@@ -52,6 +52,7 @@ from lewm.oracle.go2_branch_oracle_v1_2 import (
 )
 from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
+from lewm.oracle import go2_scorer_fixed_reissue_validation_interruption_v1 as FIXED_REISSUE_INTERRUPTION
 from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
 from lewm.oracle import go2_scorer_small_search_performance_interruption_v1 as PERFORMANCE_INTERRUPTION
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
@@ -313,6 +314,12 @@ CORPUS_SELECTION_CONTRACT = {
     "candidate_outcomes_used_for_selection": False,
 }
 
+CORPUS_SELECTION_CONTRACT_DIGEST = (
+    "c20b4feceb865b25fb24e5534be5f84d14a5795d069ca2b0c14cd3f23d8ca9dd"
+)
+if _digest(CORPUS_SELECTION_CONTRACT) != CORPUS_SELECTION_CONTRACT_DIGEST:
+    raise RuntimeError("corpus-selection contract changed during lineage integration")
+
 PREDICTOR_INPUT_CONTRACT = {
     "context_slots": 3,
     "context_frame_steps": "the three block boundaries s-10, s-5, s, where s is "
@@ -445,6 +452,9 @@ def source_bindings() -> dict[str, Any]:
             STATE_SELECTOR.AMENDMENT_ARTIFACT_PATH),
         "projection_fix_interruption_lineage": _file_binding(
             "lewm/oracle/go2_scorer_projection_fix_interruption_v1.py"),
+        "fixed_reissue_validation_interruption_lineage": _file_binding(
+            "lewm/oracle/"
+            "go2_scorer_fixed_reissue_validation_interruption_v1.py"),
         "small_search_performance_interruption_lineage": _file_binding(
             "lewm/oracle/go2_scorer_small_search_performance_interruption_v1.py"),
         "parallel_small_completion_search_executor": _file_binding(
@@ -501,8 +511,10 @@ def contract() -> dict[str, Any]:
             STATE_SELECTOR.state_selector_amendment_digest(),
         "preoutcome_projection_fix_interruption_lineage":
             INTERRUPTION.lineage_contract(),
+        "preoutcome_fixed_reissue_validation_interruption_lineage":
+            FIXED_REISSUE_INTERRUPTION.lineage_contract(),
         "preoutcome_small_search_performance_interruption_lineage":
-            PERFORMANCE_INTERRUPTION.lineage_contract(),
+            PERFORMANCE_INTERRUPTION.lineage_contract_v2(),
         "superseded_graph_infeasible_contract_artifact":
             SUPERSEDED_GRAPH_INFEASIBLE_CONTRACT_ARTIFACT,
         "invalid_scorer_identity_exclusion":
@@ -803,10 +815,43 @@ def _atomic_write_contract_output(
                 pass
 
 
+_INTERRUPTION_RECEIPT_BINDING_KEYS = frozenset({
+    "path", "receipt_digest", "raw_sha256", "byte_count", "status",
+})
+_LOWER_HEX = frozenset("0123456789abcdef")
+
+
+def _validated_interruption_receipt_binding(
+        binding: dict[str, Any], *, expected_path: Path,
+        expected_status: str, label: str,
+) -> dict[str, Any]:
+    """Pin one exact five-field receipt binding for artifact embedding."""
+
+    if (
+        type(binding) is not dict
+        or set(binding) != _INTERRUPTION_RECEIPT_BINDING_KEYS
+        or type(binding.get("path")) is not str
+        or binding["path"] != str(expected_path)
+        or type(binding.get("status")) is not str
+        or binding["status"] != expected_status
+        or any(
+            type(binding.get(key)) is not str
+            or len(binding[key]) != 64
+            or not set(binding[key]).issubset(_LOWER_HEX)
+            for key in ("receipt_digest", "raw_sha256")
+        )
+        or type(binding.get("byte_count")) is not int
+        or binding["byte_count"] <= 0
+    ):
+        raise RuntimeError(f"{label} interruption binding is invalid")
+    return dict(binding)
+
+
 def _contract_artifact_payload(
         source_launch_binding: dict[str, Any],
         state_selector_feasibility_receipt: dict[str, Any],
         mixed_precontract_disposition_receipt: dict[str, Any],
+        fixed_reissue_validation_interruption_receipt_binding: dict[str, Any],
         interruption_receipt_binding: dict[str, Any],
         performance_interruption_receipt_binding: dict[str, Any],
 ) -> dict[str, Any]:
@@ -833,41 +878,28 @@ def _contract_artifact_payload(
             source_launch_binding["bound_implementations_digest"],
         root=ROOT,
     )
-    if (
-        set(interruption_receipt_binding) != {
-            "path", "receipt_digest", "raw_sha256", "byte_count", "status"
-        }
-        or interruption_receipt_binding.get("path")
-        != str(INTERRUPTION.RECEIPT_RELATIVE_PATH)
-        or interruption_receipt_binding.get("status") != INTERRUPTION.STATUS
-        or any(
-            not isinstance(interruption_receipt_binding.get(key), str)
-            or len(interruption_receipt_binding[key]) != 64
-            for key in ("receipt_digest", "raw_sha256")
+    fixed_reissue_validation_interruption_receipt_binding = (
+        _validated_interruption_receipt_binding(
+            fixed_reissue_validation_interruption_receipt_binding,
+            expected_path=FIXED_REISSUE_INTERRUPTION.RECEIPT_RELATIVE_PATH,
+            expected_status=FIXED_REISSUE_INTERRUPTION.STATUS,
+            label="fixed-reissue validation",
         )
-        or not isinstance(interruption_receipt_binding.get("byte_count"), int)
-        or interruption_receipt_binding["byte_count"] <= 0
-    ):
-        raise RuntimeError("projection-fix interruption binding is invalid")
-    if (
-        set(performance_interruption_receipt_binding) != {
-            "path", "receipt_digest", "raw_sha256", "byte_count", "status"
-        }
-        or performance_interruption_receipt_binding.get("path")
-        != str(PERFORMANCE_INTERRUPTION.RECEIPT_RELATIVE_PATH)
-        or performance_interruption_receipt_binding.get("status")
-        != PERFORMANCE_INTERRUPTION.STATUS
-        or any(
-            not isinstance(performance_interruption_receipt_binding.get(key), str)
-            or len(performance_interruption_receipt_binding[key]) != 64
-            for key in ("receipt_digest", "raw_sha256")
+    )
+    interruption_receipt_binding = _validated_interruption_receipt_binding(
+        interruption_receipt_binding,
+        expected_path=INTERRUPTION.RECEIPT_RELATIVE_PATH,
+        expected_status=INTERRUPTION.STATUS,
+        label="projection-fix",
+    )
+    performance_interruption_receipt_binding = (
+        _validated_interruption_receipt_binding(
+            performance_interruption_receipt_binding,
+            expected_path=PERFORMANCE_INTERRUPTION.V2_RECEIPT_RELATIVE_PATH,
+            expected_status=PERFORMANCE_INTERRUPTION.V2_STATUS,
+            label="small-search performance V2",
         )
-        or not isinstance(
-            performance_interruption_receipt_binding.get("byte_count"), int)
-        or performance_interruption_receipt_binding["byte_count"] <= 0
-    ):
-        raise RuntimeError(
-            "small-search performance interruption binding is invalid")
+    )
     payload = {
         "schema": "go2_utility_scorer_contract_v1_2_artifact",
         "status": STATUS,
@@ -890,12 +922,15 @@ def _contract_artifact_payload(
         "retained_predecessor_state_count": 37,
         "rejected_predecessor_state_count": 8,
         "prospective_replacement_slot_count": 8,
+        "preoutcome_fixed_reissue_validation_interruption_verified": True,
+        "preoutcome_fixed_reissue_validation_interruption":
+            fixed_reissue_validation_interruption_receipt_binding,
         "preoutcome_projection_fix_interruption_verified": True,
         "preoutcome_projection_fix_interruption":
-            dict(interruption_receipt_binding),
+            interruption_receipt_binding,
         "preoutcome_small_search_performance_interruption_verified": True,
         "preoutcome_small_search_performance_interruption":
-            dict(performance_interruption_receipt_binding),
+            performance_interruption_receipt_binding,
         "mixed_state_post_allocation_revalidation": {
             "status": "PENDING_POST_IDENTITY_PRE_OUTCOME",
             "required_before_active_identity_manifest": True,
@@ -931,7 +966,7 @@ def issue_contract(path: Path) -> dict[str, Any]:
     source_launch_binding = clean_source_binding()
     STATE_SELECTOR.validate_authority_artifacts()
     selection_digest = _digest(CORPUS_SELECTION_CONTRACT)
-    # Both generated receipts are opened only by central custody guards.  In
+    # All generated receipts are opened only by central custody guards.  In
     # particular, do not probe or parse the managed output alias before those
     # helpers have rejected any descendant or leaf symlink and pinned its
     # canonical target.
@@ -949,6 +984,20 @@ def issue_contract(path: Path) -> dict[str, Any]:
         root=ROOT,
         )
     )
+    fixed_reissue_validation_interruption_receipt = (
+        FIXED_REISSUE_INTERRUPTION.load_and_validate_interruption_receipt(
+            expected_source_repository_commit=source_launch_binding[
+                "source_repository_commit"],
+            expected_clean_source_binding_digest=_digest(source_launch_binding),
+            expected_bound_implementations_digest=source_launch_binding[
+                "bound_implementations_digest"],
+            root=ROOT,
+        )
+    )
+    fixed_reissue_validation_interruption_binding = (
+        FIXED_REISSUE_INTERRUPTION.receipt_binding(
+            fixed_reissue_validation_interruption_receipt, root=ROOT)
+    )
     interruption_receipt = INTERRUPTION.load_and_validate_interruption_receipt(
         expected_source_repository_commit=source_launch_binding[
             "source_repository_commit"],
@@ -961,17 +1010,21 @@ def issue_contract(path: Path) -> dict[str, Any]:
         interruption_receipt, root=ROOT)
     performance_interruption_receipt = (
         PERFORMANCE_INTERRUPTION
-        .load_and_validate_performance_interruption_receipt(
+        .load_and_validate_performance_interruption_receipt_v2(
             expected_source_repository_commit=source_launch_binding[
                 "source_repository_commit"],
             expected_clean_source_binding_digest=_digest(source_launch_binding),
             expected_bound_implementations_digest=source_launch_binding[
                 "bound_implementations_digest"],
+            expected_source_transition_receipt_binding=
+                fixed_reissue_validation_interruption_binding,
             root=ROOT,
         )
     )
-    performance_interruption_binding = PERFORMANCE_INTERRUPTION.receipt_binding(
-        performance_interruption_receipt, root=ROOT)
+    performance_interruption_binding = (
+        PERFORMANCE_INTERRUPTION.performance_interruption_receipt_binding_v2(
+            performance_interruption_receipt, root=ROOT)
+    )
     invalid_index = INVALID_IDS.load_invalid_identity_index()
     if (invalid_index.binding()["invalid_scorer_identity_exclusion_digest"]
             != INVALID_IDS.invalid_identity_exclusion_digest()):
@@ -1024,7 +1077,8 @@ def issue_contract(path: Path) -> dict[str, Any]:
         raise RuntimeError("candidate-allocation amendment binding failed")
     payload = _contract_artifact_payload(
         source_launch_binding, feasibility_receipt, disposition_receipt,
-        interruption_binding, performance_interruption_binding,
+        fixed_reissue_validation_interruption_binding, interruption_binding,
+        performance_interruption_binding,
     )
     disposition = _prepare_contract_output(
         path, payload, managed_root=path.parent

@@ -299,7 +299,7 @@ def test_resigned_receipt_tamper_and_descendant_symlink_are_rejected(
     assert not list(external.iterdir())
 
 
-def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
+def test_contract_and_launch_bind_the_current_interruption_receipts(monkeypatch):
     source = {
         "source_repository_commit": "n" * 40,
         "source_repository_clean": True,
@@ -307,19 +307,28 @@ def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
     }
     feasibility = {"state_selector_feasibility_receipt_digest": "f" * 64}
     mixed = {"mixed_precontract_disposition_receipt_digest": "m" * 64}
+    fixed_reissue_binding = {
+        "path": str(
+            CONTRACT.FIXED_REISSUE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "3" * 64,
+        "raw_sha256": "4" * 64,
+        "byte_count": 234,
+        "status": CONTRACT.FIXED_REISSUE_INTERRUPTION.STATUS,
+    }
     binding = {
         "path": str(I.RECEIPT_RELATIVE_PATH),
-        "receipt_digest": "i" * 64,
-        "raw_sha256": "r" * 64,
+        "receipt_digest": "1" * 64,
+        "raw_sha256": "2" * 64,
         "byte_count": 123,
         "status": I.STATUS,
     }
     performance_binding = {
-        "path": str(CONTRACT.PERFORMANCE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
-        "receipt_digest": "j" * 64,
-        "raw_sha256": "s" * 64,
+        "path": str(
+            CONTRACT.PERFORMANCE_INTERRUPTION.V2_RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "5" * 64,
+        "raw_sha256": "6" * 64,
         "byte_count": 456,
-        "status": CONTRACT.PERFORMANCE_INTERRUPTION.STATUS,
+        "status": CONTRACT.PERFORMANCE_INTERRUPTION.V2_STATUS,
     }
     monkeypatch.setattr(
         CONTRACT.STATE_SELECTOR, "validate_frozen_reachability_feasibility_pass",
@@ -329,9 +338,16 @@ def test_contract_and_launch_bind_the_single_interruption_receipt(monkeypatch):
         "validate_preserved_state_mixed_precontract_disposition_receipt",
         lambda *_args, **_kwargs: None)
     artifact = CONTRACT._contract_artifact_payload(
-        source, feasibility, mixed, binding, performance_binding)
+        source, feasibility, mixed, fixed_reissue_binding, binding,
+        performance_binding)
+    assert artifact[
+        "preoutcome_fixed_reissue_validation_interruption_verified"] is True
+    assert artifact["preoutcome_fixed_reissue_validation_interruption"] == \
+        fixed_reissue_binding
     assert artifact["preoutcome_projection_fix_interruption_verified"] is True
     assert artifact["preoutcome_projection_fix_interruption"] == binding
+    assert artifact[
+        "preoutcome_small_search_performance_interruption_verified"] is True
     assert artifact["preoutcome_small_search_performance_interruption"] == \
         performance_binding
 

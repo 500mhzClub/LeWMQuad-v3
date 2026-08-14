@@ -74,12 +74,26 @@ def _archived_pair(
 
 
 def _mock_interruption(monkeypatch):
-    binding = {
+    projection_binding = {
         "path": str(B.INTERRUPTION.RECEIPT_RELATIVE_PATH),
         "receipt_digest": "1" * 64,
         "raw_sha256": "2" * 64,
         "byte_count": 123,
         "status": B.INTERRUPTION.STATUS,
+    }
+    transition_binding = {
+        "path": str(B.REISSUE_VALIDATION_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "3" * 64,
+        "raw_sha256": "4" * 64,
+        "byte_count": 456,
+        "status": B.REISSUE_VALIDATION_INTERRUPTION.STATUS,
+    }
+    performance_binding = {
+        "path": str(B.PERFORMANCE_INTERRUPTION.V2_RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "5" * 64,
+        "raw_sha256": "6" * 64,
+        "byte_count": 789,
+        "status": B.PERFORMANCE_INTERRUPTION.V2_STATUS,
     }
     receipt = {"synthetic": "validated interruption receipt"}
     monkeypatch.setattr(
@@ -87,15 +101,354 @@ def _mock_interruption(monkeypatch):
         lambda **_kwargs: receipt)
     monkeypatch.setattr(
         B.INTERRUPTION, "receipt_binding",
-        lambda _receipt, **_kwargs: dict(binding))
+        lambda _receipt, **_kwargs: dict(projection_binding))
     monkeypatch.setattr(
-        B.PERFORMANCE_INTERRUPTION,
-        "load_and_validate_performance_interruption_receipt",
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "load_and_validate_interruption_receipt",
         lambda **_kwargs: receipt)
     monkeypatch.setattr(
-        B.PERFORMANCE_INTERRUPTION, "receipt_binding",
-        lambda _receipt, **_kwargs: dict(binding))
-    return binding
+        B.REISSUE_VALIDATION_INTERRUPTION, "receipt_binding",
+        lambda _receipt, **_kwargs: dict(transition_binding))
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION,
+        "load_and_validate_performance_interruption_receipt_v2",
+        lambda **_kwargs: receipt)
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION,
+        "performance_interruption_receipt_binding_v2",
+        lambda _receipt, **_kwargs: dict(performance_binding))
+    return {
+        "projection": projection_binding,
+        "transition": transition_binding,
+        "performance": performance_binding,
+    }
+
+
+def test_pre_identity_validation_reopens_transition_certified_bytes_without_milp(
+        tmp_path, monkeypatch):
+    output_root = tmp_path / "go2_branch_corpus_v1_2"
+    pool_root = output_root / "scorer_fit"
+    pool_root.mkdir(parents=True)
+    artifact_path = pool_root / B.PRE_IDENTITY_VALIDATION_NAME
+    raw = b'{"synthetic_version": 1}\n'
+    artifact = {"synthetic_version": 1}
+    transition = {"synthetic": "fully validated transition"}
+    calls = []
+    monkeypatch.setattr(B, "OUT_ROOT", output_root)
+    monkeypatch.setattr(
+        B, "_load_current_reissue_validation_interruption",
+        lambda: transition)
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "validate_retained_preidentity_artifact",
+        lambda receipt, **_kwargs: (
+            calls.append(receipt) or dict(artifact)))
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "RETAINED_PREIDENTITY_ARTIFACT", {
+            "byte_count": len(raw),
+            "raw_sha256": B.hashlib.sha256(raw).hexdigest(),
+        })
+    monkeypatch.setattr(
+        B.ALLOC, "validate_pre_identity_structural_validation",
+        lambda *_args, **_kwargs: pytest.fail("MILP validator was reached"))
+    monkeypatch.setattr(
+        B.ALLOC, "build_pre_identity_structural_validation",
+        lambda *_args, **_kwargs: pytest.fail("MILP builder was reached"))
+
+    artifact_path.write_bytes(raw)
+    first = B._load_pre_identity_allocation_validation()
+    first["synthetic_version"] = 99
+    second = B._load_pre_identity_allocation_validation()
+    assert second == artifact
+    assert calls == [transition, transition]
+
+    artifact_path.write_bytes(b'{"synthetic_version": 2}\n')
+    with pytest.raises(RuntimeError, match="differs from its transition proof"):
+        B._load_pre_identity_allocation_validation()
+
+
+def test_preflight_reuses_one_exact_validated_artifact_without_rebuilding(
+        tmp_path, monkeypatch):
+    out = tmp_path / "scorer_fit"
+    out.mkdir()
+    artifact = {
+        "pre_identity_validation_digest": "a" * 64,
+        "global": {"state_slot_count": 120, "candidate_slot_count": 720},
+        "goal_type_validation": {
+            "status": "NOT_EVALUABLE_BEFORE_STATE_IDENTITIES",
+        },
+    }
+    artifact_path = out / B.PRE_IDENTITY_VALIDATION_NAME
+    artifact_path.write_text(json.dumps(artifact, sort_keys=True) + "\n")
+    launch = {
+        "clean_source_launch_receipt_digest": "b" * 64,
+        "source_repository_commit": "c" * 40,
+        "pre_identity_allocation_validation_digest": "a" * 64,
+    }
+    monkeypatch.setattr(B, "_load_issued_scorer_contract", lambda: {})
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
+    monkeypatch.setattr(
+        B.ALLOC, "validate_allocation_amendment_artifact",
+        lambda _payload: None)
+    monkeypatch.setattr(
+        B.ALLOC, "validate_pre_identity_structural_validation",
+        lambda *_args, **_kwargs: pytest.fail("MILP validator was reached"))
+    monkeypatch.setattr(
+        B.ALLOC, "build_pre_identity_structural_validation",
+        lambda: pytest.fail("valid retained preflight artifact was rebuilt"))
+    monkeypatch.setattr(
+        B, "_load_pre_identity_allocation_validation", lambda: dict(artifact))
+    monkeypatch.setattr(
+        B, "_build_clean_source_launch_receipt", lambda payload: (
+            dict(launch) if payload == artifact else
+            pytest.fail("launch received a different preflight artifact")))
+    assert B.issue_pre_identity_allocation_validation(out) == 0
+    assert B.issue_pre_identity_allocation_validation(out) == 0
+    assert json.loads(artifact_path.read_text()) == artifact
+    assert json.loads((out / B.LAUNCH_RECEIPT_NAME).read_text()) == launch
+
+
+def test_fixed_reissue_interruption_stage_records_only_transition(
+        monkeypatch):
+    source = {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+    receipt = {
+        "status": B.REISSUE_VALIDATION_INTERRUPTION.STATUS,
+        "fixed_wrapper_count_issued": 0,
+        "preidentity_exact_proof_reuse_only": True,
+        "scientific_gate_input": False,
+    }
+    captured = {}
+    monkeypatch.setattr(B, "clean_source_binding", lambda: dict(source))
+
+    def issue(**kwargs):
+        captured.update(kwargs)
+        return dict(receipt)
+
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "issue_and_archive_interruption_receipt", issue)
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION, "receipt_binding",
+        lambda payload, **_kwargs: {"status": payload["status"]})
+    assert B.stage_fixed_reissue_validation_interruption() == 0
+    assert captured["source_repository_commit"] == "a" * 40
+    assert captured["clean_source_binding_digest"] == B.canonical_digest(source)
+    assert captured["bound_implementations_digest"] == "b" * 64
+    assert callable(captured["outcome_surface_absent"])
+    assert "execution_argv" not in captured
+    assert "interpreter_versions" not in captured
+
+
+def test_performance_interruption_stage_issues_transition_bound_v2(
+        monkeypatch):
+    source = {
+        "source_repository_commit": "a" * 40,
+        "source_repository_clean": True,
+        "bound_implementations_digest": "b" * 64,
+    }
+    transition = {"transition": "validated"}
+    transition_binding = {"transition": "binding"}
+    predecessor = {"performance": "archived-v1"}
+    predecessor_binding = {"performance": "archived-v1-binding"}
+    projection = {"projection": "current"}
+    v2 = {
+        "status": B.PERFORMANCE_INTERRUPTION.V2_STATUS,
+        "scientific_gate_input": False,
+        "may_satisfy_selector_gate": False,
+    }
+    captured = {}
+    monkeypatch.setattr(B, "clean_source_binding", lambda: dict(source))
+    monkeypatch.setattr(
+        B, "_load_current_reissue_validation_interruption",
+        lambda: transition)
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION, "receipt_binding",
+        lambda payload, **_kwargs: (
+            transition_binding if payload is transition else
+            pytest.fail("unexpected transition payload")))
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "load_archived_performance_receipt_v1",
+        lambda payload, **_kwargs: (
+            predecessor if payload is transition else
+            pytest.fail("unexpected transition payload")))
+    monkeypatch.setattr(
+        B.REISSUE_VALIDATION_INTERRUPTION,
+        "archived_performance_receipt_binding_v1",
+        lambda payload, **_kwargs: (
+            predecessor_binding if payload is transition else
+            pytest.fail("unexpected transition payload")))
+    monkeypatch.setattr(
+        B.INTERRUPTION, "load_and_validate_interruption_receipt",
+        lambda **_kwargs: projection)
+
+    def issue_v2(**kwargs):
+        captured.update(kwargs)
+        return dict(v2)
+
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION,
+        "issue_performance_interruption_receipt_v2", issue_v2)
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION,
+        "performance_interruption_receipt_binding_v2",
+        lambda payload, **_kwargs: {"status": payload["status"]})
+    assert B.stage_small_search_performance_interruption() == 0
+    assert captured["source_transition_receipt_binding"] is transition_binding
+    assert captured["predecessor_v1_receipt"] is predecessor
+    assert captured["predecessor_v1_receipt_binding"] is predecessor_binding
+    assert captured["current_projection_receipt"] is projection
+    assert captured["revalidate_small_prefix"] is \
+        B._revalidate_performance_interrupted_small_prefix
+    assert callable(captured["outcome_surface_absent"])
+
+
+def test_mixed_request_validator_uses_supplied_state_shard_bindings(
+        tmp_path, monkeypatch):
+    family = str(B.STATE_SELECTOR.PRESERVED_STATE_SHARDS[0]["family"])
+    scene_dir = tmp_path / "train" / family / "scene-a"
+    scene_dir.mkdir(parents=True)
+    (scene_dir / "manifest.json").write_text("{}\n")
+    slot = {"state_id": "replacement-0"}
+    interval = {
+        "lower_scene_id_exclusive": None,
+        "upper_scene_id_exclusive": None,
+        "vacant_ordinals": [0],
+        "replacement_slots": [slot],
+    }
+    plan = {
+        "retained_scene_ids": [],
+        "rejected_identity_digests": ["a" * 64],
+        "interval_groups": [interval],
+    }
+    bindings = {"exact": "precomputed-state-shard-bindings"}
+    args = B.argparse.Namespace(
+        pool="scorer_fit", family=family, backend="cpu")
+    monkeypatch.setattr(
+        B, "_mixed_family_replacement_plan", lambda _family: plan)
+    monkeypatch.setattr(
+        B, "_state_shard_bindings",
+        lambda *_args, **_kwargs: dict(bindings))
+    monkeypatch.setattr(
+        B, "_pin_generated_path", lambda raw, _expected, **_kwargs: raw)
+    request = B._build_mixed_replacement_scene_request(
+        args=args, out=tmp_path, scene_dir=scene_dir, scene_ordinal=0,
+        interval=interval, slot=slot, accepted_scene_ids_before=[],
+        exclusion={}, family_allow_list=[scene_dir.name], persist=False)
+
+    monkeypatch.setattr(
+        B, "_state_shard_bindings",
+        lambda *_args, **_kwargs: pytest.fail(
+            "supplied mixed-request bindings were recomputed"))
+    B._validate_mixed_replacement_scene_request(
+        request, args=args, out=tmp_path, pool={family: [scene_dir]},
+        exclusion={}, expected_state_shard_bindings=bindings)
+
+
+@pytest.mark.parametrize("kind", ("ordinary", "mixed"))
+def test_fixed_shard_replay_threads_one_precomputed_binding_to_every_request(
+        kind, tmp_path, monkeypatch):
+    family = f"synthetic-{kind}"
+    request_key = (
+        "mixed_replacement_scene_request_digest" if kind == "mixed" else
+        "state_resolution_scene_request_digest")
+    capture_key = (
+        "mixed_replacement_scene_capture_digest" if kind == "mixed" else
+        "state_resolution_scene_capture_digest")
+    provenance_key = (
+        "mixed_replacement_scene_capture_provenance" if kind == "mixed" else
+        "state_resolution_scene_capture_provenance")
+    lineage_keys = tuple(B.PERFORMANCE_INTERRUPTION.SUCCESSOR_LINEAGE_KEYS)
+    expected_bindings = {
+        **{key: f"current-{index}" for index, key in enumerate(lineage_keys)},
+        "unchanged_binding": "fixed",
+    }
+    old_bindings = {
+        **{key: f"historical-{index}" for index, key in enumerate(lineage_keys)},
+        "unchanged_binding": "fixed",
+    }
+    successor_bindings = {
+        key: expected_bindings[key] for key in lineage_keys
+    }
+    request = {
+        "state_shard_bindings": old_bindings,
+        request_key: "1" * 64,
+        "scientific_request_field": "unchanged",
+    }
+    capture = {
+        "request": request,
+        request_key: request[request_key],
+        capture_key: "2" * 64,
+        "scientific_capture_field": "unchanged",
+        "worker_failure": None,
+    }
+    request_path = tmp_path / "archived-request.json"
+    capture_path = tmp_path / "archived-capture.json"
+    request_path.write_text(json.dumps(request))
+    capture_path.write_text(json.dumps(capture))
+    logical_request = "requests/archived-request.json"
+    logical_capture = "captures/archived-capture.json"
+    predecessor = {
+        "family": family,
+        provenance_key: [{
+            "request_path": logical_request,
+            "capture_path": logical_capture,
+        }],
+    }
+    transport_rows = [
+        {"path": logical_request, "archive_path": str(request_path)},
+        {"path": logical_capture, "archive_path": str(capture_path)},
+    ]
+    binding_calls = []
+    validator_bindings = []
+
+    def state_shard_bindings(*_args, **_kwargs):
+        binding_calls.append(True)
+        return dict(expected_bindings)
+
+    def validate_request(
+            _request, *, expected_state_shard_bindings, **_kwargs):
+        validator_bindings.append(dict(expected_state_shard_bindings))
+
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION, "FIXED_STATE_SHARDS",
+        ({"family": family, "kind": kind},))
+    monkeypatch.setattr(B, "scene_pool", lambda _pool: ({family: [tmp_path]}, {}))
+    monkeypatch.setattr(B, "_state_shard_bindings", state_shard_bindings)
+    monkeypatch.setattr(
+        B, "_validate_interrupted_state_identity_bindings",
+        lambda bindings: bindings)
+    monkeypatch.setattr(
+        B.PERFORMANCE_INTERRUPTION, "_pin_managed",
+        lambda path, **_kwargs: Path(path))
+    if kind == "mixed":
+        monkeypatch.setattr(
+            B, "_validate_mixed_replacement_scene_request", validate_request)
+        monkeypatch.setattr(
+            B, "_validate_mixed_replacement_scene_capture",
+            lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(
+            B, "_replay_projected_mixed_fixed_shard",
+            lambda **_kwargs: None)
+    else:
+        monkeypatch.setattr(
+            B, "_validate_state_resolution_scene_request", validate_request)
+        monkeypatch.setattr(
+            B, "_validate_state_resolution_scene_capture",
+            lambda *_args, **_kwargs: None)
+        monkeypatch.setattr(
+            B, "_replay_projected_ordinary_fixed_shard",
+            lambda **_kwargs: None)
+
+    assert B._revalidate_performance_interrupted_fixed_shard(
+        predecessor, transport_rows, successor_bindings) is True
+    assert len(binding_calls) == 1
+    assert validator_bindings == [expected_bindings]
 
 
 def test_archived_ordinary_wrapper_replays_dynamic_quota_and_first_cursor():
@@ -618,8 +971,13 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
         "source_repository_clean": True,
         "clean_source_binding": clean_source,
         "clean_source_binding_digest": B.canonical_digest(clean_source),
-        "preoutcome_projection_fix_interruption": interruption,
-        "preoutcome_small_search_performance_interruption": interruption,
+        "preoutcome_fixed_reissue_validation_interruption_verified": True,
+        "preoutcome_fixed_reissue_validation_interruption":
+            interruption["transition"],
+        "preoutcome_projection_fix_interruption": interruption["projection"],
+        "preoutcome_small_search_performance_interruption_verified": True,
+        "preoutcome_small_search_performance_interruption":
+            interruption["performance"],
         **selector_preconditions,
     }
     contract_artifact["contract_artifact_digest"] = B.canonical_digest(
@@ -628,18 +986,34 @@ def test_pre_identity_allocation_preflight_is_deterministic_and_idempotent(
     B.atomic_json(contract_path, contract_artifact)
     monkeypatch.setattr(B, "SCORER_CONTRACT_ARTIFACT_PATH", contract_path)
     out = tmp_path / "scorer_fit"
+    out.mkdir()
+    artifact = {
+        "pre_identity_validation_digest": "e" * 64,
+        "global": {"state_slot_count": 120, "candidate_slot_count": 720},
+        "goal_type_validation": {
+            "status": "NOT_EVALUABLE_BEFORE_STATE_IDENTITIES",
+        },
+    }
+    artifact_path = out / B.PRE_IDENTITY_VALIDATION_NAME
+    artifact_path.write_text(json.dumps(artifact, sort_keys=True) + "\n")
+    monkeypatch.setattr(B, "OUT_ROOT", tmp_path)
+    monkeypatch.setattr(
+        B, "_load_pre_identity_allocation_validation", lambda: dict(artifact))
+    monkeypatch.setattr(
+        B.ALLOC, "build_pre_identity_structural_validation",
+        lambda: pytest.fail("transition-certified preflight was rebuilt"))
+    monkeypatch.setattr(
+        B.ALLOC, "validate_pre_identity_structural_validation",
+        lambda *_args, **_kwargs: pytest.fail("MILP validator was reached"))
     assert B.issue_pre_identity_allocation_validation(out) == 0
-    path = out / B.PRE_IDENTITY_VALIDATION_NAME
-    first = path.read_bytes()
-    artifact = json.loads(first)
-    B.ALLOC.validate_pre_identity_structural_validation(artifact)
+    first = artifact_path.read_bytes()
     assert artifact["global"]["state_slot_count"] == 120
     assert artifact["global"]["candidate_slot_count"] == 720
     assert artifact["goal_type_validation"]["status"] == (
         "NOT_EVALUABLE_BEFORE_STATE_IDENTITIES"
     )
     assert B.issue_pre_identity_allocation_validation(out) == 0
-    assert path.read_bytes() == first
+    assert artifact_path.read_bytes() == first
 
 
 def test_issued_scorer_contract_uses_exact_managed_utility_root(
@@ -662,8 +1036,13 @@ def test_issued_scorer_contract_uses_exact_managed_utility_root(
         "source_repository_clean": True,
         "clean_source_binding": source,
         "clean_source_binding_digest": B.canonical_digest(source),
-        "preoutcome_projection_fix_interruption": interruption,
-        "preoutcome_small_search_performance_interruption": interruption,
+        "preoutcome_fixed_reissue_validation_interruption_verified": True,
+        "preoutcome_fixed_reissue_validation_interruption":
+            interruption["transition"],
+        "preoutcome_projection_fix_interruption": interruption["projection"],
+        "preoutcome_small_search_performance_interruption_verified": True,
+        "preoutcome_small_search_performance_interruption":
+            interruption["performance"],
     }
     payload["contract_artifact_digest"] = B.canonical_digest(payload)
     B.atomic_json(contract_path, payload)
@@ -706,8 +1085,16 @@ def test_issued_scorer_contract_canonical_path_survives_root_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
-                "preoutcome_projection_fix_interruption": interruption,
-                "preoutcome_small_search_performance_interruption": interruption,
+                "preoutcome_fixed_reissue_validation_interruption_verified":
+                    True,
+                "preoutcome_fixed_reissue_validation_interruption":
+                    interruption["transition"],
+                "preoutcome_projection_fix_interruption":
+                    interruption["projection"],
+                "preoutcome_small_search_performance_interruption_verified":
+                    True,
+                "preoutcome_small_search_performance_interruption":
+                    interruption["performance"],
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)
         return payload
@@ -1316,8 +1703,16 @@ def test_launch_hashes_same_pinned_utility_contract_after_alias_swap(
             "source_repository_clean": True,
             "clean_source_binding": source,
             "clean_source_binding_digest": B.canonical_digest(source),
-                "preoutcome_projection_fix_interruption": interruption,
-                "preoutcome_small_search_performance_interruption": interruption,
+                "preoutcome_fixed_reissue_validation_interruption_verified":
+                    True,
+                "preoutcome_fixed_reissue_validation_interruption":
+                    interruption["transition"],
+                "preoutcome_projection_fix_interruption":
+                    interruption["projection"],
+                "preoutcome_small_search_performance_interruption_verified":
+                    True,
+                "preoutcome_small_search_performance_interruption":
+                    interruption["performance"],
             **selector,
         }
         payload["contract_artifact_digest"] = B.canonical_digest(payload)

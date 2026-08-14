@@ -55,6 +55,10 @@ from lewm.oracle import go2_candidate_allocation_v1_2 as ALLOC
 from lewm.oracle import go2_invalid_scorer_identity_exclusion_v1_2 as INVALID_IDS
 from lewm.oracle import go2_parallel_small_completion_search_v1 as PARALLEL_SEARCH
 from lewm.oracle import go2_scorer_projection_fix_interruption_v1 as INTERRUPTION
+from lewm.oracle import (
+    go2_scorer_fixed_reissue_validation_interruption_v1 as
+    REISSUE_VALIDATION_INTERRUPTION,
+)
 from lewm.oracle import go2_scorer_small_search_performance_interruption_v1 as PERFORMANCE_INTERRUPTION
 from lewm.oracle import go2_scorer_state_selector_amendment_v2 as STATE_SELECTOR
 from lewm.oracle.go2_textured_v03_renderer import (
@@ -460,6 +464,26 @@ def _frozen_generated_artifact_path(
     return canonical_path
 
 
+def _load_current_reissue_validation_interruption() -> dict[str, Any]:
+    """Reopen the implementation-only no-write transition under current HEAD."""
+
+    source = clean_source_binding()
+    return REISSUE_VALIDATION_INTERRUPTION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=str(
+            source["source_repository_commit"]),
+        expected_clean_source_binding_digest=canonical_digest(source),
+        expected_bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+    )
+
+
+def _current_reissue_validation_interruption_binding() -> dict[str, Any]:
+    receipt = _load_current_reissue_validation_interruption()
+    return REISSUE_VALIDATION_INTERRUPTION.receipt_binding(
+        receipt, root=ROOT)
+
+
 def _load_pre_identity_allocation_validation() -> dict[str, Any]:
     raw_path = OUT_ROOT / "scorer_fit" / PRE_IDENTITY_VALIDATION_NAME
     path = _pin_generated_path(raw_path, raw_path)
@@ -468,8 +492,21 @@ def _load_pre_identity_allocation_validation() -> dict[str, Any]:
             "state identity selection is gated on the frozen pre-identity "
             "allocation validation artifact"
         )
-    artifact = json.loads(path.read_text())
-    ALLOC.validate_pre_identity_structural_validation(artifact)
+    raw_bytes = path.read_bytes()
+    receipt = _load_current_reissue_validation_interruption()
+    certified = (
+        REISSUE_VALIDATION_INTERRUPTION
+        .validate_retained_preidentity_artifact(receipt, root=ROOT)
+    )
+    artifact = json.loads(raw_bytes)
+    binding = REISSUE_VALIDATION_INTERRUPTION.RETAINED_PREIDENTITY_ARTIFACT
+    if (len(raw_bytes) != binding["byte_count"]
+            or hashlib.sha256(raw_bytes).hexdigest() != binding["raw_sha256"]
+            or artifact != certified):
+        raise RuntimeError(
+            "retained pre-identity artifact differs from its transition proof")
+    # Return a fresh object; the transition helper also reopens exact bytes and
+    # unchanged allocator/amendment source bindings without running a MILP.
     return artifact
 
 
@@ -502,6 +539,28 @@ def _load_issued_scorer_contract_at_path(path: Path) -> dict[str, Any]:
             or artifact.get("clean_source_binding_digest")
             != canonical_digest(current_source)):
         raise RuntimeError("issued scorer contract source binding differs from current HEAD")
+    transition = (
+        REISSUE_VALIDATION_INTERRUPTION
+        .load_and_validate_interruption_receipt(
+            expected_source_repository_commit=str(
+                current_source["source_repository_commit"]),
+            expected_clean_source_binding_digest=canonical_digest(
+                current_source),
+            expected_bound_implementations_digest=str(
+                current_source["bound_implementations_digest"]),
+            root=ROOT,
+        )
+    )
+    transition_binding = REISSUE_VALIDATION_INTERRUPTION.receipt_binding(
+        transition, root=ROOT)
+    if (artifact.get(
+            "preoutcome_fixed_reissue_validation_interruption_verified")
+            is not True
+            or artifact.get(
+                "preoutcome_fixed_reissue_validation_interruption")
+            != transition_binding):
+        raise RuntimeError(
+            "issued scorer contract lost fixed-reissue transition lineage")
     interruption = INTERRUPTION.load_and_validate_interruption_receipt(
         expected_source_repository_commit=str(
             current_source["source_repository_commit"]),
@@ -517,18 +576,23 @@ def _load_issued_scorer_contract_at_path(path: Path) -> dict[str, Any]:
         )
     performance_interruption = (
         PERFORMANCE_INTERRUPTION
-        .load_and_validate_performance_interruption_receipt(
+        .load_and_validate_performance_interruption_receipt_v2(
             expected_source_repository_commit=str(
                 current_source["source_repository_commit"]),
             expected_clean_source_binding_digest=canonical_digest(current_source),
             expected_bound_implementations_digest=str(
                 current_source["bound_implementations_digest"]),
+            expected_source_transition_receipt_binding=transition_binding,
             root=ROOT,
         )
     )
-    if artifact.get("preoutcome_small_search_performance_interruption") != \
-            PERFORMANCE_INTERRUPTION.receipt_binding(
-                performance_interruption, root=ROOT):
+    if (artifact.get(
+            "preoutcome_small_search_performance_interruption_verified")
+            is not True
+            or artifact.get("preoutcome_small_search_performance_interruption")
+            != PERFORMANCE_INTERRUPTION\
+                .performance_interruption_receipt_binding_v2(
+                    performance_interruption, root=ROOT)):
         raise RuntimeError(
             "issued scorer contract lost small-search performance interruption lineage"
         )
@@ -581,6 +645,9 @@ def _build_clean_source_launch_receipt(
             INVALID_IDS.invalid_identity_exclusion_digest(),
         "state_selector_amendment_digest":
             STATE_SELECTOR.state_selector_amendment_digest(),
+        "preoutcome_fixed_reissue_validation_interruption": dict(
+            scorer_artifact[
+                "preoutcome_fixed_reissue_validation_interruption"]),
         "preoutcome_projection_fix_interruption": dict(
             scorer_artifact["preoutcome_projection_fix_interruption"]),
         "preoutcome_small_search_performance_interruption": dict(
@@ -610,7 +677,7 @@ def _load_clean_source_launch_receipt() -> dict[str, Any]:
 
 
 def issue_pre_identity_allocation_validation(out: Path) -> int:
-    """Issue the deterministic structural table before any state identity."""
+    """Reopen the transition-certified pre-identity table, without a MILP."""
 
     if out.name != "scorer_fit":
         raise RuntimeError("allocation preflight is defined only for scorer_fit")
@@ -621,38 +688,18 @@ def issue_pre_identity_allocation_validation(out: Path) -> int:
     ALLOC.validate_allocation_amendment_artifact(
         json.loads(amendment_path.read_text())
     )
-    artifact = ALLOC.build_pre_identity_structural_validation()
     path = out / PRE_IDENTITY_VALIDATION_NAME
-    retained = False
-    if path.is_file():
-        try:
-            existing = json.loads(path.read_text())
-            ALLOC.validate_pre_identity_structural_validation(existing)
-            if existing == artifact:
-                retained = True
-        except Exception:
-            pass
-        if not retained and _outcome_generation_started(out):
-            raise RuntimeError(
-                "pre-identity allocation validation changed after outcomes started"
-            )
-        if not retained:
-            _preserve_invalid(path, out, "pre-identity-validation-mismatch")
-    if not retained:
-        atomic_json(path, artifact)
+    artifact = _load_pre_identity_allocation_validation()
+    if json.loads(_pin_generated_path(path, path).read_bytes()) != artifact:
+        raise RuntimeError(
+            "pre-identity proof path differs from registered artifact")
 
     launch = _build_clean_source_launch_receipt(artifact)
     launch_path = out / LAUNCH_RECEIPT_NAME
-    if launch_path.is_file():
-        existing_launch = json.loads(launch_path.read_text())
-        if existing_launch != launch:
-            if _outcome_generation_started(out):
-                raise RuntimeError("clean-source launch binding changed after outcomes started")
-            _preserve_invalid(launch_path, out, "clean-source-launch-mismatch")
-    atomic_json(launch_path, launch)
+    _write_or_require_exact_json(
+        launch_path, launch, label="clean-source launch receipt")
     print(json.dumps({
-        "recovery": ("retained_valid_pre_identity_validation" if retained
-                     else "issued_pre_identity_validation"),
+        "recovery": "retained_transition_certified_pre_identity_validation",
         "path": str(path),
         "clean_source_launch_receipt_path": str(launch_path),
         "clean_source_launch_receipt_digest":
@@ -3689,8 +3736,41 @@ def _revalidate_reissued_small_prefix(
     return True
 
 
+def stage_fixed_reissue_validation_interruption() -> int:
+    """Archive the exact ca09 authorities after the no-write SIGINT.
+
+    This is an implementation-lineage transition only.  It records the
+    interrupted, pre-issuance validation and grants no scientific retry,
+    resume, wrapper, or selector authority.
+    """
+
+    source = clean_source_binding()
+    receipt = (
+        REISSUE_VALIDATION_INTERRUPTION
+        .issue_and_archive_interruption_receipt(
+            source_repository_commit=str(source["source_repository_commit"]),
+            clean_source_binding_digest=canonical_digest(source),
+            bound_implementations_digest=str(
+                source["bound_implementations_digest"]),
+            outcome_surface_absent=lambda:
+                _phase1_outcome_surface_absence_attestation(root=ROOT),
+            root=ROOT,
+        )
+    )
+    print(json.dumps({
+        "status": receipt["status"],
+        "receipt": REISSUE_VALIDATION_INTERRUPTION.receipt_binding(
+            receipt, root=ROOT),
+        "fixed_wrapper_count_issued": receipt["fixed_wrapper_count_issued"],
+        "preidentity_exact_proof_reuse_only":
+            receipt["preidentity_exact_proof_reuse_only"],
+        "scientific_gate_input": receipt["scientific_gate_input"],
+    }, indent=2, sort_keys=True))
+    return 0
+
+
 def stage_small_search_performance_interruption() -> int:
-    """Archive the exact 24-hour pre-outcome attempt under clean successor source.
+    """Issue current-source V2 lineage from transition-bound V1 archives.
 
     This stage is an authority/custody transition only.  It neither satisfies
     the selector gate nor resolves a state.  Contract issuance and fixed-shard
@@ -3698,13 +3778,36 @@ def stage_small_search_performance_interruption() -> int:
     """
 
     source = clean_source_binding()
+    transition = _load_current_reissue_validation_interruption()
+    transition_binding = REISSUE_VALIDATION_INTERRUPTION.receipt_binding(
+        transition, root=ROOT)
+    predecessor = (
+        REISSUE_VALIDATION_INTERRUPTION
+        .load_archived_performance_receipt_v1(transition, root=ROOT)
+    )
+    predecessor_binding = (
+        REISSUE_VALIDATION_INTERRUPTION
+        .archived_performance_receipt_binding_v1(transition, root=ROOT)
+    )
+    projection = INTERRUPTION.load_and_validate_interruption_receipt(
+        expected_source_repository_commit=str(
+            source["source_repository_commit"]),
+        expected_clean_source_binding_digest=canonical_digest(source),
+        expected_bound_implementations_digest=str(
+            source["bound_implementations_digest"]),
+        root=ROOT,
+    )
     receipt = (
         PERFORMANCE_INTERRUPTION
-        .issue_and_archive_performance_interruption_receipt(
+        .issue_performance_interruption_receipt_v2(
             source_repository_commit=str(source["source_repository_commit"]),
             clean_source_binding_digest=canonical_digest(source),
             bound_implementations_digest=str(
                 source["bound_implementations_digest"]),
+            source_transition_receipt_binding=transition_binding,
+            predecessor_v1_receipt=predecessor,
+            predecessor_v1_receipt_binding=predecessor_binding,
+            current_projection_receipt=projection,
             outcome_surface_absent=lambda:
                 _phase1_outcome_surface_absence_attestation(root=ROOT),
             revalidate_small_prefix=
@@ -3714,8 +3817,9 @@ def stage_small_search_performance_interruption() -> int:
     )
     print(json.dumps({
         "status": receipt["status"],
-        "receipt": PERFORMANCE_INTERRUPTION.receipt_binding(
-            receipt, root=ROOT),
+        "receipt": PERFORMANCE_INTERRUPTION\
+            .performance_interruption_receipt_binding_v2(
+                receipt, root=ROOT),
         "scientific_gate_input": receipt["scientific_gate_input"],
         "may_satisfy_selector_gate": receipt["may_satisfy_selector_gate"],
     }, indent=2, sort_keys=True))
@@ -4224,6 +4328,10 @@ def stage_preserved_state_precontract_revalidation(
     source = clean_source_binding()
     if source.get("source_repository_clean") is not True:
         raise RuntimeError("mixed precontract disposition requires clean source")
+    # The ca09 projection/disposition authorities must already have been
+    # archived by the dedicated no-write transition.  Without that receipt,
+    # this stage may not reinterpret or supersede either active authority.
+    _load_current_reissue_validation_interruption()
     successor_digest = selection_digest()
     # The prior clean implementation was interrupted before one replacement
     # identity existed.  Preserve its exact mixed authority, contract, launch,
@@ -4781,7 +4889,9 @@ def _build_mixed_replacement_scene_request(
 
 def _validate_mixed_replacement_scene_request(
         request: dict[str, Any], *, args: argparse.Namespace, out: Path,
-        pool: dict[str, list[Path]], exclusion: dict[str, Any]) -> None:
+        pool: dict[str, list[Path]], exclusion: dict[str, Any],
+        expected_state_shard_bindings: Mapping[str, Any] | None = None,
+        ) -> None:
     _verify_self_digest(
         request, "mixed_replacement_scene_request_digest",
         "mixed replacement scene request")
@@ -4828,6 +4938,11 @@ def _validate_mixed_replacement_scene_request(
     if (len(matching_intervals) == 1 and isinstance(accepted, list)
             and len(accepted) < len(matching_intervals[0]["replacement_slots"])):
         expected_slot = matching_intervals[0]["replacement_slots"][len(accepted)]
+    expected_bindings = (
+        _state_shard_bindings(args, exclusion, [path.name for path in scenes])
+        if expected_state_shard_bindings is None
+        else dict(expected_state_shard_bindings)
+    )
     if (
         set(request) != expected_keys
         or request.get("schema") != MIXED_REPLACEMENT_SCENE_REQUEST_SCHEMA
@@ -4862,8 +4977,7 @@ def _validate_mixed_replacement_scene_request(
         or request.get("family_replacement_plan_digest") != canonical_digest(plan)
         or request.get("warmup_blocks_min") != WARMUP_BLOCKS_MIN
         or request.get("warmup_blocks_max") != WARMUP_BLOCKS_MAX
-        or request.get("state_shard_bindings") != _state_shard_bindings(
-            args, exclusion, [path.name for path in scenes])
+        or request.get("state_shard_bindings") != expected_bindings
         or any(request.get(key) not in (False, 0) for key in (
             "candidate_outcomes_loaded", "branch_identities_created",
             "branches_attempted", "frames_rendered", "target_latents_encoded",
@@ -6205,11 +6319,13 @@ def _load_reissued_small_prefix_inputs(out: Path) -> dict[str, Any]:
     """Reopen the active normal-schema 5G/5S prefix and its receipt."""
 
     performance = _load_current_performance_interruption_receipt()
+    transition_binding = _current_reissue_validation_interruption_binding()
     bindings = _performance_successor_bindings()
     receipt = (
         PERFORMANCE_INTERRUPTION
         .load_and_validate_small_prefix_reissue_receipt(
             performance_receipt=performance,
+            expected_source_transition_receipt_binding=transition_binding,
             successor_bindings=bindings,
             revalidate_prefix=_revalidate_reissued_small_prefix,
             root=ROOT,
@@ -6286,7 +6402,9 @@ def _load_reissued_small_prefix_inputs(out: Path) -> dict[str, Any]:
         "receipt": receipt,
         "receipt_binding": receipt_binding,
         "performance_receipt_binding":
-            PERFORMANCE_INTERRUPTION.receipt_binding(performance, root=ROOT),
+            PERFORMANCE_INTERRUPTION\
+                .performance_interruption_receipt_binding_v2(
+                    performance, root=ROOT),
     }
 
 
@@ -7481,14 +7599,16 @@ def _load_current_performance_interruption_receipt() -> dict[str, Any]:
     """Reopen the exact source-bound interruption authority read-only."""
 
     source = clean_source_binding()
+    transition_binding = _current_reissue_validation_interruption_binding()
     return (
         PERFORMANCE_INTERRUPTION
-        .load_and_validate_performance_interruption_receipt(
+        .load_and_validate_performance_interruption_receipt_v2(
             expected_source_repository_commit=str(
                 source["source_repository_commit"]),
             expected_clean_source_binding_digest=canonical_digest(source),
             expected_bound_implementations_digest=str(
                 source["bound_implementations_digest"]),
+            expected_source_transition_receipt_binding=transition_binding,
             root=ROOT,
         )
     )
@@ -7528,6 +7648,8 @@ def _load_active_state_shard_evidence(
         payload = PERFORMANCE_INTERRUPTION.validate_reissued_fixed_state_shard(
             envelope,
             receipt=receipt,
+            expected_source_transition_receipt_binding=
+                _current_reissue_validation_interruption_binding(),
             revalidate_predecessor=
                 _revalidate_performance_interrupted_fixed_shard,
             root=ROOT,
@@ -10446,14 +10568,16 @@ def _revalidate_performance_interrupted_fixed_shard(
         if kind == "mixed":
             _validate_mixed_replacement_scene_request(
                 request, args=args, out=OUT_ROOT / "scorer_fit",
-                pool=pool, exclusion=exclusion)
+                pool=pool, exclusion=exclusion,
+                expected_state_shard_bindings=expected_bindings)
             _validate_mixed_replacement_scene_capture(
                 capture, expected_request=request,
                 expected_state_identity_bindings=old_bindings)
         else:
             _validate_state_resolution_scene_request(
                 request, args=args, out=OUT_ROOT / "scorer_fit",
-                pool=pool, exclusion=exclusion)
+                pool=pool, exclusion=exclusion,
+                expected_state_shard_bindings=expected_bindings)
             _validate_state_resolution_scene_capture(
                 capture, expected_request=request,
                 expected_state_identity_bindings=old_bindings)
@@ -10493,21 +10617,12 @@ def _performance_successor_bindings() -> dict[str, Any]:
 def stage_reissue_performance_interrupted_fixed_shards() -> int:
     """Reissue seven exact pre-outcome shards after current contract/launch."""
 
-    source = clean_source_binding()
-    receipt = (
-        PERFORMANCE_INTERRUPTION
-        .load_and_validate_performance_interruption_receipt(
-            expected_source_repository_commit=str(
-                source["source_repository_commit"]),
-            expected_clean_source_binding_digest=canonical_digest(source),
-            expected_bound_implementations_digest=str(
-                source["bound_implementations_digest"]),
-            root=ROOT,
-        )
-    )
+    receipt = _load_current_performance_interruption_receipt()
+    transition_binding = _current_reissue_validation_interruption_binding()
 
     outputs = PERFORMANCE_INTERRUPTION.reissue_fixed_state_shards(
         receipt=receipt,
+        expected_source_transition_receipt_binding=transition_binding,
         revalidate_predecessor=
             _revalidate_performance_interrupted_fixed_shard,
         build_successor_bindings=_performance_successor_bindings,
@@ -10536,8 +10651,10 @@ def stage_reissue_performance_interrupted_small_prefix() -> int:
     """
 
     receipt = _load_current_performance_interruption_receipt()
+    transition_binding = _current_reissue_validation_interruption_binding()
     reissue = PERFORMANCE_INTERRUPTION.reissue_small_fixed_prefix(
         performance_receipt=receipt,
+        expected_source_transition_receipt_binding=transition_binding,
         build_successor_bindings=_performance_successor_bindings,
         revalidate_prefix=_revalidate_reissued_small_prefix,
         outcome_surface_absent=lambda:
@@ -11190,6 +11307,7 @@ def main() -> int:
     parser.add_argument("--stage",
                         choices=["allocation-preflight", "selector-feasibility",
                                  "selector-reachability-feasibility",
+                                 "record-fixed-reissue-validation-interruption",
                                  "record-performance-interruption",
                                  "reissue-performance-fixed-states",
                                  "reissue-performance-small-prefix",
@@ -11260,6 +11378,11 @@ def main() -> int:
         return stage_selector_feasibility(args)
     if args.stage == "selector-reachability-feasibility":
         return stage_selector_reachability_feasibility(args)
+    if args.stage == "record-fixed-reissue-validation-interruption":
+        if args.pool != "scorer_fit" or args.family is not None:
+            raise SystemExit(
+                "fixed-reissue validation interruption is scorer_fit pool-wide")
+        return stage_fixed_reissue_validation_interruption()
     if args.stage == "record-performance-interruption":
         if args.pool != "scorer_fit" or args.family is not None:
             raise SystemExit(

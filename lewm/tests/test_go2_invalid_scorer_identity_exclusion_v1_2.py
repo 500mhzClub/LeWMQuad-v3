@@ -365,15 +365,23 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         "byte_count": 123,
         "status": C.INTERRUPTION.STATUS,
     }
+    fixed_reissue_interruption = {
+        "path": str(
+            C.FIXED_REISSUE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "receipt_digest": "5" * 64,
+        "raw_sha256": "6" * 64,
+        "byte_count": 234,
+        "status": C.FIXED_REISSUE_INTERRUPTION.STATUS,
+    }
     performance_interruption = {
-        "path": str(C.PERFORMANCE_INTERRUPTION.RECEIPT_RELATIVE_PATH),
+        "path": str(C.PERFORMANCE_INTERRUPTION.V2_RECEIPT_RELATIVE_PATH),
         "receipt_digest": "3" * 64,
         "raw_sha256": "4" * 64,
         "byte_count": 456,
-        "status": C.PERFORMANCE_INTERRUPTION.STATUS,
+        "status": C.PERFORMANCE_INTERRUPTION.V2_STATUS,
     }
     payload = C._contract_artifact_payload(
-        source, feasibility, disposition, interruption,
+        source, feasibility, disposition, fixed_reissue_interruption, interruption,
         performance_interruption)
     frozen = payload["contract"]
     assert payload["schema"] == "go2_utility_scorer_contract_v1_2_artifact"
@@ -388,7 +396,13 @@ def test_contract_issue_payload_binds_launch_amendment_and_invalid45_without_enc
         feasibility["state_selector_feasibility_receipt_digest"]
     assert payload["mixed_precontract_disposition_receipt_digest"] == \
         disposition["mixed_precontract_disposition_receipt_digest"]
+    assert payload[
+        "preoutcome_fixed_reissue_validation_interruption_verified"] is True
+    assert payload["preoutcome_fixed_reissue_validation_interruption"] == \
+        fixed_reissue_interruption
     assert payload["preoutcome_projection_fix_interruption"] == interruption
+    assert payload[
+        "preoutcome_small_search_performance_interruption_verified"] is True
     assert payload["preoutcome_small_search_performance_interruption"] == \
         performance_interruption
     assert payload["mixed_state_post_allocation_revalidation"] == {
