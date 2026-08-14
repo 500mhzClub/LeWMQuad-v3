@@ -33,6 +33,7 @@ def _inputs() -> dict:
             "schema": "fixture_clean_source",
             "source_repository_commit": "a" * 40,
             "source_repository_clean": True,
+            "git_status_porcelain_v1": "",
             "bound_implementations_digest": "b" * 64,
         },
         "design_binding": _binding(
@@ -176,3 +177,108 @@ def test_active_inputs_accept_exact_correction_aware_manifest_bundle(
     loaded_authority, loaded_manifests = C._active_inputs(root=tmp_path)
     assert loaded_authority == authority
     assert loaded_manifests == manifests
+
+
+def test_immutable_issued_validator_preserves_historical_predecessor_payload(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    artifact = C.build_contract_artifact(**_inputs())
+    monkeypatch.setattr(
+        C, "IMMUTABLE_ISSUED_SOURCE_COMMIT",
+        artifact["source_repository_commit"])
+    monkeypatch.setattr(
+        C, "IMMUTABLE_ISSUED_CONTRACT_DIGEST",
+        artifact[C.CONTRACT_SELF_KEY])
+    monkeypatch.setattr(
+        C, "IMMUTABLE_ISSUED_ARTIFACT_DIGEST",
+        artifact[C.ARTIFACT_SELF_KEY])
+    monkeypatch.setattr(
+        C, "_protected_predecessor_contract",
+        lambda: (_ for _ in ()).throw(AssertionError(
+            "immutable validation must not reinterpret the live predecessor")))
+    assert C.validate_immutable_issued_contract_artifact(artifact) == artifact
+    assert C.validate_contract_artifact(artifact) == artifact
+
+
+def test_self_resigned_mutation_cannot_use_immutable_validation_path(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    issued = C.build_contract_artifact(**_inputs())
+    monkeypatch.setattr(
+        C, "IMMUTABLE_ISSUED_ARTIFACT_DIGEST",
+        issued[C.ARTIFACT_SELF_KEY])
+    changed = copy.deepcopy(issued)
+    changed["contract"]["protected_predecessor_scientific_contract"] = {
+        "tampered": True,
+    }
+    changed["contract"][C.CONTRACT_SELF_KEY] = C.canonical_digest({
+        key: value for key, value in changed["contract"].items()
+        if key != C.CONTRACT_SELF_KEY
+    })
+    changed[C.CONTRACT_SELF_KEY] = changed["contract"][C.CONTRACT_SELF_KEY]
+    changed[C.ARTIFACT_SELF_KEY] = C.canonical_digest({
+        key: value for key, value in changed.items()
+        if key != C.ARTIFACT_SELF_KEY
+    })
+    assert changed[C.ARTIFACT_SELF_KEY] != issued[C.ARTIFACT_SELF_KEY]
+    with pytest.raises(C.ScorerFitCorpusV2ContractError,
+                       match="protected predecessor scorer field changed"):
+        C.validate_contract_artifact(changed)
+
+
+def test_consumption_uses_correction_and_historical_manifest_bindings_only(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    embedded = {
+        "design_amendment": {"binding": "design"},
+        "preselection_source_correction": {"binding": "source"},
+        "post_install_manifest_replay_correction": {"binding": "replay"},
+        "rotation_mask_classification": {"binding": "masks"},
+        "small_completion_selection": {"binding": "selection"},
+        "full_bank_state_revalidation": {"binding": "revalidation"},
+        "state_identity_manifest": {"binding": "states"},
+        "expanded_assignment_manifest": {"binding": "assignments"},
+    }
+    artifact = {
+        "contract": {
+            "source_binding": {"historical": True},
+            "preoutcome_authority_bindings": embedded,
+        },
+    }
+    path = tmp_path / C.ARTIFACT_RELATIVE_PATH
+    path.parent.mkdir(parents=True)
+    path.write_text(json.dumps(artifact))
+    immutable_binding = {"binding": "immutable-contract"}
+    correction = {
+        "immutable_successor_scorer_contract_binding": immutable_binding,
+    }
+    live = {
+        "design_binding": embedded["design_amendment"],
+        "source_correction_binding":
+            embedded["preselection_source_correction"],
+        "manifest_replay_correction_binding":
+            embedded["post_install_manifest_replay_correction"],
+        "mask_classification_binding":
+            embedded["rotation_mask_classification"],
+        "selection_binding": embedded["small_completion_selection"],
+        "revalidation_binding": embedded["full_bank_state_revalidation"],
+        "state_manifest_binding": embedded["state_identity_manifest"],
+        "assignment_manifest_binding":
+            embedded["expanded_assignment_manifest"],
+    }
+    monkeypatch.setattr(
+        C, "validate_immutable_issued_contract_artifact",
+        lambda value, **_kwargs: dict(value))
+    monkeypatch.setattr(
+        C, "immutable_contract_artifact_binding",
+        lambda _value, **_kwargs: immutable_binding)
+    monkeypatch.setattr(
+        C.DESIGN, "validate_encoder_import_correction",
+        lambda value, **_kwargs: dict(value), raising=False)
+    monkeypatch.setattr(C, "_active_inputs", lambda **_kwargs: ({}, {}))
+    monkeypatch.setattr(
+        C, "_bindings_from_active_inputs",
+        lambda _authority, _manifests: live)
+    monkeypatch.setattr(
+        C, "clean_source_binding",
+        lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+            "current source must not replace historical issued source")))
+    assert C.load_contract_for_consumption(
+        root=tmp_path, encoder_import_correction=correction) == artifact

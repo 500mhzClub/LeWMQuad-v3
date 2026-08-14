@@ -8,6 +8,8 @@ candidate-subset allocator, or performance benchmark.  Its public stages are:
 * ``issue-source-correction``: bind the post-install manifest-replay repair;
 * ``freeze-manifests``: reopen and replay the five installed pre-outcome files;
 * ``issue-scorer-contract``: issue the successor contract before a branch;
+* ``issue-encoder-import-correction``: bind the post-smoke, pre-latent import
+  compatibility repair without replacing the issued scorer contract;
 * ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
 * ``status``: assemble a read-only metadata report.
 
@@ -648,6 +650,43 @@ def issue_scorer_contract(
     }
 
 
+def issue_encoder_import_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue and exactly reopen the one post-smoke import correction."""
+
+    artifact = design_authority.issue_encoder_import_correction(root=root)
+    validated = design_authority.load_encoder_import_correction_for_consumption(
+        root=root)
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued encoder-import correction changed on exact replay")
+    digest = artifact.get(design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "encoder-import correction digest is malformed")
+    immutable = artifact.get("immutable_successor_scorer_contract_binding")
+    if (not isinstance(immutable, Mapping)
+            or immutable.get("self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST
+            or immutable.get("embedded_contract_self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST):
+        raise FullBankV2RunnerError(
+            "encoder-import correction changed the immutable scorer contract")
+    return {
+        "stage": "issue-encoder-import-correction",
+        "status": design_authority.ENCODER_IMPORT_CORRECTION_STATUS,
+        "scorer_fit_corpus_v2_encoder_import_correction_digest": digest,
+        "immutable_scorer_contract_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "immutable_scorer_contract_artifact_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "scorer_contract_reissued_or_rewritten": False,
+        "preoutcome_manifests_reissued_or_rewritten": False,
+        "latent_or_scorer_runtime_started_by_issue_stage": False,
+    }
+
+
 def _runtime_contract(authority: Any, role: str) -> dict[str, Any]:
     contracts = getattr(authority, "DOWNSTREAM_RUNTIME_CONTRACTS", None)
     if (not isinstance(contracts, Mapping)
@@ -947,7 +986,9 @@ def _validate_single_shard_recovery(
 
 def _training_stop_report(
         terminal: Mapping[str, Any], *, completed: Sequence[str],
-        runtime_probe_digests: Mapping[str, str]) -> tuple[int, dict[str, Any]]:
+        runtime_probe_digests: Mapping[str, str],
+        encoder_import_correction_digest: str,
+        ) -> tuple[int, dict[str, Any]]:
     terminal_kind = terminal.get("terminal_kind")
     if terminal_kind == "COMPLETION_DEGENERACY_FAILURE":
         status = "STOP_FROZEN_COMPLETION_DEGENERACY_FAILURE"
@@ -964,6 +1005,10 @@ def _training_stop_report(
         "predictor_access_before_qualification": False,
         "final_200_state_corpus_generated": False,
         "runtime_probe_digests": dict(runtime_probe_digests),
+        "encoder_import_correction_digest":
+            encoder_import_correction_digest,
+        DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY:
+            encoder_import_correction_digest,
         "terminal_digest": terminal["terminal_digest"],
         "nothing_running": True,
     }
@@ -972,6 +1017,7 @@ def _training_stop_report(
 def _development_complete_report(
         *, terminal: Mapping[str, Any], development: Mapping[str, Any],
         completed: Sequence[str], runtime_probe_digests: Mapping[str, str],
+        encoder_import_correction_digest: str,
         ) -> tuple[int, dict[str, Any]]:
     if (development.get("qualified_scorer_bound") is not True
             or development.get("development_state_count") != 20
@@ -987,6 +1033,10 @@ def _development_complete_report(
         "predictor_access_before_qualification": False,
         "final_200_state_corpus_generated": False,
         "runtime_probe_digests": dict(runtime_probe_digests),
+        "encoder_import_correction_digest":
+            encoder_import_correction_digest,
+        DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY:
+            encoder_import_correction_digest,
         "nothing_running": True,
     }
 
@@ -1102,7 +1152,19 @@ def run_pipeline(
         ) -> tuple[int, dict[str, Any]]:
     """Execute the fail-closed post-contract sequence using injected effects."""
 
-    SCORER_CONTRACT.load_contract_for_consumption(root=root)
+    # This post-smoke authority must be validated before any command capable of
+    # importing the frozen target encoder.  The scorer contract loader receives
+    # the same validated object so it can retain the historical issued source
+    # binding without a second correction lookup or a contract reissue.
+    encoder_import_correction = (
+        DESIGN.load_encoder_import_correction_for_consumption(root=root))
+    correction_digest = encoder_import_correction.get(
+        DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY)
+    if not _is_hex(correction_digest):
+        raise FullBankV2RunnerError(
+            "encoder-import correction is missing before runtime")
+    SCORER_CONTRACT.load_contract_for_consumption(
+        root=root, encoder_import_correction=encoder_import_correction)
     BUILDER.load_and_validate_full_bank_v2_manifests_for_consumption(
         out=root / SCORER_FIT_RELATIVE_PATH)
     if not resume:
@@ -1142,7 +1204,8 @@ def run_pipeline(
                         "retained failure terminal has a passing verdict")
                 return _training_stop_report(
                     retained_terminal, completed=completed,
-                    runtime_probe_digests=probe_digests)
+                    runtime_probe_digests=probe_digests,
+                    encoder_import_correction_digest=correction_digest)
             if (retained_terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                     or retained_terminal.get("qualified") is not True):
                 raise FullBankV2RunnerError(
@@ -1158,7 +1221,8 @@ def run_pipeline(
                 return _development_complete_report(
                     terminal=retained_terminal,
                     development=retained_development,
-                    completed=completed, runtime_probe_digests=probe_digests)
+                    completed=completed, runtime_probe_digests=probe_digests,
+                    encoder_import_correction_digest=correction_digest)
             if retained_development.get("terminal_present") is not False:
                 raise FullBankV2RunnerError(
                     "optional development-terminal presence verdict is missing")
@@ -1173,7 +1237,8 @@ def run_pipeline(
             completed.append("development_transfer")
             return _development_complete_report(
                 terminal=retained_terminal, development=development,
-                completed=completed, runtime_probe_digests=probe_digests)
+                completed=completed, runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=correction_digest)
         if retained_terminal.get("terminal_present") is not False:
             raise FullBankV2RunnerError(
                 "optional training-terminal presence verdict is missing")
@@ -1313,7 +1378,8 @@ def run_pipeline(
                     "retained failure terminal has a passing verdict")
             return _training_stop_report(
                 terminal, completed=completed,
-                runtime_probe_digests=probe_digests)
+                runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=correction_digest)
         if (terminal.get("terminal_kind") != "QUALIFICATION_PASS"
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1335,7 +1401,8 @@ def run_pipeline(
                     "training failure did not produce its exact terminal status")
             return _training_stop_report(
                 terminal, completed=completed,
-                runtime_probe_digests=probe_digests)
+                runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=correction_digest)
         if (terminal_kind != "QUALIFICATION_PASS" or training_return != 0
                 or terminal.get("qualified") is not True):
             raise FullBankV2RunnerError(
@@ -1353,7 +1420,8 @@ def run_pipeline(
         completed.append("retained_existing_development_transfer_terminal")
         return _development_complete_report(
             terminal=terminal, development=prior_development,
-            completed=completed, runtime_probe_digests=probe_digests)
+            completed=completed, runtime_probe_digests=probe_digests,
+            encoder_import_correction_digest=correction_digest)
     if prior_development.get("terminal_present") is not False:
         raise FullBankV2RunnerError(
             "optional development-terminal presence verdict is missing")
@@ -1366,7 +1434,8 @@ def run_pipeline(
     completed.append("development_transfer")
     return _development_complete_report(
         terminal=terminal, development=development, completed=completed,
-        runtime_probe_digests=probe_digests)
+        runtime_probe_digests=probe_digests,
+        encoder_import_correction_digest=correction_digest)
 
 
 def _default_validation_invoker(
@@ -1453,6 +1522,9 @@ def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
         "successor_scorer_contract": _binding_if_present(
             root, SCORER_CONTRACT.ARTIFACT_RELATIVE_PATH,
             self_key=SCORER_CONTRACT.ARTIFACT_SELF_KEY),
+        "encoder_import_correction": _binding_if_present(
+            root, DESIGN.ENCODER_IMPORT_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY),
         "branch_smoke": _binding_if_present(
             root, SCORER_FIT_RELATIVE_PATH /
             BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
@@ -1900,7 +1972,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", required=True, choices=(
         "issue-design", "issue-source-correction", "freeze-manifests",
-        "issue-scorer-contract", "run",
+        "issue-scorer-contract", "issue-encoder-import-correction", "run",
         "status", "internal-probe-genesis", "internal-probe-rocm",
         "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
         "internal-validate-encoding-smoke-optional",
@@ -1936,6 +2008,9 @@ def main(argv: list[str] | None = None) -> int:
         code, report = freeze_manifests()
     elif args.stage == "issue-scorer-contract":
         report = issue_scorer_contract()
+        code = 0
+    elif args.stage == "issue-encoder-import-correction":
+        report = issue_encoder_import_correction()
         code = 0
     elif args.stage == "run":
         code, report = run_authorised(resume=args.resume)

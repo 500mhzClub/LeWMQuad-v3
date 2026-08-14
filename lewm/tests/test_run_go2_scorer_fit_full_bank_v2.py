@@ -72,8 +72,16 @@ class FakePipeline:
         }
 
         monkeypatch.setattr(
+            runner.DESIGN,
+            "load_encoder_import_correction_for_consumption",
+            lambda **_kwargs: self.events.append(
+                "validate:encoder-import-correction") or {
+                    runner.DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY: HEX_D,
+                }, raising=False)
+        monkeypatch.setattr(
             runner.SCORER_CONTRACT, "load_contract_for_consumption",
-            lambda **_kwargs: {})
+            lambda **_kwargs: self.events.append(
+                "validate:immutable-scorer-contract") or {})
         monkeypatch.setattr(
             runner.BUILDER,
             "load_and_validate_full_bank_v2_manifests_for_consumption",
@@ -210,8 +218,32 @@ def test_pass_pipeline_has_exact_order_and_development_is_pass_gated(
     assert fake.events.index("validate:training-terminal") < fake.events.index(
         "command:development_transfer")
     assert report["qualified"] is True
+    assert report["encoder_import_correction_digest"] == HEX_D
+    assert report[
+        runner.DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY] == HEX_D
     assert report["predictor_access_before_qualification"] is False
     assert report["final_200_state_corpus_generated"] is False
+    assert fake.events.index(
+        "validate:encoder-import-correction") < fake.events.index(
+            "validate:immutable-scorer-contract")
+    assert fake.events.index(
+        "validate:immutable-scorer-contract") < fake.events.index(
+            "command:smoke_encoding")
+
+
+def test_missing_encoder_import_correction_blocks_before_any_command(
+        monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    fake = FakePipeline(monkeypatch, tmp_path)
+    monkeypatch.setattr(
+        runner.DESIGN,
+        "load_encoder_import_correction_for_consumption",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            runner.FullBankV2RunnerError("fixture correction missing")))
+    with pytest.raises(runner.FullBankV2RunnerError,
+                       match="fixture correction missing"):
+        fake.run(resume=True)
+    assert fake.commands_run == []
+    assert not any(event.startswith("probe:") for event in fake.events)
 
 
 @pytest.mark.parametrize(
@@ -637,6 +669,55 @@ def test_parser_exposes_source_correction_before_manifest_stage() -> None:
         ["--stage", "freeze-manifests"])
     assert correction.stage == "issue-source-correction"
     assert manifests.stage == "freeze-manifests"
+
+
+def test_issue_encoder_import_correction_preserves_issued_contract(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    immutable = {
+        "self_digest":
+            runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "embedded_contract_self_digest":
+            runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+    }
+    payload = {
+        "immutable_successor_scorer_contract_binding": immutable,
+        "encoder_import_correction_digest": HEX_D,
+    }
+
+    class FakeDesign:
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        ENCODER_IMPORT_CORRECTION_STATUS = "ISSUED_FIXTURE_CORRECTION"
+
+        def issue_encoder_import_correction(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue")
+            return payload
+
+        def load_encoder_import_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("reopen")
+            return payload
+
+    report = runner.issue_encoder_import_correction(
+        root=tmp_path, design_authority=FakeDesign())
+    assert events == ["issue", "reopen"]
+    assert report["scorer_fit_corpus_v2_encoder_import_correction_digest"] \
+        == HEX_D
+    assert report["scorer_contract_reissued_or_rewritten"] is False
+    assert report["preoutcome_manifests_reissued_or_rewritten"] is False
+
+
+def test_parser_exposes_encoder_import_correction_before_resume_run() -> None:
+    correction = runner._parser().parse_args(
+        ["--stage", "issue-encoder-import-correction"])
+    resumed = runner._parser().parse_args(
+        ["--stage", "run", "--resume"])
+    assert correction.stage == "issue-encoder-import-correction"
+    assert resumed.stage == "run" and resumed.resume is True
 
 
 def test_preoutcome_failure_binds_corrected_source_and_immutable_design() -> None:

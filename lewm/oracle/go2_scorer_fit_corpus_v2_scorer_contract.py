@@ -41,6 +41,20 @@ PACKAGE_ROOT_RELATIVE = Path(".generated/go2_utility_scorer_fit_corpus_v2")
 ARTIFACT_NAME = "scorer_fit_corpus_v2_scorer_contract.json"
 ARTIFACT_RELATIVE_PATH = PACKAGE_ROOT_RELATIVE / ARTIFACT_NAME
 
+# The successor contract was issued once, before the first branch, from this
+# exact clean source.  A later post-smoke encoder-import compatibility
+# correction may validate that historical source binding, but must never
+# rebuild, resign, or reinterpret the scientific contract under a newer HEAD.
+IMMUTABLE_ISSUED_SOURCE_COMMIT = (
+    "72b0d771b748e777a9da47fca88a9d6cfb62d0ef"
+)
+IMMUTABLE_ISSUED_CONTRACT_DIGEST = (
+    "8fc0edae875cba6487ff1a1a771f96b0157da1474ac00de4186ecdb41b66d5df"
+)
+IMMUTABLE_ISSUED_ARTIFACT_DIGEST = (
+    "4455fd397ce7665f02725924a64ab87b1e0e9a3506d9ba64edbcc9b4daa1e121"
+)
+
 TERMINAL_INFEASIBILITY_SOURCE_COMMIT = (
     "e1bdbe7adc15d0aa85f69ffb9e97fa198eb152c5"
 )
@@ -420,7 +434,10 @@ def build_contract(
     return payload
 
 
-def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
+def _validate_contract(
+        value: Mapping[str, Any], *,
+        validate_live_predecessor: bool,
+        ) -> dict[str, Any]:
     _require(isinstance(value, Mapping), "scorer-fit V2 contract is not an object")
     contract = dict(value)
     _require(contract.get("schema") == CONTRACT_SCHEMA
@@ -433,9 +450,10 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
                 if key != CONTRACT_SELF_KEY}
     _require(recorded == canonical_digest(unsigned),
              "scorer-fit V2 contract self digest does not verify")
-    _require(contract.get("protected_predecessor_scientific_contract")
-             == _protected_predecessor_contract(),
-             "a protected predecessor scorer field changed")
+    if validate_live_predecessor:
+        _require(contract.get("protected_predecessor_scientific_contract")
+                 == _protected_predecessor_contract(),
+                 "a protected predecessor scorer field changed")
     _require(contract.get("training_budget_interpretation")
              == training_budget_interpretation(),
              "larger-corpus training budget interpretation changed")
@@ -490,6 +508,12 @@ def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
     return contract
 
 
+def validate_contract(value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate a newly built contract against the live predecessor source."""
+
+    return _validate_contract(value, validate_live_predecessor=True)
+
+
 def build_contract_artifact(
         *, source_binding: Mapping[str, Any],
         design_binding: Mapping[str, Any],
@@ -531,9 +555,11 @@ def build_contract_artifact(
     return payload
 
 
-def validate_contract_artifact(value: Mapping[str, Any], *,
-                               expected_contract: Mapping[str, Any] | None = None,
-                               ) -> dict[str, Any]:
+def _validate_contract_artifact(
+        value: Mapping[str, Any], *,
+        expected_contract: Mapping[str, Any] | None,
+        validate_live_predecessor: bool,
+        ) -> dict[str, Any]:
     _require(isinstance(value, Mapping), "scorer-fit V2 contract artifact is not an object")
     artifact = dict(value)
     _require(artifact.get("schema") == ARTIFACT_SCHEMA
@@ -545,7 +571,9 @@ def validate_contract_artifact(value: Mapping[str, Any], *,
     _require(recorded == canonical_digest({
         key: item for key, item in artifact.items() if key != ARTIFACT_SELF_KEY
     }), "scorer-fit V2 contract artifact self digest does not verify")
-    contract = validate_contract(artifact.get("contract", {}))
+    contract = _validate_contract(
+        artifact.get("contract", {}),
+        validate_live_predecessor=validate_live_predecessor)
     _require(artifact.get(CONTRACT_SELF_KEY) == contract[CONTRACT_SELF_KEY],
              "contract artifact embeds a different contract digest")
     if expected_contract is not None:
@@ -556,6 +584,70 @@ def validate_contract_artifact(value: Mapping[str, Any], *,
                 "final_200_state_evaluation_corpus_authorised"):
         _require(artifact.get(key) is False,
                  f"pre-branch contract artifact changed at {key}")
+    return artifact
+
+
+def validate_contract_artifact(value: Mapping[str, Any], *,
+                               expected_contract: Mapping[str, Any] | None = None,
+                               ) -> dict[str, Any]:
+    """Validate either the one issued artifact or a live-source build.
+
+    Downstream consumers historically perform this pure validation after the
+    correction-gated loader returns.  Route only the exact immutable artifact
+    identity through historical validation so those redundant checks cannot
+    reinterpret its predecessor payload under the import-only source change.
+    Every other artifact remains bound to the live predecessor source.
+    """
+
+    if (isinstance(value, Mapping)
+            and value.get(ARTIFACT_SELF_KEY)
+            == IMMUTABLE_ISSUED_ARTIFACT_DIGEST):
+        return validate_immutable_issued_contract_artifact(
+            value, expected_contract=expected_contract)
+
+    return _validate_contract_artifact(
+        value, expected_contract=expected_contract,
+        validate_live_predecessor=True)
+
+
+def validate_immutable_issued_contract_artifact(
+        value: Mapping[str, Any],
+        *, expected_contract: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
+    """Validate the one historical artifact without rebinding it to live HEAD.
+
+    This is deliberately stricter than the generic pure validator: the outer
+    artifact, embedded contract, and original clean-source commit are immutable
+    identities.  A compatibility correction can authorize a later import-only
+    source transition, but cannot create a second scorer contract.
+    """
+
+    artifact = _validate_contract_artifact(
+        value, expected_contract=expected_contract,
+        validate_live_predecessor=False)
+    contract = artifact["contract"]
+    source = contract.get("source_binding")
+    _require(
+        artifact.get(ARTIFACT_SELF_KEY) == IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "issued scorer-fit V2 contract artifact identity changed",
+    )
+    _require(
+        contract.get(CONTRACT_SELF_KEY) == IMMUTABLE_ISSUED_CONTRACT_DIGEST
+        and artifact.get(CONTRACT_SELF_KEY)
+        == IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "issued scorer-fit V2 scientific contract identity changed",
+    )
+    _require(
+        artifact.get("source_repository_commit")
+        == IMMUTABLE_ISSUED_SOURCE_COMMIT
+        and isinstance(source, Mapping)
+        and source.get("source_repository_commit")
+        == IMMUTABLE_ISSUED_SOURCE_COMMIT
+        and source.get("source_repository_clean") is True
+        and source.get("git_status_porcelain_v1") == ""
+        and contract.get("source_binding_digest") == canonical_digest(source),
+        "issued scorer-fit V2 historical clean-source binding changed",
+    )
     return artifact
 
 
@@ -666,23 +758,92 @@ def issue_contract(path: Path | None = None, *, root: Path = ROOT) -> dict[str, 
     return payload
 
 
-def load_contract_for_consumption(*, root: Path = ROOT) -> dict[str, Any]:
-    """Replay producers and validate the exact issued contract before outcomes."""
+def immutable_contract_artifact_binding(
+        value: Mapping[str, Any], *, root: Path = ROOT,
+        ) -> dict[str, Any]:
+    """Return the correction authority's closed historical-contract binding."""
+
+    artifact = validate_immutable_issued_contract_artifact(value)
+    path = _exact_output_path(root / ARTIFACT_RELATIVE_PATH, root=root)
+    _require(path.is_file() and not path.is_symlink(),
+             "scorer-fit V2 contract artifact is missing")
+    raw = path.read_bytes()
+    _require(json.loads(raw) == artifact,
+             "scorer-fit V2 contract artifact bytes changed")
+    contract = artifact["contract"]
+    return {
+        "path": str(ARTIFACT_RELATIVE_PATH),
+        "schema": ARTIFACT_SCHEMA,
+        "self_digest_key": ARTIFACT_SELF_KEY,
+        "self_digest": artifact[ARTIFACT_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": IMMUTABLE_ISSUED_SOURCE_COMMIT,
+        "embedded_contract_schema": CONTRACT_SCHEMA,
+        "embedded_contract_self_digest_key": CONTRACT_SELF_KEY,
+        "embedded_contract_self_digest": contract[CONTRACT_SELF_KEY],
+    }
+
+
+def load_contract_for_consumption(
+        *, root: Path = ROOT,
+        encoder_import_correction: Mapping[str, Any] | None = None,
+        ) -> dict[str, Any]:
+    """Validate the immutable issued contract through the import correction.
+
+    The contract remains byte-for-byte the artifact issued from historical
+    clean commit ``72b0d77``.  The separate post-smoke correction validates the
+    narrow live import-compatibility source transition.  It does not cause the
+    contract body or its historical source binding to be regenerated under the
+    current repository commit.
+    """
 
     path = _exact_output_path(root / ARTIFACT_RELATIVE_PATH, root=root)
     _require(path.is_file() and not path.is_symlink(),
              "scorer-fit V2 successor contract artifact is missing")
-    authority, manifests = _active_inputs(root=root)
-    artifact = json.loads(path.read_text())
-    source = artifact.get("contract", {}).get("source_binding", {})
-    current_source = clean_source_binding(root=root)
-    _require(source == current_source,
-             "issued scorer-fit V2 contract differs from current clean source")
-    expected = build_contract(
-        source_binding=current_source,
-        **_bindings_from_active_inputs(authority, manifests),
+    artifact = validate_immutable_issued_contract_artifact(
+        json.loads(path.read_text()))
+
+    correction = (
+        DESIGN.load_encoder_import_correction_for_consumption(root=root)
+        if encoder_import_correction is None
+        else DESIGN.validate_encoder_import_correction(
+            encoder_import_correction, root=root,
+            validate_live_authorities=True)
     )
-    return validate_contract_artifact(artifact, expected_contract=expected)
+    _require(isinstance(correction, Mapping),
+             "encoder-import correction authority is not an object")
+    _require(
+        correction.get("immutable_successor_scorer_contract_binding")
+        == immutable_contract_artifact_binding(artifact, root=root),
+        "encoder-import correction binds a different immutable scorer contract",
+    )
+
+    # Replay every unchanged manifest input and compare it directly with the
+    # corresponding historical binding embedded in the immutable artifact.
+    # Do not call ``build_contract`` here: the predecessor's dynamic source
+    # projection now correctly sees the reviewed import shim, while the issued
+    # scorer contract must retain its earlier protected scientific payload.
+    authority, manifests = _active_inputs(root=root)
+    live = _bindings_from_active_inputs(authority, manifests)
+    embedded = artifact["contract"]["preoutcome_authority_bindings"]
+    expected_embedded = {
+        "design_binding": "design_amendment",
+        "source_correction_binding": "preselection_source_correction",
+        "manifest_replay_correction_binding":
+            "post_install_manifest_replay_correction",
+        "mask_classification_binding": "rotation_mask_classification",
+        "selection_binding": "small_completion_selection",
+        "revalidation_binding": "full_bank_state_revalidation",
+        "state_manifest_binding": "state_identity_manifest",
+        "assignment_manifest_binding": "expanded_assignment_manifest",
+    }
+    _require(
+        all(embedded.get(embedded_key) == live[live_key]
+            for live_key, embedded_key in expected_embedded.items()),
+        "issued scorer-fit V2 contract manifest authority changed",
+    )
+    return validate_immutable_issued_contract_artifact(artifact)
 
 
 def contract_artifact_binding(value: Mapping[str, Any], *,
@@ -709,10 +870,14 @@ __all__ = [
     "CALIBRATION_ROW_COUNT", "CALIBRATION_STATE_COUNT", "CANDIDATE_COUNT",
     "CONTRACT_SCHEMA", "CONTRACT_SELF_KEY", "CONTRACT_STATUS", "EPOCHS",
     "EXAMPLE_PRESENTATIONS_PER_MODEL", "FIT_ROW_COUNT", "FIT_STATE_COUNT",
+    "IMMUTABLE_ISSUED_ARTIFACT_DIGEST",
+    "IMMUTABLE_ISSUED_CONTRACT_DIGEST", "IMMUTABLE_ISSUED_SOURCE_COMMIT",
     "OPTIMISER_UPDATES_PER_MODEL", "PACKAGE_ROOT_RELATIVE", "STATE_COUNT",
     "ScorerFitCorpusV2ContractError", "build_contract",
     "build_contract_artifact", "canonical_digest", "clean_source_binding",
-    "contract_artifact_binding", "issue_contract",
+    "contract_artifact_binding", "immutable_contract_artifact_binding",
+    "issue_contract",
     "load_contract_for_consumption", "training_budget_interpretation",
     "validate_contract", "validate_contract_artifact",
+    "validate_immutable_issued_contract_artifact",
 ]

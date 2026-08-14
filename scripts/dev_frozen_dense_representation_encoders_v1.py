@@ -18,10 +18,14 @@ Arm C -- V-JEPA 2.1 ViT-L/16-384 final normed tokens through the official
 """
 from __future__ import annotations
 
+from contextlib import contextmanager
 import hashlib
+import importlib.machinery
 import json
 from pathlib import Path
 import sys
+from types import ModuleType
+from typing import Iterator
 
 import numpy as np
 from PIL import Image
@@ -74,6 +78,84 @@ def _normalise(tensor: torch.Tensor) -> torch.Tensor:
 def _to_chw(image: Image.Image) -> torch.Tensor:
     array = np.asarray(image.convert("RGB"), dtype=np.float32) / 255.0
     return torch.from_numpy(array.copy()).permute(2, 0, 1).contiguous()
+
+
+def drop_path_compat_v1(
+    x: torch.Tensor,
+    drop_prob: float = 0.0,
+    training: bool = False,
+    scale_by_keep: bool = True,
+) -> torch.Tensor:
+    """The timm per-sample stochastic-depth formula, without importing timm."""
+
+    probability = float(drop_prob)
+    if not 0.0 <= probability <= 1.0:
+        raise ValueError("drop_prob must be in [0,1]")
+    if probability == 0.0 or not training:
+        return x
+    keep_prob = 1.0 - probability
+    shape = (x.shape[0],) + (1,) * (x.ndim - 1)
+    random_tensor = x.new_empty(shape).bernoulli_(keep_prob)
+    if keep_prob > 0.0 and scale_by_keep:
+        random_tensor.div_(keep_prob)
+    return x * random_tensor
+
+
+class DropPathCompatV1(torch.nn.Module):
+    def __init__(self, drop_prob: float = 0.0, scale_by_keep: bool = True) -> None:
+        super().__init__()
+        self.drop_prob = float(drop_prob)
+        self.scale_by_keep = bool(scale_by_keep)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return drop_path_compat_v1(
+            x,
+            self.drop_prob,
+            self.training,
+            self.scale_by_keep,
+        )
+
+
+def _package_module(name: str) -> ModuleType:
+    module = ModuleType(name)
+    module.__package__ = name
+    module.__path__ = []  # type: ignore[attr-defined]
+    module.__spec__ = importlib.machinery.ModuleSpec(
+        name=name, loader=None, is_package=True
+    )
+    return module
+
+
+@contextmanager
+def scoped_timm_drop_path_shim_v1() -> Iterator[None]:
+    """Provide only the legacy timm API imported by the frozen V-JEPA source."""
+
+    names = ("timm", "timm.models", "timm.models.layers")
+    missing = object()
+    previous = {name: sys.modules.get(name, missing) for name in names}
+    timm_module = _package_module("timm")
+    models_module = _package_module("timm.models")
+    layers_module = _package_module("timm.models.layers")
+    layers_module.drop_path = drop_path_compat_v1  # type: ignore[attr-defined]
+    layers_module.DropPath = DropPathCompatV1  # type: ignore[attr-defined]
+    timm_module.models = models_module  # type: ignore[attr-defined]
+    models_module.layers = layers_module  # type: ignore[attr-defined]
+    sys.modules.update(
+        {
+            "timm": timm_module,
+            "timm.models": models_module,
+            "timm.models.layers": layers_module,
+        }
+    )
+    try:
+        yield
+    finally:
+        for name in reversed(names):
+            prior = previous[name]
+            if prior is missing:
+                sys.modules.pop(name, None)
+            else:
+                sys.modules[name] = prior  # type: ignore[assignment]
 
 
 # --------------------------------------------------------------------------
@@ -221,8 +303,11 @@ class VJepa21Arm:
             sys.path.insert(0, str(VJEPA_REPOSITORY))
         import importlib
 
-        backbones = importlib.import_module("src.hub.backbones")
-        encoder, _predictor = getattr(backbones, self.constructor)(pretrained=False)
+        with scoped_timm_drop_path_shim_v1():
+            backbones = importlib.import_module("src.hub.backbones")
+            encoder, _predictor = getattr(backbones, self.constructor)(
+                pretrained=False
+            )
         state = torch.load(self.checkpoint, map_location="cpu", weights_only=False)
         encoder_state = backbones._clean_backbone_key(state["ema_encoder"])  # noqa: SLF001
         encoder.load_state_dict(encoder_state, strict=True)

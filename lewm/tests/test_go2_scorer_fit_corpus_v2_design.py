@@ -210,16 +210,82 @@ def _corrected_sources_replay() -> list[dict[str, object]]:
 
 
 def _manifest_replay_correction(
-        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+        monkeypatch: pytest.MonkeyPatch, *, source_commit: str = "e" * 40,
+        ) -> dict[str, object]:
     immutable = _immutable_active_preselection_source_correction(monkeypatch)
     return design.build_manifest_replay_correction(
-        source_repository_commit="e" * 40,
+        source_repository_commit=source_commit,
         source_bindings=_corrected_sources_replay(),
         immutable_active_preselection_source_correction=immutable,
         installed_preoutcome_artifact_bindings=
             design.INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS,
         successor_and_runtime_outputs_absent_at_issue=
             design._expected_absence_rows(phase="successor_contract"),
+    )
+
+
+def _encoder_import_correction(
+        monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    replay = _manifest_replay_correction(
+        monkeypatch,
+        source_commit=
+            design.ENCODER_IMPORT_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_MANIFEST_REPLAY_CORRECTION_DIGEST",
+        replay[design.MANIFEST_REPLAY_CORRECTION_SELF_KEY])
+    replay_raw = (json.dumps(replay, sort_keys=True, indent=2) + "\n").encode()
+    immutable_replay = {
+        "payload": replay,
+        "binding": design.manifest_replay_correction_artifact_binding(
+            replay, replay_raw),
+    }
+    sources = copy.deepcopy(replay["source_bindings"])
+    changed_base = set(
+        design.ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS
+    ).intersection(design.EXPECTED_SOURCE_PATHS)
+    for index, row in enumerate(sources):
+        if row["path"] in changed_base:
+            row["byte_count"] = int(row["byte_count"]) + 50_000
+            row["sha256"] = f"{index + 50_000:064x}"
+    old_dev = copy.deepcopy(
+        design.ENCODER_IMPORT_CORRECTION_DEV_ENCODER_HISTORICAL_BINDING)
+    new_dev = copy.deepcopy(old_dev)
+    new_dev["byte_count"] = int(new_dev["byte_count"]) + 1
+    new_dev["sha256"] = "8" * 64
+    dev_transition = {
+        "path": old_dev["path"], "role": old_dev["role"],
+        "historical": old_dev, "current": new_dev,
+    }
+    tests = []
+    for index, (path, role) in enumerate(
+            design.ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_SPECS):
+        historical = {
+            "path": path, "role": role, "exists": index != 3,
+            "byte_count": 0 if index == 3 else index + 1,
+            "sha256": None if index == 3 else f"{index + 1:064x}",
+        }
+        current = {
+            "path": path, "role": role, "exists": True,
+            "byte_count": index + 101, "sha256": f"{index + 101:064x}",
+        }
+        tests.append({
+            "path": path, "role": role,
+            "historical": historical, "current": current,
+        })
+    return design.build_encoder_import_correction(
+        source_repository_commit="f" * 40,
+        source_bindings=sources,
+        immutable_manifest_replay_correction=immutable_replay,
+        immutable_successor_scorer_contract_binding=
+            design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING,
+        dev_encoder_source_transition=dev_transition,
+        focused_test_source_transitions=tests,
+        branch_smoke_binding=
+            design.IMMUTABLE_ENCODER_IMPORT_FAILURE_BRANCH_SMOKE_BINDING,
+        branch_corpus_binding=
+            design.IMMUTABLE_ENCODER_IMPORT_FAILURE_CORPUS_RECEIPT_BINDING,
+        prelatent_outputs_absent_at_issue=
+            design._expected_encoder_import_correction_absence_rows(),
     )
 
 
@@ -899,6 +965,67 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert len(installed_calls) >= 2
     path = tmp_path / design.MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH
     assert stat.S_IMODE(path.stat().st_mode) == 0o444
+    monkeypatch.setattr(
+        design, "ENCODER_IMPORT_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+        "e" * 40)
+    monkeypatch.setattr(
+        design, "IMMUTABLE_MANIFEST_REPLAY_CORRECTION_DIGEST",
+        correction[design.MANIFEST_REPLAY_CORRECTION_SELF_KEY])
+    encoder_sources = copy.deepcopy(correction["source_bindings"])
+    base_changed = set(
+        design.ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS
+    ).intersection(design.EXPECTED_SOURCE_PATHS)
+    for index, row in enumerate(encoder_sources):
+        if row["path"] in base_changed:
+            row["byte_count"] = int(row["byte_count"]) + 50_000
+            row["sha256"] = f"{index + 50_000:064x}"
+    old_dev = copy.deepcopy(
+        design.ENCODER_IMPORT_CORRECTION_DEV_ENCODER_HISTORICAL_BINDING)
+    new_dev = {**old_dev, "byte_count": old_dev["byte_count"] + 1,
+               "sha256": "8" * 64}
+    dev_transition = {
+        "path": old_dev["path"], "role": old_dev["role"],
+        "historical": old_dev, "current": new_dev,
+    }
+    test_transitions = []
+    for index, (test_path, role) in enumerate(
+            design.ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_SPECS):
+        historical = {
+            "path": test_path, "role": role, "exists": index != 3,
+            "byte_count": 0 if index == 3 else index + 1,
+            "sha256": None if index == 3 else f"{index + 1:064x}",
+        }
+        current = {
+            "path": test_path, "role": role, "exists": True,
+            "byte_count": index + 101, "sha256": f"{index + 101:064x}",
+        }
+        test_transitions.append({
+            "path": test_path, "role": role,
+            "historical": historical, "current": current,
+        })
+    replay_raw = path.read_bytes()
+    encoder_correction = design.build_encoder_import_correction(
+        source_repository_commit="f" * 40,
+        source_bindings=encoder_sources,
+        immutable_manifest_replay_correction={
+            "payload": correction,
+            "binding": design.manifest_replay_correction_artifact_binding(
+                correction, replay_raw),
+        },
+        immutable_successor_scorer_contract_binding=
+            design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING,
+        dev_encoder_source_transition=dev_transition,
+        focused_test_source_transitions=test_transitions,
+        branch_smoke_binding=
+            design.IMMUTABLE_ENCODER_IMPORT_FAILURE_BRANCH_SMOKE_BINDING,
+        branch_corpus_binding=
+            design.IMMUTABLE_ENCODER_IMPORT_FAILURE_CORPUS_RECEIPT_BINDING,
+        prelatent_outputs_absent_at_issue=
+            design._expected_encoder_import_correction_absence_rows(),
+    )
+    monkeypatch.setattr(
+        design, "load_encoder_import_correction_for_consumption",
+        lambda **_kwargs: copy.deepcopy(encoder_correction))
     active = design.load_active_design_authority(root=tmp_path)
     assert active["source_correction"] == immutable["payload"]
     assert active["source_correction_binding"] == immutable["binding"]
@@ -910,7 +1037,9 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert active["manifest_replay_correction_binding"] == (
         design.manifest_replay_correction_artifact_binding(
             correction, path.read_bytes()))
-    assert active["active_source_repository_commit"] == "e" * 40
+    assert active["manifest_replay_source_repository_commit"] == "e" * 40
+    assert active["active_source_repository_commit"] == "f" * 40
+    assert active["encoder_import_correction"] == encoder_correction
     immutable_v2 = immutable["payload"][
         "immutable_preselection_source_correction_v2"]
     immutable_v1 = immutable_v2["payload"][
@@ -920,3 +1049,216 @@ def test_manifest_replay_issue_and_active_loader_keep_5206_lineage(
     assert design.issue_manifest_replay_correction(
         root=tmp_path) == correction
     assert len(absence_calls) == 2
+
+
+def test_encoder_import_correction_is_closed_science_preserving_and_truthful(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_import_correction(monkeypatch)
+    assert design.validate_encoder_import_correction(
+        correction, validate_live_authorities=False) == correction
+    assert correction["production_source_transition"][
+        "observed_changed_source_paths"] == sorted(
+            design.ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    assert [row["path"] for row in correction[
+            "focused_test_source_transitions"]] == list(
+                design.ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_PATHS)
+    assert correction["immutable_successor_scorer_contract_binding"] == (
+        design.IMMUTABLE_SUCCESSOR_SCORER_CONTRACT_BINDING)
+    assert correction["preserved_scientific_contract"] == (
+        design.ENCODER_IMPORT_CORRECTION_PRESERVED_SCIENCE)
+    failure = correction["encoder_import_failure_boundary"]
+    assert failure["branch_record_count"] == 12
+    assert failure["rendered_horizon_frame_count"] == 48
+    assert failure["branch_outcomes_exist"] is True
+    assert failure[
+        "branch_outcome_or_label_value_consumed_for_correction"] is False
+    assert failure[
+        "checkpoint_file_read_only_for_sha256_identity_verification"] is True
+    assert failure["checkpoint_torch_load_or_tensor_deserialization_started"] is False
+    assert failure["encoder_or_predictor_model_constructed"] is False
+    assert failure["latent_shard_written"] is False
+    assert correction["encoder_import_correction"][
+        "runtime_venv_package_installed_or_mutated"] is False
+    assert correction["issuance_boundary"][
+        "later_consumption_requires_failure_time_receipts_live"] is False
+
+
+def test_encoder_import_correction_rejects_tamper_and_extra_production_change(
+        monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_import_correction(monkeypatch)
+    raw = (json.dumps(correction, sort_keys=True, indent=2) + "\n").encode()
+    binding = design.encoder_import_correction_artifact_binding(correction, raw)
+    assert binding["self_digest"] == correction[
+        design.ENCODER_IMPORT_CORRECTION_SELF_KEY]
+    tampered = copy.deepcopy(correction)
+    tampered["encoder_import_failure_boundary"][
+        "checkpoint_torch_load_or_tensor_deserialization_started"] = True
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.validate_encoder_import_correction(
+            tampered, validate_live_authorities=False)
+
+    replay = correction["immutable_manifest_replay_correction"]["payload"]
+    sources = copy.deepcopy(correction["source_bindings"])
+    unchanged = next(
+        row for row in sources
+        if row["path"] not in set(
+            design.ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS))
+    unchanged["byte_count"] = int(unchanged["byte_count"]) + 1
+    unchanged["sha256"] = "f" * 64
+    with pytest.raises(design.ScorerFitCorpusV2DesignError):
+        design.build_encoder_import_correction(
+            source_repository_commit=correction["source_repository_commit"],
+            source_bindings=sources,
+            immutable_manifest_replay_correction=
+                correction["immutable_manifest_replay_correction"],
+            immutable_successor_scorer_contract_binding=
+                correction["immutable_successor_scorer_contract_binding"],
+            dev_encoder_source_transition=correction[
+                "dev_encoder_source_transition"],
+            focused_test_source_transitions=correction[
+                "focused_test_source_transitions"],
+            branch_smoke_binding=correction["immutable_branch_smoke_binding"],
+            branch_corpus_binding=correction[
+                "immutable_partial_corpus_receipt_binding"],
+            prelatent_outputs_absent_at_issue=correction[
+                "prelatent_outputs_absent_at_issue"],
+        )
+    assert replay[design.MANIFEST_REPLAY_CORRECTION_SELF_KEY] == correction[
+        "immutable_manifest_replay_correction_digest"]
+
+
+def test_encoder_import_correction_issue_reopen_and_receipt_refresh_lifecycle(
+        tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    correction = _encoder_import_correction(monkeypatch)
+    commit = correction["source_repository_commit"]
+    sources = correction["source_bindings"]
+    immutable_replay = correction["immutable_manifest_replay_correction"]
+    successor = correction["immutable_successor_scorer_contract_binding"]
+    dev_transition = correction["dev_encoder_source_transition"]
+    test_transitions = correction["focused_test_source_transitions"]
+    smoke = correction["immutable_branch_smoke_binding"]
+    corpus = correction["immutable_partial_corpus_receipt_binding"]
+    absence = correction["prelatent_outputs_absent_at_issue"]
+    expected = tmp_path / design.ENCODER_IMPORT_CORRECTION_RELATIVE_PATH
+    expected.parent.mkdir(parents=True)
+
+    calls = {
+        "source": 0, "replay": 0, "successor": 0, "dev": 0,
+        "tests": 0, "receipts": 0, "absence": 0, "install": 0,
+    }
+
+    def clean_source(*, root: Path) -> tuple[str, list[dict[str, object]]]:
+        assert root == tmp_path
+        calls["source"] += 1
+        return str(commit), copy.deepcopy(sources)
+
+    def load_replay(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["replay"] += 1
+        return copy.deepcopy(immutable_replay)
+
+    def load_successor(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["successor"] += 1
+        return copy.deepcopy(successor)
+
+    def load_dev(*, root: Path) -> dict[str, object]:
+        assert root == tmp_path
+        calls["dev"] += 1
+        return copy.deepcopy(dev_transition)
+
+    def load_tests(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        calls["tests"] += 1
+        return copy.deepcopy(test_transitions)
+
+    def load_receipts(
+            *, root: Path,
+            ) -> tuple[dict[str, object], dict[str, object]]:
+        assert root == tmp_path
+        calls["receipts"] += 1
+        return copy.deepcopy(smoke), copy.deepcopy(corpus)
+
+    def load_absence(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        calls["absence"] += 1
+        return copy.deepcopy(absence)
+
+    monkeypatch.setattr(design, "clean_source_authority", clean_source)
+    monkeypatch.setattr(
+        design, "_load_immutable_manifest_replay_correction", load_replay)
+    monkeypatch.setattr(
+        design, "_load_immutable_successor_scorer_contract_binding",
+        load_successor)
+    monkeypatch.setattr(design, "_dev_encoder_source_transition", load_dev)
+    monkeypatch.setattr(
+        design, "_focused_test_source_transitions", load_tests)
+    monkeypatch.setattr(
+        design, "_validate_live_encoder_import_failure_receipts",
+        load_receipts)
+    monkeypatch.setattr(
+        design, "audit_encoder_import_correction_prelatent_absence",
+        load_absence)
+
+    exclusive_json = design._exclusive_json
+
+    def checked_exclusive_json(
+            path: Path, payload: dict[str, object], *, label: str) -> None:
+        assert path == expected
+        assert label == "post-smoke encoder-import correction"
+        assert not path.exists() and not path.is_symlink()
+        assert {key: calls[key] for key in (
+            "source", "replay", "successor", "dev", "tests", "receipts",
+            "absence",
+        )} == {
+            "source": 2, "replay": 2, "successor": 2, "dev": 2,
+            "tests": 2, "receipts": 2, "absence": 2,
+        }
+        calls["install"] += 1
+        exclusive_json(path, payload, label=label)
+
+    monkeypatch.setattr(design, "_exclusive_json", checked_exclusive_json)
+    issued = design.issue_encoder_import_correction(
+        root=tmp_path, source_repository_commit=str(commit))
+    assert issued == correction
+    assert calls == {
+        "source": 3, "replay": 3, "successor": 3, "dev": 3,
+        "tests": 3, "receipts": 3, "absence": 3, "install": 1,
+    }
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
+    raw = expected.read_bytes()
+    assert design.encoder_import_correction_artifact_binding(
+        correction, raw)["self_digest"] == correction[
+            design.ENCODER_IMPORT_CORRECTION_SELF_KEY]
+
+    refreshed_receipt_checks: list[int] = []
+    refreshed_absence_checks: list[int] = []
+
+    def refreshed_receipts(
+            *, root: Path,
+            ) -> tuple[dict[str, object], dict[str, object]]:
+        assert root == tmp_path
+        refreshed_receipt_checks.append(1)
+        return {"refreshed": True}, {"refreshed": True}
+
+    def refreshed_absence(*, root: Path) -> list[dict[str, object]]:
+        assert root == tmp_path
+        refreshed_absence_checks.append(1)
+        return [{"refreshed": True}]
+
+    monkeypatch.setattr(
+        design, "_validate_live_encoder_import_failure_receipts",
+        refreshed_receipts)
+    monkeypatch.setattr(
+        design, "audit_encoder_import_correction_prelatent_absence",
+        refreshed_absence)
+    reopened = design.load_encoder_import_correction_for_consumption(
+        root=tmp_path, require_failure_boundary_live=False)
+    assert reopened == correction
+    assert design.issue_encoder_import_correction(
+        root=tmp_path, source_repository_commit=str(commit)) == correction
+    assert refreshed_receipt_checks == []
+    assert refreshed_absence_checks == []
+    assert calls["install"] == 1
+    assert expected.read_bytes() == raw
+    assert stat.S_IMODE(expected.stat().st_mode) == 0o444
