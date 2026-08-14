@@ -11,6 +11,56 @@ from scripts import encode_go2_branch_corpus_v1_2 as encoder
 
 
 class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
+    def test_target_encoder_compute_dtype_is_fp32_on_cpu_and_cuda(self):
+        self.assertEqual(
+            encoder.TARGET_ENCODER_COMPUTE_DTYPE_NAME,
+            "float32",
+        )
+        self.assertIs(
+            encoder.target_encoder_compute_dtype(
+                encoder.torch.device("cpu"), full_bank_v2=True),
+            encoder.torch.float32,
+        )
+        self.assertIs(
+            encoder.target_encoder_compute_dtype(
+                encoder.torch.device("cuda:0"), full_bank_v2=True),
+            encoder.torch.float32,
+        )
+
+    def test_legacy_compute_dtype_policy_is_unchanged_on_cpu_and_cuda(self):
+        self.assertIs(
+            encoder.target_encoder_compute_dtype(
+                encoder.torch.device("cpu"), full_bank_v2=False),
+            encoder.torch.float32,
+        )
+        self.assertIs(
+            encoder.target_encoder_compute_dtype(
+                encoder.torch.device("cuda:0"), full_bank_v2=False),
+            encoder.torch.bfloat16,
+        )
+
+    def test_full_bank_dtype_binding_rejects_missing_or_bf16_lineage(self):
+        encoder._validate_target_encoder_compute_dtype(  # noqa: SLF001
+            "float32", label="fixture")
+        for value in (None, "bfloat16"):
+            with self.assertRaisesRegex(
+                    RuntimeError, "target-encoder compute dtype changed"):
+                encoder._validate_target_encoder_compute_dtype(  # noqa: SLF001
+                    value, label="fixture")
+
+    def test_dtype_correction_digest_binding_is_exact(self):
+        digest = "e" * 64
+        self.assertEqual(
+            encoder._validate_encoder_compute_dtype_correction_digest(  # noqa: SLF001
+                digest, label="fixture"),
+            digest,
+        )
+        for value in (None, "e" * 63, "g" * 64):
+            with self.assertRaisesRegex(
+                    RuntimeError, "correction digest changed"):
+                encoder._validate_encoder_compute_dtype_correction_digest(  # noqa: SLF001
+                    value, label="fixture")
+
     def test_full_bank_v2_input_route_uses_only_exact_v2_producers(self):
         bindings = {key: "a" * 64
                     for key in encoder.FULL_BANK_V2_BINDING_KEYS}
@@ -63,6 +113,10 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
             encoder.V2_CONTRACT.CONTRACT_SELF_KEY: "c" * 64,
             encoder.V2_CONTRACT.ARTIFACT_SELF_KEY: "d" * 64,
         }
+        dtype_correction = {
+            encoder.V2_DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+                "e" * 64,
+        }
         bundle = {
             "manifest": manifest,
             "receipt": {"complete": False},
@@ -74,6 +128,8 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                 return_value={
                     "source_correction_digest": bindings[
                         "scorer_fit_corpus_v2_source_correction_digest"],
+                    "encoder_compute_dtype_correction_digest": "e" * 64,
+                    "encoder_compute_dtype_correction": dtype_correction,
                 }), \
                 mock.patch.object(
                 encoder.CORPUS_BUILDER,
@@ -81,7 +137,7 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                 return_value=bundle) as producer, \
                 mock.patch.object(
                     encoder.V2_CONTRACT, "load_contract_for_consumption",
-                    return_value=artifact), \
+                    return_value=artifact) as contract_loader, \
                 mock.patch.object(
                     encoder.V2_CONTRACT, "validate_contract_artifact",
                     return_value=artifact), \
@@ -95,10 +151,14 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                 encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
         producer.assert_called_once_with(
             out=encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        contract_loader.assert_called_once_with(
+            root=encoder.ROOT,
+            encoder_compute_dtype_correction=dtype_correction)
         alloc.assert_not_called()
         legacy.assert_not_called()
         self.assertEqual(observed[0], manifest)
         self.assertEqual(len(observed[2]), 12)
+        self.assertEqual(observed[4], "e" * 64)
 
     def test_full_bank_v2_source_correction_mismatch_precedes_branch_producer(
             self):
@@ -109,9 +169,17 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                 },
             },
         }
+        dtype_correction = {
+            encoder.V2_DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+                "e" * 64,
+        }
         with mock.patch.object(
                 encoder.V2_DESIGN, "load_active_design_authority",
-                return_value={"source_correction_digest": "a" * 64}), \
+                return_value={
+                    "source_correction_digest": "a" * 64,
+                    "encoder_compute_dtype_correction_digest": "e" * 64,
+                    "encoder_compute_dtype_correction": dtype_correction,
+                }), \
                 mock.patch.object(
                     encoder.V2_CONTRACT, "load_contract_for_consumption",
                     return_value=artifact), \
@@ -126,6 +194,26 @@ class BranchCorpusEncoderProvenanceTests(unittest.TestCase):
                     RuntimeError, "source-correction lineage changed"):
                 encoder._load_full_bank_v2_inputs(
                     encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        producer.assert_not_called()
+
+    def test_missing_dtype_correction_precedes_contract_and_branch_producer(
+            self):
+        with mock.patch.object(
+                encoder.V2_DESIGN, "load_active_design_authority",
+                return_value={"source_correction_digest": "a" * 64}), \
+                mock.patch.object(
+                    encoder.V2_CONTRACT, "load_contract_for_consumption",
+                    side_effect=AssertionError("contract opened")) as contract, \
+                mock.patch.object(
+                    encoder.CORPUS_BUILDER,
+                    "load_and_validate_full_bank_v2_branch_outputs_for_consumption",
+                    side_effect=AssertionError("branch producer opened")) as producer:
+            with self.assertRaisesRegex(
+                    RuntimeError,
+                    "active encoder-compute-dtype correction is unavailable"):
+                encoder._load_full_bank_v2_inputs(  # noqa: SLF001
+                    encoder.OUT_ROOT / "scorer_fit", allow_partial=True)
+        contract.assert_not_called()
         producer.assert_not_called()
 
     def test_full_bank_v2_output_registry_is_versioned_and_disjoint(self):

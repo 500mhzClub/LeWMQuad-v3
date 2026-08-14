@@ -787,15 +787,15 @@ def immutable_contract_artifact_binding(
 
 def load_contract_for_consumption(
         *, root: Path = ROOT,
-        encoder_import_correction: Mapping[str, Any] | None = None,
+        encoder_compute_dtype_correction: Mapping[str, Any] | None = None,
         ) -> dict[str, Any]:
-    """Validate the immutable issued contract through the import correction.
+    """Validate the immutable contract through the active dtype correction.
 
     The contract remains byte-for-byte the artifact issued from historical
-    clean commit ``72b0d77``.  The separate post-smoke correction validates the
-    narrow live import-compatibility source transition.  It does not cause the
-    contract body or its historical source binding to be regenerated under the
-    current repository commit.
+    clean commit ``72b0d77``.  The first post-smoke correction is itself now
+    immutable history.  Its successor validates the narrow live FP32 compute
+    policy while binding that import correction and this contract exactly; it
+    does not rebuild either predecessor under the current repository commit.
     """
 
     path = _exact_output_path(root / ARTIFACT_RELATIVE_PATH, root=root)
@@ -805,18 +805,19 @@ def load_contract_for_consumption(
         json.loads(path.read_text()))
 
     correction = (
-        DESIGN.load_encoder_import_correction_for_consumption(root=root)
-        if encoder_import_correction is None
-        else DESIGN.validate_encoder_import_correction(
-            encoder_import_correction, root=root,
+        DESIGN.load_encoder_compute_dtype_correction_for_consumption(root=root)
+        if encoder_compute_dtype_correction is None
+        else DESIGN.validate_encoder_compute_dtype_correction(
+            encoder_compute_dtype_correction, root=root,
             validate_live_authorities=True)
     )
     _require(isinstance(correction, Mapping),
-             "encoder-import correction authority is not an object")
+             "encoder-compute-dtype correction authority is not an object")
     _require(
         correction.get("immutable_successor_scorer_contract_binding")
         == immutable_contract_artifact_binding(artifact, root=root),
-        "encoder-import correction binds a different immutable scorer contract",
+        "encoder-compute-dtype correction binds a different immutable "
+        "scorer contract",
     )
 
     # Replay every unchanged manifest input and compare it directly with the

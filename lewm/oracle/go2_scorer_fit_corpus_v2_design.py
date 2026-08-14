@@ -70,6 +70,13 @@ ENCODER_IMPORT_CORRECTION_STATUS = (
     "ISSUED_POST_SMOKE_PRE_LATENT_ENCODER_IMPORT_COMPATIBILITY_CORRECTION")
 ENCODER_IMPORT_CORRECTION_SELF_KEY = (
     "scorer_fit_corpus_v2_encoder_import_correction_digest")
+ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_post_import_pre_latent_encoder_compute_"
+    "dtype_correction_v1")
+ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS = (
+    "ISSUED_POST_IMPORT_PRE_LATENT_ENCODER_COMPUTE_DTYPE_CORRECTION")
+ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
+    "scorer_fit_corpus_v2_encoder_compute_dtype_correction_digest")
 
 BRANCH_GENERATED_ROOT_RELATIVE_PATH = Path(
     ".generated/go2_branch_corpus_v1_2")
@@ -109,6 +116,10 @@ MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH = (
 ENCODER_IMPORT_CORRECTION_RELATIVE_PATH = (
     SCORER_FIT_RELATIVE_PATH /
     "scorer_fit_corpus_v2_post_smoke_encoder_import_correction_v1.json"
+)
+ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    "scorer_fit_corpus_v2_post_import_encoder_compute_dtype_correction_v1.json"
 )
 
 ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT = (
@@ -182,6 +193,66 @@ ENCODER_IMPORT_CORRECTION_DEV_ENCODER_HISTORICAL_BINDING = {
     "byte_count": 12_741,
     "sha256": (
         "9fa9780376416cc0181d2e37980d5af8a1bb632dec82ec802e53e33991f74efb"),
+}
+ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT = (
+    "e41d0ee9935cc22fcd940dd9d988f41137f35baf")
+ENCODER_COMPUTE_DTYPE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS = (
+    "lewm/oracle/go2_scorer_fit_corpus_v2_design.py",
+    "lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "scripts/encode_go2_branch_corpus_v1_2.py",
+    "scripts/run_go2_scorer_fit_full_bank_v2.py",
+)
+ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS = (
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_design.py",
+    "lewm/tests/test_go2_scorer_fit_corpus_v2_scorer_contract.py",
+    "lewm/tests/test_encode_go2_branch_corpus_v1_2.py",
+    "lewm/tests/test_run_go2_scorer_fit_full_bank_v2.py",
+)
+IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = (
+    "1d782743cbec903e4bfde5fb349c12b0122bb5a2b39a35f3552dd673e47e8bf0")
+IMMUTABLE_ENCODER_IMPORT_CORRECTION_BINDING = {
+    "path": str(ENCODER_IMPORT_CORRECTION_RELATIVE_PATH),
+    "schema": ENCODER_IMPORT_CORRECTION_SCHEMA,
+    "self_digest_key": ENCODER_IMPORT_CORRECTION_SELF_KEY,
+    "self_digest": IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST,
+    "raw_sha256": (
+        "23a4830dc74031b92350d197031ba3de6e7ca53061aced3da63589bec6524078"),
+    "byte_count": 189_622,
+    "source_repository_commit":
+        ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+}
+ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING = {
+    "path": "scripts/encode_go2_branch_corpus_v1_2.py",
+    "role": "failed_full_bank_v2_bfloat16_encoder_route",
+    "exists": True,
+    "byte_count": 101_507,
+    "sha256": (
+        "2751e09562251004f9d1e478ee060f6746ded62a09a7ff5b929ed8f6a5e1cd6c"),
+}
+ENCODER_COMPUTE_DTYPE_UNCHANGED_DEV_ENCODER_BINDING = {
+    "path": "scripts/dev_frozen_dense_representation_encoders_v1.py",
+    "role": "frozen_target_encoder_import_route",
+    "exists": True,
+    "byte_count": 15_564,
+    "sha256": (
+        "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2"),
+}
+ENCODER_COMPUTE_DTYPE_STAGE_A_FP32_SOURCE_BINDING = {
+    "path": "scripts/encode_go2_counterfactual_fidelity_stage_a_v1_2.py",
+    "role": "frozen_stage_a_true_latent_fp32_encoder_route",
+    "exists": True,
+    "byte_count": 27_974,
+    "sha256": (
+        "5f67ac9bb879467d2698265189603f4b4f3a84daa6595b4fecd1e3be03ba9d35"),
+}
+ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING = {
+    "repository_commit": "204698b45b3712590f06245fbfba32d3be539812",
+    "path": "app/vjepa_2_1/models/utils/modules.py",
+    "role": "frozen_upstream_rope_sdpa_failure_source",
+    "byte_count": 16_963,
+    "sha256": (
+        "64be6a87bd9f18d385f4e44186db3347d1665e18a1f0511d51d3b305531562e2"),
+    "first_scaled_dot_product_attention_line": 287,
 }
 IMMUTABLE_MANIFEST_REPLAY_CORRECTION_DIGEST = (
     "b35a46b02a51bb030d8777d6b081ec76445d1ebb081be9220e97f22519cbbe7c")
@@ -671,6 +742,9 @@ ENCODER_IMPORT_CORRECTION_DEV_ENCODER_SOURCE_SPEC = (
 ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_SPECS = tuple(
     (path, "focused_encoder_import_compatibility_test")
     for path in ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_PATHS)
+ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS = tuple(
+    (path, "focused_encoder_compute_dtype_correction_test")
+    for path in ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS)
 
 V2_PREOUTCOME_ARTIFACT_PATHS = (
     SCORER_FIT_RELATIVE_PATH / "state_manifest_v2.json",
@@ -750,6 +824,13 @@ ENCODER_IMPORT_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
         "counterfactual_development_transfer_v2/score_shards",
     UTILITY_V2_ROOT_RELATIVE_PATH /
         "counterfactual_development_transfer_v2/invalid_attempts",
+)
+ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_PATHS = (
+    *ENCODER_IMPORT_CORRECTION_REQUIRED_ABSENT_PATHS,
+)
+ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_DIRECTORIES = (
+    SCORER_FIT_RELATIVE_PATH / "latents_v2",
+    *ENCODER_IMPORT_CORRECTION_REQUIRED_ABSENT_DIRECTORIES,
 )
 
 _ROTATION_IDS = tuple(
@@ -889,6 +970,71 @@ ENCODER_IMPORT_FAILURE_BOUNDARY = {
     "encoder_or_predictor_weights_loaded": False,
     "latent_shard_written": False,
     "latent_index_written": False,
+    "smoke_encoding_receipt_written": False,
+    "scorer_training_started": False,
+    "development_transfer_started": False,
+    "predictor_checkpoint_opened": False,
+    "final_200_state_corpus_generated": False,
+    "scientific_qualification_verdict_reached": False,
+}
+
+ENCODER_COMPUTE_DTYPE_CORRECTION_PRESERVED_SCIENCE = {
+    **ENCODER_IMPORT_CORRECTION_PRESERVED_SCIENCE,
+    "encoder_import_correction_digest":
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST,
+    "target_encoder_compute_dtype": "float32",
+    "target_latent_storage_dtype": "float16",
+    "stage_a_fp32_source_sha256":
+        ENCODER_COMPUTE_DTYPE_STAGE_A_FP32_SOURCE_BINDING["sha256"],
+}
+
+ENCODER_COMPUTE_DTYPE_FAILURE_BOUNDARY = {
+    "status": "IMMUTABLE_INFRASTRUCTURE_FAILURE_ROCM_SDPA_QKV_DTYPE_MISMATCH",
+    "historical_source_repository_commit":
+        ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+    "runner_stage": "smoke_encoding",
+    "encoder_command": [
+        ".generated/venvs/world_model_rocm_7_2_1_v1/bin/python",
+        "scripts/encode_go2_branch_corpus_v1_2.py",
+        "--pool", "scorer_fit", "--corpus-design", "full-bank-v2", "--smoke",
+    ],
+    "exception_type": "RuntimeError",
+    "exception_message": (
+        "Expected query, key, and value to have the same dtype, but got "
+        "query.dtype: float key.dtype: float and value.dtype: c10::BFloat16 "
+        "instead."),
+    "failure_operation": "torch.nn.functional.scaled_dot_product_attention",
+    "failure_source_binding": copy.deepcopy(
+        ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING),
+    "branch_smoke_completed": True,
+    "branch_smoke_zero_new_resume_completed": True,
+    "branch_record_count": 12,
+    "rendered_horizon_frame_count": 48,
+    "candidate_indices": list(CANDIDATE_INDICES),
+    "branch_outcomes_exist": True,
+    "branch_outcome_or_label_value_consumed_for_correction": False,
+    "registered_smoke_frames_verified_by_failed_encoder": True,
+    "branch_frame_value_opened_by_correction_issuer": False,
+    "missing_context_shard_count_at_failure": 1,
+    "missing_horizon_shard_count_at_failure": 12,
+    "device": "cuda:0",
+    "failed_selected_encoder_compute_dtype": "bfloat16",
+    "target_encoder_constructor_completed": True,
+    "checkpoint_torch_load_map_location_cpu_completed": True,
+    "strict_encoder_state_dict_load_completed": True,
+    "encoder_to_cuda_bfloat16_completed": True,
+    "encoder_eval_and_requires_grad_false_completed": True,
+    "first_context_batch_preprocessing_completed": True,
+    "first_encoder_forward_entered": True,
+    "rope_query_dtype_at_failure": "float32",
+    "rope_key_dtype_at_failure": "float32",
+    "attention_value_dtype_at_failure": "bfloat16",
+    "encode_paths_returned": False,
+    "atomic_f16_reached": False,
+    "context_latent_shard_written": False,
+    "horizon_latent_shard_written": False,
+    "latent_index_written": False,
+    "encoding_invocation_summary_written": False,
     "smoke_encoding_receipt_written": False,
     "scorer_training_started": False,
     "development_transfer_started": False,
@@ -2856,6 +3002,46 @@ def _validate_encoder_import_correction_absence(value: Any) -> list[dict[str, An
     return copy.deepcopy(expected)
 
 
+def _expected_encoder_compute_dtype_correction_absence_rows(
+        ) -> list[dict[str, Any]]:
+    rows = [
+        {"path": str(path), "expected_kind": "file", "exists": False}
+        for path in ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_PATHS
+    ]
+    rows.extend({
+        "path": str(path), "expected_kind": "directory", "exists": False,
+    } for path in ENCODER_COMPUTE_DTYPE_CORRECTION_REQUIRED_ABSENT_DIRECTORIES)
+    return rows
+
+
+def _validate_encoder_compute_dtype_correction_absence(
+        value: Any) -> list[dict[str, Any]]:
+    expected = _expected_encoder_compute_dtype_correction_absence_rows()
+    if not isinstance(value, list) or value != expected:
+        raise ScorerFitCorpusV2DesignError(
+            "post-import pre-latent dtype absence projection changed")
+    return copy.deepcopy(expected)
+
+
+def _validate_encoder_compute_dtype_focused_test_transitions(
+        value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list) or len(value) != len(
+            ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype focused test transition coverage changed")
+    transitions = [
+        _validate_source_transition(row, path=path, role=role)
+        for (path, role), row in zip(
+            ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS,
+            value, strict=True)
+    ]
+    if [row["path"] for row in transitions] != list(
+            ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype focused test transition order changed")
+    return transitions
+
+
 _ENCODER_IMPORT_CORRECTION_KEYS = frozenset({
     "schema", "status", "complete", "encoder_import_correction_version",
     "source_repository_commit", "source_bindings", "source_binding_set_digest",
@@ -3105,6 +3291,344 @@ def encoder_import_correction_artifact_binding(
     }
 
 
+_IMMUTABLE_ENCODER_IMPORT_CORRECTION_KEYS = frozenset({"payload", "binding"})
+
+
+def validate_immutable_encoder_import_correction(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Validate the exact e41d import correction without live-source equality."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _IMMUTABLE_ENCODER_IMPORT_CORRECTION_KEYS
+            or not isinstance(value.get("payload"), Mapping)
+            or not isinstance(value.get("binding"), Mapping)):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-import correction is not closed")
+    immutable = copy.deepcopy(dict(value))
+    payload = validate_encoder_import_correction(
+        immutable["payload"], validate_live_authorities=False)
+    expected_binding = encoder_import_correction_artifact_binding(
+        payload, _pretty_json_bytes(payload))
+    if (immutable["binding"] != expected_binding
+            or expected_binding != IMMUTABLE_ENCODER_IMPORT_CORRECTION_BINDING
+            or payload.get(ENCODER_IMPORT_CORRECTION_SELF_KEY)
+            != IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST
+            or payload.get("source_repository_commit")
+            != ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-import correction changed")
+    immutable["payload"] = payload
+    immutable["binding"] = expected_binding
+    return immutable
+
+
+_ENCODER_COMPUTE_DTYPE_CORRECTION_KEYS = frozenset({
+    "schema", "status", "complete", "encoder_compute_dtype_correction_version",
+    "source_repository_commit", "source_bindings", "source_binding_set_digest",
+    "historical_source_repository_commit",
+    "immutable_encoder_import_correction",
+    "immutable_encoder_import_correction_digest",
+    "immutable_successor_scorer_contract_binding",
+    "immutable_branch_smoke_binding", "immutable_partial_corpus_receipt_binding",
+    "failed_encoder_source_binding", "unchanged_dev_encoder_source_binding",
+    "unchanged_stage_a_fp32_source_binding", "upstream_rope_source_binding",
+    "focused_test_source_transitions", "production_source_transition",
+    "production_source_transition_digest", "focused_test_source_transition_digest",
+    "preserved_scientific_contract", "preserved_scientific_contract_digest",
+    "prelatent_outputs_absent_at_issue",
+    "prelatent_outputs_absent_at_issue_digest",
+    "encoder_compute_dtype_failure_boundary",
+    "encoder_compute_dtype_failure_boundary_digest",
+    "encoder_compute_dtype_correction",
+    "encoder_compute_dtype_correction_material_digest", "issuance_boundary",
+    ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY,
+})
+
+
+def build_encoder_compute_dtype_correction(
+        *, source_repository_commit: str,
+        source_bindings: Sequence[Mapping[str, Any]],
+        immutable_encoder_import_correction: Mapping[str, Any],
+        immutable_successor_scorer_contract_binding: Mapping[str, Any],
+        focused_test_source_transitions: Sequence[Mapping[str, Any]],
+        branch_smoke_binding: Mapping[str, Any],
+        branch_corpus_binding: Mapping[str, Any],
+        failed_encoder_source_binding: Mapping[str, Any],
+        unchanged_dev_encoder_source_binding: Mapping[str, Any],
+        unchanged_stage_a_fp32_source_binding: Mapping[str, Any],
+        upstream_rope_source_binding: Mapping[str, Any],
+        prelatent_outputs_absent_at_issue: Sequence[Mapping[str, Any]],
+        ) -> dict[str, Any]:
+    """Build the chained FP32 fidelity correction without reading outcomes."""
+
+    if (not _is_hex(source_repository_commit, 40)
+            or source_repository_commit
+            == ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction source commit is malformed or not new")
+    current_sources = _validate_source_bindings(list(source_bindings))
+    immutable_import = validate_immutable_encoder_import_correction(
+        immutable_encoder_import_correction)
+    import_payload = immutable_import["payload"]
+    historical_sources = import_payload["source_bindings"]
+    changed = _changed_source_paths(historical_sources, current_sources)
+    expected_changed = sorted(
+        ENCODER_COMPUTE_DTYPE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS)
+    if changed != expected_changed:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction changed an unauthorised source path")
+    successor = _validate_immutable_successor_scorer_contract_binding(
+        immutable_successor_scorer_contract_binding)
+    if import_payload["immutable_successor_scorer_contract_binding"] != successor:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction scorer-contract chain changed")
+    smoke = _validate_failure_runtime_binding(
+        branch_smoke_binding,
+        expected=IMMUTABLE_ENCODER_IMPORT_FAILURE_BRANCH_SMOKE_BINDING,
+        label="dtype-failure branch smoke")
+    corpus = _validate_failure_runtime_binding(
+        branch_corpus_binding,
+        expected=IMMUTABLE_ENCODER_IMPORT_FAILURE_CORPUS_RECEIPT_BINDING,
+        label="dtype-failure partial corpus receipt")
+    if dict(failed_encoder_source_binding) != (
+            ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING):
+        raise ScorerFitCorpusV2DesignError(
+            "failed encoder source binding changed")
+    historical_encoder = next(
+        row for row in historical_sources
+        if row["path"] == ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING[
+            "path"])
+    if (historical_encoder["byte_count"]
+            != ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING["byte_count"]
+            or historical_encoder["sha256"]
+            != ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING["sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "failed encoder source disagrees with immutable source closure")
+    if dict(unchanged_dev_encoder_source_binding) != (
+            ENCODER_COMPUTE_DTYPE_UNCHANGED_DEV_ENCODER_BINDING):
+        raise ScorerFitCorpusV2DesignError(
+            "unchanged target-encoder source binding changed")
+    if dict(unchanged_stage_a_fp32_source_binding) != (
+            ENCODER_COMPUTE_DTYPE_STAGE_A_FP32_SOURCE_BINDING):
+        raise ScorerFitCorpusV2DesignError(
+            "frozen Stage-A FP32 source binding changed")
+    if dict(upstream_rope_source_binding) != (
+            ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING):
+        raise ScorerFitCorpusV2DesignError(
+            "frozen upstream RoPE source binding changed")
+    tests = _validate_encoder_compute_dtype_focused_test_transitions(
+        list(focused_test_source_transitions))
+    absence = _validate_encoder_compute_dtype_correction_absence(
+        list(prelatent_outputs_absent_at_issue))
+    production_transition = {
+        "allowed_changed_source_paths": list(
+            ENCODER_COMPUTE_DTYPE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS),
+        "observed_changed_source_paths": changed,
+        "historical_bound_source_paths": [
+            row["path"] for row in historical_sources],
+        "current_bound_source_paths": [row["path"] for row in current_sources],
+        "failed_encoder_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING),
+        "unchanged_dev_encoder_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_UNCHANGED_DEV_ENCODER_BINDING),
+        "extra_production_source_path_changed": False,
+    }
+    science = copy.deepcopy(ENCODER_COMPUTE_DTYPE_CORRECTION_PRESERVED_SCIENCE)
+    failure = copy.deepcopy(ENCODER_COMPUTE_DTYPE_FAILURE_BOUNDARY)
+    if (science.get("encoder_import_correction_digest")
+            != IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST
+            or failure.get("historical_source_repository_commit")
+            != ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype immutable science or failure chain changed")
+    correction_material = {
+        "status": "SOURCE_ONLY_ENCODER_COMPUTE_DTYPE_FIDELITY_CORRECTION",
+        "defect": (
+            "FULL_BANK_V2_ROUTE_SELECTED_EXPLICIT_BFLOAT16_MODEL_AND_INPUT_"
+            "COMPUTE_INSTEAD_OF_FROZEN_STAGE_A_FLOAT32_COMPUTE"),
+        "correction": (
+            "RESTORE_FULL_BANK_V2_TARGET_ENCODER_COMPUTE_DTYPE_TO_FLOAT32_"
+            "IDENTICAL_TO_FROZEN_STAGE_A"),
+        "failed_compute_dtype": "bfloat16",
+        "corrected_compute_dtype": "float32",
+        "latent_storage_dtype": "float16",
+        "automatic_mixed_precision_or_autocast_enabled": False,
+        "preprocessing_changed": False,
+        "target_normalisation_changed": False,
+        "target_encoder_architecture_changed": False,
+        "target_encoder_checkpoint_changed": False,
+        "target_encoder_output_layer_changed": False,
+        "scientific_target_encoder_contract_changed": False,
+        "runtime_compute_dtype_restored_to_frozen_stage_a": True,
+        "strict_state_dict_loading_changed": False,
+        "latent_shape_token_order_or_storage_dtype_changed": False,
+        "corpus_manifest_branch_frame_or_label_changed": False,
+        "scorer_architecture_training_budget_or_qualification_changed": False,
+        "runtime_venv_package_installed_or_mutated": False,
+        "branch_outcome_or_label_value_used": False,
+        "resume_scope": "VALID_REGISTERED_SMOKE_BRANCHES_THEN_MISSING_LATENTS_ONLY",
+    }
+    payload: dict[str, Any] = {
+        "schema": ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA,
+        "status": ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS,
+        "complete": True,
+        "encoder_compute_dtype_correction_version": 1,
+        "source_repository_commit": source_repository_commit,
+        "source_bindings": current_sources,
+        "source_binding_set_digest": canonical_digest(current_sources),
+        "historical_source_repository_commit":
+            ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+        "immutable_encoder_import_correction": copy.deepcopy(immutable_import),
+        "immutable_encoder_import_correction_digest":
+            IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST,
+        "immutable_successor_scorer_contract_binding": successor,
+        "immutable_branch_smoke_binding": smoke,
+        "immutable_partial_corpus_receipt_binding": corpus,
+        "failed_encoder_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING),
+        "unchanged_dev_encoder_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_UNCHANGED_DEV_ENCODER_BINDING),
+        "unchanged_stage_a_fp32_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_STAGE_A_FP32_SOURCE_BINDING),
+        "upstream_rope_source_binding": copy.deepcopy(
+            ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING),
+        "focused_test_source_transitions": tests,
+        "production_source_transition": production_transition,
+        "production_source_transition_digest": canonical_digest(
+            production_transition),
+        "focused_test_source_transition_digest": canonical_digest(tests),
+        "preserved_scientific_contract": science,
+        "preserved_scientific_contract_digest": canonical_digest(science),
+        "prelatent_outputs_absent_at_issue": absence,
+        "prelatent_outputs_absent_at_issue_digest": canonical_digest(absence),
+        "encoder_compute_dtype_failure_boundary": failure,
+        "encoder_compute_dtype_failure_boundary_digest": canonical_digest(failure),
+        "encoder_compute_dtype_correction": correction_material,
+        "encoder_compute_dtype_correction_material_digest": canonical_digest(
+            correction_material),
+        "issuance_boundary": {
+            "immutable_encoder_import_correction_preserved": True,
+            "immutable_successor_scorer_contract_preserved": True,
+            "state_and_assignment_manifests_preserved": True,
+            "valid_smoke_branches_and_frames_preserved": True,
+            "source_tree_clean_and_committed": True,
+            "exact_failure_time_branch_receipt_metadata_validated": True,
+            "branch_outcome_or_label_value_read_for_correction": False,
+            "frame_latent_weight_or_predictor_artifact_read_for_correction": False,
+            "double_prelatent_absence_audit_required": True,
+            "failure_time_receipts_may_later_be_refreshed_by_full_corpus": True,
+            "later_consumption_requires_failure_time_receipts_live": False,
+            "scientific_contract_manifest_or_encoder_checkpoint_reissued": False,
+            "branch_regenerated_based_on_label": False,
+            "final_200_state_corpus_authorised": False,
+        },
+    }
+    if set(payload) != _ENCODER_COMPUTE_DTYPE_CORRECTION_KEYS - {
+            ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY}:
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction construction surface changed")
+    payload[ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY] = canonical_digest(payload)
+    return payload
+
+
+def validate_encoder_compute_dtype_correction(
+        payload: Mapping[str, Any], *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    if (not isinstance(payload, Mapping)
+            or set(payload) != _ENCODER_COMPUTE_DTYPE_CORRECTION_KEYS):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction is not closed")
+    correction = copy.deepcopy(dict(payload))
+    if (correction.get("schema") != ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA
+            or correction.get("status") != ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS
+            or correction.get("complete") is not True
+            or correction.get("encoder_compute_dtype_correction_version") != 1):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction version changed")
+    expected = build_encoder_compute_dtype_correction(
+        source_repository_commit=str(correction.get(
+            "source_repository_commit", "")),
+        source_bindings=correction.get("source_bindings", []),
+        immutable_encoder_import_correction=correction.get(
+            "immutable_encoder_import_correction", {}),
+        immutable_successor_scorer_contract_binding=correction.get(
+            "immutable_successor_scorer_contract_binding", {}),
+        focused_test_source_transitions=correction.get(
+            "focused_test_source_transitions", []),
+        branch_smoke_binding=correction.get("immutable_branch_smoke_binding", {}),
+        branch_corpus_binding=correction.get(
+            "immutable_partial_corpus_receipt_binding", {}),
+        failed_encoder_source_binding=correction.get(
+            "failed_encoder_source_binding", {}),
+        unchanged_dev_encoder_source_binding=correction.get(
+            "unchanged_dev_encoder_source_binding", {}),
+        unchanged_stage_a_fp32_source_binding=correction.get(
+            "unchanged_stage_a_fp32_source_binding", {}),
+        upstream_rope_source_binding=correction.get(
+            "upstream_rope_source_binding", {}),
+        prelatent_outputs_absent_at_issue=correction.get(
+            "prelatent_outputs_absent_at_issue", []),
+    )
+    if (correction != expected
+            or correction.get(ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+            != canonical_digest(_without(
+                correction, ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY))):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction binding changed")
+    if validate_live_authorities:
+        commit, sources = clean_source_authority(root=root)
+        immutable_import = _load_immutable_encoder_import_correction(root=root)
+        successor = _load_immutable_successor_scorer_contract_binding(root=root)
+        tests = _encoder_compute_dtype_focused_test_source_transitions(root=root)
+        failed, dev, stage_a, upstream = (
+            _validate_live_encoder_compute_dtype_source_evidence(root=root))
+        if (commit != correction["source_repository_commit"]
+                or sources != correction["source_bindings"]
+                or immutable_import
+                != correction["immutable_encoder_import_correction"]
+                or successor
+                != correction["immutable_successor_scorer_contract_binding"]
+                or tests != correction["focused_test_source_transitions"]
+                or failed != correction["failed_encoder_source_binding"]
+                or dev != correction["unchanged_dev_encoder_source_binding"]
+                or stage_a
+                != correction["unchanged_stage_a_fp32_source_binding"]
+                or upstream != correction["upstream_rope_source_binding"]):
+            raise ScorerFitCorpusV2DesignError(
+                "live source or immutable dtype-correction lineage changed")
+        if require_failure_boundary_live:
+            smoke, corpus = _validate_live_encoder_import_failure_receipts(root=root)
+            absence = audit_encoder_compute_dtype_correction_prelatent_absence(
+                root=root)
+            if (smoke != correction["immutable_branch_smoke_binding"]
+                    or corpus
+                    != correction["immutable_partial_corpus_receipt_binding"]
+                    or absence != correction["prelatent_outputs_absent_at_issue"]):
+                raise ScorerFitCorpusV2DesignError(
+                    "encoder-compute-dtype failure boundary changed before issue")
+    return correction
+
+
+def encoder_compute_dtype_correction_artifact_binding(
+        payload: Mapping[str, Any], raw: bytes) -> dict[str, Any]:
+    correction = validate_encoder_compute_dtype_correction(
+        payload, validate_live_authorities=False)
+    if raw != _pretty_json_bytes(correction):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction raw bytes changed")
+    return {
+        "path": str(ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH),
+        "schema": ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA,
+        "self_digest_key": ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY,
+        "self_digest": correction[ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY],
+        "raw_sha256": hashlib.sha256(raw).hexdigest(),
+        "byte_count": len(raw),
+        "source_repository_commit": correction["source_repository_commit"],
+    }
+
+
 def completion_order_material(
         complete_structural_state_identity: Mapping[str, Any],
         designated_goal_identity: Mapping[str, Any], *,
@@ -3334,6 +3858,74 @@ def _focused_test_source_transitions(
     return _validate_focused_test_source_transitions(transitions)
 
 
+def _encoder_compute_dtype_focused_test_source_transitions(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    repository = Path(root).resolve()
+    transitions: list[dict[str, Any]] = []
+    for path, role in ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_SPECS:
+        transitions.append({
+            "path": path,
+            "role": role,
+            "historical": _transition_endpoint_from_raw(
+                path=path, role=role,
+                raw=_historical_source_blob(
+                    root=repository,
+                    commit=(
+                        ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT),
+                    relative=path)),
+            "current": _current_source_endpoint(
+                root=repository, path=path, role=role),
+        })
+    return _validate_encoder_compute_dtype_focused_test_transitions(transitions)
+
+
+def _validate_live_encoder_compute_dtype_source_evidence(
+        *, root: Path = ROOT,
+        ) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    repository = Path(root).resolve()
+    failed_expected = ENCODER_COMPUTE_DTYPE_FAILURE_ENCODER_SOURCE_BINDING
+    failed_raw = _historical_source_blob(
+        root=repository,
+        commit=ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT,
+        relative=failed_expected["path"])
+    failed = _transition_endpoint_from_raw(
+        path=failed_expected["path"], role=failed_expected["role"],
+        raw=failed_raw)
+    if failed != failed_expected:
+        raise ScorerFitCorpusV2DesignError(
+            "historical failed encoder route binding changed")
+
+    dev_expected = ENCODER_COMPUTE_DTYPE_UNCHANGED_DEV_ENCODER_BINDING
+    dev = _current_source_endpoint(
+        root=repository, path=dev_expected["path"], role=dev_expected["role"])
+    stage_expected = ENCODER_COMPUTE_DTYPE_STAGE_A_FP32_SOURCE_BINDING
+    stage_a = _current_source_endpoint(
+        root=repository, path=stage_expected["path"], role=stage_expected["role"])
+    if dev != dev_expected or stage_a != stage_expected:
+        raise ScorerFitCorpusV2DesignError(
+            "unchanged target-encoder or Stage-A FP32 source changed")
+
+    upstream_expected = ENCODER_COMPUTE_DTYPE_UPSTREAM_ROPE_SOURCE_BINDING
+    upstream_root = Path.home() / (
+        ".cache/vjepa2-" + upstream_expected["repository_commit"])
+    upstream_path = upstream_root / upstream_expected["path"]
+    if (not upstream_path.is_file() or upstream_path.is_symlink()
+            or _git("rev-parse", "HEAD", root=upstream_root).decode().strip()
+            != upstream_expected["repository_commit"]):
+        raise ScorerFitCorpusV2DesignError(
+            "frozen upstream RoPE source repository changed")
+    upstream_raw = upstream_path.read_bytes()
+    if (len(upstream_raw) != upstream_expected["byte_count"]
+            or hashlib.sha256(upstream_raw).hexdigest()
+            != upstream_expected["sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "frozen upstream RoPE source binding changed")
+    return (
+        copy.deepcopy(failed_expected), copy.deepcopy(dev_expected),
+        copy.deepcopy(stage_expected), copy.deepcopy(upstream_expected),
+    )
+
+
 def _load_immutable_manifest_replay_correction(
         *, root: Path = ROOT) -> dict[str, Any]:
     payload = load_manifest_replay_correction(
@@ -3345,6 +3937,26 @@ def _load_immutable_manifest_replay_correction(
     return validate_immutable_manifest_replay_correction({
         "payload": payload,
         "binding": manifest_replay_correction_artifact_binding(payload, raw),
+    })
+
+
+def _load_immutable_encoder_import_correction(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    expected = IMMUTABLE_ENCODER_IMPORT_CORRECTION_BINDING
+    path = _pin_generated(
+        root, expected["path"], label="immutable encoder-import correction")
+    if (not path.is_file() or path.is_symlink()
+            or stat.S_IMODE(path.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-import correction mode changed")
+    payload, raw = _load_json(path, label="immutable encoder-import correction")
+    if (len(raw) != expected["byte_count"]
+            or hashlib.sha256(raw).hexdigest() != expected["raw_sha256"]):
+        raise ScorerFitCorpusV2DesignError(
+            "immutable encoder-import correction raw binding changed")
+    return validate_immutable_encoder_import_correction({
+        "payload": payload,
+        "binding": encoder_import_correction_artifact_binding(payload, raw),
     })
 
 
@@ -3469,6 +4081,18 @@ def audit_encoder_import_correction_prelatent_absence(
         if path.exists() or path.is_symlink():
             raise ScorerFitCorpusV2DesignError(
                 f"pre-latent output predates encoder correction: {row['path']}")
+    return rows
+
+
+def audit_encoder_compute_dtype_correction_prelatent_absence(
+        *, root: Path = ROOT) -> list[dict[str, Any]]:
+    rows = _expected_encoder_compute_dtype_correction_absence_rows()
+    for row in rows:
+        path = _pin_generated(
+            root, row["path"], label="compute-dtype correction absence")
+        if path.exists() or path.is_symlink():
+            raise ScorerFitCorpusV2DesignError(
+                f"pre-latent output predates dtype correction: {row['path']}")
     return rows
 
 
@@ -4246,10 +4870,114 @@ def issue_encoder_import_correction(
         root=root, require_failure_boundary_live=True)
 
 
+def load_encoder_compute_dtype_correction_for_consumption(
+        path: Path | None = None, *, root: Path = ROOT,
+        validate_live_authorities: bool = True,
+        require_failure_boundary_live: bool = False,
+        ) -> dict[str, Any]:
+    """Load the chained FP32 correction without pinning refreshed receipts."""
+
+    expected = _pin_generated(
+        root, ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH,
+        label="encoder-compute-dtype correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction logical path changed")
+    if (not expected.is_file() or expected.is_symlink()
+            or stat.S_IMODE(expected.stat().st_mode) != 0o444):
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction mode changed")
+    payload, raw = _load_json(
+        expected, label="encoder-compute-dtype correction")
+    correction = validate_encoder_compute_dtype_correction(
+        payload, root=root, validate_live_authorities=validate_live_authorities,
+        require_failure_boundary_live=require_failure_boundary_live)
+    encoder_compute_dtype_correction_artifact_binding(correction, raw)
+    return correction
+
+
+def issue_encoder_compute_dtype_correction(
+        path: Path | None = None, *, root: Path = ROOT,
+        source_repository_commit: str | None = None,
+        ) -> dict[str, Any]:
+    """Issue the one chained FP32 correction before any latent is written."""
+
+    expected = _pin_generated(
+        root, ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH,
+        label="encoder-compute-dtype correction")
+    supplied = expected if path is None else Path(path).absolute()
+    if supplied.absolute() != expected.absolute():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction logical path changed")
+    if not expected.parent.is_dir() or expected.parent.is_symlink():
+        raise ScorerFitCorpusV2DesignError(
+            "encoder-compute-dtype correction parent is unavailable")
+    if expected.exists() or expected.is_symlink():
+        return load_encoder_compute_dtype_correction_for_consumption(root=root)
+
+    commit, sources = clean_source_authority(root=root)
+    if source_repository_commit is not None and commit != source_repository_commit:
+        raise ScorerFitCorpusV2DesignError(
+            "requested encoder-compute-dtype correction commit is not live")
+    immutable_import = _load_immutable_encoder_import_correction(root=root)
+    successor = _load_immutable_successor_scorer_contract_binding(root=root)
+    tests = _encoder_compute_dtype_focused_test_source_transitions(root=root)
+    failed, dev, stage_a, upstream = (
+        _validate_live_encoder_compute_dtype_source_evidence(root=root))
+    smoke, corpus = _validate_live_encoder_import_failure_receipts(root=root)
+    first_absence = audit_encoder_compute_dtype_correction_prelatent_absence(
+        root=root)
+    correction = build_encoder_compute_dtype_correction(
+        source_repository_commit=commit,
+        source_bindings=sources,
+        immutable_encoder_import_correction=immutable_import,
+        immutable_successor_scorer_contract_binding=successor,
+        focused_test_source_transitions=tests,
+        branch_smoke_binding=smoke,
+        branch_corpus_binding=corpus,
+        failed_encoder_source_binding=failed,
+        unchanged_dev_encoder_source_binding=dev,
+        unchanged_stage_a_fp32_source_binding=stage_a,
+        upstream_rope_source_binding=upstream,
+        prelatent_outputs_absent_at_issue=first_absence,
+    )
+
+    second_commit, second_sources = clean_source_authority(root=root)
+    second_import = _load_immutable_encoder_import_correction(root=root)
+    second_successor = _load_immutable_successor_scorer_contract_binding(root=root)
+    second_tests = _encoder_compute_dtype_focused_test_source_transitions(root=root)
+    second_failed, second_dev, second_stage_a, second_upstream = (
+        _validate_live_encoder_compute_dtype_source_evidence(root=root))
+    second_smoke, second_corpus = (
+        _validate_live_encoder_import_failure_receipts(root=root))
+    second_absence = audit_encoder_compute_dtype_correction_prelatent_absence(
+        root=root)
+    if ((commit, sources) != (second_commit, second_sources)
+            or immutable_import != second_import
+            or successor != second_successor
+            or tests != second_tests
+            or (failed, dev, stage_a, upstream)
+            != (second_failed, second_dev, second_stage_a, second_upstream)
+            or (smoke, corpus) != (second_smoke, second_corpus)
+            or first_absence != second_absence):
+        raise ScorerFitCorpusV2DesignError(
+            "source, chained lineage, failure metadata, or absence changed "
+            "before encoder-compute-dtype correction install")
+    _exclusive_json(
+        expected, correction, label="encoder-compute-dtype correction")
+    return load_encoder_compute_dtype_correction_for_consumption(
+        root=root, require_failure_boundary_live=True)
+
+
 def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
     """Return immutable science plus the mandatory corrected source authority."""
 
-    encoder_correction = load_encoder_import_correction_for_consumption(root=root)
+    dtype_correction = load_encoder_compute_dtype_correction_for_consumption(
+        root=root)
+    immutable_encoder_correction = validate_immutable_encoder_import_correction(
+        dtype_correction["immutable_encoder_import_correction"])
+    encoder_correction = immutable_encoder_correction["payload"]
     immutable_replay = validate_immutable_manifest_replay_correction(
         encoder_correction["immutable_manifest_replay_correction"])
     replay_correction = immutable_replay["payload"]
@@ -4289,15 +5017,21 @@ def load_active_design_authority(*, root: Path = ROOT) -> dict[str, Any]:
         "manifest_replay_correction_digest": replay_correction[
             MANIFEST_REPLAY_CORRECTION_SELF_KEY],
         "encoder_import_correction": encoder_correction,
-        "encoder_import_correction_binding":
-            encoder_import_correction_artifact_binding(
-                encoder_correction,
-                _pretty_json_bytes(encoder_correction)),
+        "encoder_import_correction_binding": immutable_encoder_correction[
+            "binding"],
         "encoder_import_correction_digest": encoder_correction[
             ENCODER_IMPORT_CORRECTION_SELF_KEY],
+        "encoder_compute_dtype_correction": dtype_correction,
+        "encoder_compute_dtype_correction_binding":
+            encoder_compute_dtype_correction_artifact_binding(
+                dtype_correction, _pretty_json_bytes(dtype_correction)),
+        "encoder_compute_dtype_correction_digest": dtype_correction[
+            ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY],
         "manifest_replay_source_repository_commit": replay_correction[
             "source_repository_commit"],
-        "active_source_repository_commit": encoder_correction[
+        "encoder_import_source_repository_commit": encoder_correction[
+            "source_repository_commit"],
+        "active_source_repository_commit": dtype_correction[
             "source_repository_commit"],
         "active_selector_digest": ACTIVE_SELECTOR_DIGEST,
         "candidate_bank_digest": CANDIDATE_BANK_DIGEST,
@@ -4317,6 +5051,15 @@ __all__ = [
     "CANDIDATE_INDICES", "COMPLETION_ORDER_DOMAIN",
     "COMPLETION_ORDERING_CONTRACT", "DESIGN_RELATIVE_PATH", "DESIGN_SCHEMA",
     "DESIGN_SELF_KEY", "DESIGN_STATUS", "EXACT_INFEASIBILITY_DIGEST",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_FOCUSED_TEST_PATHS",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_PRESERVED_SCIENCE",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_SCHEMA",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY",
+    "ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS",
+    "ENCODER_COMPUTE_DTYPE_FAILURE_BOUNDARY",
     "ENCODER_IMPORT_CORRECTION_ALLOWED_CHANGED_SOURCE_PATHS",
     "ENCODER_IMPORT_CORRECTION_FOCUSED_TEST_PATHS",
     "ENCODER_IMPORT_CORRECTION_HISTORICAL_SOURCE_REPOSITORY_COMMIT",
@@ -4331,6 +5074,8 @@ __all__ = [
     "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_BINDING",
     "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST",
     "IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_REPOSITORY_COMMIT",
+    "IMMUTABLE_ENCODER_IMPORT_CORRECTION_BINDING",
+    "IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST",
     "INSTALLED_FULL_BANK_V2_PREOUTCOME_ARTIFACT_BINDINGS",
     "ISSUED_FULL_BANK_V2_SOURCE_REPOSITORY_COMMIT",
     "IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST",
@@ -4363,9 +5108,10 @@ __all__ = [
     "TERMINAL_SOURCE_REPOSITORY_COMMIT", "V2_FUTURE_OUTPUT_PATHS",
     "V2_PREOUTCOME_ARTIFACT_PATHS", "V2_RUNTIME_OUTPUT_PATHS",
     "V2_SUCCESSOR_CONTRACT_PATH", "audit_v2_outcome_outputs_absent",
+    "audit_encoder_compute_dtype_correction_prelatent_absence",
     "audit_encoder_import_correction_prelatent_absence",
     "audit_v2_runtime_outputs_absent", "build_design_amendment",
-    "build_encoder_import_correction",
+    "build_encoder_compute_dtype_correction", "build_encoder_import_correction",
     "build_manifest_replay_correction", "builder_default_canonical_digest",
     "build_preselection_source_correction",
     "build_preselection_source_correction_v1",
@@ -4373,14 +5119,18 @@ __all__ = [
     "build_rotation_mask_classification", "canonical_digest",
     "clean_source_authority", "completion_order_key", "completion_order_material",
     "design_amendment_artifact_binding",
+    "encoder_compute_dtype_correction_artifact_binding",
     "encoder_import_correction_artifact_binding", "issue_design_amendment",
+    "issue_encoder_compute_dtype_correction",
     "issue_encoder_import_correction",
     "issue_manifest_replay_correction",
     "issue_preselection_source_correction",
     "issue_preselection_source_correction_v1",
     "issue_preselection_source_correction_v2",
     "issue_rotation_mask_classification", "load_active_design_authority",
-    "load_design_amendment", "load_encoder_import_correction_for_consumption",
+    "load_design_amendment",
+    "load_encoder_compute_dtype_correction_for_consumption",
+    "load_encoder_import_correction_for_consumption",
     "load_manifest_replay_correction",
     "load_preselection_source_correction",
     "load_preselection_source_correction_v1",
@@ -4398,7 +5148,10 @@ __all__ = [
     "validate_immutable_preselection_source_correction_v2",
     "validate_historical_predecessor_artifacts",
     "validate_installed_full_bank_v2_preoutcome_artifacts",
-    "validate_encoder_import_correction", "validate_manifest_replay_correction",
+    "validate_encoder_compute_dtype_correction",
+    "validate_encoder_import_correction",
+    "validate_immutable_encoder_import_correction",
+    "validate_manifest_replay_correction",
     "validate_preselection_source_correction",
     "validate_preselection_source_correction_v1",
     "validate_preselection_source_correction_v2",

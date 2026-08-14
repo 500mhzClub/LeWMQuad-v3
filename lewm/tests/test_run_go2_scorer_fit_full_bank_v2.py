@@ -73,15 +73,41 @@ class FakePipeline:
 
         monkeypatch.setattr(
             runner.DESIGN,
-            "load_encoder_import_correction_for_consumption",
-            lambda **_kwargs: self.events.append(
-                "validate:encoder-import-correction") or {
+            "ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY",
+            "encoder_compute_dtype_correction_digest", raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST", HEX_D,
+            raising=False)
+        self.dtype_correction = {
+            runner.DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY: HEX_C,
+            "immutable_encoder_import_correction_digest": HEX_D,
+            "immutable_encoder_import_correction": {
+                "payload": {
                     runner.DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY: HEX_D,
-                }, raising=False)
+                },
+            },
+        }
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "load_encoder_compute_dtype_correction_for_consumption",
+            lambda **_kwargs: self.events.append(
+                "validate:encoder-compute-dtype-correction")
+            or self.dtype_correction, raising=False)
+        monkeypatch.setattr(
+            runner.DESIGN,
+            "load_encoder_import_correction_for_consumption",
+            lambda **_kwargs: (_ for _ in ()).throw(AssertionError(
+                "old import correction must not be live-loaded")))
+        def load_contract(**kwargs: Any) -> dict[str, Any]:
+            assert kwargs["encoder_compute_dtype_correction"] \
+                is self.dtype_correction
+            self.events.append("validate:immutable-scorer-contract")
+            return {}
+
         monkeypatch.setattr(
             runner.SCORER_CONTRACT, "load_contract_for_consumption",
-            lambda **_kwargs: self.events.append(
-                "validate:immutable-scorer-contract") or {})
+            load_contract)
         monkeypatch.setattr(
             runner.BUILDER,
             "load_and_validate_full_bank_v2_manifests_for_consumption",
@@ -221,22 +247,25 @@ def test_pass_pipeline_has_exact_order_and_development_is_pass_gated(
     assert report["encoder_import_correction_digest"] == HEX_D
     assert report[
         runner.DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY] == HEX_D
+    assert report["encoder_compute_dtype_correction_digest"] == HEX_C
+    assert report[
+        runner.DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY] == HEX_C
     assert report["predictor_access_before_qualification"] is False
     assert report["final_200_state_corpus_generated"] is False
     assert fake.events.index(
-        "validate:encoder-import-correction") < fake.events.index(
+        "validate:encoder-compute-dtype-correction") < fake.events.index(
             "validate:immutable-scorer-contract")
     assert fake.events.index(
         "validate:immutable-scorer-contract") < fake.events.index(
             "command:smoke_encoding")
 
 
-def test_missing_encoder_import_correction_blocks_before_any_command(
+def test_missing_encoder_compute_dtype_correction_blocks_before_any_command(
         monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
     fake = FakePipeline(monkeypatch, tmp_path)
     monkeypatch.setattr(
         runner.DESIGN,
-        "load_encoder_import_correction_for_consumption",
+        "load_encoder_compute_dtype_correction_for_consumption",
         lambda **_kwargs: (_ for _ in ()).throw(
             runner.FullBankV2RunnerError("fixture correction missing")))
     with pytest.raises(runner.FullBankV2RunnerError,
@@ -328,6 +357,8 @@ def test_optional_smoke_accepts_only_complete_branch_to_encoder_transition(
         "rendered_horizon_frame_count": 48,
         "true_latent_trajectory_count": 12,
         "true_latent_trajectory_shape": [4, 768, 1024],
+        "encoder_compute_dtype": "float32",
+        "encoder_compute_dtype_correction_digest": HEX_C,
         "state_id": "smoke-state",
         "branch_identity_digests": identities,
         "branch_row_digests": rows,
@@ -385,6 +416,9 @@ def test_optional_smoke_accepts_only_complete_branch_to_encoder_transition(
         runner.BUILDER,
         "load_and_validate_full_bank_v2_manifests_for_consumption",
         lambda **_kwargs: {
+            "design_authority": {
+                "encoder_compute_dtype_correction_digest": HEX_C,
+            },
             "state_manifest": {"state_manifest_digest": state_digest},
             "assignment_manifest": {
                 "full_bank_assignment_manifest_digest": assignment_digest},
@@ -404,6 +438,23 @@ def test_optional_smoke_accepts_only_complete_branch_to_encoder_transition(
     assert projection["terminal_present"] is True
     assert projection["smoke_protocol_complete"] is True
     assert projection["requires_full_encoder_refresh"] is True
+    smoke["encoder_compute_dtype_correction_digest"] = HEX_D
+    smoke["smoke_receipt_digest"] = runner.canonical_digest({
+        key: value for key, value in smoke.items()
+        if key != "smoke_receipt_digest"
+    })
+    with pytest.raises(runner.FullBankV2RunnerError,
+                       match="encoding smoke receipt changed"):
+        runner._optional_encoding_smoke_projection(root=tmp_path)
+    smoke["encoder_compute_dtype_correction_digest"] = HEX_C
+    smoke["encoder_compute_dtype"] = "bfloat16"
+    smoke["smoke_receipt_digest"] = runner.canonical_digest({
+        key: value for key, value in smoke.items()
+        if key != "smoke_receipt_digest"
+    })
+    with pytest.raises(runner.FullBankV2RunnerError,
+                       match="encoding smoke receipt changed"):
+        runner._optional_encoding_smoke_projection(root=tmp_path)
 
 
 def test_resume_deletion_window_repairs_once_without_second_deletion(
@@ -671,6 +722,46 @@ def test_parser_exposes_source_correction_before_manifest_stage() -> None:
     assert manifests.stage == "freeze-manifests"
 
 
+def test_issue_scorer_contract_does_not_require_later_runtime_correction(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    artifact = {
+        "contract_digest": HEX_C,
+        "artifact_digest": HEX_D,
+    }
+
+    class FakeContract:
+        CONTRACT_SELF_KEY = "contract_digest"
+        ARTIFACT_SELF_KEY = "artifact_digest"
+
+        def issue_contract(self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue")
+            return artifact
+
+        def validate_contract_artifact(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            events.append("validate-issued")
+            return dict(value)
+
+        def contract_artifact_binding(
+                self, value: Mapping[str, Any], *, root: Path,
+                ) -> Mapping[str, Any]:
+            assert root == tmp_path and value == artifact
+            events.append("reopen-issued-bytes")
+            return {"self_digest": HEX_D}
+
+        def load_contract_for_consumption(self, **_kwargs: Any) -> None:
+            raise AssertionError(
+                "historical issuance must not require dtype correction")
+
+    report = runner.issue_scorer_contract(
+        root=tmp_path, contract_authority=FakeContract())
+    assert events == ["issue", "validate-issued", "reopen-issued-bytes"]
+    assert report["scorer_fit_corpus_v2_scorer_contract_digest"] == HEX_C
+    assert report["contract_artifact_digest"] == HEX_D
+
+
 def test_issue_encoder_import_correction_preserves_issued_contract(
         tmp_path: Path) -> None:
     events: list[str] = []
@@ -688,6 +779,7 @@ def test_issue_encoder_import_correction_preserves_issued_contract(
     class FakeDesign:
         ENCODER_IMPORT_CORRECTION_SELF_KEY = (
             "encoder_import_correction_digest")
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
         ENCODER_IMPORT_CORRECTION_STATUS = "ISSUED_FIXTURE_CORRECTION"
 
         def issue_encoder_import_correction(
@@ -709,6 +801,66 @@ def test_issue_encoder_import_correction_preserves_issued_contract(
         == HEX_D
     assert report["scorer_contract_reissued_or_rewritten"] is False
     assert report["preoutcome_manifests_reissued_or_rewritten"] is False
+    assert report["replayed_from_immutable_dtype_correction_lineage"] is False
+
+
+def test_old_import_issue_stage_replays_nested_immutable_at_current_source(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    old = {
+        "immutable_successor_scorer_contract_binding": {
+            "self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+            "embedded_contract_self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        },
+        "encoder_import_correction_digest": HEX_D,
+    }
+    immutable = {"payload": old, "binding": {"self_digest": HEX_D}}
+    dtype = {
+        "immutable_encoder_import_correction": immutable,
+        "immutable_encoder_import_correction_digest": HEX_D,
+    }
+
+    class FakeDesign:
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
+        ENCODER_IMPORT_CORRECTION_STATUS = "ISSUED_FIXTURE_CORRECTION"
+        ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH = (
+            runner.DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH)
+
+        def load_encoder_compute_dtype_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("load-dtype")
+            return dtype
+
+        def validate_immutable_encoder_import_correction(
+                self, value: Mapping[str, Any]) -> Mapping[str, Any]:
+            assert value == immutable
+            events.append("validate-immutable-import")
+            return immutable
+
+        def issue_encoder_import_correction(self, **_kwargs: Any) -> None:
+            raise AssertionError("immutable import correction was reissued")
+
+        def load_encoder_import_correction_for_consumption(
+                self, **_kwargs: Any) -> None:
+            raise AssertionError(
+                "historical import source was live-reinterpreted")
+
+    dtype_path = tmp_path / (
+        FakeDesign.ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH)
+    dtype_path.parent.mkdir(parents=True)
+    dtype_path.write_text("installed fixture marker")
+    report = runner.issue_encoder_import_correction(
+        root=tmp_path, design_authority=FakeDesign())
+    assert events == ["load-dtype", "validate-immutable-import"]
+    assert report["scorer_fit_corpus_v2_encoder_import_correction_digest"] \
+        == HEX_D
+    assert report["replayed_from_immutable_dtype_correction_lineage"] is True
+    assert report["scorer_contract_reissued_or_rewritten"] is False
 
 
 def test_parser_exposes_encoder_import_correction_before_resume_run() -> None:
@@ -717,6 +869,65 @@ def test_parser_exposes_encoder_import_correction_before_resume_run() -> None:
     resumed = runner._parser().parse_args(
         ["--stage", "run", "--resume"])
     assert correction.stage == "issue-encoder-import-correction"
+    assert resumed.stage == "run" and resumed.resume is True
+
+
+def test_issue_encoder_compute_dtype_correction_preserves_predecessors(
+        tmp_path: Path) -> None:
+    events: list[str] = []
+    payload = {
+        "immutable_encoder_import_correction": {
+            "payload": {"encoder_import_correction_digest": HEX_D},
+            "binding": {"self_digest": HEX_D},
+        },
+        "immutable_encoder_import_correction_digest": HEX_D,
+        "immutable_successor_scorer_contract_binding": {
+            "self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+            "embedded_contract_self_digest":
+                runner.SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        },
+        "encoder_compute_dtype_correction_digest": HEX_C,
+    }
+
+    class FakeDesign:
+        ENCODER_IMPORT_CORRECTION_SELF_KEY = (
+            "encoder_import_correction_digest")
+        IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST = HEX_D
+        ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY = (
+            "encoder_compute_dtype_correction_digest")
+        ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS = "ISSUED_FIXTURE_DTYPE"
+
+        def issue_encoder_compute_dtype_correction(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("issue-dtype")
+            return payload
+
+        def load_encoder_compute_dtype_correction_for_consumption(
+                self, *, root: Path) -> Mapping[str, Any]:
+            assert root == tmp_path
+            events.append("reopen-dtype")
+            return payload
+
+    report = runner.issue_encoder_compute_dtype_correction(
+        root=tmp_path, design_authority=FakeDesign())
+    assert events == ["issue-dtype", "reopen-dtype"]
+    assert report["encoder_compute_dtype_correction_digest"] == HEX_C
+    assert report["encoder_import_correction_digest"] == HEX_D
+    assert report["encoder_import_correction_reissued_or_rewritten"] is False
+    assert report["scorer_contract_reissued_or_rewritten"] is False
+    assert report["preoutcome_manifests_reissued_or_rewritten"] is False
+    assert report["branch_latent_or_scorer_runtime_started_by_issue_stage"] \
+        is False
+
+
+def test_parser_exposes_dtype_correction_before_resume_run() -> None:
+    correction = runner._parser().parse_args(
+        ["--stage", "issue-encoder-compute-dtype-correction"])
+    resumed = runner._parser().parse_args(
+        ["--stage", "run", "--resume"])
+    assert correction.stage == "issue-encoder-compute-dtype-correction"
     assert resumed.stage == "run" and resumed.resume is True
 
 

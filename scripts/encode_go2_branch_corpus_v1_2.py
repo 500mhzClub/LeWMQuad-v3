@@ -137,6 +137,7 @@ FULL_BANK_V2_ENCODING_INVOCATION_SCHEMA = (
 FULL_BANK_V2_EXPECTED_STATES = 120
 FULL_BANK_V2_EXPECTED_BRANCHES = 1_440
 FULL_BANK_V2_EXPECTED_CANDIDATES_PER_STATE = 12
+TARGET_ENCODER_COMPUTE_DTYPE_NAME = "float32"
 FULL_BANK_V2_INDEX_NAME = "latents_index_v2.json"
 FULL_BANK_V2_ENCODING_SUMMARY_NAME = "encoding_invocation_summary_v2.json"
 FULL_BANK_V2_SMOKE_NAME = "smoke_encoding_receipt_v2.json"
@@ -174,12 +175,18 @@ def _is_full_bank_v2_manifest(value: Mapping[str, Any]) -> bool:
 
 
 def _load_full_bank_v2_source_correction_authority(
-        ) -> tuple[str, dict[str, Any], dict[str, Any]]:
+        ) -> tuple[str, str, dict[str, Any], dict[str, Any]]:
     """Validate the corrected source boundary before opening branch outputs."""
 
     try:
         authority = V2_DESIGN.load_active_design_authority(root=ROOT)
-        artifact = V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+        dtype_correction = authority.get("encoder_compute_dtype_correction")
+        if not isinstance(dtype_correction, Mapping):
+            raise RuntimeError(
+                "active encoder-compute-dtype correction is unavailable")
+        artifact = V2_CONTRACT.load_contract_for_consumption(
+            root=ROOT,
+            encoder_compute_dtype_correction=dtype_correction)
         artifact = V2_CONTRACT.validate_contract_artifact(artifact)
     except (OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         raise RuntimeError(
@@ -189,16 +196,25 @@ def _load_full_bank_v2_source_correction_authority(
     lineage = (contract.get("preoutcome_lineage")
                if isinstance(contract, Mapping) else None)
     digest = authority.get("source_correction_digest")
+    dtype_correction_digest = authority.get(
+        "encoder_compute_dtype_correction_digest")
     if (not isinstance(digest, str)
             or len(digest) != 64
             or any(character not in "0123456789abcdef" for character in digest)
+            or not isinstance(dtype_correction_digest, str)
+            or len(dtype_correction_digest) != 64
+            or any(character not in "0123456789abcdef"
+                   for character in dtype_correction_digest)
+            or dtype_correction.get(
+                V2_DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+            != dtype_correction_digest
             or not isinstance(lineage, Mapping)
             or lineage.get("scorer_fit_corpus_v2_source_correction_digest")
             != digest):
         raise RuntimeError(
             "full-bank V2 active authority/successor source-correction "
             "lineage changed")
-    return digest, dict(artifact), dict(contract)
+    return digest, dtype_correction_digest, dict(artifact), dict(contract)
 
 
 def _corpus_binding_keys(manifest: Mapping[str, Any]) -> tuple[str, ...]:
@@ -862,14 +878,15 @@ def _load_inputs(out: Path, *, allow_partial: bool,
 def _load_full_bank_v2_inputs(
         out: Path, *, allow_partial: bool,
         ) -> tuple[dict[str, Any], dict[str, Any], list[dict[str, Any]],
-                   dict[str, Any]]:
+                   dict[str, Any], str]:
     """Consume the exact V2 producers without opening legacy allocation data."""
 
     expected_out = OUT_ROOT / "scorer_fit"
     if out != expected_out:
         raise RuntimeError(
             "full-bank V2 encoding is registered only for scorer_fit")
-    correction_digest, artifact, successor = (
+    (correction_digest, encoder_compute_dtype_correction_digest,
+     artifact, successor) = (
         _load_full_bank_v2_source_correction_authority())
     try:
         bundle = (
@@ -941,13 +958,37 @@ def _load_full_bank_v2_inputs(
             or manifest.get("target_encoder_checkpoint_sha256")
             != target.get("checkpoint_sha256")):
         raise RuntimeError("full-bank V2 target-encoder contract changed")
-    return manifest, receipt, rows, dict(artifact)
+    return (manifest, receipt, rows, dict(artifact),
+            encoder_compute_dtype_correction_digest)
 
 
 def normalise(tokens: torch.Tensor) -> torch.Tensor:
     """The frozen factorial target normalisation."""
 
     return F.layer_norm(tokens, (tokens.shape[-1],))
+
+
+def target_encoder_compute_dtype(
+        device: torch.device, *, full_bank_v2: bool) -> torch.dtype:
+    """Keep legacy precision unchanged; use FP32 only for full-bank V2."""
+
+    if full_bank_v2:
+        return torch.float32
+    return torch.bfloat16 if device.type == "cuda" else torch.float32
+
+
+def _validate_target_encoder_compute_dtype(value: Any, *, label: str) -> None:
+    if value != TARGET_ENCODER_COMPUTE_DTYPE_NAME:
+        raise RuntimeError(f"{label} target-encoder compute dtype changed")
+
+
+def _validate_encoder_compute_dtype_correction_digest(
+        value: Any, *, label: str) -> str:
+    if (not isinstance(value, str) or len(value) != 64
+            or any(character not in "0123456789abcdef" for character in value)):
+        raise RuntimeError(
+            f"{label} encoder-compute-dtype correction digest changed")
+    return value
 
 
 def encode_paths(arm: Any, encoder: Any, paths: list[str], device: torch.device,
@@ -1007,6 +1048,7 @@ def _validate_full_bank_v2_latent_index(
         index: Mapping[str, Any], *, out: Path,
         manifest: Mapping[str, Any], receipt: Mapping[str, Any],
         rows: list[dict[str, Any]], contract_artifact: Mapping[str, Any],
+        encoder_compute_dtype_correction_digest: str,
         require_complete: bool, verify_encoder_checkpoint: bool,
         ) -> dict[str, Any]:
     """Validate the exact atomic-shard index produced by this module."""
@@ -1015,6 +1057,12 @@ def _validate_full_bank_v2_latent_index(
     _verify_self_digest(index, "latents_index_digest", "full-bank V2 latent index")
     artifact = V2_CONTRACT.validate_contract_artifact(contract_artifact)
     successor = artifact["contract"]
+    _validate_target_encoder_compute_dtype(
+        index.get("encoder_compute_dtype"), label="full-bank V2 latent index")
+    expected_dtype_correction_digest = (
+        _validate_encoder_compute_dtype_correction_digest(
+            encoder_compute_dtype_correction_digest,
+            label="active full-bank V2 authority"))
     expected_bindings = {
         key: manifest[key] for key in FULL_BANK_V2_BINDING_KEYS
     }
@@ -1022,6 +1070,8 @@ def _validate_full_bank_v2_latent_index(
             or index.get("status") != STATUS
             or index.get("pool") != "scorer_fit_v2"
             or index.get("corpus_design") != "full-bank-v2"
+            or index.get("encoder_compute_dtype_correction_digest")
+            != expected_dtype_correction_digest
             or index.get("state_manifest_digest")
             != manifest["state_manifest_digest"]
             or index.get("full_bank_assignment_manifest_digest")
@@ -1130,8 +1180,9 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
     """Validate the one registered 12-candidate V2 smoke and its shards."""
 
     scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
-    manifest, receipt, rows, artifact = _load_full_bank_v2_inputs(
-        scorer_fit, allow_partial=True)
+    (manifest, receipt, rows, artifact,
+     encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
+         scorer_fit, allow_partial=True)
     branch_bundle = (
         CORPUS_BUILDER
         .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
@@ -1144,7 +1195,10 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
         label="full-bank V2 latent index")
     index = _validate_full_bank_v2_latent_index(
         index, out=scorer_fit, manifest=manifest, receipt=receipt, rows=rows,
-        contract_artifact=artifact, require_complete=False,
+        contract_artifact=artifact,
+        encoder_compute_dtype_correction_digest=
+            encoder_compute_dtype_correction_digest,
+        require_complete=False,
         verify_encoder_checkpoint=verify_encoder_checkpoint)
     smoke = _read_regular_json(
         scorer_fit / FULL_BANK_V2_SMOKE_NAME,
@@ -1159,9 +1213,14 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
     smoke_contexts = [
         record for record in index["context_records"]
         if record["state_id"] == smoke_state_id]
+    _validate_target_encoder_compute_dtype(
+        smoke.get("encoder_compute_dtype"),
+        label="full-bank V2 encoding smoke receipt")
     expected_candidates = list(range(12))
     if (smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
             or smoke.get("status") != STATUS
+            or smoke.get("encoder_compute_dtype_correction_digest")
+            != encoder_compute_dtype_correction_digest
             or smoke.get("base_end_to_end_pass") is not True
             or smoke.get("candidate_indices") != expected_candidates
             or smoke.get("branch_count") != 12
@@ -1266,6 +1325,8 @@ def load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
         "registered_smoke_shard_inventory": latent_inventory,
         "registered_smoke_shard_inventory_digest": canonical_digest(
             latent_inventory),
+        "encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest,
         "state_count": 1,
         "horizon_latent_count": 12,
         "horizon_shape": [HORIZONS, TOKENS, TOKEN_DIM],
@@ -1297,8 +1358,9 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
     # retained only for a source-only test seam; it cannot weaken production.
     _ = verify_frame_paths
     scorer_fit = OUT_ROOT / "scorer_fit" if out is None else Path(out)
-    manifest, receipt, rows, artifact = _load_full_bank_v2_inputs(
-        scorer_fit, allow_partial=False)
+    (manifest, receipt, rows, artifact,
+     encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
+         scorer_fit, allow_partial=False)
     branch_bundle = (
         CORPUS_BUILDER
         .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
@@ -1314,7 +1376,10 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
         label="full-bank V2 latent index")
     index = _validate_full_bank_v2_latent_index(
         index, out=scorer_fit, manifest=manifest, receipt=receipt, rows=rows,
-        contract_artifact=artifact, require_complete=True,
+        contract_artifact=artifact,
+        encoder_compute_dtype_correction_digest=
+            encoder_compute_dtype_correction_digest,
+        require_complete=True,
         verify_encoder_checkpoint=verify_encoder_checkpoint)
     smoke_bundle = (
         load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
@@ -1330,6 +1395,8 @@ def load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
         "latent_index_digest": index["latents_index_digest"],
         "encoder_checkpoint_sha256": manifest[
             "target_encoder_checkpoint_sha256"],
+        "encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest,
     }
     return {
         "state_manifest": manifest,
@@ -1381,7 +1448,8 @@ def main() -> int:
             "full-bank V2 does not authorise final-evaluation encoding")
     if full_bank_v2:
         (manifest, corpus_receipt, all_rows,
-         v2_contract_artifact) = _load_full_bank_v2_inputs(
+         v2_contract_artifact,
+         encoder_compute_dtype_correction_digest) = _load_full_bank_v2_inputs(
              out, allow_partial=args.smoke)
         contract_lineage = None
         operational_contract_digest = v2_contract_artifact[
@@ -1390,6 +1458,7 @@ def main() -> int:
         manifest, corpus_receipt, all_rows, contract_lineage = _load_inputs(
             out, allow_partial=args.smoke, pool=args.pool)
         v2_contract_artifact = None
+        encoder_compute_dtype_correction_digest = None
         operational_contract_digest = (
             contract_lineage["current_scorer_contract_v1_2_digest"]
             if contract_lineage is not None else contract_digest()
@@ -1493,6 +1562,15 @@ def main() -> int:
                 else "go2_branch_corpus_v1_2_latents_index_v2")
             if prior.get("schema") != expected_index_schema:
                 raise RuntimeError("prior latent-index schema changed")
+            if full_bank_v2:
+                _validate_target_encoder_compute_dtype(
+                    prior.get("encoder_compute_dtype"),
+                    label="prior full-bank V2 latent index")
+                if prior.get("encoder_compute_dtype_correction_digest") != (
+                        encoder_compute_dtype_correction_digest):
+                    raise RuntimeError(
+                        "prior full-bank V2 encoder-compute-dtype correction "
+                        "digest changed")
             contract_matches = (
                 prior.get("scorer_fit_corpus_v2_scorer_contract_digest")
                 == operational_contract_digest if full_bank_v2 else
@@ -1625,7 +1703,8 @@ def main() -> int:
     new_horizon_shards = len(missing_horizon)
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+    dtype = target_encoder_compute_dtype(
+        device, full_bank_v2=full_bank_v2)
     arm = E.VJepa21CroppedV03Arm()
     if E.preprocessing_hash(arm) != PREPROCESSING_SHA256:
         raise RuntimeError("frozen V03 preprocessing identity changed")
@@ -1710,6 +1789,11 @@ def main() -> int:
         **({"corpus_design": "full-bank-v2"} if full_bank_v2 else {}),
         "complete": complete,
         "encoder": encoder_identity,
+        **({"encoder_compute_dtype": TARGET_ENCODER_COMPUTE_DTYPE_NAME}
+           if full_bank_v2 else {}),
+        **({"encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest}
+           if full_bank_v2 else {}),
         "target_encoder_digest": manifest["target_encoder_digest"],
         "target_encoder_checkpoint_sha256":
             manifest["target_encoder_checkpoint_sha256"],
@@ -1826,6 +1910,11 @@ def main() -> int:
             if (prior_smoke.get("schema") != FULL_BANK_V2_SMOKE_SCHEMA
                     or prior_smoke.get("state_identity_digest")
                     != state["state_identity_digest"]
+                    or prior_smoke.get("encoder_compute_dtype")
+                    != TARGET_ENCODER_COMPUTE_DTYPE_NAME
+                    or prior_smoke.get(
+                        "encoder_compute_dtype_correction_digest")
+                    != encoder_compute_dtype_correction_digest
                     or prior_smoke.get(
                         "scorer_fit_corpus_v2_scorer_contract_digest")
                     != operational_contract_digest):
@@ -1846,6 +1935,11 @@ def main() -> int:
             and smoke_context_shape_ok
             and smoke_horizon_shape_ok
             and index["preprocessing_digest"] == PREPROCESSING_SHA256
+            and (not full_bank_v2 or index.get("encoder_compute_dtype")
+                 == TARGET_ENCODER_COMPUTE_DTYPE_NAME)
+            and (not full_bank_v2 or index.get(
+                "encoder_compute_dtype_correction_digest")
+                == encoder_compute_dtype_correction_digest)
             and all(row.get("utility") is not None for row in rows)
             and resume_only_verified)
         smoke = {
@@ -1869,6 +1963,9 @@ def main() -> int:
                 "rendered_horizon_frame_count": 48,
                 "true_latent_trajectory_count": 12,
                 "true_latent_trajectory_shape": [4, TOKENS, TOKEN_DIM],
+                "encoder_compute_dtype": TARGET_ENCODER_COMPUTE_DTYPE_NAME,
+                "encoder_compute_dtype_correction_digest":
+                    encoder_compute_dtype_correction_digest,
             } if full_bank_v2 else {}),
             "state_id": state["state_id"],
             "state_identity_digest": state["state_identity_digest"],
