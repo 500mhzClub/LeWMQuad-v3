@@ -31,7 +31,62 @@ REGISTERED_GENERATED_TARGET_ROOT = Path(
     "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/"
     "active/go2_scorer_fit_oracle_v1_3"
 )
+SUPERSEDED_PREATTEMPT_ARCHIVE_ROOT = (
+    REGISTERED_GENERATED_TARGET_ROOT.parent
+    / "go2_scorer_fit_oracle_v1_3_superseded_snapshot_gate_c4f28d67"
+)
+GENESIS_RUNTIME_CONTRACT = {
+    "interpreter_relative_path":
+        ".generated/venvs/genesis_render_vulkan/bin/python",
+    "pyvenv_config_relative_path":
+        ".generated/venvs/genesis_render_vulkan/pyvenv.cfg",
+    "pyvenv_config_sha256":
+        "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9",
+    "pyvenv_config_byte_count": 219,
+    "python_version": "3.12.3",
+    "genesis_version": "0.3.14",
+    "numpy_version": "2.4.6",
+    "torch_version": "2.12.0+cu130",
+    "backend": "cpu",
+    "gstaichi_version": "4.6.0",
+}
+SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY = {
+    "source_commit": "c4f28d67a97646eaddfcf268432cce793bbdf126",
+    "authority": {
+        "self_digest":
+            "e8bbecc4820897e4a9854a323ec3b2e38e0bae0e726845a32544d33ce64e0703",
+        "raw_sha256":
+            "cd906f464975c755ad5b6257ad60e3df70dcc22a14d8b4d7e296f0bb07b7cc25",
+        "byte_count": 51976,
+    },
+    "replay_plan": {
+        "self_digest":
+            "14228b2c2a2a39dcf4f51f79a29baa820f17641b94220a73ea62ff22ed5ea37e",
+        "raw_sha256":
+            "434660c6aa862675f74517123693b75420ab539ceb62e7c5b9c3bc3ecef153cd",
+        "byte_count": 122301,
+    },
+    "equivalence_receipt": {
+        "self_digest":
+            "1bb88a95ef4694136a106ff1ef9b3240232a94853682888d030b21f284443074",
+        "raw_sha256":
+            "b0bfad652c9244220179b68d397eb2b5ac99c6d7b9d545c62660bf3b450d4ed2",
+        "byte_count": 644424,
+    },
+    "replay_attempt_markers": 0,
+    "replay_overlays": 0,
+    "candidate_branch_execution_started": False,
+    "archive_root": str(SUPERSEDED_PREATTEMPT_ARCHIVE_ROOT),
+    "disposition": "SUPERSEDED_PREATTEMPT_IMPLEMENTATION_CORRECTION",
+    "reason": (
+        "the in-process snapshot digest includes unpersisted process-global RNG "
+        "history and is not a cross-run physical-state fingerprint"
+    ),
+}
 AUTHORITY_PATH = GENERATED_ROOT / "authority.json"
+SUPERSEDED_PREATTEMPT_TRANSITION_PATH = (
+    GENERATED_ROOT / "superseded_preattempt_transition.json"
+)
 REPLAY_PLAN_PATH = GENERATED_ROOT / "replay_plan.json"
 EQUIVALENCE_RECEIPT_PATH = GENERATED_ROOT / "equivalence_receipt.json"
 REPLAY_ATTEMPTS_ROOT = GENERATED_ROOT / "replay_attempts"
@@ -333,6 +388,8 @@ QUALIFICATION_THRESHOLDS = {
 
 OUTPUT_PATHS = {
     "authority": str(AUTHORITY_PATH),
+    "superseded_preattempt_transition":
+        str(SUPERSEDED_PREATTEMPT_TRANSITION_PATH),
     "replay_plan": str(REPLAY_PLAN_PATH),
     "equivalence_receipt": str(EQUIVALENCE_RECEIPT_PATH),
     "replay_attempts_root": str(REPLAY_ATTEMPTS_ROOT),
@@ -461,12 +518,29 @@ def contract() -> dict[str, Any]:
         "exact_replay_allowlist_digest": failed_branch_allowlist_digest(),
         "replay_policy": {
             "attempts": 18,
-            "exact_source_state_snapshot_candidate_and_action": True,
+            "exact_source_state_redrive_and_candidate_action": True,
+            "source_snapshot_digest_preserved_as_lineage": True,
+            "source_snapshot_digest_equality_required": False,
+            "source_snapshot_digest_limitation": (
+                "snapshot bytes and original process-global RNG history were not "
+                "persisted"
+            ),
+            "prebranch_physical_witness": (
+                "three context poses plus persisted proprio/control/action context "
+                "and previous applied command"
+            ),
+            "context_pose_atol": 1e-5,
+            "horizon_pose_atol": 1e-5,
+            "action_atol": 1e-6,
+            "four_horizon_pose_checks_required": True,
             "new_overlay_only": True,
             "predecessor_rows_or_frames_overwritten": False,
             "retry_or_replacement": False,
             "all_twenty_ticks_required": True,
         },
+        "genesis_runtime": dict(GENESIS_RUNTIME_CONTRACT),
+        "superseded_preattempt_execution_authority":
+            dict(SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY),
         "legacy_valid_equivalence": {
             "row_count": 1422,
             "mode": "exact v1.2 label adoption plus deterministic recomputation",
@@ -653,6 +727,7 @@ __all__ = [
     "FAILED_BRANCH_ALLOWLIST",
     "FAILED_BRANCH_IDENTITIES",
     "FAMILIES",
+    "GENESIS_RUNTIME_CONTRACT",
     "FIT_IDENTITY_PROJECTION_DIGEST",
     "FRESH_CALIBRATION_CORPUS_RECEIPT_PATH",
     "FRESH_CALIBRATION_FRAMES_ROOT",
@@ -694,6 +769,9 @@ __all__ = [
     "SOURCE_CLOSURE_PATHS",
     "STAGE_COUNTS",
     "STRATA",
+    "SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY",
+    "SUPERSEDED_PREATTEMPT_ARCHIVE_ROOT",
+    "SUPERSEDED_PREATTEMPT_TRANSITION_PATH",
     "TEST_CLOSURE_PATHS",
     "TRACE_SCHEMA",
     "TRAINING_CHECKPOINTS_ROOT",

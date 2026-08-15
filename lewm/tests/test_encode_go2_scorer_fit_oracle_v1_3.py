@@ -218,5 +218,7 @@ def test_encoder_has_no_predictor_or_final_benchmark_route():
         line for line in source.splitlines() if line.lstrip().startswith(
             ("from ", "import ")))
     assert "final_eval" not in source
-    assert ENCODER.latent_index_path() == CONTRACT.LATENT_INDEX_PATH.resolve()
-    assert ENCODER.encoding_receipt_path() == CONTRACT.ENCODING_RECEIPT_PATH.resolve()
+    assert ENCODER.latent_index_path() == ENCODER.ROOT / CONTRACT.LATENT_INDEX_PATH
+    assert ENCODER.encoding_receipt_path() == (
+        ENCODER.ROOT / CONTRACT.ENCODING_RECEIPT_PATH
+    )

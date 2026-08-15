@@ -20,6 +20,7 @@ import argparse
 import copy
 import gc
 import hashlib
+import importlib.metadata
 import json
 import math
 import os
@@ -59,6 +60,11 @@ V2_ROOT = B.OUT_ROOT / "scorer_fit"
 AUTHORITY_SCHEMA = "go2_scorer_fit_oracle_v1_3_preregistration_authority_v1"
 AUTHORITY_SELF_KEY = "authority_digest"
 AUTHORITY_PATH = OUT_ROOT / "authority.json"
+SUPERSEDED_TRANSITION_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_superseded_preattempt_transition_v1"
+)
+SUPERSEDED_TRANSITION_SELF_KEY = "superseded_preattempt_transition_digest"
+SUPERSEDED_TRANSITION_PATH = OUT_ROOT / "superseded_preattempt_transition.json"
 REPLAY_PLAN_SCHEMA = "go2_scorer_fit_oracle_v1_3_exact_replay_plan_v1"
 REPLAY_PLAN_SELF_KEY = "replay_plan_digest"
 REPLAY_PLAN_PATH = OUT_ROOT / "replay_plan.json"
@@ -183,6 +189,43 @@ def file_sha256(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             hasher.update(chunk)
     return hasher.hexdigest()
+
+
+def require_genesis_runtime() -> dict[str, Any]:
+    """Require the exact CPU runtime frozen before physical branch execution."""
+
+    import torch
+
+    expected = V13_CONTRACT.GENESIS_RUNTIME_CONTRACT
+    interpreter = Path(sys.executable).absolute()
+    expected_interpreter = (
+        ROOT / expected["interpreter_relative_path"]
+    ).absolute()
+    pyvenv = ROOT / expected["pyvenv_config_relative_path"]
+    if interpreter != expected_interpreter:
+        raise WorkflowError("v1.3 Genesis interpreter differs from the frozen runtime")
+    if (
+        not pyvenv.is_file()
+        or pyvenv.is_symlink()
+        or pyvenv.stat().st_size != expected["pyvenv_config_byte_count"]
+        or file_sha256(pyvenv) != expected["pyvenv_config_sha256"]
+    ):
+        raise WorkflowError("v1.3 Genesis pyvenv binding changed")
+    actual = {
+        "interpreter_relative_path": _repo_relative(interpreter),
+        "pyvenv_config_relative_path": _repo_relative(pyvenv),
+        "pyvenv_config_sha256": file_sha256(pyvenv),
+        "pyvenv_config_byte_count": pyvenv.stat().st_size,
+        "python_version": sys.version.split()[0],
+        "genesis_version": importlib.metadata.version("genesis-world"),
+        "numpy_version": np.__version__,
+        "torch_version": torch.__version__,
+        "backend": "cpu",
+        "gstaichi_version": importlib.metadata.version("gstaichi"),
+    }
+    if actual != expected:
+        raise WorkflowError("v1.3 Genesis runtime package binding changed")
+    return actual
 
 
 def _with_self_digest(payload: Mapping[str, Any], key: str) -> dict[str, Any]:
@@ -315,6 +358,56 @@ def load_diagnostic(path: Path = DIAGNOSTIC_PATH) -> dict[str, Any]:
     return report
 
 
+def build_superseded_preattempt_transition() -> dict[str, Any]:
+    payload = {
+        "schema": SUPERSEDED_TRANSITION_SCHEMA,
+        "status": "SUPERSEDED_PREATTEMPT_IMPLEMENTATION_CORRECTION",
+        "superseded": copy.deepcopy(
+            V13_CONTRACT.SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY
+        ),
+        "archive_root": str(V13_CONTRACT.SUPERSEDED_PREATTEMPT_ARCHIVE_ROOT),
+        "registered_successor_root": str(
+            V13_CONTRACT.REGISTERED_GENERATED_TARGET_ROOT
+        ),
+        "old_bytes_preserved": True,
+        "candidate_branch_execution_started": False,
+        "retry_or_replacement": False,
+    }
+    return _with_self_digest(payload, SUPERSEDED_TRANSITION_SELF_KEY)
+
+
+def validate_superseded_preattempt_archive() -> dict[str, Any]:
+    """Validate the exact three-file zero-attempt predecessor after archival."""
+
+    archive = V13_CONTRACT.SUPERSEDED_PREATTEMPT_ARCHIVE_ROOT
+    if not archive.is_dir() or archive.is_symlink():
+        raise WorkflowError("superseded preattempt archive is absent or not regular")
+    expected = {
+        "authority.json": V13_CONTRACT.SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY[
+            "authority"
+        ],
+        "replay_plan.json": V13_CONTRACT.SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY[
+            "replay_plan"
+        ],
+        "equivalence_receipt.json":
+            V13_CONTRACT.SUPERSEDED_PREATTEMPT_EXECUTION_AUTHORITY[
+                "equivalence_receipt"
+            ],
+    }
+    if {path.name for path in archive.iterdir()} != set(expected):
+        raise WorkflowError("superseded preattempt archive inventory changed")
+    for name, binding in expected.items():
+        path = archive / name
+        if (
+            not path.is_file()
+            or path.is_symlink()
+            or path.stat().st_size != binding["byte_count"]
+            or file_sha256(path) != binding["raw_sha256"]
+        ):
+            raise WorkflowError(f"superseded preattempt archive changed: {name}")
+    return build_superseded_preattempt_transition()
+
+
 def _source_binding(root: Path = ROOT) -> dict[str, Any]:
     commit = subprocess.check_output(
         ["git", "rev-parse", "HEAD"], cwd=root, text=True
@@ -393,6 +486,10 @@ def build_authority(
         "source_binding": copy.deepcopy(dict(source_binding)),
         "oracle_v1_3_digest": oracle.oracle_digest(),
         "scorer_fit_oracle_v1_3_contract_digest": contract_digest,
+        "superseded_preattempt_transition_digest":
+            build_superseded_preattempt_transition()[
+                SUPERSEDED_TRANSITION_SELF_KEY
+            ],
         "oracle_contract": oracle.oracle_contract(),
         "diagnostic": {
             "path": _repo_relative(DIAGNOSTIC_PATH),
@@ -416,7 +513,11 @@ def build_authority(
             "rgb_policy": "REUSE_IMMUTABLE_V2_FRAMES_NO_RERENDER",
             "horizon_pose_atol": HORIZON_POSE_ATOL,
             "action_atol": ACTION_ATOL,
+            "source_snapshot_digest_preserved_as_lineage": True,
+            "source_snapshot_digest_equality_required": False,
+            "prebranch_physical_witness_required": True,
         },
+        "genesis_runtime": dict(V13_CONTRACT.GENESIS_RUNTIME_CONTRACT),
         "legacy_equivalence": {
             "adopted_valid_count": EXPECTED_V2_VALID,
             "fit_adopted_count": EXPECTED_OLD_FIT_VALID,
@@ -491,6 +592,10 @@ def validate_authority(payload: Mapping[str, Any]) -> None:
         or payload.get("oracle_v1_3_digest") != _v13().oracle_digest()
         or payload.get("scorer_fit_oracle_v1_3_contract_digest")
         != V13_CONTRACT.contract_digest()
+        or payload.get("genesis_runtime")
+        != V13_CONTRACT.GENESIS_RUNTIME_CONTRACT
+        or payload.get("superseded_preattempt_transition_digest")
+        != build_superseded_preattempt_transition()[SUPERSEDED_TRANSITION_SELF_KEY]
     ):
         raise WorkflowError("v1.3 preregistration authority changed")
     prohibited = payload.get("prohibited")
@@ -508,12 +613,26 @@ def validate_authority(payload: Mapping[str, Any]) -> None:
 def issue_authority(*, root: Path = ROOT, out_root: Path = OUT_ROOT) -> dict[str, Any]:
     report = load_diagnostic(root / DIAGNOSTIC_PATH.relative_to(ROOT))
     authority = build_authority(_source_binding(root), report)
+    if out_root.absolute() == OUT_ROOT.absolute():
+        transition = validate_superseded_preattempt_archive()
+        _atomic_json(
+            out_root / SUPERSEDED_TRANSITION_PATH.name,
+            transition,
+            out_root=out_root,
+        )
     _atomic_json(out_root / "authority.json", authority, out_root=out_root)
     return authority
 
 
 def load_authority(path: Path = AUTHORITY_PATH) -> dict[str, Any]:
     guarded_output_path("authority.json", out_root=path.parent)
+    if path.parent.absolute() == OUT_ROOT.absolute():
+        transition = _read_regular_json(
+            path.parent / SUPERSEDED_TRANSITION_PATH.name
+        )
+        _validate_self_digest(transition, SUPERSEDED_TRANSITION_SELF_KEY)
+        if transition != validate_superseded_preattempt_archive():
+            raise WorkflowError("superseded preattempt transition changed")
     authority = _read_regular_json(path)
     validate_authority(authority)
     live_commit = subprocess.check_output(
@@ -689,6 +808,19 @@ def build_replay_plan(
             or row.get("invalid_reason") != "unlocatable_or_unreachable_geodesic"
         ):
             raise WorkflowError("exact replay identity is not one diagnosed V2 refusal")
+        source_context_poses = [
+            frame.get("camera_pose_world")
+            for frame in row.get("context_frames", [])
+        ]
+        source_horizon_poses = [
+            frame.get("camera_pose_world")
+            for frame in row.get("horizon_frames", [])
+        ]
+        source_prebranch_witness = _normalised_prebranch_witness(
+            proprio=row.get("proprio"), control=row.get("control"),
+            action_context_blocks=row.get("action_context_blocks"),
+            previous_applied_command=row.get("previous_applied_command"),
+        )
         entries.append({
             **expected,
             "snapshot_digest": row.get("snapshot_digest"),
@@ -697,10 +829,13 @@ def build_replay_plan(
             "goal": row.get("goal"),
             "requested": row.get("requested"),
             "post_slew": row.get("post_slew"),
-            "horizon_camera_poses": [
-                frame.get("camera_pose_world")
-                for frame in row.get("horizon_frames", [])
-            ],
+            "source_context_camera_poses": source_context_poses,
+            "source_context_pose_digest": digest(source_context_poses),
+            "source_prebranch_witness": source_prebranch_witness,
+            "source_prebranch_witness_digest":
+                digest(source_prebranch_witness),
+            "horizon_camera_poses": source_horizon_poses,
+            "source_horizon_pose_digest": digest(source_horizon_poses),
         })
     entries.sort(key=lambda value: value["branch_identity_digest"])
     payload = {
@@ -1104,13 +1239,160 @@ def _pose_to_camera_pose(ctx: V1.BranchContext, pose: BasePose) -> dict[str, lis
     }
 
 
-def validate_replay_equality(
-    *, old_row: Mapping[str, Any], snapshot_digest: str,
-    branch: Mapping[str, Any], horizon_camera_poses: Sequence[Mapping[str, Any]],
-    pose_atol: float = HORIZON_POSE_ATOL, action_atol: float = ACTION_ATOL,
+def _camera_pose_sequence_error(
+    old_poses: Sequence[Mapping[str, Any]],
+    new_poses: Sequence[Mapping[str, Any]], *, expected_count: int,
+    pose_atol: float,
+) -> float:
+    if len(old_poses) != expected_count or len(new_poses) != expected_count:
+        raise WorkflowError(f"exact replay lacks {expected_count} old/new poses")
+    deviations: list[float] = []
+    for old, new in zip(old_poses, new_poses):
+        for key in ("position", "lookat", "up"):
+            old_values = np.asarray(old.get(key), dtype=np.float64)
+            new_values = np.asarray(new.get(key), dtype=np.float64)
+            if old_values.shape != (3,) or new_values.shape != (3,):
+                raise WorkflowError("replay camera pose is malformed")
+            deviation = float(np.max(np.abs(old_values - new_values)))
+            deviations.append(deviation)
+            if deviation > pose_atol:
+                raise WorkflowError("exact replay camera pose exceeds frozen tolerance")
+    return max(deviations, default=0.0)
+
+
+def _normalised_prebranch_witness(
+    *, proprio: Any, control: Any, action_context_blocks: Any,
+    previous_applied_command: Any,
 ) -> dict[str, Any]:
-    if snapshot_digest != old_row.get("snapshot_digest"):
-        raise WorkflowError("exact replay snapshot digest changed before execution")
+    proprio_array = np.asarray(proprio, dtype=np.float32)
+    control_array = np.asarray(control, dtype=np.float32)
+    action_context_array = np.asarray(action_context_blocks, dtype=np.float64)
+    previous_array = np.asarray(previous_applied_command, dtype=np.float64)
+    if (
+        proprio_array.shape != (B.PROPRIO_HISTORY, 30)
+        or control_array.shape != (B.PROPRIO_HISTORY, 2)
+        or action_context_array.shape != (B.CONTEXT_SLOTS, 10)
+        or previous_array.shape != (3,)
+        or not all(np.all(np.isfinite(value)) for value in (
+            proprio_array, control_array, action_context_array, previous_array,
+        ))
+    ):
+        raise WorkflowError("exact replay prebranch physical witness is malformed")
+    return {
+        "proprio": proprio_array.tolist(),
+        "control": control_array.tolist(),
+        "action_context_blocks": action_context_array.tolist(),
+        "previous_applied_command": previous_array.tolist(),
+    }
+
+
+def validate_replay_preexecution(
+    *, old_row: Mapping[str, Any], replay_snapshot_digest: str,
+    context_camera_poses: Sequence[Mapping[str, Any]],
+    proprio: Sequence[Sequence[float]], control: Sequence[Sequence[float]],
+    action_context_blocks: Sequence[Sequence[float]],
+    previous_applied_command: Sequence[float],
+    pose_atol: float = HORIZON_POSE_ATOL,
+    action_atol: float = ACTION_ATOL,
+) -> dict[str, Any]:
+    """Validate the persisted physical pre-branch witness before an attempt."""
+
+    source_snapshot_digest = old_row.get("snapshot_digest")
+    if not _sha256_string(source_snapshot_digest) or not _sha256_string(
+            replay_snapshot_digest):
+        raise WorkflowError("exact replay snapshot lineage is malformed")
+    old_context_poses = [
+        frame.get("camera_pose_world")
+        for frame in old_row.get("context_frames", [])
+    ]
+    max_error = _camera_pose_sequence_error(
+        old_context_poses, context_camera_poses,
+        expected_count=3, pose_atol=pose_atol,
+    )
+    source_witness = _normalised_prebranch_witness(
+        proprio=old_row.get("proprio"), control=old_row.get("control"),
+        action_context_blocks=old_row.get("action_context_blocks"),
+        previous_applied_command=old_row.get("previous_applied_command"),
+    )
+    replay_witness = _normalised_prebranch_witness(
+        proprio=proprio, control=control,
+        action_context_blocks=action_context_blocks,
+        previous_applied_command=previous_applied_command,
+    )
+    old_proprio = np.asarray(source_witness["proprio"], dtype=np.float32)
+    new_proprio = np.asarray(replay_witness["proprio"], dtype=np.float32)
+    old_control = np.asarray(source_witness["control"], dtype=np.float32)
+    new_control = np.asarray(replay_witness["control"], dtype=np.float32)
+    old_action_context = np.asarray(
+        source_witness["action_context_blocks"], dtype=np.float64
+    )
+    new_action_context = np.asarray(
+        replay_witness["action_context_blocks"], dtype=np.float64
+    )
+    old_previous = np.asarray(
+        source_witness["previous_applied_command"], dtype=np.float64
+    )
+    new_previous = np.asarray(
+        replay_witness["previous_applied_command"], dtype=np.float64
+    )
+    if not np.array_equal(old_proprio, new_proprio):
+        raise WorkflowError("exact replay proprio history changed")
+    if not np.array_equal(old_control, new_control):
+        raise WorkflowError("exact replay control history changed")
+    action_context_error = float(np.max(np.abs(
+        old_action_context - new_action_context
+    )))
+    previous_error = float(np.max(np.abs(old_previous - new_previous)))
+    if action_context_error > action_atol:
+        raise WorkflowError("exact replay action context changed")
+    if previous_error > action_atol:
+        raise WorkflowError("exact replay previous applied command changed")
+    return {
+        "source_snapshot_digest": source_snapshot_digest,
+        "replay_snapshot_digest": replay_snapshot_digest,
+        "source_snapshot_digest_preserved_as_lineage": True,
+        "snapshot_digest_equality_required": False,
+        "snapshot_digest_limitation": (
+            "source snapshot bytes and original process-global RNG history were not "
+            "persisted"
+        ),
+        "context_pose_atol": float(pose_atol),
+        "max_context_camera_pose_abs_error": max_error,
+        "three_context_poses_within_tolerance": True,
+        "source_context_pose_digest": digest(old_context_poses),
+        "replay_context_pose_digest": digest(list(context_camera_poses)),
+        "replay_context_camera_poses": copy.deepcopy(list(context_camera_poses)),
+        "source_prebranch_witness_digest": digest(source_witness),
+        "replay_prebranch_witness_digest": digest(replay_witness),
+        "replay_prebranch_witness": replay_witness,
+        "proprio_history_exact": True,
+        "control_history_exact": True,
+        "prebranch_action_atol": float(action_atol),
+        "max_action_context_abs_error": action_context_error,
+        "action_context_within_tolerance": True,
+        "max_previous_applied_command_abs_error": previous_error,
+        "previous_applied_command_within_tolerance": True,
+    }
+
+
+def validate_replay_equality(
+    *, old_row: Mapping[str, Any], branch: Mapping[str, Any],
+    horizon_camera_poses: Sequence[Mapping[str, Any]],
+    preexecution: Mapping[str, Any], pose_atol: float = HORIZON_POSE_ATOL,
+    action_atol: float = ACTION_ATOL,
+) -> dict[str, Any]:
+    if (
+        preexecution.get("source_snapshot_digest")
+        != old_row.get("snapshot_digest")
+        or preexecution.get("source_snapshot_digest_preserved_as_lineage") is not True
+        or preexecution.get("snapshot_digest_equality_required") is not False
+        or preexecution.get("three_context_poses_within_tolerance") is not True
+        or preexecution.get("proprio_history_exact") is not True
+        or preexecution.get("control_history_exact") is not True
+        or preexecution.get("action_context_within_tolerance") is not True
+        or preexecution.get("previous_applied_command_within_tolerance") is not True
+    ):
+        raise WorkflowError("exact replay preexecution witness changed")
     if branch.get("requested") != old_row.get("realised_requested_prefix"):
         raise WorkflowError("exact replay requested action prefix changed")
     if not np.allclose(
@@ -1122,27 +1404,22 @@ def validate_replay_equality(
     old_poses = [
         frame.get("camera_pose_world") for frame in old_row.get("horizon_frames", [])
     ]
-    if len(old_poses) != 4 or len(horizon_camera_poses) != 4:
-        raise WorkflowError("exact replay lacks four old/new horizon poses")
-    deviations: list[float] = []
-    for old, new in zip(old_poses, horizon_camera_poses):
-        for key in ("position", "lookat", "up"):
-            old_values = np.asarray(old.get(key), dtype=np.float64)
-            new_values = np.asarray(new.get(key), dtype=np.float64)
-            if old_values.shape != (3,) or new_values.shape != (3,):
-                raise WorkflowError("replay camera pose is malformed")
-            deviation = float(np.max(np.abs(old_values - new_values)))
-            deviations.append(deviation)
-            if deviation > pose_atol:
-                raise WorkflowError("exact replay horizon pose exceeds frozen tolerance")
+    max_error = _camera_pose_sequence_error(
+        old_poses, horizon_camera_poses,
+        expected_count=4, pose_atol=pose_atol,
+    )
     return {
-        "snapshot_digest_exact": True,
+        **copy.deepcopy(dict(preexecution)),
         "requested_actions_exact": True,
         "post_slew_action_atol": float(action_atol),
         "post_slew_actions_within_tolerance": True,
         "horizon_pose_atol": float(pose_atol),
-        "max_horizon_camera_pose_abs_error": max(deviations, default=0.0),
+        "max_horizon_camera_pose_abs_error": max_error,
         "four_horizon_poses_within_tolerance": True,
+        "source_horizon_pose_digest": digest(old_poses),
+        "replay_horizon_pose_digest": digest(list(horizon_camera_poses)),
+        "replay_horizon_camera_poses":
+            copy.deepcopy(list(horizon_camera_poses)),
     }
 
 
@@ -1229,6 +1506,7 @@ def generate_replay_overlays(*, backend: str = "cpu",
     if backend != "cpu":
         raise WorkflowError("v1.3 branch runtime is frozen to CPU")
     authority = load_authority(out_root / "authority.json")
+    require_genesis_runtime()
     plan = load_replay_plan(out_root=out_root)
     corpus = load_v2_corpus()
     equivalence = _read_regular_json(out_root / "equivalence_receipt.json")
@@ -1264,8 +1542,23 @@ def generate_replay_overlays(*, backend: str = "cpu",
         )
         topology = V12.link_topology(ctx)
         ctx.begin_episode()
-        for _ in range(int(state["warmup_blocks"])):
-            B.drive_block_with_probe(ctx, lambda _tick, _previous: None)
+        proprio_log: list[list[float]] = []
+        control_log: list[list[float]] = []
+        action_context_blocks: list[list[float]] = []
+        context_poses: list[BasePose] = []
+        warmup_blocks = int(state["warmup_blocks"])
+
+        def probe(_tick_idx: int, previous_applied: Sequence[float]) -> None:
+            proprio_log.append(B.proprio_sample(ctx))
+            control_log.append(B.control_sample(previous_applied))
+
+        for block_index in range(warmup_blocks):
+            driven = B.drive_block_with_probe(ctx, probe)
+            if block_index >= warmup_blocks - B.CONTEXT_SLOTS:
+                action_context_blocks.append(B.action_block_10d(
+                    np.asarray(driven.executed, dtype=np.float64)[0]
+                ))
+                context_poses.append(capture_base_pose(ctx))
         verdict = B.classify_state(ctx, topology, requested_stratum=state["stratum"])
         if isinstance(verdict, str):
             raise WorkflowError(f"exact replay state redrive failed: {verdict}")
@@ -1284,12 +1577,30 @@ def generate_replay_overlays(*, backend: str = "cpu",
                 "source_step": state["source_step"], "episode_id": state["episode_id"],
             },
         )
-        expected_snapshots = {
-            old_by_identity[entry["branch_identity_digest"]]["snapshot_digest"]
+        context_camera_poses = [
+            _pose_to_camera_pose(ctx, pose) for pose in context_poses
+        ]
+        proprio = np.asarray(
+            proprio_log[-B.PROPRIO_HISTORY:], dtype=np.float32
+        )
+        control = np.asarray(
+            control_log[-B.PROPRIO_HISTORY:], dtype=np.float32
+        )
+        previous_applied = np.asarray(
+            ctx.runner._last_executed, dtype=np.float64
+        )[0].tolist()
+        preexecution_by_identity = {
+            entry["branch_identity_digest"]: validate_replay_preexecution(
+                old_row=old_by_identity[entry["branch_identity_digest"]],
+                replay_snapshot_digest=snapshot.digest,
+                context_camera_poses=context_camera_poses,
+                proprio=proprio.tolist(),
+                control=control.tolist(),
+                action_context_blocks=action_context_blocks,
+                previous_applied_command=previous_applied,
+            )
             for entry in entries_by_state[state_id]
         }
-        if expected_snapshots != {snapshot.digest}:
-            raise WorkflowError("exact replay snapshot differs before any candidate")
         for entry in sorted(entries_by_state[state_id], key=lambda row: row["candidate_index"]):
             identity = entry["branch_identity_digest"]
             output_path = _replay_overlay_path(identity, out_root=out_root)
@@ -1315,9 +1626,10 @@ def generate_replay_overlays(*, backend: str = "cpu",
             )
             old_row = old_by_identity[identity]
             equality = validate_replay_equality(
-                old_row=old_row, snapshot_digest=snapshot.digest, branch=branch,
+                old_row=old_row, branch=branch,
                 horizon_camera_poses=[_pose_to_camera_pose(ctx, pose)
                                       for pose in horizon_poses],
+                preexecution=preexecution_by_identity[identity],
             )
             score = _v13().score_branch_v13(branch)
             if score is None:
@@ -1343,6 +1655,70 @@ def _validate_replay_overlay_binding(
     identity = str(overlay.get("source_branch_identity_digest", ""))
     score = _v13().score_branch_v13(overlay.get("trace", {}))
     equality = overlay.get("replay_equality", {})
+    trace = overlay.get("trace", {})
+    source_context_poses = planned.get("source_context_camera_poses", [])
+    source_witness = planned.get("source_prebranch_witness", {})
+    replay_context_poses = equality.get("replay_context_camera_poses", [])
+    replay_witness = equality.get("replay_prebranch_witness", {})
+    replay_horizon_poses = equality.get("replay_horizon_camera_poses", [])
+    try:
+        source_normalised = _normalised_prebranch_witness(**source_witness)
+        replay_normalised = _normalised_prebranch_witness(**replay_witness)
+        context_error = _camera_pose_sequence_error(
+            source_context_poses, replay_context_poses,
+            expected_count=3, pose_atol=HORIZON_POSE_ATOL,
+        )
+        horizon_error = _camera_pose_sequence_error(
+            planned.get("horizon_camera_poses", []), replay_horizon_poses,
+            expected_count=4, pose_atol=HORIZON_POSE_ATOL,
+        )
+        source_proprio = np.asarray(source_normalised["proprio"], dtype=np.float32)
+        replay_proprio = np.asarray(replay_normalised["proprio"], dtype=np.float32)
+        source_control = np.asarray(source_normalised["control"], dtype=np.float32)
+        replay_control = np.asarray(replay_normalised["control"], dtype=np.float32)
+        source_action_context = np.asarray(
+            source_normalised["action_context_blocks"], dtype=np.float64
+        )
+        replay_action_context = np.asarray(
+            replay_normalised["action_context_blocks"], dtype=np.float64
+        )
+        source_previous = np.asarray(
+            source_normalised["previous_applied_command"], dtype=np.float64
+        )
+        replay_previous = np.asarray(
+            replay_normalised["previous_applied_command"], dtype=np.float64
+        )
+        action_context_error = float(np.max(np.abs(
+            source_action_context - replay_action_context
+        )))
+        previous_error = float(np.max(np.abs(source_previous - replay_previous)))
+        physical_witness_matches = bool(
+            np.array_equal(source_proprio, replay_proprio)
+            and np.array_equal(source_control, replay_control)
+            and action_context_error <= ACTION_ATOL
+            and previous_error <= ACTION_ATOL
+        )
+        post_slew_matches_plan = bool(np.allclose(
+            np.asarray(trace.get("post_slew"), dtype=np.float64),
+            np.asarray(planned.get("post_slew"), dtype=np.float64),
+            rtol=0.0, atol=ACTION_ATOL,
+        ))
+    except (TypeError, ValueError, WorkflowError):
+        context_error = math.inf
+        horizon_error = math.inf
+        action_context_error = math.inf
+        previous_error = math.inf
+        physical_witness_matches = False
+        post_slew_matches_plan = False
+
+    def finite_at_most(value: Any, limit: float) -> bool:
+        return bool(
+            not isinstance(value, bool)
+            and isinstance(value, (int, float))
+            and math.isfinite(float(value))
+            and 0.0 <= float(value) <= limit
+        )
+
     marker_path = _attempt_path("replay", identity, out_root=out_root)
     marker = _read_regular_json(marker_path)
     _validate_self_digest(marker, "attempt_digest")
@@ -1355,19 +1731,75 @@ def _validate_replay_overlay_binding(
         != authority["scorer_fit_oracle_v1_3_contract_digest"]
         or identity != planned.get("branch_identity_digest")
         or overlay.get("source_branch_row_digest") != planned.get("branch_row_digest")
+        or overlay.get("state_id") != planned.get("state_id")
         or overlay.get("state_identity_digest") != planned.get("state_identity_digest")
         or overlay.get("assignment_identity_digest")
         != planned.get("assignment_identity_digest")
+        or overlay.get("scene_id") != planned.get("scene_id")
+        or overlay.get("split_role") != planned.get("split_role")
         or overlay.get("candidate_index") != planned.get("candidate_index")
+        or overlay.get("candidate") != planned.get("candidate")
+        or overlay.get("goal") != planned.get("goal")
+        or trace.get("candidate") != planned.get("candidate")
+        or trace.get("primitives") != planned.get("primitives")
         or marker.get("kind") != "replay"
         or marker.get("identity_digest") != identity
         or overlay.get("attempt_digest") != marker.get("attempt_digest")
         or score is None
         or _label_projection(score) != _label_projection(overlay.get("labels", {}))
-        or equality.get("snapshot_digest_exact") is not True
+        or equality.get("source_snapshot_digest") != planned.get("snapshot_digest")
+        or not _sha256_string(equality.get("replay_snapshot_digest"))
+        or equality.get("source_snapshot_digest_preserved_as_lineage") is not True
+        or equality.get("snapshot_digest_equality_required") is not False
+        or equality.get("source_context_pose_digest")
+        != planned.get("source_context_pose_digest")
+        or planned.get("source_context_pose_digest")
+        != digest(source_context_poses)
+        or equality.get("replay_context_pose_digest")
+        != digest(replay_context_poses)
+        or equality.get("source_prebranch_witness_digest")
+        != planned.get("source_prebranch_witness_digest")
+        or planned.get("source_prebranch_witness_digest")
+        != digest(source_witness)
+        or equality.get("replay_prebranch_witness_digest")
+        != digest(replay_witness)
+        or not physical_witness_matches
+        or equality.get("three_context_poses_within_tolerance") is not True
+        or equality.get("proprio_history_exact") is not True
+        or equality.get("control_history_exact") is not True
+        or equality.get("action_context_within_tolerance") is not True
+        or equality.get("previous_applied_command_within_tolerance") is not True
+        or equality.get("context_pose_atol") != HORIZON_POSE_ATOL
+        or not finite_at_most(
+            equality.get("max_context_camera_pose_abs_error"), HORIZON_POSE_ATOL
+        )
+        or equality.get("max_context_camera_pose_abs_error") != context_error
+        or equality.get("prebranch_action_atol") != ACTION_ATOL
+        or not finite_at_most(
+            equality.get("max_action_context_abs_error"), ACTION_ATOL
+        )
+        or equality.get("max_action_context_abs_error") != action_context_error
+        or not finite_at_most(
+            equality.get("max_previous_applied_command_abs_error"), ACTION_ATOL
+        )
+        or equality.get("max_previous_applied_command_abs_error") != previous_error
         or equality.get("requested_actions_exact") is not True
         or equality.get("post_slew_actions_within_tolerance") is not True
+        or trace.get("requested") != planned.get("requested")
+        or not post_slew_matches_plan
+        or equality.get("post_slew_action_atol") != ACTION_ATOL
         or equality.get("four_horizon_poses_within_tolerance") is not True
+        or equality.get("source_horizon_pose_digest")
+        != planned.get("source_horizon_pose_digest")
+        or planned.get("source_horizon_pose_digest")
+        != digest(planned.get("horizon_camera_poses", []))
+        or equality.get("replay_horizon_pose_digest")
+        != digest(replay_horizon_poses)
+        or equality.get("horizon_pose_atol") != HORIZON_POSE_ATOL
+        or not finite_at_most(
+            equality.get("max_horizon_camera_pose_abs_error"), HORIZON_POSE_ATOL
+        )
+        or equality.get("max_horizon_camera_pose_abs_error") != horizon_error
         or overlay.get("v2_row_modified") is not False
         or overlay.get("v2_rgb_rerendered") is not False
     ):
@@ -1508,6 +1940,7 @@ def select_fresh_calibration_states(*, backend: str = "cpu",
     if backend != "cpu":
         raise WorkflowError("fresh calibration selection is CPU-only")
     authority = load_authority(out_root / "authority.json")
+    require_genesis_runtime()
     corpus = load_v2_corpus()
     # Selection is downstream of the fixed replay/equivalence result, and no
     # candidate outcome participates in this state selection.
@@ -1798,6 +2231,7 @@ def generate_fresh_calibration(*, backend: str = "cpu",
     if backend != "cpu":
         raise WorkflowError("fresh calibration branch generation is CPU-only")
     authority = load_authority(out_root / "authority.json")
+    require_genesis_runtime()
     corpus = load_v2_corpus()
     manifest = _read_regular_json(out_root / "fresh_calibration/state_manifest.json")
     validate_fresh_calibration_manifest(

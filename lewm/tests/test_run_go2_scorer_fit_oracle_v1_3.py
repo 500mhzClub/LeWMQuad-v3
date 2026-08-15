@@ -70,6 +70,17 @@ def _v2_rows(diagnostic):
             "goal": record["designated_goal"],
             "requested": record["requested_and_post_slew_action"]["requested"],
             "post_slew": record["requested_and_post_slew_action"]["post_slew"],
+            "proprio": [[0.0] * 30 for _ in range(15)],
+            "control": [[0.0] * 2 for _ in range(15)],
+            "action_context_blocks": [[0.0] * 10 for _ in range(3)],
+            "previous_applied_command": [0.0, 0.0, 0.0],
+            "context_frames": [
+                {"camera_pose_world": {
+                    "position": [float(index), 0.0, 0.0],
+                    "lookat": [float(index) + 1.0, 0.0, 0.0],
+                    "up": [0.0, 0.0, 1.0],
+                }} for index in range(3)
+            ],
             "horizon_frames": [
                 {"camera_pose_world": {
                     "position": [float(index), 0.0, 0.0],
@@ -194,6 +205,16 @@ def test_replay_plan_is_exact_eighteen_and_rejects_subset(
     plan = W.build_replay_plan(authority, diagnostic, rows)
     W.validate_replay_plan(plan, authority, diagnostic, rows)
     assert len(plan["entries"]) == 18
+    for entry in plan["entries"]:
+        assert entry["source_context_pose_digest"] == W.digest(
+            entry["source_context_camera_poses"]
+        )
+        assert entry["source_prebranch_witness_digest"] == W.digest(
+            entry["source_prebranch_witness"]
+        )
+        assert entry["source_horizon_pose_digest"] == W.digest(
+            entry["horizon_camera_poses"]
+        )
     subset = copy.deepcopy(plan)
     subset["entries"].pop()
     subset["entry_count"] = 17
@@ -250,29 +271,70 @@ def _camera_pose(offset: float = 0.0):
     }
 
 
-def test_exact_replay_equality_checks_snapshot_actions_and_all_four_poses():
+def test_exact_replay_uses_preserved_prebranch_witness_not_snapshot_equality():
     actions = [[[0.1, 0.0, 0.0]] * 5] * 4
+    proprio = [[float(index)] * 30 for index in range(15)]
+    control = [[float(index), -float(index)] for index in range(15)]
+    action_context = [[float(index)] * 10 for index in range(3)]
+    previous = [0.1, -0.2, 0.3]
     old = {
         "snapshot_digest": "a" * 64,
         "realised_requested_prefix": actions,
         "post_slew": actions,
+        "proprio": proprio,
+        "control": control,
+        "action_context_blocks": action_context,
+        "previous_applied_command": previous,
+        "context_frames": [
+            {"camera_pose_world": _camera_pose()} for _ in range(3)
+        ],
         "horizon_frames": [{"camera_pose_world": _camera_pose()} for _ in range(4)],
     }
     branch = {"requested": actions, "post_slew": actions}
+    preexecution = W.validate_replay_preexecution(
+        old_row=old,
+        replay_snapshot_digest="b" * 64,
+        context_camera_poses=[_camera_pose(1e-7) for _ in range(3)],
+        proprio=proprio,
+        control=control,
+        action_context_blocks=action_context,
+        previous_applied_command=previous,
+    )
     result = W.validate_replay_equality(
-        old_row=old, snapshot_digest="a" * 64, branch=branch,
+        old_row=old, preexecution=preexecution, branch=branch,
         horizon_camera_poses=[_camera_pose(1e-7) for _ in range(4)],
     )
-    assert result["snapshot_digest_exact"] is True
+    assert result["source_snapshot_digest"] == "a" * 64
+    assert result["replay_snapshot_digest"] == "b" * 64
+    assert result["snapshot_digest_equality_required"] is False
+    assert result["proprio_history_exact"] is True
+    assert result["control_history_exact"] is True
     assert result["four_horizon_poses_within_tolerance"] is True
-    with pytest.raises(W.WorkflowError, match="snapshot"):
-        W.validate_replay_equality(
-            old_row=old, snapshot_digest="b" * 64, branch=branch,
-            horizon_camera_poses=[_camera_pose() for _ in range(4)],
+    with pytest.raises(W.WorkflowError, match="camera pose"):
+        W.validate_replay_preexecution(
+            old_row=old,
+            replay_snapshot_digest="b" * 64,
+            context_camera_poses=[_camera_pose(1e-2) for _ in range(3)],
+            proprio=proprio,
+            control=control,
+            action_context_blocks=action_context,
+            previous_applied_command=previous,
         )
-    with pytest.raises(W.WorkflowError, match="pose"):
+    changed_proprio = copy.deepcopy(proprio)
+    changed_proprio[0][0] += 1.0
+    with pytest.raises(W.WorkflowError, match="proprio"):
+        W.validate_replay_preexecution(
+            old_row=old,
+            replay_snapshot_digest="b" * 64,
+            context_camera_poses=[_camera_pose() for _ in range(3)],
+            proprio=changed_proprio,
+            control=control,
+            action_context_blocks=action_context,
+            previous_applied_command=previous,
+        )
+    with pytest.raises(W.WorkflowError, match="camera pose"):
         W.validate_replay_equality(
-            old_row=old, snapshot_digest="a" * 64, branch=branch,
+            old_row=old, preexecution=preexecution, branch=branch,
             horizon_camera_poses=[_camera_pose(1e-2) for _ in range(4)],
         )
 
@@ -428,3 +490,21 @@ def test_replay_uses_the_verified_raw_state_manifest_without_runtime_authority()
     assert 'corpus["state_manifest"]["states"]' in source
     assert "load_full_bank_v2_branch_runtime_authority" not in source
     assert "_load_runtime_v2_authority" not in source
+
+
+def test_every_physical_stage_checks_the_frozen_genesis_runtime():
+    for function in (
+        W.generate_replay_overlays,
+        W.select_fresh_calibration_states,
+        W.generate_fresh_calibration,
+    ):
+        assert "require_genesis_runtime()" in inspect.getsource(function)
+
+
+def test_overlay_validator_recomputes_physical_witness_not_only_flags():
+    source = inspect.getsource(W._validate_replay_overlay_binding)
+    assert "_normalised_prebranch_witness(**source_witness)" in source
+    assert "_normalised_prebranch_witness(**replay_witness)" in source
+    assert "_camera_pose_sequence_error" in source
+    assert "physical_witness_matches" in source
+    assert 'trace.get("requested") != planned.get("requested")' in source

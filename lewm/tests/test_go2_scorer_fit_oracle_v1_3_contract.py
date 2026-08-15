@@ -173,6 +173,23 @@ def test_contract_freezes_endpoint_rule_and_never_authorises_missing_labels():
     assert contract["prohibitions"]["train_with_any_missing_label"] is True
 
 
+def test_replay_contract_uses_preserved_physical_witness_and_exact_runtime():
+    contract = C.contract()
+    replay = contract["replay_policy"]
+    assert replay["source_snapshot_digest_preserved_as_lineage"] is True
+    assert replay["source_snapshot_digest_equality_required"] is False
+    assert "proprio/control/action context" in replay["prebranch_physical_witness"]
+    assert contract["genesis_runtime"] == C.GENESIS_RUNTIME_CONTRACT
+    assert C.GENESIS_RUNTIME_CONTRACT["backend"] == "cpu"
+    assert C.GENESIS_RUNTIME_CONTRACT["genesis_version"] == "0.3.14"
+    assert C.GENESIS_RUNTIME_CONTRACT["gstaichi_version"] == "4.6.0"
+    assert C.GENESIS_RUNTIME_CONTRACT["numpy_version"] == "2.4.6"
+    superseded = contract["superseded_preattempt_execution_authority"]
+    assert superseded["candidate_branch_execution_started"] is False
+    assert superseded["replay_attempt_markers"] == 0
+    assert superseded["replay_overlays"] == 0
+
+
 def test_committed_preregistration_matches_the_complete_live_source_closure():
     artifact = json.loads((ROOT / C.PREREGISTRATION_PATH).read_text())
     assert C.validate_preregistration(artifact, root=ROOT) == artifact

@@ -237,6 +237,18 @@
       "worker_or_infrastructure_failure": "terminal; never skip to a replacement scene"
     },
     "fresh_calibration_selector_digest": "041607943d7246ee657584130e4fe35d7565944f933f3e07a9ee4ffc576981cb",
+    "genesis_runtime": {
+      "backend": "cpu",
+      "genesis_version": "0.3.14",
+      "gstaichi_version": "4.6.0",
+      "interpreter_relative_path": ".generated/venvs/genesis_render_vulkan/bin/python",
+      "numpy_version": "2.4.6",
+      "python_version": "3.12.3",
+      "pyvenv_config_byte_count": 219,
+      "pyvenv_config_relative_path": ".generated/venvs/genesis_render_vulkan/pyvenv.cfg",
+      "pyvenv_config_sha256": "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9",
+      "torch_version": "2.12.0+cu130"
+    },
     "historical_calibration_disposition": {
       "branch_count": 288,
       "discarded": false,
@@ -536,6 +548,7 @@
       "scorer_package": ".generated/go2_scorer_fit_oracle_v1_3/scorer/scorer_package.pt",
       "scorer_package_receipt": ".generated/go2_scorer_fit_oracle_v1_3/scorer/scorer_package_receipt.json",
       "scorer_root": ".generated/go2_scorer_fit_oracle_v1_3/scorer",
+      "superseded_preattempt_transition": ".generated/go2_scorer_fit_oracle_v1_3/superseded_preattempt_transition.json",
       "training_checkpoints_root": ".generated/go2_scorer_fit_oracle_v1_3/scorer/training",
       "training_execution_authorisation": ".generated/go2_scorer_fit_oracle_v1_3/scorer/training_execution_authorisation.json",
       "training_view": ".generated/go2_scorer_fit_oracle_v1_3/training_view.json"
@@ -577,12 +590,20 @@
     },
     "qualification_pass_authorises_predictor_open_in_this_workflow": false,
     "replay_policy": {
+      "action_atol": 1e-06,
       "all_twenty_ticks_required": true,
       "attempts": 18,
-      "exact_source_state_snapshot_candidate_and_action": true,
+      "context_pose_atol": 1e-05,
+      "exact_source_state_redrive_and_candidate_action": true,
+      "four_horizon_pose_checks_required": true,
+      "horizon_pose_atol": 1e-05,
       "new_overlay_only": true,
+      "prebranch_physical_witness": "three context poses plus persisted proprio/control/action context and previous applied command",
       "predecessor_rows_or_frames_overwritten": false,
-      "retry_or_replacement": false
+      "retry_or_replacement": false,
+      "source_snapshot_digest_equality_required": false,
+      "source_snapshot_digest_limitation": "snapshot bytes and original process-global RNG history were not persisted",
+      "source_snapshot_digest_preserved_as_lineage": true
     },
     "schema": "go2_scorer_fit_oracle_v1_3_contract_v1",
     "scorer_training": {
@@ -663,6 +684,30 @@
       "v1_3_simulator_branch_executions": 306
     },
     "status": "FROZEN_PREOUTCOME_DEVELOPMENT_CONTRACT",
+    "superseded_preattempt_execution_authority": {
+      "archive_root": "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/active/go2_scorer_fit_oracle_v1_3_superseded_snapshot_gate_c4f28d67",
+      "authority": {
+        "byte_count": 51976,
+        "raw_sha256": "cd906f464975c755ad5b6257ad60e3df70dcc22a14d8b4d7e296f0bb07b7cc25",
+        "self_digest": "e8bbecc4820897e4a9854a323ec3b2e38e0bae0e726845a32544d33ce64e0703"
+      },
+      "candidate_branch_execution_started": false,
+      "disposition": "SUPERSEDED_PREATTEMPT_IMPLEMENTATION_CORRECTION",
+      "equivalence_receipt": {
+        "byte_count": 644424,
+        "raw_sha256": "b0bfad652c9244220179b68d397eb2b5ac99c6d7b9d545c62660bf3b450d4ed2",
+        "self_digest": "1bb88a95ef4694136a106ff1ef9b3240232a94853682888d030b21f284443074"
+      },
+      "reason": "the in-process snapshot digest includes unpersisted process-global RNG history and is not a cross-run physical-state fingerprint",
+      "replay_attempt_markers": 0,
+      "replay_overlays": 0,
+      "replay_plan": {
+        "byte_count": 122301,
+        "raw_sha256": "434660c6aa862675f74517123693b75420ab539ceb62e7c5b9c3bc3ecef153cd",
+        "self_digest": "14228b2c2a2a39dcf4f51f79a29baa820f17641b94220a73ea62ff22ed5ea37e"
+      },
+      "source_commit": "c4f28d67a97646eaddfcf268432cce793bbdf126"
+    },
     "test_closure_paths": [
       "lewm/tests/test_go2_branch_oracle_v1_3.py",
       "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
@@ -671,12 +716,12 @@
       "lewm/tests/test_train_go2_utility_scorer_v1_3.py"
     ]
   },
-  "contract_digest": "2d95183be6386fc15f54ba87b013b338e2bee7e7f5fced7c3969a3f8b4b74d9c",
+  "contract_digest": "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89",
   "final_200_state_benchmark_generated": false,
   "fresh_calibration_candidate_generation_started": false,
   "latent_encoding_started": false,
   "predictor_utility_shards_opened": false,
-  "preregistration_digest": "ee6149ec8b49d9cacdbac2a7d52e20b049d27b8fdbc8f77fe4b97a279a9354b2",
+  "preregistration_digest": "6ec652931e2ab8085c391d88d4c199de3fd1db9061b824891a748821eb0119a7",
   "qualification_started": false,
   "schema": "go2_scorer_fit_oracle_v1_3_preregistration_v1",
   "scorer_training_started": false,
@@ -687,14 +732,14 @@
       "sha256": "e86d56cd238d9892219fb97edf00bf0042424881688d46caf422cea2e02894af"
     },
     {
-      "byte_count": 37421,
+      "byte_count": 40642,
       "path": "lewm/oracle/go2_scorer_fit_oracle_v1_3_contract.py",
-      "sha256": "7c1144f75607ae78c922001bc658a19a1d099f095792f7c51110cb32c4f8dc87"
+      "sha256": "12e4e5398b5aacb26cbfb6b692de82f76973f01d43261d895589a80a86fcf44e"
     },
     {
-      "byte_count": 112717,
+      "byte_count": 132883,
       "path": "scripts/run_go2_scorer_fit_oracle_v1_3.py",
-      "sha256": "176bdda98864d3a5751f6d953b86bfbbe849f96d073d4395e427c021b3695b52"
+      "sha256": "04312987630697882965ed79be6487bf4286579d0ffeec8d599ecfd9c6324a7e"
     },
     {
       "byte_count": 37842,
@@ -782,19 +827,19 @@
       "sha256": "6591f891e3062f16df84c300e59d9b169953f9d6805ea3747f72c4523702f8ab"
     },
     {
-      "byte_count": 7628,
+      "byte_count": 8573,
       "path": "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
-      "sha256": "f631850e6fbf83fbaf3f568e934d870b19e8ceba77a96138cc9e6c2f3f61077c"
+      "sha256": "f3927bf4cc6fae9b4a0999a091166876a546244960ef26a3299df2915df7abb4"
     },
     {
-      "byte_count": 17733,
+      "byte_count": 21112,
       "path": "lewm/tests/test_run_go2_scorer_fit_oracle_v1_3.py",
-      "sha256": "0393352fa4771fe034f59fea896ef8a02043818102265dff21a00b91ef908464"
+      "sha256": "a5ba822fb05132c9582189bba03bf0328572392b74b35840daf18658178d2026"
     },
     {
-      "byte_count": 10075,
+      "byte_count": 10101,
       "path": "lewm/tests/test_encode_go2_scorer_fit_oracle_v1_3.py",
-      "sha256": "c5c1bcb6dfe2171985b2049e9b08aa4024b3a1e0b00bbba08f32ae2c92bf4331"
+      "sha256": "8e75c316fb2be9cc7b91d968d882780dca6d791e9d19705916398d39815f400b"
     },
     {
       "byte_count": 5863,
