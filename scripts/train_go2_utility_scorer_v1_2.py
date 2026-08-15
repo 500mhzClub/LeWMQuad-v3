@@ -251,6 +251,24 @@ def sha256_file(path: Path, chunk_size: int = 8 << 20) -> str:
     return digest.hexdigest()
 
 
+def _contiguous_cpu_tensor_bytes(tensor: torch.Tensor) -> bytes:
+    """Return device-independent tensor bytes without assuming tensor rank."""
+
+    value = tensor.detach().to(device="cpu").contiguous()
+    return value.reshape(-1).view(torch.uint8).numpy().tobytes(order="C")
+
+
+def tensor_receipt_bytes(tensor: torch.Tensor) -> bytes:
+    """Canonical dtype/shape/value binding for tensors, including scalars."""
+
+    value = tensor.detach().to(device="cpu").contiguous()
+    return b"".join((
+        str(value.dtype).encode("ascii"),
+        json.dumps(list(value.shape)).encode("ascii"),
+        _contiguous_cpu_tensor_bytes(value),
+    ))
+
+
 def state_dict_digest(state: Mapping[str, torch.Tensor]) -> str:
     """Stable digest independent of torch.save container metadata."""
 
@@ -258,59 +276,62 @@ def state_dict_digest(state: Mapping[str, torch.Tensor]) -> str:
     for name in sorted(state):
         tensor = state[name].detach().cpu().contiguous()
         digest.update(name.encode("utf-8"))
-        digest.update(str(tensor.dtype).encode("ascii"))
-        digest.update(json.dumps(list(tensor.shape)).encode("ascii"))
-        digest.update(tensor.view(torch.uint8).numpy().tobytes())
+        digest.update(tensor_receipt_bytes(tensor))
     return digest.hexdigest()
 
 
 def tensor_digest(tensor: torch.Tensor) -> str:
-    value = tensor.detach().cpu().contiguous()
-    digest = hashlib.sha256()
-    digest.update(str(value.dtype).encode("ascii"))
-    digest.update(json.dumps(list(value.shape)).encode("ascii"))
-    digest.update(value.view(torch.uint8).numpy().tobytes())
-    return digest.hexdigest()
+    return hashlib.sha256(tensor_receipt_bytes(tensor)).hexdigest()
+
+
+def structured_receipt_bytes(value: Any) -> bytes:
+    """Canonical bytes for nested optimiser/RNG state.
+
+    Mapping keys and sequence positions are emitted before their values, so
+    each tensor digest is bound to its stable field path in the nested state.
+    """
+
+    payload = bytearray()
+
+    def update(item: Any) -> None:
+        if isinstance(item, torch.Tensor):
+            payload.extend(b"torch:")
+            payload.extend(tensor_digest(item).encode("ascii"))
+        elif isinstance(item, np.ndarray):
+            array = np.ascontiguousarray(item)
+            payload.extend(b"numpy:")
+            payload.extend(str(array.dtype).encode("ascii"))
+            payload.extend(json.dumps(list(array.shape)).encode("ascii"))
+            payload.extend(array.tobytes())
+        elif isinstance(item, Mapping):
+            payload.extend(b"mapping{")
+            for key in sorted(item, key=lambda candidate: repr(candidate)):
+                update(key)
+                update(item[key])
+            payload.extend(b"}")
+        elif isinstance(item, tuple):
+            payload.extend(b"tuple[")
+            for member in item:
+                update(member)
+            payload.extend(b"]")
+        elif isinstance(item, list):
+            payload.extend(b"list[")
+            for member in item:
+                update(member)
+            payload.extend(b"]")
+        else:
+            payload.extend(type(item).__name__.encode("ascii"))
+            payload.extend(b":")
+            payload.extend(repr(item).encode("utf-8"))
+
+    update(value)
+    return bytes(payload)
 
 
 def structured_digest(value: Any) -> str:
     """Stable digest for nested optimiser/RNG state containing tensors/arrays."""
 
-    digest = hashlib.sha256()
-
-    def update(item: Any) -> None:
-        if isinstance(item, torch.Tensor):
-            digest.update(b"torch:")
-            digest.update(tensor_digest(item).encode("ascii"))
-        elif isinstance(item, np.ndarray):
-            array = np.ascontiguousarray(item)
-            digest.update(b"numpy:")
-            digest.update(str(array.dtype).encode("ascii"))
-            digest.update(json.dumps(list(array.shape)).encode("ascii"))
-            digest.update(array.tobytes())
-        elif isinstance(item, Mapping):
-            digest.update(b"mapping{")
-            for key in sorted(item, key=lambda candidate: repr(candidate)):
-                update(key)
-                update(item[key])
-            digest.update(b"}")
-        elif isinstance(item, tuple):
-            digest.update(b"tuple[")
-            for member in item:
-                update(member)
-            digest.update(b"]")
-        elif isinstance(item, list):
-            digest.update(b"list[")
-            for member in item:
-                update(member)
-            digest.update(b"]")
-        else:
-            digest.update(type(item).__name__.encode("ascii"))
-            digest.update(b":")
-            digest.update(repr(item).encode("utf-8"))
-
-    update(value)
-    return digest.hexdigest()
+    return hashlib.sha256(structured_receipt_bytes(value)).hexdigest()
 
 
 def _fsync_directory(path: Path) -> None:

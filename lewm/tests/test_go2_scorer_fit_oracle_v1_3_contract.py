@@ -290,6 +290,11 @@ def test_replay_contract_uses_preserved_physical_witness_and_exact_runtime():
     assert superseded["replay_overlays"] == 0
 
 
-def test_committed_preregistration_matches_the_complete_live_source_closure():
+def test_committed_predecessor_preregistration_remains_immutable_after_repair():
     artifact = json.loads((ROOT / C.PREREGISTRATION_PATH).read_text())
-    assert C.validate_preregistration(artifact, root=ROOT) == artifact
+    assert C.validate_preregistration(artifact, root=None) == artifact
+    trainer_source = (
+        ROOT / "scripts/train_go2_utility_scorer_v1_3.py").read_text()
+    assert "load_preserved_encoded_training_view_for_replacement" in trainer_source
+    assert "root=None, out_root=out_root" in trainer_source
+    assert "replacement_source_binding(root)" in trainer_source

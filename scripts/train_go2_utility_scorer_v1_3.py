@@ -10,11 +10,13 @@ evaluation corpus is opened by this module.
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import math
 import os
 from pathlib import Path
+import subprocess
 import sys
 from typing import Any, Mapping, Sequence
 
@@ -49,6 +51,10 @@ PACKAGE_RECEIPT_SELF_KEY = "scorer_package_receipt_digest"
 BASELINE_RECEIPT_SELF_KEY = "baseline_receipt_digest"
 TRAINING_AUTHORISATION_SELF_KEY = "training_execution_authorisation_digest"
 EVALUATION_AUTHORISATION_SELF_KEY = "qualification_evaluation_authorisation_digest"
+INVALID_ATTEMPT_SELF_KEY = CONTRACT.INVALID_TRAINING_ATTEMPT_SELF_KEY
+REPLACEMENT_AUTHORISATION_SELF_KEY = (
+    CONTRACT.SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SELF_KEY
+)
 
 EXPECTED_FIT_STATES = 96
 EXPECTED_FIT_ROWS = 1_152
@@ -59,6 +65,58 @@ EXPECTED_UPDATES_PER_EPOCH = 18
 EXPECTED_UPDATES_PER_MODEL = 1_080
 EXPECTED_PRESENTATIONS_PER_MODEL = 69_120
 SOURCE_DIGEST_KEYS = ENCODER.SOURCE_DIGEST_KEYS
+REPAIR_CHANGED_PATHS = frozenset({
+    "lewm/oracle/go2_scorer_fit_oracle_v1_3_contract.py",
+    "lewm/tests/test_train_go2_utility_scorer_v1_2.py",
+    "lewm/tests/test_train_go2_utility_scorer_v1_3.py",
+    "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
+    "scripts/train_go2_utility_scorer_v1_2.py",
+    "scripts/train_go2_utility_scorer_v1_3.py",
+})
+SERIALIZER_SMOKE_NODE = (
+    "lewm/tests/test_train_go2_utility_scorer_v1_2.py::"
+    "UtilityScorerTrainerTests::"
+    "test_tiny_production_training_checkpoint_receipt_smoke"
+)
+ORIGINAL_EXCEPTION_TYPE = "RuntimeError"
+ORIGINAL_EXCEPTION_MESSAGE = (
+    "self.dim() cannot be 0 to view Float as Byte (different element sizes)"
+)
+ORIGINAL_TRACEBACK_FRAMES = [
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_3.py", "line": 1021,
+        "source": "raise SystemExit(main())",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_3.py", "line": 1006,
+        "source": "result = train_and_qualify(device_name=args.device)",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_3.py", "line": 809,
+        "source": "FROZEN_TRAINER.train_registered_model(",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_2.py", "line": 3109,
+        "source": '"optimizer_state_digest": structured_digest(optimizer_state),',
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_2.py", "line": 312,
+        "source": "update(value)",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_2.py", "line": 295,
+        "source": "update(item[key])",
+        "note": "repeated recursive frame in nested AdamW state",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_2.py", "line": 284,
+        "source": "digest.update(tensor_digest(item).encode(\"ascii\"))",
+    },
+    {
+        "path": "scripts/train_go2_utility_scorer_v1_2.py", "line": 272,
+        "source": "digest.update(value.view(torch.uint8).numpy().tobytes())",
+    },
+]
 
 
 class V13TrainingError(RuntimeError):
@@ -95,35 +153,44 @@ def scorer_root(root: Path = ROOT) -> Path:
 
 
 def qualification_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.QUALIFICATION_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_QUALIFICATION_PATH
 
 
 def scorer_package_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.SCORER_PACKAGE_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_PACKAGE_PATH
 
 
 def scorer_package_receipt_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.SCORER_PACKAGE_RECEIPT_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_PACKAGE_RECEIPT_PATH
 
 
 def baseline_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.NO_LATENT_BASELINE_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_BASELINE_PATH
 
 
 def baseline_receipt_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.NO_LATENT_BASELINE_RECEIPT_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_BASELINE_RECEIPT_PATH
 
 
 def failed_scorer_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.FAILED_SCORER_PATH
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_FAILED_SCORER_PATH
 
 
-def training_authorisation_path(root: Path = ROOT) -> Path:
+def original_training_authorisation_path(root: Path = ROOT) -> Path:
     return root / CONTRACT.TRAINING_EXECUTION_AUTHORISATION_PATH
 
 
+def invalid_attempt_receipt_path(root: Path = ROOT) -> Path:
+    return root / CONTRACT.INVALID_TRAINING_ATTEMPT_RECEIPT_PATH
+
+
+def replacement_authorisation_path(root: Path = ROOT) -> Path:
+    return root / CONTRACT.SCORER_TRAINING_REPLACEMENT_AUTHORISATION_PATH
+
+
 def evaluation_authorisation_path(root: Path = ROOT) -> Path:
-    return root / CONTRACT.QUALIFICATION_EVALUATION_AUTHORISATION_PATH
+    return root / (
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_EVALUATION_AUTHORISATION_PATH)
 
 
 def _signed(value: Mapping[str, Any], self_key: str) -> dict[str, Any]:
@@ -334,7 +401,8 @@ def corpus_from_encoded_bundle(bundle: Mapping[str, Any]) -> dict[str, Any]:
              "fit/calibration scenes overlap")
     store = FROZEN_TRAINER.HorizonShardStore(
         records, Path(bundle.get("encoded_root", ENCODER.encoded_root())))
-    return {"view": view, "index": index, "rows": rows,
+    return {"view": view, "index": index, "receipt": bundle.get("receipt"),
+            "rows": rows,
             "fit_rows": fit, "calibration_rows": calibration,
             "horizon": store}
 
@@ -363,45 +431,30 @@ def _preflight_registered_training(
         name: str, *, use_latent: bool,
         registration: Mapping[str, Any], training_run_digest: str,
         device: torch.device, budget: Mapping[str, Any], training_rows: int,
-        continuation_authorised: bool, root: Path) -> None:
-    """Reject any state the inherited trainer would turn into a restart."""
+        root: Path) -> None:
+    """Require a fresh replacement namespace; resume and retry are forbidden."""
 
-    model_root = scorer_root(root) / "training" / name
+    model_root = (root / CONTRACT.SCORER_TRAINING_REPLACEMENT_CHECKPOINTS_ROOT
+                  / name)
     attempts = sorted(path for path in model_root.glob("attempt_*")
                       if path.is_dir() and not path.is_symlink()) \
         if model_root.is_dir() and not model_root.is_symlink() else []
     candidates = FROZEN_TRAINER._checkpoint_candidates(model_root) \
         if model_root.is_dir() and not model_root.is_symlink() else []
-    _require(not attempts or continuation_authorised,
-             f"{name} has training attempts without the immutable run authority")
-    _require(not attempts or candidates,
-             f"{name} has a non-resumable prior attempt; retry is forbidden")
-    if not candidates:
-        return
-    checkpoint_path = candidates[0]
-    _require(checkpoint_path.is_file() and not checkpoint_path.is_symlink(),
-             f"{name} newest checkpoint is not a regular file")
-    try:
-        payload = torch.load(checkpoint_path, map_location="cpu",
-                             weights_only=False)
-        execution = FROZEN_TRAINER._execution_fingerprint(device)
-        FROZEN_TRAINER._validate_checkpoint(
-            payload, name=name, use_latent=use_latent,
-            training_run_digest=training_run_digest,
-            initial_state_digest=registration["initial_state_digest"],
-            execution=execution, training_rows=training_rows,
-            epochs=int(budget["epochs"]), path=checkpoint_path)
-        probe = FROZEN_TRAINER.UtilityScorer(use_latent=use_latent)
-        probe.load_state_dict(payload["model_state_dict"], strict=True)
-        probe.to(device)
-        optimiser = FROZEN_TRAINER._new_optimiser(probe, budget)
-        optimiser.load_state_dict(payload["optimizer_state_dict"])
-        generator = torch.Generator(device="cpu")
-        generator.set_state(payload["order_generator_state"])
-    except Exception as exc:
-        raise V13TrainingError(
-            f"{name} newest checkpoint is not exactly resumable; retry is "
-            f"forbidden: {exc}") from exc
+    del use_latent, registration, training_run_digest, device, budget, training_rows
+    _require(not candidates,
+             f"{name} has a checkpoint; resume or retry is not authorised")
+    if name == "latent":
+        expected = model_root / "attempt_000"
+        _require(attempts == [expected]
+                 and (expected / "attempt.json").is_file()
+                 and not (expected / "attempt.json").is_symlink(),
+                 "latent replacement requires exactly the preserved failed "
+                 "attempt_000 and no later attempt")
+    else:
+        _require(not attempts,
+                 "no-latent baseline was already started; replacement is "
+                 "not authorised")
 
 
 def _binding_payload(corpus: Mapping[str, Any]) -> dict[str, Any]:
@@ -438,6 +491,487 @@ def _binding_payload(corpus: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
+def _git_output(root: Path, *arguments: str) -> str:
+    try:
+        return subprocess.check_output(
+            ["git", *arguments], cwd=root, text=True,
+            stderr=subprocess.STDOUT).strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise V13TrainingError(f"cannot validate replacement source: {exc}") from exc
+
+
+def replacement_source_binding(root: Path = ROOT) -> dict[str, Any]:
+    """Bind a clean committed repair and reject any broader source change."""
+
+    head = _git_output(root, "rev-parse", "HEAD")
+    _require(head != CONTRACT.INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT,
+             "replacement source repair was not committed")
+    _require(not _git_output(
+        root, "status", "--porcelain"),
+        "replacement training requires a clean tracked source tree")
+    ancestor = subprocess.run(
+        ["git", "merge-base", "--is-ancestor",
+         CONTRACT.INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT, head],
+        cwd=root, check=False, capture_output=True, text=True)
+    _require(ancestor.returncode == 0,
+             "failed-attempt source is not an ancestor of repaired source")
+    changed = frozenset(filter(None, _git_output(
+        root, "diff", "--name-only",
+        f"{CONTRACT.INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT}..{head}").splitlines()))
+    _require(changed == REPAIR_CHANGED_PATHS,
+             f"replacement source changed outside the narrow allowlist: "
+             f"{sorted(changed ^ REPAIR_CHANGED_PATHS)}")
+    bindings = []
+    for relative in sorted(changed):
+        path = root / relative
+        _require(path.is_file() and not path.is_symlink(),
+                 f"replacement source path changed: {relative}")
+        bindings.append({
+            "path": relative,
+            "sha256": file_sha256(path),
+            "byte_count": path.stat().st_size,
+        })
+    return {
+        "source_commit": head,
+        "source_clean": True,
+        "failed_attempt_source_commit":
+            CONTRACT.INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT,
+        "changed_paths": sorted(changed),
+        "changed_source_bindings": bindings,
+        "changed_source_bindings_digest": canonical_digest(bindings),
+    }
+
+
+def run_serializer_smoke(root: Path = ROOT) -> dict[str, Any]:
+    """Run only the tiny training fixture through the failed production path."""
+
+    command = [sys.executable, "-m", "pytest", "-q", SERIALIZER_SMOKE_NODE]
+    environment = dict(os.environ)
+    environment["PYTEST_DISABLE_PLUGIN_AUTOLOAD"] = "1"
+    completed = subprocess.run(
+        command, cwd=root, env=environment, check=False,
+        capture_output=True, text=True)
+    _require(completed.returncode == 0,
+             "scalar-safe production-path smoke failed:\n"
+             + completed.stdout + completed.stderr)
+    test_path = root / SERIALIZER_SMOKE_NODE.split("::", 1)[0]
+    serializer_path = root / "scripts/train_go2_utility_scorer_v1_2.py"
+    return {
+        "non_scientific_tiny_fixture": True,
+        "fresh_calibration_opened": False,
+        "command": command,
+        "return_code": completed.returncode,
+        "stdout_sha256": hashlib.sha256(
+            completed.stdout.encode("utf-8")).hexdigest(),
+        "stderr_sha256": hashlib.sha256(
+            completed.stderr.encode("utf-8")).hexdigest(),
+        "serializer_source_sha256": file_sha256(serializer_path),
+        "serializer_source_byte_count": serializer_path.stat().st_size,
+        "focused_test_sha256": file_sha256(test_path),
+        "focused_test_byte_count": test_path.stat().st_size,
+        "passed": True,
+    }
+
+
+def registered_data_order_plan(fit_rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    """Recompute the exact frozen CPU shuffle sequence without model execution."""
+
+    _require(len(fit_rows) == EXPECTED_FIT_ROWS,
+             "data-order plan requires the exact fit rows")
+    base = [str(row["training_view_row_digest"]) for row in fit_rows]
+    generator = torch.Generator(device="cpu")
+    generator.manual_seed(20260811)
+    permutations = []
+    presentations = []
+    for epoch in range(1, 61):
+        order = torch.randperm(EXPECTED_FIT_ROWS, generator=generator)
+        permutation = order.tolist()
+        permutations.append({
+            "epoch": epoch,
+            "permutation_tensor_digest": FROZEN_TRAINER.tensor_digest(
+                order.to(torch.int64)),
+        })
+        presentations.append({
+            "epoch": epoch,
+            "ordered_training_view_row_digests_digest": canonical_digest(
+                [base[index] for index in permutation]),
+        })
+    result = {
+        "base_order": "state_id_then_candidate_index",
+        "base_training_view_row_digest_sequence_digest": canonical_digest(base),
+        "generator": "torch.Generator(device='cpu')",
+        "seed": 20260811,
+        "algorithm": "torch.randperm(1152, generator=generator)",
+        "epochs": 60,
+        "batch_size": 64,
+        "updates_per_epoch": 18,
+        "permutations": permutations,
+        "row_presentations": presentations,
+        "final_generator_state_digest": FROZEN_TRAINER.tensor_digest(
+            generator.get_state()),
+    }
+    result["permutation_plan_digest"] = canonical_digest(permutations)
+    result["row_presentation_plan_digest"] = canonical_digest(presentations)
+    _require(
+        result["base_training_view_row_digest_sequence_digest"]
+        == "c862d0814efb0cbac179eedf9835d869a4dd3588e66c2df668feb44e469e1296"
+        and result["permutation_plan_digest"]
+        == "8e0f2c195f57fa3b883bb8830a4067f95e7965716c851be31b369d5e997c255d"
+        and result["row_presentation_plan_digest"]
+        == "85b1b96ad3aab1442c71a90e6afdbb3e3dc87e8115cb0f9c127953531f7efefb"
+        and permutations[0]["permutation_tensor_digest"]
+        == "d41a76b417fb0c2b0a9959e447a8b0a004d9793b74f6386b4e3418789184a103"
+        and permutations[-1]["permutation_tensor_digest"]
+        == "e71b4cb6ea9bf0854e603894457e265204cec4978256bb5e6d08a00e6026735a"
+        and result["final_generator_state_digest"]
+        == "f1826a6a0c7f2cde2dcd028393e1229f2a6931099a22b8c31f97b968dbc77cb2",
+        "registered data-order plan changed")
+    return result
+
+
+def _raw_artifact_binding(path: Path, *, root: Path) -> dict[str, Any]:
+    _require(path.is_file() and not path.is_symlink(),
+             f"preserved artifact is absent or non-regular: {path}")
+    return {
+        "path": str(path.relative_to(root)),
+        "sha256": file_sha256(path),
+        "byte_count": path.stat().st_size,
+    }
+
+
+def _require_preserved_raw_binding(relative: str, *, root: Path) -> dict[str, Any]:
+    path = ENCODER._generated_root(root) / relative
+    observed = _raw_artifact_binding(path, root=root)
+    expected = CONTRACT.SCORER_TRAINING_INTEGRITY_REPLACEMENT[
+        "preserved_raw_bindings"][relative]
+    _require({key: observed[key] for key in ("sha256", "byte_count")}
+             == expected,
+             f"preserved pre-replacement bytes changed: {relative}")
+    return observed
+
+
+def _validate_original_failed_attempt(
+        *, root: Path, initialisations: Mapping[str, Mapping[str, Any]],
+        data_order: Mapping[str, Any]) -> tuple[dict[str, Any], dict[str, Any]]:
+    original_auth_path = original_training_authorisation_path(root)
+    original_auth = _validate_signed(
+        _read_json(original_auth_path, label="original training authorisation"),
+        TRAINING_AUTHORISATION_SELF_KEY, "original training authorisation")
+    expected_auth = _authorisation_payload(
+        binding_digest="c783a16d28d3770f0dc253633aabd4af45d543122b9dbb20190334bd0ce2e7e5",
+        training_run_digest=(
+            "f9d9f2d78360f5155596e6eebfacadad4aa47afb21f2b5bfcf0a5637708622b7"),
+        initialisations=initialisations)
+    _require(original_auth == expected_auth,
+             "original one-shot training authorisation changed")
+    _require_preserved_raw_binding(
+        "scorer/training_execution_authorisation.json", root=root)
+    _require_preserved_raw_binding(
+        "scorer/initialisations/latent.pt", root=root)
+    _require_preserved_raw_binding(
+        "scorer/initialisations/no_latent.pt", root=root)
+    attempt_binding = _require_preserved_raw_binding(
+        "scorer/training/latent/attempt_000/attempt.json", root=root)
+    attempt_path = root / attempt_binding["path"]
+    attempt = _read_json(attempt_path, label="original latent attempt marker")
+    _require(
+        attempt.get("schema") == "go2_utility_scorer_training_attempt_v1"
+        and attempt.get("attempt") == 0
+        and attempt.get("model_name") == "latent"
+        and attempt.get("training_run_digest")
+        == original_auth["training_run_digest"]
+        and attempt.get("initial_state_digest")
+        == initialisations["latent"]["initial_state_digest"]
+        and attempt.get("start_after_completed_epoch") == 0
+        and attempt.get("resume_source") is None
+        and attempt.get("recovery_decision")
+        == "started_from_registered_initialisation",
+        "original failed-attempt marker changed")
+    attempt_dir = attempt_path.parent
+    _require({path.name for path in attempt_dir.iterdir()} == {"attempt.json"},
+             "original failed attempt published an unexpected artifact")
+    original_training_root = root / CONTRACT.TRAINING_CHECKPOINTS_ROOT
+    no_latent_root = original_training_root / "no_latent"
+    _require(not no_latent_root.exists() and not no_latent_root.is_symlink(),
+             "original no-latent baseline unexpectedly started")
+    for path in (
+        root / CONTRACT.QUALIFICATION_EVALUATION_AUTHORISATION_PATH,
+        root / CONTRACT.QUALIFICATION_PATH,
+        root / CONTRACT.SCORER_PACKAGE_PATH,
+        root / CONTRACT.SCORER_PACKAGE_RECEIPT_PATH,
+        root / CONTRACT.NO_LATENT_BASELINE_PATH,
+        root / CONTRACT.NO_LATENT_BASELINE_RECEIPT_PATH,
+        root / CONTRACT.FAILED_SCORER_PATH,
+    ):
+        _require(not path.exists() and not path.is_symlink(),
+                 f"original failed run unexpectedly published {path}")
+    receipt = _signed({
+        "schema": CONTRACT.INVALID_TRAINING_ATTEMPT_SCHEMA,
+        "status": CONTRACT.INVALID_TRAINING_ATTEMPT_STATUS,
+        "complete": True,
+        "scientific_scorer_run": False,
+        "original_source_commit":
+            CONTRACT.INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT,
+        "run_identity": original_auth["training_run_digest"],
+        "binding_digest": original_auth["binding_digest"],
+        "training_execution_authorisation_digest":
+            original_auth[TRAINING_AUTHORISATION_SELF_KEY],
+        "scorer_seed": 20260811,
+        "model_initialisations": {
+            name: {
+                "initial_state_digest": value["initial_state_digest"],
+                "path": value["path"],
+                "sha256": value["sha256"],
+            } for name, value in initialisations.items()
+        },
+        "data_order_plan": dict(data_order),
+        "completed_optimizer_updates": 18,
+        "completed_epoch_update_loops": 1,
+        "published_checkpoint_epochs": 0,
+        "checkpoint_published": False,
+        "resumable_checkpoint_exists": False,
+        "no_latent_baseline_started": False,
+        "calibration_or_qualification_started": False,
+        "scorer_metric_inspected": False,
+        "predictor_checkpoint_opened": False,
+        "predictor_utility_shard_opened": False,
+        "development_transfer_package_opened": False,
+        "exception": {
+            "type": ORIGINAL_EXCEPTION_TYPE,
+            "message": ORIGINAL_EXCEPTION_MESSAGE,
+            "traceback_frames": copy.deepcopy(ORIGINAL_TRACEBACK_FRAMES),
+            "capture": "observed console PTY traceback",
+            "durable_stderr_log_path": None,
+            "capture_limitation": "PTY traceback was not persisted as a file",
+        },
+        "attempt_marker": attempt_binding,
+        "attempt_marker_payload_digest": canonical_digest(attempt),
+        "preserved_not_deleted_or_overwritten": True,
+        "resume_permitted": False,
+    }, INVALID_ATTEMPT_SELF_KEY)
+    return receipt, original_auth
+
+
+def _preserved_science_bindings(
+        *, root: Path, corpus: Mapping[str, Any]) -> dict[str, Any]:
+    view, index = corpus["view"], corpus["index"]
+    raw = {
+        relative: _require_preserved_raw_binding(relative, root=root)
+        for relative in (
+            "training_view.json", "equivalence_receipt.json",
+            "replay_overlay_manifest.json",
+            "fresh_calibration/state_manifest.json",
+            "fresh_calibration/corpus_receipt.json",
+            "encoded_training_view/latent_index.json",
+            "encoded_training_view/encoding_receipt.json",
+        )
+    }
+    attempt_files = sorted(
+        (root / CONTRACT.REPLAY_ATTEMPTS_ROOT).glob("*.json"))
+    overlay_files = sorted(
+        (root / CONTRACT.REPLAY_OVERLAYS_ROOT).glob("*.json"))
+    expected_names = {f"{value}.json" for value in CONTRACT.FAILED_BRANCH_ALLOWLIST}
+    _require(len(attempt_files) == len(overlay_files) == 18
+             and {path.name for path in attempt_files} == expected_names
+             and {path.name for path in overlay_files} == expected_names,
+             "exact eighteen replay artifacts changed")
+    marker_bindings = [_raw_artifact_binding(path, root=root)
+                       for path in attempt_files]
+    overlay_bindings = [_raw_artifact_binding(path, root=root)
+                        for path in overlay_files]
+    fit_states = sorted({str(row["state_identity_digest"])
+                         for row in corpus["fit_rows"]})
+    calibration_states = sorted({str(row["state_identity_digest"])
+                                 for row in corpus["calibration_rows"]})
+    fit_scenes = sorted({str(row["scene_id"]) for row in corpus["fit_rows"]})
+    calibration_scenes = sorted({str(row["scene_id"])
+                                 for row in corpus["calibration_rows"]})
+    historical = view["historical_calibration_disposition"]
+    disposition_key = next(key for key in historical
+                           if key.endswith("disposition_digest"))
+    result = {
+        "oracle_v1_3_digest": view["oracle_v1_3_digest"],
+        "scorer_fit_oracle_v1_3_contract_digest":
+            view["scorer_fit_oracle_v1_3_contract_digest"],
+        **{key: view[key] for key in SOURCE_DIGEST_KEYS},
+        "training_view_digest": view["training_view_digest"],
+        "latent_index_digest": index[ENCODER.LATENT_INDEX_SELF_KEY],
+        "encoding_receipt_digest": corpus["receipt"][
+            ENCODER.ENCODING_RECEIPT_SELF_KEY],
+        "target_encoder_digest": index["target_encoder_digest"],
+        "target_encoder_checkpoint_sha256":
+            index["target_encoder_checkpoint_sha256"],
+        "preprocess_contract_digest": index["preprocess_contract_digest"],
+        "preprocessing_digest": index["preprocessing_digest"],
+        "fit_state_count": len(fit_states),
+        "fit_state_identity_set_digest": canonical_digest(fit_states),
+        "fit_scene_set_digest": canonical_digest(fit_scenes),
+        "fresh_calibration_state_count": len(calibration_states),
+        "fresh_calibration_state_identity_set_digest":
+            canonical_digest(calibration_states),
+        "fresh_calibration_scene_set_digest": canonical_digest(calibration_scenes),
+        "historical_calibration_disposition_digest": historical[disposition_key],
+        "training_row_count": len(corpus["rows"]),
+        "missing_label_count": view["missing_label_count"],
+        "registered_replay_count": len(attempt_files),
+        "registered_replay_identity_set_digest": canonical_digest(
+            sorted(CONTRACT.FAILED_BRANCH_ALLOWLIST)),
+        "replay_attempt_marker_bindings_digest":
+            canonical_digest(marker_bindings),
+        "replay_overlay_file_bindings_digest":
+            canonical_digest(overlay_bindings),
+        "raw_artifact_bindings": raw,
+    }
+    expected = CONTRACT.SCORER_TRAINING_INTEGRITY_REPLACEMENT[
+        "frozen_scientific_inputs"]
+    _require(
+        result["oracle_v1_3_digest"] == expected["oracle_v1_3_digest"]
+        and result["scorer_fit_oracle_v1_3_contract_digest"]
+        == expected["scorer_fit_contract_digest"]
+        and result["v2_corpus_digest"] == CONTRACT.FROZEN_CORPUS_DIGEST
+        and result["equivalence_receipt_digest"]
+        == expected["legacy_equivalence_receipt_digest"]
+        and result["replay_overlay_manifest_digest"]
+        == expected["replay_overlay_manifest_digest"]
+        and result["fresh_calibration_state_manifest_digest"]
+        == expected["fresh_calibration_state_manifest_digest"]
+        and result["fresh_calibration_corpus_digest"]
+        == expected["fresh_calibration_corpus_digest"]
+        and result["training_view_digest"] == expected["training_view_digest"]
+        and result["latent_index_digest"] == expected["latent_index_digest"]
+        and result["encoding_receipt_digest"]
+        == expected["encoding_receipt_digest"]
+        and result["fit_state_count"] == 96
+        and result["fit_state_identity_set_digest"]
+        == "858ad55b14d0079ea11c49a1c79b2245c7adb71846493c449e7eb3cf1d16900a"
+        and result["fit_scene_set_digest"]
+        == "a7ef974169522a270f407de1b1b6023583816f82f76a9b8b9cc0b896bfa67373"
+        and result["fresh_calibration_state_count"] == 24
+        and result["fresh_calibration_state_identity_set_digest"]
+        == "730e4a4835f748ad28f1fae9422c8613d8fd56a2afe0135720842c7203c04b7c"
+        and result["fresh_calibration_scene_set_digest"]
+        == "91fcf0d00b7c6122a9af7e2f2db6e585070390caede5950259f13bdc90480e8e"
+        and result["historical_calibration_disposition_digest"]
+        == "8e8b7aba9f55c62ec1fbefffafc324794df564234d348ed6a8f35e6afb3d072a"
+        and result["registered_replay_identity_set_digest"]
+        == "d2386c2a6d99ea4695d6afc85708d3cf99a1657489e6e6c9cd52bb91d50b56dd"
+        and result["replay_attempt_marker_bindings_digest"]
+        == "baf2cf718367118f6b05d30365fa93405c9e1ef139e5a9d34cb2053e9f80e2cf"
+        and result["replay_overlay_file_bindings_digest"]
+        == "5233bca4c560c844324f3e937469faef850d4fba4e6588ae07945a6484872b44"
+        and result["training_row_count"] == 1440
+        and result["missing_label_count"] == 0,
+        "frozen scientific input digest inventory changed")
+    return result
+
+
+def _replacement_authorisation_payload(
+        *, invalid_attempt: Mapping[str, Any], source: Mapping[str, Any],
+        science: Mapping[str, Any], binding: Mapping[str, Any],
+        binding_digest: str, training_run_digest: str,
+        initialisations: Mapping[str, Mapping[str, Any]],
+        data_order: Mapping[str, Any], smoke: Mapping[str, Any],
+        ) -> dict[str, Any]:
+    scientific_contract = {
+        "architecture": binding["architecture"],
+        "normalisation": binding["normalisation"],
+        "utility_weights": binding["utility_weights"],
+        "training": binding["training"],
+        "training_execution_counts": binding["training_execution_counts"],
+        "qualification_thresholds": binding["qualification_thresholds"],
+        "learning_rate_schedule": binding["learning_rate_schedule"],
+        "final_epoch_only": binding["final_epoch_only"],
+        "epoch_selection_permitted": binding["epoch_selection_permitted"],
+        "model_specific_calibration": binding["model_specific_calibration"],
+        "action_input": "exact 4x10 post-slew action blocks",
+        "goal_binding": "exact frozen 3-vector goal_binding_input",
+        "targets": ["progress", "safety", "completion"],
+    }
+    return _signed({
+        "schema": CONTRACT.SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SCHEMA,
+        "status": STATUS,
+        "complete": True,
+        "replacement_contract_digest":
+            CONTRACT.scorer_training_integrity_replacement_digest(),
+        "replacement_attempt_number": 1,
+        "maximum_authorised_replacement_attempts": 1,
+        "invalid_original_attempt_receipt_digest":
+            invalid_attempt[INVALID_ATTEMPT_SELF_KEY],
+        "invalid_original_attempt_status": invalid_attempt["status"],
+        "original_exception": invalid_attempt["exception"],
+        "repaired_source": dict(source),
+        "serializer_smoke": dict(smoke),
+        "frozen_scientific_inputs": dict(science),
+        "scientific_training_contract": scientific_contract,
+        "scientific_training_contract_digest":
+            canonical_digest(scientific_contract),
+        "binding_digest": binding_digest,
+        "training_run_digest": training_run_digest,
+        "registered_seed": 20260811,
+        "registered_initial_model_artifacts": {
+            name: {
+                "path": value["path"],
+                "sha256": value["sha256"],
+                "initial_state_digest": value["initial_state_digest"],
+            } for name, value in initialisations.items()
+        },
+        "registered_data_and_batch_order": dict(data_order),
+        "restart_from_identical_registered_initialisation": True,
+        "reuse_original_eighteen_updates": False,
+        "final_epoch_selection": "final_epoch_only_no_selection",
+        "authorisation_reason": (
+            "the original attempt could not publish a checkpoint or expose a "
+            "scientific result"
+        ),
+        "authorised_because_of_model_performance": False,
+        "further_replacement_automatically_permitted": False,
+        "later_defect_requires_new_explicit_decision": True,
+        "predictor_checkpoints_opened": 0,
+        "predictor_utility_shards_opened": 0,
+        "final_200_state_corpus_generated": False,
+    }, REPLACEMENT_AUTHORISATION_SELF_KEY)
+
+
+def issue_training_integrity_replacement_authorisation(
+        *, root: Path, corpus: Mapping[str, Any], binding: Mapping[str, Any],
+        binding_digest: str, training_run_digest: str,
+        initialisations: Mapping[str, Mapping[str, Any]],
+        ) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Publish the invalid lineage and sole replacement authority once."""
+
+    source = replacement_source_binding(root)
+    data_order = registered_data_order_plan(corpus["fit_rows"])
+    invalid, original_auth = _validate_original_failed_attempt(
+        root=root, initialisations=initialisations, data_order=data_order)
+    _require(training_run_digest == original_auth["training_run_digest"]
+             and binding_digest == original_auth["binding_digest"],
+             "replacement run differs from the invalid run identity")
+    publish_json_once(
+        invalid_attempt_receipt_path(root), invalid,
+        label="invalid original scorer attempt receipt")
+    science = _preserved_science_bindings(root=root, corpus=corpus)
+    path = replacement_authorisation_path(root)
+    if path.exists() or path.is_symlink():
+        authority = _validate_signed(
+            _read_json(path, label="replacement authorisation"),
+            REPLACEMENT_AUTHORISATION_SELF_KEY, "replacement authorisation")
+        _require(authority.get("repaired_source") == source
+                 and authority.get("frozen_scientific_inputs") == science
+                 and authority.get("invalid_original_attempt_receipt_digest")
+                 == invalid[INVALID_ATTEMPT_SELF_KEY]
+                 and authority.get("training_run_digest") == training_run_digest,
+                 "existing replacement authorisation changed")
+        return invalid, authority
+    smoke = run_serializer_smoke(root)
+    authority = _replacement_authorisation_payload(
+        invalid_attempt=invalid, source=source, science=science,
+        binding=binding, binding_digest=binding_digest,
+        training_run_digest=training_run_digest,
+        initialisations=initialisations, data_order=data_order, smoke=smoke)
+    publish_json_once(path, authority, label="sole scorer integrity replacement")
+    return invalid, authority
+
+
 def _authorisation_payload(
         *, binding_digest: str, training_run_digest: str,
         initialisations: Mapping[str, Mapping[str, Any]],
@@ -465,12 +999,15 @@ def _authorisation_payload(
 def _evaluation_authorisation_payload(
         *, training_run_digest: str,
         final_state_digests: Mapping[str, str],
+        replacement_authorisation_digest: str,
         ) -> dict[str, Any]:
     return _signed({
         "schema": EVALUATION_AUTHORISATION_SCHEMA,
         "status": STATUS,
         "complete": True,
         "training_run_digest": training_run_digest,
+        "integrity_replacement_authorisation_digest":
+            replacement_authorisation_digest,
         "final_state_digests": dict(final_state_digests),
         "qualification_evaluations_authorised": 1,
         "qualification_evaluations_completed_before_issue": 0,
@@ -573,11 +1110,147 @@ def _read_json(path: Path, *, label: str) -> dict[str, Any]:
     return value
 
 
+def _validate_preserved_workflow_inputs_for_replacement(
+        *, root: Path) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any],
+                                dict[str, Any]]:
+    """Replay frozen producer validation without requiring its old live source."""
+
+    _require(root.resolve() == ROOT.resolve(),
+             "replacement consumption is restricted to the registered repository")
+    workflow = ENCODER.WORKFLOW
+    out_root = ENCODER._generated_root(root)
+    authority, correction = workflow.load_selector_integrity_replacement_authority(
+        root=None, out_root=out_root)
+    corpus = workflow.load_v2_corpus(v2_root=workflow.V2_ROOT)
+    plan = workflow.load_replay_plan(
+        out_root=out_root, v2_root=workflow.V2_ROOT, authority=authority)
+    equivalence = workflow._read_regular_json(
+        out_root / "equivalence_receipt.json")
+    workflow.validate_equivalence_receipt(
+        equivalence, authority, corpus["rows"])
+    overlay_manifest = workflow._read_regular_json(
+        out_root / "replay_overlay_manifest.json")
+    workflow._validate_self_digest(
+        overlay_manifest, workflow.REPLAY_OVERLAY_MANIFEST_SELF_KEY)
+    pool, exclusion = workflow.B.scene_pool("scorer_fit")
+    attempt = workflow._read_regular_json(
+        out_root / "fresh_calibration/selection_attempt.json")
+    workflow.validate_fresh_selection_attempt(
+        attempt, authority=authority, correction=correction,
+        v2_state_manifest=corpus["state_manifest"], plan=plan,
+        equivalence=equivalence, overlay_manifest=overlay_manifest,
+        pool=pool, exclusion=exclusion)
+    terminal = workflow._read_regular_json(
+        out_root / "fresh_calibration/selection_terminal.json")
+    states = workflow.validate_fresh_selection_terminal(
+        terminal, attempt=attempt, correction=correction, out_root=out_root)
+    manifest = workflow._read_regular_json(
+        out_root / "fresh_calibration/state_manifest.json")
+    workflow.validate_fresh_calibration_manifest(
+        manifest, authority=authority,
+        v2_state_manifest=corpus["state_manifest"],
+        selector_integrity_replacement_authority=correction)
+    expected_manifest = workflow.build_fresh_calibration_manifest(
+        authority=authority, v2_state_manifest=corpus["state_manifest"],
+        states=states, exclusion_binding=attempt["manifest_exclusion_binding"],
+        selector_integrity_replacement_authority=correction)
+    _require(manifest == expected_manifest,
+             "fresh calibration manifest changed after target encoding")
+    return authority, correction, corpus, manifest
+
+
+def _materialise_preserved_training_view_for_replacement(
+        *, root: Path, authority: Mapping[str, Any],
+        manifest: Mapping[str, Any]) -> dict[str, Any]:
+    """Materialise the immutable view while bypassing only live-source equality."""
+
+    workflow = ENCODER.WORKFLOW
+    path = root / CONTRACT.TRAINING_VIEW_PATH
+    reference = workflow._read_regular_json(path)
+    workflow._validate_training_view_shape(reference)
+    _require(
+        reference.get("authority_digest")
+        == authority[workflow.AUTHORITY_SELF_KEY]
+        and reference.get("oracle_v1_3_digest")
+        == authority["oracle_v1_3_digest"]
+        and reference.get("scorer_fit_oracle_v1_3_contract_digest")
+        == authority["scorer_fit_oracle_v1_3_contract_digest"]
+        and reference.get("fresh_calibration_state_manifest_digest")
+        == manifest[workflow.FRESH_STATE_MANIFEST_SELF_KEY],
+        "training view is bound to another preserved v1.3 authority")
+    rows = []
+    for reference_row in reference["rows"]:
+        workflow._validate_self_digest(
+            reference_row, "training_view_row_digest")
+        input_row, _ = workflow._resolve_bound_input(reference_row["input"])
+        label_source, _ = workflow._resolve_bound_input(
+            reference_row["label_source"])
+        labels = (
+            workflow._label_projection(label_source["labels"])
+            if reference_row["source_kind"] == workflow.SOURCE_KIND_REPLAY
+            else workflow._label_projection(label_source))
+        _require(labels == reference_row["label_projection"],
+                 "materialised label differs from the frozen projection")
+        frame_root = root / reference_row["frame_root"]
+        rows.append({
+            **{key: reference_row[key] for key in (
+                "role", "source_kind", "state_id", "state_identity_digest",
+                "scene_id", "family", "stratum", "candidate_index",
+                "branch_identity_digest", "training_view_row_digest")},
+            "frame_root": reference_row["frame_root"],
+            "context_frames": workflow._normalise_frame_records(
+                input_row["context_frames"], frame_root),
+            "horizon_frames": workflow._normalise_frame_records(
+                input_row["horizon_frames"], frame_root),
+            "action_blocks": input_row["action_blocks"],
+            "action_context_blocks": input_row["action_context_blocks"],
+            "previous_applied_command": input_row["previous_applied_command"],
+            "goal_binding_input": input_row["goal_binding_input"],
+            "proprio": input_row["proprio"],
+            "control": input_row["control"],
+            "masks": input_row["masks"],
+            "timing": input_row["timing"],
+            **labels,
+        })
+    result = copy.deepcopy(reference)
+    result["reference_rows"] = result.pop("rows")
+    result["rows"] = rows
+    return ENCODER.validate_training_view_structure(result)
+
+
+def load_preserved_encoded_training_view_for_replacement(
+        *, root: Path = ROOT,
+        verify_encoder_checkpoint: bool = False) -> dict[str, Any]:
+    """Validate exact frozen bytes without reopening corpus/encoding execution."""
+
+    ENCODER._require_registered_generated_root(root)
+    authority, _correction, _corpus, manifest = (
+        _validate_preserved_workflow_inputs_for_replacement(root=root))
+    view = _materialise_preserved_training_view_for_replacement(
+        root=root, authority=authority, manifest=manifest)
+    index_path = ENCODER.latent_index_path(root)
+    receipt_path = ENCODER.encoding_receipt_path(root)
+    _require(index_path.is_file() and not index_path.is_symlink(),
+             "frozen latent index is absent")
+    _require(receipt_path.is_file() and not receipt_path.is_symlink(),
+             "frozen encoding receipt is absent")
+    index = ENCODER.validate_latent_index(
+        json.loads(index_path.read_text()), view, root=root,
+        verify_encoder_checkpoint=verify_encoder_checkpoint)
+    receipt = ENCODER._validate_signed(
+        json.loads(receipt_path.read_text()), ENCODER.ENCODING_RECEIPT_SELF_KEY,
+        "frozen v1.3 encoding receipt")
+    _require(receipt == ENCODER._receipt_payload(index, root=root),
+             "frozen encoding receipt differs from exact index bytes")
+    return {"view": view, "index": index, "receipt": receipt,
+            "encoded_root": ENCODER.encoded_root(root)}
+
+
 def load_and_validate_training_terminal_for_consumption(
         *, root: Path = ROOT, require_qualified: bool | None = None,
         verify_encoder_checkpoint: bool = False,
         ) -> dict[str, Any]:
-    encoded = ENCODER.load_and_validate_encoded_training_view_for_consumption(
+    encoded = load_preserved_encoded_training_view_for_replacement(
         root=root, verify_encoder_checkpoint=verify_encoder_checkpoint)
     encoded = {**encoded, "root": root}
     corpus = corpus_from_encoded_bundle(encoded)
@@ -636,27 +1309,42 @@ def load_and_validate_training_terminal_for_consumption(
              and report.get("baseline_dominance_pairwise") == expected_dominance
              and qualified == all(criteria.values()),
              "v1.3 frozen qualification criteria do not replay")
-    training_auth = _validate_signed(
-        _read_json(training_authorisation_path(root),
-                   label="training authorisation"),
-        TRAINING_AUTHORISATION_SELF_KEY, "training authorisation")
+    replacement_auth = _validate_signed(
+        _read_json(replacement_authorisation_path(root),
+                   label="replacement authorisation"),
+        REPLACEMENT_AUTHORISATION_SELF_KEY, "replacement authorisation")
     evaluation_auth = _validate_signed(
         _read_json(evaluation_authorisation_path(root),
                    label="qualification evaluation authorisation"),
         EVALUATION_AUTHORISATION_SELF_KEY,
         "qualification evaluation authorisation")
-    expected_training_auth = _authorisation_payload(
+    binding = _binding_payload(corpus)
+    binding["encoding_receipt_digest"] = corpus["receipt"][
+        ENCODER.ENCODING_RECEIPT_SELF_KEY]
+    data_order = registered_data_order_plan(corpus["fit_rows"])
+    invalid, _original_auth = _validate_original_failed_attempt(
+        root=root, initialisations=report.get("initialisations", {}),
+        data_order=data_order)
+    science = _preserved_science_bindings(root=root, corpus=corpus)
+    expected_replacement_auth = _replacement_authorisation_payload(
+        invalid_attempt=invalid, source=replacement_source_binding(root),
+        science=science, binding=binding,
         binding_digest=str(report.get("binding_digest")),
         training_run_digest=str(report.get("training_run_digest")),
-        initialisations=report.get("initialisations", {}))
+        initialisations=report.get("initialisations", {}),
+        data_order=data_order, smoke=replacement_auth.get("serializer_smoke", {}))
     expected_evaluation_auth = _evaluation_authorisation_payload(
         training_run_digest=str(report.get("training_run_digest")),
-        final_state_digests=report.get("final_state_digests", {}))
+        final_state_digests=report.get("final_state_digests", {}),
+        replacement_authorisation_digest=replacement_auth[
+            REPLACEMENT_AUTHORISATION_SELF_KEY])
     receipts = report.get("training_receipts")
-    _require(training_auth == expected_training_auth
+    _require(replacement_auth == expected_replacement_auth
              and evaluation_auth == expected_evaluation_auth
-             and report.get("training_execution_authorisation_digest")
-             == training_auth[TRAINING_AUTHORISATION_SELF_KEY]
+             and report.get("integrity_replacement_authorisation_digest")
+             == replacement_auth[REPLACEMENT_AUTHORISATION_SELF_KEY]
+             and report.get("invalid_original_attempt_receipt_digest")
+             == invalid[INVALID_ATTEMPT_SELF_KEY]
              and report.get("qualification_evaluation_authorisation_digest")
              == evaluation_auth[EVALUATION_AUTHORISATION_SELF_KEY]
              and isinstance(receipts, Mapping)
@@ -667,7 +1355,7 @@ def load_and_validate_training_terminal_for_consumption(
                      and receipt.get("epoch_selection")
                      == "final_epoch_only_no_selection"
                      for receipt in receipts.values()),
-             "one-shot authorisations differ from terminal")
+             "replacement authorisations differ from terminal")
 
     baseline_receipt = _validate_signed(
         _read_json(baseline_receipt_path(root), label="baseline receipt"),
@@ -732,7 +1420,7 @@ def train_and_qualify(*, root: Path = ROOT,
              "qualification evaluation was already authorised without a "
              "terminal; repeating it is forbidden")
     _configure_frozen_trainer(root)
-    encoded = ENCODER.load_and_validate_encoded_training_view_for_consumption(
+    encoded = load_preserved_encoded_training_view_for_replacement(
         root=root, verify_encoder_checkpoint=False)
     encoded = {**encoded, "root": root}
     corpus = corpus_from_encoded_bundle(encoded)
@@ -762,10 +1450,6 @@ def train_and_qualify(*, root: Path = ROOT,
         ENCODER.ENCODING_RECEIPT_SELF_KEY]
     binding_digest = canonical_digest(binding)
 
-    fit_features = FROZEN_TRAINER.features(
-        fit_rows, corpus["horizon"], device)
-    calibration_features = FROZEN_TRAINER.features(
-        calibration_rows, corpus["horizon"], device)
     models: dict[str, FROZEN_TRAINER.UtilityScorer] = {}
     initialisations: dict[str, dict[str, Any]] = {}
     for name, use_latent in (("latent", True), ("no_latent", False)):
@@ -783,24 +1467,24 @@ def train_and_qualify(*, root: Path = ROOT,
             for name, value in initialisations.items()
         },
     })
-    training_auth = _authorisation_payload(
-        binding_digest=binding_digest,
-        training_run_digest=training_run_digest,
-        initialisations=initialisations)
-    training_auth_path = training_authorisation_path(root)
-    continuation_authorised = (
-        training_auth_path.exists() or training_auth_path.is_symlink())
-    publish_json_once(
-        training_auth_path, training_auth,
-        label="v1.3 one-shot training authorisation")
+    invalid_attempt, replacement_auth = (
+        issue_training_integrity_replacement_authorisation(
+            root=root, corpus=corpus, binding=binding,
+            binding_digest=binding_digest,
+            training_run_digest=training_run_digest,
+            initialisations=initialisations))
 
     for name, use_latent in (("latent", True), ("no_latent", False)):
         _preflight_registered_training(
             name, use_latent=use_latent,
             registration=initialisations[name],
             training_run_digest=training_run_digest, device=device,
-            budget=budget, training_rows=len(fit_rows),
-            continuation_authorised=continuation_authorised, root=root)
+            budget=budget, training_rows=len(fit_rows), root=root)
+
+    fit_features = FROZEN_TRAINER.features(
+        fit_rows, corpus["horizon"], device)
+    calibration_features = FROZEN_TRAINER.features(
+        calibration_rows, corpus["horizon"], device)
 
     packages: dict[str, dict[str, torch.Tensor]] = {}
     training_receipts: dict[str, dict[str, Any]] = {}
@@ -818,6 +1502,13 @@ def train_and_qualify(*, root: Path = ROOT,
                  and training_receipts[name].get("epoch_selection")
                  == "final_epoch_only_no_selection",
                  f"{name} training did not end at the frozen final epoch")
+        expected_attempt = "attempt_001" if name == "latent" else "attempt_000"
+        _require(Path(str(training_receipts[name]["final_checkpoint"])).parent.name
+                 == expected_attempt
+                 and training_receipts[name].get("resume_source") is None
+                 and training_receipts[name].get("recovery_decision")
+                 == "started_from_registered_initialisation",
+                 f"{name} did not start the sole replacement from frozen init")
         models[name].load_state_dict(packages[name], strict=True)
         models[name].to(device)
     final_state_digests = {
@@ -826,7 +1517,9 @@ def train_and_qualify(*, root: Path = ROOT,
     }
     evaluation_auth = _evaluation_authorisation_payload(
         training_run_digest=training_run_digest,
-        final_state_digests=final_state_digests)
+        final_state_digests=final_state_digests,
+        replacement_authorisation_digest=replacement_auth[
+            REPLACEMENT_AUTHORISATION_SELF_KEY])
     publish_json_once(
         evaluation_path, evaluation_auth,
         label="v1.3 one-shot qualification evaluation authorisation")
@@ -872,6 +1565,10 @@ def train_and_qualify(*, root: Path = ROOT,
         "status": STATUS,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
+        "invalid_original_attempt_receipt_digest":
+            invalid_attempt[INVALID_ATTEMPT_SELF_KEY],
+        "integrity_replacement_authorisation_digest":
+            replacement_auth[REPLACEMENT_AUTHORISATION_SELF_KEY],
         "bindings": binding,
         "oracle_v1_3_digest": corpus["view"]["oracle_v1_3_digest"],
         "scorer_fit_oracle_v1_3_contract_digest":
@@ -966,8 +1663,12 @@ def train_and_qualify(*, root: Path = ROOT,
         "qualification_evaluations": 1,
         "training_run_digest": training_run_digest,
         "binding_digest": binding_digest,
-        "training_execution_authorisation_digest":
-            training_auth[TRAINING_AUTHORISATION_SELF_KEY],
+        "invalid_original_attempt_receipt_digest":
+            invalid_attempt[INVALID_ATTEMPT_SELF_KEY],
+        "integrity_replacement_authorisation_digest":
+            replacement_auth[REPLACEMENT_AUTHORISATION_SELF_KEY],
+        "replacement_attempt_number": 1,
+        "maximum_authorised_replacement_attempts": 1,
         "qualification_evaluation_authorisation_digest":
             evaluation_auth[EVALUATION_AUTHORISATION_SELF_KEY],
         "training_execution_counts": training_execution_counts(),

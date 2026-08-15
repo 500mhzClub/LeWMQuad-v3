@@ -1,4 +1,4 @@
-"""Frozen scorer-fit oracle-v1.3 contract and selector-integrity amendment.
+"""Frozen scorer-fit oracle-v1.3 contract and narrow integrity amendments.
 
 The contract is intentionally a narrow successor to the protected scorer-fit
 V2 corpus.  It freezes the graph-boundary label rule, the exact eighteen-row
@@ -6,8 +6,10 @@ replay allowlist, the disposition of the historical calibration states, the
 outcome-blind fresh-calibration selector, the unchanged scorer/qualification
 budget, and closed output/stage authority.  A separate selector-only integrity
 replacement binds the pre-manifest selector crash without changing that
-scientific contract.  Importing this module reads or writes nothing and opens
-no model checkpoint.
+scientific contract.  A separate scorer-training integrity replacement may
+repair only scalar-safe receipt serialization after the original run stopped
+before publishing a checkpoint or exposing a scientific result.  Importing
+this module reads or writes nothing and opens no model checkpoint.
 """
 from __future__ import annotations
 
@@ -150,6 +152,44 @@ NO_LATENT_BASELINE_RECEIPT_PATH = SCORER_ROOT / "no_latent_baseline_receipt.json
 FAILED_SCORER_PATH = SCORER_ROOT / "failed_scorer.pt"
 REGISTERED_INITIALISATIONS_ROOT = SCORER_ROOT / "initialisations"
 TRAINING_CHECKPOINTS_ROOT = SCORER_ROOT / "training"
+SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT = (
+    SCORER_ROOT / "integrity_replacement_v1"
+)
+INVALID_TRAINING_ATTEMPT_RECEIPT_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT
+    / "invalid_original_attempt.json"
+)
+SCORER_TRAINING_REPLACEMENT_AUTHORISATION_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT
+    / "replacement_authorisation.json"
+)
+SCORER_TRAINING_REPLACEMENT_CHECKPOINTS_ROOT = (
+    SCORER_ROOT / "training"
+)
+SCORER_TRAINING_REPLACEMENT_QUALIFICATION_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT / "qualification.json"
+)
+SCORER_TRAINING_REPLACEMENT_EVALUATION_AUTHORISATION_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT
+    / "qualification_evaluation_authorisation.json"
+)
+SCORER_TRAINING_REPLACEMENT_PACKAGE_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT / "scorer_package.pt"
+)
+SCORER_TRAINING_REPLACEMENT_PACKAGE_RECEIPT_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT
+    / "scorer_package_receipt.json"
+)
+SCORER_TRAINING_REPLACEMENT_BASELINE_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT / "no_latent_baseline.pt"
+)
+SCORER_TRAINING_REPLACEMENT_BASELINE_RECEIPT_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT
+    / "no_latent_baseline_receipt.json"
+)
+SCORER_TRAINING_REPLACEMENT_FAILED_SCORER_PATH = (
+    SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT / "failed_scorer.pt"
+)
 
 TRACE_SCHEMA = ORACLE.TRACE_SCHEMA
 REPLAY_OVERLAY_SCHEMA = "go2_scorer_fit_oracle_v1_3_replay_overlay_v1"
@@ -176,6 +216,132 @@ SELECTOR_INTEGRITY_REPLACEMENT_SCHEMA = (
 SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY = (
     "selector_integrity_replacement_authority_digest"
 )
+INVALID_TRAINING_ATTEMPT_SCHEMA = (
+    "go2_utility_scorer_oracle_v1_3_invalid_training_attempt_v1"
+)
+INVALID_TRAINING_ATTEMPT_SELF_KEY = "invalid_training_attempt_receipt_digest"
+SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SCHEMA = (
+    "go2_utility_scorer_oracle_v1_3_integrity_replacement_authorisation_v1"
+)
+SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SELF_KEY = (
+    "integrity_replacement_authorisation_digest"
+)
+INVALID_TRAINING_ATTEMPT_STATUS = (
+    "INVALID_TECHNICAL_PREQUALIFICATION_ADAMW_SCALAR_STATE_SERIALIZATION"
+)
+INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT = (
+    "0c621a63a4d1668e1dea72cb9f6d7a2e11efb8ed"
+)
+SCORER_TRAINING_REPLACEMENT_ATTEMPT = 1
+SCORER_TRAINING_MAXIMUM_REPLACEMENT_ATTEMPTS = 1
+
+SCORER_TRAINING_INTEGRITY_REPLACEMENT = {
+    "schema": (
+        "go2_utility_scorer_oracle_v1_3_training_integrity_replacement_v1_"
+        "contract_v1"
+    ),
+    "status": "FROZEN_TECHNICAL_PREQUALIFICATION_INTEGRITY_REPLACEMENT",
+    "invalid_original_attempt": {
+        "source_commit": INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT,
+        "status": INVALID_TRAINING_ATTEMPT_STATUS,
+        "training_run_digest":
+            "f9d9f2d78360f5155596e6eebfacadad4aa47afb21f2b5bfcf0a5637708622b7",
+        "training_execution_authorisation_digest":
+            "7217b78513408d68a961cec5756c1caac614778fd32e7c37822e70398a677d5f",
+        "completed_optimizer_updates": 18,
+        "checkpoint_published": False,
+        "no_latent_baseline_started": False,
+        "qualification_started": False,
+        "exception_type": "RuntimeError",
+        "exception_message": (
+            "self.dim() cannot be 0 to view Float as Byte (different element "
+            "sizes)"
+        ),
+    },
+    "frozen_scientific_inputs": {
+        "oracle_v1_3_digest":
+            "0592876e7768a627198f1154da64b4ed492237fe68196e011fcbfcfef7706e63",
+        "scorer_fit_contract_digest":
+            "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89",
+        "legacy_equivalence_receipt_digest":
+            "49a4efb800b8eae5fe4a4a7cfc47833bfda8c5994acc02f5736a2f08ec76992e",
+        "replay_overlay_manifest_digest":
+            "b4906f7eff24a63e3d1c102187678f9dcacc835aa55bc0c69f66f14b16022594",
+        "fresh_calibration_state_manifest_digest":
+            "9eaebfd78da51b2d072c34e8c725ad9a75a73f2888537f347a1e682a0a57b30b",
+        "fresh_calibration_corpus_digest":
+            "18e127910169623c5660a9c46bde4b0de3eb82aa9b86ab8e3dd38106eb35c049",
+        "training_view_digest":
+            "9eefff24953fdfc1eb7718ff6067a9bc06f5f8bd321f62769521234d6393291c",
+        "latent_index_digest":
+            "25bbd7731fc2e3026063544c64d31abff2c0ded43991504eab4d11938401b758",
+        "encoding_receipt_digest":
+            "91bb919714c4cd0dc19da988b80dc10612715a0a64d6bd1b553c84d41cdefb5a",
+        "latent_initial_state_digest":
+            "f74eba729b0f9fbeb9cdb502a3c5f6bf239bc8ba500a5398f59a91bc2c4dead5",
+        "no_latent_initial_state_digest":
+            "2915cc3a42cb0215c875c36141fb0c4fec9aea7f2304355857157421f9a69535",
+        "binding_digest":
+            "c783a16d28d3770f0dc253633aabd4af45d543122b9dbb20190334bd0ce2e7e5",
+    },
+    "preserved_raw_bindings": {
+        "training_view.json": {
+            "sha256": "f6381bf21fe76f4713059715577e2ca34d833540e90b5946b9b7c02239e7d613",
+            "byte_count": 2771524,
+        },
+        "equivalence_receipt.json": {
+            "sha256": "f023724313f6f85d2fa60abbf432a54652a7de79a0941be1515e1e54d896c779",
+            "byte_count": 644424,
+        },
+        "replay_overlay_manifest.json": {
+            "sha256": "3c5548b51f090f879ba3095f66d08f65704459e90913fd84eda44e8c351abf53",
+            "byte_count": 8697,
+        },
+        "fresh_calibration/state_manifest.json": {
+            "sha256": "67b1fe4f288c9a47b1eacf13118dc5a163300268ebf755e65aa03d169d81424c",
+            "byte_count": 328564,
+        },
+        "fresh_calibration/corpus_receipt.json": {
+            "sha256": "829a07281d145c4cdfbeca9b81bd2f17d4419626d1a8a89e224f281c1ddc3a7c",
+            "byte_count": 132331,
+        },
+        "encoded_training_view/latent_index.json": {
+            "sha256": "55e66239562757393f27240e620ce3624e73f10df73420be824eaa0f4216fe11",
+            "byte_count": 915615,
+        },
+        "encoded_training_view/encoding_receipt.json": {
+            "sha256": "4e87abf7165eb4a0d4f74d6050e64932efc74c03845369d2e4a1d68262a13cf0",
+            "byte_count": 1613,
+        },
+        "scorer/training_execution_authorisation.json": {
+            "sha256": "2b3222e1b911d43e6f809c91ad4d4328df71c9199ede41818a2d06db5a079d81",
+            "byte_count": 928,
+        },
+        "scorer/training/latent/attempt_000/attempt.json": {
+            "sha256": "73d1e806b3909783bea4d38eb4cd669bccfa815c86e30e5a326bae1dd9e6ea0a",
+            "byte_count": 922,
+        },
+        "scorer/initialisations/latent.pt": {
+            "sha256": "6c81d2e26e4f64f3842c7d3e43e79260a692d7a4102bc3ab666e11e5574277b8",
+            "byte_count": 6403949,
+        },
+        "scorer/initialisations/no_latent.pt": {
+            "sha256": "dfd60f05a0a1b4ab2aa44f006210a8b5d6041372efcb277187027089509fbf7b",
+            "byte_count": 2201919,
+        },
+    },
+    "sole_repair": (
+        "scalar-safe device-independent canonical tensor receipt serialization; "
+        "no scientific state mutation"
+    ),
+    "replacement_attempt": SCORER_TRAINING_REPLACEMENT_ATTEMPT,
+    "maximum_authorised_replacement_attempts":
+        SCORER_TRAINING_MAXIMUM_REPLACEMENT_ATTEMPTS,
+    "restart_from_registered_initialisation": True,
+    "reuse_invalid_attempt_updates": False,
+    "performance_based_authorisation": False,
+    "further_replacement_automatically_permitted": False,
+}
 
 SOURCE_BASE_COMMIT = "1c07df778b7225301b9be80ebd2f6162bfe16965"
 AUDITED_CORPUS_SOURCE_COMMIT = "5c67135ad83b9206e6520e507f1ecaf980fd3d8d"
@@ -709,6 +875,10 @@ def selector_integrity_replacement_digest() -> str:
     return canonical_digest(SELECTOR_INTEGRITY_REPLACEMENT)
 
 
+def scorer_training_integrity_replacement_digest() -> str:
+    return canonical_digest(SCORER_TRAINING_INTEGRITY_REPLACEMENT)
+
+
 def contract() -> dict[str, Any]:
     inherited = ORACLE.oracle_contract()
     if (
@@ -1029,6 +1199,11 @@ __all__ = [
     "GENERATED_ROOT",
     "HISTORICAL_CALIBRATION_STATES",
     "HORIZON_LATENTS_ROOT",
+    "INVALID_TRAINING_ATTEMPT_RECEIPT_PATH",
+    "INVALID_TRAINING_ATTEMPT_SCHEMA",
+    "INVALID_TRAINING_ATTEMPT_SELF_KEY",
+    "INVALID_TRAINING_ATTEMPT_SOURCE_COMMIT",
+    "INVALID_TRAINING_ATTEMPT_STATUS",
     "LATENT_INDEX_PATH",
     "LATENT_INDEX_SCHEMA",
     "NO_LATENT_BASELINE_PATH",
@@ -1060,6 +1235,21 @@ __all__ = [
     "SCORER_PACKAGE_RECEIPT_SCHEMA",
     "SCORER_PACKAGE_SCHEMA",
     "SCORER_ROOT",
+    "SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT",
+    "SCORER_TRAINING_INTEGRITY_REPLACEMENT",
+    "SCORER_TRAINING_MAXIMUM_REPLACEMENT_ATTEMPTS",
+    "SCORER_TRAINING_REPLACEMENT_ATTEMPT",
+    "SCORER_TRAINING_REPLACEMENT_AUTHORISATION_PATH",
+    "SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SCHEMA",
+    "SCORER_TRAINING_REPLACEMENT_AUTHORISATION_SELF_KEY",
+    "SCORER_TRAINING_REPLACEMENT_BASELINE_PATH",
+    "SCORER_TRAINING_REPLACEMENT_BASELINE_RECEIPT_PATH",
+    "SCORER_TRAINING_REPLACEMENT_CHECKPOINTS_ROOT",
+    "SCORER_TRAINING_REPLACEMENT_EVALUATION_AUTHORISATION_PATH",
+    "SCORER_TRAINING_REPLACEMENT_FAILED_SCORER_PATH",
+    "SCORER_TRAINING_REPLACEMENT_PACKAGE_PATH",
+    "SCORER_TRAINING_REPLACEMENT_PACKAGE_RECEIPT_PATH",
+    "SCORER_TRAINING_REPLACEMENT_QUALIFICATION_PATH",
     "SCORER_TRAINING_CONTRACT",
     "SELECTOR_INTEGRITY_REPLACEMENT",
     "SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH",
@@ -1085,6 +1275,7 @@ __all__ = [
     "fresh_calibration_selector_digest",
     "historical_calibration_disposition_digest",
     "selector_integrity_replacement_digest",
+    "scorer_training_integrity_replacement_digest",
     "source_bindings",
     "validate_original_preregistration",
     "validate_preregistration",

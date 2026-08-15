@@ -1,6 +1,7 @@
 """Focused non-sealed tests for the v1.2 utility-scorer trainer."""
 from __future__ import annotations
 
+import copy
 import json
 import inspect
 import tempfile
@@ -629,6 +630,140 @@ class UtilityScorerTrainerTests(unittest.TestCase):
             self.assertEqual(second_receipt["recovery_decision"],
                              "reused_verified_registered_initialisation")
 
+    def test_tensor_receipts_are_scalar_safe_deterministic_and_sensitive(self):
+        scalar = torch.tensor(1.0, dtype=torch.float32)
+        matrix = torch.tensor([[1, 2], [3, 4]], dtype=torch.int64)
+        nested = {"state": {0: {"step": scalar, "exp_avg": matrix}}}
+
+        for value in (scalar, matrix):
+            first_bytes = scorer.tensor_receipt_bytes(value)
+            first_digest = scorer.tensor_digest(value)
+            self.assertEqual(first_bytes, scorer.tensor_receipt_bytes(value))
+            self.assertEqual(first_digest, scorer.tensor_digest(value))
+        self.assertEqual(
+            scorer.structured_receipt_bytes(nested),
+            scorer.structured_receipt_bytes(nested),
+        )
+        self.assertEqual(scorer.structured_digest(nested),
+                         scorer.structured_digest(nested))
+
+        self.assertNotEqual(scorer.tensor_digest(scalar),
+                            scorer.tensor_digest(torch.tensor(2.0)))
+        self.assertNotEqual(scorer.tensor_digest(scalar),
+                            scorer.tensor_digest(torch.tensor([1.0])))
+        # These two scalar values have identical four value bytes; only their
+        # dtype metadata differs.
+        self.assertNotEqual(
+            scorer.tensor_digest(torch.tensor(1.0, dtype=torch.float32)),
+            scorer.tensor_digest(torch.tensor(1065353216, dtype=torch.int32)),
+        )
+        self.assertNotEqual(
+            scorer.structured_digest({"state": {0: {"step": scalar}}}),
+            scorer.structured_digest({"state": {0: {"other": scalar}}}),
+        )
+        if torch.cuda.is_available():
+            self.assertEqual(scorer.tensor_receipt_bytes(scalar),
+                             scorer.tensor_receipt_bytes(scalar.cuda()))
+            self.assertEqual(scorer.tensor_digest(matrix),
+                             scorer.tensor_digest(matrix.cuda()))
+
+    def test_structured_receipt_does_not_mutate_nested_optimizer_state(self):
+        scalar = torch.tensor(3.0, dtype=torch.float32)
+        noncontiguous = torch.arange(12, dtype=torch.float64).reshape(3, 4).t()
+        state = {
+            "state": {4: {"step": scalar, "exp_avg": noncontiguous}},
+            "param_groups": [{"params": [4], "lr": 3e-4}],
+        }
+        before = copy.deepcopy(state)
+        scorer.structured_receipt_bytes(state)
+        scorer.structured_digest(state)
+        self.assertTrue(torch.equal(state["state"][4]["step"],
+                                    before["state"][4]["step"]))
+        self.assertTrue(torch.equal(state["state"][4]["exp_avg"],
+                                    before["state"][4]["exp_avg"]))
+        self.assertEqual(state["state"][4]["exp_avg"].stride(),
+                         before["state"][4]["exp_avg"].stride())
+        self.assertEqual(state["param_groups"], before["param_groups"])
+
+    def test_realistic_adamw_state_after_one_update_is_receipted(self):
+        scorer.configure_determinism(20260811)
+        model = scorer.UtilityScorer(use_latent=False, hidden=8)
+        optimiser = scorer._new_optimiser(model, scorer.SCORER["training"])
+        action_goal = torch.arange(3 * scorer.ACTION_DIM + 3 * scorer.GOAL_DIM,
+                                   dtype=torch.float32).reshape(3, -1) / 100.0
+        outputs = model(torch.empty(3, 0), action_goal)
+        sum(value.square().mean() for value in outputs).backward()
+        optimiser.step()
+        state = optimiser.state_dict()
+        steps = [entry["step"] for entry in state["state"].values()]
+        self.assertTrue(steps)
+        self.assertTrue(all(step.ndim == 0 for step in steps))
+        first = scorer.structured_digest(state)
+        self.assertEqual(first, scorer.structured_digest(state))
+        self.assertEqual(first, __import__("hashlib").sha256(
+            scorer.structured_receipt_bytes(state)).hexdigest())
+
+    def test_tiny_production_training_checkpoint_receipt_smoke(self):
+        """One non-scientific update traverses the failed production path."""
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            scorer.configure_determinism(20260811)
+            model = scorer.UtilityScorer(use_latent=False, hidden=8)
+            initial_state = scorer._cpu_state(model)
+            initial_digest = scorer.state_dict_digest(initial_state)
+            initial_path = root / "tiny_initialisation.pt"
+            scorer.atomic_torch_save({
+                "model_state_dict": initial_state,
+            }, initial_path)
+            initialisation = {
+                "path": str(initial_path),
+                "initial_state_digest": initial_digest,
+            }
+            rows = 4
+            latent = torch.zeros((rows, scorer.HORIZONS, scorer.TOKEN_DIM))
+            action_goal = torch.linspace(
+                -1.0, 1.0, rows * (scorer.ACTION_DIM + scorer.GOAL_DIM),
+            ).reshape(rows, -1)
+            targets = {
+                "progress": torch.linspace(-0.5, 0.5, rows),
+                "safety": torch.tensor([0.0, 1.0, 0.25, 0.75]),
+                "completion": torch.tensor([0.0, 1.0, 0.0, 1.0]),
+            }
+            budget = dict(scorer.SCORER["training"])
+            budget.update({"epochs": 1, "batch": rows})
+            with mock.patch.object(scorer, "PACKAGE_DIR", root), \
+                    mock.patch.object(scorer, "_validate_budget"):
+                _final_state, result = scorer.train_registered_model(
+                    "tiny_non_scientific_fixture", model, use_latent=False,
+                    latent=latent, action_goal=action_goal, targets=targets,
+                    device=torch.device("cpu"), budget=budget,
+                    training_run_digest="d" * 64,
+                    initialisation=initialisation,
+                )
+
+            checkpoint_path = Path(result["final_checkpoint"])
+            payload = torch.load(checkpoint_path, map_location="cpu",
+                                 weights_only=False)
+            optimizer_state = payload["optimizer_state_dict"]
+            self.assertTrue(any(
+                entry["step"].ndim == 0
+                for entry in optimizer_state["state"].values()
+            ))
+            self.assertEqual(payload["optimizer_state_digest"],
+                             scorer.structured_digest(optimizer_state))
+            self.assertEqual(
+                scorer.structured_receipt_bytes(optimizer_state),
+                scorer.structured_receipt_bytes(optimizer_state),
+            )
+            self.assertEqual(scorer._validate_checkpoint(
+                payload, name="tiny_non_scientific_fixture", use_latent=False,
+                training_run_digest="d" * 64,
+                initial_state_digest=initial_digest,
+                execution=payload["execution_fingerprint"],
+                training_rows=rows, epochs=1, path=checkpoint_path,
+            ), 1)
+
     def test_checkpoint_requires_exact_rng_optimizer_and_order_state(self):
         scorer.configure_determinism(20260811)
         model = scorer.UtilityScorer(use_latent=False, hidden=8)
@@ -636,7 +771,14 @@ class UtilityScorerTrainerTests(unittest.TestCase):
         execution = scorer._execution_fingerprint(torch.device("cpu"))
         generator = torch.Generator(device="cpu").manual_seed(20260811)
         order = torch.tensor([2, 0, 1], dtype=torch.int64)
-        optimizer_state = torch.optim.AdamW(model.parameters()).state_dict()
+        optimizer = torch.optim.AdamW(model.parameters())
+        outputs = model(torch.empty(3, 0), torch.ones(3, scorer.ACTION_DIM +
+                                                       scorer.GOAL_DIM))
+        sum(value.mean() for value in outputs).backward()
+        optimizer.step()
+        optimizer_state = optimizer.state_dict()
+        self.assertTrue(all(entry["step"].ndim == 0
+                            for entry in optimizer_state["state"].values()))
         rng_state = scorer._capture_rng_state()
         generator_state = generator.get_state()
         payload = {

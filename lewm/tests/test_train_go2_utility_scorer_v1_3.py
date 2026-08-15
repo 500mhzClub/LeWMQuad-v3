@@ -57,13 +57,13 @@ def test_degeneracy_training_and_evaluation_gates_are_in_order():
     features = source.index("FROZEN_TRAINER.features(")
     registration = source.index("FROZEN_TRAINER.register_initialisation(")
     training_authorisation = source.index(
-        "label=\"v1.3 one-shot training authorisation\"")
+        "issue_training_integrity_replacement_authorisation(")
     train_call = source.index("FROZEN_TRAINER.train_registered_model(")
     evaluation_authorisation = source.index(
         "label=\"v1.3 one-shot qualification evaluation authorisation\"")
     evaluate_call = source.index("FROZEN_TRAINER.evaluate_model(")
-    assert degeneracy < features < registration < training_authorisation
-    assert training_authorisation < train_call
+    assert degeneracy < registration < training_authorisation < features
+    assert features < train_call
     assert train_call < evaluation_authorisation < evaluate_call
     assert source.index("evaluation_authorisation_path(root)") < degeneracy
 
@@ -94,6 +94,19 @@ def test_all_training_outputs_are_registered_under_the_closed_contract_root():
     }
     assert all(CONTRACT.GENERATED_ROOT in path.parents for path in expected)
     assert set(CONTRACT.OUTPUT_PATHS.values()) >= {str(path) for path in expected}
+    replacement = {
+        CONTRACT.INVALID_TRAINING_ATTEMPT_RECEIPT_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_AUTHORISATION_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_QUALIFICATION_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_EVALUATION_AUTHORISATION_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_PACKAGE_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_PACKAGE_RECEIPT_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_BASELINE_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_BASELINE_RECEIPT_PATH,
+        CONTRACT.SCORER_TRAINING_REPLACEMENT_FAILED_SCORER_PATH,
+    }
+    assert all(CONTRACT.SCORER_TRAINING_INTEGRITY_REPLACEMENT_ROOT in path.parents
+               for path in replacement)
     assert CONTRACT.contract()[
         "qualification_pass_authorises_predictor_open_in_this_workflow"] is False
     assert CONTRACT.contract()["final_200_state_benchmark_authorised"] is False
@@ -143,3 +156,83 @@ def test_immutable_json_publication_is_idempotent_not_replaceable(
     with pytest.raises(trainer.V13TrainingError):
         trainer.publish_json_once(
             path, {**payload, "qualified": True}, label="synthetic terminal")
+
+
+def test_replacement_amendment_does_not_change_frozen_science_contract():
+    assert CONTRACT.contract_digest() == (
+        "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89")
+    amendment = CONTRACT.SCORER_TRAINING_INTEGRITY_REPLACEMENT
+    assert amendment["invalid_original_attempt"]["status"] == (
+        "INVALID_TECHNICAL_PREQUALIFICATION_ADAMW_SCALAR_STATE_SERIALIZATION")
+    assert amendment["replacement_attempt"] == 1
+    assert amendment["maximum_authorised_replacement_attempts"] == 1
+    assert amendment["performance_based_authorisation"] is False
+    assert amendment["further_replacement_automatically_permitted"] is False
+
+
+def test_replacement_authorisation_binds_lineage_and_forbids_another_attempt():
+    trainer = _trainer()
+    initialisations = {
+        "latent": {"path": "latent.pt", "sha256": "a" * 64,
+                   "initial_state_digest": "b" * 64},
+        "no_latent": {"path": "no_latent.pt", "sha256": "c" * 64,
+                      "initial_state_digest": "d" * 64},
+    }
+    invalid = {trainer.INVALID_ATTEMPT_SELF_KEY: "e" * 64,
+               "status": CONTRACT.INVALID_TRAINING_ATTEMPT_STATUS,
+               "exception": {"type": "RuntimeError", "message": "scalar"}}
+    binding = {
+        "architecture": {}, "normalisation": {}, "utility_weights": {},
+        "training": {}, "training_execution_counts": {},
+        "qualification_thresholds": {}, "learning_rate_schedule": "constant",
+        "final_epoch_only": True, "epoch_selection_permitted": False,
+        "model_specific_calibration": None,
+    }
+    value = trainer._replacement_authorisation_payload(
+        invalid_attempt=invalid, source={"source_commit": "f" * 40},
+        science={"training_view_digest": "1" * 64}, binding=binding,
+        binding_digest="2" * 64, training_run_digest="3" * 64,
+        initialisations=initialisations, data_order={"seed": 20260811},
+        smoke={"passed": True})
+    assert trainer._validate_signed(
+        value, trainer.REPLACEMENT_AUTHORISATION_SELF_KEY,
+        "synthetic replacement") == value
+    assert value["replacement_attempt_number"] == 1
+    assert value["maximum_authorised_replacement_attempts"] == 1
+    assert value["reuse_original_eighteen_updates"] is False
+    assert value["authorised_because_of_model_performance"] is False
+    assert value["further_replacement_automatically_permitted"] is False
+
+
+def test_replacement_preflight_accepts_only_preserved_attempt_zero(tmp_path: Path):
+    trainer = _trainer()
+    model_root = (tmp_path / CONTRACT.SCORER_TRAINING_REPLACEMENT_CHECKPOINTS_ROOT
+                  / "latent")
+    attempt = model_root / "attempt_000"
+    attempt.mkdir(parents=True)
+    (attempt / "attempt.json").write_text("{}")
+    common = dict(
+        use_latent=True, registration={}, training_run_digest="a" * 64,
+        device=trainer.torch.device("cpu"), budget={}, training_rows=1152,
+        root=tmp_path)
+    trainer._preflight_registered_training("latent", **common)
+    (model_root / "attempt_001").mkdir()
+    with pytest.raises(trainer.V13TrainingError, match="attempt_000"):
+        trainer._preflight_registered_training("latent", **common)
+
+
+def test_replacement_loader_bypasses_only_old_live_source_equality():
+    source = _function_source(
+        "load_preserved_encoded_training_view_for_replacement")
+    bridge = _function_source(
+        "_validate_preserved_workflow_inputs_for_replacement")
+    assert "load_and_validate_encoded_training_view_for_consumption" not in source
+    assert "root=None" in bridge
+    for validation in (
+        "validate_equivalence_receipt(",
+        "validate_fresh_selection_attempt(",
+        "validate_fresh_selection_terminal(",
+        "validate_fresh_calibration_manifest(",
+        "validate_latent_index(",
+    ):
+        assert validation in source + bridge
