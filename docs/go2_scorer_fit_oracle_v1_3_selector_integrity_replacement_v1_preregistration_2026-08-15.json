@@ -735,7 +735,7 @@
     "status": "FROZEN_BEFORE_V1_3_BRANCH_EXECUTION"
   },
   "predictor_utility_shards_opened": false,
-  "preregistration_digest": "2c57b1f6204aabff48704d6cec5650c035619133b145dfd155d8d97bab940b13",
+  "preregistration_digest": "467a4d830171218d52edeca49d40ff212fa12faaa03b7a644540a14764b704a3",
   "qualification_started": false,
   "schema": "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_v1_preregistration_v1",
   "scorer_training_started": false,
@@ -807,7 +807,7 @@
       },
       "equivalence_receipt": {
         "byte_count": 644424,
-        "compared_count": 1422,
+        "compared_branch_count": 1422,
         "file_mode": "0600",
         "mismatch_count": 0,
         "path": ".generated/go2_scorer_fit_oracle_v1_3/equivalence_receipt.json",
@@ -877,7 +877,7 @@
     "valid_result_survives_nonzero_teardown": true,
     "worker_refuses_existing_terminal_result_or_launch_marker": true
   },
-  "selector_integrity_replacement_digest": "3353d5b4b2b9270cd1bb489ed7277d4791ab143d4d5103314aa257f9a6571e45",
+  "selector_integrity_replacement_digest": "0f2a8901c7d55ccfb71946cb5d0c4612f435d27fe66e8868122da15f74067a3d",
   "selector_integrity_replacement_started": false,
   "source_bindings": [
     {
@@ -886,14 +886,14 @@
       "sha256": "e86d56cd238d9892219fb97edf00bf0042424881688d46caf422cea2e02894af"
     },
     {
-      "byte_count": 53469,
+      "byte_count": 53476,
       "path": "lewm/oracle/go2_scorer_fit_oracle_v1_3_contract.py",
-      "sha256": "417ca1e6b303c2627352c34f9d1f6952b137e5331dcf120a7765e9f6d8a5c196"
+      "sha256": "95b1bef7c4bff9525edb0f680af367c746519c8412794313faef2c69dfec0c73"
     },
     {
-      "byte_count": 183446,
+      "byte_count": 183465,
       "path": "scripts/run_go2_scorer_fit_oracle_v1_3.py",
-      "sha256": "e4f38fa7e12d0184b57f4597b172f74a6505573e6341ff86c28a5dd6b2b2839e"
+      "sha256": "af5b89f072e499a10902ceb58863937ee8e968bcb8259548524eb32ed996777a"
     },
     {
       "byte_count": 37842,
@@ -981,14 +981,14 @@
       "sha256": "6591f891e3062f16df84c300e59d9b169953f9d6805ea3747f72c4523702f8ab"
     },
     {
-      "byte_count": 13800,
+      "byte_count": 13807,
       "path": "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
-      "sha256": "fb6efa87e0194f84c77c1b00041e5a221b35b40db7f4024d10b33bf39a3d579f"
+      "sha256": "a2645813ddc7dee60ddb4fee19e3930b1be8b73a4845792a6241cd758cb2a3c1"
     },
     {
-      "byte_count": 33258,
+      "byte_count": 33785,
       "path": "lewm/tests/test_run_go2_scorer_fit_oracle_v1_3.py",
-      "sha256": "ac0e0373499968033777d4c41d9bdb863b84e9394d9c96e0bc33cb61f5933098"
+      "sha256": "690204f7760a66ef9573d4b552f3611eb0b2947a3236a6752fab1d38c57e1881"
     },
     {
       "byte_count": 10101,

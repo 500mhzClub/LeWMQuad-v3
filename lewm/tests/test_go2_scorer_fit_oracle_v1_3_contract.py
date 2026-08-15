@@ -153,7 +153,7 @@ def test_selector_integrity_incident_and_predecessor_outputs_are_exactly_bound()
     assert outputs["fresh_branch_attempt_count"] == 0
     assert outputs["fresh_branch_outcome_count"] == 0
     preserved = replacement["preserved_predecessor_artifacts"]
-    assert preserved["equivalence_receipt"]["compared_count"] == 1422
+    assert preserved["equivalence_receipt"]["compared_branch_count"] == 1422
     assert preserved["equivalence_receipt"]["mismatch_count"] == 0
     assert preserved["replay_attempt_markers"]["count"] == 18
     assert preserved["replay_overlays"]["count"] == 18

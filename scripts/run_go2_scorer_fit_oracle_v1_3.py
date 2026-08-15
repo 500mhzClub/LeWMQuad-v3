@@ -767,7 +767,8 @@ def _validate_preserved_selector_predecessor(
         if payload.get(binding["self_key"]) != binding["self_digest"]:
             raise WorkflowError(f"preserved selector predecessor digest changed: {name}")
         for count_key in (
-            "entry_count", "compared_count", "mismatch_count", "overlay_count",
+            "entry_count", "compared_branch_count", "mismatch_count",
+            "overlay_count",
             "fit_overlay_count", "historical_calibration_overlay_count",
         ):
             if count_key in binding and payload.get(count_key) != binding[count_key]:

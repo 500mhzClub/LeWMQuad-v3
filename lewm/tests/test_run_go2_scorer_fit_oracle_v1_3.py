@@ -243,6 +243,18 @@ def test_equivalence_adopts_exact_1422_with_1146_fit(
     assert all(row["exact_equal"] is True for row in receipt["pairs"])
 
 
+def test_preserved_equivalence_binding_uses_the_real_receipt_count_field(
+        authority, diagnostic):
+    receipt = W.build_equivalence_receipt(authority, _v2_rows(diagnostic))
+    binding = W.V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT[
+        "preserved_predecessor_artifacts"
+    ]["equivalence_receipt"]
+    assert "compared_count" not in binding
+    assert binding["compared_branch_count"] == \
+        receipt["compared_branch_count"] == 1422
+    assert binding["mismatch_count"] == receipt["mismatch_count"] == 0
+
+
 def test_equivalence_rejects_one_changed_legacy_label(authority, diagnostic):
     rows = _v2_rows(diagnostic)
     rows[18]["min_clearance_m"] += 0.01

@@ -428,7 +428,7 @@ SELECTOR_INTEGRITY_REPLACEMENT = {
             ),
             "byte_count": 644424,
             "file_mode": "0600",
-            "compared_count": 1422,
+            "compared_branch_count": 1422,
             "mismatch_count": 0,
         },
         "replay_overlay_manifest": {
