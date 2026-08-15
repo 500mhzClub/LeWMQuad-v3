@@ -1,0 +1,1007 @@
+{
+  "complete": true,
+  "contract": {
+    "all_historical_identity_projection_digest": "8aeb6db77f92d7564b4202f5523bc5ec623e20e931b264d947726ba99b6cedf6",
+    "exact_replay_allowlist": [
+      {
+        "branch_identity_digest": "33de555bbc5b913511a5b0a2e8cca854f80abd2ea0bb4921afd125eb46cba095",
+        "candidate": "reverse_then_turn",
+        "candidate_index": 10,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "local_composite_motifs_2a01daa53a72",
+        "split_role": "fit",
+        "state_id": "scorer_fit-local_composite_motifs-completion_enriched-03",
+        "state_identity_digest": "dec61a0ec069783511a34d5f3744bf8e6f5ce3068e2063b887aa946432a740a6"
+      },
+      {
+        "branch_identity_digest": "76d449932f11663ffee4d73d9399b3a0d7027cd978acf28c1346d87c37a2d614",
+        "candidate": "turn_left_sustained",
+        "candidate_index": 5,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "medium_enclosed_maze_1124574f7392",
+        "split_role": "fit",
+        "state_id": "scorer_fit-medium_enclosed_maze-general-04",
+        "state_identity_digest": "b84f201bcf8b8d913760c2e64436ca4034b43c6d4476b24105a6fe962be966d8"
+      },
+      {
+        "branch_identity_digest": "2c52803b44470dff7a3e4b89f83dd5b0fdaaf7404d14e8bae9b5a2a9b29faab7",
+        "candidate": "turn_right_sustained",
+        "candidate_index": 6,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "medium_enclosed_maze_1124574f7392",
+        "split_role": "fit",
+        "state_id": "scorer_fit-medium_enclosed_maze-general-04",
+        "state_identity_digest": "b84f201bcf8b8d913760c2e64436ca4034b43c6d4476b24105a6fe962be966d8"
+      },
+      {
+        "branch_identity_digest": "893c3293aecf7f27050bc5471f0f3844347836a04078133bf5b338867289646c",
+        "candidate": "reverse_then_turn",
+        "candidate_index": 10,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "medium_enclosed_maze_1124574f7392",
+        "split_role": "fit",
+        "state_id": "scorer_fit-medium_enclosed_maze-general-04",
+        "state_identity_digest": "b84f201bcf8b8d913760c2e64436ca4034b43c6d4476b24105a6fe962be966d8"
+      },
+      {
+        "branch_identity_digest": "52a516e559ecf88ad27e91ad4e4c66e670fc715297956ff391c9a72272f9d77c",
+        "candidate": "straight_fast",
+        "candidate_index": 0,
+        "diagnostic_category": "OFF_NAVIGABLE_GRAPH_OUTCOME",
+        "scene_id": "open_obstacle_field_03fdc12540a1",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-open_obstacle_field-general-00",
+        "state_identity_digest": "2e1b7f43e028eee7b162cf4fbbaf1981b85e9266c7b91bc218c456ca3c60ed74"
+      },
+      {
+        "branch_identity_digest": "e175015f9e54321b64f88bde4cd59771046136d2cc54ecec31c41e02509c12b7",
+        "candidate": "straight_medium",
+        "candidate_index": 1,
+        "diagnostic_category": "OFF_NAVIGABLE_GRAPH_OUTCOME",
+        "scene_id": "open_obstacle_field_03fdc12540a1",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-open_obstacle_field-general-00",
+        "state_identity_digest": "2e1b7f43e028eee7b162cf4fbbaf1981b85e9266c7b91bc218c456ca3c60ed74"
+      },
+      {
+        "branch_identity_digest": "69f9315951c67db1ebf9ccc00272ef05cd17f025431842bafc526d30bddd5f5e",
+        "candidate": "straight_fast",
+        "candidate_index": 0,
+        "diagnostic_category": "OFF_NAVIGABLE_GRAPH_OUTCOME",
+        "scene_id": "open_obstacle_field_060b48609180",
+        "split_role": "fit",
+        "state_id": "scorer_fit-open_obstacle_field-general-02",
+        "state_identity_digest": "c5bd2d361a1a8f394f4e12097efac68cbd00767179c8823d6f8efa106ea61b41"
+      },
+      {
+        "branch_identity_digest": "6f2d34186896a1d1ff75b936a7b1bd7599181baaf54a1b01efa3f51f5e616eef",
+        "candidate": "straight_medium",
+        "candidate_index": 1,
+        "diagnostic_category": "OFF_NAVIGABLE_GRAPH_OUTCOME",
+        "scene_id": "open_obstacle_field_060b48609180",
+        "split_role": "fit",
+        "state_id": "scorer_fit-open_obstacle_field-general-02",
+        "state_identity_digest": "c5bd2d361a1a8f394f4e12097efac68cbd00767179c8823d6f8efa106ea61b41"
+      },
+      {
+        "branch_identity_digest": "bb26b919f04a3b26cd8852192a18fa8a050f0e179a442b449b1064021c4e5051",
+        "candidate": "straight_fast",
+        "candidate_index": 0,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "6d3900adf9e67e1e15bbd7017b6ab6bcc1378cc41278b15333174ea2070f7832",
+        "candidate": "straight_medium",
+        "candidate_index": 1,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "1c571b29a26c4922d89b258d9c7f6f4a0902c7ac6edb17788c814b836875e6ec",
+        "candidate": "straight_slow",
+        "candidate_index": 2,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "9b5333525d0d86a8039d1d53cd302fcb915cf3b1e64e94d45e8a8827e2bc82ca",
+        "candidate": "arc_left_sustained",
+        "candidate_index": 3,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "b446e9f2746590e4237952086cba55ac51e38e55e3fb28e7d43be333dfaa588d",
+        "candidate": "arc_right_sustained",
+        "candidate_index": 4,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "36330c334efe461cfbfa0beae5b46d11aff10940d661a0fc1b457927b4adfa74",
+        "candidate": "turn_left_sustained",
+        "candidate_index": 5,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "682ac99be9f989602607b6d34ae1d64484e22cb1665d4c832a989aa0fb2ad305",
+        "candidate": "turn_left_then_go",
+        "candidate_index": 7,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "2ebefcf80c8229b2fcc828977342f1998a74259714f4ea5c3c0de85ab962c6c1",
+        "candidate": "turn_right_then_go",
+        "candidate_index": 8,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "82cd0c2c647a71327b58c0a1e7d0dc3b6c4a2d46ce738887af48e944782c5200",
+        "candidate": "go_then_turn_left",
+        "candidate_index": 9,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      },
+      {
+        "branch_identity_digest": "6021ecc564f728d49420c28bcf18d2d64eaea535f9b488593b36f20679913bdb",
+        "candidate": "hold_all",
+        "candidate_index": 11,
+        "diagnostic_category": "LOCATABLE_GOAL_UNREACHABLE_OUTCOME",
+        "scene_id": "visual_sensor_stress_2301db82bb24",
+        "split_role": "calibration",
+        "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+        "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976"
+      }
+    ],
+    "exact_replay_allowlist_digest": "d3bcca73d9a98cd9c95050a8b3686e1aa1a0b47e431dd17aa225d717f466d5c2",
+    "final_200_state_benchmark_authorised": false,
+    "fit_identity_projection_digest": "c81b031af848149f5b263129285c1ea78a79b3c3fb136f44309f9ad673049f48",
+    "fresh_calibration_selector": {
+      "allocation": "exact Cartesian product of eight families and three strata",
+      "capture_rule": "first eligible boundary under the inherited selector",
+      "count": 24,
+      "drive_seed_rule": "20260811 XOR crc32(scene_id)",
+      "exclusions": {
+        "all_120_historical_scorer_fit_scenes": true,
+        "all_predecessor_selector_exclusions": true,
+        "future_final_evaluation_must_exclude_fresh_scenes": true,
+        "historical_identity_projection_digest": "8aeb6db77f92d7564b4202f5523bc5ec623e20e931b264d947726ba99b6cedf6",
+        "selected_fresh_scenes_are_pairwise_distinct": true,
+        "source_state_manifest_digest": "db79efce49d949522832d920b23a38292a491dc9e6fb2cbf2b8e0a5176fb062e"
+      },
+      "families": [
+        "large_enclosed_maze",
+        "local_composite_motifs",
+        "loop_alias_stress",
+        "medium_enclosed_maze",
+        "open_obstacle_field",
+        "rough_local_dynamics",
+        "small_enclosed_maze",
+        "visual_sensor_stress"
+      ],
+      "forbidden_selection_inputs": [
+        "candidate identity",
+        "candidate outcome",
+        "oracle label",
+        "latent",
+        "scorer output",
+        "qualification metric"
+      ],
+      "manifest_frozen_before_candidate_branch_generation": true,
+      "one_state_per_scene": true,
+      "post_selection_replacement": false,
+      "scene_order": "ascending lexical scene_id within each family",
+      "schema": "go2_scorer_fit_oracle_v1_3_fresh_calibration_selector_v1",
+      "states_per_family_stratum": 1,
+      "strata": [
+        "general",
+        "safety_enriched",
+        "completion_enriched"
+      ],
+      "warmup_blocks_inclusive": [
+        40,
+        120
+      ],
+      "worker_or_infrastructure_failure": "terminal; never skip to a replacement scene"
+    },
+    "fresh_calibration_selector_digest": "041607943d7246ee657584130e4fe35d7565944f933f3e07a9ee4ffc576981cb",
+    "genesis_runtime": {
+      "backend": "cpu",
+      "genesis_version": "0.3.14",
+      "gstaichi_version": "4.6.0",
+      "interpreter_relative_path": ".generated/venvs/genesis_render_vulkan/bin/python",
+      "numpy_version": "2.4.6",
+      "python_version": "3.12.3",
+      "pyvenv_config_byte_count": 219,
+      "pyvenv_config_relative_path": ".generated/venvs/genesis_render_vulkan/pyvenv.cfg",
+      "pyvenv_config_sha256": "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9",
+      "torch_version": "2.12.0+cu130"
+    },
+    "historical_calibration_disposition": {
+      "branch_count": 288,
+      "discarded": false,
+      "identity_projection_digest": "143f736376c7ef03b0f943670de79fcf69cc2b198c601b13188efc487d35b65f",
+      "qualification_eligible": false,
+      "replaced": false,
+      "state_count": 24,
+      "states": [
+        {
+          "family": "large_enclosed_maze",
+          "scene_id": "large_enclosed_maze_0294e4b379e1",
+          "state_id": "scorer_fit-large_enclosed_maze-general-00",
+          "state_identity_digest": "9237d8db4c775c0a03b0f0391df05a50eb9518ee0a93c7b15bb67305f7e9a830",
+          "stratum": "general"
+        },
+        {
+          "family": "large_enclosed_maze",
+          "scene_id": "large_enclosed_maze_196aa71822f2",
+          "state_id": "scorer_fit-large_enclosed_maze-safety_enriched-00",
+          "state_identity_digest": "7a0d0c4886f9e59c827be19b2e35d70c92ff233e47543fb9e999e31299e10bb5",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "large_enclosed_maze",
+          "scene_id": "large_enclosed_maze_2fab4b1c16a6",
+          "state_id": "scorer_fit-large_enclosed_maze-completion_enriched-00",
+          "state_identity_digest": "451efe30e767df2f0d2d5cb8cc0b7813c36b4f66aff5fb6c3a9fc3a8284dd015",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "local_composite_motifs",
+          "scene_id": "local_composite_motifs_0302989c334d",
+          "state_id": "scorer_fit-local_composite_motifs-general-00",
+          "state_identity_digest": "3ca257fb07956a88a0101a01cf67549be02f415df3ab676b4a5b06260258991a",
+          "stratum": "general"
+        },
+        {
+          "family": "local_composite_motifs",
+          "scene_id": "local_composite_motifs_15175bca8bdb",
+          "state_id": "scorer_fit-local_composite_motifs-safety_enriched-00",
+          "state_identity_digest": "5ba6a01d358195db42fb265c4e406bc61347077f6e95179de9479435126fb441",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "local_composite_motifs",
+          "scene_id": "local_composite_motifs_15385f6ed7d6",
+          "state_id": "scorer_fit-local_composite_motifs-completion_enriched-00",
+          "state_identity_digest": "24a28ab7ffeca55088cdac2f7eb2b9b79313c4706f9852c5f8c954d4dbbdc0e3",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "loop_alias_stress",
+          "scene_id": "loop_alias_stress_02bc8ab4058a",
+          "state_id": "scorer_fit-loop_alias_stress-general-00",
+          "state_identity_digest": "8d9287576881e9b006b88cc6c4ab4dc4ae0152d7cc7c33d7acff2cd99791651c",
+          "stratum": "general"
+        },
+        {
+          "family": "loop_alias_stress",
+          "scene_id": "loop_alias_stress_2ea7bc8d2198",
+          "state_id": "scorer_fit-loop_alias_stress-safety_enriched-00",
+          "state_identity_digest": "2d4d0a270a3db9baf12f621b08090bb1281c24dfbef063009f365064e44fa659",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "loop_alias_stress",
+          "scene_id": "loop_alias_stress_39316161a20c",
+          "state_id": "scorer_fit-loop_alias_stress-completion_enriched-00",
+          "state_identity_digest": "17cdc4f171251f9728d8f12a3fcf1f60966fdfe7d0669c91a5476952afc0093b",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "medium_enclosed_maze",
+          "scene_id": "medium_enclosed_maze_0011a1affc54",
+          "state_id": "scorer_fit-medium_enclosed_maze-general-00",
+          "state_identity_digest": "be7401dcbf89c27cc9766a131ebae6d77019b190819e0bb901aae379d6eb5ebb",
+          "stratum": "general"
+        },
+        {
+          "family": "medium_enclosed_maze",
+          "scene_id": "medium_enclosed_maze_137e1f03ca2d",
+          "state_id": "scorer_fit-medium_enclosed_maze-safety_enriched-00",
+          "state_identity_digest": "24676131f0c9c03e7e8496b7481d216d8b7bf5a2462fb380729628daf20d876d",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "medium_enclosed_maze",
+          "scene_id": "medium_enclosed_maze_2167bdab4e49",
+          "state_id": "scorer_fit-medium_enclosed_maze-completion_enriched-00",
+          "state_identity_digest": "9c3940c1a512f4ddaa4f29d7a4f05b210bdf6dbed212d26f94ced72301ed3235",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "open_obstacle_field",
+          "scene_id": "open_obstacle_field_03fdc12540a1",
+          "state_id": "scorer_fit-open_obstacle_field-general-00",
+          "state_identity_digest": "2e1b7f43e028eee7b162cf4fbbaf1981b85e9266c7b91bc218c456ca3c60ed74",
+          "stratum": "general"
+        },
+        {
+          "family": "open_obstacle_field",
+          "scene_id": "open_obstacle_field_14592a4488b0",
+          "state_id": "scorer_fit-open_obstacle_field-safety_enriched-00",
+          "state_identity_digest": "fbce3ad81c19ffb1a6a57573403077a86b3cf9162da931064cb2b5c221ce45b2",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "open_obstacle_field",
+          "scene_id": "open_obstacle_field_165a5b0554e1",
+          "state_id": "scorer_fit-open_obstacle_field-completion_enriched-00",
+          "state_identity_digest": "220525522bfd3054dbcdde8c5338d6f1459d46443457798e27682f85343c3b8f",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "rough_local_dynamics",
+          "scene_id": "rough_local_dynamics_088e9f856dda",
+          "state_id": "scorer_fit-rough_local_dynamics-general-00",
+          "state_identity_digest": "18108441dd1a56a4e76f59c9b151ac71726a7a149bbde97553b78dd9091878f4",
+          "stratum": "general"
+        },
+        {
+          "family": "rough_local_dynamics",
+          "scene_id": "rough_local_dynamics_249e04b2e81a",
+          "state_id": "scorer_fit-rough_local_dynamics-safety_enriched-00",
+          "state_identity_digest": "5cce57d3f1e709e02beadadb351c18aeefb13d1b49a41260246ba1a57c8fd80e",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "rough_local_dynamics",
+          "scene_id": "rough_local_dynamics_1a072465e2d2",
+          "state_id": "scorer_fit-rough_local_dynamics-completion_enriched-00",
+          "state_identity_digest": "aebe821f5d1361977bae8e99d816a04a38ef08cb2b0bcf5ce8621ce27f321b5d",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "small_enclosed_maze",
+          "scene_id": "small_enclosed_maze_035bc78f0849",
+          "state_id": "scorer_fit-small_enclosed_maze-general-00",
+          "state_identity_digest": "0b9a6eb9a429145dc441bf15d0a8dd38e25cff1c501c4420cddb1da1a83296cc",
+          "stratum": "general"
+        },
+        {
+          "family": "small_enclosed_maze",
+          "scene_id": "small_enclosed_maze_0a705161a37f",
+          "state_id": "scorer_fit-small_enclosed_maze-safety_enriched-00",
+          "state_identity_digest": "1cfccd331434a6d8350dfae42c71abfddf3c38d1a5f817e0483ab90345170e6c",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "small_enclosed_maze",
+          "scene_id": "small_enclosed_maze_fd68c85e4fec",
+          "state_id": "scorer_fit-small_enclosed_maze-completion_enriched-00",
+          "state_identity_digest": "38a1bbf11b5aab346790d5f3973b4a8f45f6094ba87bbdd861349e0ebe41a05e",
+          "stratum": "completion_enriched"
+        },
+        {
+          "family": "visual_sensor_stress",
+          "scene_id": "visual_sensor_stress_02a4094c2467",
+          "state_id": "scorer_fit-visual_sensor_stress-general-00",
+          "state_identity_digest": "b8c1cd6e866610bdef0af28f8b444823d891ff28a417000c8c300d77827f24c9",
+          "stratum": "general"
+        },
+        {
+          "family": "visual_sensor_stress",
+          "scene_id": "visual_sensor_stress_2301db82bb24",
+          "state_id": "scorer_fit-visual_sensor_stress-safety_enriched-00",
+          "state_identity_digest": "95e8fb1b34724192fec7a3e2cb9a700cf4d472ba62ae348de7b34f3cec87a976",
+          "stratum": "safety_enriched"
+        },
+        {
+          "family": "visual_sensor_stress",
+          "scene_id": "visual_sensor_stress_07b6ccbe4132",
+          "state_id": "scorer_fit-visual_sensor_stress-completion_enriched-00",
+          "state_identity_digest": "7750a982f03e5ef237230d1ebae5a96ac284f5b6b47476404812b89b348c565e",
+          "stratum": "completion_enriched"
+        }
+      ],
+      "status": "DEVELOPMENT_ONLY"
+    },
+    "historical_calibration_disposition_digest": "8ec3c6d206d162012642536c6c54c56a9c50f0d3887b5477594f90a3f3c29c70",
+    "legacy_valid_equivalence": {
+      "legacy_label_keys": [
+        "start_geodesic_m",
+        "final_geodesic_m",
+        "progress",
+        "contact_fraction",
+        "clearance_cost",
+        "stuck_fraction",
+        "fall",
+        "safety",
+        "completion",
+        "utility",
+        "min_clearance_m",
+        "evaluation_points"
+      ],
+      "mode": "exact v1.2 label adoption plus deterministic recomputation",
+      "requires_exact_row_digest_allowlist": true,
+      "row_count": 1422,
+      "simulator_rerun_count": 0
+    },
+    "lineage": {
+      "audited_corpus_source_commit": "5c67135ad83b9206e6520e507f1ecaf980fd3d8d",
+      "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+      "diagnostic_audit_digest": "90dda36b7e85a650a75d1efb5d21faf3f3ed40f0860f3bdb3f6a4e69b8bd3741",
+      "diagnostic_file_sha256": "26ba643ff311acebbeba6fb59941bb56cc80fd29b5c9d52ee2c2acacae1c5d43",
+      "diagnostic_path": "docs/lewm_go2_scorer_fit_v2_graph_label_failure_diagnostic_2026-08-15.json",
+      "frozen_assignment_manifest_digest": "a91d6d211f5b07270df5a66262ce4ba218e8a3925ae5f8aba196b8c10f4959f4",
+      "frozen_branch_identity_set_digest": "d9330a4d9102011c616abcb6d38bb8644e8bbf9f497aa0cb176bf184ad7acdf3",
+      "frozen_branch_rows_sha256": "e7cabd8734e1e5b1776a5ad0de3eb093f6222169103e0b1c39e8ef9b2be60036",
+      "frozen_corpus_digest": "5216e2182a4e165a673714fcccbd6b769d01fa565a69a466b3cab066ab01ccc3",
+      "frozen_state_manifest_digest": "db79efce49d949522832d920b23a38292a491dc9e6fb2cbf2b8e0a5176fb062e",
+      "source_base_commit": "1c07df778b7225301b9be80ebd2f6162bfe16965",
+      "v1_2_oracle_digest": "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4",
+      "v1_2_progress_digest": "840328d918f446bad1a5855e72f13f8937fc9a42eafd87818bf8cd94305e2c3d",
+      "v1_2_safety_digest": "5cf4572be2490c1b6f748abc704fff3a3c15fb1ea8dc060e49314e2bbaf01e0f"
+    },
+    "managed_output_storage": {
+      "logical_root": ".generated/go2_scorer_fit_oracle_v1_3",
+      "only_the_logical_root_may_be_a_symlink": true,
+      "registered_physical_target": "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/active/go2_scorer_fit_oracle_v1_3"
+    },
+    "oracle_contract": {
+      "completion_locate_radius_condition": false,
+      "graph_boundary_final": {
+        "completion": "unchanged v1.2 at-goal-cell-at-any-tick",
+        "final_geodesic_m": null,
+        "physical_safety": "unchanged v1.2 tick aggregation",
+        "progress": -1.0,
+        "statuses": [
+          "GOAL_UNREACHABLE",
+          "OUTSIDE_LOCATE_RADIUS"
+        ],
+        "utility": "1.0*progress - 2.0*safety + 0.5*completion"
+      },
+      "graph_status_precedence": [
+        "NUMERIC_INVALID",
+        "OUTSIDE_LOCATE_RADIUS",
+        "GOAL_UNREACHABLE",
+        "REACHABLE"
+      ],
+      "horizon_blocks": 4,
+      "horizon_ticks": 20,
+      "inherited_progress_digest": "840328d918f446bad1a5855e72f13f8937fc9a42eafd87818bf8cd94305e2c3d",
+      "inherited_safety_digest": "5cf4572be2490c1b6f748abc704fff3a3c15fb1ea8dc060e49314e2bbaf01e0f",
+      "legacy_label_keys": [
+        "start_geodesic_m",
+        "final_geodesic_m",
+        "progress",
+        "contact_fraction",
+        "clearance_cost",
+        "stuck_fraction",
+        "fall",
+        "safety",
+        "completion",
+        "utility",
+        "min_clearance_m",
+        "evaluation_points"
+      ],
+      "locate_radius_m": 2.0,
+      "located_inequality": "nearest_node_distance_m <= 2.0",
+      "name": "go2_branch_oracle_v1_3",
+      "numeric_or_missing_trace": "refuse without a label",
+      "reachable_final": "delegate v1.2 aggregate labels exactly",
+      "schema": "go2_branch_oracle_v1_3_contract_v1",
+      "supersedes_oracle_v1_2_digest": "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4",
+      "ticks_per_block": 5,
+      "trace_schema": "go2_branch_oracle_v1_3_tick_trace_v1",
+      "transient_graph_status": "persisted diagnostic; non-latching",
+      "utility_weights": {
+        "completion": 0.5,
+        "progress": 1.0,
+        "safety": -2.0
+      }
+    },
+    "oracle_v1_3_digest": "0592876e7768a627198f1154da64b4ed492237fe68196e011fcbfcfef7706e63",
+    "output_paths": {
+      "authority": ".generated/go2_scorer_fit_oracle_v1_3/authority.json",
+      "encoded_training_view_root": ".generated/go2_scorer_fit_oracle_v1_3/encoded_training_view",
+      "encoding_receipt": ".generated/go2_scorer_fit_oracle_v1_3/encoded_training_view/encoding_receipt.json",
+      "equivalence_receipt": ".generated/go2_scorer_fit_oracle_v1_3/equivalence_receipt.json",
+      "failed_scorer": ".generated/go2_scorer_fit_oracle_v1_3/scorer/failed_scorer.pt",
+      "fresh_calibration_corpus_receipt": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/corpus_receipt.json",
+      "fresh_calibration_frames_root": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/frames",
+      "fresh_calibration_rows_root": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/rows",
+      "fresh_calibration_state_manifest": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/state_manifest.json",
+      "horizon_latents_root": ".generated/go2_scorer_fit_oracle_v1_3/encoded_training_view/latents/horizon",
+      "latent_index": ".generated/go2_scorer_fit_oracle_v1_3/encoded_training_view/latent_index.json",
+      "no_latent_baseline": ".generated/go2_scorer_fit_oracle_v1_3/scorer/no_latent_baseline.pt",
+      "no_latent_baseline_receipt": ".generated/go2_scorer_fit_oracle_v1_3/scorer/no_latent_baseline_receipt.json",
+      "qualification": ".generated/go2_scorer_fit_oracle_v1_3/scorer/qualification.json",
+      "qualification_evaluation_authorisation": ".generated/go2_scorer_fit_oracle_v1_3/scorer/qualification_evaluation_authorisation.json",
+      "registered_initialisations_root": ".generated/go2_scorer_fit_oracle_v1_3/scorer/initialisations",
+      "replay_attempts_root": ".generated/go2_scorer_fit_oracle_v1_3/replay_attempts",
+      "replay_overlay_manifest": ".generated/go2_scorer_fit_oracle_v1_3/replay_overlay_manifest.json",
+      "replay_overlays_root": ".generated/go2_scorer_fit_oracle_v1_3/replay_overlays",
+      "replay_plan": ".generated/go2_scorer_fit_oracle_v1_3/replay_plan.json",
+      "scorer_package": ".generated/go2_scorer_fit_oracle_v1_3/scorer/scorer_package.pt",
+      "scorer_package_receipt": ".generated/go2_scorer_fit_oracle_v1_3/scorer/scorer_package_receipt.json",
+      "scorer_root": ".generated/go2_scorer_fit_oracle_v1_3/scorer",
+      "superseded_preattempt_transition": ".generated/go2_scorer_fit_oracle_v1_3/superseded_preattempt_transition.json",
+      "training_checkpoints_root": ".generated/go2_scorer_fit_oracle_v1_3/scorer/training",
+      "training_execution_authorisation": ".generated/go2_scorer_fit_oracle_v1_3/scorer/training_execution_authorisation.json",
+      "training_view": ".generated/go2_scorer_fit_oracle_v1_3/training_view.json"
+    },
+    "output_schemas": {
+      "encoding_receipt": "go2_scorer_fit_oracle_v1_3_encoding_receipt_v1",
+      "latent_index": "go2_scorer_fit_oracle_v1_3_latent_index_v1",
+      "no_latent_baseline": "go2_utility_scorer_oracle_v1_3_no_latent_baseline_v1",
+      "no_latent_baseline_receipt": "go2_utility_scorer_oracle_v1_3_no_latent_baseline_receipt_v1",
+      "qualification": "go2_utility_scorer_oracle_v1_3_qualification_v1",
+      "qualification_evaluation_authorisation": "go2_utility_scorer_oracle_v1_3_qualification_evaluation_authorisation_v1",
+      "replay_overlay": "go2_scorer_fit_oracle_v1_3_replay_overlay_v1",
+      "scorer_package": "go2_utility_scorer_oracle_v1_3_package_v1",
+      "scorer_package_receipt": "go2_utility_scorer_oracle_v1_3_package_receipt_v1",
+      "trace": "go2_branch_oracle_v1_3_tick_trace_v1",
+      "training_execution_authorisation": "go2_utility_scorer_oracle_v1_3_training_execution_authorisation_v1"
+    },
+    "prohibitions": {
+      "generate_final_200_state_benchmark": true,
+      "open_predictor_utility_shards_before_qualification_pass": true,
+      "replace_predecessor_branch_state_candidate_or_frame": true,
+      "retry_or_tune_after_training_or_qualification_outcomes": true,
+      "train_with_any_missing_label": true,
+      "use_historical_calibration_for_qualification": true
+    },
+    "qualification": {
+      "completion_ece_max": 0.1,
+      "completion_nondegenerate_in_fit_and_calibration": true,
+      "completion_roc_auc_min": 0.75,
+      "composite_within_state_pairwise_accuracy_min": 0.65,
+      "conjunction_required": true,
+      "evaluation_count": 1,
+      "failure_is_terminal": true,
+      "no_latent_pairwise_margin_min": 0.05,
+      "progress_spearman_min": 0.5,
+      "safety_ece_max": 0.1,
+      "safety_roc_auc_min": 0.75,
+      "tie_tolerance": 0.02
+    },
+    "qualification_pass_authorises_predictor_open_in_this_workflow": false,
+    "replay_policy": {
+      "action_atol": 1e-06,
+      "all_twenty_ticks_required": true,
+      "attempts": 18,
+      "context_pose_atol": 1e-05,
+      "exact_source_state_redrive_and_candidate_action": true,
+      "four_horizon_pose_checks_required": true,
+      "horizon_pose_atol": 1e-05,
+      "new_overlay_only": true,
+      "prebranch_physical_witness": "three context poses plus persisted proprio/control/action context and previous applied command",
+      "predecessor_rows_or_frames_overwritten": false,
+      "retry_or_replacement": false,
+      "source_snapshot_digest_equality_required": false,
+      "source_snapshot_digest_limitation": "snapshot bytes and original process-global RNG history were not persisted",
+      "source_snapshot_digest_preserved_as_lineage": true
+    },
+    "schema": "go2_scorer_fit_oracle_v1_3_contract_v1",
+    "scorer_training": {
+      "architecture": "unchanged protected shared three-head scorer",
+      "degenerate_label_policy": "stop before training or fail qualification",
+      "final_epoch_only": true,
+      "fit_calibration_split": "by scene",
+      "heads": [
+        "progress",
+        "safety",
+        "completion"
+      ],
+      "missing_label_policy": "stop before encoding/training",
+      "paired_no_latent_baseline_required": true,
+      "protected_predecessor_scorer_contract_digest": "6cd0916954d3ad22adc19e66c0bf873ff0016cc685f95ce47d6355dd55450e10",
+      "protected_v2_successor_contract_digest": "8fc0edae875cba6487ff1a1a771f96b0157da1474ac00de4186ecdb41b66d5df",
+      "required_no_latent_baseline_runs": 1,
+      "retry_or_hyperparameter_tuning_after_outcomes": false,
+      "shared_scorer_runs": 1,
+      "training": {
+        "batch": 64,
+        "epochs": 60,
+        "grad_clip": 1.0,
+        "lr": 0.0003,
+        "optimiser": "AdamW",
+        "seed": 20260811,
+        "weight_decay": 0.01
+      },
+      "updates_per_epoch": 18,
+      "updates_per_model": 1080,
+      "utility": "1.0*progress - 2.0*safety + 0.5*completion",
+      "weight_selection": "final epoch only; no best-epoch selection"
+    },
+    "source_closure_paths": [
+      "lewm/oracle/go2_branch_oracle_v1_3.py",
+      "lewm/oracle/go2_scorer_fit_oracle_v1_3_contract.py",
+      "scripts/run_go2_scorer_fit_oracle_v1_3.py",
+      "scripts/encode_go2_scorer_fit_oracle_v1_3.py",
+      "scripts/train_go2_utility_scorer_v1_3.py",
+      "lewm/oracle/go2_branch_oracle_v1_2.py",
+      "scripts/run_go2_oracle_branch_pilot_v1.py",
+      "scripts/run_go2_oracle_branch_pilot_v1_2.py",
+      "scripts/build_go2_branch_corpus_v1_2.py",
+      "lewm_worlds/lewm_worlds/scene_graph.py",
+      "lewm_worlds/lewm_worlds/labels/derived.py",
+      "lewm_genesis/lewm_genesis/rollout.py",
+      "lewm/oracle/go2_scorer_contract_v1_2.py",
+      "scripts/encode_go2_branch_corpus_v1_2.py",
+      "scripts/train_go2_utility_scorer_v1_2.py",
+      "scripts/dev_action_slew_reconstruction_v1.py",
+      "scripts/dev_frozen_dense_representation_encoders_v1.py",
+      "config/go2_platform_manifest.yaml",
+      "config/go2_primitive_registry.yaml"
+    ],
+    "stage_counts": {
+      "complete_fit_rows": 1152,
+      "complete_fresh_calibration_rows": 288,
+      "encoded_horizon_latent_shards": 1440,
+      "exact_failed_branch_replays": 18,
+      "failed_fit_branch_replays": 6,
+      "failed_historical_calibration_branch_replays": 12,
+      "final_benchmark_states_generated": 0,
+      "fresh_calibration_branches": 288,
+      "fresh_calibration_states": 24,
+      "historical_branch_rows": 1440,
+      "historical_calibration_states_development_only": 24,
+      "historical_fit_states": 96,
+      "historical_states": 120,
+      "legacy_valid_adoptions": 1422,
+      "legacy_valid_fit_adoptions": 1146,
+      "legacy_valid_historical_calibration_adoptions": 276,
+      "no_latent_baseline_training_runs": 1,
+      "predictor_utility_shards_opened_before_qualification_pass": 0,
+      "qualification_evaluations": 1,
+      "shared_scorer_training_runs": 1,
+      "training_view_rows": 1440,
+      "training_view_states": 120,
+      "v1_3_simulator_branch_executions": 306
+    },
+    "status": "FROZEN_PREOUTCOME_DEVELOPMENT_CONTRACT",
+    "superseded_preattempt_execution_authority": {
+      "archive_root": "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/active/go2_scorer_fit_oracle_v1_3_superseded_snapshot_gate_c4f28d67",
+      "authority": {
+        "byte_count": 51976,
+        "raw_sha256": "cd906f464975c755ad5b6257ad60e3df70dcc22a14d8b4d7e296f0bb07b7cc25",
+        "self_digest": "e8bbecc4820897e4a9854a323ec3b2e38e0bae0e726845a32544d33ce64e0703"
+      },
+      "candidate_branch_execution_started": false,
+      "disposition": "SUPERSEDED_PREATTEMPT_IMPLEMENTATION_CORRECTION",
+      "equivalence_receipt": {
+        "byte_count": 644424,
+        "raw_sha256": "b0bfad652c9244220179b68d397eb2b5ac99c6d7b9d545c62660bf3b450d4ed2",
+        "self_digest": "1bb88a95ef4694136a106ff1ef9b3240232a94853682888d030b21f284443074"
+      },
+      "reason": "the in-process snapshot digest includes unpersisted process-global RNG history and is not a cross-run physical-state fingerprint",
+      "replay_attempt_markers": 0,
+      "replay_overlays": 0,
+      "replay_plan": {
+        "byte_count": 122301,
+        "raw_sha256": "434660c6aa862675f74517123693b75420ab539ceb62e7c5b9c3bc3ecef153cd",
+        "self_digest": "14228b2c2a2a39dcf4f51f79a29baa820f17641b94220a73ea62ff22ed5ea37e"
+      },
+      "source_commit": "c4f28d67a97646eaddfcf268432cce793bbdf126"
+    },
+    "test_closure_paths": [
+      "lewm/tests/test_go2_branch_oracle_v1_3.py",
+      "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
+      "lewm/tests/test_run_go2_scorer_fit_oracle_v1_3.py",
+      "lewm/tests/test_encode_go2_scorer_fit_oracle_v1_3.py",
+      "lewm/tests/test_train_go2_utility_scorer_v1_3.py"
+    ]
+  },
+  "contract_digest": "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89",
+  "exact_failed_branch_replay_completed": true,
+  "exact_failed_branch_replay_count": 18,
+  "failed_selector_process_observed": true,
+  "final_200_state_benchmark_generated": false,
+  "fresh_calibration_branch_execution_started": false,
+  "fresh_calibration_state_manifest_published": false,
+  "latent_encoding_started": false,
+  "legacy_equivalence_compared_count": 1422,
+  "legacy_equivalence_completed": true,
+  "legacy_equivalence_mismatch_count": 0,
+  "original_preregistration_binding": {
+    "byte_count": 40749,
+    "path": "docs/lewm_go2_scorer_fit_oracle_v1_3_preregistration_2026-08-15.json",
+    "raw_sha256": "5ede05ca2cd25caaa055adafcc57ead2a868977e5a829fa2941b11e465d778a3",
+    "schema": "go2_scorer_fit_oracle_v1_3_preregistration_v1",
+    "self_digest": "6ec652931e2ab8085c391d88d4c199de3fd1db9061b824891a748821eb0119a7",
+    "status": "FROZEN_BEFORE_V1_3_BRANCH_EXECUTION"
+  },
+  "predictor_utility_shards_opened": false,
+  "preregistration_digest": "2c57b1f6204aabff48704d6cec5650c035619133b145dfd155d8d97bab940b13",
+  "qualification_started": false,
+  "schema": "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_v1_preregistration_v1",
+  "scorer_training_started": false,
+  "selector_integrity_replacement": {
+    "authority": {
+      "branch_retry_or_replacement": false,
+      "candidate_branch_execution": false,
+      "final_benchmark_generation": false,
+      "fresh_calibration_state_manifest_publication": true,
+      "latent_encoding": false,
+      "predictor_checkpoint_or_utility_shard_open": false,
+      "qualification": false,
+      "scorer_training": false,
+      "selector_recomputation": true
+    },
+    "exclusive_per_task_launch_marker_required": true,
+    "failed_selector_outputs": {
+      "fresh_branch_attempt_count": 0,
+      "fresh_branch_outcome_count": 0,
+      "fresh_calibration_root_exists": false,
+      "selected_state_count": 0,
+      "selection_attempt_exists": false,
+      "selection_result_count": 0,
+      "selection_task_count": 0,
+      "state_manifest_exists": false
+    },
+    "incident": {
+      "evidence_source": "kernel journal",
+      "fault_address": "0x1088",
+      "likely_cpu": 8,
+      "observed_at_local": "2026-08-15T12:45:50+01:00",
+      "observed_at_utc": "2026-08-15T11:45:50Z",
+      "page_fault_error_code": 4,
+      "phase": "before any fresh-calibration manifest or durable output",
+      "process_gone": true,
+      "process_id": 1822672,
+      "shared_object": "libc.so.6",
+      "shared_object_offset": "0xa00d4",
+      "signal": "SIGSEGV",
+      "stage": "select-calibration"
+    },
+    "launch_marker_path_rule": "selection_tasks/<task_digest>.launch.json",
+    "manifest_publication": "only after exactly 24 valid isolated results satisfy the unchanged selector",
+    "nonzero_teardown_survival_condition": "child result was atomically published before teardown and passes exact parent validation",
+    "one_shot_selector_attempt": true,
+    "parent_exact_validation_before_merge_required": true,
+    "paths": {
+      "replacement_authority": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/selector_integrity_replacement_v1.json",
+      "selection_attempt": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/selection_attempt.json",
+      "selection_results_root": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/selection_results",
+      "selection_tasks_root": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/selection_tasks",
+      "selection_terminal": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/selection_terminal.json",
+      "state_manifest": ".generated/go2_scorer_fit_oracle_v1_3/fresh_calibration/state_manifest.json"
+    },
+    "per_scene_process_isolation_required": true,
+    "post_selection_replacement": false,
+    "predecessor_authority_digest": "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f",
+    "predecessor_contract_digest": "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89",
+    "predecessor_source_commit": "cfe087c36b2129510f4c75af36c1a2631b59f6ac",
+    "predecessor_source_files_digest": "12578e82ad25b5a1c49f0c81b0c490f280ff5b86da692ab52249409c952e9997",
+    "preserved_predecessor_artifacts": {
+      "authority": {
+        "byte_count": 55477,
+        "file_mode": "0600",
+        "path": ".generated/go2_scorer_fit_oracle_v1_3/authority.json",
+        "raw_sha256": "669c6847c97e04b319ba8de12a5df72957cbf225796605f9567626e26fa6bb4e",
+        "self_digest": "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f",
+        "self_key": "authority_digest"
+      },
+      "equivalence_receipt": {
+        "byte_count": 644424,
+        "compared_count": 1422,
+        "file_mode": "0600",
+        "mismatch_count": 0,
+        "path": ".generated/go2_scorer_fit_oracle_v1_3/equivalence_receipt.json",
+        "raw_sha256": "f023724313f6f85d2fa60abbf432a54652a7de79a0941be1515e1e54d896c779",
+        "self_digest": "49a4efb800b8eae5fe4a4a7cfc47833bfda8c5994acc02f5736a2f08ec76992e",
+        "self_key": "equivalence_receipt_digest"
+      },
+      "file_binding_set_rule": "canonical digest of ascending-path records containing path, sha256, and byte_count",
+      "mutation_authorised": false,
+      "replay_attempt_markers": {
+        "count": 18,
+        "file_binding_set_digest": "baf2cf718367118f6b05d30365fa93405c9e1ef139e5a9d34cb2053e9f80e2cf",
+        "file_mode": "0600",
+        "root": ".generated/go2_scorer_fit_oracle_v1_3/replay_attempts"
+      },
+      "replay_overlay_manifest": {
+        "byte_count": 8697,
+        "file_mode": "0600",
+        "fit_overlay_count": 6,
+        "historical_calibration_overlay_count": 12,
+        "overlay_count": 18,
+        "path": ".generated/go2_scorer_fit_oracle_v1_3/replay_overlay_manifest.json",
+        "raw_sha256": "3c5548b51f090f879ba3095f66d08f65704459e90913fd84eda44e8c351abf53",
+        "self_digest": "b4906f7eff24a63e3d1c102187678f9dcacc835aa55bc0c69f66f14b16022594",
+        "self_key": "replay_overlay_manifest_digest"
+      },
+      "replay_overlays": {
+        "count": 18,
+        "file_binding_set_digest": "5233bca4c560c844324f3e937469faef850d4fba4e6588ae07945a6484872b44",
+        "file_mode": "0600",
+        "root": ".generated/go2_scorer_fit_oracle_v1_3/replay_overlays"
+      },
+      "replay_plan": {
+        "byte_count": 460892,
+        "entry_count": 18,
+        "file_mode": "0600",
+        "path": ".generated/go2_scorer_fit_oracle_v1_3/replay_plan.json",
+        "raw_sha256": "beebf4c65a4e8d2633f6e33ad836c45a24aa504fa2f56334baf2e154665ef0ec",
+        "self_digest": "39a75ba2abe545b30adf27222bf9bc03283c6036fad37bd6f14f1bd5d36a6c03",
+        "self_key": "replay_plan_digest"
+      }
+    },
+    "preserved_predecessor_authority_continuation": {
+      "authorising_artifact": ".generated/go2_scorer_fit_oracle_v1_3/authority.json",
+      "authorising_artifact_digest": "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f",
+      "branch_attempt_policy": "AT_MOST_ONCE_PER_EXACT_IDENTITY_NO_REPLACEMENT",
+      "continuation_requires_current_successor_preregistration_binding": true,
+      "continuation_requires_exact_24_state_manifest": true,
+      "continuation_requires_valid_selector_terminal": true,
+      "fresh_branch_attempts_before_replacement": 0,
+      "fresh_branch_budget": 288,
+      "predecessor_candidate_branch_authority_preserved": true,
+      "replacement_grants_new_candidate_branch_authority": false
+    },
+    "resume_only_from_valid_task_result": true,
+    "same_outcome_blind_selector_required": true,
+    "scene_skip_or_replacement": false,
+    "schema": "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_contract_v1",
+    "scope": "fresh_calibration_state_selection_only",
+    "selector_attempt_count": 1,
+    "selector_digest": "041607943d7246ee657584130e4fe35d7565944f933f3e07a9ee4ffc576981cb",
+    "status": "FROZEN_SELECTOR_ONLY_INTEGRITY_REPLACEMENT",
+    "successor_preregistration_digest_key": "preregistration_digest",
+    "successor_preregistration_path": "docs/go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_v1_preregistration_2026-08-15.json",
+    "task_result_atomic_publication_required": true,
+    "unresolved_child_is_terminal": true,
+    "valid_result_survives_nonzero_teardown": true,
+    "worker_refuses_existing_terminal_result_or_launch_marker": true
+  },
+  "selector_integrity_replacement_digest": "3353d5b4b2b9270cd1bb489ed7277d4791ab143d4d5103314aa257f9a6571e45",
+  "selector_integrity_replacement_started": false,
+  "source_bindings": [
+    {
+      "byte_count": 11178,
+      "path": "lewm/oracle/go2_branch_oracle_v1_3.py",
+      "sha256": "e86d56cd238d9892219fb97edf00bf0042424881688d46caf422cea2e02894af"
+    },
+    {
+      "byte_count": 53469,
+      "path": "lewm/oracle/go2_scorer_fit_oracle_v1_3_contract.py",
+      "sha256": "417ca1e6b303c2627352c34f9d1f6952b137e5331dcf120a7765e9f6d8a5c196"
+    },
+    {
+      "byte_count": 183446,
+      "path": "scripts/run_go2_scorer_fit_oracle_v1_3.py",
+      "sha256": "e4f38fa7e12d0184b57f4597b172f74a6505573e6341ff86c28a5dd6b2b2839e"
+    },
+    {
+      "byte_count": 37842,
+      "path": "scripts/encode_go2_scorer_fit_oracle_v1_3.py",
+      "sha256": "56d5c60b3105f49d52d529fdb16603a8fc42f8e156382f0fabdc2b1b1f6c8a54"
+    },
+    {
+      "byte_count": 44819,
+      "path": "scripts/train_go2_utility_scorer_v1_3.py",
+      "sha256": "e658a29f07c41738c851f3b55f331a4b4d2e366f90c2983115b81f6f2269667b"
+    },
+    {
+      "byte_count": 13637,
+      "path": "lewm/oracle/go2_branch_oracle_v1_2.py",
+      "sha256": "6d7a6b20bcfb5da112ff10e95a7d3573ebf07884e7b4e58315a733254d6f4fc2"
+    },
+    {
+      "byte_count": 74309,
+      "path": "scripts/run_go2_oracle_branch_pilot_v1.py",
+      "sha256": "19cf29132d4d9c3c8a6f3630bc243caa62a27e5f3616a5598fa487775ef10955"
+    },
+    {
+      "byte_count": 32502,
+      "path": "scripts/run_go2_oracle_branch_pilot_v1_2.py",
+      "sha256": "03307d6718471b6a4358d0952ff24cb1dd67a4a08ba0ea3258ed2e5376e0c889"
+    },
+    {
+      "byte_count": 817432,
+      "path": "scripts/build_go2_branch_corpus_v1_2.py",
+      "sha256": "6c034da9c27436f235d0d5e7ddddc825a999140799ec03c6446413c70fe232d6"
+    },
+    {
+      "byte_count": 23227,
+      "path": "lewm_worlds/lewm_worlds/scene_graph.py",
+      "sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46"
+    },
+    {
+      "byte_count": 26364,
+      "path": "lewm_worlds/lewm_worlds/labels/derived.py",
+      "sha256": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d"
+    },
+    {
+      "byte_count": 86066,
+      "path": "lewm_genesis/lewm_genesis/rollout.py",
+      "sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a"
+    },
+    {
+      "byte_count": 52408,
+      "path": "lewm/oracle/go2_scorer_contract_v1_2.py",
+      "sha256": "a916c20fdc92762a7aeefc773823bf4870e671528b2aea8bed0df69cfa1c0664"
+    },
+    {
+      "byte_count": 213110,
+      "path": "scripts/encode_go2_branch_corpus_v1_2.py",
+      "sha256": "a691d02361415fc7a8e0d07a482122b6089bb9460ff58e6d90b85077979e575d"
+    },
+    {
+      "byte_count": 199390,
+      "path": "scripts/train_go2_utility_scorer_v1_2.py",
+      "sha256": "09ae7515961c11be9a8e443f937df6d86434a0955f31314306f4be54fb04d368"
+    },
+    {
+      "byte_count": 13469,
+      "path": "scripts/dev_action_slew_reconstruction_v1.py",
+      "sha256": "17075cc10bdfc637a630da1b495f064156be9d481b6be631f50fd1e370b9203e"
+    },
+    {
+      "byte_count": 15564,
+      "path": "scripts/dev_frozen_dense_representation_encoders_v1.py",
+      "sha256": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2"
+    },
+    {
+      "byte_count": 4613,
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    {
+      "byte_count": 2454,
+      "path": "config/go2_primitive_registry.yaml",
+      "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+    },
+    {
+      "byte_count": 6382,
+      "path": "lewm/tests/test_go2_branch_oracle_v1_3.py",
+      "sha256": "6591f891e3062f16df84c300e59d9b169953f9d6805ea3747f72c4523702f8ab"
+    },
+    {
+      "byte_count": 13800,
+      "path": "lewm/tests/test_go2_scorer_fit_oracle_v1_3_contract.py",
+      "sha256": "fb6efa87e0194f84c77c1b00041e5a221b35b40db7f4024d10b33bf39a3d579f"
+    },
+    {
+      "byte_count": 33258,
+      "path": "lewm/tests/test_run_go2_scorer_fit_oracle_v1_3.py",
+      "sha256": "ac0e0373499968033777d4c41d9bdb863b84e9394d9c96e0bc33cb61f5933098"
+    },
+    {
+      "byte_count": 10101,
+      "path": "lewm/tests/test_encode_go2_scorer_fit_oracle_v1_3.py",
+      "sha256": "8e75c316fb2be9cc7b91d968d882780dca6d791e9d19705916398d39815f400b"
+    },
+    {
+      "byte_count": 5863,
+      "path": "lewm/tests/test_train_go2_utility_scorer_v1_3.py",
+      "sha256": "5c4e19a008e3b194093ad4ddfe854ef7e8d0a5c94389edf473beff56ee85a424"
+    }
+  ],
+  "source_freeze_commit": null,
+  "source_repository_base_commit": "cfe087c36b2129510f4c75af36c1a2631b59f6ac",
+  "status": "FROZEN_AFTER_PREMANIFEST_SELECTOR_SIGSEGV_BEFORE_INTEGRITY_REPLACEMENT"
+}

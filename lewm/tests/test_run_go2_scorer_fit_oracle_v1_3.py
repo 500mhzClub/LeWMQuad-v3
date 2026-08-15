@@ -111,8 +111,9 @@ def _v2_rows(diagnostic):
 def test_command_surface_is_data_only_and_has_exact_stage_counts():
     assert W.STAGES == (
         "issue-authority", "issue-replay-plan", "adopt-valid",
-        "replay-failures", "select-calibration", "generate-calibration",
-        "compose-training-view", "status",
+        "replay-failures", "issue-selector-integrity-replacement",
+        "select-calibration", "generate-calibration", "compose-training-view",
+        "status",
     )
     assert not any(stage.startswith(("encode", "train")) for stage in W.STAGES)
     assert not any(
@@ -371,6 +372,87 @@ def _fresh_states():
     ]
 
 
+def _selection_fixture(tmp_path: Path, authority):
+    pool = {}
+    for family in W.FAMILIES:
+        scenes = []
+        for index in range(3):
+            scene = tmp_path / "corpus" / "development" / family / (
+                f"fresh-{family}-{index}"
+            )
+            scene.mkdir(parents=True)
+            (scene / "manifest.json").write_text("{}\n")
+            scenes.append(scene)
+        pool[family] = scenes
+    correction = {
+        W.V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY: "c" * 64,
+    }
+    old = _old_state_manifest()
+    plan = {W.REPLAY_PLAN_SELF_KEY: "p" * 64}
+    equivalence = {W.EQUIVALENCE_SELF_KEY: "e" * 64}
+    overlays = {W.REPLAY_OVERLAY_MANIFEST_SELF_KEY: "o" * 64}
+    attempt = W.build_fresh_selection_attempt(
+        authority=authority, correction=correction, v2_state_manifest=old,
+        plan=plan, equivalence=equivalence, overlay_manifest=overlays,
+        pool=pool, exclusion={"synthetic": True},
+    )
+    W.validate_fresh_selection_attempt(
+        attempt, authority=authority, correction=correction,
+        v2_state_manifest=old, plan=plan, equivalence=equivalence,
+        overlay_manifest=overlays, pool=pool,
+        exclusion={"synthetic": True},
+    )
+    return correction, attempt, pool
+
+
+def _selected_for_task(task):
+    return {
+        "state_id": task["state_id"],
+        "family": task["family"],
+        "scene_id": task["scene_id"],
+        "scene_dir": task["scene_dir"],
+        "scene_manifest_sha256": task["scene_manifest_sha256"],
+        "scene_manifest_byte_count": task["scene_manifest_byte_count"],
+        "split": "development",
+        "drive_seed": task["drive_seed"],
+        "stratum": task["stratum"],
+        "warmup_blocks": 40,
+        "source_step": 200,
+        "episode_id": 1,
+        "episode_cluster_id": f"{task['scene_id']}/env0/ep1",
+        "cell_id": 2,
+        "boundary": {"source_step": 200},
+        "goal": {"material_id": "goal"},
+        "goal_type": "goal",
+        "body_clearance_m": 0.3,
+        "clearance_m": 0.2,
+        "previous_applied_command": [0.0, 0.0, 0.0],
+    }
+
+
+def _complete_selection_sequence(tmp_path: Path, authority):
+    correction, attempt, pool = _selection_fixture(tmp_path, authority)
+    tasks, results = [], []
+    used = set()
+    for slot, (family, stratum) in enumerate(
+        (family, stratum)
+        for family in W.FAMILIES for stratum in W.STRATA
+    ):
+        scene = next(path for path in pool[family] if path.name not in used)
+        task = W.build_fresh_selection_task(
+            attempt=attempt, correction=correction, family=family,
+            stratum=stratum, slot_index=slot, scene_ordinal=0,
+            scene_dir=scene, used_scene_ids=sorted(used),
+        )
+        result = W.build_fresh_selection_result(
+            task=task, selected_state=_selected_for_task(task),
+        )
+        tasks.append(task)
+        results.append(result)
+        used.add(scene.name)
+    return correction, attempt, tasks, results
+
+
 def test_fresh_manifest_is_exact_disjoint_8x3_and_frozen_before_branches(authority):
     manifest = W.build_fresh_calibration_manifest(
         authority=authority, v2_state_manifest=_old_state_manifest(),
@@ -403,6 +485,227 @@ def test_fresh_manifest_refuses_old_scene_or_duplicate_slot(authority):
             authority=authority, v2_state_manifest=_old_state_manifest(),
             states=states, exclusion_binding={},
         )
+
+
+def test_selector_integrity_sequence_preserves_family_stratum_lexical_order(
+        tmp_path: Path, authority):
+    correction, attempt, tasks, results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    states = W._validate_fresh_selection_sequence(
+        attempt=attempt, correction=correction, tasks=tasks, results=results,
+    )
+    assert len(states) == 24
+    assert len({row["scene_id"] for row in states}) == 24
+    assert [(row["family"], row["stratum"]) for row in states] == [
+        (family, stratum)
+        for family in W.FAMILIES for stratum in W.STRATA
+    ]
+
+    skipped = copy.deepcopy(tasks)
+    skipped[0]["scene_ordinal"] = 1
+    skipped[0].pop(W.FRESH_SELECTION_TASK_SELF_KEY)
+    skipped[0] = W._with_self_digest(
+        skipped[0], W.FRESH_SELECTION_TASK_SELF_KEY
+    )
+    changed_result = W.build_fresh_selection_result(
+        task=skipped[0], selected_state=_selected_for_task(skipped[0]),
+    )
+    with pytest.raises(W.WorkflowError, match="lexical sequence"):
+        W._validate_fresh_selection_sequence(
+            attempt=attempt, correction=correction,
+            tasks=[skipped[0], *tasks[1:]],
+            results=[changed_result, *results[1:]],
+        )
+
+
+def test_selector_result_surface_is_exact_and_candidate_outcomes_are_forbidden(
+        tmp_path: Path, authority):
+    correction, attempt, tasks, results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    W.validate_fresh_selection_task(
+        tasks[0], attempt=attempt, correction=correction,
+    )
+    W.validate_fresh_selection_result(results[0], task=tasks[0])
+    changed = copy.deepcopy(results[0])
+    changed["selected_state"]["candidate_outcome"] = 1.0
+    changed.pop(W.FRESH_SELECTION_RESULT_SELF_KEY)
+    changed = W._with_self_digest(changed, W.FRESH_SELECTION_RESULT_SELF_KEY)
+    with pytest.raises(W.WorkflowError, match="selected state changed"):
+        W.validate_fresh_selection_result(changed, task=tasks[0])
+    changed = copy.deepcopy(results[0])
+    changed["extra"] = True
+    changed.pop(W.FRESH_SELECTION_RESULT_SELF_KEY)
+    changed = W._with_self_digest(changed, W.FRESH_SELECTION_RESULT_SELF_KEY)
+    with pytest.raises(W.WorkflowError, match="scene result changed"):
+        W.validate_fresh_selection_result(changed, task=tasks[0])
+    changed_task = copy.deepcopy(tasks[0])
+    changed_task["extra"] = True
+    changed_task.pop(W.FRESH_SELECTION_TASK_SELF_KEY)
+    changed_task = W._with_self_digest(
+        changed_task, W.FRESH_SELECTION_TASK_SELF_KEY,
+    )
+    with pytest.raises(W.WorkflowError, match="scene task changed"):
+        W.validate_fresh_selection_task(
+            changed_task, attempt=attempt, correction=correction,
+        )
+
+
+def test_selector_success_terminal_binds_every_durable_task_and_result(
+        tmp_path: Path, authority):
+    correction, attempt, tasks, results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    out_root = tmp_path / "out"
+    for task, result in zip(tasks, results):
+        task_path, created = W._publish_exact_selection_task(
+            task, out_root=out_root
+        )
+        launch_path, launch = W._claim_fresh_selection_launch(
+            task=task, attempt=attempt, correction=correction,
+            out_root=out_root,
+        )
+        result_path = W._selection_result_path(
+            task[W.FRESH_SELECTION_TASK_SELF_KEY], out_root=out_root,
+        )
+        W._atomic_json(result_path, result, out_root=out_root)
+        assert created is True
+        assert launch[W.FRESH_SELECTION_LAUNCH_SELF_KEY]
+        assert task_path.is_file() and launch_path.is_file() and result_path.is_file()
+    terminal = W.build_fresh_selection_terminal(
+        attempt=attempt, correction=correction, tasks=tasks, results=results,
+    )
+    states = W.validate_fresh_selection_terminal(
+        terminal, attempt=attempt, correction=correction, out_root=out_root,
+    )
+    assert terminal["task_result_count"] == 24
+    assert terminal["selected_state_count"] == 24
+    assert len(states) == 24
+
+
+def test_selector_unresolved_child_terminal_is_permanent(
+        tmp_path: Path, authority):
+    correction, attempt, tasks, _results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    terminal = W.build_failed_fresh_selection_terminal(
+        attempt=attempt, correction=correction,
+        failed_task=tasks[0], return_code=-11,
+    )
+    out_root = tmp_path / "out"
+    W._publish_exact_selection_task(tasks[0], out_root=out_root)
+    with pytest.raises(W.WorkflowError, match="terminal after unresolved child"):
+        W.validate_fresh_selection_terminal(
+            terminal, attempt=attempt, correction=correction,
+            out_root=out_root,
+        )
+    assert terminal["retry_or_scene_replacement_authorised"] is False
+    assert terminal["candidate_branch_execution_started"] is False
+
+
+def test_selector_restart_never_relaunches_preexisting_task_without_result(
+        tmp_path: Path, authority):
+    _correction, _attempt, tasks, _results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    out_root = tmp_path / "out"
+    _path, first_created = W._publish_exact_selection_task(
+        tasks[0], out_root=out_root
+    )
+    _path, second_created = W._publish_exact_selection_task(
+        tasks[0], out_root=out_root
+    )
+    assert first_created is True
+    assert second_created is False
+    source = inspect.getsource(W.select_fresh_calibration_states)
+    assert source.index("if not task_created and not result_path.exists()") \
+        < source.index("_run_fresh_selection_child")
+
+
+def test_selector_launch_claim_is_exclusive(
+        tmp_path: Path, authority):
+    correction, attempt, tasks, _results = _complete_selection_sequence(
+        tmp_path, authority
+    )
+    out_root = tmp_path / "out"
+    first_path, first = W._claim_fresh_selection_launch(
+        task=tasks[0], attempt=attempt, correction=correction,
+        out_root=out_root,
+    )
+    W.validate_fresh_selection_launch_marker(
+        first, task=tasks[0], attempt=attempt, correction=correction,
+    )
+    assert first_path.is_file()
+    with pytest.raises(W.WorkflowError, match="refusing to replace"):
+        W._claim_fresh_selection_launch(
+            task=tasks[0], attempt=attempt, correction=correction,
+            out_root=out_root,
+        )
+
+
+def test_selector_worker_refuses_to_rerun_an_existing_result(tmp_path: Path):
+    out_root = tmp_path / "out"
+    tasks = out_root / "fresh_calibration/selection_tasks"
+    results = out_root / "fresh_calibration/selection_results"
+    tasks.mkdir(parents=True)
+    results.mkdir(parents=True)
+    identity = "a" * 64
+    task_path = tasks / f"{identity}.json"
+    result_path = results / f"{identity}.json"
+    task_path.write_text("{}\n")
+    result_path.write_text("{}\n")
+    with pytest.raises(W.WorkflowError, match="existing result"):
+        W.run_fresh_selection_worker(
+            task_path=task_path, result_path=result_path, backend="cpu",
+        )
+
+
+def test_selector_worker_refuses_duplicate_manual_launch_marker(tmp_path: Path):
+    out_root = tmp_path / "out"
+    tasks = out_root / "fresh_calibration/selection_tasks"
+    results = out_root / "fresh_calibration/selection_results"
+    tasks.mkdir(parents=True)
+    results.mkdir(parents=True)
+    identity = "b" * 64
+    task_path = tasks / f"{identity}.json"
+    result_path = results / f"{identity}.json"
+    task_path.write_text("{}\n")
+    W._selection_launch_path(identity, out_root=out_root).write_text("{}\n")
+    with pytest.raises(W.WorkflowError, match="existing launch marker"):
+        W.run_fresh_selection_worker(
+            task_path=task_path, result_path=result_path, backend="cpu",
+        )
+
+
+def test_selector_worker_refuses_any_existing_terminal(tmp_path: Path):
+    out_root = tmp_path / "out"
+    tasks = out_root / "fresh_calibration/selection_tasks"
+    results = out_root / "fresh_calibration/selection_results"
+    tasks.mkdir(parents=True)
+    results.mkdir(parents=True)
+    identity = "c" * 64
+    task_path = tasks / f"{identity}.json"
+    result_path = results / f"{identity}.json"
+    task_path.write_text("{}\n")
+    (out_root / "fresh_calibration/selection_terminal.json").write_text("{}\n")
+    with pytest.raises(W.WorkflowError, match="existing terminal"):
+        W.run_fresh_selection_worker(
+            task_path=task_path, result_path=result_path, backend="cpu",
+        )
+
+
+def test_fresh_branch_generation_requires_all_three_continuation_gates():
+    loader = inspect.getsource(W.load_validated_fresh_selection)
+    assert "validate_fresh_selection_terminal" in loader
+    assert "validate_fresh_calibration_manifest" in loader
+    assert "load_selector_integrity_replacement_authority" in loader
+    assert "continuation_requires_current_successor_preregistration_binding" \
+        in loader
+    generation = inspect.getsource(W.generate_fresh_calibration)
+    assert "load_validated_fresh_selection" in generation
+    assert generation.index("load_validated_fresh_selection") \
+        < generation.index("begin_attempt_once")
 
 
 def test_historical_calibration_disposition_is_preserved_not_discarded():

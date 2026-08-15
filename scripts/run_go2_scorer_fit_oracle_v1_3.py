@@ -24,6 +24,7 @@ import importlib.metadata
 import json
 import math
 import os
+import stat
 import subprocess
 import sys
 import tempfile
@@ -89,6 +90,38 @@ FRESH_BRANCH_ROW_SELF_KEY = "fresh_calibration_branch_row_digest"
 FRESH_CORPUS_SCHEMA = "go2_scorer_fit_oracle_v1_3_fresh_calibration_corpus_v1"
 FRESH_CORPUS_SELF_KEY = "fresh_calibration_corpus_digest"
 FRESH_CORPUS_PATH = OUT_ROOT / "fresh_calibration/corpus_receipt.json"
+
+SELECTOR_INTEGRITY_REPLACEMENT_PATH = (
+    OUT_ROOT / "fresh_calibration/selector_integrity_replacement_v1.json"
+)
+FRESH_SELECTION_ATTEMPT_PATH = (
+    OUT_ROOT / "fresh_calibration/selection_attempt.json"
+)
+FRESH_SELECTION_TASKS_ROOT = OUT_ROOT / "fresh_calibration/selection_tasks"
+FRESH_SELECTION_RESULTS_ROOT = OUT_ROOT / "fresh_calibration/selection_results"
+FRESH_SELECTION_TERMINAL_PATH = (
+    OUT_ROOT / "fresh_calibration/selection_terminal.json"
+)
+FRESH_SELECTION_ATTEMPT_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_fresh_selection_attempt_v1"
+)
+FRESH_SELECTION_ATTEMPT_SELF_KEY = "fresh_selection_attempt_digest"
+FRESH_SELECTION_TASK_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_fresh_selection_scene_task_v1"
+)
+FRESH_SELECTION_TASK_SELF_KEY = "fresh_selection_scene_task_digest"
+FRESH_SELECTION_LAUNCH_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_fresh_selection_scene_launch_v1"
+)
+FRESH_SELECTION_LAUNCH_SELF_KEY = "fresh_selection_scene_launch_digest"
+FRESH_SELECTION_RESULT_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_fresh_selection_scene_result_v1"
+)
+FRESH_SELECTION_RESULT_SELF_KEY = "fresh_selection_scene_result_digest"
+FRESH_SELECTION_TERMINAL_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_fresh_selection_terminal_v1"
+)
+FRESH_SELECTION_TERMINAL_SELF_KEY = "fresh_selection_terminal_digest"
 
 TRAINING_VIEW_SCHEMA = "go2_scorer_fit_oracle_v1_3_training_view_v1"
 TRAINING_VIEW_ROW_SCHEMA = "go2_scorer_fit_oracle_v1_3_training_view_row_v1"
@@ -157,6 +190,18 @@ SOURCE_KIND_FRESH = "V13_FRESH_CALIBRATION"
 
 class WorkflowError(RuntimeError):
     """A fail-closed v1.3 workflow contract violation."""
+
+
+class FreshSelectionChildUnresolved(WorkflowError):
+    """One isolated selector child failed before publishing an exact result."""
+
+    def __init__(self, task_digest: str, return_code: int | None) -> None:
+        super().__init__(
+            "isolated fresh-selection child has no valid durable result; "
+            "selector attempt is terminal"
+        )
+        self.task_digest = task_digest
+        self.return_code = None if return_code is None else int(return_code)
 
 
 def _v13() -> Any:
@@ -607,7 +652,7 @@ def validate_authority(payload: Mapping[str, Any]) -> None:
         raise WorkflowError("v1.3 source/preregistration binding is absent")
     preregistration = source_binding.get("preregistration")
     if isinstance(preregistration, Mapping):
-        V13_CONTRACT.validate_preregistration(preregistration)
+        V13_CONTRACT.validate_original_preregistration(preregistration)
 
 
 def issue_authority(*, root: Path = ROOT, out_root: Path = OUT_ROOT) -> dict[str, Any]:
@@ -650,8 +695,8 @@ def load_authority(path: Path = AUTHORITY_PATH) -> dict[str, Any]:
         raise WorkflowError("v1.3 runtime source commit is no longer exact and clean")
     preregistration = authority["source_binding"].get("preregistration")
     if isinstance(preregistration, Mapping):
-        V13_CONTRACT.validate_preregistration(preregistration, root=ROOT)
-        preregistration_path = ROOT / V13_CONTRACT.PREREGISTRATION_PATH
+        V13_CONTRACT.validate_original_preregistration(preregistration, root=ROOT)
+        preregistration_path = ROOT / V13_CONTRACT.ORIGINAL_PREREGISTRATION_PATH
         committed = _read_regular_json(preregistration_path)
         if (
             committed != preregistration
@@ -664,6 +709,257 @@ def load_authority(path: Path = AUTHORITY_PATH) -> dict[str, Any]:
         ):
             raise WorkflowError("committed v1.3 preregistration binding changed")
     return authority
+
+
+def _contract_output_path(path: str, *, out_root: Path) -> Path:
+    try:
+        relative = Path(path).relative_to(V13_CONTRACT.GENERATED_ROOT)
+    except ValueError as exc:
+        raise WorkflowError("selector-integrity path escaped the output root") from exc
+    return guarded_output_path(relative, out_root=out_root)
+
+
+def _mode_string(path: Path) -> str:
+    return f"{stat.S_IMODE(path.stat().st_mode):04o}"
+
+
+def _binding_set(root: Path, *, out_root: Path) -> list[dict[str, Any]]:
+    if not root.is_dir() or root.is_symlink():
+        raise WorkflowError(f"preserved artifact root changed: {root}")
+    records = []
+    for path in sorted(root.iterdir(), key=lambda value: value.name):
+        if not path.is_file() or path.is_symlink():
+            raise WorkflowError(f"preserved artifact inventory changed: {root}")
+        relative = path.absolute().relative_to(out_root.absolute())
+        records.append({
+            "path": str(V13_CONTRACT.GENERATED_ROOT / relative),
+            "sha256": file_sha256(path),
+            "byte_count": path.stat().st_size,
+        })
+    return records
+
+
+def _validate_preserved_selector_predecessor(
+    *, out_root: Path = OUT_ROOT,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Validate the frozen aa7c authority and its completed upstream outputs."""
+
+    replacement = V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT
+    expected_artifacts = replacement["preserved_predecessor_artifacts"]
+    validated: dict[str, Any] = {}
+    base_authority: dict[str, Any] | None = None
+    for name in (
+        "authority", "replay_plan", "equivalence_receipt",
+        "replay_overlay_manifest",
+    ):
+        binding = expected_artifacts[name]
+        path = _contract_output_path(binding["path"], out_root=out_root)
+        if (
+            not path.is_file()
+            or path.is_symlink()
+            or path.stat().st_size != binding["byte_count"]
+            or file_sha256(path) != binding["raw_sha256"]
+            or _mode_string(path) != binding["file_mode"]
+        ):
+            raise WorkflowError(f"preserved selector predecessor changed: {name}")
+        payload = _read_regular_json(path)
+        _validate_self_digest(payload, binding["self_key"])
+        if payload.get(binding["self_key"]) != binding["self_digest"]:
+            raise WorkflowError(f"preserved selector predecessor digest changed: {name}")
+        for count_key in (
+            "entry_count", "compared_count", "mismatch_count", "overlay_count",
+            "fit_overlay_count", "historical_calibration_overlay_count",
+        ):
+            if count_key in binding and payload.get(count_key) != binding[count_key]:
+                raise WorkflowError(
+                    f"preserved selector predecessor count changed: {name}/{count_key}"
+                )
+        validated[name] = {
+            "path": binding["path"],
+            "self_digest": binding["self_digest"],
+            "raw_sha256": binding["raw_sha256"],
+            "byte_count": binding["byte_count"],
+        }
+        if name == "authority":
+            base_authority = payload
+
+    for name in ("replay_attempt_markers", "replay_overlays"):
+        binding = expected_artifacts[name]
+        root = _contract_output_path(binding["root"], out_root=out_root)
+        records = _binding_set(root, out_root=out_root)
+        if (
+            len(records) != binding["count"]
+            or any(
+                _mode_string(root / Path(record["path"]).name)
+                != binding["file_mode"]
+                for record in records
+            )
+            or digest(records) != binding["file_binding_set_digest"]
+        ):
+            raise WorkflowError(f"preserved selector predecessor set changed: {name}")
+        validated[name] = {
+            "root": binding["root"],
+            "count": binding["count"],
+            "file_binding_set_digest": binding["file_binding_set_digest"],
+        }
+
+    if base_authority is None:
+        raise WorkflowError("preserved selector predecessor authority is absent")
+    if (
+        base_authority.get(AUTHORITY_SELF_KEY)
+        != replacement["predecessor_authority_digest"]
+        or base_authority.get("scorer_fit_oracle_v1_3_contract_digest")
+        != replacement["predecessor_contract_digest"]
+        or base_authority.get("source_binding", {}).get("source_repository_commit")
+        != replacement["predecessor_source_commit"]
+        or base_authority.get("source_binding", {}).get("source_files_digest")
+        != replacement["predecessor_source_files_digest"]
+    ):
+        raise WorkflowError("preserved selector predecessor authority lineage changed")
+    return base_authority, validated
+
+
+def build_selector_integrity_replacement_authority(
+    *, base_authority: Mapping[str, Any], source_binding: Mapping[str, Any],
+    predecessor_validation: Mapping[str, Any],
+) -> dict[str, Any]:
+    replacement = V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT
+    preregistration = source_binding.get("preregistration")
+    if not isinstance(preregistration, Mapping):
+        raise WorkflowError("selector-integrity successor preregistration is absent")
+    if (
+        base_authority.get(AUTHORITY_SELF_KEY)
+        != replacement["predecessor_authority_digest"]
+        or source_binding.get("preregistration_path")
+        != replacement["successor_preregistration_path"]
+    ):
+        raise WorkflowError("selector-integrity authority lineage changed")
+    payload = {
+        "schema": V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SCHEMA,
+        "status": "FROZEN_SELECTOR_ONLY_INTEGRITY_REPLACEMENT_AUTHORITY",
+        "complete": True,
+        "selector_integrity_replacement": copy.deepcopy(replacement),
+        "selector_integrity_replacement_digest":
+            V13_CONTRACT.selector_integrity_replacement_digest(),
+        "predecessor_authority_digest": base_authority[AUTHORITY_SELF_KEY],
+        "predecessor_artifact_validation": copy.deepcopy(
+            dict(predecessor_validation)
+        ),
+        "failed_selector_outputs_verified": copy.deepcopy(
+            replacement["failed_selector_outputs"]
+        ),
+        "successor_preregistration_path": source_binding["preregistration_path"],
+        "successor_preregistration_digest": preregistration[
+            replacement["successor_preregistration_digest_key"]
+        ],
+        "successor_contract_digest": V13_CONTRACT.contract_digest(),
+        "successor_source_binding": copy.deepcopy(dict(source_binding)),
+        "one_shot_selector_attempt_authorised": True,
+        "candidate_branch_execution_authorised": False,
+    }
+    return _with_self_digest(
+        payload, V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+    )
+
+
+def validate_selector_integrity_replacement_authority(
+    correction: Mapping[str, Any], *, base_authority: Mapping[str, Any],
+    predecessor_validation: Mapping[str, Any], root: Path | None = None,
+) -> None:
+    replacement = V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT
+    _validate_self_digest(
+        correction, V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+    )
+    source_binding = correction.get("successor_source_binding")
+    preregistration = (
+        source_binding.get("preregistration")
+        if isinstance(source_binding, Mapping) else None
+    )
+    if (
+        correction.get("schema")
+        != V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SCHEMA
+        or correction.get("status")
+        != "FROZEN_SELECTOR_ONLY_INTEGRITY_REPLACEMENT_AUTHORITY"
+        or correction.get("complete") is not True
+        or correction.get("selector_integrity_replacement") != replacement
+        or correction.get("selector_integrity_replacement_digest")
+        != V13_CONTRACT.selector_integrity_replacement_digest()
+        or correction.get("predecessor_authority_digest")
+        != base_authority.get(AUTHORITY_SELF_KEY)
+        or correction.get("predecessor_artifact_validation")
+        != predecessor_validation
+        or correction.get("failed_selector_outputs_verified")
+        != replacement["failed_selector_outputs"]
+        or correction.get("successor_preregistration_path")
+        != replacement["successor_preregistration_path"]
+        or not isinstance(preregistration, Mapping)
+        or correction.get("successor_preregistration_digest")
+        != preregistration.get(replacement["successor_preregistration_digest_key"])
+        or correction.get("successor_contract_digest")
+        != V13_CONTRACT.contract_digest()
+        or correction.get("one_shot_selector_attempt_authorised") is not True
+        or correction.get("candidate_branch_execution_authorised") is not False
+    ):
+        raise WorkflowError("selector-integrity replacement authority changed")
+    V13_CONTRACT.validate_preregistration(preregistration)
+    if root is not None:
+        live = _source_binding(root)
+        if source_binding != live:
+            raise WorkflowError("selector-integrity successor source binding changed")
+
+
+def issue_selector_integrity_replacement(
+    *, root: Path = ROOT, out_root: Path = OUT_ROOT,
+) -> dict[str, Any]:
+    base, predecessor = _validate_preserved_selector_predecessor(
+        out_root=out_root
+    )
+    correction_path = _contract_output_path(
+        str(V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH),
+        out_root=out_root,
+    )
+    if correction_path.exists():
+        correction = _read_regular_json(correction_path)
+        validate_selector_integrity_replacement_authority(
+            correction, base_authority=base,
+            predecessor_validation=predecessor, root=root,
+        )
+        return correction
+    fresh_root = _contract_output_path(
+        str(V13_CONTRACT.FRESH_CALIBRATION_ROOT), out_root=out_root
+    )
+    if fresh_root.exists():
+        raise WorkflowError(
+            "selector-integrity replacement requires the recorded absent fresh root"
+        )
+    source_binding = _source_binding(root)
+    correction = build_selector_integrity_replacement_authority(
+        base_authority=base, source_binding=source_binding,
+        predecessor_validation=predecessor,
+    )
+    validate_selector_integrity_replacement_authority(
+        correction, base_authority=base,
+        predecessor_validation=predecessor, root=root,
+    )
+    _atomic_json(correction_path, correction, out_root=out_root)
+    return correction
+
+
+def load_selector_integrity_replacement_authority(
+    *, root: Path = ROOT, out_root: Path = OUT_ROOT,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    base, predecessor = _validate_preserved_selector_predecessor(
+        out_root=out_root
+    )
+    correction = _read_regular_json(_contract_output_path(
+        str(V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH),
+        out_root=out_root,
+    ))
+    validate_selector_integrity_replacement_authority(
+        correction, base_authority=base,
+        predecessor_validation=predecessor, root=root,
+    )
+    return base, correction
 
 
 # ---------------------------------------------------------------- V2 inputs --
@@ -886,9 +1182,11 @@ def issue_replay_plan(*, out_root: Path = OUT_ROOT,
 
 
 def load_replay_plan(*, out_root: Path = OUT_ROOT,
-                     v2_root: Path = V2_ROOT) -> dict[str, Any]:
+                     v2_root: Path = V2_ROOT,
+                     authority: Mapping[str, Any] | None = None) -> dict[str, Any]:
     plan = _read_regular_json(out_root / "replay_plan.json")
-    authority = load_authority(out_root / "authority.json")
+    if authority is None:
+        authority = load_authority(out_root / "authority.json")
     corpus = load_v2_corpus(v2_root=v2_root)
     validate_replay_plan(plan, authority, load_diagnostic(), corpus["rows"])
     return plan
@@ -1863,8 +2161,17 @@ def compile_replay_overlay_manifest(
 def build_fresh_calibration_manifest(
     *, authority: Mapping[str, Any], v2_state_manifest: Mapping[str, Any],
     states: Sequence[Mapping[str, Any]], exclusion_binding: Mapping[str, Any],
+    selector_integrity_replacement_authority: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
-    validate_authority(authority)
+    if (
+        authority.get(AUTHORITY_SELF_KEY)
+        == V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT[
+            "predecessor_authority_digest"
+        ]
+    ):
+        _validate_self_digest(authority, AUTHORITY_SELF_KEY)
+    else:
+        validate_authority(authority)
     old_states = v2_state_manifest.get("states", [])
     old_scene_ids = {str(row.get("scene_id")) for row in old_states}
     if len(old_scene_ids) != EXPECTED_OLD_STATE_COUNT:
@@ -1902,6 +2209,12 @@ def build_fresh_calibration_manifest(
         "status": STATUS,
         "complete": True,
         "authority_digest": authority[AUTHORITY_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": (
+            selector_integrity_replacement_authority.get(
+                V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+            )
+            if selector_integrity_replacement_authority is not None else None
+        ),
         "oracle_v1_3_digest": authority["oracle_v1_3_digest"],
         "scorer_fit_oracle_v1_3_contract_digest": authority[
             "scorer_fit_oracle_v1_3_contract_digest"
@@ -1922,135 +2235,969 @@ def build_fresh_calibration_manifest(
 def validate_fresh_calibration_manifest(
     manifest: Mapping[str, Any], *, authority: Mapping[str, Any],
     v2_state_manifest: Mapping[str, Any],
+    selector_integrity_replacement_authority: Mapping[str, Any] | None = None,
 ) -> None:
     _validate_self_digest(manifest, FRESH_STATE_MANIFEST_SELF_KEY)
     rebuilt = build_fresh_calibration_manifest(
         authority=authority, v2_state_manifest=v2_state_manifest,
         states=manifest.get("states", []),
         exclusion_binding=manifest.get("exclusion_binding", {}),
+        selector_integrity_replacement_authority=
+            selector_integrity_replacement_authority,
     )
     if dict(manifest) != rebuilt:
         raise WorkflowError("fresh calibration state manifest changed")
 
 
+def build_fresh_selection_attempt(
+    *, authority: Mapping[str, Any], correction: Mapping[str, Any],
+    v2_state_manifest: Mapping[str, Any], plan: Mapping[str, Any],
+    equivalence: Mapping[str, Any], overlay_manifest: Mapping[str, Any],
+    pool: Mapping[str, Sequence[Path]], exclusion: Mapping[str, Any],
+) -> dict[str, Any]:
+    old_scene_ids = sorted(
+        str(row["scene_id"]) for row in v2_state_manifest.get("states", [])
+    )
+    inventory = {
+        family: [path.name for path in sorted(pool[family], key=lambda p: p.name)]
+        for family in FAMILIES
+    }
+    scene_bindings = {
+        family: {
+            path.name: {
+                "scene_dir": str(path.resolve()),
+                "scene_manifest_sha256": B.file_sha256(path / "manifest.json"),
+                "scene_manifest_byte_count": (path / "manifest.json").stat().st_size,
+            }
+            for path in sorted(pool[family], key=lambda p: p.name)
+        }
+        for family in FAMILIES
+    }
+    payload = {
+        "schema": FRESH_SELECTION_ATTEMPT_SCHEMA,
+        "status": "ONE_SHOT_SELECTOR_INTEGRITY_REPLACEMENT_STARTED",
+        "complete": False,
+        "authority_digest": authority[AUTHORITY_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": correction[
+            V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+        ],
+        "selector_integrity_replacement_digest":
+            V13_CONTRACT.selector_integrity_replacement_digest(),
+        "selector_digest": V13_CONTRACT.fresh_calibration_selector_digest(),
+        "v2_state_manifest_digest": v2_state_manifest["state_manifest_digest"],
+        "replay_plan_digest": plan[REPLAY_PLAN_SELF_KEY],
+        "equivalence_receipt_digest": equivalence[EQUIVALENCE_SELF_KEY],
+        "replay_overlay_manifest_digest": overlay_manifest[
+            REPLAY_OVERLAY_MANIFEST_SELF_KEY
+        ],
+        "families": list(FAMILIES),
+        "strata": list(STRATA),
+        "scene_inventory": inventory,
+        "scene_inventory_digest": digest(inventory),
+        "scene_bindings": scene_bindings,
+        "scene_bindings_digest": digest(scene_bindings),
+        "old_scene_ids": old_scene_ids,
+        "old_scene_ids_digest": digest(old_scene_ids),
+        "manifest_exclusion_binding": {
+            **copy.deepcopy(dict(exclusion)),
+            "old_scorer_fit_scene_ids": old_scene_ids,
+            "old_scorer_fit_scene_ids_digest": digest(old_scene_ids),
+            "lexical_selection": True,
+            "replay_plan_digest": plan[REPLAY_PLAN_SELF_KEY],
+        },
+        "warmup_blocks_inclusive": [
+            FRESH_WARMUP_BLOCKS_MIN, FRESH_WARMUP_BLOCKS_MAX,
+        ],
+        "backend": "cpu",
+        "per_scene_process_isolation": True,
+        "candidate_outcomes_consumed": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_ATTEMPT_SELF_KEY)
+
+
+def validate_fresh_selection_attempt(
+    attempt: Mapping[str, Any], *, authority: Mapping[str, Any],
+    correction: Mapping[str, Any], v2_state_manifest: Mapping[str, Any],
+    plan: Mapping[str, Any], equivalence: Mapping[str, Any],
+    overlay_manifest: Mapping[str, Any],
+    pool: Mapping[str, Sequence[Path]], exclusion: Mapping[str, Any],
+) -> None:
+    _validate_self_digest(attempt, FRESH_SELECTION_ATTEMPT_SELF_KEY)
+    expected = build_fresh_selection_attempt(
+        authority=authority, correction=correction,
+        v2_state_manifest=v2_state_manifest, plan=plan,
+        equivalence=equivalence, overlay_manifest=overlay_manifest,
+        pool=pool, exclusion=exclusion,
+    )
+    if dict(attempt) != expected:
+        raise WorkflowError("fresh-selection one-shot attempt changed")
+
+
+def build_fresh_selection_task(
+    *, attempt: Mapping[str, Any], correction: Mapping[str, Any],
+    family: str, stratum: str, slot_index: int, scene_ordinal: int,
+    scene_dir: Path, used_scene_ids: Sequence[str],
+) -> dict[str, Any]:
+    manifest_path = scene_dir / "manifest.json"
+    if (
+        family not in FAMILIES or stratum not in STRATA
+        or not manifest_path.is_file() or manifest_path.is_symlink()
+    ):
+        raise WorkflowError("fresh-selection task input is malformed")
+    payload = {
+        "schema": FRESH_SELECTION_TASK_SCHEMA,
+        "status": "DURABLE_BEFORE_ISOLATED_SCENE_PROCESS",
+        "attempt_digest": attempt[FRESH_SELECTION_ATTEMPT_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": correction[
+            V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+        ],
+        "selector_digest": V13_CONTRACT.fresh_calibration_selector_digest(),
+        "backend": "cpu",
+        "slot_index": int(slot_index),
+        "scene_ordinal": int(scene_ordinal),
+        "family": family,
+        "stratum": stratum,
+        "state_id": f"oracle_v1_3-calibration-{family}-{stratum}",
+        "scene_id": scene_dir.name,
+        "scene_dir": str(scene_dir.resolve()),
+        "scene_manifest_sha256": B.file_sha256(manifest_path),
+        "scene_manifest_byte_count": manifest_path.stat().st_size,
+        "drive_seed": int(V1._drive_seed(scene_dir.name)),
+        "used_scene_ids_before": sorted(str(value) for value in used_scene_ids),
+        "used_scene_ids_before_digest": digest(sorted(
+            str(value) for value in used_scene_ids
+        )),
+        "warmup_blocks_inclusive": [
+            FRESH_WARMUP_BLOCKS_MIN, FRESH_WARMUP_BLOCKS_MAX,
+        ],
+        "candidate_outcomes_consumed": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_TASK_SELF_KEY)
+
+
+def validate_fresh_selection_task(
+    task: Mapping[str, Any], *, attempt: Mapping[str, Any],
+    correction: Mapping[str, Any],
+) -> None:
+    _validate_self_digest(task, FRESH_SELECTION_TASK_SELF_KEY)
+    family = task.get("family")
+    stratum = task.get("stratum")
+    scene_id = task.get("scene_id")
+    slot_index = task.get("slot_index")
+    scene_ordinal = task.get("scene_ordinal")
+    used_scene_ids = task.get("used_scene_ids_before")
+    scene_dir = Path(str(task.get("scene_dir", "")))
+    manifest_path = scene_dir / "manifest.json"
+    inventory = attempt.get("scene_inventory", {})
+    scene_binding = attempt.get("scene_bindings", {}).get(family, {}).get(
+        scene_id, {}
+    )
+    if (
+        family not in FAMILIES
+        or stratum not in STRATA
+        or not isinstance(scene_id, str)
+        or isinstance(slot_index, bool) or not isinstance(slot_index, int)
+        or isinstance(scene_ordinal, bool) or not isinstance(scene_ordinal, int)
+        or slot_index < 0 or scene_ordinal < 0
+        or not isinstance(used_scene_ids, list)
+        or any(not isinstance(value, str) for value in used_scene_ids)
+        or used_scene_ids != sorted(set(used_scene_ids))
+        or scene_id not in inventory.get(family, [])
+        or scene_dir.name != scene_id
+        or task.get("scene_dir") != scene_binding.get("scene_dir")
+        or task.get("scene_manifest_sha256")
+        != scene_binding.get("scene_manifest_sha256")
+        or task.get("scene_manifest_byte_count")
+        != scene_binding.get("scene_manifest_byte_count")
+        or not manifest_path.is_file()
+        or manifest_path.is_symlink()
+        or manifest_path.stat().st_size != task.get("scene_manifest_byte_count")
+        or B.file_sha256(manifest_path) != task.get("scene_manifest_sha256")
+    ):
+        raise WorkflowError("fresh-selection scene task changed")
+    expected = build_fresh_selection_task(
+        attempt=attempt, correction=correction, family=family,
+        stratum=stratum, slot_index=slot_index, scene_ordinal=scene_ordinal,
+        scene_dir=scene_dir, used_scene_ids=used_scene_ids,
+    )
+    if dict(task) != expected:
+        raise WorkflowError("fresh-selection scene task changed")
+
+
+def build_fresh_selection_result(
+    *, task: Mapping[str, Any], selected_state: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    payload = {
+        "schema": FRESH_SELECTION_RESULT_SCHEMA,
+        "status": "SCENE_EVALUATION_PUBLISHED_BEFORE_PROCESS_TEARDOWN",
+        "task_digest": task[FRESH_SELECTION_TASK_SELF_KEY],
+        "attempt_digest": task["attempt_digest"],
+        "selector_integrity_replacement_authority_digest": task[
+            "selector_integrity_replacement_authority_digest"
+        ],
+        "family": task["family"],
+        "stratum": task["stratum"],
+        "scene_id": task["scene_id"],
+        "eligible": selected_state is not None,
+        "selected_state": (
+            copy.deepcopy(dict(selected_state))
+            if selected_state is not None else None
+        ),
+        "candidate_outcomes_consumed": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_RESULT_SELF_KEY)
+
+
+def validate_fresh_selection_result(
+    result: Mapping[str, Any], *, task: Mapping[str, Any],
+) -> None:
+    _validate_self_digest(result, FRESH_SELECTION_RESULT_SELF_KEY)
+    selected = result.get("selected_state")
+    eligible = result.get("eligible")
+    if (
+        result.get("schema") != FRESH_SELECTION_RESULT_SCHEMA
+        or result.get("status")
+        != "SCENE_EVALUATION_PUBLISHED_BEFORE_PROCESS_TEARDOWN"
+        or result.get("task_digest") != task.get(FRESH_SELECTION_TASK_SELF_KEY)
+        or result.get("attempt_digest") != task.get("attempt_digest")
+        or result.get("selector_integrity_replacement_authority_digest")
+        != task.get("selector_integrity_replacement_authority_digest")
+        or any(result.get(key) != task.get(key) for key in (
+            "family", "stratum", "scene_id",
+        ))
+        or not isinstance(eligible, bool)
+        or (eligible and not isinstance(selected, Mapping))
+        or (not eligible and selected is not None)
+        or result.get("candidate_outcomes_consumed") is not False
+    ):
+        raise WorkflowError("fresh-selection scene result changed")
+    if eligible:
+        required = {
+            "state_id", "family", "scene_id", "scene_dir",
+            "scene_manifest_sha256", "scene_manifest_byte_count", "split",
+            "drive_seed", "stratum", "warmup_blocks", "source_step",
+            "episode_id", "episode_cluster_id", "cell_id", "boundary", "goal",
+            "goal_type", "body_clearance_m", "clearance_m",
+            "previous_applied_command",
+        }
+        allowed = required | {
+            "completion_rotation_eligibility_vector", "snapshot_task_status",
+        }
+        if (
+            not required.issubset(selected)
+            or not set(selected).issubset(allowed)
+            or selected.get("state_id") != task.get("state_id")
+            or selected.get("family") != task.get("family")
+            or selected.get("stratum") != task.get("stratum")
+            or selected.get("scene_id") != task.get("scene_id")
+            or selected.get("scene_dir") != task.get("scene_dir")
+            or selected.get("scene_manifest_sha256")
+            != task.get("scene_manifest_sha256")
+            or selected.get("scene_manifest_byte_count")
+            != task.get("scene_manifest_byte_count")
+            or selected.get("drive_seed") != task.get("drive_seed")
+            or isinstance(selected.get("warmup_blocks"), bool)
+            or not isinstance(selected.get("warmup_blocks"), int)
+            or not FRESH_WARMUP_BLOCKS_MIN
+            <= selected["warmup_blocks"] <= FRESH_WARMUP_BLOCKS_MAX
+        ):
+            raise WorkflowError("fresh-selection selected state changed")
+    expected = build_fresh_selection_result(
+        task=task, selected_state=selected if eligible else None,
+    )
+    if dict(result) != expected:
+        raise WorkflowError("fresh-selection scene result changed")
+
+
+def _fresh_selection_artifact_path(
+    root: Path, identity: str, *, out_root: Path,
+) -> Path:
+    if not _sha256_string(identity):
+        raise WorkflowError("fresh-selection artifact identity is malformed")
+    relative_root = root.absolute().relative_to(out_root.absolute())
+    return guarded_output_path(relative_root / f"{identity}.json", out_root=out_root)
+
+
+def _publish_exact_selection_task(
+    task: Mapping[str, Any], *, out_root: Path,
+) -> tuple[Path, bool]:
+    path = _fresh_selection_artifact_path(
+        out_root / "fresh_calibration/selection_tasks",
+        task[FRESH_SELECTION_TASK_SELF_KEY], out_root=out_root,
+    )
+    existed = path.exists()
+    _atomic_json(path, task, out_root=out_root)
+    return path, not existed
+
+
+def _selection_result_path(task_digest: str, *, out_root: Path) -> Path:
+    return _fresh_selection_artifact_path(
+        out_root / "fresh_calibration/selection_results",
+        task_digest, out_root=out_root,
+    )
+
+
+def _selection_launch_path(task_digest: str, *, out_root: Path) -> Path:
+    if not _sha256_string(task_digest):
+        raise WorkflowError("fresh-selection launch identity is malformed")
+    relative = Path(
+        "fresh_calibration/selection_tasks"
+    ) / f"{task_digest}.launch.json"
+    return guarded_output_path(relative, out_root=out_root)
+
+
+def build_fresh_selection_launch_marker(
+    *, task: Mapping[str, Any], attempt: Mapping[str, Any],
+    correction: Mapping[str, Any],
+) -> dict[str, Any]:
+    payload = {
+        "schema": FRESH_SELECTION_LAUNCH_SCHEMA,
+        "status": "EXCLUSIVE_CHILD_LAUNCH_CLAIMED_BEFORE_GENESIS",
+        "task_digest": task[FRESH_SELECTION_TASK_SELF_KEY],
+        "attempt_digest": attempt[FRESH_SELECTION_ATTEMPT_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": correction[
+            V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+        ],
+        "selector_digest": V13_CONTRACT.fresh_calibration_selector_digest(),
+        "candidate_outcomes_consumed": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_LAUNCH_SELF_KEY)
+
+
+def validate_fresh_selection_launch_marker(
+    marker: Mapping[str, Any], *, task: Mapping[str, Any],
+    attempt: Mapping[str, Any], correction: Mapping[str, Any],
+) -> None:
+    _validate_self_digest(marker, FRESH_SELECTION_LAUNCH_SELF_KEY)
+    expected = build_fresh_selection_launch_marker(
+        task=task, attempt=attempt, correction=correction,
+    )
+    if dict(marker) != expected:
+        raise WorkflowError("fresh-selection launch marker changed")
+
+
+def _claim_fresh_selection_launch(
+    *, task: Mapping[str, Any], attempt: Mapping[str, Any],
+    correction: Mapping[str, Any], out_root: Path,
+) -> tuple[Path, dict[str, Any]]:
+    marker = build_fresh_selection_launch_marker(
+        task=task, attempt=attempt, correction=correction,
+    )
+    path = _selection_launch_path(
+        task[FRESH_SELECTION_TASK_SELF_KEY], out_root=out_root,
+    )
+    _atomic_json(path, marker, out_root=out_root, exact_idempotence=False)
+    return path, marker
+
+
+def _selected_state_from_scene(
+    *, task: Mapping[str, Any], ctx: Any, record: Mapping[str, Any], block: int,
+) -> dict[str, Any]:
+    scene_dir = Path(task["scene_dir"])
+    episode_id = int(ctx.runner.episode_states[0].episode_id)
+    selected = {
+        "state_id": task["state_id"],
+        "family": task["family"],
+        "scene_id": task["scene_id"],
+        "scene_dir": task["scene_dir"],
+        "scene_manifest_sha256": task["scene_manifest_sha256"],
+        "scene_manifest_byte_count": task["scene_manifest_byte_count"],
+        "split": scene_dir.parents[1].name,
+        "drive_seed": task["drive_seed"],
+        "stratum": task["stratum"],
+        "warmup_blocks": block,
+        "source_step": int(record["boundary"]["source_step"]),
+        "episode_id": episode_id,
+        "episode_cluster_id": f"{task['scene_id']}/env0/ep{episode_id}",
+        "cell_id": int(record["cell_id"]),
+        "boundary": record["boundary"],
+        "goal": record["goal"],
+        "goal_type": record["goal"]["material_id"],
+        "body_clearance_m": float(record["body_clearance_m"]),
+        "clearance_m": float(record["clearance_m"]),
+        "previous_applied_command": np.asarray(
+            ctx.runner._last_executed, dtype=np.float64
+        )[0].tolist(),
+    }
+    for key in (
+        "completion_rotation_eligibility_vector",
+        "snapshot_task_status", "previous_applied_command",
+    ):
+        if key in record:
+            selected[key] = record[key]
+    return selected
+
+
+def execute_fresh_selection_task(
+    *, task: Mapping[str, Any], result_path: Path, backend: str,
+    out_root: Path,
+) -> dict[str, Any]:
+    """Evaluate one scene and publish its exact result before runtime teardown."""
+
+    if backend != "cpu" or task.get("backend") != "cpu":
+        raise WorkflowError("fresh-selection child is CPU-only")
+    if result_path.exists():
+        raise WorkflowError("fresh-selection result already exists; rerun refused")
+    require_genesis_runtime()
+    scene_dir = Path(task["scene_dir"])
+    ctx: Any | None = None
+    try:
+        shared = V1._load_shared(backend)
+        ctx = V1.build_context(
+            scene_dir, seed=int(task["drive_seed"]), backend=backend,
+            shared=shared,
+        )
+        topology = V12.link_topology(ctx)
+        ctx.begin_episode()
+        selected: dict[str, Any] | None = None
+        for block in range(1, FRESH_WARMUP_BLOCKS_MAX + 1):
+            B.drive_block_with_probe(ctx, lambda _tick, _previous: None)
+            if block < FRESH_WARMUP_BLOCKS_MIN:
+                continue
+            verdict = B.classify_state(
+                ctx, topology, requested_stratum=task["stratum"]
+            )
+            if isinstance(verdict, str):
+                continue
+            record, _field, _strata = verdict
+            selected = _selected_state_from_scene(
+                task=task, ctx=ctx, record=record, block=block,
+            )
+            break
+        result = build_fresh_selection_result(
+            task=task, selected_state=selected,
+        )
+        _atomic_json(result_path, result, out_root=out_root)
+        return result
+    finally:
+        if ctx is not None:
+            del ctx
+        gc.collect()
+
+
+def _validate_fresh_selection_sequence(
+    *, attempt: Mapping[str, Any], correction: Mapping[str, Any],
+    tasks: Sequence[Mapping[str, Any]], results: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    if len(tasks) != len(results):
+        raise WorkflowError("fresh-selection task/result inventory differs")
+    slots = [(family, stratum) for family in FAMILIES for stratum in STRATA]
+    old_scene_ids = set(attempt["old_scene_ids"])
+    used_scene_ids: set[str] = set()
+    selected_states: list[dict[str, Any]] = []
+    slot_index = 0
+    scene_ordinal = 0
+    for task, result in zip(tasks, results):
+        if slot_index >= len(slots):
+            raise WorkflowError("fresh-selection continued after all slots were filled")
+        validate_fresh_selection_task(
+            task, attempt=attempt, correction=correction,
+        )
+        validate_fresh_selection_result(result, task=task)
+        family, stratum = slots[slot_index]
+        candidates = [
+            scene_id for scene_id in attempt["scene_inventory"][family]
+            if scene_id not in old_scene_ids and scene_id not in used_scene_ids
+        ]
+        if (
+            task.get("slot_index") != slot_index
+            or task.get("scene_ordinal") != scene_ordinal
+            or task.get("family") != family
+            or task.get("stratum") != stratum
+            or scene_ordinal >= len(candidates)
+            or task.get("scene_id") != candidates[scene_ordinal]
+            or task.get("used_scene_ids_before") != sorted(used_scene_ids)
+        ):
+            raise WorkflowError("fresh-selection lexical sequence changed")
+        if result["eligible"]:
+            selected = copy.deepcopy(dict(result["selected_state"]))
+            selected_states.append(selected)
+            used_scene_ids.add(selected["scene_id"])
+            slot_index += 1
+            scene_ordinal = 0
+        else:
+            scene_ordinal += 1
+    if slot_index != len(slots):
+        raise WorkflowError("fresh-selection sequence is incomplete")
+    return selected_states
+
+
+def build_fresh_selection_terminal(
+    *, attempt: Mapping[str, Any], correction: Mapping[str, Any],
+    tasks: Sequence[Mapping[str, Any]], results: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    states = _validate_fresh_selection_sequence(
+        attempt=attempt, correction=correction, tasks=tasks, results=results,
+    )
+    rows = []
+    for task, result in zip(tasks, results):
+        launch = build_fresh_selection_launch_marker(
+            task=task, attempt=attempt, correction=correction,
+        )
+        task_digest = task[FRESH_SELECTION_TASK_SELF_KEY]
+        rows.append({
+            "task_digest": task_digest,
+            "launch_digest": launch[FRESH_SELECTION_LAUNCH_SELF_KEY],
+            "result_digest": result[FRESH_SELECTION_RESULT_SELF_KEY],
+            "task_path": str(Path("selection_tasks") / f"{task_digest}.json"),
+            "launch_path": str(
+                Path("selection_tasks") / f"{task_digest}.launch.json"
+            ),
+            "result_path": str(
+                Path("selection_results") / f"{task_digest}.json"
+            ),
+            "eligible": result["eligible"],
+        })
+    payload = {
+        "schema": FRESH_SELECTION_TERMINAL_SCHEMA,
+        "status": "COMPLETE_EXACT_24_STATE_SELECTOR_TERMINAL",
+        "complete": True,
+        "attempt_digest": attempt[FRESH_SELECTION_ATTEMPT_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": correction[
+            V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+        ],
+        "selector_digest": V13_CONTRACT.fresh_calibration_selector_digest(),
+        "task_result_count": len(rows),
+        "selected_state_count": len(states),
+        "selected_scene_count": len({row["scene_id"] for row in states}),
+        "states": states,
+        "states_digest": digest(states),
+        "rows": rows,
+        "candidate_outcomes_consumed": False,
+        "state_manifest_published": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_TERMINAL_SELF_KEY)
+
+
+def build_failed_fresh_selection_terminal(
+    *, attempt: Mapping[str, Any], correction: Mapping[str, Any],
+    failed_task: Mapping[str, Any], return_code: int | None,
+    failure_kind: str = "ISOLATED_CHILD_RETURNED_WITHOUT_VALID_RESULT",
+) -> dict[str, Any]:
+    payload = {
+        "schema": FRESH_SELECTION_TERMINAL_SCHEMA,
+        "status": "TERMINAL_UNRESOLVED_ISOLATED_CHILD",
+        "complete": False,
+        "attempt_digest": attempt[FRESH_SELECTION_ATTEMPT_SELF_KEY],
+        "selector_integrity_replacement_authority_digest": correction[
+            V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY
+        ],
+        "selector_digest": V13_CONTRACT.fresh_calibration_selector_digest(),
+        "failed_task_digest": failed_task[FRESH_SELECTION_TASK_SELF_KEY],
+        "failed_scene_id": failed_task["scene_id"],
+        "failure_kind": failure_kind,
+        "return_code": None if return_code is None else int(return_code),
+        "valid_result_published": False,
+        "retry_or_scene_replacement_authorised": False,
+        "candidate_branch_execution_started": False,
+    }
+    return _with_self_digest(payload, FRESH_SELECTION_TERMINAL_SELF_KEY)
+
+
+def _selection_terminal_rows(
+    terminal: Mapping[str, Any], *, attempt: Mapping[str, Any],
+    correction: Mapping[str, Any], out_root: Path,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    tasks: list[dict[str, Any]] = []
+    results: list[dict[str, Any]] = []
+    fresh_root = out_root / "fresh_calibration"
+    for row in terminal.get("rows", []):
+        task_relative = Path(str(row.get("task_path", "")))
+        launch_relative = Path(str(row.get("launch_path", "")))
+        result_relative = Path(str(row.get("result_path", "")))
+        if (
+            task_relative.is_absolute() or launch_relative.is_absolute()
+            or result_relative.is_absolute() or ".." in task_relative.parts
+            or ".." in launch_relative.parts or ".." in result_relative.parts
+        ):
+            raise WorkflowError("fresh-selection terminal path is unsafe")
+        task = _read_regular_json(fresh_root / task_relative)
+        launch = _read_regular_json(fresh_root / launch_relative)
+        result = _read_regular_json(fresh_root / result_relative)
+        if (
+            task.get(FRESH_SELECTION_TASK_SELF_KEY) != row.get("task_digest")
+            or launch.get(FRESH_SELECTION_LAUNCH_SELF_KEY)
+            != row.get("launch_digest")
+            or result.get(FRESH_SELECTION_RESULT_SELF_KEY)
+            != row.get("result_digest")
+            or result.get("eligible") != row.get("eligible")
+        ):
+            raise WorkflowError("fresh-selection terminal row changed")
+        validate_fresh_selection_task(
+            task, attempt=attempt, correction=correction,
+        )
+        validate_fresh_selection_launch_marker(
+            launch, task=task, attempt=attempt, correction=correction,
+        )
+        validate_fresh_selection_result(result, task=task)
+        tasks.append(task)
+        results.append(result)
+    return tasks, results
+
+
+def validate_fresh_selection_terminal(
+    terminal: Mapping[str, Any], *, attempt: Mapping[str, Any],
+    correction: Mapping[str, Any], out_root: Path,
+) -> list[dict[str, Any]]:
+    _validate_self_digest(terminal, FRESH_SELECTION_TERMINAL_SELF_KEY)
+    if terminal.get("complete") is not True:
+        failure_kind = terminal.get("failure_kind")
+        return_code = terminal.get("return_code")
+        failed_task_digest = terminal.get("failed_task_digest")
+        if (
+            terminal.get("schema") != FRESH_SELECTION_TERMINAL_SCHEMA
+            or terminal.get("status") != "TERMINAL_UNRESOLVED_ISOLATED_CHILD"
+            or terminal.get("attempt_digest")
+            != attempt.get(FRESH_SELECTION_ATTEMPT_SELF_KEY)
+            or terminal.get("selector_integrity_replacement_authority_digest")
+            != correction.get(V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY)
+            or terminal.get("valid_result_published") is not False
+            or terminal.get("retry_or_scene_replacement_authorised") is not False
+            or terminal.get("candidate_branch_execution_started") is not False
+            or not _sha256_string(failed_task_digest)
+            or failure_kind not in {
+                "ISOLATED_CHILD_RETURNED_WITHOUT_VALID_RESULT",
+                "PREEXISTING_TASK_WITHOUT_VALID_RESULT",
+            }
+            or (
+                failure_kind == "PREEXISTING_TASK_WITHOUT_VALID_RESULT"
+                and return_code is not None
+            )
+            or (
+                failure_kind == "ISOLATED_CHILD_RETURNED_WITHOUT_VALID_RESULT"
+                and (isinstance(return_code, bool)
+                     or not isinstance(return_code, int))
+            )
+        ):
+            raise WorkflowError("fresh-selection failure terminal changed")
+        failed_task_path = _fresh_selection_artifact_path(
+            out_root / "fresh_calibration/selection_tasks",
+            failed_task_digest, out_root=out_root,
+        )
+        failed_task = _read_regular_json(failed_task_path)
+        validate_fresh_selection_task(
+            failed_task, attempt=attempt, correction=correction,
+        )
+        expected = build_failed_fresh_selection_terminal(
+            attempt=attempt, correction=correction,
+            failed_task=failed_task, return_code=return_code,
+            failure_kind=failure_kind,
+        )
+        if dict(terminal) != expected:
+            raise WorkflowError("fresh-selection failure terminal changed")
+        raise WorkflowError("fresh-selection attempt is terminal after unresolved child")
+    tasks, results = _selection_terminal_rows(
+        terminal, attempt=attempt, correction=correction, out_root=out_root,
+    )
+    expected = build_fresh_selection_terminal(
+        attempt=attempt, correction=correction, tasks=tasks, results=results,
+    )
+    if dict(terminal) != expected:
+        raise WorkflowError("fresh-selection success terminal changed")
+    return copy.deepcopy(expected["states"])
+
+
+def _run_fresh_selection_child(
+    *, task_path: Path, result_path: Path, backend: str,
+) -> int:
+    command = [
+        sys.executable, str(Path(__file__).resolve()),
+        "--fresh-selection-worker-task", str(task_path),
+        "--fresh-selection-worker-result", str(result_path),
+        "--backend", backend,
+    ]
+    try:
+        completed = subprocess.run(command, cwd=ROOT, check=False)
+    except OSError:
+        return 127
+    return int(completed.returncode)
+
+
+def run_fresh_selection_worker(
+    *, task_path: Path, result_path: Path, backend: str,
+) -> dict[str, Any]:
+    out_root = result_path.absolute().parents[2]
+    expected_task_root = out_root / "fresh_calibration/selection_tasks"
+    expected_result_root = out_root / "fresh_calibration/selection_results"
+    terminal_path = out_root / "fresh_calibration/selection_terminal.json"
+    if (
+        task_path.absolute().parent != expected_task_root.absolute()
+        or result_path.absolute().parent != expected_result_root.absolute()
+        or task_path.name != result_path.name
+    ):
+        raise WorkflowError("fresh-selection worker paths changed")
+    launch_path = _selection_launch_path(task_path.stem, out_root=out_root)
+    if terminal_path.exists() or terminal_path.is_symlink():
+        raise WorkflowError("fresh-selection worker refused an existing terminal")
+    if result_path.exists() or result_path.is_symlink():
+        raise WorkflowError("fresh-selection worker refused an existing result")
+    if launch_path.exists() or launch_path.is_symlink():
+        raise WorkflowError("fresh-selection worker refused an existing launch marker")
+    authority, correction = load_selector_integrity_replacement_authority(
+        out_root=out_root
+    )
+    del authority
+    task = _read_regular_json(task_path)
+    attempt = _read_regular_json(
+        out_root / "fresh_calibration/selection_attempt.json"
+    )
+    _validate_self_digest(attempt, FRESH_SELECTION_ATTEMPT_SELF_KEY)
+    validate_fresh_selection_task(
+        task, attempt=attempt, correction=correction,
+    )
+    if (
+        task.get(FRESH_SELECTION_TASK_SELF_KEY) != task_path.stem
+    ):
+        raise WorkflowError("fresh-selection worker task authority changed")
+    claimed_path, marker = _claim_fresh_selection_launch(
+        task=task, attempt=attempt, correction=correction, out_root=out_root,
+    )
+    if claimed_path != launch_path:
+        raise WorkflowError("fresh-selection launch marker path changed")
+    validate_fresh_selection_launch_marker(
+        marker, task=task, attempt=attempt, correction=correction,
+    )
+    if terminal_path.exists() or terminal_path.is_symlink():
+        raise WorkflowError("fresh-selection worker refused an existing terminal")
+    return execute_fresh_selection_task(
+        task=task, result_path=result_path, backend=backend, out_root=out_root,
+    )
+
+
 def select_fresh_calibration_states(*, backend: str = "cpu",
                                     out_root: Path = OUT_ROOT) -> dict[str, Any]:
-    """Select one lexical scene per family/stratum, then freeze all 24."""
+    """Run the one-shot selector as durable, per-scene isolated tasks."""
 
     if backend != "cpu":
         raise WorkflowError("fresh calibration selection is CPU-only")
-    authority = load_authority(out_root / "authority.json")
+    authority, correction = load_selector_integrity_replacement_authority(
+        out_root=out_root
+    )
     require_genesis_runtime()
     corpus = load_v2_corpus()
-    # Selection is downstream of the fixed replay/equivalence result, and no
-    # candidate outcome participates in this state selection.
-    plan = load_replay_plan(out_root=out_root)
+    plan = load_replay_plan(out_root=out_root, authority=authority)
     equivalence = _read_regular_json(out_root / "equivalence_receipt.json")
     validate_equivalence_receipt(equivalence, authority, corpus["rows"])
     overlay_manifest = _read_regular_json(out_root / "replay_overlay_manifest.json")
     _validate_self_digest(overlay_manifest, REPLAY_OVERLAY_MANIFEST_SELF_KEY)
-    if overlay_manifest.get("overlay_count") != EXPECTED_V2_INVALID:
+    if (
+        overlay_manifest.get("overlay_count") != EXPECTED_V2_INVALID
+        or overlay_manifest.get("authority_digest") != authority[AUTHORITY_SELF_KEY]
+    ):
         raise WorkflowError("fresh selection requires all exact replay overlays")
-    # Use the ordinary scene pool and apply the frozen 120-scene exclusion
-    # below.  The legacy ``final_eval`` pool also excludes those scenes, but
-    # does so by reopening a historical live-source authority that cannot
-    # validate a newly committed v1.3 successor.
     pool, exclusion = B.scene_pool("scorer_fit")
     if tuple(sorted(pool)) != FAMILIES:
         raise WorkflowError("fresh calibration family inventory changed")
     old_scene_ids = {
         str(row["scene_id"]) for row in corpus["state_manifest"]["states"]
     }
-    shared = V1._load_shared(backend)
-    chosen: list[dict[str, Any]] = []
-    used_scenes: set[str] = set()
-    for family in FAMILIES:
-        for stratum in STRATA:
+    expected_attempt = build_fresh_selection_attempt(
+        authority=authority, correction=correction,
+        v2_state_manifest=corpus["state_manifest"], plan=plan,
+        equivalence=equivalence, overlay_manifest=overlay_manifest,
+        pool=pool, exclusion=exclusion,
+    )
+    attempt_path = out_root / "fresh_calibration/selection_attempt.json"
+    if attempt_path.exists():
+        attempt = _read_regular_json(attempt_path)
+        validate_fresh_selection_attempt(
+            attempt, authority=authority, correction=correction,
+            v2_state_manifest=corpus["state_manifest"], plan=plan,
+            equivalence=equivalence, overlay_manifest=overlay_manifest,
+            pool=pool, exclusion=exclusion,
+        )
+    else:
+        attempt = expected_attempt
+        _atomic_json(attempt_path, attempt, out_root=out_root)
+
+    terminal_path = out_root / "fresh_calibration/selection_terminal.json"
+    state_manifest_path = out_root / "fresh_calibration/state_manifest.json"
+    if terminal_path.exists():
+        terminal = _read_regular_json(terminal_path)
+        chosen = validate_fresh_selection_terminal(
+            terminal, attempt=attempt, correction=correction, out_root=out_root,
+        )
+    else:
+        if state_manifest_path.exists():
+            raise WorkflowError("fresh state manifest exists without selector terminal")
+        tasks: list[dict[str, Any]] = []
+        results: list[dict[str, Any]] = []
+        used_scenes: set[str] = set()
+        for slot_index, (family, stratum) in enumerate(
+            (family, stratum) for family in FAMILIES for stratum in STRATA
+        ):
             selected: dict[str, Any] | None = None
+            scene_ordinal = 0
             for scene_dir in sorted(pool[family], key=lambda path: path.name):
                 if scene_dir.name in used_scenes or scene_dir.name in old_scene_ids:
                     continue
-                try:
-                    ctx = V1.build_context(
-                        scene_dir, seed=int(V1._drive_seed(scene_dir.name)),
-                        backend=backend, shared=shared,
+                task = build_fresh_selection_task(
+                    attempt=attempt, correction=correction, family=family,
+                    stratum=stratum, slot_index=slot_index,
+                    scene_ordinal=scene_ordinal, scene_dir=scene_dir,
+                    used_scene_ids=sorted(used_scenes),
+                )
+                task_path, task_created = _publish_exact_selection_task(
+                    task, out_root=out_root
+                )
+                result_path = _selection_result_path(
+                    task[FRESH_SELECTION_TASK_SELF_KEY], out_root=out_root,
+                )
+                return_code = 0
+                if not task_created and not result_path.exists():
+                    failed = build_failed_fresh_selection_terminal(
+                        attempt=attempt, correction=correction,
+                        failed_task=task, return_code=None,
+                        failure_kind="PREEXISTING_TASK_WITHOUT_VALID_RESULT",
                     )
-                    topology = V12.link_topology(ctx)
-                    ctx.begin_episode()
-                    for block in range(1, FRESH_WARMUP_BLOCKS_MAX + 1):
-                        B.drive_block_with_probe(ctx, lambda _tick, _previous: None)
-                        if block < FRESH_WARMUP_BLOCKS_MIN:
-                            continue
-                        verdict = B.classify_state(
-                            ctx, topology, requested_stratum=stratum
-                        )
-                        if isinstance(verdict, str):
-                            continue
-                        record, _field, _strata = verdict
-                        manifest_path = scene_dir / "manifest.json"
-                        episode_id = int(ctx.runner.episode_states[0].episode_id)
-                        selected = {
-                            "state_id": f"oracle_v1_3-calibration-{family}-{stratum}",
-                            "family": family,
-                            "scene_id": scene_dir.name,
-                            "scene_dir": str(scene_dir.resolve()),
-                            "scene_manifest_sha256": B.file_sha256(manifest_path),
-                            "scene_manifest_byte_count": manifest_path.stat().st_size,
-                            "split": scene_dir.parents[1].name,
-                            "drive_seed": int(V1._drive_seed(scene_dir.name)),
-                            "stratum": stratum,
-                            "warmup_blocks": block,
-                            "source_step": int(record["boundary"]["source_step"]),
-                            "episode_id": episode_id,
-                            "episode_cluster_id": f"{scene_dir.name}/env0/ep{episode_id}",
-                            "cell_id": int(record["cell_id"]),
-                            "boundary": record["boundary"],
-                            "goal": record["goal"],
-                            "goal_type": record["goal"]["material_id"],
-                            "body_clearance_m": float(record["body_clearance_m"]),
-                            "clearance_m": float(record["clearance_m"]),
-                            "previous_applied_command": np.asarray(
-                                ctx.runner._last_executed, dtype=np.float64
-                            )[0].tolist(),
-                        }
-                        for key in (
-                            "completion_rotation_eligibility_vector",
-                            "snapshot_task_status", "previous_applied_command",
-                        ):
-                            if key in record:
-                                selected[key] = record[key]
-                        break
-                except Exception as exc:
-                    # Infrastructure failures cannot silently advance the
-                    # lexical scene cursor and thereby select a replacement.
-                    raise WorkflowError(
-                        f"fresh selection infrastructure failure at {scene_dir.name}"
+                    _atomic_json(terminal_path, failed, out_root=out_root)
+                    raise FreshSelectionChildUnresolved(
+                        task[FRESH_SELECTION_TASK_SELF_KEY], None
+                    )
+                if not result_path.exists():
+                    return_code = _run_fresh_selection_child(
+                        task_path=task_path, result_path=result_path,
+                        backend=backend,
+                    )
+                if not result_path.exists():
+                    failed = build_failed_fresh_selection_terminal(
+                        attempt=attempt, correction=correction,
+                        failed_task=task, return_code=return_code,
+                    )
+                    _atomic_json(terminal_path, failed, out_root=out_root)
+                    raise FreshSelectionChildUnresolved(
+                        task[FRESH_SELECTION_TASK_SELF_KEY], return_code
+                    )
+                try:
+                    launch = _read_regular_json(_selection_launch_path(
+                        task[FRESH_SELECTION_TASK_SELF_KEY], out_root=out_root,
+                    ))
+                    validate_fresh_selection_launch_marker(
+                        launch, task=task, attempt=attempt,
+                        correction=correction,
+                    )
+                    result = _read_regular_json(result_path)
+                    validate_fresh_selection_result(result, task=task)
+                except WorkflowError as exc:
+                    failure_kind = (
+                        "ISOLATED_CHILD_RETURNED_WITHOUT_VALID_RESULT"
+                        if task_created
+                        else "PREEXISTING_TASK_WITHOUT_VALID_RESULT"
+                    )
+                    failure_code = return_code if task_created else None
+                    failed = build_failed_fresh_selection_terminal(
+                        attempt=attempt, correction=correction,
+                        failed_task=task, return_code=failure_code,
+                        failure_kind=failure_kind,
+                    )
+                    _atomic_json(terminal_path, failed, out_root=out_root)
+                    raise FreshSelectionChildUnresolved(
+                        task[FRESH_SELECTION_TASK_SELF_KEY], failure_code
                     ) from exc
-                finally:
-                    if "ctx" in locals():
-                        del ctx
-                        gc.collect()
-                if selected is not None:
+                tasks.append(task)
+                results.append(result)
+                if result["eligible"]:
+                    selected = copy.deepcopy(dict(result["selected_state"]))
+                    used_scenes.add(selected["scene_id"])
                     break
+                scene_ordinal += 1
             if selected is None:
-                raise WorkflowError(f"no frozen fresh calibration identity for {family}/{stratum}")
-            chosen.append(selected)
-            used_scenes.add(selected["scene_id"])
+                raise WorkflowError(
+                    f"no frozen fresh calibration identity for {family}/{stratum}"
+                )
+        terminal = build_fresh_selection_terminal(
+            attempt=attempt, correction=correction, tasks=tasks, results=results,
+        )
+        _atomic_json(terminal_path, terminal, out_root=out_root)
+        chosen = validate_fresh_selection_terminal(
+            terminal, attempt=attempt, correction=correction, out_root=out_root,
+        )
+
     manifest = build_fresh_calibration_manifest(
         authority=authority, v2_state_manifest=corpus["state_manifest"],
-        states=chosen, exclusion_binding={
-            **exclusion,
-            "old_scorer_fit_scene_ids": sorted(old_scene_ids),
-            "old_scorer_fit_scene_ids_digest": digest(sorted(old_scene_ids)),
-            "lexical_selection": True,
-            "replay_plan_digest": plan[REPLAY_PLAN_SELF_KEY],
-        },
+        states=chosen,
+        exclusion_binding=attempt["manifest_exclusion_binding"],
+        selector_integrity_replacement_authority=correction,
     )
-    _atomic_json(
-        out_root / "fresh_calibration/state_manifest.json", manifest,
-        out_root=out_root,
+    _atomic_json(state_manifest_path, manifest, out_root=out_root)
+    validate_fresh_calibration_manifest(
+        manifest, authority=authority,
+        v2_state_manifest=corpus["state_manifest"],
+        selector_integrity_replacement_authority=correction,
     )
     return manifest
+
+
+def load_validated_fresh_selection(
+    *, out_root: Path = OUT_ROOT, v2_root: Path = V2_ROOT,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Load the paired authority only after terminal and manifest validation."""
+
+    authority, correction = load_selector_integrity_replacement_authority(
+        out_root=out_root
+    )
+    corpus = load_v2_corpus(v2_root=v2_root)
+    plan = load_replay_plan(
+        out_root=out_root, v2_root=v2_root, authority=authority,
+    )
+    equivalence = _read_regular_json(out_root / "equivalence_receipt.json")
+    validate_equivalence_receipt(equivalence, authority, corpus["rows"])
+    overlay_manifest = _read_regular_json(
+        out_root / "replay_overlay_manifest.json"
+    )
+    _validate_self_digest(overlay_manifest, REPLAY_OVERLAY_MANIFEST_SELF_KEY)
+    pool, exclusion = B.scene_pool("scorer_fit")
+    attempt = _read_regular_json(
+        out_root / "fresh_calibration/selection_attempt.json"
+    )
+    validate_fresh_selection_attempt(
+        attempt, authority=authority, correction=correction,
+        v2_state_manifest=corpus["state_manifest"], plan=plan,
+        equivalence=equivalence, overlay_manifest=overlay_manifest,
+        pool=pool, exclusion=exclusion,
+    )
+    terminal = _read_regular_json(
+        out_root / "fresh_calibration/selection_terminal.json"
+    )
+    states = validate_fresh_selection_terminal(
+        terminal, attempt=attempt, correction=correction, out_root=out_root,
+    )
+    manifest = _read_regular_json(
+        out_root / "fresh_calibration/state_manifest.json"
+    )
+    validate_fresh_calibration_manifest(
+        manifest, authority=authority,
+        v2_state_manifest=corpus["state_manifest"],
+        selector_integrity_replacement_authority=correction,
+    )
+    expected_manifest = build_fresh_calibration_manifest(
+        authority=authority, v2_state_manifest=corpus["state_manifest"],
+        states=states,
+        exclusion_binding=attempt["manifest_exclusion_binding"],
+        selector_integrity_replacement_authority=correction,
+    )
+    continuation = V13_CONTRACT.SELECTOR_INTEGRITY_REPLACEMENT[
+        "preserved_predecessor_authority_continuation"
+    ]
+    if (
+        manifest != expected_manifest
+        or continuation["replacement_grants_new_candidate_branch_authority"]
+        is not False
+        or continuation["predecessor_candidate_branch_authority_preserved"]
+        is not True
+        or continuation["continuation_requires_valid_selector_terminal"]
+        is not True
+        or continuation["continuation_requires_exact_24_state_manifest"]
+        is not True
+        or continuation[
+            "continuation_requires_current_successor_preregistration_binding"
+        ] is not True
+        or continuation["fresh_branch_attempts_before_replacement"] != 0
+        or continuation["fresh_branch_budget"]
+        != EXPECTED_FRESH_CALIBRATION_BRANCHES
+    ):
+        raise WorkflowError("fresh branch continuation authority changed")
+    return authority, correction, corpus, manifest
 
 
 # ------------------------------------------------ fresh branch generation --
@@ -2230,13 +3377,11 @@ def generate_fresh_calibration(*, backend: str = "cpu",
                                out_root: Path = OUT_ROOT) -> dict[str, Any]:
     if backend != "cpu":
         raise WorkflowError("fresh calibration branch generation is CPU-only")
-    authority = load_authority(out_root / "authority.json")
-    require_genesis_runtime()
-    corpus = load_v2_corpus()
-    manifest = _read_regular_json(out_root / "fresh_calibration/state_manifest.json")
-    validate_fresh_calibration_manifest(
-        manifest, authority=authority, v2_state_manifest=corpus["state_manifest"]
+    authority, correction, corpus, manifest = load_validated_fresh_selection(
+        out_root=out_root
     )
+    require_genesis_runtime()
+    del correction, corpus
     fresh_root = out_root / "fresh_calibration"
     shared = V1._load_shared(backend)
     completed: list[dict[str, Any]] = []
@@ -2569,8 +3714,9 @@ def _training_view_row(
 
 def compose_training_view(*, out_root: Path = OUT_ROOT,
                           v2_root: Path = V2_ROOT) -> dict[str, Any]:
-    authority = load_authority(out_root / "authority.json")
-    corpus = load_v2_corpus(v2_root=v2_root)
+    authority, correction, corpus, fresh_manifest = \
+        load_validated_fresh_selection(out_root=out_root, v2_root=v2_root)
+    del correction
     equivalence = _read_regular_json(out_root / "equivalence_receipt.json")
     validate_equivalence_receipt(equivalence, authority, corpus["rows"])
     replay_manifest = _read_regular_json(out_root / "replay_overlay_manifest.json")
@@ -2585,11 +3731,6 @@ def compose_training_view(*, out_root: Path = OUT_ROOT,
         if file_sha256(path) != entry["sha256"]:
             raise WorkflowError("replay overlay raw digest changed")
         overlays[overlay["source_branch_identity_digest"]] = (overlay, path)
-    fresh_manifest = _read_regular_json(out_root / "fresh_calibration/state_manifest.json")
-    validate_fresh_calibration_manifest(
-        fresh_manifest, authority=authority,
-        v2_state_manifest=corpus["state_manifest"],
-    )
     fresh_receipt = _read_regular_json(out_root / "fresh_calibration/corpus_receipt.json")
     _validate_self_digest(fresh_receipt, FRESH_CORPUS_SELF_KEY)
     if fresh_receipt.get("branch_count") != EXPECTED_FRESH_CALIBRATION_BRANCHES:
@@ -2810,12 +3951,15 @@ def load_training_view_for_consumption(
         raise WorkflowError("training view must be loaded from its registered path")
     view = _read_regular_json(path)
     _validate_training_view_shape(view)
-    authority = load_authority(AUTHORITY_PATH)
+    authority, correction, _corpus, manifest = load_validated_fresh_selection()
+    del correction
     if (
         view.get("authority_digest") != authority[AUTHORITY_SELF_KEY]
         or view.get("oracle_v1_3_digest") != authority["oracle_v1_3_digest"]
         or view.get("scorer_fit_oracle_v1_3_contract_digest")
         != authority["scorer_fit_oracle_v1_3_contract_digest"]
+        or view.get("fresh_calibration_state_manifest_digest")
+        != manifest[FRESH_STATE_MANIFEST_SELF_KEY]
     ):
         raise WorkflowError("training view is bound to another v1.3 authority")
     if not materialize:
@@ -2869,6 +4013,7 @@ STAGES = (
     "issue-replay-plan",
     "adopt-valid",
     "replay-failures",
+    "issue-selector-integrity-replacement",
     "select-calibration",
     "generate-calibration",
     "compose-training-view",
@@ -2885,6 +4030,12 @@ def status(*, out_root: Path = OUT_ROOT) -> dict[str, Any]:
         "replay_plan": out_root / "replay_plan.json",
         "equivalence": out_root / "equivalence_receipt.json",
         "replay_overlays": out_root / "replay_overlay_manifest.json",
+        "selector_integrity_replacement":
+            out_root / "fresh_calibration/selector_integrity_replacement_v1.json",
+        "fresh_selection_attempt":
+            out_root / "fresh_calibration/selection_attempt.json",
+        "fresh_selection_terminal":
+            out_root / "fresh_calibration/selection_terminal.json",
         "fresh_states": out_root / "fresh_calibration/state_manifest.json",
         "fresh_corpus": out_root / "fresh_calibration/corpus_receipt.json",
         "training_view": out_root / "training_view.json",
@@ -2904,13 +4055,39 @@ def status(*, out_root: Path = OUT_ROOT) -> dict[str, Any]:
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--stage", required=True, choices=STAGES)
+    parser.add_argument("--stage", choices=STAGES)
     parser.add_argument("--backend", default="cpu", choices=("cpu",))
+    parser.add_argument(
+        "--fresh-selection-worker-task", type=Path, help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
+        "--fresh-selection-worker-result", type=Path, help=argparse.SUPPRESS,
+    )
     parser.add_argument(
         "--execute-authorized", action="store_true",
         help="required only for the three simulator-backed stages",
     )
     args = parser.parse_args(argv)
+    worker_paths = (
+        args.fresh_selection_worker_task,
+        args.fresh_selection_worker_result,
+    )
+    if any(path is not None for path in worker_paths):
+        if (
+            not all(path is not None for path in worker_paths)
+            or args.stage is not None
+            or args.execute_authorized
+        ):
+            raise WorkflowError("fresh-selection worker invocation is malformed")
+        result = run_fresh_selection_worker(
+            task_path=args.fresh_selection_worker_task,
+            result_path=args.fresh_selection_worker_result,
+            backend=args.backend,
+        )
+        print(json.dumps(result, indent=2, sort_keys=True, allow_nan=False))
+        return 0
+    if args.stage is None:
+        parser.error("--stage is required")
     if args.stage in RUNTIME_STAGES and not args.execute_authorized:
         raise WorkflowError(
             f"{args.stage} is simulator-backed and requires --execute-authorized"
@@ -2925,6 +4102,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         result = issue_equivalence_receipt()
     elif args.stage == "replay-failures":
         result = generate_replay_overlays(backend=args.backend)
+    elif args.stage == "issue-selector-integrity-replacement":
+        result = issue_selector_integrity_replacement()
     elif args.stage == "select-calibration":
         result = select_fresh_calibration_states(backend=args.backend)
     elif args.stage == "generate-calibration":

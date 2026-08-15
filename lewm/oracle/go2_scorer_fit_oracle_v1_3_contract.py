@@ -1,11 +1,13 @@
-"""Frozen pre-outcome contract for scorer-fit oracle v1.3.
+"""Frozen scorer-fit oracle-v1.3 contract and selector-integrity amendment.
 
 The contract is intentionally a narrow successor to the protected scorer-fit
 V2 corpus.  It freezes the graph-boundary label rule, the exact eighteen-row
 replay allowlist, the disposition of the historical calibration states, the
 outcome-blind fresh-calibration selector, the unchanged scorer/qualification
-budget, and closed output/stage authority.  Importing this module reads or
-writes nothing and opens no model checkpoint.
+budget, and closed output/stage authority.  A separate selector-only integrity
+replacement binds the pre-manifest selector crash without changing that
+scientific contract.  Importing this module reads or writes nothing and opens
+no model checkpoint.
 """
 from __future__ import annotations
 
@@ -19,13 +21,34 @@ from lewm.oracle import go2_branch_oracle_v1_3 as ORACLE
 
 
 CONTRACT_SCHEMA = "go2_scorer_fit_oracle_v1_3_contract_v1"
-PREREGISTRATION_SCHEMA = "go2_scorer_fit_oracle_v1_3_preregistration_v1"
+ORIGINAL_PREREGISTRATION_SCHEMA = "go2_scorer_fit_oracle_v1_3_preregistration_v1"
+PREREGISTRATION_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_v1_"
+    "preregistration_v1"
+)
 CONTRACT_STATUS = "FROZEN_PREOUTCOME_DEVELOPMENT_CONTRACT"
-PREREGISTRATION_STATUS = "FROZEN_BEFORE_V1_3_BRANCH_EXECUTION"
+ORIGINAL_PREREGISTRATION_STATUS = "FROZEN_BEFORE_V1_3_BRANCH_EXECUTION"
+PREREGISTRATION_STATUS = (
+    "FROZEN_AFTER_PREMANIFEST_SELECTOR_SIGSEGV_BEFORE_INTEGRITY_REPLACEMENT"
+)
 
-PREREGISTRATION_PATH = Path(
+ORIGINAL_PREREGISTRATION_PATH = Path(
     "docs/lewm_go2_scorer_fit_oracle_v1_3_preregistration_2026-08-15.json"
 )
+PREREGISTRATION_PATH = Path(
+    "docs/go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_v1_"
+    "preregistration_2026-08-15.json"
+)
+ORIGINAL_PREREGISTRATION_BINDING = {
+    "path": str(ORIGINAL_PREREGISTRATION_PATH),
+    "schema": ORIGINAL_PREREGISTRATION_SCHEMA,
+    "status": ORIGINAL_PREREGISTRATION_STATUS,
+    "self_digest":
+        "6ec652931e2ab8085c391d88d4c199de3fd1db9061b824891a748821eb0119a7",
+    "raw_sha256":
+        "5ede05ca2cd25caaa055adafcc57ead2a868977e5a829fa2941b11e465d778a3",
+    "byte_count": 40749,
+}
 GENERATED_ROOT = Path(".generated/go2_scorer_fit_oracle_v1_3")
 REGISTERED_GENERATED_TARGET_ROOT = Path(
     "/home/andrewknowles/.local/share/lewm_go2_planning_utility_v1_2/"
@@ -99,6 +122,13 @@ FRESH_CALIBRATION_FRAMES_ROOT = FRESH_CALIBRATION_ROOT / "frames"
 FRESH_CALIBRATION_CORPUS_RECEIPT_PATH = (
     FRESH_CALIBRATION_ROOT / "corpus_receipt.json"
 )
+SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH = (
+    FRESH_CALIBRATION_ROOT / "selector_integrity_replacement_v1.json"
+)
+FRESH_SELECTION_ATTEMPT_PATH = FRESH_CALIBRATION_ROOT / "selection_attempt.json"
+FRESH_SELECTION_TASKS_ROOT = FRESH_CALIBRATION_ROOT / "selection_tasks"
+FRESH_SELECTION_RESULTS_ROOT = FRESH_CALIBRATION_ROOT / "selection_results"
+FRESH_SELECTION_TERMINAL_PATH = FRESH_CALIBRATION_ROOT / "selection_terminal.json"
 TRAINING_VIEW_PATH = GENERATED_ROOT / "training_view.json"
 
 ENCODED_TRAINING_VIEW_ROOT = GENERATED_ROOT / "encoded_training_view"
@@ -139,6 +169,12 @@ SCORER_PACKAGE_RECEIPT_SCHEMA = (
 NO_LATENT_BASELINE_SCHEMA = "go2_utility_scorer_oracle_v1_3_no_latent_baseline_v1"
 NO_LATENT_BASELINE_RECEIPT_SCHEMA = (
     "go2_utility_scorer_oracle_v1_3_no_latent_baseline_receipt_v1"
+)
+SELECTOR_INTEGRITY_REPLACEMENT_SCHEMA = (
+    "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_authority_v1"
+)
+SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY = (
+    "selector_integrity_replacement_authority_digest"
 )
 
 SOURCE_BASE_COMMIT = "1c07df778b7225301b9be80ebd2f6162bfe16965"
@@ -317,6 +353,190 @@ FRESH_CALIBRATION_SELECTOR = {
     "manifest_frozen_before_candidate_branch_generation": True,
 }
 
+SELECTOR_INTEGRITY_REPLACEMENT = {
+    "schema": (
+        "go2_scorer_fit_oracle_v1_3_selector_integrity_replacement_contract_v1"
+    ),
+    "status": "FROZEN_SELECTOR_ONLY_INTEGRITY_REPLACEMENT",
+    "scope": "fresh_calibration_state_selection_only",
+    "predecessor_authority_digest": (
+        "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f"
+    ),
+    "predecessor_source_commit": (
+        "cfe087c36b2129510f4c75af36c1a2631b59f6ac"
+    ),
+    "predecessor_contract_digest": (
+        "93532f22a0cbc0e57ccdab3d5c01419cd824bc402d637738c5004eb621c23a89"
+    ),
+    "predecessor_source_files_digest": (
+        "12578e82ad25b5a1c49f0c81b0c490f280ff5b86da692ab52249409c952e9997"
+    ),
+    "selector_digest": (
+        "041607943d7246ee657584130e4fe35d7565944f933f3e07a9ee4ffc576981cb"
+    ),
+    "successor_preregistration_path": str(PREREGISTRATION_PATH),
+    "successor_preregistration_digest_key": "preregistration_digest",
+    "incident": {
+        "stage": "select-calibration",
+        "process_id": 1822672,
+        "observed_at_local": "2026-08-15T12:45:50+01:00",
+        "observed_at_utc": "2026-08-15T11:45:50Z",
+        "evidence_source": "kernel journal",
+        "signal": "SIGSEGV",
+        "fault_address": "0x1088",
+        "page_fault_error_code": 4,
+        "shared_object": "libc.so.6",
+        "shared_object_offset": "0xa00d4",
+        "likely_cpu": 8,
+        "process_gone": True,
+        "phase": "before any fresh-calibration manifest or durable output",
+    },
+    "preserved_predecessor_artifacts": {
+        "authority": {
+            "path": str(AUTHORITY_PATH),
+            "self_key": "authority_digest",
+            "self_digest": (
+                "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f"
+            ),
+            "raw_sha256": (
+                "669c6847c97e04b319ba8de12a5df72957cbf225796605f9567626e26fa6bb4e"
+            ),
+            "byte_count": 55477,
+            "file_mode": "0600",
+        },
+        "replay_plan": {
+            "path": str(REPLAY_PLAN_PATH),
+            "self_key": "replay_plan_digest",
+            "self_digest": (
+                "39a75ba2abe545b30adf27222bf9bc03283c6036fad37bd6f14f1bd5d36a6c03"
+            ),
+            "raw_sha256": (
+                "beebf4c65a4e8d2633f6e33ad836c45a24aa504fa2f56334baf2e154665ef0ec"
+            ),
+            "byte_count": 460892,
+            "file_mode": "0600",
+            "entry_count": 18,
+        },
+        "equivalence_receipt": {
+            "path": str(EQUIVALENCE_RECEIPT_PATH),
+            "self_key": "equivalence_receipt_digest",
+            "self_digest": (
+                "49a4efb800b8eae5fe4a4a7cfc47833bfda8c5994acc02f5736a2f08ec76992e"
+            ),
+            "raw_sha256": (
+                "f023724313f6f85d2fa60abbf432a54652a7de79a0941be1515e1e54d896c779"
+            ),
+            "byte_count": 644424,
+            "file_mode": "0600",
+            "compared_count": 1422,
+            "mismatch_count": 0,
+        },
+        "replay_overlay_manifest": {
+            "path": str(REPLAY_OVERLAY_MANIFEST_PATH),
+            "self_key": "replay_overlay_manifest_digest",
+            "self_digest": (
+                "b4906f7eff24a63e3d1c102187678f9dcacc835aa55bc0c69f66f14b16022594"
+            ),
+            "raw_sha256": (
+                "3c5548b51f090f879ba3095f66d08f65704459e90913fd84eda44e8c351abf53"
+            ),
+            "byte_count": 8697,
+            "file_mode": "0600",
+            "overlay_count": 18,
+            "fit_overlay_count": 6,
+            "historical_calibration_overlay_count": 12,
+        },
+        "replay_attempt_markers": {
+            "root": str(REPLAY_ATTEMPTS_ROOT),
+            "count": 18,
+            "file_mode": "0600",
+            "file_binding_set_digest": (
+                "baf2cf718367118f6b05d30365fa93405c9e1ef139e5a9d34cb2053e9f80e2cf"
+            ),
+        },
+        "replay_overlays": {
+            "root": str(REPLAY_OVERLAYS_ROOT),
+            "count": 18,
+            "file_mode": "0600",
+            "file_binding_set_digest": (
+                "5233bca4c560c844324f3e937469faef850d4fba4e6588ae07945a6484872b44"
+            ),
+        },
+        "file_binding_set_rule": (
+            "canonical digest of ascending-path records containing path, sha256, "
+            "and byte_count"
+        ),
+        "mutation_authorised": False,
+    },
+    "failed_selector_outputs": {
+        "fresh_calibration_root_exists": False,
+        "state_manifest_exists": False,
+        "selection_attempt_exists": False,
+        "selection_task_count": 0,
+        "selection_result_count": 0,
+        "selected_state_count": 0,
+        "fresh_branch_attempt_count": 0,
+        "fresh_branch_outcome_count": 0,
+    },
+    "one_shot_selector_attempt": True,
+    "selector_attempt_count": 1,
+    "same_outcome_blind_selector_required": True,
+    "per_scene_process_isolation_required": True,
+    "exclusive_per_task_launch_marker_required": True,
+    "launch_marker_path_rule": (
+        "selection_tasks/<task_digest>.launch.json"
+    ),
+    "worker_refuses_existing_terminal_result_or_launch_marker": True,
+    "task_result_atomic_publication_required": True,
+    "parent_exact_validation_before_merge_required": True,
+    "resume_only_from_valid_task_result": True,
+    "unresolved_child_is_terminal": True,
+    "valid_result_survives_nonzero_teardown": True,
+    "nonzero_teardown_survival_condition": (
+        "child result was atomically published before teardown and passes exact "
+        "parent validation"
+    ),
+    "scene_skip_or_replacement": False,
+    "post_selection_replacement": False,
+    "manifest_publication": (
+        "only after exactly 24 valid isolated results satisfy the unchanged selector"
+    ),
+    "paths": {
+        "replacement_authority":
+            str(SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH),
+        "selection_attempt": str(FRESH_SELECTION_ATTEMPT_PATH),
+        "selection_tasks_root": str(FRESH_SELECTION_TASKS_ROOT),
+        "selection_results_root": str(FRESH_SELECTION_RESULTS_ROOT),
+        "selection_terminal": str(FRESH_SELECTION_TERMINAL_PATH),
+        "state_manifest": str(FRESH_CALIBRATION_STATE_MANIFEST_PATH),
+    },
+    "authority": {
+        "selector_recomputation": True,
+        "fresh_calibration_state_manifest_publication": True,
+        "candidate_branch_execution": False,
+        "branch_retry_or_replacement": False,
+        "latent_encoding": False,
+        "scorer_training": False,
+        "qualification": False,
+        "predictor_checkpoint_or_utility_shard_open": False,
+        "final_benchmark_generation": False,
+    },
+    "preserved_predecessor_authority_continuation": {
+        "authorising_artifact": str(AUTHORITY_PATH),
+        "authorising_artifact_digest": (
+            "aa7c536059017d4eb7953f6ebb42bf0d83f7ca4c6303f4c52d3631637a0fe48f"
+        ),
+        "replacement_grants_new_candidate_branch_authority": False,
+        "predecessor_candidate_branch_authority_preserved": True,
+        "continuation_requires_valid_selector_terminal": True,
+        "continuation_requires_exact_24_state_manifest": True,
+        "continuation_requires_current_successor_preregistration_binding": True,
+        "fresh_branch_attempts_before_replacement": 0,
+        "fresh_branch_budget": 288,
+        "branch_attempt_policy": "AT_MOST_ONCE_PER_EXACT_IDENTITY_NO_REPLACEMENT",
+    },
+}
+
 STAGE_COUNTS = {
     "historical_states": 120,
     "historical_fit_states": 96,
@@ -485,6 +705,10 @@ def fresh_calibration_selector_digest() -> str:
     return canonical_digest(FRESH_CALIBRATION_SELECTOR)
 
 
+def selector_integrity_replacement_digest() -> str:
+    return canonical_digest(SELECTOR_INTEGRITY_REPLACEMENT)
+
+
 def contract() -> dict[str, Any]:
     inherited = ORACLE.oracle_contract()
     if (
@@ -645,11 +869,23 @@ def build_preregistration(
         "complete": True,
         "contract": contract(),
         "contract_digest": contract_digest(),
-        "source_repository_base_commit": SOURCE_BASE_COMMIT,
+        "selector_integrity_replacement": SELECTOR_INTEGRITY_REPLACEMENT,
+        "selector_integrity_replacement_digest":
+            selector_integrity_replacement_digest(),
+        "original_preregistration_binding": ORIGINAL_PREREGISTRATION_BINDING,
+        "source_repository_base_commit":
+            SELECTOR_INTEGRITY_REPLACEMENT["predecessor_source_commit"],
         "source_freeze_commit": source_freeze_commit,
         "source_bindings": [dict(row) for row in source_bindings_value],
-        "branch_execution_started": False,
-        "fresh_calibration_candidate_generation_started": False,
+        "legacy_equivalence_completed": True,
+        "legacy_equivalence_compared_count": 1422,
+        "legacy_equivalence_mismatch_count": 0,
+        "exact_failed_branch_replay_completed": True,
+        "exact_failed_branch_replay_count": 18,
+        "failed_selector_process_observed": True,
+        "fresh_calibration_state_manifest_published": False,
+        "selector_integrity_replacement_started": False,
+        "fresh_calibration_branch_execution_started": False,
         "latent_encoding_started": False,
         "scorer_training_started": False,
         "qualification_started": False,
@@ -658,6 +894,39 @@ def build_preregistration(
     }
     payload["preregistration_digest"] = canonical_digest(payload)
     return payload
+
+
+def validate_original_preregistration(
+    value: Mapping[str, Any],
+    *,
+    root: Path | None = None,
+) -> dict[str, Any]:
+    artifact = dict(value)
+    digest = artifact.pop("preregistration_digest", None)
+    if digest != canonical_digest(artifact):
+        raise RuntimeError("original v1.3 preregistration self digest changed")
+    artifact["preregistration_digest"] = digest
+    if (
+        digest != ORIGINAL_PREREGISTRATION_BINDING["self_digest"]
+        or artifact.get("schema") != ORIGINAL_PREREGISTRATION_SCHEMA
+        or artifact.get("status") != ORIGINAL_PREREGISTRATION_STATUS
+        or artifact.get("complete") is not True
+        or artifact.get("contract") != contract()
+        or artifact.get("contract_digest") != contract_digest()
+    ):
+        raise RuntimeError("original v1.3 preregistration contract changed")
+    if root is not None:
+        path = root / ORIGINAL_PREREGISTRATION_PATH
+        if not path.is_file() or path.is_symlink():
+            raise RuntimeError("original v1.3 preregistration file is absent")
+        data = path.read_bytes()
+        if (
+            len(data) != ORIGINAL_PREREGISTRATION_BINDING["byte_count"]
+            or hashlib.sha256(data).hexdigest()
+            != ORIGINAL_PREREGISTRATION_BINDING["raw_sha256"]
+        ):
+            raise RuntimeError("original v1.3 preregistration bytes changed")
+    return artifact
 
 
 def validate_preregistration(
@@ -677,19 +946,35 @@ def validate_preregistration(
         or artifact.get("complete") is not True
         or artifact.get("contract") != contract()
         or artifact.get("contract_digest") != contract_digest()
+        or artifact.get("selector_integrity_replacement")
+        != SELECTOR_INTEGRITY_REPLACEMENT
+        or artifact.get("selector_integrity_replacement_digest")
+        != selector_integrity_replacement_digest()
+        or artifact.get("original_preregistration_binding")
+        != ORIGINAL_PREREGISTRATION_BINDING
+        or artifact.get("source_repository_base_commit")
+        != SELECTOR_INTEGRITY_REPLACEMENT["predecessor_source_commit"]
     ):
         raise RuntimeError("v1.3 preregistration contract changed")
-    for flag in (
-        "branch_execution_started",
-        "fresh_calibration_candidate_generation_started",
-        "latent_encoding_started",
-        "scorer_training_started",
-        "qualification_started",
-        "predictor_utility_shards_opened",
-        "final_200_state_benchmark_generated",
-    ):
-        if artifact.get(flag) is not False:
-            raise RuntimeError(f"pre-outcome flag is not false: {flag}")
+    required_state = {
+        "legacy_equivalence_completed": True,
+        "legacy_equivalence_compared_count": 1422,
+        "legacy_equivalence_mismatch_count": 0,
+        "exact_failed_branch_replay_completed": True,
+        "exact_failed_branch_replay_count": 18,
+        "failed_selector_process_observed": True,
+        "fresh_calibration_state_manifest_published": False,
+        "selector_integrity_replacement_started": False,
+        "fresh_calibration_branch_execution_started": False,
+        "latent_encoding_started": False,
+        "scorer_training_started": False,
+        "qualification_started": False,
+        "predictor_utility_shards_opened": False,
+        "final_200_state_benchmark_generated": False,
+    }
+    for key, expected_value in required_state.items():
+        if artifact.get(key) != expected_value:
+            raise RuntimeError(f"selector-integrity preregistration state changed: {key}")
     bindings = artifact.get("source_bindings")
     if not isinstance(bindings, list) or any(
         not isinstance(row, Mapping) for row in bindings
@@ -705,6 +990,8 @@ def validate_preregistration(
         expected = source_bindings(root, paths=paths)
         if bindings != expected:
             raise RuntimeError("v1.3 live source bytes differ from preregistration")
+        original = json.loads((root / ORIGINAL_PREREGISTRATION_PATH).read_text())
+        validate_original_preregistration(original, root=root)
         diagnostic = root / DIAGNOSTIC_PATH
         if (
             not diagnostic.is_file()
@@ -735,6 +1022,10 @@ __all__ = [
     "FRESH_CALIBRATION_ROWS_ROOT",
     "FRESH_CALIBRATION_SELECTOR",
     "FRESH_CALIBRATION_STATE_MANIFEST_PATH",
+    "FRESH_SELECTION_ATTEMPT_PATH",
+    "FRESH_SELECTION_RESULTS_ROOT",
+    "FRESH_SELECTION_TASKS_ROOT",
+    "FRESH_SELECTION_TERMINAL_PATH",
     "GENERATED_ROOT",
     "HISTORICAL_CALIBRATION_STATES",
     "HORIZON_LATENTS_ROOT",
@@ -745,6 +1036,10 @@ __all__ = [
     "NO_LATENT_BASELINE_RECEIPT_SCHEMA",
     "NO_LATENT_BASELINE_SCHEMA",
     "OLD_CALIBRATION_STATES",
+    "ORIGINAL_PREREGISTRATION_BINDING",
+    "ORIGINAL_PREREGISTRATION_PATH",
+    "ORIGINAL_PREREGISTRATION_SCHEMA",
+    "ORIGINAL_PREREGISTRATION_STATUS",
     "OUTPUT_PATHS",
     "PREREGISTRATION_PATH",
     "PREREGISTRATION_SCHEMA",
@@ -766,6 +1061,10 @@ __all__ = [
     "SCORER_PACKAGE_SCHEMA",
     "SCORER_ROOT",
     "SCORER_TRAINING_CONTRACT",
+    "SELECTOR_INTEGRITY_REPLACEMENT",
+    "SELECTOR_INTEGRITY_REPLACEMENT_AUTHORITY_PATH",
+    "SELECTOR_INTEGRITY_REPLACEMENT_SCHEMA",
+    "SELECTOR_INTEGRITY_REPLACEMENT_SELF_KEY",
     "SOURCE_CLOSURE_PATHS",
     "STAGE_COUNTS",
     "STRATA",
@@ -785,6 +1084,8 @@ __all__ = [
     "failed_branch_allowlist_digest",
     "fresh_calibration_selector_digest",
     "historical_calibration_disposition_digest",
+    "selector_integrity_replacement_digest",
     "source_bindings",
+    "validate_original_preregistration",
     "validate_preregistration",
 ]
