@@ -3,6 +3,8 @@ from __future__ import annotations
 from copy import deepcopy
 import hashlib
 from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 from typing import Any
 
@@ -13,6 +15,18 @@ import torch
 
 from scripts import dev_frozen_dense_representation_encoders_v1 as incumbent
 from scripts import vjepa2_1_vitg_frozen_encoder_ablation_v1 as ablation
+
+
+def test_direct_cli_resolves_repository_imports(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, str(Path(ablation.__file__).resolve()), "--help"],
+        cwd=tmp_path,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "--run-smoke" in result.stdout
 
 
 def test_frozen_scale_only_contract_and_namespace() -> None:

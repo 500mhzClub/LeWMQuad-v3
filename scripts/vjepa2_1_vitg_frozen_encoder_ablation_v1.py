@@ -29,10 +29,13 @@ from PIL import Image
 import torch
 import torch.nn.functional as F
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
 from scripts import dev_frozen_dense_representation_encoders_v1 as frozen_encoders
 
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
 VJEPA_REPOSITORY_COMMIT = "204698b45b3712590f06245fbfba32d3be539812"
 VJEPA_REPOSITORY = Path.home() / f".cache/vjepa2-{VJEPA_REPOSITORY_COMMIT}"
 VJEPA_CHECKPOINT = Path.home() / ".cache/vjepa2_1_vitg_384.pt"
