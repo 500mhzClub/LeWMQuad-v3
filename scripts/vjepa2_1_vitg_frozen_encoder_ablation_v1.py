@@ -728,8 +728,13 @@ def _top_system_memory_consumers_v1() -> dict[str, Any]:
 def _ram_observation_v1() -> dict[str, int]:
     values: dict[str, int] = {}
     for line in Path("/proc/meminfo").read_text(encoding="ascii").splitlines():
-        label, raw, unit = line.split()
-        if label in {"MemTotal:", "MemAvailable:", "SwapTotal:", "SwapFree:"}:
+        fields = line.split()
+        if fields and fields[0] in {
+            "MemTotal:", "MemAvailable:", "SwapTotal:", "SwapFree:"
+        }:
+            if len(fields) != 3:
+                raise VJepaVitGAblationError("incomplete host RAM field")
+            label, raw, unit = fields
             if unit != "kB":
                 raise VJepaVitGAblationError("unexpected /proc meminfo unit")
             values[label.rstrip(":").lower() + "_bytes"] = int(raw) * 1024

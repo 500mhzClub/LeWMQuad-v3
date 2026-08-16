@@ -191,6 +191,26 @@ def test_process_preflight_reads_only_bounded_standard_metadata() -> None:
     )
 
 
+def test_ram_observation_ignores_unitless_meminfo_lines(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class FixturePath:
+        def read_text(self, *, encoding: str) -> str:
+            assert encoding == "ascii"
+            return (
+                "MemTotal: 100 kB\nMemAvailable: 80 kB\n"
+                "HugePages_Total: 0\nSwapTotal: 20 kB\nSwapFree: 10 kB\n"
+            )
+
+    monkeypatch.setattr(ablation, "Path", lambda _path: FixturePath())
+    assert ablation._ram_observation_v1() == {  # noqa: SLF001
+        "memtotal_bytes": 102_400,
+        "memavailable_bytes": 81_920,
+        "swaptotal_bytes": 20_480,
+        "swapfree_bytes": 10_240,
+    }
+
+
 def test_checkpoint_validation_is_exact_and_never_downloads(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
