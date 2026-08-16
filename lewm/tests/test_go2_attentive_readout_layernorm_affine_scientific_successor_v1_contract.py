@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pytest
+
 from lewm.oracle import (
     go2_attentive_readout_layernorm_affine_scientific_successor_v1_contract
     as C,
@@ -88,3 +92,56 @@ def test_source_closure_binds_fit_loader_and_science_dependencies() -> None:
         "scripts/train_go2_utility_scorer_v1_3_attentive_readout_amendment_v1.py",
     ):
         assert path in C.FROZEN_DEPENDENCY_FILES
+
+
+def test_predecessor_semantic_preflight_works_from_successor_head() -> None:
+    before = C.runtime_root(C.ROOT)
+    assert not before.exists() and not before.is_symlink()
+    assert C.validate_predecessor_success(C.ROOT) == C.PREDECESSOR_BINDING
+    assert not before.exists() and not before.is_symlink()
+
+
+class _BridgeRunner:
+    def __init__(self, *, requested_root: Path | None = None,
+                 terminal_error: BaseException | None = None) -> None:
+        self.requested_root = requested_root
+        self.terminal_error = terminal_error
+        self.observed_contract: dict[str, object] | None = None
+
+    def load_contract(self, root: Path) -> dict[str, object]:
+        raise AssertionError("historical live loader must be scoped out")
+
+    def validate_terminal(self, root: Path) -> dict[str, object]:
+        self.observed_contract = self.load_contract(
+            self.requested_root or root)
+        if self.terminal_error is not None:
+            raise self.terminal_error
+        return {"terminal": "validated"}
+
+
+def test_installed_contract_bridge_is_root_scoped_and_always_restored(
+        tmp_path: Path) -> None:
+    installed = {"contract": "immutable"}
+    success = _BridgeRunner()
+    success_loader = success.load_contract
+    assert C._validate_predecessor_terminal_with_installed_contract(
+        runner=success, installed_contract=installed, root=tmp_path,
+    ) == {"terminal": "validated"}
+    assert success.observed_contract == installed
+    assert success.load_contract == success_loader
+
+    wrong_root = _BridgeRunner(requested_root=tmp_path.parent)
+    wrong_loader = wrong_root.load_contract
+    with pytest.raises(C.ScientificSuccessorContractError,
+                       match="bridge root changed"):
+        C._validate_predecessor_terminal_with_installed_contract(
+            runner=wrong_root, installed_contract=installed, root=tmp_path)
+    assert wrong_root.load_contract == wrong_loader
+
+    sentinel = RuntimeError("semantic validator failed")
+    failed = _BridgeRunner(terminal_error=sentinel)
+    failed_loader = failed.load_contract
+    with pytest.raises(RuntimeError, match="semantic validator failed"):
+        C._validate_predecessor_terminal_with_installed_contract(
+            runner=failed, installed_contract=installed, root=tmp_path)
+    assert failed.load_contract == failed_loader

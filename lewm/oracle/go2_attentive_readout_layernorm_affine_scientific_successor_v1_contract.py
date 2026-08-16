@@ -397,6 +397,35 @@ def storage_binding(root: Path = ROOT) -> dict[str, Any]:
     }
 
 
+def _validate_predecessor_terminal_with_installed_contract(
+        *, runner: Any, installed_contract: Mapping[str, Any], root: Path,
+        ) -> dict[str, Any]:
+    """Run the frozen semantic validator under its exact installed contract.
+
+    The predecessor's live loader correctly required its own source commit to
+    contain exactly its four additive paths.  A later additive successor
+    commit cannot satisfy that historical Git-diff predicate.  The installed
+    predecessor contract already binds that historical closure.  Override
+    only the loader for the duration of the unchanged terminal validator,
+    restrict it to this repository root, and always restore it.
+    """
+
+    frozen = dict(installed_contract)
+    expected_root = root.resolve()
+    original_loader = runner.load_contract
+
+    def installed_loader(requested_root: Path = root) -> dict[str, Any]:
+        require(Path(requested_root).resolve() == expected_root,
+                "predecessor validator bridge root changed")
+        return dict(frozen)
+
+    runner.load_contract = installed_loader
+    try:
+        return runner.validate_terminal(root)
+    finally:
+        runner.load_contract = original_loader
+
+
 def validate_predecessor_success(root: Path = ROOT) -> dict[str, Any]:
     """Independently bind the exact diagnostic bytes and semantic success."""
 
@@ -432,7 +461,16 @@ def validate_predecessor_success(root: Path = ROOT) -> dict[str, Any]:
                 and value[key] == PREDECESSOR_BINDING[binding_key],
                 f"predecessor {name} bytes changed")
         loaded[name] = value
-    validated = RUNNER.validate_terminal(root)
+    installed_contract = LN.validate_contract(loaded["contract"])
+    logical = root / LN.GENERATED_PARENT
+    require(installed_contract == loaded["contract"]
+            and installed_contract["predecessor"]
+            == LN.predecessor_binding(root)
+            and logical.is_symlink()
+            and logical.resolve() == LN.REGISTERED_PARENT,
+            "installed predecessor contract or live custody changed")
+    validated = _validate_predecessor_terminal_with_installed_contract(
+        runner=RUNNER, installed_contract=installed_contract, root=root)
     require(validated == loaded["terminal"],
             "predecessor semantic validator disagrees")
     terminal = loaded["terminal"]
