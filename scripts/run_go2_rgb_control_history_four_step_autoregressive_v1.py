@@ -185,6 +185,18 @@ def _sequence_digest(value: Sequence[Any]) -> str:
     return hashlib.sha256(_canonical_compact(list(value))).hexdigest()
 
 
+def frozen_target_cache_path(cache_index: Mapping[str, Any], horizon: int) -> Path:
+    """Resolve a dense target cache only through its frozen absolute index path."""
+    if horizon not in (3, 4):
+        _die(f"unsupported dense target horizon: {horizon}")
+    record = cache_index.get("caches", {}).get(str(horizon), {})
+    path = Path(str(record.get("path", "")))
+    expected = Path(C.runtime_root()) / TARGET_BLOBS[horizon]
+    if path != expected:
+        _die(f"H{horizon} target cache path differs from frozen index")
+    return path
+
+
 def _mem_available_bytes() -> int:
     with Path("/proc/meminfo").open("r", encoding="utf-8") as handle:
         for line in handle:
@@ -1188,9 +1200,7 @@ def validate_target_cache_index() -> dict[str, Any]:
         _die("target cache preprocessing implementation differs")
     for horizon in (3, 4):
         record = receipt.get("caches", {}).get(str(horizon), {})
-        path = Path(str(record.get("path", "")))
-        if path != runtime_root() / TARGET_BLOBS[horizon]:
-            _die(f"H{horizon} target cache path differs")
+        path = frozen_target_cache_path(receipt, horizon)
         _require_immutable_file(path, f"H{horizon} target cache")
         if path.stat().st_size != expected_bytes:
             _die(f"H{horizon} target cache missing or wrong-sized")
@@ -1349,8 +1359,12 @@ class FourStepLoader:
         step2_path = F.TWO_CACHE / "frozen_train_step2.f16"
         step2_rows = step2_path.stat().st_size // (P.TOKENS * P.TOKEN_DIM * 2)
         self.y2 = R.load_cache(step2_path, step2_rows)
-        self.y3 = R.load_cache(runtime_root() / TARGET_BLOBS[3], len(self.entries))
-        self.y4 = R.load_cache(runtime_root() / TARGET_BLOBS[4], len(self.entries))
+        self.y3 = R.load_cache(
+            frozen_target_cache_path(self.cache_index, 3), len(self.entries)
+        )
+        self.y4 = R.load_cache(
+            frozen_target_cache_path(self.cache_index, 4), len(self.entries)
+        )
 
     def __len__(self) -> int:
         return len(self.entries)
@@ -1848,7 +1862,8 @@ def preflight_stage(args: argparse.Namespace) -> dict[str, Any]:
     peak_allocated = int(torch.cuda.max_memory_allocated(device))
     peak_reserved = int(torch.cuda.max_memory_reserved(device))
     target_cache_bytes = sum(
-        (runtime_root() / TARGET_BLOBS[horizon]).stat().st_size for horizon in (3, 4)
+        frozen_target_cache_path(validate_target_cache_index(), horizon).stat().st_size
+        for horizon in (3, 4)
     )
     comparator_sizes = []
     for comparator_seed in C.FROZEN_SEEDS:

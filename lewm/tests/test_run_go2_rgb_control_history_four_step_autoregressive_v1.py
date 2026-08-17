@@ -311,6 +311,43 @@ def test_smoke_receipt_payload_is_canonical_json_native_and_truth_digests_differ
     assert true_receipt["objective"] == false_receipt["objective"]
 
 
+def test_target_cache_resolution_uses_frozen_absolute_index_paths() -> None:
+    frozen_root = Path("/frozen/original/run")
+    monkeypatch = pytest.MonkeyPatch()
+    monkeypatch.setattr(R.C, "runtime_root", lambda: frozen_root)
+    try:
+        index = {"caches": {"3": {"path": str(frozen_root / "train_target_h3.f16")}}}
+        assert R.frozen_target_cache_path(index, 3) == frozen_root / "train_target_h3.f16"
+        sibling = {"caches": {"3": {"path": "/new/sibling/train_target_h3.f16"}}}
+        with pytest.raises(RuntimeError, match="frozen index"):
+            R.frozen_target_cache_path(sibling, 3)
+    finally:
+        monkeypatch.undo()
+
+
+def test_target_cache_loader_has_no_successor_namespace_path_construction() -> None:
+    source = _function_source("frozen_target_cache_path")
+    loader = SOURCE.read_text()
+    assert "Path(C.runtime_root()) / TARGET_BLOBS[horizon]" in source
+    assert "frozen_target_cache_path(self.cache_index, 3)" in loader
+    assert "frozen_target_cache_path(self.cache_index, 4)" in loader
+    assert "self.y3 = R.load_cache(runtime_root() / TARGET_BLOBS[3]" not in loader
+    assert "self.y4 = R.load_cache(runtime_root() / TARGET_BLOBS[4]" not in loader
+
+
+def test_frozen_target_cache_bindings_remain_unchanged() -> None:
+    assert R.C.TARGET_CACHE_CONTRACT["dense_cache_shape_each"] == [3854, 768, 1024]
+    assert R.C.TARGET_CACHE_CONTRACT["missing_dense_cache_bytes_each"] == 6061817856
+    assert R.C.TARGET_CACHE_CONTRACT["missing_dense_cache_bytes_total"] == 12123635712
+    assert R.TARGET_BLOBS == {3: "train_target_h3.f16", 4: "train_target_h4.f16"}
+
+
+def test_successor_outputs_use_runtime_root_while_target_inputs_use_index() -> None:
+    source = _function_source("smoke_stage")
+    assert 'receipt_path = runtime_root() / "smoke.json"' in source
+    assert "frozen_target_cache_path(self.cache_index" in SOURCE.read_text()
+
+
 def test_manifest_receipt_discloses_historical_sample_mismatch() -> None:
     source = _function_source("manifest_stage")
     assert '"historical_control_train_rows": 3_922' in source
