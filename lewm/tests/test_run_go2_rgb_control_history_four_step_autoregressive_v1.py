@@ -259,6 +259,58 @@ def test_smoke_warmup_chain_probe_and_checkpoint_state_are_discarded() -> None:
     assert '"calibration_or_counterfactual_corpus_opened": False' in source
 
 
+def test_equal_weight_receipt_flag_is_builtin_bool_without_changing_truth() -> None:
+    components = [0.125, 0.25, 0.375, 0.5]
+    combined = sum(components) / 4.0
+    numpy_truth = abs(combined - __import__("numpy").mean(components)) < 1e-7
+    repaired_truth = bool(numpy_truth)
+    assert type(numpy_truth).__module__ == "numpy"
+    assert type(repaired_truth) is bool
+    assert repaired_truth is True
+    assert repaired_truth == bool(numpy_truth)
+    source = _function_source("smoke_stage")
+    assert '"exact_equal_weight_formula": bool(' in source
+
+
+def test_smoke_receipt_payload_is_canonical_json_native_and_truth_digests_differ() -> None:
+    import json
+    import numpy as np
+
+    def assert_no_numpy_scalars(value: object) -> None:
+        if isinstance(value, dict):
+            for key, child in value.items():
+                assert type(key) is str
+                assert_no_numpy_scalars(child)
+        elif isinstance(value, (list, tuple)):
+            for child in value:
+                assert_no_numpy_scalars(child)
+        else:
+            assert not isinstance(value, np.generic)
+
+    common = {
+        "schema": "go2_rgb_control_history_four_step_smoke_v1",
+        "objective": {
+            "component_losses_H1_H4": [0.1, 0.2, 0.3, 0.4],
+            "combined": 0.25,
+            "arithmetic_mean": 0.25,
+        },
+        "scientific_optimizer_step_performed": False,
+    }
+    true_receipt = {
+        **common,
+        "objective_separation": {"exact_equal_weight_formula": True},
+    }
+    false_receipt = {
+        **common,
+        "objective_separation": {"exact_equal_weight_formula": False},
+    }
+    assert_no_numpy_scalars(true_receipt)
+    encoded = json.dumps(true_receipt, sort_keys=True, allow_nan=False)
+    assert json.loads(encoded) == true_receipt
+    assert R._digest(true_receipt) != R._digest(false_receipt)
+    assert true_receipt["objective"] == false_receipt["objective"]
+
+
 def test_manifest_receipt_discloses_historical_sample_mismatch() -> None:
     source = _function_source("manifest_stage")
     assert '"historical_control_train_rows": 3_922' in source

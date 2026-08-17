@@ -1616,7 +1616,12 @@ def smoke_stage(args: argparse.Namespace) -> dict[str, Any]:
         "component_losses_H1_H4": initial_components,
         "combined": initial_loss,
         "arithmetic_mean": float(np.mean(initial_components)),
-        "exact_equal_weight_formula": abs(initial_loss - np.mean(initial_components)) < 1e-7,
+        # ``np.mean`` returns a NumPy scalar; receipts must contain only
+        # ordinary JSON-native values.  This is a receipt-boundary conversion
+        # only—the objective calculation and its truth value are unchanged.
+        "exact_equal_weight_formula": bool(
+            abs(initial_loss - np.mean(initial_components)) < 1e-7
+        ),
     }
     if not objective_separation["exact_equal_weight_formula"]:
         _die("four-step objective is not the arithmetic mean of H1-H4")
