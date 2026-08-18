@@ -12,7 +12,8 @@ from typing import Any
 
 BASE_SOURCE_COMMIT = "dc94fdfd0e8d29f65643a34981f901cc7dcd5bcb"
 PREDECESSOR_RUNTIME = Path(
-    "/home/andrewknowles/.cache/lewm_go2_temporal_v03/four_step_rollout_v1"
+    "/home/andrewknowles/.cache/lewm_go2_temporal_v03/"
+    "four_step_rollout_v1_input_custody_successor_2"
 )
 RUNTIME_ROOT = Path(
     "/home/andrewknowles/.cache/lewm_go2_temporal_v03/"
