@@ -1,0 +1,27 @@
+[
+  {
+    "table": "T1",
+    "rows": 20,
+    "seeds": 8,
+    "horizons": "H1-H4",
+    "branches": 240
+  },
+  {
+    "table": "T2",
+    "primary": "H2 cosine",
+    "estimate": 0.008076707101566105,
+    "interval": [
+      0.006428472675623277,
+      0.009724941527508933
+    ]
+  },
+  {
+    "table": "T3",
+    "primary": "H4 four-minus-two cosine",
+    "estimate": 0.014186333399266046,
+    "interval": [
+      0.011091450301704343,
+      0.01728121649682775
+    ]
+  }
+]
