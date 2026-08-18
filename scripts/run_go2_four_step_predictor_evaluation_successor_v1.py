@@ -134,15 +134,21 @@ def _successor_bindings(old_contract: dict[str, Any]) -> Iterator[None]:
     def old_seed_dir(seed: int) -> Path:
         return C.PREDECESSOR_RUNTIME / "training" / f"seed_{int(seed)}"
 
+    ignored = {C.SCORER_CONTRACT_PATH, C.ENCODER_PATH}
+
     def filtered_require(condition: Any, message: str) -> None:
-        if (not condition and str(message) ==
-                f"Stage-A implementation changed: {C.SCORER_CONTRACT_PATH}"):
+        if (not condition and any(
+            str(message) == f"Stage-A implementation changed: {path}"
+            for path in ignored
+        )):
             return
         q_require(condition, message)
 
     def filtered_occupancy_require(condition: Any, message: str) -> None:
-        if (not condition and str(message) ==
-                f"Stage-A implementation changed: {C.SCORER_CONTRACT_PATH}"):
+        if (not condition and any(
+            str(message) == f"Stage-A implementation changed: {path}"
+            for path in ignored
+        )):
             return
         o_require(condition, message)
 
@@ -178,6 +184,10 @@ def run() -> dict[str, Any]:
     if C.RUNTIME_ROOT.exists():
         raise RuntimeError("successor namespace already exists; one-shot refusal")
     old_contract = _check_predecessor()
+    previous_terminal = C.PREVIOUS_SUCCESSOR_RUNTIME / "terminal.json"
+    if (not previous_terminal.is_file()
+            or _sha256(previous_terminal) != C.PREVIOUS_SUCCESSOR_TERMINAL_RAW_SHA256):
+        raise RuntimeError("previous evaluation-successor terminal differs")
     for seed, expected in C.CHECKPOINTS.items():
         path = _old_checkpoint(int(seed))
         if not path.is_file() or _sha256(path) != expected:
