@@ -1,0 +1,216 @@
+{
+  "schema": "safe_local_waypoint_planner_dev_v1",
+  "seed": 2026081903,
+  "fixture": {
+    "oracle_reducer": true,
+    "random_reducer": true,
+    "tie_break": 0,
+    "schema_reload": true,
+    "pass": true,
+    "cases": 3
+  },
+  "dataset": {
+    "actions": [
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all",
+      "straight_fast",
+      "straight_medium",
+      "straight_slow",
+      "arc_left_sustained",
+      "arc_right_sustained",
+      "turn_left_sustained",
+      "turn_right_sustained",
+      "turn_left_then_go",
+      "turn_right_then_go",
+      "go_then_turn_left",
+      "reverse_then_turn",
+      "hold_all"
+    ],
+    "source_rows": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_oracle_branch_pilot_v1_2/pilot_branches.jsonl",
+    "source_digest": "761c0de85296db70e044a177a75cbd1f12181c506a375a8827946468c8a6ce4c",
+    "proxy_note": "Existing oracle branch outcomes and frozen H3 token shards are reused; rows are development-only and are not a new exact-reset waypoint panel."
+  },
+  "split": {
+    "fit_states": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "calibration_states": [
+      4,
+      5
+    ],
+    "held_out_states": [
+      6,
+      7
+    ],
+    "branches": 96
+  },
+  "parameter_count": 132551,
+  "training": {
+    "seed": 2026081903,
+    "epochs": 1,
+    "optimizer": "closed_form_ridge_development_fallback",
+    "fit_rows": 48,
+    "fit_loss": 0.017932234331965446,
+    "checkpoint": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/minimal_spatial_topological_planning_spike_v1/planner_checkpoint.npz",
+    "checkpoint_sha256": "6b621bdf58ab2c58cd902e19c7854b7aa492297c97cbdadf331e5f6c498a2926"
+  },
+  "true_future": {
+    "condition": "true_future",
+    "states": 2,
+    "selected": [
+      5,
+      17
+    ],
+    "per_state": [
+      {
+        "state": 6,
+        "selected": 5,
+        "oracle_best": 1,
+        "progress": 0.2889870977983108,
+        "regret": 0.6351838935289514,
+        "unsafe": 0.95
+      },
+      {
+        "state": 7,
+        "selected": 17,
+        "oracle_best": 22,
+        "progress": -0.26240941616266633,
+        "regret": 0.33266931647316356,
+        "unsafe": 0.9666666666666667
+      }
+    ],
+    "oracle_best": [
+      1,
+      22
+    ],
+    "realised_selected_progress": 0.013288840817822223,
+    "absolute_progress_regret": 0.4839266050010575,
+    "normalised_progress_regret": 1.137368602308819,
+    "best_progress_top1": 0.0,
+    "selected_unsafe_rate": 0.9583333333333333,
+    "waypoint_completion_rate": 0.0
+  },
+  "true_future_gate": {
+    "geometry": {
+      "available": true,
+      "direction_cosine": null,
+      "heading_mae_deg": null,
+      "note": "proxy branch ledger does not contain local-waypoint pose labels"
+    },
+    "progress": false,
+    "safety": false,
+    "passed": false,
+    "classification": "TRUE_FUTURE_LOCAL_WAYPOINT_PLANNER_NO_GO"
+  },
+  "predicted_evaluation": null,
+  "action_only": {
+    "condition": "action_only_candidate_index",
+    "states": 2,
+    "selected": [
+      0,
+      12
+    ],
+    "oracle_best": [
+      1,
+      22
+    ],
+    "realised_selected_progress": -0.18519690665354926,
+    "absolute_progress_regret": 0.6824123524724289,
+    "normalised_progress_regret": 1.6038679740043296,
+    "best_progress_top1": 0.0,
+    "selected_unsafe_rate": 1.0,
+    "waypoint_completion_rate": 0.0
+  },
+  "oracle": {
+    "condition": "oracle_best",
+    "normalised_progress_regret": 0.0
+  },
+  "classification": "TRUE_FUTURE_LOCAL_WAYPOINT_PLANNER_NO_GO",
+  "scientific_status": "DEVELOPMENT_PROXY_RESULT_NOT_CLAIM_BEARING",
+  "predictor_access": "existing prediction shards only; no predictor checkpoint opened"
+}
