@@ -1,0 +1,82 @@
+{
+  "schema": "lewm_one_tick_viability_constrained_mpc_scaffold_v1_evidence_index",
+  "source_commit": "481253b5a504b0cd9fd05b14f5ad662b496fa0a8",
+  "date": "2026-08-21",
+  "primary_classification": "ONE_TICK_VIABILITY_KERNEL_NO_GO",
+  "candidate_bank_classification": "CANDIDATE_BANK_ONE_TICK_VIABILITY_NO_GO",
+  "compute_classification": "REPLANNING_COMPUTE_LATENCY_NO_GO",
+  "bindings": {
+    "viability_tree": {
+      "path": ".generated/one_tick_viability_constrained_mpc_v1/viability_tree_index.json",
+      "sha256": "90224c60de57cdd07a66bb3eb6c1cc78e6245f8a705ff0a37ff079c129706c2a",
+      "content_digest": "8f8978631e84477c8ffb845edd2ce8cfd4d740ac6e1e0984a3099ff38617bb3d"
+    },
+    "viability_result": {
+      "path": ".generated/one_tick_viability_constrained_mpc_v1/viability_result.json",
+      "sha256": "403bed3a1ca537e0fdfa1179e16558fb7ee39834eb33d8423b54259ff1c723f7",
+      "content_digest": "5c92785455c91b70f1f3c3e38635d16981ddb1537dabadd08ef70d35dd993b0e"
+    },
+    "latency_result": {
+      "path": ".generated/one_tick_viability_constrained_mpc_v1/latency_benchmark.json",
+      "sha256": "d664dcd11592e61fbf6b6622692abdaaf1b20ee2324c5daa327b79e2eed1f2fb",
+      "content_digest": "8161e7820019730f0750aa9a274c19d66fd8e1103e138d5ecf746744eb2f3050"
+    },
+    "row_ledger": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/one_tick_viability_constrained_mpc_v1/row_level_evidence_v1.jsonl",
+      "sha256": "af3480af2ae2c20769140e2ced6b3a2d0b9d0994bf21fb5eda93cd3644d7bb13",
+      "bytes": 2564586,
+      "rows": 6564
+    },
+    "latency_trace": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/one_tick_viability_constrained_mpc_v1/latency_trace_v1.npz",
+      "sha256": "ba5b91aefd79714dd165a4cd5f426f49a217449ac2cfb1d0bd00e1d0068f8d5f",
+      "bytes": 16381,
+      "rows": 500
+    },
+    "timing_checkpoint": {
+      "sha256": "75e7a8f5eb5416100dd91fdd07c6aeae1c8fa2255ef189bfde2a5ce300f881b4",
+      "seed": 2026080901,
+      "epoch": 21
+    }
+  },
+  "counts": {
+    "frozen_states": 48,
+    "registered_prefixes_reproduced": 576,
+    "successor_branches": 5628,
+    "predecessor_states": 6,
+    "predecessor_prefixes": 72,
+    "predecessor_successor_branches": 288,
+    "contact_free_prefix_candidates": 469,
+    "viability_admissible_candidates": 438,
+    "states_with_viability_admissible_action": 40
+  },
+  "condition_c": {
+    "selected_first_tick_contacts": 0,
+    "selected_nonviable_successors": 0,
+    "states_retaining_candidate": 40,
+    "mean_immediate_progress_rate_m_s": 0.051923746642794,
+    "mean_h3_realised_progress_m": 0.2076852752002425,
+    "oracle_progress_fraction": 0.8987272442727102,
+    "normalized_viability_route_regret": 0.07859095096724125,
+    "best_viability_admissible_top3": 0.9,
+    "selected_later_h1_contact": 9,
+    "selected_later_h2_h3_contact": 9,
+    "selected_stuck": 10
+  },
+  "latency_ms": {
+    "total_p50": 179.05218852683902,
+    "total_p90": 179.64938720688224,
+    "total_p95": 179.76795530412346,
+    "total_p99": 180.00540494453162,
+    "total_maximum": 180.3536149673164,
+    "deadline_misses_100_ms": 500,
+    "deadline_misses_200_ms": 0
+  },
+  "prohibitions_observed": {
+    "model_training": false,
+    "learned_safety_inference": false,
+    "new_scientific_panel": false,
+    "global_memory": false,
+    "navigation": false
+  }
+}
