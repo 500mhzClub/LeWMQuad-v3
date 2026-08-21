@@ -1,0 +1,69 @@
+{
+  "schema": "lewm_multi_cycle_viability_envelope_and_state_eligibility_v1_evidence_index",
+  "source_commit": "8ab19f4816aec7461072f45f48fd9a6f7ceac81e",
+  "date": "2026-08-21",
+  "primary_classification": "STATE_ELIGIBILITY_SIGNAL_CANDIDATE_BANK_LIMITATION",
+  "candidate_bank_classification": "CANDIDATE_BANK_MULTI_CYCLE_VIABILITY_NO_GO",
+  "platform_track": "GO2_PLATFORM_STOPPING_MODE_PARITY_PENDING",
+  "bindings": {
+    "selection": {
+      "path": ".generated/multi_cycle_viability_envelope_v1/frozen_state_selection.json",
+      "sha256": "d066e0f99cabe51878b33f5847c4cd80cdf14e9bd9d380262c8bc77b6b128312",
+      "content_digest": "18a383620e29a9b53fb783d07eff702b024e7633523fb6bc062017963d9f6f68"
+    },
+    "fixture": {
+      "path": ".generated/multi_cycle_viability_envelope_v1/fixture.json",
+      "sha256": "932b3658b508de5381f38a2936132b5743a7f7a5895c2b2747cb5bda0f9bce14",
+      "content_digest": "9888eee8ebcc5f0debc349ac4c2cc59ed378a4095025dbaf1691eada0a22d5c3"
+    },
+    "materialization_index": {
+      "path": ".generated/multi_cycle_viability_envelope_v1/multi_cycle_index.json",
+      "sha256": "e36806bf43bc726ceca273839d21442c4d54d21c41f8d9981b7286b3bfbc3a78",
+      "content_digest": "30eeff53ead3bc05e707ddc27e394b62626cf3f8e2dfa160810f76acd56e7361"
+    },
+    "development_result": {
+      "path": ".generated/multi_cycle_viability_envelope_v1/development_result.json",
+      "sha256": "e3fe09889d0ca1eb958b823c027fb0898feb63cb9c0c46ee3e9b8ec985a19785",
+      "content_digest": "ec411b7b1c45afe380e836578ded93784fbdc835277b365980f124815748d086"
+    },
+    "row_ledger": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/multi_cycle_viability_envelope_v1/row_level_evidence_v1.jsonl",
+      "sha256": "5bd5186054d698ac15f829900f09c5800c729466a16d023f2fee7642f2599f95",
+      "bytes": 6137229,
+      "rows": 23049
+    }
+  },
+  "counts": {
+    "failure_states": 8,
+    "matched_controls": 8,
+    "predecessor_boundaries": 62,
+    "predecessor_current_prefixes": 744,
+    "predecessor_successor_branches": 3552,
+    "rollout_current_prefixes": 1548,
+    "rollout_successor_branches": 17076,
+    "stable_failure_envelopes": 5,
+    "persistent_candidate_bank_failures": 1
+  },
+  "rollout": {
+    "executed_cycles": 128,
+    "selected_first_tick_contacts": 0,
+    "selected_nonviable_successors": 0,
+    "cycles_with_at_least_two_safe_successor_actions": 126,
+    "matched_control_h3_oracle_fraction": 0.9989499963042058,
+    "all_h3_oracle_fraction": 0.9955044084789346,
+    "all_normalized_regret": 0.00915556181066442,
+    "all_best_top3": 1.0
+  },
+  "next_experiment": {
+    "name": "H1_CANDIDATE_BANK_VIABILITY_SUCCESSOR_V1",
+    "single_mechanism": "DEDICATED_LATERAL_RETREAT"
+  },
+  "prohibitions_observed": {
+    "model_training": false,
+    "learned_safety_inference": false,
+    "jepa_quality_evaluation": false,
+    "candidate_bank_change": false,
+    "memory": false,
+    "navigation": false
+  }
+}
