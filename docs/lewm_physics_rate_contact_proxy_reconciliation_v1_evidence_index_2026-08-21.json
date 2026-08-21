@@ -1,0 +1,120 @@
+{
+  "schema": "lewm_physics_rate_contact_proxy_reconciliation_v1_evidence_index",
+  "experiment": "PHYSICS_RATE_CONTACT_PROXY_RECONCILIATION_V1",
+  "mode": "POST_OUTCOME_DEVELOPMENT_DIAGNOSTIC",
+  "source_commit": "5d440911774682f351b8ab7192c89b453226328b",
+  "classification": "PHYSICS_RATE_FULL_GEOMETRY_SCORE_NO_GO",
+  "secondary_classifications": [
+    "PREVIOUS_FALSE_POSITIVES_EXPLAINED_BY_TEMPORAL_ALIASING"
+  ],
+  "targets": {
+    "historical": "H1_SAMPLED_DISALLOWED_CONTACT",
+    "development": "H1_ANY_PHYSICS_STEP_DISALLOWED_CONTACT",
+    "material_hazard": "SEVERITY_UNRESOLVED"
+  },
+  "frozen_panel": {
+    "calibration_states": 24,
+    "heldout_states": 24,
+    "candidates_per_state": 12,
+    "branches": 576,
+    "physics_steps_per_branch": 250,
+    "geometry_ledger_sha256": "827263fa58aaf782daddcca9c935173f46a0b4c44a672549cbc2daf8b4a7eea5"
+  },
+  "sampled_vs_physics_confusion": {
+    "calibration": {
+      "sampled_positive_physics_positive": 31,
+      "sampled_positive_physics_negative": 0,
+      "sampled_negative_physics_positive": 59,
+      "sampled_negative_physics_negative": 198
+    },
+    "heldout": {
+      "sampled_positive_physics_positive": 53,
+      "sampled_positive_physics_negative": 0,
+      "sampled_negative_physics_positive": 88,
+      "sampled_negative_physics_negative": 147
+    }
+  },
+  "heldout_results": {
+    "FULL_ARTICULATED_SCENE_GEOMETRY": {
+      "threshold_clearance_m": -0.004124335013329983,
+      "auc": 0.9375211077338736,
+      "average_precision": 0.8960101002344898,
+      "recall": 0.950354609929078,
+      "false_negative_rate": 0.04964539007092199,
+      "negative_retention": 0.8095238095238095,
+      "states_retaining": 11,
+      "selected_contacts": 1,
+      "gate_passed": false
+    },
+    "DEPTH_ARTICULATED_SWEEP": {
+      "threshold_clearance_m": 0.8684709668159485,
+      "auc": 0.8118396294688088,
+      "average_precision": 0.7921840751525251,
+      "recall": 1.0,
+      "negative_retention": 0.16326530612244897,
+      "states_retaining": 2,
+      "selected_contacts": 0,
+      "gate_passed": false
+    },
+    "LIDAR_ARTICULATED_SWEEP": {
+      "threshold_clearance_m": 0.11950722336769104,
+      "auc": 0.8458049886621315,
+      "average_precision": 0.7721001484679567,
+      "recall": 0.9645390070921985,
+      "negative_retention": 0.6462585034013606,
+      "states_retaining": 9,
+      "selected_contacts": 2,
+      "gate_passed": false
+    },
+    "DEPTH_LIDAR_ARTICULATED_SWEEP": {
+      "threshold_clearance_m": 0.11950722336769104,
+      "auc": 0.8547787909490037,
+      "average_precision": 0.7877016652312554,
+      "recall": 0.9645390070921985,
+      "negative_retention": 0.6462585034013606,
+      "states_retaining": 9,
+      "selected_contacts": 2,
+      "gate_passed": false
+    }
+  },
+  "heldout_frontiers": {
+    "FULL_ARTICULATED_SCENE_GEOMETRY": {"thresholds": 167, "complete_gate_points": 0},
+    "DEPTH_ARTICULATED_SWEEP": {"thresholds": 217, "complete_gate_points": 0},
+    "LIDAR_ARTICULATED_SWEEP": {"thresholds": 211, "complete_gate_points": 0},
+    "DEPTH_LIDAR_ARTICULATED_SWEEP": {"thresholds": 212, "complete_gate_points": 0},
+    "WIDE_GEOMETRY_EMBODIED_CONTACT_HEAD_V1": {"thresholds": 252, "complete_gate_points": 0}
+  },
+  "solver_consistency": {
+    "selected_threshold_disagreements": 35,
+    "geometry_query_mismatch": 35,
+    "collision_margin_m": 0.0,
+    "exact_solver_query_reproduced": false,
+    "limitation": "The persisted reducer used the solver's primitive source but an analytic/SAT and sampled-capsule query, not Genesis MPR/GJK. Contact manifold and penetration were not persisted."
+  },
+  "learned_score_diagnostic": {
+    "condition": "WIDE_GEOMETRY_EMBODIED_CONTACT_HEAD_V1",
+    "auc": 0.7486370434698703,
+    "average_precision": 0.7644324725659206,
+    "recall": 0.9574468085106383,
+    "negative_retention": 0.23129251700680273,
+    "selected_contacts": 2,
+    "sampled_negative_rejections": 195,
+    "physics_positive_among_rejections": 82,
+    "fraction_explained": 0.4205128205128205,
+    "other_conditions": "Unavailable on this wide-* panel: persisted DEPTH_ONLY, LIDAR_ONLY, and DEPTH_PLUS_EMBODIED logits are bound to scale-* rows and checkpoint execution was prohibited."
+  },
+  "row_level_evidence": {
+    "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/physics_rate_contact_proxy_reconciliation_v1/row_level_evidence_v1.npz",
+    "sha256": "3e5de8b6b4007f9ac066bb981e23f9fc59b28459caa23d93c9c222431b18b8ee",
+    "bytes": 30140
+  },
+  "new_persisted_bytes": 53821,
+  "execution": {
+    "training": false,
+    "learned_inference": false,
+    "simulation_or_replay": false,
+    "new_panel_generation": false,
+    "jepa_access": false,
+    "memory_or_navigation": false
+  }
+}
