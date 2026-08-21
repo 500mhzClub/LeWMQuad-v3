@@ -1,0 +1,60 @@
+{
+  "claim_boundary": "Simulation-only controller development and oracle viability for H1_ANY_PHYSICS_STEP_DISALLOWED_CONTACT; no learned planner-safety or physical Go2 qualification.",
+  "evidence_root": ".generated/lateral_controller_failure_attribution_and_full_budget_successor_v2",
+  "external_evidence_root": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lateral_controller_failure_attribution_and_full_budget_successor_v2",
+  "key_artifact_digests": {
+    "aggregate_result.json": {
+      "bytes": 168887,
+      "sha256": "8d965e97d8b5f392f257ddb87d7f67ec679ec87661cebc9c178a73ea17b01d74"
+    },
+    "attribution_result.json": {
+      "bytes": 1066114,
+      "sha256": "82cacdd4e987bb96f6921c50c5f408b57a3a9ec28a7e72237e3fd3c8d2b4521b"
+    },
+    "qualification_successor_final.json": {
+      "bytes": 91112,
+      "sha256": "76be07152c4904de53a78ea252dfba5683eed3998e9cd391d3165a92333ac676"
+    },
+    "qualification_v1_requalification.json": {
+      "bytes": 91062,
+      "sha256": "8a9c58967125aa4a8ce2c636e2dce0a9af5fbd24412ebf3e5ebc6f52adb8e990"
+    },
+    "scientific_collection_receipt.json": {
+      "bytes": 103,
+      "sha256": "3fb56d689f9a6430720568f541e1816eedbfa4fee641d6add66435f3eca1d17b"
+    },
+    "scientific_viability_result.json": {
+      "bytes": 14000031,
+      "sha256": "2fbd7643345223ae683ed0a18189d0f46e4734f376b7ff61bf37ef910f929041"
+    },
+    "successor_training_result.json": {
+      "bytes": 16840,
+      "sha256": "ae6fd70d319e86e268236def24ba8d4e50770d7ff63d8dc7edbd5f1b698363cf"
+    }
+  },
+  "primary_classification": "LATERAL_CONTROLLER_SIGNAL_VIABILITY_NO_GO",
+  "required_paths": [
+    "attribution_result.json",
+    "qualification_v1_requalification.json",
+    "successor_training_result.json",
+    "qualification_successor_final.json",
+    "scientific_collection_receipt.json",
+    "scientific_viability_result.json",
+    "aggregate_result.json",
+    "seed_2026082015/model_999.pt",
+    "scientific_states/*.json",
+    "scientific_rollouts/*.json"
+  ],
+  "row_level_ledger": {
+    "bytes": 7131291,
+    "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lateral_controller_failure_attribution_and_full_budget_successor_v2/row_level_evidence_v2.jsonl",
+    "sha256": "e16cba31cb4354339dd7edca60f65e17085ce54d37482fe90d42017e4cc25612"
+  },
+  "schema": "lateral_controller_failure_attribution_and_full_budget_successor_v2_evidence_index",
+  "source_commit": "004ef60c81d98f744e5dad0206d4c6a618707196",
+  "successor_checkpoint": {
+    "bytes": 4547691,
+    "path": ".generated/lateral_controller_failure_attribution_and_full_budget_successor_v2/seed_2026082015/model_999.pt",
+    "sha256": "04a85caec6720da2e9c1beabc93817b2a264da7e2efbb87cd3d2b33c614cbaed"
+  }
+}
