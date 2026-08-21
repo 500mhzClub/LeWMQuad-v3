@@ -1,0 +1,86 @@
+{
+  "schema": "lewm_lateral_recovery_locomotion_controller_dev_v1_evidence_index",
+  "source_commit": "690bd1ffbf0a59ba806fb62d4d5fe521f296bd3f",
+  "date": "2026-08-21",
+  "primary_classification": "LATERAL_CONTROLLER_QUALIFICATION_NO_GO",
+  "controller_classification": "LATERAL_TRACKING_AUTHORITY_NO_GO",
+  "bindings": {
+    "source_checkpoint": {
+      "path": "models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt",
+      "sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff"
+    },
+    "training_contract": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/training_contract.json",
+      "sha256": "46f88f5b183bd9cd6dd3d3c81f5ca29a7c7ede332da2a139aae21e623458d96a",
+      "bytes": 4458
+    },
+    "smoke": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/smoke_result.json",
+      "sha256": "ea490fe46c28dd43a58c78028c3d1e30f59d131eb3201a7a74321690d476ec08",
+      "bytes": 535
+    },
+    "training_result": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/training_result.json",
+      "sha256": "3c4eff120ffe0f7a18e080381f8ec5275d142a3c8cc932fbc90adb0f4b1a388f",
+      "bytes": 5543
+    },
+    "checkpoint": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/seed_2026082014/model_624.pt",
+      "sha256": "9199cfde3d26b421fc50bc5a7a94f69b23eb7befc7509175174eb3059f35d18b",
+      "bytes": 4547691
+    },
+    "inference_config": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/seed_2026082014/inference_cfgs.pkl",
+      "sha256": "958a38e70a769e8f00918eec730af0cc653ea245b6cbcb0cd5468a3049cd3e54",
+      "bytes": 2450
+    },
+    "qualification": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/controller_qualification.json",
+      "sha256": "93c6c8ec6dde608460c34584eab5cbd369ed2fcf977e26190140d261aac7da5c",
+      "bytes": 196690
+    },
+    "development_result": {
+      "path": ".generated/lateral_recovery_locomotion_controller_dev_v1/development_result.json",
+      "sha256": "6e8677694053e80c600838155116d61b76f8be1d448d9a90e7f4c535bbac2fbf",
+      "bytes": 13563
+    },
+    "row_ledger": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lateral_recovery_locomotion_controller_dev_v1/controller_qualification_rows_v1.jsonl",
+      "sha256": "8f1df48ce9dec6dbd179d73a9f8525c3b95b5ceed6c6aa40c9531c5aa8598cd8",
+      "bytes": 147132,
+      "rows": 156
+    }
+  },
+  "training": {
+    "seed": 2026082014,
+    "updates": 125,
+    "parallel_environments": 4096,
+    "final_iteration": 624,
+    "complete_seeds": 1
+  },
+  "qualification": {
+    "route_non_regression_pass": true,
+    "lateral_tracking_pass": false,
+    "mode_transition_pass": false,
+    "lateral_0_5_s_abs_0_2_velocity_fraction": 0.23709017783403397,
+    "lateral_correct_sign_rows": 83,
+    "lateral_rows": 96,
+    "contacts": 0,
+    "falls": 0,
+    "joint_or_torque_violations": 0
+  },
+  "scientific_execution": {
+    "frozen_states_opened": 0,
+    "branches": 0,
+    "full_panel_after": "not_evaluated"
+  },
+  "prohibitions_observed": {
+    "second_controller_seed": false,
+    "jepa_access_or_execution": false,
+    "utility_or_safety_model": false,
+    "historical_route_controller_modified": false,
+    "predictor_contract_modified": false,
+    "memory": false,
+    "navigation": false
+  }
+}
