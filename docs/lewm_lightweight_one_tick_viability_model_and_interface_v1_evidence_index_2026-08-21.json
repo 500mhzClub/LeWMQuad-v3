@@ -1,0 +1,50 @@
+{
+  "claim_boundary": "SIMULATED_ONE_TICK_CONTACT_AND_SUCCESSOR_VIABILITY development evidence only; no material, physical-Go2, JEPA-planner, or navigation claim.",
+  "evidence_root": ".generated/lightweight_one_tick_viability_model_and_interface_v1",
+  "external_evidence_root": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lightweight_one_tick_viability_model_and_interface_v1",
+  "key_artifact_digests": {
+    "collection_receipt.json": {
+      "bytes": 87,
+      "sha256": "b795f259653f144bfd0f5d19330032db7af08af708bf220f519955eb8fbd2afc"
+    },
+    "evaluator_fixture.json": {
+      "bytes": 600,
+      "sha256": "2d04edd719cad0d1ed3e03bd0d693d14c5987a9cb60038dbcc09e985fada4b58"
+    },
+    "oracle_tree_index.json": {
+      "bytes": 2457659,
+      "sha256": "ef55112cea076b69fa425cdccf805852ea9b70ad4e79e3a9d6553ba0c0a5dc8b"
+    },
+    "panel_manifest.json": {
+      "bytes": 288739,
+      "sha256": "520fa89b894c7cac84ea15b6b53c1d3ac969bf5e4282387c286ff80a23c1c04f"
+    },
+    "persistence_receipt.json": {
+      "bytes": 909,
+      "sha256": "793789cd366f9c6ff67d929174da47cec5beda172e30eab13ac15fa8965e49bd"
+    },
+    "result.json": {
+      "bytes": 14095,
+      "sha256": "d91ee9dfe9b4762734d86e328097cb68b141cecf4d7a029734c5f72c7985aa9c"
+    }
+  },
+  "panel_manifest_content_digest": "34f7eb6609dd28053eba066fb56f18f3b68451809cd22eab1378bb95b1d02695",
+  "primary_classification": "FRESH_MICRO_VIABILITY_PANEL_INADEQUATE",
+  "required_paths": [
+    "panel_manifest.json",
+    "collection_receipt.json",
+    "states/*.json",
+    "oracle_tree_index.json",
+    "evaluator_fixture.json",
+    "result.json",
+    "persistence_receipt.json"
+  ],
+  "row_level_ledger": {
+    "bytes": 2239577,
+    "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lightweight_one_tick_viability_model_and_interface_v1/row_level_evidence_v1.jsonl",
+    "rows": 2464,
+    "sha256": "0a273a3f464f770ccf8d28a1c6c3d9ddad63efdb767c1a63175ddcb479a18eea"
+  },
+  "schema": "lightweight_one_tick_viability_model_and_interface_v1_evidence_index",
+  "source_commit": "90dda7ecde62a6edfb1c837a0b456e4950b31f7d"
+}
