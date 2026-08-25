@@ -86,6 +86,87 @@ def test_frozen_corpus_lineage_and_role_isolation() -> None:
     assert receipt["roles"]["untouched_g2"] == "FORBIDDEN_NOT_READ"
 
 
+def test_failed_attempt_and_exact_sensor_materialization_amendment_are_frozen() -> None:
+    receipt = contract.build_contract()
+    assert receipt["schema_version"] == (
+        "body_centric_range_coverage_qualification_v1.contract.v2"
+    )
+    amendment = receipt["prospective_execution_amendment"]
+    assert amendment["id"] == "EXACT_SENSOR_MATERIALIZATION_MAP_AMENDMENT_V1"
+    assert amendment["status"] == "FROZEN_BEFORE_REEXECUTION"
+    failed = amendment["failed_attempt"]
+    assert failed["source_freeze_commit"] == (
+        "3ef985d7fcea8c26609fd6cc8a1d5e66507e9c1c"
+    )
+    assert failed["path"] == (
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+        "body_centric_range_coverage_qualification_v1__failed_3ef985d_"
+        "copy_geometry_assertion"
+    )
+    assert failed["receipt_sha256"] == (
+        "277e76da379f7b992ae5b5df27d7cdf88b8f5b56d63720bb765e2074549f51e4"
+    )
+    assert failed["file_manifest_sha256"] == (
+        "e6244e5d3284e29ad17a949a93b0d21e4d94e93557d57c3cafcda25feabae0a8"
+    )
+    assert failed["terminal_absences"] == {
+        "materialization_index": "ABSENT",
+        "calibration_thresholds": "ABSENT",
+        "heldout_metric_evaluation": "NOT_RUN",
+        "result": "ABSENT",
+    }
+    custody = amendment["custody"]
+    assert custody["prior_state_shards_reusable_after_refreeze"] is False
+    assert custody["canonical_output_root_remains_unchanged"] is True
+    assert custody["restart_policy"] == (
+        "fresh preexecution receipt and materialisation from state zero"
+    )
+
+    maps = receipt["representative_maps"]
+    action = maps["decision_action_copy_map"]
+    assert action["contract_id"] == "DECISION_ACTION_COPY_MAP"
+    assert action["implementation_type"] == "AppliedActionCopyMap"
+    assert action["npz_array"] == "action_representative_transition"
+    assert action["legacy_npz_alias"] == "representative_transition"
+    assert action["sensor_reuse_authority"] is False
+    assert action["representative_count"] == 13385
+    assert "diagnostic only" in action["applied_action_copy_validation"]
+
+    geometry = maps["exact_sensor_materialization_map"]
+    assert geometry["contract_id"] == "EXACT_SENSOR_MATERIALIZATION_MAP"
+    assert geometry["implementation_type"] == "ExactGeometryMaterializationMap"
+    assert geometry["npz_array"] == "geometry_representative_transition"
+    assert geometry["exact_array_fields"] == [
+        "qpos",
+        "link_transform",
+        "geom_transform",
+        "native_contact",
+        "exact_contact",
+        "frozen_contact_label",
+    ]
+    assert geometry["boundary_requirement"] == "identical boundary snapshot digest"
+    assert "tolerance is forbidden" in geometry["equality"]
+    assert geometry["representative_count"] == 13584
+    assert geometry["exact_reused_transition_pairs"] == 15886
+    assert geometry["independently_materialized_nonexact_action_copy_pairs"] == 199
+    assert geometry["nonexact_action_copy_state_count"] == 81
+    assert geometry["nonexact_action_copy_state_role_counts"] == {
+        "training": 58,
+        "internal_calibration": 12,
+        "development_held_out": 11,
+    }
+    cardinality = maps["cardinality_identity"]
+    assert cardinality["decision_action_representatives"] + 199 == (
+        cardinality["exact_sensor_materialization_representatives"]
+    )
+    assert cardinality["exact_sensor_materialization_representatives"] + (
+        cardinality["exact_sensor_reused_transition_pairs"]
+    ) == cardinality["frozen_transition_count"] == 29470
+    preflight = maps["full_corpus_structural_preflight"]
+    assert preflight["state_count"] == 176
+    assert preflight["failure_policy"] == "fail closed before materialisation"
+
+
 def test_assumed_l2_sensor_and_mounts_are_exactly_bound() -> None:
     receipt = contract.build_contract()
     sensor = receipt["hardware_binding"]
@@ -286,6 +367,9 @@ def test_contract_validation_rejects_tampering_even_when_resigned() -> None:
 
 def test_output_schema_is_self_digesting_and_row_level(tmp_path: Path) -> None:
     schema = contract.build_output_schema()
+    assert schema["schema_version"] == (
+        "body_centric_range_coverage_qualification_v1.output.v2"
+    )
     declared = schema.pop("output_schema_sha256")
     assert declared == contract.OUTPUT_SCHEMA_SHA256
     assert contract.canonical_json_sha256(schema) == declared
@@ -299,6 +383,56 @@ def test_output_schema_is_self_digesting_and_row_level(tmp_path: Path) -> None:
         "per_link_evidence"
     ]["required_keys"]
     assert "error_class" in schema["files"]["coverage_errors"]["required_keys"]
+    preexecution = schema["files"]["preexecution_receipt"]
+    assert "exact_geometry_materialization_preflight" in preexecution["required_keys"]
+    assert "prospective_execution_amendment_validation" in preexecution["required_keys"]
+    index = schema["files"]["materialization_index"]
+    assert "geometry_representatives" in index["required_keys"]
+    assert "geometry_representatives" in index["record_required_keys"]
+    state = schema["files"]["state_evidence"]
+    assert state["npz_required_arrays"] == [
+        "representative_transition",
+        "action_representative_transition",
+        "geometry_representative_transition",
+    ]
+    assert {
+        "geometry_representatives",
+        "geometry_current_representatives",
+        "geometry_successor_representatives",
+        "applied_action_copy_validation",
+        "exact_geometry_materialization_validation",
+        "representative_mappings",
+    }.issubset(state["required_keys"])
+    assert state["scan_transition_index_semantics"].startswith(
+        "transition_index is the exact geometry-source transition"
+    )
+    assert "may be false" in state["validation_semantics"][
+        "applied_action_copy_validation"
+    ]
+    assert "must pass" in state["validation_semantics"][
+        "exact_geometry_materialization_validation"
+    ]
+    transition = schema["files"]["transition_evidence"]
+    assert {
+        "action_representative_transition_index",
+        "geometry_representative_transition_index",
+    }.issubset(transition["required_keys"])
+    per_link = schema["files"]["per_link_evidence"]
+    assert {
+        "state_id",
+        "transition_index",
+        "action_representative_transition_index",
+        "geometry_representative_transition_index",
+    }.issubset(per_link["required_keys"])
+    raw = schema["files"]["raw_audit_manifest"]
+    assert {
+        "source_representative_transition_uid",
+        "source_action_representative_transition_uid",
+        "source_geometry_representative_transition_uid",
+    }.issubset(raw["required_keys"])
+    assert "geometry_representatives" in schema["files"]["result"][
+        "materialisation_count_required_keys"
+    ]
 
     path = tmp_path / "nested" / "schema.json"
     assert contract.write_output_schema(path) == path

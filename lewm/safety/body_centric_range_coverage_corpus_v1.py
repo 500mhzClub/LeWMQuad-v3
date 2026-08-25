@@ -180,6 +180,15 @@ _REQUIRED_SHARD_FIELDS = (
     "transition_action",
 )
 
+GEOMETRY_MATERIALIZATION_FIELDS = (
+    "qpos",
+    "link_transform",
+    "geom_transform",
+    "native_contact",
+    "exact_contact",
+    "frozen_contact_label",
+)
+
 
 class CorpusBindingError(RuntimeError):
     """The local predecessor evidence does not match its frozen binding."""
@@ -278,7 +287,7 @@ def applied_action_key(row: Mapping[str, Any]) -> tuple[Any, ...]:
 
 @dataclass(frozen=True)
 class AppliedActionCopyMap:
-    """Physical-transition representatives with full historical row custody."""
+    """Deployable-action representatives with full historical row custody."""
 
     state_id: str
     representative_by_transition: tuple[int, ...]
@@ -303,6 +312,33 @@ class AppliedActionCopyMap:
     @property
     def successor_representative_count(self) -> int:
         return len(self.successor_representative_transitions)
+
+    def representative_for(self, transition_index: int) -> int:
+        return self.representative_by_transition[int(transition_index)]
+
+
+@dataclass(frozen=True)
+class ExactGeometryMaterializationMap:
+    """Exact trajectory-equivalence groups nested inside deployable actions.
+
+    ``AppliedActionCopyMap`` defines the frozen decision identity.  Equal
+    applied commands need not have byte-identical predecessor replays, so this
+    second map is the strictly narrower authority for reusing materialized
+    sensor evidence.
+    """
+
+    state_id: str
+    representative_by_transition: tuple[int, ...]
+    copies_by_representative: Mapping[int, tuple[int, ...]]
+    action_representative_by_geometry_representative: Mapping[int, int]
+
+    @property
+    def transition_count(self) -> int:
+        return len(self.representative_by_transition)
+
+    @property
+    def representative_count(self) -> int:
+        return len(self.copies_by_representative)
 
     def representative_for(self, transition_index: int) -> int:
         return self.representative_by_transition[int(transition_index)]
@@ -1570,7 +1606,13 @@ def validate_boundary_alignment(
 def validate_representative_geometry(
     shard: GeometryShard, copy_map: AppliedActionCopyMap
 ) -> Mapping[str, Any]:
-    """Prove that every proposed copy has an identical physical trajectory."""
+    """Audit whether deployable-action groups also share exact trajectories.
+
+    A failed audit does not invalidate the applied-action identity contract.
+    It means the differing rows must be split by
+    :func:`build_exact_geometry_materialization_map` before sensor evidence is
+    reused.
+    """
 
     arrays = shard.arrays
     fields = ("qpos", "link_transform", "geom_transform", "native_contact", "exact_contact")
@@ -1600,6 +1642,201 @@ def validate_representative_geometry(
     return MappingProxyType(output)
 
 
+def _exact_geometry_rows_equal(
+    arrays: Mapping[str, np.ndarray], left: int, right: int
+) -> bool:
+    return all(
+        np.array_equal(arrays[field][left], arrays[field][right])
+        for field in GEOMETRY_MATERIALIZATION_FIELDS
+    )
+
+
+def build_exact_geometry_materialization_map(
+    shard: GeometryShard,
+    action_map: AppliedActionCopyMap,
+    boundary_snapshot_digests: Sequence[str],
+) -> ExactGeometryMaterializationMap:
+    """Partition each deployable action into exact evidence-reuse groups.
+
+    Geometry groups never cross a deployable-action group.  A historical row
+    may reuse its canonical action representative only when the scan-phase
+    boundary digest and all frozen trajectory/contact arrays are exactly
+    equal.  Any row that differs from that authority is conservatively
+    materialized as its own singleton; noncanonical replays never become a new
+    copy authority.  No numeric tolerance is authorized.
+    """
+
+    _require(shard.state_id == action_map.state_id, "geometry/action state mismatch")
+    _require(
+        shard.transition_count == action_map.transition_count,
+        f"{shard.state_id}: geometry/action transition mismatch",
+    )
+    digests = tuple(str(value) for value in boundary_snapshot_digests)
+    _require(
+        len(digests) == shard.transition_count,
+        f"{shard.state_id}: boundary-digest cardinality mismatch",
+    )
+    arrays = shard.arrays
+    for field in GEOMETRY_MATERIALIZATION_FIELDS:
+        _require(field in arrays, f"geometry materialization requires {field}")
+
+    representative_by_transition = [-1] * shard.transition_count
+    copies_by_representative: dict[int, list[int]] = {}
+    action_by_geometry_representative: dict[int, int] = {}
+    for action_representative, action_copies in sorted(
+        action_map.copies_by_representative.items()
+    ):
+        ordered = (action_representative,) + tuple(
+            transition
+            for transition in action_copies
+            if transition != action_representative
+        )
+        for transition in ordered:
+            shares_action_geometry = bool(
+                digests[action_representative] == digests[transition]
+                and _exact_geometry_rows_equal(
+                    arrays, action_representative, transition
+                )
+            )
+            geometry_representative = (
+                action_representative if shares_action_geometry else transition
+            )
+            if geometry_representative not in action_by_geometry_representative:
+                action_by_geometry_representative[geometry_representative] = (
+                    action_representative
+                )
+            representative_by_transition[transition] = geometry_representative
+            copies_by_representative.setdefault(geometry_representative, []).append(
+                transition
+            )
+
+    _require(
+        all(value >= 0 for value in representative_by_transition),
+        f"{shard.state_id}: incomplete geometry materialization map",
+    )
+    frozen_copies = MappingProxyType(
+        {
+            representative: tuple(copies)
+            for representative, copies in sorted(copies_by_representative.items())
+        }
+    )
+    return ExactGeometryMaterializationMap(
+        state_id=shard.state_id,
+        representative_by_transition=tuple(representative_by_transition),
+        copies_by_representative=frozen_copies,
+        action_representative_by_geometry_representative=MappingProxyType(
+            dict(sorted(action_by_geometry_representative.items()))
+        ),
+    )
+
+
+def validate_exact_geometry_materialization_map(
+    shard: GeometryShard,
+    action_map: AppliedActionCopyMap,
+    geometry_map: ExactGeometryMaterializationMap,
+    boundary_snapshot_digests: Sequence[str],
+) -> Mapping[str, Any]:
+    """Prove complete custody and exactness of an evidence-reuse map."""
+
+    digests = tuple(str(value) for value in boundary_snapshot_digests)
+    mismatches: list[dict[str, Any]] = []
+    if (
+        shard.state_id != geometry_map.state_id
+        or action_map.state_id != geometry_map.state_id
+        or shard.transition_count != geometry_map.transition_count
+        or len(digests) != shard.transition_count
+    ):
+        mismatches.append({"kind": "CARDINALITY_OR_STATE_BINDING"})
+    else:
+        covered = sorted(
+            transition
+            for copies in geometry_map.copies_by_representative.values()
+            for transition in copies
+        )
+        if covered != list(range(shard.transition_count)):
+            mismatches.append({"kind": "INCOMPLETE_OR_DUPLICATED_CUSTODY"})
+        for geometry_representative, copies in (
+            geometry_map.copies_by_representative.items()
+        ):
+            action_representative = action_map.representative_for(
+                geometry_representative
+            )
+            if (
+                geometry_map.action_representative_by_geometry_representative.get(
+                    geometry_representative
+                )
+                != action_representative
+                or geometry_representative not in copies
+            ):
+                mismatches.append(
+                    {
+                        "kind": "REPRESENTATIVE_BINDING",
+                        "geometry_representative": geometry_representative,
+                    }
+                )
+            for transition in copies:
+                if action_map.representative_for(transition) != action_representative:
+                    mismatches.append(
+                        {
+                            "kind": "CROSSED_ACTION_GROUP",
+                            "geometry_representative": geometry_representative,
+                            "transition": transition,
+                        }
+                    )
+                if digests[transition] != digests[geometry_representative]:
+                    mismatches.append(
+                        {
+                            "kind": "BOUNDARY_DIGEST",
+                            "geometry_representative": geometry_representative,
+                            "transition": transition,
+                        }
+                    )
+                for field in GEOMETRY_MATERIALIZATION_FIELDS:
+                    if not np.array_equal(
+                        shard.arrays[field][geometry_representative],
+                        shard.arrays[field][transition],
+                    ):
+                        mismatches.append(
+                            {
+                                "kind": "TRAJECTORY_FIELD",
+                                "geometry_representative": geometry_representative,
+                                "transition": transition,
+                                "field": field,
+                            }
+                        )
+    expected = build_exact_geometry_materialization_map(
+        shard, action_map, boundary_snapshot_digests
+    )
+    if (
+        geometry_map.representative_by_transition
+        != expected.representative_by_transition
+        or dict(geometry_map.copies_by_representative)
+        != dict(expected.copies_by_representative)
+    ):
+        mismatches.append({"kind": "NONCANONICAL_PARTITION"})
+    split_geometry_representatives = [
+        representative
+        for representative, action_representative in (
+            geometry_map.action_representative_by_geometry_representative.items()
+        )
+        if representative != action_representative
+    ]
+    output = {
+        "schema": "body_centric_range_exact_geometry_materialization_validation_v1",
+        "state_id": shard.state_id,
+        "transitions": shard.transition_count,
+        "action_representatives": action_map.representative_count,
+        "geometry_representatives": geometry_map.representative_count,
+        "exact_evidence_copies": shard.transition_count
+        - geometry_map.representative_count,
+        "split_geometry_representatives": split_geometry_representatives,
+        "mismatches": mismatches,
+        "pass": not mismatches,
+    }
+    output["content_digest"] = json_content_digest(output)
+    return MappingProxyType(output)
+
+
 __all__ = [
     "ACTION_CONTRACT_SHA256",
     "AppliedActionCopyMap",
@@ -1616,7 +1853,9 @@ __all__ = [
     "EXPECTED_STATES",
     "EXPECTED_SUCCESSOR_TRANSITIONS",
     "EXPECTED_TRANSITIONS",
+    "ExactGeometryMaterializationMap",
     "FrozenCorpus",
+    "GEOMETRY_MATERIALIZATION_FIELDS",
     "GEOMETRY_INDEX_SHA256",
     "GeometryShard",
     "LoadedFrozenState",
@@ -1632,6 +1871,7 @@ __all__ = [
     "applied_action_key",
     "body_region_for_link",
     "build_applied_action_copy_map",
+    "build_exact_geometry_materialization_map",
     "collision_shape_contract",
     "contact_attribution",
     "instantiate_collision_contract",
@@ -1645,5 +1885,6 @@ __all__ = [
     "sha256_file",
     "transition_identity_rows",
     "validate_boundary_alignment",
+    "validate_exact_geometry_materialization_map",
     "validate_representative_geometry",
 ]

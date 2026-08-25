@@ -46,7 +46,7 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Any, Iterable
+from typing import Any, Iterable, Sequence
 
 import numpy as np
 
@@ -86,6 +86,16 @@ EXPECTED = {
     "current_transitions": 2464,
     "successor_transitions": 27006,
     "physics_steps": 1473500,
+    "action_representatives": 13385,
+    "geometry_representatives": 13584,
+    "nonexact_independent_rows": 199,
+    "exact_reused_pairs": 15886,
+    "geometry_affected_states": 81,
+}
+EXPECTED_GEOMETRY_AFFECTED_ROLE_COUNTS = {
+    "training": 58,
+    "calibration": 12,
+    "heldout": 11,
 }
 CONDITIONS = tuple(CONTRACT.CONDITION_IDS)
 MODES = tuple(CONTRACT.EVIDENCE_MODE_IDS)
@@ -1801,22 +1811,14 @@ def frozen_audit_subset(context: Any) -> dict[str, list[str]]:
     return selected
 
 
-def representative_geometry_is_equal(state: Any, representative: int, copy: int) -> bool:
-    arrays = state.shard.arrays
-    return bool(
-        np.allclose(arrays["qpos"][representative], arrays["qpos"][copy], rtol=0.0, atol=2e-6)
-        and np.allclose(arrays["geom_transform"][representative], arrays["geom_transform"][copy], rtol=0.0, atol=2e-6)
-        and bool(arrays["frozen_contact_label"][representative]) == bool(arrays["frozen_contact_label"][copy])
-    )
-
-
 def raw_audit_artifact(
     *,
     transition_identity: str,
     role: str,
     family: str,
     transition_kind: str,
-    source_representative_transition_uid: str,
+    source_action_representative_transition_uid: str,
+    source_geometry_representative_transition_uid: str,
     boundary_snapshot_digest: str,
     condition_id: str,
     mode_id: str,
@@ -1885,7 +1887,12 @@ def raw_audit_artifact(
         "role": role,
         "family": family,
         "transition_kind": transition_kind,
-        "source_representative_transition_uid": source_representative_transition_uid,
+        # Compatibility alias: the artifact bytes always come from the exact
+        # geometry representative, which may differ from the decision-action
+        # representative.
+        "source_representative_transition_uid": source_geometry_representative_transition_uid,
+        "source_action_representative_transition_uid": source_action_representative_transition_uid,
+        "source_geometry_representative_transition_uid": source_geometry_representative_transition_uid,
         "boundary_snapshot_digest": boundary_snapshot_digest,
         "condition_id": condition_id,
         "evidence_mode": mode_id,
@@ -1984,10 +1991,59 @@ def _validate_state_receipt_artifacts(
         or sha256_file(shard) != receipt["shard_sha256"]
     ):
         raise RuntimeError(f"state shard drift: {shard}")
-    if receipt.get("applied_action_copy_validation", {}).get("pass") is not True:
-        raise RuntimeError(f"state copy validation is absent or failed: {receipt_path}")
-    if len(receipt.get("scan_receipts", [])) != int(receipt["representatives"]) * 4:
+    if (
+        receipt.get("exact_geometry_materialization_validation", {}).get("pass")
+        is not True
+    ):
+        raise RuntimeError(
+            f"state exact-geometry validation is absent or failed: {receipt_path}"
+        )
+    if len(receipt.get("scan_receipts", [])) != int(
+        receipt["geometry_representatives"]
+    ) * 4:
         raise RuntimeError(f"state scan-receipt cardinality drift: {receipt_path}")
+    mappings = receipt.get("representative_mappings", {})
+    if mappings != {
+        "decision_authority": "DECISION_ACTION_COPY_MAP",
+        "sensor_materialization_authority": "EXACT_SENSOR_MATERIALIZATION_MAP",
+        "legacy_action_array": "representative_transition",
+        "action_array": "action_representative_transition",
+        "geometry_array": "geometry_representative_transition",
+        "action_representatives": int(receipt["representatives"]),
+        "geometry_representatives": int(receipt["geometry_representatives"]),
+    }:
+        raise RuntimeError(f"state representative-map receipt drift: {receipt_path}")
+    with np.load(shard, allow_pickle=False) as materialized:
+        required_mappings = {
+            "representative_transition",
+            "action_representative_transition",
+            "geometry_representative_transition",
+        }
+        if not required_mappings.issubset(materialized.files):
+            raise RuntimeError(f"state representative arrays missing: {shard}")
+        legacy_action = np.asarray(materialized["representative_transition"])
+        action = np.asarray(materialized["action_representative_transition"])
+        geometry = np.asarray(materialized["geometry_representative_transition"])
+    if (
+        legacy_action.shape != (int(receipt["transitions"]),)
+        or action.shape != legacy_action.shape
+        or geometry.shape != legacy_action.shape
+        or not np.array_equal(legacy_action, action)
+        or len(np.unique(action)) != int(receipt["representatives"])
+        or len(np.unique(geometry)) != int(receipt["geometry_representatives"])
+    ):
+        raise RuntimeError(f"state representative-array drift: {shard}")
+    for scan in receipt.get("scan_receipts", []):
+        geometry_index = int(scan.get("geometry_representative_transition_index", -1))
+        action_index = int(scan.get("action_representative_transition_index", -1))
+        if (
+            int(scan.get("transition_index", -1)) != geometry_index
+            or geometry_index < 0
+            or geometry_index >= len(geometry)
+            or int(geometry[geometry_index]) != geometry_index
+            or int(action[geometry_index]) != action_index
+        ):
+            raise RuntimeError(f"state scan representative provenance drift: {shard}")
     for raw in receipt.get("raw_audit", []):
         artifact = OUTPUT_ROOT / raw["artifact_relative_path"]
         if (
@@ -2020,24 +2076,27 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
         state_id,
         shard_fields=("approximate_scene_clearance", "lidar_clearance"),
     )
-    copy_validation = dict(
+    action_copy_validation = dict(
         corpus_adapter.validate_representative_geometry(
             state.shard, state.action_copy_map
         )
     )
-    if copy_validation.get("pass") is not True:
-        raise RuntimeError(f"{state_id}: applied-action copy geometry is not exact")
-    for representative, copies in state.action_copy_map.copies_by_representative.items():
-        representative_digest = transition_boundary(
-            state, dict(state.transition_rows[representative])
-        )[2]
-        for copy in copies:
-            copy_digest = transition_boundary(state, dict(state.transition_rows[copy]))[2]
-            if copy_digest != representative_digest:
-                raise RuntimeError(
-                    f"{state_id}: scan-phase boundary differs for copy "
-                    f"{representative}->{copy}"
-                )
+    boundary_digests = tuple(
+        transition_boundary(state, dict(row))[2] for row in state.transition_rows
+    )
+    geometry_map = corpus_adapter.build_exact_geometry_materialization_map(
+        state.shard, state.action_copy_map, boundary_digests
+    )
+    geometry_validation = dict(
+        corpus_adapter.validate_exact_geometry_materialization_map(
+            state.shard,
+            state.action_copy_map,
+            geometry_map,
+            boundary_digests,
+        )
+    )
+    if geometry_validation.get("pass") is not True:
+        raise RuntimeError(f"{state_id}: exact geometry materialization map failed")
     boxes, specs = runtime_geometry_contract(state)
     transitions = state.shard.transition_count
     evidence = _empty_evidence_arrays(transitions)
@@ -2049,7 +2108,7 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
     raw_audit: list[dict[str, Any]] = []
     planning_cloud_cache: dict[tuple[str, str], dict[str, Any]] = {}
     copy_map = state.action_copy_map
-    representatives = sorted(copy_map.copies_by_representative)
+    representatives = sorted(geometry_map.copies_by_representative)
     for ordinal, representative in enumerate(representatives, 1):
         row = dict(state.transition_rows[representative])
         boundary_qpos, boundary_geom, boundary_digest = transition_boundary(state, row)
@@ -2109,6 +2168,10 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
             _store_evidence(evidence, representative, 3, MODES.index(mode), dense_d[mode])
 
         identity = str(row["identity"])
+        action_representative = copy_map.representative_for(representative)
+        action_representative_identity = str(
+            state.transition_rows[action_representative]["identity"]
+        )
         for condition_index, condition_id in enumerate(CONDITIONS[:2]):
             auxiliary = dense_a if condition_index == 0 else dense_c
             for mode_index, mode in enumerate(MODES):
@@ -2177,6 +2240,8 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
                 scan_receipts.append(
                     {
                         "transition_index": representative,
+                        "action_representative_transition_index": action_representative,
+                        "geometry_representative_transition_index": representative,
                         "condition_id": condition_id,
                         "evidence_mode": mode,
                         "ray_count": cloud["ray_count"],
@@ -2192,7 +2257,7 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
                 )
                 selected_copy_identities = [
                     str(state.transition_rows[copy]["identity"])
-                    for copy in copy_map.copies_by_representative[representative]
+                    for copy in geometry_map.copies_by_representative[representative]
                     if str(state.transition_rows[copy]["identity"]) in audit_identities
                 ]
                 for selected_identity in selected_copy_identities:
@@ -2202,7 +2267,8 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
                             role=state.role,
                             family=state.family,
                             transition_kind=str(row["level"]),
-                            source_representative_transition_uid=identity,
+                            source_action_representative_transition_uid=action_representative_identity,
+                            source_geometry_representative_transition_uid=identity,
                             boundary_snapshot_digest=boundary_digest,
                             condition_id=condition_id,
                             mode_id=mode,
@@ -2212,7 +2278,7 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
 
         selected_copy_identities = [
             str(state.transition_rows[copy]["identity"])
-            for copy in copy_map.copies_by_representative[representative]
+            for copy in geometry_map.copies_by_representative[representative]
             if str(state.transition_rows[copy]["identity"]) in audit_identities
         ]
         for selected_identity in selected_copy_identities:
@@ -2227,7 +2293,8 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
                             role=state.role,
                             family=state.family,
                             transition_kind=str(row["level"]),
-                            source_representative_transition_uid=identity,
+                            source_action_representative_transition_uid=action_representative_identity,
+                            source_geometry_representative_transition_uid=identity,
                             boundary_snapshot_digest=boundary_digest,
                             condition_id=condition_id,
                             mode_id=mode,
@@ -2248,7 +2315,7 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
                         )
                     )
 
-        for copy in copy_map.copies_by_representative[representative]:
+        for copy in geometry_map.copies_by_representative[representative]:
             if copy == representative:
                 continue
             _copy_evidence(evidence, representative, copy)
@@ -2349,7 +2416,17 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
         "transition_level": np.asarray([row["level"] for row in identity_rows]),
         "transition_current_action": np.asarray([row["current_action_index"] for row in identity_rows], np.int16),
         "transition_action": np.asarray([row["action_index"] for row in identity_rows], np.int16),
-        "representative_transition": np.asarray(copy_map.representative_by_transition, np.int32),
+        # The legacy name remains the deployable decision-action map.  Sensor
+        # evidence provenance uses the strictly narrower exact-geometry map.
+        "representative_transition": np.asarray(
+            copy_map.representative_by_transition, np.int32
+        ),
+        "action_representative_transition": np.asarray(
+            copy_map.representative_by_transition, np.int32
+        ),
+        "geometry_representative_transition": np.asarray(
+            geometry_map.representative_by_transition, np.int32
+        ),
         "legacy_sparse_global_clearance_m": np.min(
             np.asarray(state.shard.arrays["lidar_clearance"], np.float32), axis=(1, 2)
         ),
@@ -2363,9 +2440,18 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
         "family": state.family,
         "role": state.role,
         "transitions": transitions,
-        "representatives": len(representatives),
+        "representatives": copy_map.representative_count,
+        "geometry_representatives": geometry_map.representative_count,
         "current_representatives": state.action_copy_map.current_representative_count,
         "successor_representatives": state.action_copy_map.successor_representative_count,
+        "geometry_current_representatives": sum(
+            str(state.transition_rows[index]["level"]) == "current"
+            for index in representatives
+        ),
+        "geometry_successor_representatives": sum(
+            str(state.transition_rows[index]["level"]) == "successor"
+            for index in representatives
+        ),
         "shard_path": str(shard_path),
         "shard_sha256": sha256_file(shard_path),
         "storage_bytes": shard_path.stat().st_size,
@@ -2374,7 +2460,17 @@ def materialize_state(context: Any, state_id: str, audit_identities: set[str]) -
         "contract_sha256": sha256_file(TRACKED_CONTRACT),
         "source_closure_sha256": sha256_file(TRACKED_CLOSURE),
         "source_freeze_commit": git("rev-parse", "HEAD"),
-        "applied_action_copy_validation": copy_validation,
+        "applied_action_copy_validation": action_copy_validation,
+        "exact_geometry_materialization_validation": geometry_validation,
+        "representative_mappings": {
+            "decision_authority": "DECISION_ACTION_COPY_MAP",
+            "sensor_materialization_authority": "EXACT_SENSOR_MATERIALIZATION_MAP",
+            "legacy_action_array": "representative_transition",
+            "action_array": "action_representative_transition",
+            "geometry_array": "geometry_representative_transition",
+            "action_representatives": copy_map.representative_count,
+            "geometry_representatives": geometry_map.representative_count,
+        },
         "scan_receipts": scan_receipts,
         "raw_audit": raw_audit,
         "oracle_attribution_timing_mismatch_count": int(
@@ -2589,6 +2685,240 @@ def write_freeze_receipts() -> dict[str, Any]:
     }
 
 
+def exact_geometry_materialization_corpus_audit(
+    context: Any, corpus_adapter: Any
+) -> dict[str, Any]:
+    """Audit all frozen rows before authorizing evidence materialization."""
+
+    records: list[dict[str, Any]] = []
+    role_affected = {role: 0 for role in EXPECTED_GEOMETRY_AFFECTED_ROLE_COUNTS}
+    action_representatives = 0
+    geometry_representatives = 0
+    geometry_current_representatives = 0
+    geometry_successor_representatives = 0
+    exact_reused_pairs = 0
+    for state_id in context.state_ids:
+        state = corpus_adapter.load_state(context, state_id, shard_fields=())
+        boundary_digests = tuple(
+            transition_boundary(state, dict(row))[2]
+            for row in state.transition_rows
+        )
+        geometry_map = corpus_adapter.build_exact_geometry_materialization_map(
+            state.shard, state.action_copy_map, boundary_digests
+        )
+        validation = dict(
+            corpus_adapter.validate_exact_geometry_materialization_map(
+                state.shard,
+                state.action_copy_map,
+                geometry_map,
+                boundary_digests,
+            )
+        )
+        if validation.get("pass") is not True:
+            raise RuntimeError(
+                f"{state_id}: corpus-wide exact geometry partition failed"
+            )
+        action_count = state.action_copy_map.representative_count
+        geometry_count = geometry_map.representative_count
+        geometry_current = sum(
+            str(state.transition_rows[index]["level"]) == "current"
+            for index in geometry_map.copies_by_representative
+        )
+        geometry_successor = geometry_count - geometry_current
+        affected = geometry_count != action_count
+        if affected:
+            role_affected[state.role] += 1
+        action_representatives += action_count
+        geometry_representatives += geometry_count
+        geometry_current_representatives += geometry_current
+        geometry_successor_representatives += geometry_successor
+        exact_reused_pairs += state.shard.transition_count - geometry_count
+        records.append(
+            {
+                "state_id": state_id,
+                "role": state.role,
+                "transitions": state.shard.transition_count,
+                "action_representatives": action_count,
+                "geometry_representatives": geometry_count,
+                "geometry_current_representatives": geometry_current,
+                "geometry_successor_representatives": geometry_successor,
+                "additional_geometry_representatives": geometry_count
+                - action_count,
+                "boundary_snapshot_digest_count": len(boundary_digests),
+                "boundary_snapshot_digests_sha256": hashlib.sha256(
+                    canonical_bytes(list(boundary_digests))
+                ).hexdigest(),
+                "action_representative_mapping_sha256": hashlib.sha256(
+                    canonical_bytes(
+                        list(state.action_copy_map.representative_by_transition)
+                    )
+                ).hexdigest(),
+                "geometry_representative_mapping_sha256": hashlib.sha256(
+                    canonical_bytes(list(geometry_map.representative_by_transition))
+                ).hexdigest(),
+                "split_geometry_representatives": validation[
+                    "split_geometry_representatives"
+                ],
+                "pass": True,
+            }
+        )
+    affected_states = sum(row["geometry_representatives"] != row["action_representatives"] for row in records)
+    observed = {
+        "states": len(records),
+        "transitions": sum(int(row["transitions"]) for row in records),
+        "action_representatives": action_representatives,
+        "geometry_representatives": geometry_representatives,
+        "nonexact_independent_rows": geometry_representatives
+        - action_representatives,
+        "affected_states": affected_states,
+        "affected_states_by_role": role_affected,
+        "exact_reused_pairs": exact_reused_pairs,
+    }
+    required = {
+        "states": EXPECTED["states"],
+        "transitions": EXPECTED["transitions"],
+        "action_representatives": EXPECTED["action_representatives"],
+        "geometry_representatives": EXPECTED["geometry_representatives"],
+        "nonexact_independent_rows": EXPECTED["nonexact_independent_rows"],
+        "affected_states": EXPECTED["geometry_affected_states"],
+        "affected_states_by_role": EXPECTED_GEOMETRY_AFFECTED_ROLE_COUNTS,
+        "exact_reused_pairs": EXPECTED["exact_reused_pairs"],
+    }
+    if observed != required:
+        raise RuntimeError(
+            f"corpus-wide exact geometry totals drift: observed={observed}, required={required}"
+        )
+    value = {
+        "schema": "body_centric_range_exact_geometry_corpus_audit_v1",
+        "authority_split": {
+            "decision": "DECISION_ACTION_COPY_MAP",
+            "sensor_materialization": "EXACT_SENSOR_MATERIALIZATION_MAP",
+            "numeric_tolerance": 0.0,
+            "fields": list(corpus_adapter.GEOMETRY_MATERIALIZATION_FIELDS),
+            "boundary_snapshot_digest_required_equal": True,
+        },
+        **observed,
+        "geometry_current_representatives": geometry_current_representatives,
+        "geometry_successor_representatives": geometry_successor_representatives,
+        "records": records,
+        "pass": True,
+    }
+    value["content_digest"] = content_digest(value)
+    return value
+
+
+def validate_prospective_execution_amendment(
+    contract: dict[str, Any], *, canonical_files_before_preflight: Sequence[Path]
+) -> dict[str, Any]:
+    """Bind the immutable failed attempt and prove a state-zero restart."""
+
+    amendment = contract.get("prospective_execution_amendment", {})
+    if (
+        amendment.get("id") != "EXACT_SENSOR_MATERIALIZATION_MAP_AMENDMENT_V1"
+        or amendment.get("status") != "FROZEN_BEFORE_REEXECUTION"
+    ):
+        raise RuntimeError("prospective execution amendment is absent or unfrozen")
+    failed = amendment.get("failed_attempt", {})
+    failed_root = Path(str(failed.get("path", "")))
+    if not failed_root.is_dir() or failed_root.resolve() == OUTPUT_ROOT.resolve():
+        raise RuntimeError("failed-attempt custody namespace is missing or canonical")
+
+    def bound_child(relative_key: str, digest_key: str) -> tuple[Path, str]:
+        relative = Path(str(failed.get(relative_key, "")))
+        if relative.is_absolute() or ".." in relative.parts:
+            raise RuntimeError(f"unsafe failed-attempt path: {relative}")
+        path = failed_root / relative
+        digest = str(failed.get(digest_key, ""))
+        if not path.is_file() or sha256_file(path) != digest:
+            raise RuntimeError(f"failed-attempt binding drift: {path}")
+        return path, digest
+
+    failed_receipt_path, failed_receipt_sha256 = bound_child(
+        "receipt_relative_path", "receipt_sha256"
+    )
+    failed_manifest_path, failed_manifest_sha256 = bound_child(
+        "file_manifest_relative_path", "file_manifest_sha256"
+    )
+    failed_receipt = json.loads(failed_receipt_path.read_text())
+    failed_receipt_core = dict(failed_receipt)
+    failed_receipt_digest = failed_receipt_core.pop("content_digest", None)
+    if (
+        failed_receipt_digest != content_digest(failed_receipt_core)
+        or failed_receipt.get("source_freeze_commit")
+        != failed.get("source_freeze_commit")
+        or failed_receipt.get("status")
+        != "FAIL_CLOSED_MATERIALIZATION_INCOMPLETE_COPY_GEOMETRY_ASSERTION"
+    ):
+        raise RuntimeError("failed-attempt receipt semantics drift")
+    manifest_rows = [
+        json.loads(line)
+        for line in failed_manifest_path.read_text().splitlines()
+        if line
+    ]
+    custody = failed_receipt.get("custody", {})
+    if (
+        len(manifest_rows) != int(custody.get("manifest_rows", -1))
+        or sum(int(row.get("bytes", -1)) for row in manifest_rows)
+        != int(custody.get("manifest_payload_bytes", -1))
+        or custody.get("manifest_sha256") != failed_manifest_sha256
+    ):
+        raise RuntimeError("failed-attempt manifest custody drift")
+    for row in manifest_rows:
+        relative = Path(str(row.get("relative_path", "")))
+        artifact = failed_root / relative
+        if (
+            relative.is_absolute()
+            or ".." in relative.parts
+            or not artifact.is_file()
+            or artifact.stat().st_size != int(row.get("bytes", -1))
+            or sha256_file(artifact) != str(row.get("sha256", ""))
+        ):
+            raise RuntimeError(f"failed-attempt manifest member drift: {relative}")
+    required_absences = dict(failed.get("terminal_absences", {}))
+    if any(
+        failed_receipt.get("terminal_absences", {}).get(key) != value
+        for key, value in required_absences.items()
+    ):
+        raise RuntimeError("failed-attempt terminal-absence receipt drift")
+    actual_terminal_paths = {
+        "materialization_index": failed_root / "materialization_index.json",
+        "calibration_thresholds": failed_root
+        / "calibration"
+        / "thresholds_frozen.json",
+        "result": failed_root / "result.json",
+    }
+    if any(path.exists() for path in actual_terminal_paths.values()):
+        raise RuntimeError("failed-attempt terminal artifact unexpectedly exists")
+    existing_canonical = sorted(
+        str(path.relative_to(OUTPUT_ROOT))
+        for path in canonical_files_before_preflight
+    )
+    if existing_canonical:
+        raise RuntimeError(
+            f"canonical output is not fresh before reexecution: {existing_canonical[:8]}"
+        )
+    value = {
+        "schema": "body_centric_range_prospective_execution_amendment_validation_v1",
+        "amendment_id": amendment["id"],
+        "failed_attempt_root": str(failed_root),
+        "failed_attempt_receipt_path": str(failed_receipt_path),
+        "failed_attempt_receipt_sha256": failed_receipt_sha256,
+        "failed_attempt_manifest_path": str(failed_manifest_path),
+        "failed_attempt_manifest_sha256": failed_manifest_sha256,
+        "failed_attempt_manifest_rows": len(manifest_rows),
+        "failed_attempt_manifest_payload_bytes": sum(
+            int(row["bytes"]) for row in manifest_rows
+        ),
+        "terminal_absences": required_absences,
+        "canonical_output_files_before_preflight": existing_canonical,
+        "canonical_output_fresh": True,
+        "prior_state_shards_reused": False,
+        "pass": True,
+    }
+    value["content_digest"] = content_digest(value)
+    return value
+
+
 def preflight(*, full_shards: bool = True) -> dict[str, Any]:
     if git("status", "--porcelain=v1"):
         raise RuntimeError("preflight requires a clean worktree")
@@ -2607,6 +2937,9 @@ def preflight(*, full_shards: bool = True) -> dict[str, Any]:
     processes = running_scientific_processes()
     if processes:
         raise RuntimeError(f"scientific process already active: {processes}")
+    canonical_files_before_preflight = tuple(
+        path for path in OUTPUT_ROOT.rglob("*") if path.is_file()
+    ) if OUTPUT_ROOT.exists() else ()
     OUTPUT_ROOT.mkdir(parents=True, exist_ok=True)
     workspace_fs = filesystem_receipt(ROOT)
     output_fs = filesystem_receipt(OUTPUT_ROOT)
@@ -2620,6 +2953,10 @@ def preflight(*, full_shards: bool = True) -> dict[str, Any]:
         raise RuntimeError("output filesystem has less than 40 GB free")
     contract = CONTRACT.load_and_validate_contract(TRACKED_CONTRACT)
     schema = CONTRACT.load_and_validate_output_schema(TRACKED_SCHEMA)
+    amendment_validation = validate_prospective_execution_amendment(
+        contract,
+        canonical_files_before_preflight=canonical_files_before_preflight,
+    )
     recovery_lineage = contract["recovery_lineage"]
     for path_key, digest_key in (
         ("final_recovery_receipt", "final_recovery_receipt_sha256"),
@@ -2665,6 +3002,17 @@ def preflight(*, full_shards: bool = True) -> dict[str, Any]:
     environment["content_digest"] = content_digest(environment)
     inputs = validate_frozen_inputs(full_shards=full_shards)
     corpus_context = corpus_adapter.load_corpus_context(ROOT)
+    exact_geometry_audit = (
+        exact_geometry_materialization_corpus_audit(
+            corpus_context, corpus_adapter
+        )
+        if full_shards
+        else {
+            "schema": "body_centric_range_exact_geometry_corpus_audit_v1",
+            "status": "NOT_RUN_QUICK_PREFLIGHT",
+            "pass": False,
+        }
+    )
     boundary_smoke = corpus_context.load_boundary_transforms(corpus_context.state_ids[0])
     if boundary_smoke.current.qpos.shape != (19,) or boundary_smoke.current.contract_geom_transform.shape != (27, 7):
         raise RuntimeError("snapshot boundary import-closure smoke failed")
@@ -2692,6 +3040,8 @@ def preflight(*, full_shards: bool = True) -> dict[str, Any]:
         "source_closure_sha256": sha256_file(TRACKED_CLOSURE),
         "source_freeze_commit": head,
         "inputs": inputs,
+        "exact_geometry_materialization_preflight": exact_geometry_audit,
+        "prospective_execution_amendment_validation": amendment_validation,
         "environment": environment,
         "boundary_snapshot_smoke": {
             "state_id": boundary_smoke.state_id,
@@ -2740,8 +3090,45 @@ def validate_preexecution_receipt() -> dict[str, Any]:
         raise RuntimeError("preexecution contract binding drift")
     if receipt.get("source_closure_sha256") != sha256_file(TRACKED_CLOSURE):
         raise RuntimeError("preexecution source-closure binding drift")
+    amendment_validation = receipt.get(
+        "prospective_execution_amendment_validation", {}
+    )
+    amendment_core = dict(amendment_validation)
+    amendment_digest = amendment_core.pop("content_digest", None)
+    if (
+        amendment_validation.get("pass") is not True
+        or amendment_validation.get("canonical_output_fresh") is not True
+        or amendment_validation.get("prior_state_shards_reused") is not False
+        or amendment_digest != content_digest(amendment_core)
+    ):
+        raise RuntimeError("prospective execution amendment validation drift")
     if int(receipt.get("inputs", {}).get("geometry_shard_hashes_checked", -1)) != EXPECTED["states"]:
         raise RuntimeError("scientific execution requires a full 176-shard preflight")
+    geometry_audit = receipt.get("exact_geometry_materialization_preflight", {})
+    geometry_audit_core = dict(geometry_audit)
+    geometry_audit_digest = geometry_audit_core.pop("content_digest", None)
+    expected_geometry_totals = {
+        "states": EXPECTED["states"],
+        "transitions": EXPECTED["transitions"],
+        "action_representatives": EXPECTED["action_representatives"],
+        "geometry_representatives": EXPECTED["geometry_representatives"],
+        "nonexact_independent_rows": EXPECTED["nonexact_independent_rows"],
+        "affected_states": EXPECTED["geometry_affected_states"],
+        "affected_states_by_role": EXPECTED_GEOMETRY_AFFECTED_ROLE_COUNTS,
+        "exact_reused_pairs": EXPECTED["exact_reused_pairs"],
+    }
+    if (
+        geometry_audit.get("pass") is not True
+        or geometry_audit_digest != content_digest(geometry_audit_core)
+        or any(
+            geometry_audit.get(key) != value
+            for key, value in expected_geometry_totals.items()
+        )
+        or len(geometry_audit.get("records", [])) != EXPECTED["states"]
+    ):
+        raise RuntimeError(
+            "scientific execution requires the complete exact-geometry corpus audit"
+        )
     if git("status", "--porcelain=v1"):
         raise RuntimeError("scientific execution requires a clean worktree")
     if running_scientific_processes():
@@ -2777,12 +3164,23 @@ def _validate_materialization_index_artifacts(
         ("source_closure_sha256", sha256_file(TRACKED_CLOSURE)),
         ("states", EXPECTED["states"]),
         ("transitions", EXPECTED["transitions"]),
+        ("representatives", EXPECTED["action_representatives"]),
+        ("geometry_representatives", EXPECTED["geometry_representatives"]),
     ):
         if index.get(key) != expected:
             raise RuntimeError(f"materialization {key} binding drift")
     records = list(index.get("records", []))
     if [row.get("state_id") for row in records] != list(context.state_ids):
         raise RuntimeError("materialization state-record order/cardinality drift")
+    if (
+        sum(int(row.get("transitions", -1)) for row in records)
+        != int(index["transitions"])
+        or sum(int(row.get("representatives", -1)) for row in records)
+        != int(index["representatives"])
+        or sum(int(row.get("geometry_representatives", -1)) for row in records)
+        != int(index["geometry_representatives"])
+    ):
+        raise RuntimeError("materialization record aggregate drift")
     expected_raw_rows: list[dict[str, Any]] = []
     for record in records:
         receipt = _validate_state_receipt_artifacts(
@@ -2791,6 +3189,7 @@ def _validate_materialization_index_artifacts(
         )
         for key in (
             "scene_id", "family", "role", "transitions", "representatives",
+            "geometry_representatives",
             "shard_path", "shard_sha256", "storage_bytes",
         ):
             if record.get(key) != receipt.get(key):
@@ -2818,6 +3217,13 @@ def _validate_materialization_index_artifacts(
     for row in observed_raw_rows:
         if row["transition_uid"] not in selected_identities:
             raise RuntimeError("raw-audit row is outside the frozen selected subset")
+        if (
+            row.get("source_representative_transition_uid")
+            != row.get("source_geometry_representative_transition_uid")
+            or not row.get("source_action_representative_transition_uid")
+            or not row.get("source_geometry_representative_transition_uid")
+        ):
+            raise RuntimeError("raw-audit representative provenance drift")
         expected_rank = audit_selection_sha256(
             transition_uid=row["transition_uid"],
             role=row["role"],
@@ -2891,6 +3297,7 @@ def materialize() -> dict[str, Any]:
                         "role",
                         "transitions",
                         "representatives",
+                        "geometry_representatives",
                         "shard_path",
                         "shard_sha256",
                         "storage_bytes",
@@ -2963,6 +3370,9 @@ def materialize() -> dict[str, Any]:
             "states": len(records),
             "transitions": sum(int(row["transitions"]) for row in records),
             "representatives": sum(int(row["representatives"]) for row in records),
+            "geometry_representatives": sum(
+                int(row["geometry_representatives"]) for row in records
+            ),
             "conditions": len(CONDITIONS),
             "evidence_modes": len(MODES),
             "physics_steps": EXPECTED["physics_steps"],
@@ -2984,7 +3394,13 @@ def materialize() -> dict[str, Any]:
             "jepa_predictor_opens": 0,
             "g2_opens": 0,
         }
-        if index["states"] != EXPECTED["states"] or index["transitions"] != EXPECTED["transitions"]:
+        if (
+            index["states"] != EXPECTED["states"]
+            or index["transitions"] != EXPECTED["transitions"]
+            or index["representatives"] != EXPECTED["action_representatives"]
+            or index["geometry_representatives"]
+            != EXPECTED["geometry_representatives"]
+        ):
             raise RuntimeError("materialization cardinality mismatch")
         index["content_digest"] = content_digest(index)
         atomic_json(existing_path, index)
@@ -3326,6 +3742,25 @@ def persist_row_level_evidence(
             link_names = context.protected_link_names(state_id)
             scene_object_names = context.scene_obbs(state_id).object_names
             with np.load(_state_evidence_path(state_id), allow_pickle=False) as archive:
+                action_representative_transition = np.asarray(
+                    archive["action_representative_transition"], np.int32
+                )
+                geometry_representative_transition = np.asarray(
+                    archive["geometry_representative_transition"], np.int32
+                )
+                if (
+                    action_representative_transition.shape != (len(identities),)
+                    or geometry_representative_transition.shape != (len(identities),)
+                    or not np.array_equal(
+                        action_representative_transition,
+                        np.asarray(
+                            action_copy_map.representative_by_transition, np.int32
+                        ),
+                    )
+                ):
+                    raise RuntimeError(
+                        f"{state_id}: row-ledger representative provenance drift"
+                    )
                 for condition_index, condition_id in enumerate(CONDITIONS):
                     for mode_index, mode_id in enumerate(MODES):
                         threshold = float(
@@ -3444,6 +3879,12 @@ def persist_row_level_evidence(
                                 "transition_uid": identity["identity"],
                                 "state_id": state_id,
                                 "transition_index": transition_index,
+                                "action_representative_transition_index": int(
+                                    action_representative_transition[transition_index]
+                                ),
+                                "geometry_representative_transition_index": int(
+                                    geometry_representative_transition[transition_index]
+                                ),
                                 "transition_level": identity["level"],
                                 "current_action_index": int(identity["current_action_index"]),
                                 "action_index": action_index,
@@ -3494,6 +3935,16 @@ def persist_row_level_evidence(
                                     "transition_uid": identity["identity"],
                                     "state_id": state_id,
                                     "transition_index": transition_index,
+                                    "action_representative_transition_index": int(
+                                        action_representative_transition[
+                                            transition_index
+                                        ]
+                                    ),
+                                    "geometry_representative_transition_index": int(
+                                        geometry_representative_transition[
+                                            transition_index
+                                        ]
+                                    ),
                                     "condition_id": condition_id,
                                     "evidence_mode": mode_id,
                                     "protected_link": link_name,
@@ -4626,6 +5077,9 @@ def evaluate() -> dict[str, Any]:
             "states": materialization["states"],
             "transitions": materialization["transitions"],
             "representatives": materialization["representatives"],
+            "geometry_representatives": materialization[
+                "geometry_representatives"
+            ],
             "physics_steps": materialization["physics_steps"],
             "protected_links": materialization["protected_links"],
             "raw_audit_artifacts": materialization["raw_audit_artifacts"],

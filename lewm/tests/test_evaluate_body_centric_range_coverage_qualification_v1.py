@@ -2,8 +2,36 @@ from __future__ import annotations
 
 import numpy as np
 
+from lewm.safety import body_centric_range_coverage_corpus_v1 as corpus
 from lewm.safety import body_centric_range_coverage_v1 as geometry
 from scripts import evaluate_body_centric_range_coverage_qualification_v1 as evaluator
+
+
+def test_frozen_exact_geometry_preflight_totals() -> None:
+    context = corpus.load_corpus_context(evaluator.ROOT)
+    receipt = evaluator.exact_geometry_materialization_corpus_audit(context, corpus)
+    assert receipt["pass"] is True
+    assert receipt["action_representatives"] == 13_385
+    assert receipt["geometry_representatives"] == 13_584
+    assert receipt["nonexact_independent_rows"] == 199
+    assert receipt["affected_states"] == 81
+    assert receipt["affected_states_by_role"] == {
+        "training": 58,
+        "calibration": 12,
+        "heldout": 11,
+    }
+    assert receipt["exact_reused_pairs"] == 15_886
+
+
+def test_failed_attempt_custody_and_fresh_restart_binding() -> None:
+    receipt = evaluator.validate_prospective_execution_amendment(
+        evaluator.CONTRACT.build_contract(),
+        canonical_files_before_preflight=(),
+    )
+    assert receipt["pass"] is True
+    assert receipt["canonical_output_fresh"] is True
+    assert receipt["prior_state_shards_reused"] is False
+    assert receipt["failed_attempt_manifest_rows"] == 328
 
 
 def test_sparse_evaluator_accepts_canonical_uppercase_environment_hits() -> None:

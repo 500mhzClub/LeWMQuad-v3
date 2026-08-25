@@ -22,8 +22,8 @@ from typing import Any, Mapping
 
 
 EXPERIMENT_ID = "BODY_CENTRIC_RANGE_COVERAGE_QUALIFICATION_V1"
-CONTRACT_SCHEMA_VERSION = "body_centric_range_coverage_qualification_v1.contract.v1"
-OUTPUT_SCHEMA_VERSION = "body_centric_range_coverage_qualification_v1.output.v1"
+CONTRACT_SCHEMA_VERSION = "body_centric_range_coverage_qualification_v1.contract.v2"
+OUTPUT_SCHEMA_VERSION = "body_centric_range_coverage_qualification_v1.output.v2"
 L2_PHASE_NAMESPACE = "BODY_CENTRIC_RANGE_COVERAGE_QUALIFICATION_V1/L2_PHASE_V1"
 
 CONDITION_IDS = (
@@ -176,6 +176,8 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
             "required_keys": [
                 "head", "contract_sha256", "source_closure_sha256", "inputs",
                 "environment", "platform_emitting_housing_smoke",
+                "exact_geometry_materialization_preflight",
+                "prospective_execution_amendment_validation",
                 "workspace_filesystem", "output_filesystem", "pass"
             ],
         },
@@ -195,9 +197,14 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
             "cardinality": 1,
             "required_keys": [
                 "head", "contract_sha256", "source_closure_sha256", "states",
-                "transitions", "representatives", "records", "storage_bytes", "status",
+                "transitions", "representatives", "geometry_representatives",
+                "records", "storage_bytes", "status",
                 "scan_materialization_counts", "materialization_workers",
                 "process_start_method", "numeric_thread_environment"
+            ],
+            "record_required_keys": [
+                "state_id", "transitions", "representatives",
+                "geometry_representatives", "shard_path", "shard_sha256"
             ],
         },
         "state_evidence": {
@@ -205,8 +212,39 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
             "cardinality": "176 NPZ shards and 176 bound state receipts",
             "required_keys": [
                 "state_id", "role", "family", "transitions", "representatives",
+                "geometry_representatives", "current_representatives",
+                "successor_representatives", "geometry_current_representatives",
+                "geometry_successor_representatives", "applied_action_copy_validation",
+                "exact_geometry_materialization_validation", "representative_mappings",
                 "shard_path", "shard_sha256", "contract_sha256", "source_closure_sha256"
             ],
+            "npz_required_arrays": [
+                "representative_transition", "action_representative_transition",
+                "geometry_representative_transition"
+            ],
+            "validation_semantics": {
+                "applied_action_copy_validation": (
+                    "diagnostic only; may be false and never authorizes sensor-evidence reuse"
+                ),
+                "exact_geometry_materialization_validation": (
+                    "must pass before the state shard may be accepted or reused"
+                ),
+            },
+            "representative_array_semantics": {
+                "representative_transition": (
+                    "legacy exact alias of action_representative_transition"
+                ),
+                "action_representative_transition": "DECISION_ACTION_COPY_MAP",
+                "geometry_representative_transition": "EXACT_SENSOR_MATERIALIZATION_MAP",
+            },
+            "scan_receipt_required_keys": [
+                "transition_index", "action_representative_transition_index",
+                "geometry_representative_transition_index", "condition_id",
+                "evidence_mode", "ray_count"
+            ],
+            "scan_transition_index_semantics": (
+                "transition_index is the exact geometry-source transition rendered for this scan"
+            ),
         },
         "result": {
             "relative_path": "result.json",
@@ -231,6 +269,9 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
                 "custody",
                 "result_content_sha256",
             ],
+            "materialisation_count_required_keys": [
+                "transitions", "representatives", "geometry_representatives"
+            ],
         },
         "transition_evidence": {
             "relative_path": "evidence/transition_evidence.jsonl",
@@ -239,6 +280,8 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
                 "transition_uid",
                 "state_id",
                 "transition_index",
+                "action_representative_transition_index",
+                "geometry_representative_transition_index",
                 "transition_level",
                 "current_action_index",
                 "action_index",
@@ -278,6 +321,10 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
             ),
             "required_keys": [
                 "transition_uid",
+                "state_id",
+                "transition_index",
+                "action_representative_transition_index",
+                "geometry_representative_transition_index",
                 "condition_id",
                 "evidence_mode",
                 "protected_link",
@@ -342,6 +389,8 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
                 "family",
                 "transition_kind",
                 "source_representative_transition_uid",
+                "source_action_representative_transition_uid",
+                "source_geometry_representative_transition_uid",
                 "boundary_snapshot_digest",
                 "pattern_identity",
                 "phase_digest_sha256",
@@ -353,6 +402,9 @@ _OUTPUT_SCHEMA_CORE: dict[str, Any] = {
                 "artifact_sha256",
                 "point_or_witness_count",
             ],
+            "source_representative_transition_uid_semantics": (
+                "legacy compatibility alias of source_geometry_representative_transition_uid"
+            ),
         },
         "report": {
             "relative_path": "report.md",
@@ -464,6 +516,47 @@ def _contract_core() -> dict[str, Any]:
             "scientific_execution_gate_receipt": "/home/andrewknowles/recovery/REPOSITORY_BACKUP_SPACE_AND_ENVIRONMENT_RECOVERY_V1/scientific_execution_gate_receipt.json",
             "scientific_execution_gate_receipt_sha256": "64f3c64f262fba4f2370aeb89e0c82ca1c49ecab2b0e0834062c0cbf6f840388",
         },
+        "prospective_execution_amendment": {
+            "id": "EXACT_SENSOR_MATERIALIZATION_MAP_AMENDMENT_V1",
+            "status": "FROZEN_BEFORE_REEXECUTION",
+            "reason": (
+                "the first frozen execution failed closed during materialisation because "
+                "deployable applied-action identity did not imply byte-identical replay geometry"
+            ),
+            "failed_attempt": {
+                "source_freeze_commit": "3ef985d7fcea8c26609fd6cc8a1d5e66507e9c1c",
+                "path": (
+                    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+                    "body_centric_range_coverage_qualification_v1__failed_3ef985d_"
+                    "copy_geometry_assertion"
+                ),
+                "receipt_relative_path": "failed_attempt_receipt.json",
+                "receipt_sha256": (
+                    "277e76da379f7b992ae5b5df27d7cdf88b8f5b56d63720bb765e2074549f51e4"
+                ),
+                "file_manifest_relative_path": "FAILED_ATTEMPT_FILE_MANIFEST.jsonl",
+                "file_manifest_sha256": (
+                    "e6244e5d3284e29ad17a949a93b0d21e4d94e93557d57c3cafcda25feabae0a8"
+                ),
+                "terminal_absences": {
+                    "materialization_index": "ABSENT",
+                    "calibration_thresholds": "ABSENT",
+                    "heldout_metric_evaluation": "NOT_RUN",
+                    "result": "ABSENT",
+                },
+                "scientific_interpretation": (
+                    "no complete materialisation, calibrated threshold, held-out metric, "
+                    "benchmark, classification, or scientific result was produced"
+                ),
+            },
+            "custody": {
+                "prior_namespace_is_immutable_failed-attempt_evidence": True,
+                "prior_state_shards_reusable_after_refreeze": False,
+                "canonical_output_root_remains_unchanged": True,
+                "restart_policy": "fresh preexecution receipt and materialisation from state zero",
+                "prior_freeze_commit_must_not_be_rewritten": True,
+            },
+        },
         "predecessor_bindings": {
             "experiment": "EXPLICIT_PER_LINK_GEOMETRIC_MICRO_STATE_UPPER_BOUND_V1",
             "source_lineage_commit": "10b3a190d506830e6a87e04a0f1c832b92295bd7",
@@ -497,6 +590,82 @@ def _contract_core() -> dict[str, Any]:
             "route_authority": "deterministic H3 route scores",
             "development_heldout_exact_unique_action_h3_progress_m": 4.2499809517354254,
             "mutable_fields": [],
+        },
+        "representative_maps": {
+            "decision_action_copy_map": {
+                "contract_id": "DECISION_ACTION_COPY_MAP",
+                "implementation_type": "AppliedActionCopyMap",
+                "npz_array": "action_representative_transition",
+                "legacy_npz_alias": "representative_transition",
+                "legacy_alias_rule": (
+                    "representative_transition must be byte-identical to "
+                    "action_representative_transition"
+                ),
+                "authority": (
+                    "unique deployable applied-action identity for calibration, two-ply "
+                    "safe-action counting, admission, H3 selection, and route metrics"
+                ),
+                "sensor_reuse_authority": False,
+                "representative_count": 13385,
+                "applied_action_copy_validation": (
+                    "trajectory-equality diagnostic only; it may be false and cannot fail "
+                    "decision identity or authorize sensor reuse"
+                ),
+            },
+            "exact_sensor_materialization_map": {
+                "contract_id": "EXACT_SENSOR_MATERIALIZATION_MAP",
+                "implementation_type": "ExactGeometryMaterializationMap",
+                "npz_array": "geometry_representative_transition",
+                "authority": (
+                    "the only map authorized to reuse rendered scans or copy sensor-derived evidence"
+                ),
+                "exact_array_fields": [
+                    "qpos",
+                    "link_transform",
+                    "geom_transform",
+                    "native_contact",
+                    "exact_contact",
+                    "frozen_contact_label",
+                ],
+                "boundary_requirement": "identical boundary snapshot digest",
+                "equality": "byte-exact array equality and exact digest equality; tolerance is forbidden",
+                "representative_count": 13584,
+                "exact_reused_transition_pairs": 15886,
+                "independently_materialized_nonexact_action_copy_pairs": 199,
+                "nonexact_action_copy_state_count": 81,
+                "nonexact_action_copy_state_role_counts": {
+                    "training": 58,
+                    "internal_calibration": 12,
+                    "development_held_out": 11,
+                },
+                "validation_requirement": (
+                    "exact_geometry_materialization_validation must pass before any state "
+                    "sensor shard is accepted or reused"
+                ),
+            },
+            "cardinality_identity": {
+                "frozen_transition_count": 29470,
+                "decision_action_representatives": 13385,
+                "exact_sensor_materialization_representatives": 13584,
+                "exact_sensor_reused_transition_pairs": 15886,
+                "nonexact_pairs_split_for_independent_materialization": 199,
+            },
+            "row_evidence_rule": (
+                "all 29,470 frozen rows retain their own row identity and bind both the decision-action "
+                "and exact sensor-materialization representative; sensor evidence is sourced only from "
+                "the exact geometry representative"
+            ),
+            "full_corpus_structural_preflight": {
+                "state_count": 176,
+                "timing": "before the first scientific sensor result is calculated",
+                "required_checks": [
+                    "both representative maps are total and self-bound",
+                    "legacy action-map alias is exact",
+                    "every sensor-materialization reuse satisfies every exact field and boundary digest",
+                    "frozen corpus-wide counts equal the prospectively bound totals",
+                ],
+                "failure_policy": "fail closed before materialisation",
+            },
         },
         "roles": {
             "training": {

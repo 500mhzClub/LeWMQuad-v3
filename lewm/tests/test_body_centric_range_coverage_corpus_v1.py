@@ -117,6 +117,109 @@ def test_shard_alignment_and_identical_representative_trajectories(
     assert validation["mismatches"] == []
 
 
+def _geometry_partition_fixture(
+    *, transitions: int = 4
+) -> tuple[corpus.GeometryShard, corpus.AppliedActionCopyMap]:
+    arrays = {
+        "qpos": np.zeros((transitions, 2, 1), np.float32),
+        "link_transform": np.zeros((transitions, 2, 1, 1), np.float32),
+        "geom_transform": np.zeros((transitions, 2, 1, 1), np.float32),
+        "native_contact": np.zeros((transitions, 2), bool),
+        "exact_contact": np.zeros((transitions, 2), bool),
+        "frozen_contact_label": np.zeros(transitions, np.uint8),
+    }
+    shard = corpus.GeometryShard(
+        state_id="synthetic",
+        arrays=arrays,
+        transition_rows=tuple({"transition_index": index} for index in range(transitions)),
+        identity_rows=(),
+        geometry_receipt={},
+    )
+    action_map = corpus.AppliedActionCopyMap(
+        state_id="synthetic",
+        representative_by_transition=(0,) * transitions,
+        copies_by_representative={0: tuple(range(transitions))},
+        current_action_representative={index: 0 for index in range(transitions)},
+        current_representative_transitions=(0,),
+        successor_representative_transitions=(),
+        unique_successor_prefix_actions=(),
+    )
+    return shard, action_map
+
+
+def test_exact_geometry_materialization_splits_micro_difference_and_boundary() -> None:
+    shard, action_map = _geometry_partition_fixture()
+    shard.arrays["qpos"][1, 1, 0] = np.float32(5e-7)
+    boundary_digests = ("same", "same", "different", "same")
+    geometry_map = corpus.build_exact_geometry_materialization_map(
+        shard, action_map, boundary_digests
+    )
+    assert geometry_map.representative_by_transition == (0, 1, 2, 0)
+    assert dict(geometry_map.copies_by_representative) == {
+        0: (0, 3),
+        1: (1,),
+        2: (2,),
+    }
+    assert dict(geometry_map.action_representative_by_geometry_representative) == {
+        0: 0,
+        1: 0,
+        2: 0,
+    }
+    validation = corpus.validate_exact_geometry_materialization_map(
+        shard, action_map, geometry_map, boundary_digests
+    )
+    assert validation["pass"] is True
+    assert validation["action_representatives"] == 1
+    assert validation["geometry_representatives"] == 3
+    assert validation["exact_evidence_copies"] == 1
+    assert validation["split_geometry_representatives"] == [1, 2]
+
+
+@pytest.mark.parametrize("field", corpus.GEOMETRY_MATERIALIZATION_FIELDS)
+def test_each_frozen_geometry_field_is_an_exact_partition_authority(field: str) -> None:
+    shard, action_map = _geometry_partition_fixture(transitions=2)
+    values = shard.arrays[field]
+    if values.dtype == np.bool_ or field == "frozen_contact_label":
+        values.reshape(2, -1)[1, 0] = 1
+    else:
+        values.reshape(2, -1)[1, 0] = np.float32(1e-8)
+    geometry_map = corpus.build_exact_geometry_materialization_map(
+        shard, action_map, ("same", "same")
+    )
+    assert geometry_map.representative_by_transition == (0, 1)
+    assert geometry_map.representative_count == 2
+
+
+def test_failed_calibration_state_preserves_actions_but_splits_geometry(
+    context: corpus.FrozenCorpus,
+) -> None:
+    state = corpus.load_state(context, "wide-cal-0-05")
+    boundary_digests = tuple(
+        (
+            state.boundaries.current.snapshot_digest
+            if row["level"] == "current"
+            else state.boundaries.successors[
+                int(row["current_action_index"])
+            ].snapshot_digest
+        )
+        for row in state.transition_rows
+    )
+    geometry_map = corpus.build_exact_geometry_materialization_map(
+        state.shard, state.action_copy_map, boundary_digests
+    )
+    assert state.action_copy_map.representative_count == 10
+    assert geometry_map.representative_count == 13
+    assert geometry_map.representative_for(8) == 6
+    assert geometry_map.representative_for(7) == 7
+    assert geometry_map.representative_for(9) == 9
+    assert geometry_map.representative_for(11) == 11
+    validation = corpus.validate_exact_geometry_materialization_map(
+        state.shard, state.action_copy_map, geometry_map, boundary_digests
+    )
+    assert validation["pass"] is True
+    assert validation["split_geometry_representatives"] == [7, 9, 11]
+
+
 def test_snapshot_boundaries_are_exact_arrays_and_match_successor_endpoint(
     context: corpus.FrozenCorpus, loaded_state: corpus.LoadedFrozenState
 ) -> None:
