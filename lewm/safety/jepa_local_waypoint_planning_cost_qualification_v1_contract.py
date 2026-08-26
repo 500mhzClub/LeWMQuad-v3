@@ -44,6 +44,10 @@ GPU_CHILD_RECEIPT_ORDER_AMENDMENT_SCHEMA_VERSION = (
     "jepa_local_waypoint_planning_cost_qualification_v1."
     "gpu_child_receipt_order_amendment.v1"
 )
+MARKDOWN_REPORT_ORDER_AMENDMENT_SCHEMA_VERSION = (
+    "jepa_local_waypoint_planning_cost_qualification_v1."
+    "markdown_report_order_amendment.v1"
+)
 
 STARTING_HEAD = "b29eae1929725a4cc26a35d95662b545daee4553"
 STAGE_A_FREEZE_COMMIT = "e9e8c41a327ddbe51c38fa04f05ae1d30266720b"
@@ -180,6 +184,10 @@ TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "gpu_child_receipt_order_amendment_2026-08-26.json"
 )
+TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH = Path(
+    "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
+    "markdown_report_order_amendment_2026-08-26.json"
+)
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "source_closure_2026-08-26.json"
@@ -202,6 +210,9 @@ GOAL_VIEW_CORRECTION_COMMIT = "e81ef67763d1daeff9be6cef32ad031465bc57e8"
 CURRENT_TOKEN_CORRECTION_COMMIT = "131aa118ec77c4ff636b7135950aaf2bc8070742"
 GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT = (
     "700c55482233f48d2ff8d93faf6c69948c0cecb9"
+)
+GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT = (
+    "15c470f2e80430a5d39d6c9067a2405d17e50059"
 )
 GOAL_VIEW_RENDER_SEMANTICS = (
     "VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE"
@@ -345,6 +356,26 @@ FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY: dict[str, Any] = {
     ),
 }
 
+FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".jepa_local_waypoint_planning_cost_qualification_v1."
+    "failed-1787781577870272329-466540"
+)
+FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY: dict[str, Any] = {
+    "record_fields": ["path", "sha256", "bytes"],
+    "record_order": "ascending archive-relative POSIX path",
+    "aggregate_algorithm": (
+        "SHA-256 of compact canonical JSON bytes of the ordered record array, with "
+        "object keys sorted and without terminal LF"
+    ),
+    "record_count": 5737,
+    "total_bytes": 8488751047,
+    "canonical_records_bytes": 937603,
+    "aggregate_sha256": (
+        "9fe33ce48b2cfce82f993f2d4357f1603c03ae9a6b872969e8c45a696577d616"
+    ),
+}
+
 GPU_RECEIPT_SERIALIZATION_POLICY: dict[str, Any] = {
     "classification": "CONSTRUCTION_SITE_PATH_TO_CANONICAL_JSON_STRING",
     "receipt": "receipts/gpu_inference.json",
@@ -457,6 +488,26 @@ GPU_CHILD_RECEIPT_ORDER_POLICY: dict[str, Any] = {
     "exact_per_phase_binding_values_required": True,
     "terminal_validator_only_change": True,
     "canonical_serialization_change": False,
+    "scientific_tensor_cost_metric_gate_or_classification_change": False,
+}
+MARKDOWN_REPORT_ORDER_POLICY: dict[str, Any] = {
+    "classification": "DETERMINISTIC_SORTED_KEY_MARKDOWN_JSON_FRAGMENT",
+    "report": "report.md",
+    "source_field": "diagnostic_flags",
+    "render_expression": (
+        "json.dumps(result['diagnostic_flags'], sort_keys=True)"
+    ),
+    "sort_keys": True,
+    "ensure_ascii": True,
+    "separators": "Python json.dumps defaults",
+    "json_object_member_order_semantic": False,
+    "canonical_result_roundtrip_required": True,
+    "exact_report_byte_regeneration_required": True,
+    "failed_attempt_changed_line_numbers_one_based": [126],
+    "failed_attempt_changed_line_count": 1,
+    "failed_attempt_report_bytes_before_and_after": 16795,
+    "canonical_result_serialization_change": False,
+    "terminal_markdown_renderer_only_change": True,
     "scientific_tensor_cost_metric_gate_or_classification_change": False,
 }
 GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS = (
@@ -1941,6 +1992,253 @@ GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
 }
 
 
+def _markdown_report_order_execution_amendment_core() -> dict[str, Any]:
+    return {
+        "schema": MARKDOWN_REPORT_ORDER_AMENDMENT_SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "date": "2026-08-26",
+        "status": "PROSPECTIVE_BEFORE_FRESH_REEXECUTION",
+        "prior_source_freeze": {
+            "commit": GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT,
+            "contract": {
+                "path": str(TRACKED_CONTRACT_RECEIPT_PATH),
+                "sha256": "8b3f14440997517a5b8881f05b86de5671b32c6bc4d49c85e76c44169fb9afd3",
+                "bytes": 75638,
+                "digest_field": "contract_sha256",
+                "content_digest": "e8e3be46fe9ca717d684c3381dd9837d59490c065d54d05ce991de6c4edf1632",
+            },
+            "output_schema": {
+                "path": str(TRACKED_OUTPUT_SCHEMA_PATH),
+                "sha256": "2268e56f354510dafa1e8597ef81ae73a0243dfe94d024b0366777b6699839ef",
+                "bytes": 70375,
+                "digest_field": "output_schema_sha256",
+                "content_digest": "85aac14be7851debd20bb7cc191a9dc0ef15ab70245f20fa3c81329b50f78035",
+            },
+            "fixture": {
+                "path": str(TRACKED_FIXTURE_PATH),
+                "sha256": "c4f9ee09f6f47a1b1d704e7fa9908101217b2c0937c02b2184dd09eb6cb0bf57",
+                "bytes": 12961,
+                "digest_field": "content_digest",
+                "content_digest": "e875cfbec5348866b6de65bce7b81d6460269abbca32cdf309936ca25e347875",
+            },
+            "goal_view_amendment": {
+                "path": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+                "sha256": "f05aa92c439fced757014043a07df60b31e602d23aec6edf5d8b8921fe5548aa",
+                "bytes": 6599,
+                "digest_field": "content_digest",
+                "content_digest": "a816c4229539ea3966875cb09843b61f2867bb793a1501e96e2c529132da3812",
+            },
+            "current_token_amendment": {
+                "path": str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
+                "sha256": "2ccad35e809cccff52973ccddc6acf0f0a624173d71c0f7c00113d31bf7301cd",
+                "bytes": 11084,
+                "digest_field": "content_digest",
+                "content_digest": "3b426c945ac827a2e1e49cd312cd6d40d8af92b4cdec968afa867b3f51d907db",
+            },
+            "gpu_receipt_serialization_amendment": {
+                "path": str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
+                "sha256": "6970b4f4b238f04d217fbaad776627402a2d7c56e40f83ea2d0bd6d0aca5449d",
+                "bytes": 8678,
+                "digest_field": "content_digest",
+                "content_digest": "75be21487c3f051f0495ab53788c8b43e7e8fe91dfc513f226117ef9085a4def",
+            },
+            "gpu_child_receipt_order_amendment": {
+                "path": str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
+                "sha256": "481bcc88876267261fcff0e794b95330222ba18b32a0d3ada4311d063f20904b",
+                "bytes": 9673,
+                "digest_field": "content_digest",
+                "content_digest": "4c708696bc9e30f26ebecb43fc2ca0350f8e89bef788f5b3d91aafa0bfddce9c",
+            },
+            "source_closure": {
+                "path": str(TRACKED_SOURCE_CLOSURE_PATH),
+                "sha256": "724c58bcde439cdf7c19e60d12cd5b6d3e04fd896794287f63b4d34e99628397",
+                "bytes": 13767,
+                "digest_field": "content_digest",
+                "content_digest": "218f72d220ed896168bd868892c4a6d04bc957d988ac2f53b866ae3852bff67d",
+                "rows": 86,
+            },
+        },
+        "failed_attempt": {
+            "archive_path": str(FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE),
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "schema": "jepa_local_waypoint_planning_cost_failed_attempt_v1",
+                "sha256": "917c54573839ce4f892e69e1435451ce0f4506c1896c83e58a60d7a0623709ab",
+                "bytes": 1193,
+                "content_digest": "1e581bf82b612b97facec7087c08313a7d8a1f943b8d3d40be96ed466ea29d42",
+                "source_freeze_commit": GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT,
+                "phase": "DEEP_PREPUBLICATION_CHECK",
+                "error_type": "QualificationError",
+                "error_message": "terminal Markdown report regeneration drift",
+                "failed_child_execution_receipt": None,
+                "partial_artifacts_reusable": False,
+                "nothing_running": True,
+            },
+            "archive_inventory": copy.deepcopy(
+                FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY
+            ),
+            "artifact_summary": {
+                "materialization": {"files": 344, "bytes": 20306615},
+                "latents": {"files": 5378, "bytes": 8459285178},
+                "goal_views": {"files": 1, "bytes": 110941},
+                "receipts": {"files": 8, "bytes": 1013442},
+                "evidence": {"files": 3, "bytes": 661130},
+                "aggregates": {"files": 1, "bytes": 7281659},
+                "report": {"files": 1, "bytes": 16795},
+                "result": {"files": 1, "bytes": 75287},
+                "total_files": 5737,
+                "total_bytes": 8488751047,
+            },
+            "nonreusable_terminal_artifacts": {
+                "context_reconstruction_index": {
+                    "path": "materialization/context_reconstruction_index.json",
+                    "sha256": "ade1d5ca3376d1c534ee8826db17c89ab92ae9309c018c10ff2bb04fe77e6cb6",
+                    "bytes": 1225908,
+                },
+                "cpu_runtime_input_inventory": {
+                    "path": "materialization/cpu_runtime_input_inventory.json",
+                    "sha256": "75491f24bbb2707f2677c8f7cf976c81f9e45074b0dd644b1d7dd087134d8a25",
+                    "bytes": 143850,
+                },
+                "oracle_admissibility_fanout_index": {
+                    "path": "materialization/oracle_admissibility_fanout_index.json",
+                    "sha256": "523593093f57432eec338483994b2c3dcf5295673bc1a876006a72fcf049be33",
+                    "bytes": 1023766,
+                },
+                "dense_route_replay_input_index": {
+                    "path": "materialization/dense_route_replay_input_index.json",
+                    "sha256": "cbb6e0cdcb2d4615fc5d13cdbfedb7f07dca99db2fc56e561bfe21554f6f95a3",
+                    "bytes": 37235,
+                },
+                "goal_view_index": {
+                    "path": "goal_views/index.json",
+                    "sha256": "de2421d108e009ccd65b2186660ed1cba06ffa13bfbb8e0cdae4a713f223418c",
+                    "bytes": 110941,
+                },
+                "batch_manifest": {
+                    "path": "latents/batch_manifest.json",
+                    "sha256": "865a8211981d7ccff3efe811aedd40c6a907a77fcb407a7cee608bb934432291",
+                    "bytes": 32787,
+                },
+                "tensor_index": {
+                    "path": "latents/tensor_index.json",
+                    "sha256": "de75493b0a62cb495fd83ccae724f1e1ff317c7cfc6f47a45fcf28521e8a0157",
+                    "bytes": 2847399,
+                },
+                "gpu_inference": {
+                    "path": "receipts/gpu_inference.json",
+                    "sha256": "0035c8203aad375aaac5ee83a7038db7b2adca63643cf289f05e39af13e35b59",
+                    "bytes": 8194,
+                },
+                "aggregate_metrics": {
+                    "path": "aggregates/metrics.json",
+                    "sha256": "21fafc431df3c0e199238ca5844174a96471a583e1c138be783013dbd19d646a",
+                    "bytes": 7281659,
+                },
+                "persistence": {
+                    "path": "receipts/persistence.json",
+                    "sha256": "eb296fed1dc3f3419c790df6928be6a8c65c2cc0dcdc2c3a74a831d4d7150fb5",
+                    "bytes": 947791,
+                    "content_digest": "aabbd6248cca2758b3c63f8a9baed22f58a20fd7ff29dde286a938143d94aeb0",
+                },
+                "result": {
+                    "path": "result.json",
+                    "schema": "jepa_local_waypoint_planning_cost_result_v1",
+                    "sha256": "9665c84eb7e96a5f6a9935772515053198aa2395bc2a0c329647b708fe7c199f",
+                    "bytes": 75287,
+                    "result_content_sha256": "6b3b4a4c72fb22b373e145b4a3104aa7a5af22f945bfafec5daf410762e57ba5",
+                },
+                "report": {
+                    "path": "report.md",
+                    "sha256": "5744ebe6d67aaf850d882d7bad7926af877330d622c3324ccdfc1d554730458d",
+                    "bytes": 16795,
+                },
+            },
+            "deterministic_report_regeneration": {
+                "path": "report.md",
+                "sha256": "d0c5f3507254d66712e80dac9adb4bc67cdfee14b52446580a93b5b30bcdae7e",
+                "bytes": 16795,
+                "differing_line_numbers_one_based": [126],
+                "differing_line_count": 1,
+                "all_other_lines_exact": True,
+            },
+            "running_marker_present": False,
+            "failed_running_marker_present": False,
+            "successful_terminal_check_receipt_or_artifact_present": False,
+            "canonical_output_root_absent": True,
+            "hidden_result_persistence_and_report_published_canonically": False,
+            "hidden_result_persistence_and_report_reusable": False,
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment": 0,
+            "prohibition_counters_all_zero": True,
+            "scientific_result_published": False,
+        },
+        "static_diagnosis": {
+            "route_outcome_metric_gate_or_classification_values_read_or_used": 0,
+            "source_file": (
+                "scripts/evaluate_jepa_local_waypoint_planning_cost_qualification_v1.py"
+            ),
+            "source_line_at_prior_commit": 6466,
+            "result_field": "diagnostic_flags",
+            "prior_render_expression": "json.dumps(result['diagnostic_flags'])",
+            "canonical_result_object_keys_sorted": True,
+            "in_memory_classification_insertion_order_differed_from_reload": True,
+            "terminal_phase": "DEEP_PREPUBLICATION_CHECK",
+            "terminal_error": "terminal Markdown report regeneration drift",
+            "finding": (
+                "the Markdown renderer embedded a JSON object without an explicit key "
+                "order; canonical result reload changed only that nonsemantic member "
+                "order, so exact terminal report regeneration failed on line 126"
+            ),
+        },
+        "amended_markdown_rendering_semantics": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_POLICY
+        ),
+        "prohibitions": {
+            "json_object_member_order_as_scientific_semantics": True,
+            "canonical_result_serialization_change": True,
+            "prior_attempt_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": True,
+            "scientific_tensor_cost_metric_gate_or_classification_change": True,
+            "training_checkpoint_or_candidate_change": True,
+            "untouched_g2_stage_b_memory_navigation_routing_or_beacon_capture": True,
+        },
+        "execution_lifecycle": {
+            "retain_all_prior_freeze_and_correction_commits_as_ancestors": True,
+            "new_terminal_markdown_renderer_correction_commit_is_future_source_authority": True,
+            "new_hidden_attempt_namespace": True,
+            "canonical_output_root_must_be_absent": True,
+            "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
+            "automatic_retry": False,
+            "fresh_preflight_required": True,
+            "fresh_complete_execution_required": True,
+            "result_commit_message_remains": (
+                "Evaluate JEPA local waypoint planning cost qualification"
+            ),
+        },
+    }
+
+
+def build_markdown_report_order_execution_amendment() -> dict[str, Any]:
+    return attach_content_digest(_markdown_report_order_execution_amendment_core())
+
+
+def markdown_report_order_execution_amendment_receipt_bytes() -> bytes:
+    return canonical_json_bytes(build_markdown_report_order_execution_amendment()) + b"\n"
+
+
+MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT = (
+    build_markdown_report_order_execution_amendment()
+)
+MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
+    "path": str(TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(
+        markdown_report_order_execution_amendment_receipt_bytes()
+    ).hexdigest(),
+    "bytes": len(markdown_report_order_execution_amendment_receipt_bytes()),
+    "content_digest": MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT["content_digest"],
+}
+
+
 def _self_digest(value: Mapping[str, Any], key: str) -> dict[str, Any]:
     payload = copy.deepcopy(dict(value))
     payload.pop(key, None)
@@ -2366,6 +2664,22 @@ def _contract_core() -> dict[str, Any]:
             ),
             "fresh_execution_only": True,
             "prior_phase_shard_tensor_receipt_or_result_reuse": False,
+        },
+        "markdown_report_order_execution_amendment": {
+            "receipt_binding": copy.deepcopy(
+                MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+            ),
+            "prior_source_freeze_commit": (
+                GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT
+            ),
+            "failed_attempt_archive": str(
+                FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE
+            ),
+            "terminal_markdown_order_policy": copy.deepcopy(
+                MARKDOWN_REPORT_ORDER_POLICY
+            ),
+            "fresh_execution_only": True,
+            "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
         },
         "preexecution_custody": {
             "outcome_barrier": (
@@ -3593,6 +3907,9 @@ def _contract_core() -> dict[str, Any]:
             "gpu_child_receipt_order_amendment": str(
                 TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH
             ),
+            "markdown_report_order_amendment": str(
+                TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH
+            ),
             "source_closure": str(TRACKED_SOURCE_CLOSURE_PATH),
             "result": str(TRACKED_RESULT_PATH),
             "report": str(TRACKED_REPORT_PATH),
@@ -3624,6 +3941,7 @@ _OUTPUT_FILES = {
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
+            "markdown_report_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "goal_view_static_validation",
@@ -3677,6 +3995,9 @@ _OUTPUT_FILES = {
         "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "markdown_report_order_amendment_binding_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -3686,6 +4007,9 @@ _OUTPUT_FILES = {
         ),
         "gpu_child_receipt_order_policy_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
+        "markdown_report_order_policy_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_POLICY
         ),
         "goal_view_static_validation_exact": copy.deepcopy(
             GOAL_VIEW_STATIC_VALIDATION_SUCCESS
@@ -4666,6 +4990,7 @@ _OUTPUT_FILES = {
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
+            "markdown_report_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "seed",
@@ -4738,6 +5063,9 @@ _OUTPUT_FILES = {
         "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "markdown_report_order_amendment_binding_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -4750,6 +5078,9 @@ _OUTPUT_FILES = {
         ),
         "gpu_child_receipt_order_policy_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
+        "markdown_report_order_policy_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_POLICY
         ),
         "goal_pose_semantics_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
@@ -4807,6 +5138,7 @@ _OUTPUT_FILES = {
             "Current-token authority amendment and BF16 cohort limitation",
             "GPU receipt serialization amendment and failed-attempt custody",
             "GPU child receipt order amendment and failed-attempt custody",
+            "Markdown report order amendment and failed-attempt custody",
             "Historical renderer limitation",
             "Controller execution custody",
             "Population and materialisation counts",
@@ -4835,6 +5167,7 @@ _OUTPUT_FILES = {
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
+            "markdown_report_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "dense_route_replay_input_index_binding",
@@ -4873,6 +5206,9 @@ _OUTPUT_FILES = {
         "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "markdown_report_order_amendment_binding_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -4885,6 +5221,9 @@ _OUTPUT_FILES = {
         ),
         "gpu_child_receipt_order_policy_exact": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
+        "markdown_report_order_policy_exact": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_POLICY
         ),
         "report_integrity": (
             "report.md is included in artifact_manifest with exact path, SHA-256 and bytes"
@@ -4901,6 +5240,9 @@ def _output_schema_core() -> dict[str, Any]:
         "canonical_json": "UTF-8, sorted keys, compact separators, one trailing LF",
         "gpu_child_execution_receipt_mapping_semantics": copy.deepcopy(
             GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
+        "markdown_report_json_fragment_semantics": copy.deepcopy(
+            MARKDOWN_REPORT_ORDER_POLICY
         ),
         "row_ledgers": "gzip JSONL; one canonical compact JSON object plus LF per row",
         "files": copy.deepcopy(_OUTPUT_FILES),
@@ -4953,8 +5295,9 @@ def _output_schema_core() -> dict[str, Any]:
             "partial_run": (
                 "archive the complete untouched hidden attempt namespace with a "
                 "self-digesting failure receipt; a later attempt starts from a new empty "
-                "hidden namespace and reuses no scientific phase or shard; partial phase "
-                "evidence is never resumed or copied into the canonical output"
+                "hidden namespace and reuses no phase, shard, tensor, receipt, aggregate, "
+                "result or report; partial evidence is never resumed or copied into the "
+                "canonical output"
             ),
             "bound_prior_failed_attempt": {
                 "original_freeze_commit": ORIGINAL_FREEZE_COMMIT,
@@ -4987,6 +5330,18 @@ def _output_schema_core() -> dict[str, Any]:
                 ),
                 "inventory": copy.deepcopy(
                     FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY
+                ),
+                "reuse": False,
+            },
+            "bound_markdown_report_order_failed_attempt": {
+                "source_freeze_commit": (
+                    GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT
+                ),
+                "archive_path": str(
+                    FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE
+                ),
+                "inventory": copy.deepcopy(
+                    FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY
                 ),
                 "reuse": False,
             },
@@ -5346,6 +5701,65 @@ def _run_contract_fixture_checks() -> dict[str, bool]:
         ]
         is False
     )
+    markdown_amendment = MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT
+    markdown_summary = markdown_amendment["failed_attempt"]["artifact_summary"]
+    markdown_groups = (
+        "materialization",
+        "latents",
+        "goal_views",
+        "receipts",
+        "evidence",
+        "aggregates",
+        "report",
+        "result",
+    )
+    checks["markdown_report_order_amendment_is_terminal_only_and_no_reuse"] = (
+        markdown_amendment["status"] == "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        and markdown_amendment["prior_source_freeze"]["commit"]
+        == GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT
+        and markdown_amendment["failed_attempt"][
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        ]
+        is False
+        and markdown_amendment["failed_attempt"][
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        ]
+        == 0
+        and MARKDOWN_REPORT_ORDER_POLICY["terminal_markdown_renderer_only_change"]
+        is True
+        and MARKDOWN_REPORT_ORDER_POLICY[
+            "scientific_tensor_cost_metric_gate_or_classification_change"
+        ]
+        is False
+    )
+    checks["markdown_report_order_failed_archive_partition"] = (
+        sum(markdown_summary[group]["files"] for group in markdown_groups)
+        == markdown_summary["total_files"]
+        == FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY["record_count"]
+        == 5737
+        and sum(markdown_summary[group]["bytes"] for group in markdown_groups)
+        == markdown_summary["total_bytes"]
+        == FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY["total_bytes"]
+    )
+    diagnostic_flags_probe = {
+        "two_step_base_screen_passed_but_full_gate_failed": False,
+        "both_predicted_base_screens_failed": True,
+        "ONE_STEP_BASE_SCREEN_ONLY": False,
+    }
+    canonical_result_probe = json.loads(
+        canonical_json_bytes({"diagnostic_flags": diagnostic_flags_probe})
+    )
+    checks["markdown_json_fragment_order_is_deterministic"] = (
+        json.dumps(diagnostic_flags_probe, sort_keys=True)
+        == json.dumps(canonical_result_probe["diagnostic_flags"], sort_keys=True)
+        and MARKDOWN_REPORT_ORDER_POLICY["sort_keys"] is True
+        and MARKDOWN_REPORT_ORDER_POLICY["json_object_member_order_semantic"]
+        is False
+        and MARKDOWN_REPORT_ORDER_POLICY[
+            "exact_report_byte_regeneration_required"
+        ]
+        is True
+    )
     checks["gpu_child_durable_error_capture"] = (
         set(GPU_CHILD_EXECUTION_RECEIPTS) == {"PREFLIGHT", "MATERIALIZE"}
         and all(
@@ -5574,11 +5988,29 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "bound_gpu_receipt_serialization_failed_attempt_archive": str(
                     FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_ARCHIVE
                 ),
+                "bound_gpu_child_receipt_order_failed_attempt_archive": str(
+                    FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE
+                ),
+                "bound_markdown_report_order_failed_attempt_archive": str(
+                    FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE
+                ),
                 "fresh_hidden_attempt_after_goal_view_amendment": "PASS_REQUIRED",
                 "fresh_hidden_attempt_after_current_token_amendment": "PASS_REQUIRED",
                 "fresh_hidden_attempt_after_gpu_receipt_serialization_amendment": (
                     "PASS_REQUIRED"
                 ),
+                "fresh_hidden_attempt_after_gpu_child_receipt_order_amendment": (
+                    "PASS_REQUIRED"
+                ),
+                "fresh_hidden_attempt_after_markdown_report_order_amendment": (
+                    "PASS_REQUIRED"
+                ),
+            },
+            "terminal_markdown_regeneration": {
+                "policy": copy.deepcopy(MARKDOWN_REPORT_ORDER_POLICY),
+                "in_memory_and_canonical_roundtrip_report_exact": "PASS_REQUIRED",
+                "diagnostic_flags_fragment_key_order": "SORTED",
+                "report_byte_drift": "FAIL_CLOSED",
             },
             "cpu_worker_allocator": {
                 "environment": copy.deepcopy(
@@ -5744,6 +6176,41 @@ def validate_gpu_child_receipt_order_execution_amendment(
     return copy.deepcopy(dict(value))
 
 
+def validate_markdown_report_order_execution_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_content_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        build_markdown_report_order_execution_amendment()
+    ):
+        raise ContractError(
+            "Markdown-report order execution amendment differs from its authority"
+        )
+    failed = value.get("failed_attempt", {})
+    diagnosis = value.get("static_diagnosis", {})
+    policy = value.get("amended_markdown_rendering_semantics", {})
+    if (
+        value.get("status") != "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        or value.get("prior_source_freeze", {}).get("commit")
+        != GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT
+        or failed.get(
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        )
+        is not False
+        or failed.get(
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        )
+        != 0
+        or diagnosis.get(
+            "route_outcome_metric_gate_or_classification_values_read_or_used"
+        )
+        != 0
+        or policy != MARKDOWN_REPORT_ORDER_POLICY
+    ):
+        raise ContractError("Markdown-report order amendment violates custody")
+    return copy.deepcopy(dict(value))
+
+
 def _write_immutable(path: Path, payload: bytes, label: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -5803,6 +6270,16 @@ def write_gpu_child_receipt_order_execution_amendment(
         Path(path),
         gpu_child_receipt_order_execution_amendment_receipt_bytes(),
         "GPU-child receipt order execution amendment",
+    )
+
+
+def write_markdown_report_order_execution_amendment(
+    path: str | Path = TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        markdown_report_order_execution_amendment_receipt_bytes(),
+        "Markdown-report order execution amendment",
     )
 
 
@@ -5892,6 +6369,18 @@ def load_and_validate_gpu_child_receipt_order_execution_amendment(
     )
 
 
+def load_and_validate_markdown_report_order_execution_amendment(
+    path: str | Path = TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    return validate_markdown_report_order_execution_amendment(
+        _load_exact(
+            Path(path),
+            markdown_report_order_execution_amendment_receipt_bytes(),
+            "Markdown-report order execution amendment",
+        )
+    )
+
+
 SOURCE_CLOSURE_DEFAULT_PATHS = (
     "lewm/__init__.py",
     "lewm/safety/__init__.py",
@@ -5906,6 +6395,7 @@ SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
     str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
     str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
+    str(TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH),
     str(ENTRYPOINT_PATH),
     "scripts/run_jepa_local_waypoint_planning_cost_inference_v1.py",
     "lewm/safety/jepa_local_waypoint_planning_cost_metrics_v1.py",
@@ -6059,6 +6549,7 @@ __all__ = [
     "CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING",
     "CURRENT_TOKEN_CORRECTION_COMMIT",
     "GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT",
+    "GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT",
     "DENSE_ROUTE_REPLAY_INPUT_BINDINGS",
     "ENTRYPOINT_PATH",
     "EXECUTION_WATCHDOGS",
@@ -6085,6 +6576,8 @@ __all__ = [
     "FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_INVENTORY",
     "FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE",
     "FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY",
+    "FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE",
+    "FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY",
     "GOAL_VIEW_CORRECTION_COMMIT",
     "GPU_CHILD_EXECUTION_RECEIPTS",
     "GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS",
@@ -6101,6 +6594,10 @@ __all__ = [
     "GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT",
     "GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING",
     "GPU_CHILD_RECEIPT_ORDER_POLICY",
+    "MARKDOWN_REPORT_ORDER_AMENDMENT_SCHEMA_VERSION",
+    "MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT",
+    "MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING",
+    "MARKDOWN_REPORT_ORDER_POLICY",
     "HARD_FAMILY_IDS",
     "HISTORICAL_RENDERER_LIMITATIONS",
     "INTERPRETER_BINARY_BINDING",
@@ -6130,6 +6627,7 @@ __all__ = [
     "TRACKED_CURRENT_TOKEN_AMENDMENT_PATH",
     "TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH",
     "TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH",
+    "TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
     "TRACKED_REPORT_PATH",
@@ -6144,6 +6642,7 @@ __all__ = [
     "build_current_token_execution_amendment",
     "build_gpu_receipt_serialization_execution_amendment",
     "build_gpu_child_receipt_order_execution_amendment",
+    "build_markdown_report_order_execution_amendment",
     "build_output_schema",
     "build_source_closure",
     "canonical_json_bytes",
@@ -6158,12 +6657,14 @@ __all__ = [
     "current_token_execution_amendment_receipt_bytes",
     "gpu_receipt_serialization_execution_amendment_receipt_bytes",
     "gpu_child_receipt_order_execution_amendment_receipt_bytes",
+    "markdown_report_order_execution_amendment_receipt_bytes",
     "load_and_validate_contract",
     "load_and_validate_fixture_receipt",
     "load_and_validate_goal_view_execution_amendment",
     "load_and_validate_current_token_execution_amendment",
     "load_and_validate_gpu_receipt_serialization_execution_amendment",
     "load_and_validate_gpu_child_receipt_order_execution_amendment",
+    "load_and_validate_markdown_report_order_execution_amendment",
     "load_and_validate_output_schema",
     "no_family_complete_collapse",
     "output_schema_receipt_bytes",
@@ -6177,6 +6678,7 @@ __all__ = [
     "validate_current_token_execution_amendment",
     "validate_gpu_receipt_serialization_execution_amendment",
     "validate_gpu_child_receipt_order_execution_amendment",
+    "validate_markdown_report_order_execution_amendment",
     "validate_gpu_child_execution_receipt_mapping",
     "validate_output_schema",
     "write_contract",
@@ -6185,6 +6687,7 @@ __all__ = [
     "write_current_token_execution_amendment",
     "write_gpu_receipt_serialization_execution_amendment",
     "write_gpu_child_receipt_order_execution_amendment",
+    "write_markdown_report_order_execution_amendment",
     "write_output_schema",
     "write_source_closure",
 ]

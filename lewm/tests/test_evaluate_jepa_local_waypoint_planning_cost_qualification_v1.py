@@ -56,6 +56,10 @@ def _populate_current_token_schema_fields(
         value["gpu_child_receipt_order_amendment_binding"] = copy.deepcopy(
             spec["gpu_child_receipt_order_amendment_binding_exact"]
         )
+    if "markdown_report_order_amendment_binding_exact" in spec:
+        value["markdown_report_order_amendment_binding"] = copy.deepcopy(
+            spec["markdown_report_order_amendment_binding_exact"]
+        )
     if "gpu_receipt_serialization_preinference_check_exact" in spec:
         value["gpu_receipt_serialization_preinference_check"] = copy.deepcopy(
             spec["gpu_receipt_serialization_preinference_check_exact"]
@@ -321,6 +325,13 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "load_and_validate_markdown_report_order_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT
+        ),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "load_and_validate_fixture_receipt",
         lambda: {"pass": True, "executed_checks": {"synthetic": True}},
     )
@@ -464,7 +475,54 @@ def test_frozen_receipts_fail_closed_when_gpu_child_order_amendment_is_absent(
         E.validate_frozen_receipts()
 
 
-def test_freeze_writes_both_amendments_before_source_closure(
+def test_frozen_receipts_fail_closed_when_markdown_order_amendment_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_goal_view_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_current_token_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_gpu_receipt_serialization_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT
+        ),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_gpu_child_receipt_order_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT
+        ),
+    )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_markdown_report_order_execution_amendment",
+        absent,
+    )
+    with pytest.raises(E.QualificationError, match="Markdown report order.*absent"):
+        E.validate_frozen_receipts()
+
+
+def test_freeze_writes_all_amendments_before_source_closure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     calls: list[str] = []
@@ -497,6 +555,11 @@ def test_freeze_writes_both_amendments_before_source_closure(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "write_markdown_report_order_execution_amendment",
+        lambda *_args: calls.append("markdown_order_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "build_source_closure",
         lambda *_args, **_kwargs: calls.append("build_closure") or {},
     )
@@ -518,6 +581,9 @@ def test_freeze_writes_both_amendments_before_source_closure(
             "gpu_child_receipt_order_execution_amendment": {
                 "content_digest": "o"
             },
+            "markdown_report_order_execution_amendment": {
+                "content_digest": "m"
+            },
             "source_closure": {"content_digest": "s"},
         },
     )
@@ -530,6 +596,7 @@ def test_freeze_writes_both_amendments_before_source_closure(
         "current_amendment",
         "gpu_receipt_amendment",
         "gpu_child_order_amendment",
+        "markdown_order_amendment",
         "build_closure",
         "write_closure",
     ]
@@ -543,6 +610,10 @@ def test_freeze_writes_both_amendments_before_source_closure(
     assert (
         receipt["gpu_child_receipt_order_execution_amendment_content_digest"]
         == "o"
+    )
+    assert (
+        receipt["markdown_report_order_execution_amendment_content_digest"]
+        == "m"
     )
 
 
@@ -585,6 +656,13 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     _populate_current_token_schema_fields(value, spec)
     value = E.attach_digest(value, "result_content_sha256")
     E._validate_schema_value("result", value)
+
+    tampered = copy.deepcopy(value)
+    tampered["markdown_report_order_amendment_binding"]["sha256"] = "0" * 64
+    tampered = E.attach_digest(tampered, "result_content_sha256")
+    with pytest.raises(E.QualificationError, match="Markdown report order.*drift"):
+        E._validate_schema_value("result", tampered)
+
     value["storage"].pop("peak_vram_bytes")
     value = E.attach_digest(value, "result_content_sha256")
     with pytest.raises(E.QualificationError, match="storage lacks required keys"):
@@ -926,6 +1004,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
                 "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
                     E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
                 ),
+                "markdown_report_order_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+                ),
                 "current_token_authority_policy": copy.deepcopy(
                     E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
                 ),
@@ -958,6 +1039,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             ),
             "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
                 E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+            ),
+            "markdown_report_order_amendment_binding": copy.deepcopy(
+                E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
             ),
             "current_token_authority_policy": copy.deepcopy(
                 E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -1546,8 +1630,135 @@ def test_successful_gpu_terminal_check_is_observational(
 def test_report_source_contains_exact_current_token_amendment_section() -> None:
     source = inspect.getsource(E._markdown_report)
     assert "## Current-token authority amendment and BF16 cohort limitation" in source
+    assert "## Markdown report order amendment and failed-attempt custody" in source
+    assert "json.dumps(result['diagnostic_flags'], sort_keys=True)" in source
     assert "144 frames in nine fixed batches of 16" in source
     assert "Current-token re-encodes are zero" in source
+
+
+def test_markdown_report_survives_canonical_json_key_order_roundtrip() -> None:
+    population_aggregate = {
+        "states": 1,
+        "pairwise_accuracy": 0.0,
+        "spearman_rho": 0.0,
+        "normalized_regret": 0.0,
+        "best_route_top3_rate": 0.0,
+        "selected_progress_ratio": 0.0,
+        "selected_immediate_contacts_h1": 0,
+        "selected_nonviable_successors": 0,
+        "selected_stuck": 0,
+    }
+    family_aggregate = {
+        "states": 1,
+        "pairwise_accuracy": 0.0,
+        "normalized_regret": 0.0,
+        "best_route_top3_rate": 0.0,
+        "selected_route_progress_m_sum": 0.0,
+        "complete_family_collapse": False,
+    }
+    aggregates = {
+        "per_role": {
+            source: {
+                "heldout": {
+                    "populations": {
+                        population: {
+                            "aggregate": copy.deepcopy(population_aggregate),
+                            **(
+                                {
+                                    "per_family": {
+                                        family: copy.deepcopy(family_aggregate)
+                                        for family in E.CONTRACT.FAMILY_IDS
+                                    }
+                                }
+                                if population == "ORACLE_VIABILITY_ADMISSIBLE"
+                                else {}
+                            ),
+                        }
+                        for population in E.CONTRACT.POPULATION_IDS
+                    }
+                }
+            }
+            for source in (
+                "TRUE_FUTURE_LATENT_COST",
+                "ONE_STEP_PREDICTED_LATENT_COST",
+                "TWO_STEP_PREDICTED_LATENT_COST",
+                "KINEMATIC_ROUTE_BASELINE",
+                "RANDOM",
+            )
+        },
+        "paired_comparisons": {
+            comparison_id: {
+                "mean_route_progress_gain_m": {
+                    "point": 0.0,
+                    "bootstrap_lower_95": 0.0,
+                    "bootstrap_upper_95": 0.0,
+                },
+                "normalized_regret_reduction": {
+                    "point": 0.0,
+                    "bootstrap_lower_95": 0.0,
+                    "bootstrap_upper_95": 0.0,
+                },
+                "material_improvement": False,
+            }
+            for comparison_id in E.CONTRACT.PAIRED_COMPARISON_IDS
+        },
+        "latent_progress_diagnostics": {
+            source: {
+                "monotonicity": {
+                    "all": {
+                        "current_to_h3_nonincrease_fraction": 0.0,
+                        "overall_monotonic_trajectory_fraction": 0.0,
+                    }
+                }
+            }
+            for source in E.CONTRACT.SOURCE_IDS
+        },
+        "all_candidate_tendency_diagnostics": {
+            source: {
+                "all": {
+                    outcome: {"downranking_accuracy": 0.0}
+                    for outcome in (
+                        "immediate_contact_h1",
+                        "successor_nonviable",
+                        "stuck",
+                        "no_progress",
+                    )
+                }
+            }
+            for source in E.CONTRACT.SOURCE_IDS
+        },
+    }
+    result = {
+        "source_freeze_commit": "f" * 40,
+        "seed": E.CONTRACT.SEED,
+        "materialisation_counts": {"states": 48},
+        "goal_cell_classification_counts": {"valid": 48},
+        "goal_pose_semantics": {"candidate_independent": True},
+        "current_token_execution_amendment_binding": {"path": "current.json"},
+        "current_token_authority_policy": {
+            "device_batch_cohort_limitation": "synthetic"
+        },
+        "gpu_receipt_serialization_amendment_binding": {"path": "gpu.json"},
+        "gpu_child_receipt_order_amendment_binding": {"path": "child.json"},
+        "markdown_report_order_amendment_binding": {"path": "markdown.json"},
+        "historical_renderer_limitations": {"preserved": True},
+        "controller_execution_custody": {"training": 0},
+        "gates": {"true_future": {"pass": False}},
+        "two_step_gate_passed": False,
+        "primary_classification": "SYNTHETIC",
+        "secondary_classifications": ["SYNTHETIC_SECONDARY"],
+        # Deliberately differs from canonical JSON object-member order.
+        "diagnostic_flags": {"z_last": True, "a_first": False},
+        "next_experiment": "SYNTHETIC_NEXT",
+        "runtime_s": {"total": 0.0},
+        "storage": {"bytes": 0},
+    }
+
+    before = E._markdown_report(result, aggregates)
+    roundtripped_result = json.loads(E.canonical_json_bytes(result))
+    roundtripped_aggregates = json.loads(E.canonical_json_bytes(aggregates))
+
+    assert E._markdown_report(roundtripped_result, roundtripped_aggregates) == before
 
 
 def test_successful_watchdog_status_is_exact_and_rejects_partial_resume() -> None:

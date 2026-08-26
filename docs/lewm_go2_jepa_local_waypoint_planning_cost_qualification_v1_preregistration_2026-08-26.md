@@ -265,6 +265,51 @@ correction commit, fresh preflight and entirely new empty hidden attempt are
 required. This amendment is frozen in
 `docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_gpu_child_receipt_order_amendment_2026-08-26.json`.
 
+## Failed fifth attempt and prospective Markdown report-order amendment
+
+The terminal mapping-order correction source freeze
+`15c470f2e80430a5d39d6c9067a2405d17e50059` remains an immutable ancestor.
+Its fresh hidden execution reached the deep prepublication check and failed
+closed with `QualificationError: terminal Markdown report regeneration drift`.
+The untouched attempt is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787781577870272329-466540`.
+Its complete 5,737-file, 8,488,751,047-byte inventory has 937,603 canonical
+record bytes and aggregate SHA-256
+`9fe33ce48b2cfce82f993f2d4357f1603c03ae9a6b872969e8c45a696577d616`.
+The failure receipt is 1,193 bytes, file SHA-256
+`917c54573839ce4f892e69e1435451ce0f4506c1896c83e58a60d7a0623709ab`
+and content digest
+`1e581bf82b612b97facec7087c08313a7d8a1f943b8d3d40be96ed466ea29d42`.
+It records phase `DEEP_PREPUBLICATION_CHECK`, no failed child receipt,
+`partial_artifacts_reusable=false`, `nothing_running=true`, and all eleven
+prohibition counters at zero. `RUNNING.json` and `FAILED_RUNNING_MARKER.json`
+are absent, and the canonical output root is absent.
+
+The exact defect is terminal Markdown serialization only. The report renderer
+embedded `result['diagnostic_flags']` with `json.dumps(...)` but without an
+explicit key order. The in-memory classification mapping insertion order
+differed from the key-sorted canonical-result reload. The archived report and
+its deterministic regeneration are both exactly 16,795 bytes and differ only
+on one-based line 126: archived SHA-256
+`5744ebe6d67aaf850d882d7bad7926af877330d622c3324ccdfc1d554730458d`,
+regenerated SHA-256
+`d0c5f3507254d66712e80dac9adb4bc67cdfee14b52446580a93b5b30bcdae7e`.
+JSON object member order is nonsemantic. The prospective correction renders
+that fragment with
+`json.dumps(result['diagnostic_flags'], sort_keys=True)` and requires exact
+Markdown bytes from both the in-memory result and its canonical-JSON
+roundtrip. Canonical result serialization and every tensor, cost, population,
+metric, gate and classification remain unchanged.
+
+The hidden archive contains complete materialisation, tensor, evidence,
+aggregate, persistence, result and report artifacts, but none was published to
+the canonical output or tracked result paths. No scientific value from those
+artifacts was used to define this amendment. Every archived phase, shard,
+tensor, receipt, aggregate, result and report remains nonreusable. A new
+correction commit, fresh preflight and entirely new empty hidden attempt are
+required. This amendment is frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_markdown_report_order_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -835,9 +880,9 @@ and metadata only in the outer failure archive/receipt.
 
 ## Commit and stop rules
 
-The original freeze and all three prior correction commits remain ancestors
-because they bind the four archived failed attempts. Make one separate
-prospective terminal mapping-order correction commit before a new fresh
+The original freeze and all four prior correction commits remain ancestors
+because they bind the five archived failed attempts. Make one separate
+prospective terminal Markdown report-order correction commit before a new fresh
 preflight; do not amend or orphan any ancestor and do not reuse a prior phase,
 shard, tensor, receipt, aggregate, result or report. The final result commit
 message remains exactly
