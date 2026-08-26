@@ -158,6 +158,12 @@ class QualificationError(RuntimeError):
     """Fail-closed execution or custody error."""
 
 
+GOAL_RENDER_SEMANTICS = CONTRACT.GOAL_VIEW_RENDER_SEMANTICS
+GOAL_POSE_SEMANTICS = CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT[
+    "amended_goal_pose_semantics"
+]
+
+
 def sha256_file(path: str | Path, chunk_size: int = 1 << 22) -> str:
     digest = hashlib.sha256()
     with Path(path).open("rb") as handle:
@@ -362,6 +368,12 @@ def validate_frozen_receipts() -> dict[str, Any]:
     contract = CONTRACT.load_and_validate_contract()
     schema = CONTRACT.load_and_validate_output_schema()
     fixture = CONTRACT.load_and_validate_fixture_receipt()
+    try:
+        amendment = CONTRACT.load_and_validate_goal_view_execution_amendment()
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "frozen goal-view execution amendment is absent or invalid"
+        ) from exc
     checks = fixture.get("executed_checks")
     if fixture.get("pass") is not True or not isinstance(checks, Mapping) or not checks:
         raise QualificationError("frozen fixture receipt did not execute and pass checks")
@@ -389,8 +401,145 @@ def validate_frozen_receipts() -> dict[str, Any]:
         "contract": contract,
         "output_schema": schema,
         "fixture": fixture,
+        "goal_view_execution_amendment": amendment,
         "source_closure": closure,
     }
+
+
+def _git_blob(commit: str, path: str | Path) -> bytes:
+    result = subprocess.run(
+        ["git", "show", f"{commit}:{Path(path).as_posix()}"],
+        cwd=ROOT,
+        check=False,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        raise QualificationError(
+            f"cannot recover original-freeze artifact {path} from {commit}"
+        )
+    return bytes(result.stdout)
+
+
+def validate_goal_view_execution_amendment_custody(
+    source_freeze_commit: str,
+    *,
+    require_canonical_output_absent: bool,
+) -> dict[str, Any]:
+    """Validate the prospective correction and immutable failed-run evidence."""
+
+    try:
+        amendment = CONTRACT.load_and_validate_goal_view_execution_amendment()
+    except CONTRACT.ContractError as exc:
+        raise QualificationError("goal-view execution amendment is invalid") from exc
+    amendment_path = ROOT / CONTRACT.TRACKED_GOAL_VIEW_AMENDMENT_PATH
+    observed_binding = _receipt_binding(amendment_path, digest_key="content_digest")
+    if observed_binding != CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING:
+        raise QualificationError("goal-view execution amendment binding drift")
+
+    original_commit = str(amendment["original_freeze"]["commit"])
+    if original_commit != CONTRACT.ORIGINAL_FREEZE_COMMIT:
+        raise QualificationError("goal-view amendment original-freeze commit drift")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", original_commit, source_freeze_commit],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if ancestry.returncode != 0 or source_freeze_commit == original_commit:
+        raise QualificationError(
+            "goal-view correction commit must be a descendant of the original freeze"
+        )
+    for artifact_id in ("contract", "output_schema", "fixture", "source_closure"):
+        expected = amendment["original_freeze"][artifact_id]
+        raw = _git_blob(original_commit, str(expected["path"]))
+        if (
+            len(raw) != int(expected["bytes"])
+            or hashlib.sha256(raw).hexdigest() != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"goal-view amendment original-freeze {artifact_id} binding drift"
+            )
+        try:
+            prior_value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise QualificationError(
+                f"goal-view amendment original-freeze {artifact_id} is not JSON"
+            ) from exc
+        digest_field = str(expected["digest_field"])
+        if prior_value.get(digest_field) != expected["content_digest"]:
+            raise QualificationError(
+                f"goal-view amendment original-freeze {artifact_id} digest drift"
+            )
+
+    archive = Path(str(amendment["failed_attempt"]["archive_path"]))
+    if archive.resolve() != CONTRACT.FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE.resolve():
+        raise QualificationError("goal-view failed-attempt archive path drift")
+    if not archive.is_dir():
+        raise QualificationError("goal-view failed-attempt archive is absent")
+    archive_rows = [
+        {
+            "path": path.relative_to(archive).as_posix(),
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+        for path in sorted(
+            (candidate for candidate in archive.rglob("*") if candidate.is_file()),
+            key=lambda candidate: candidate.relative_to(archive).as_posix(),
+        )
+    ]
+    archive_payload = canonical_json_bytes(archive_rows)[:-1]
+    observed_inventory = {
+        **{
+            key: value
+            for key, value in CONTRACT.FAILED_GOAL_VIEW_ATTEMPT_INVENTORY.items()
+            if key in ("record_fields", "record_order", "aggregate_algorithm")
+        },
+        "record_count": len(archive_rows),
+        "total_bytes": sum(int(row["bytes"]) for row in archive_rows),
+        "canonical_records_bytes": len(archive_payload),
+        "aggregate_sha256": hashlib.sha256(archive_payload).hexdigest(),
+    }
+    if observed_inventory != CONTRACT.FAILED_GOAL_VIEW_ATTEMPT_INVENTORY:
+        raise QualificationError("goal-view failed-attempt archive inventory drift")
+
+    failure_expected = amendment["failed_attempt"]["failure_receipt"]
+    failure_path = archive / str(failure_expected["path"])
+    if (
+        not failure_path.is_file()
+        or failure_path.stat().st_size != int(failure_expected["bytes"])
+        or sha256_file(failure_path) != failure_expected["sha256"]
+    ):
+        raise QualificationError("goal-view failed-attempt receipt binding drift")
+    failure = load_json(failure_path)
+    validate_digest(failure)
+    if (
+        failure.get("content_digest") != failure_expected["content_digest"]
+        or failure.get("schema")
+        != "jepa_local_waypoint_planning_cost_failed_attempt_v1"
+        or failure.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or failure.get("source_freeze_commit") != original_commit
+        or failure.get("phase") != failure_expected["phase"]
+        or failure.get("error_type") != failure_expected["error_type"]
+        or failure_expected["terminal_error"]
+        not in str(failure.get("error_message", ""))
+        or failure.get("partial_artifacts_reusable")
+        is not failure_expected["partial_artifacts_reusable"]
+        or failure.get("nothing_running") is not failure_expected["nothing_running"]
+        or failure.get("active_experiment_processes") != []
+        or failure.get("prohibition_counters") != prohibition_counters()
+    ):
+        raise QualificationError("goal-view failed-attempt receipt custody drift")
+    for relative in amendment["failed_attempt"]["terminal_absences"]:
+        if archive.joinpath(str(relative)).exists():
+            raise QualificationError(
+                f"goal-view failed attempt unexpectedly contains {relative}"
+            )
+    if require_canonical_output_absent and OUTPUT_ROOT.exists():
+        raise QualificationError(
+            "canonical output root exists before corrected fresh execution"
+        )
+    return amendment
 
 
 def _validated_interpreter_binary_binding(
@@ -1098,6 +1247,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
     CONTRACT.write_contract(ROOT / CONTRACT.TRACKED_CONTRACT_RECEIPT_PATH)
     CONTRACT.write_output_schema(ROOT / CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH)
     CONTRACT.write_fixture_receipt(ROOT / CONTRACT.TRACKED_FIXTURE_PATH)
+    CONTRACT.write_goal_view_execution_amendment(
+        ROOT / CONTRACT.TRACKED_GOAL_VIEW_AMENDMENT_PATH
+    )
     closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
     CONTRACT.write_source_closure(closure, ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
     frozen = validate_frozen_receipts()
@@ -1106,6 +1258,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
         "contract_sha256": CONTRACT.CONTRACT_SHA256,
         "output_schema_sha256": CONTRACT.OUTPUT_SCHEMA_SHA256,
         "fixture_content_digest": frozen["fixture"]["content_digest"],
+        "goal_view_execution_amendment_content_digest": frozen[
+            "goal_view_execution_amendment"
+        ]["content_digest"],
         "source_closure_content_digest": frozen["source_closure"]["content_digest"],
         "outcome_rows_read": 0,
         "checkpoint_tensors_opened": 0,
@@ -1175,6 +1330,10 @@ def preflight(
     cpu_entrypoint = Path(sys.executable).absolute()
     cpu_interpreter_binding = _validate_cpu_interpreter_entrypoint()
     frozen = validate_frozen_receipts()
+    validate_goal_view_execution_amendment_custody(
+        source_freeze_commit,
+        require_canonical_output_absent=True,
+    )
     inputs = validate_input_hashes()
     if output_root.exists() and any(output_root.iterdir()):
         existing = output_root / PREEXEC_REL
@@ -1211,6 +1370,9 @@ def preflight(
             CPU_RUNTIME_INPUT_INVENTORY_REL, output_root
         )
         inputs["cpu_runtime_input_inventory"] = cpu_runtime_binding
+        goal_view_static_validation, _static_goal_rows = (
+            _static_goal_view_semantics_and_validation()
+        )
         _run_gpu_child(
             [
                 "preflight",
@@ -1375,6 +1537,10 @@ def preflight(
                     ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH,
                     digest_key="content_digest",
                 ),
+                "goal_view_execution_amendment_binding": copy.deepcopy(
+                    CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+                ),
+                "goal_view_static_validation": goal_view_static_validation,
                 "preexecution_custody": {
                     "contract_disclosure": copy.deepcopy(
                         CONTRACT.build_contract()["preexecution_custody"]
@@ -1413,6 +1579,9 @@ def preflight(
                 "hidden_attempt_root": str(output_root),
                 "execution_watchdog_config": copy.deepcopy(
                     CONTRACT.EXECUTION_WATCHDOGS
+                ),
+                "cpu_worker_environment": copy.deepcopy(
+                    CONTRACT.EXECUTION_WATCHDOGS["cpu_worker_environment"]
                 ),
                 "prohibition_counters": prohibition_counters(),
                 "runtime_s": time.time() - started,
@@ -1782,6 +1951,191 @@ def _save_fanout_shard(
     }
 
 
+def _goal_cell_semantics(
+    scene_graph: Any,
+    path_cells: Sequence[int],
+) -> dict[str, Any]:
+    """Validate the frozen three-cell route and classify its view endpoint.
+
+    ``SceneGraph.nav_blocked_cells`` is a *transit* constraint: its own API
+    deliberately permits a blocked cell to be reached as a route endpoint.
+    The local waypoint panel likewise freezes ``cell_center(path[2])`` as a
+    virtual goal-view coordinate.  It is not a command to place the robot or
+    a physical sensor at that cell, so occupancy is persisted diagnostically
+    and is never converted into a different waypoint identity.
+    """
+
+    if len(path_cells) < 3:
+        raise QualificationError("waypoint path has fewer than three cells")
+    cells = [int(value) for value in path_cells[:3]]
+    node_count = int(getattr(scene_graph, "n_nodes", -1))
+    if node_count <= 0 or any(cell < 0 or cell >= node_count for cell in cells):
+        raise QualificationError("waypoint path contains an invalid scene-graph node")
+    centres = [
+        [float(value) for value in scene_graph.cell_center(cell)] for cell in cells
+    ]
+    if any(
+        len(center) != 2 or not all(math.isfinite(value) for value in center)
+        for center in centres
+    ):
+        raise QualificationError("waypoint path has a non-finite cell centre")
+    edge_pairs = [[cells[0], cells[1]], [cells[1], cells[2]]]
+    edges_traversable = [
+        target in set(int(value) for value in scene_graph.neighbors(source))
+        for source, target in edge_pairs
+    ]
+    if edges_traversable != [True, True]:
+        raise QualificationError(
+            "waypoint path consecutive frozen route edges are not traversable"
+        )
+
+    blocked_cells = frozenset(
+        int(value) for value in getattr(scene_graph, "nav_blocked_cells", ())
+    )
+    beacon_cells = frozenset(
+        int(value) for value in getattr(scene_graph, "beacon_cells_set", ())
+    )
+    goal_cell = cells[2]
+    goal_cell_hops = scene_graph.bfs_distance(
+        cells[0], goal_cell, transit_blocked=blocked_cells
+    )
+    if goal_cell_hops is None:
+        raise QualificationError(
+            "waypoint path[2] endpoint is unreachable in the frozen graph"
+        )
+    goal_cell_nav_blocked = goal_cell in blocked_cells
+    goal_cell_is_beacon_endpoint = goal_cell in beacon_cells
+    goal_cell_is_low_clearance = (
+        goal_cell_nav_blocked and not goal_cell_is_beacon_endpoint
+    )
+    if goal_cell_is_beacon_endpoint:
+        classification = "BEACON_ENDPOINT"
+    elif goal_cell_is_low_clearance:
+        classification = "LOW_CLEARANCE_TRANSIT_BLOCKED"
+    else:
+        classification = "UNBLOCKED"
+    return {
+        "path_cells": cells,
+        "path_cell_centers_world_xy": centres,
+        "goal_cell": goal_cell,
+        "goal_path_cell_ids_valid": True,
+        "goal_path_consecutive_edge_pairs": edge_pairs,
+        "goal_path_consecutive_edges_traversable": True,
+        "goal_cell_endpoint_reachable": True,
+        "goal_cell_endpoint_bfs_hops": int(goal_cell_hops),
+        "goal_cell_nav_blocked": goal_cell_nav_blocked,
+        "goal_cell_block_classification": classification,
+        "goal_cell_is_beacon_endpoint": goal_cell_is_beacon_endpoint,
+        "goal_cell_is_low_clearance_transit_blocked": goal_cell_is_low_clearance,
+        "goal_render_semantics": GOAL_RENDER_SEMANTICS,
+        "pass": True,
+    }
+
+
+def _static_goal_view_semantics_and_validation(
+) -> tuple[dict[str, Any], dict[str, dict[str, Any]]]:
+    """Reconstruct the full outcome-free goal domain before workers launch."""
+
+    worlds_root = str(ROOT / "lewm_worlds")
+    if worlds_root not in sys.path:
+        sys.path.insert(0, worlds_root)
+    from lewm_worlds.manifest import parse_scene_manifest_dict
+    from lewm_worlds.scene_graph import SceneGraph
+
+    state_manifest = load_json(STATE_MANIFEST)
+    states = list(state_manifest.get("state_candidates", ()))
+    if len(states) != STATE_COUNT:
+        raise QualificationError("goal-view frozen state-manifest cardinality drift")
+    by_state: dict[str, dict[str, Any]] = {}
+    optional_waypoint_xy_present = 0
+    optional_waypoint_xy_matches = 0
+    optional_waypoint_body_present = 0
+    optional_waypoint_body_matches = 0
+    blocked_state_ids = {"beacon_endpoint": [], "low_clearance_transit_blocked": []}
+    counts = {
+        "states": len(states),
+        "endpoint_reachable": 0,
+        "nav_blocked": 0,
+        "beacon_endpoint": 0,
+        "low_clearance_transit_blocked": 0,
+        "unblocked": 0,
+    }
+    for state in states:
+        state_id = str(state.get("state_id"))
+        if state_id in by_state:
+            raise QualificationError("goal-view frozen state identities are not unique")
+        scene_manifest = load_json(Path(str(state["scene_dir"])) / "manifest.json")
+        semantics = _goal_cell_semantics(
+            SceneGraph(parse_scene_manifest_dict(scene_manifest)),
+            [int(cell) for cell in state.get("waypoint_path_cells", ())],
+        )
+        by_state[state_id] = semantics
+        counts["endpoint_reachable"] += int(
+            semantics["goal_cell_endpoint_reachable"]
+        )
+        counts["nav_blocked"] += int(semantics["goal_cell_nav_blocked"])
+        counts["beacon_endpoint"] += int(
+            semantics["goal_cell_is_beacon_endpoint"]
+        )
+        counts["low_clearance_transit_blocked"] += int(
+            semantics["goal_cell_is_low_clearance_transit_blocked"]
+        )
+        counts["unblocked"] += int(not semantics["goal_cell_nav_blocked"])
+        if semantics["goal_cell_is_beacon_endpoint"]:
+            blocked_state_ids["beacon_endpoint"].append(state_id)
+        elif semantics["goal_cell_is_low_clearance_transit_blocked"]:
+            blocked_state_ids["low_clearance_transit_blocked"].append(state_id)
+
+        centre = semantics["path_cell_centers_world_xy"][2]
+        manifest_xy = state.get("waypoint_xy")
+        if manifest_xy is not None:
+            optional_waypoint_xy_present += 1
+            if list(manifest_xy) != centre:
+                raise QualificationError(
+                    f"{state_id}: optional waypoint_xy disagrees with frozen path[2]"
+                )
+            optional_waypoint_xy_matches += 1
+        manifest_body = state.get("waypoint_body_xy")
+        if manifest_body is not None:
+            optional_waypoint_body_present += 1
+            (start_x, start_y), start_yaw, _start_z = state["start_pose"]
+            dx = centre[0] - float(start_x)
+            dy = centre[1] - float(start_y)
+            cosine = math.cos(float(start_yaw))
+            sine = math.sin(float(start_yaw))
+            expected_body = [
+                cosine * dx + sine * dy,
+                -sine * dx + cosine * dy,
+            ]
+            if list(manifest_body) != expected_body:
+                raise QualificationError(
+                    f"{state_id}: optional waypoint_body_xy disagrees exactly"
+                )
+            optional_waypoint_body_matches += 1
+    for state_ids in blocked_state_ids.values():
+        state_ids.sort(key=lambda value: int(value.rsplit("-", 1)[1]))
+    if counts != CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS or blocked_state_ids != (
+        CONTRACT.GOAL_CELL_BLOCKED_STATE_IDS
+    ):
+        raise QualificationError("goal-view static blocked-cell domain drift")
+    validation = {
+        "states": len(states),
+        "valid_node_ids": len(states),
+        "consecutive_route_edges_traversable": len(states),
+        **{key: counts[key] for key in counts if key != "states"},
+        "blocked_state_ids": blocked_state_ids,
+        "optional_manifest_waypoint_xy_present": optional_waypoint_xy_present,
+        "optional_manifest_waypoint_xy_exact_matches": optional_waypoint_xy_matches,
+        "path1_position_substitutions": 0,
+        "state_drops_or_alternate_goals": 0,
+        "route_outcome_rows_read": 0,
+        "pass": True,
+    }
+    if validation != CONTRACT.GOAL_VIEW_STATIC_VALIDATION_SUCCESS:
+        raise QualificationError("goal-view static preflight validation drift")
+    return validation, by_state
+
+
 def _materialize_state(
     state_index: int,
     *,
@@ -1881,24 +2235,12 @@ def _materialize_state(
         context_paths.append(_artifact_reference(path, output_root))
 
     path_cells = [int(value) for value in state.get("waypoint_path_cells", [])]
-    if len(path_cells) < 3:
-        raise QualificationError(f"{state_id}: waypoint path has fewer than three cells")
-    centres = [
-        [float(v) for v in ctx.scene_graph.cell_center(cell)] for cell in path_cells[:3]
-    ]
-    blocked_cells = frozenset(
-        int(value) for value in getattr(ctx.scene_graph, "nav_blocked_cells", ())
-    )
-    goal_cell = path_cells[2]
-    goal_cell_free = goal_cell not in blocked_cells
-    goal_cell_hops = ctx.scene_graph.bfs_distance(
-        path_cells[0], goal_cell, transit_blocked=blocked_cells
-    )
-    goal_cell_reachable = goal_cell_hops is not None
-    if not goal_cell_free or not goal_cell_reachable:
-        raise QualificationError(
-            f"{state_id}: frozen path[2] goal cell is not free and reachable"
-        )
+    try:
+        goal_cell_semantics = _goal_cell_semantics(ctx.scene_graph, path_cells)
+    except QualificationError as exc:
+        raise QualificationError(f"{state_id}: {exc}") from exc
+    path_cells = goal_cell_semantics["path_cells"]
+    centres = goal_cell_semantics["path_cell_centers_world_xy"]
     waypoint_xy = centres[2]
     if state.get("waypoint_xy") is not None and list(state["waypoint_xy"]) != waypoint_xy:
         raise QualificationError(f"{state_id}: persisted waypoint_xy disagrees exactly")
@@ -2140,14 +2482,25 @@ def _materialize_state(
                 "snapshot_base_z": float(current_position[2]),
                 "waypoint_path_cells": path_cells,
                 "path_cell_centers_world_xy": centres,
-                "goal_cell_preconditions": {
-                    "goal_cell": goal_cell,
-                    "free": goal_cell_free,
-                    "reachable_from_path_start": goal_cell_reachable,
-                    "bfs_hops": int(goal_cell_hops),
-                    "transit_blocked_cell_count": len(blocked_cells),
-                    "pass": True,
-                },
+                "goal_cell_preconditions": goal_cell_semantics,
+                "goal_cell_endpoint_reachable": goal_cell_semantics[
+                    "goal_cell_endpoint_reachable"
+                ],
+                "goal_cell_nav_blocked": goal_cell_semantics[
+                    "goal_cell_nav_blocked"
+                ],
+                "goal_cell_block_classification": goal_cell_semantics[
+                    "goal_cell_block_classification"
+                ],
+                "goal_cell_is_beacon_endpoint": goal_cell_semantics[
+                    "goal_cell_is_beacon_endpoint"
+                ],
+                "goal_cell_is_low_clearance_transit_blocked": goal_cell_semantics[
+                    "goal_cell_is_low_clearance_transit_blocked"
+                ],
+                "goal_render_semantics": goal_cell_semantics[
+                    "goal_render_semantics"
+                ],
                 "goal_pose_world_xyz_rpy": [
                     waypoint_xy[0],
                     waypoint_xy[1],
@@ -2216,6 +2569,7 @@ def _worker_environment() -> dict[str, str]:
             "NUMEXPR_NUM_THREADS": "1",
             "VECLIB_MAXIMUM_THREADS": "1",
             "TI_NUM_THREADS": "1",
+            "MALLOC_ARENA_MAX": "1",
             "PYTHONDONTWRITEBYTECODE": "1",
         }
     )
@@ -2581,6 +2935,20 @@ def _build_materialization_indices(
                 "waypoint_path_cells": goal["waypoint_path_cells"],
                 "path_cell_centers_world_xy": goal["path_cell_centers_world_xy"],
                 "goal_cell_preconditions": goal["goal_cell_preconditions"],
+                "goal_cell_endpoint_reachable": goal[
+                    "goal_cell_endpoint_reachable"
+                ],
+                "goal_cell_nav_blocked": goal["goal_cell_nav_blocked"],
+                "goal_cell_block_classification": goal[
+                    "goal_cell_block_classification"
+                ],
+                "goal_cell_is_beacon_endpoint": goal[
+                    "goal_cell_is_beacon_endpoint"
+                ],
+                "goal_cell_is_low_clearance_transit_blocked": goal[
+                    "goal_cell_is_low_clearance_transit_blocked"
+                ],
+                "goal_render_semantics": goal["goal_render_semantics"],
                 "goal_pose_world_xyz_rpy": goal["goal_pose_world_xyz_rpy"],
                 "branch_snapshot_digest_expected": row["branch_snapshot_digest"],
                 "snapshot_digest_observed": row["replay_snapshot_digest"],
@@ -2696,12 +3064,37 @@ def _build_materialization_indices(
             "failed_state_ids": [],
         }
     )
+    goal_cell_classification_counts = {
+        "states": len(goal_records),
+        "endpoint_reachable": sum(
+            int(row["goal_cell_endpoint_reachable"]) for row in goal_records
+        ),
+        "nav_blocked": sum(int(row["goal_cell_nav_blocked"]) for row in goal_records),
+        "beacon_endpoint": sum(
+            int(row["goal_cell_is_beacon_endpoint"]) for row in goal_records
+        ),
+        "low_clearance_transit_blocked": sum(
+            int(row["goal_cell_is_low_clearance_transit_blocked"])
+            for row in goal_records
+        ),
+        "unblocked": sum(
+            int(not row["goal_cell_nav_blocked"]) for row in goal_records
+        ),
+    }
     goal_index = attach_digest(
         {
             **_phase_core("jepa_local_waypoint_goal_view_index_v1", source_freeze_commit),
             "cpu_runtime_input_inventory_binding": cpu_runtime_binding,
             "historical_renderer_limitations": copy.deepcopy(
                 CONTRACT.HISTORICAL_RENDERER_LIMITATIONS
+            ),
+            "goal_view_execution_amendment_binding": copy.deepcopy(
+                CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+            ),
+            "goal_pose_semantics": copy.deepcopy(GOAL_POSE_SEMANTICS),
+            "goal_cell_classification_counts": goal_cell_classification_counts,
+            "goal_cell_classification_validation": copy.deepcopy(
+                CONTRACT.GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
             ),
             "states": 48,
             "records": goal_records,
@@ -4081,6 +4474,86 @@ def _actual_storage(output_root: Path) -> dict[str, Any]:
     }
 
 
+def _validate_goal_view_semantics(value: Mapping[str, Any]) -> None:
+    """Reconstruct every goal-cell classification from frozen static inputs."""
+
+    if value.get("goal_view_execution_amendment_binding") != (
+        CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+    ):
+        raise QualificationError("goal-view execution-amendment binding drift")
+    if value.get("goal_pose_semantics") != GOAL_POSE_SEMANTICS:
+        raise QualificationError("goal-view pose semantics drift")
+    if value.get("goal_cell_classification_validation") != (
+        CONTRACT.GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+    ):
+        raise QualificationError("goal-view classification validation drift")
+    records = value.get("records")
+    if not isinstance(records, list) or len(records) != STATE_COUNT:
+        raise QualificationError("goal-view record cardinality drift")
+    state_manifest = load_json(STATE_MANIFEST)
+    states = list(state_manifest.get("state_candidates", ()))
+    if len(states) != STATE_COUNT:
+        raise QualificationError("goal-view frozen state-manifest cardinality drift")
+    static_validation, semantics_by_state = (
+        _static_goal_view_semantics_and_validation()
+    )
+    observed_counts = {
+        key: static_validation[key]
+        for key in CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS
+    }
+    for index, (state, record) in enumerate(zip(states, records, strict=True)):
+        state_id = str(state.get("state_id"))
+        if record.get("state_id") != state_id:
+            raise QualificationError(f"goal-view state identity drift at row {index}")
+        semantics = semantics_by_state[state_id]
+        exact_fields = {
+            "waypoint_path_cells": semantics["path_cells"],
+            "path_cell_centers_world_xy": semantics[
+                "path_cell_centers_world_xy"
+            ],
+            "goal_cell_preconditions": semantics,
+            "goal_cell_endpoint_reachable": semantics[
+                "goal_cell_endpoint_reachable"
+            ],
+            "goal_cell_nav_blocked": semantics["goal_cell_nav_blocked"],
+            "goal_cell_block_classification": semantics[
+                "goal_cell_block_classification"
+            ],
+            "goal_cell_is_beacon_endpoint": semantics[
+                "goal_cell_is_beacon_endpoint"
+            ],
+            "goal_cell_is_low_clearance_transit_blocked": semantics[
+                "goal_cell_is_low_clearance_transit_blocked"
+            ],
+            "goal_render_semantics": semantics["goal_render_semantics"],
+        }
+        differing = sorted(
+            key for key, expected in exact_fields.items() if record.get(key) != expected
+        )
+        if differing:
+            raise QualificationError(
+                f"goal-view static route semantics drift for {state_id}: {differing}"
+            )
+        centres = semantics["path_cell_centers_world_xy"]
+        yaw = math.atan2(
+            centres[1][1] - centres[0][1], centres[1][0] - centres[0][0]
+        )
+        expected_pose = [
+            centres[2][0],
+            centres[2][1],
+            float(state["start_pose"][2]),
+            0.0,
+            0.0,
+            yaw,
+        ]
+        if record.get("goal_pose_world_xyz_rpy") != expected_pose:
+            raise QualificationError(f"goal-view deterministic pose drift for {state_id}")
+    if observed_counts != CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS:
+        raise QualificationError("goal-view frozen classification cardinality drift")
+    if value.get("goal_cell_classification_counts") != observed_counts:
+        raise QualificationError("goal-view persisted classification count drift")
+
+
 def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
     spec = CONTRACT.build_output_schema()["files"][file_id]
     missing = sorted(set(spec.get("required_keys", ())) - set(value))
@@ -4093,6 +4566,19 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         "result_content_sha256" if file_id == "result" else "content_digest",
     )
     if file_id == "preexecution_receipt":
+        if value.get("goal_view_execution_amendment_binding") != spec[
+            "goal_view_execution_amendment_binding_exact"
+        ]:
+            raise QualificationError("preexecution goal-view amendment binding drift")
+        static_validation, _semantics = _static_goal_view_semantics_and_validation()
+        if value.get("goal_view_static_validation") != spec[
+            "goal_view_static_validation_exact"
+        ] or value.get("goal_view_static_validation") != static_validation:
+            raise QualificationError("preexecution static goal-view validation drift")
+        if value.get("cpu_worker_environment") != spec[
+            "cpu_worker_environment_exact"
+        ]:
+            raise QualificationError("preexecution CPU worker environment drift")
         custody = value.get("preexecution_custody")
         if not isinstance(custody, Mapping) or set(custody) != set(
             spec["preexecution_custody_required_keys"]
@@ -4136,6 +4622,8 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
                 raise QualificationError(
                     f"{file_id} record {index} lacks required keys {absent}"
                 )
+    if file_id == "goal_view_index":
+        _validate_goal_view_semantics(value)
     if file_id == "cpu_runtime_input_inventory":
         if value.get("prefreeze_scene_byte_inventory_binding") != (
             CONTRACT.SCENE_INPUT_BYTE_INVENTORY_BINDING
@@ -4533,6 +5021,24 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         if value.get("cpu_watchdog_status") != spec["cpu_watchdog_status_exact"]:
             raise QualificationError("CPU fanout watchdog-status drift")
     if file_id == "result":
+        if value.get("goal_view_execution_amendment_binding") != spec[
+            "goal_view_execution_amendment_binding_exact"
+        ]:
+            raise QualificationError("result goal-view amendment binding drift")
+        if value.get("goal_pose_semantics") != spec[
+            "goal_pose_semantics_exact"
+        ]:
+            raise QualificationError("result goal-view pose semantics drift")
+        if value.get("goal_cell_classification_counts") != spec[
+            "goal_cell_classification_counts_exact"
+        ]:
+            raise QualificationError("result goal-cell classification count drift")
+        if value.get("goal_cell_classification_validation") != spec[
+            "goal_cell_classification_validation_exact"
+        ]:
+            raise QualificationError(
+                "result goal-cell classification validation drift"
+            )
         nested = (
             ("materialisation_counts", "materialisation_count_required_keys"),
             ("goal_view_counts", "goal_view_count_required_keys"),
@@ -4571,6 +5077,10 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         ]:
             raise QualificationError("result execution-watchdog status drift")
     if file_id == "persistence_receipt":
+        if value.get("goal_view_execution_amendment_binding") != spec[
+            "goal_view_execution_amendment_binding_exact"
+        ]:
+            raise QualificationError("persistence goal-view amendment binding drift")
         if value.get("execution_watchdog_status") != spec[
             "execution_watchdog_status_exact"
         ]:
@@ -4712,6 +5222,14 @@ def _markdown_report(result: Mapping[str, Any], aggregates: Mapping[str, Any]) -
         "All 48 states use replay boundaries 38/39/40, source-frame offsets -480/-240/0, command-tick offsets -10/-5/0, and one candidate-independent path[2] goal view. Current RGB and raw FP16 token authority reproduce exactly.",
         "",
         "The `FROZEN_STATE_RECONSTRUCTION_REPLAY` invokes the production collector scheduler/RouteTeacher and frozen PPO for exactly 48×40 prefix blocks solely to reproduce the committed post-block-40 state identities. It performs no experimental candidate selection, executes zero JEPA-cost actions, and is not a navigation qualification.",
+        "",
+        "## Goal-view amendment and virtual-pose limitation",
+        "",
+        f"Goal-cell classification: `{json.dumps(result['goal_cell_classification_counts'], sort_keys=True)}`.",
+        "",
+        f"Pose semantics: `{json.dumps(result['goal_pose_semantics'], sort_keys=True)}`.",
+        "",
+        "The exact path[2] cell centre is a candidate-independent virtual counterfactual render pose, not a physically executable robot or sensor pose. Nav-blocked cells remain valid reachable endpoints: 13 are beacon endpoints and one is low-clearance transit-blocked. No path[1] substitution, alternate standoff search, state drop, or prior failed-shard reuse occurred.",
         "",
         "## Historical renderer limitation",
         "",
@@ -4928,6 +5446,9 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
         "output_schema_sha256": CONTRACT.OUTPUT_SCHEMA_SHA256,
         "fixture_sha256": sha256_file(ROOT / CONTRACT.TRACKED_FIXTURE_PATH),
         "source_closure_sha256": sha256_file(ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH),
+        "goal_view_execution_amendment_binding": copy.deepcopy(
+            CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
         "seed": CONTRACT.SEED,
         "materialisation_counts": {
             "states": 48,
@@ -4950,6 +5471,13 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
             "paired_effect_evidence_rows": 32,
         },
         "goal_view_counts": {"states": 48, "views": 48, "failed": 0},
+        "goal_pose_semantics": copy.deepcopy(goal["goal_pose_semantics"]),
+        "goal_cell_classification_counts": copy.deepcopy(
+            goal["goal_cell_classification_counts"]
+        ),
+        "goal_cell_classification_validation": copy.deepcopy(
+            goal["goal_cell_classification_validation"]
+        ),
         "gpu_environment_receipt_binding": _binding(
             GPU_ENVIRONMENT_REL, output_root
         ),
@@ -5091,6 +5619,9 @@ def _build_persistence_receipt(
             "total_bytes": sum(int(row["bytes"]) for row in manifest),
             "row_counts": {"candidate": 1728, "selection": 720, "paired": 32},
             "row_reproduction": dict(row_reproduction),
+            "goal_view_execution_amendment_binding": copy.deepcopy(
+                CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+            ),
             "context_reconstruction_index_binding": _binding(
                 CONTEXT_INDEX_REL, output_root
             ),
@@ -5145,6 +5676,16 @@ def _validate_result_cross_bindings(
         fanout, loaded["gpu_inference_receipt"]
     )
     exact_bindings = {
+        "goal_view_execution_amendment_binding": copy.deepcopy(
+            CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "goal_pose_semantics": copy.deepcopy(goal["goal_pose_semantics"]),
+        "goal_cell_classification_counts": copy.deepcopy(
+            goal["goal_cell_classification_counts"]
+        ),
+        "goal_cell_classification_validation": copy.deepcopy(
+            goal["goal_cell_classification_validation"]
+        ),
         "metrics": _binding(AGGREGATE_REL, output_root),
         "gpu_environment_receipt_binding": _binding(
             GPU_ENVIRONMENT_REL, output_root
@@ -5244,6 +5785,10 @@ def _validate_result_cross_bindings(
         raise QualificationError("result/persistence prohibition custody drift")
     if persistence.get("execution_watchdog_status") != execution_watchdog_status:
         raise QualificationError("persistence execution-watchdog custody drift")
+    if persistence.get("goal_view_execution_amendment_binding") != (
+        CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+    ):
+        raise QualificationError("persistence goal-view amendment custody drift")
     if result.get("head") != result.get("source_freeze_commit"):
         raise QualificationError("result head/source-freeze binding drift")
     if result.get("experiment_id") != CONTRACT.EXPERIMENT_ID:
@@ -5326,6 +5871,10 @@ def check(
     if source_freeze_commit is not None and source_freeze_commit != frozen_commit:
         raise QualificationError("requested source-freeze commit differs from result")
     validate_source_freeze_commit(frozen_commit, require_live_head=False)
+    validate_goal_view_execution_amendment_custody(
+        frozen_commit,
+        require_canonical_output_absent=False,
+    )
     current_input_bindings = validate_input_hashes()
     validate_cpu_runtime_input_inventory(
         frozen_commit,

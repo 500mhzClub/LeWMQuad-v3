@@ -130,6 +130,18 @@ def test_goal_view_is_candidate_independent_and_route_heading_is_exact() -> None
     assert goal["orientation_world_rpy_rad"]["pitch"] == 0.0
     assert goal["candidate_dependent_inputs"] == []
     assert "path[2]" in goal["preconditions"][1]
+    assert "need not be free or transit-safe" in goal["preconditions"][2]
+    assert goal["renderer"]["goal_render_semantics"] == (
+        contract.GOAL_VIEW_RENDER_SEMANTICS
+    )
+    assert goal["renderer"]["physical_executability_claim"] is False
+    assert goal["source_semantic_validation"]["path1_position_substitution"] == (
+        "forbidden"
+    )
+    assert goal["source_semantic_validation"]["nav_blocked_is_diagnostic_not_failure"]
+    assert goal["goal_cell_classification_counts"] == (
+        contract.GOAL_CELL_CLASSIFICATION_COUNTS
+    )
     assert "only 22/48" in goal["manifest_waypoint_fields"]
     assert goal["renderer"]["robot_visibility"].startswith("no-robot")
 
@@ -139,6 +151,70 @@ def test_goal_view_is_candidate_independent_and_route_heading_is_exact() -> None
     )
     with pytest.raises(contract.ContractError, match="identical centres"):
         contract.route_heading_yaw([1.0, 1.0], [1.0, 1.0])
+
+
+def test_goal_cell_static_classification_matches_all_48_frozen_states() -> None:
+    root = Path(__file__).resolve().parents[2]
+    import sys
+
+    sys.path.insert(0, str(root / "lewm_worlds"))
+    from lewm_worlds.manifest import parse_scene_manifest_dict
+    from lewm_worlds.scene_graph import SceneGraph
+
+    manifest = json.loads(
+        (root / ".generated/safe_local_waypoint_purpose_built_v1/state_manifest.json")
+        .read_text(encoding="utf-8")
+    )
+    counts = {
+        "states": 0,
+        "endpoint_reachable": 0,
+        "nav_blocked": 0,
+        "beacon_endpoint": 0,
+        "low_clearance_transit_blocked": 0,
+        "unblocked": 0,
+    }
+    blocked = {"beacon_endpoint": [], "low_clearance_transit_blocked": []}
+    optional_waypoint_fields = 0
+    for state in manifest["state_candidates"]:
+        graph = SceneGraph(
+            parse_scene_manifest_dict(
+                json.loads(
+                    (Path(state["scene_dir"]) / "manifest.json").read_text(
+                        encoding="utf-8"
+                    )
+                )
+            )
+        )
+        path = [int(value) for value in state["waypoint_path_cells"]]
+        assert len(path) >= 3
+        assert all(cell in range(graph.n_nodes) for cell in path[:3])
+        assert path[1] in graph.neighbors(path[0])
+        assert path[2] in graph.neighbors(path[1])
+        reachable = graph.bfs_distance(
+            path[0], path[2], transit_blocked=graph.nav_blocked_cells
+        )
+        assert reachable is not None
+        counts["states"] += 1
+        counts["endpoint_reachable"] += 1
+        if path[2] in graph.beacon_cells_set:
+            classification = "beacon_endpoint"
+        elif path[2] in graph.nav_blocked_cells:
+            classification = "low_clearance_transit_blocked"
+        else:
+            classification = "unblocked"
+        counts[classification] += 1
+        if classification != "unblocked":
+            counts["nav_blocked"] += 1
+            blocked[classification].append(state["state_id"])
+        if state.get("waypoint_xy") is not None:
+            optional_waypoint_fields += 1
+            assert list(state["waypoint_xy"]) == [
+                float(value) for value in graph.cell_center(path[2])
+            ]
+
+    assert counts == contract.GOAL_CELL_CLASSIFICATION_COUNTS
+    assert blocked == contract.GOAL_CELL_BLOCKED_STATE_IDS
+    assert optional_waypoint_fields == 22
 
 
 def test_tokenwise_cosine_cost_is_token_aligned_float64_mean() -> None:
@@ -483,6 +559,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "canonical_output_root",
         "hidden_attempt_root",
         "cpu_runtime_input_inventory_binding",
+        "goal_view_execution_amendment_binding",
     } <= set(files["preexecution_receipt"]["required_keys"])
     preexecution = files["preexecution_receipt"]
     assert preexecution["preexecution_custody_required_keys"] == [
@@ -504,6 +581,58 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "predictor_inference_calls": 0,
         "fixture_pass": True,
     }
+    assert preexecution["goal_view_execution_amendment_binding_exact"] == (
+        contract.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+    )
+    assert preexecution["goal_view_static_validation_exact"] == (
+        contract.GOAL_VIEW_STATIC_VALIDATION_SUCCESS
+    )
+    assert preexecution["cpu_worker_environment_exact"] == {
+        "MALLOC_ARENA_MAX": "1",
+        "workers": 32,
+        "dynamic_worker_fallback": False,
+        "purpose": "allocator fragmentation mitigation only",
+        "scientific_semantics_change": False,
+    }
+    assert preexecution["execution_watchdog_config_exact"][
+        "cpu_worker_environment"
+    ] == preexecution["cpu_worker_environment_exact"]
+    goal_index = files["goal_view_index"]
+    assert goal_index["goal_cell_classification_counts_exact"] == (
+        contract.GOAL_CELL_CLASSIFICATION_COUNTS
+    )
+    assert goal_index["goal_cell_classification_validation_exact"] == (
+        contract.GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+    )
+    assert goal_index["goal_render_semantics_exact"] == (
+        contract.GOAL_VIEW_RENDER_SEMANTICS
+    )
+    for key in (
+        "goal_cell_preconditions",
+        "goal_cell_endpoint_reachable",
+        "goal_cell_nav_blocked",
+        "goal_cell_block_classification",
+        "goal_cell_is_beacon_endpoint",
+        "goal_cell_is_low_clearance_transit_blocked",
+        "goal_render_semantics",
+    ):
+        assert key in goal_index["record_required_keys"]
+    assert goal_index["goal_cell_precondition_required_keys"] == [
+        "path_cells",
+        "path_cell_centers_world_xy",
+        "goal_cell",
+        "goal_path_cell_ids_valid",
+        "goal_path_consecutive_edge_pairs",
+        "goal_path_consecutive_edges_traversable",
+        "goal_cell_endpoint_reachable",
+        "goal_cell_endpoint_bfs_hops",
+        "goal_cell_nav_blocked",
+        "goal_cell_block_classification",
+        "goal_cell_is_beacon_endpoint",
+        "goal_cell_is_low_clearance_transit_blocked",
+        "goal_render_semantics",
+        "pass",
+    ]
     assert files["candidate_evidence"]["path"].endswith(".jsonl.gz")
     assert files["selection_evidence"]["path"].endswith(".jsonl.gz")
     assert files["paired_effect_evidence"]["path"].endswith(".jsonl.gz")
@@ -530,6 +659,10 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "primary_classification" in result_keys
     assert "secondary_classifications" in result_keys
     assert "requirements_custody" in result_keys
+    assert "goal_view_execution_amendment_binding" in result_keys
+    assert "goal_pose_semantics" in result_keys
+    assert "goal_cell_classification_counts" in result_keys
+    assert "goal_cell_classification_validation" in result_keys
     result_schema = files["result"]
     assert result_schema["materialisation_count_required_keys"] == [
         "states",
@@ -602,6 +735,9 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "required_keys"
     ]
     persistence_schema = files["persistence_receipt"]
+    assert "goal_view_execution_amendment_binding" in persistence_schema[
+        "required_keys"
+    ]
     assert "artifact_manifest_exclusions" in persistence_schema["required_keys"]
     assert persistence_schema["artifact_manifest_exclusions_exact"] == [
         "receipts/persistence.json",
@@ -688,18 +824,84 @@ def test_fixture_is_self_digesting_payload_free_and_complete() -> None:
         contract.validate_fixture_receipt(tampered)
 
 
+def test_goal_view_amendment_binds_failed_attempt_and_is_prospective() -> None:
+    root = Path(__file__).resolve().parents[2]
+    value = contract.build_goal_view_execution_amendment()
+    contract.validate_goal_view_execution_amendment(value)
+    binding = contract.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+    tracked = root / binding["path"]
+    assert tracked.read_bytes() == contract.goal_view_execution_amendment_receipt_bytes()
+    assert len(tracked.read_bytes()) == binding["bytes"]
+    assert hashlib.sha256(tracked.read_bytes()).hexdigest() == binding["sha256"]
+    assert value["content_digest"] == binding["content_digest"]
+    assert value["original_freeze"]["commit"] == contract.ORIGINAL_FREEZE_COMMIT
+    assert value["static_diagnosis"]["route_outcome_rows_read_or_used"] == 0
+    assert value["failed_attempt"]["scientific_phase_or_shard_reuse"] is False
+    assert value["failed_attempt"]["scientific_result_published"] is False
+    assert value["failed_attempt"]["aggregate_metrics_or_gates_computed"] is False
+    assert value["failed_attempt"]["gpu_predictor_inference_executed"] is False
+    summary = value["failed_attempt"]["artifact_summary"]
+    assert (
+        summary["worker_logs"]
+        + summary["partial_context_rgb_files"]
+        + summary["preexecution_or_environment_receipts"]
+        + summary["cpu_runtime_input_inventory_receipts"]
+        + summary["failure_or_running_marker_receipts"]
+        == 41
+    )
+
+    for artifact in ("contract", "output_schema", "fixture", "source_closure"):
+        row = value["original_freeze"][artifact]
+        payload = subprocess.run(
+            ["git", "show", f"{contract.ORIGINAL_FREEZE_COMMIT}:{row['path']}"],
+            cwd=root,
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+        assert len(payload) == row["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == row["sha256"]
+
+    archive = Path(value["failed_attempt"]["archive_path"])
+    rows = []
+    for path in sorted(item for item in archive.rglob("*") if item.is_file()):
+        payload = path.read_bytes()
+        rows.append(
+            {
+                "path": path.relative_to(archive).as_posix(),
+                "sha256": hashlib.sha256(payload).hexdigest(),
+                "bytes": len(payload),
+            }
+        )
+    inventory = value["failed_attempt"]["archive_inventory"]
+    canonical = contract.canonical_json_bytes(rows)
+    assert len(rows) == inventory["record_count"] == 41
+    assert sum(row["bytes"] for row in rows) == inventory["total_bytes"]
+    assert len(canonical) == inventory["canonical_records_bytes"]
+    assert hashlib.sha256(canonical).hexdigest() == inventory["aggregate_sha256"]
+    failure = value["failed_attempt"]["failure_receipt"]
+    failure_payload = (archive / failure["path"]).read_bytes()
+    assert len(failure_payload) == failure["bytes"]
+    assert hashlib.sha256(failure_payload).hexdigest() == failure["sha256"]
+    assert json.loads(failure_payload)["content_digest"] == failure["content_digest"]
+
+
 def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     contract_path = tmp_path / "contract.json"
     schema_path = tmp_path / "schema.json"
     fixture_path = tmp_path / "fixture.json"
+    amendment_path = tmp_path / "amendment.json"
     contract.write_contract(contract_path)
     contract.write_output_schema(schema_path)
     contract.write_fixture_receipt(fixture_path)
+    contract.write_goal_view_execution_amendment(amendment_path)
     assert contract.load_and_validate_contract(contract_path) == contract.build_contract()
     assert contract.load_and_validate_output_schema(schema_path) == contract.build_output_schema()
     assert contract.load_and_validate_fixture_receipt(fixture_path) == (
         contract.build_fixture_receipt()
     )
+    assert contract.load_and_validate_goal_view_execution_amendment(
+        amendment_path
+    ) == contract.build_goal_view_execution_amendment()
     assert json.loads(contract_path.read_bytes())["experiment_id"] == contract.EXPERIMENT_ID
     contract_path.write_bytes(b"{}\n")
     with pytest.raises(contract.ContractError, match="refusing to overwrite"):
@@ -716,6 +918,10 @@ def test_static_source_bindings_match_the_clean_starting_tree() -> None:
 def test_cpu_runtime_input_bindings_are_exact_without_deserialising_policy() -> None:
     root = Path(__file__).resolve().parents[2]
     binding = contract.CPU_RUNTIME_INPUT_BINDINGS
+    assert contract.CPU_FOUNDATIONAL_PACKAGE_BINDINGS["torch"]["package_root"] == (
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/"
+        "genesis_render_vulkan/lib/python3.12/site-packages/torch"
+    )
     assert binding["foundational_packages"] == (
         contract.CPU_FOUNDATIONAL_PACKAGE_BINDINGS
     )
@@ -1036,6 +1242,7 @@ def test_source_closure_builder_never_traverses_generated_or_outcomes() -> None:
         "lewm/safety/jepa_local_waypoint_planning_cost_qualification_v1_contract.py"
         in paths
     )
+    assert str(contract.TRACKED_GOAL_VIEW_AMENDMENT_PATH) in paths
     assert not any("route_intent_v2_result" in path for path in paths)
     with pytest.raises(contract.ContractError, match="duplicate"):
         contract.build_source_closure(

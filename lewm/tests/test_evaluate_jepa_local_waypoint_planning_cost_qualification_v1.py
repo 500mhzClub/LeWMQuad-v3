@@ -46,6 +46,84 @@ def test_control_history_fails_closed_on_missing_or_wrong_blocks() -> None:
         E._control_history_from_replay_blocks(bad)
 
 
+class _GoalGraph:
+    n_nodes = 21
+    nav_blocked_cells = frozenset({20})
+    beacon_cells_set = frozenset({20})
+
+    def cell_center(self, cell: int) -> tuple[float, float]:
+        return {
+            12: (-0.8519999980926514, -2.555000066757202),
+            11: (-1.7039999961853027, -2.555000066757202),
+            20: (-1.7039999961853027, -1.7039999961853027),
+        }[cell]
+
+    def neighbors(self, cell: int) -> tuple[int, ...]:
+        return {12: (11,), 11: (12, 20), 20: (11,)}.get(cell, ())
+
+    def bfs_distance(
+        self, start: int, goal: int, *, transit_blocked: frozenset[int]
+    ) -> int | None:
+        assert (start, goal) == (12, 20)
+        assert transit_blocked == self.nav_blocked_cells
+        return 2
+
+
+def test_purpose18_beacon_endpoint_is_reachable_and_not_substituted() -> None:
+    value = E._goal_cell_semantics(_GoalGraph(), [12, 11, 20])
+    assert value["path_cells"] == [12, 11, 20]
+    assert value["goal_cell_endpoint_reachable"] is True
+    assert value["goal_cell_nav_blocked"] is True
+    assert value["goal_cell_block_classification"] == "BEACON_ENDPOINT"
+    assert value["goal_cell_is_beacon_endpoint"] is True
+    assert value["goal_cell_is_low_clearance_transit_blocked"] is False
+    assert value["goal_render_semantics"] == E.CONTRACT.GOAL_VIEW_RENDER_SEMANTICS
+
+
+def test_low_clearance_endpoint_is_allowed_and_disclosed() -> None:
+    graph = _GoalGraph()
+    graph.beacon_cells_set = frozenset()
+    value = E._goal_cell_semantics(graph, [12, 11, 20])
+    assert value["goal_cell_endpoint_reachable"] is True
+    assert value["goal_cell_block_classification"] == (
+        "LOW_CLEARANCE_TRANSIT_BLOCKED"
+    )
+    assert value["goal_cell_is_low_clearance_transit_blocked"] is True
+
+
+def test_goal_cell_semantics_fail_closed_on_invalid_edge_or_unreachable_endpoint() -> None:
+    graph = _GoalGraph()
+    graph.neighbors = lambda cell: {12: (11,), 11: ()}.get(cell, ())
+    with pytest.raises(E.QualificationError, match="edges are not traversable"):
+        E._goal_cell_semantics(graph, [12, 11, 20])
+
+    graph = _GoalGraph()
+    graph.bfs_distance = lambda *_args, **_kwargs: None
+    with pytest.raises(E.QualificationError, match="endpoint is unreachable"):
+        E._goal_cell_semantics(graph, [12, 11, 20])
+    with pytest.raises(E.QualificationError, match="invalid scene-graph node"):
+        E._goal_cell_semantics(graph, [12, 11, 21])
+
+
+def test_static_goal_view_preflight_reproduces_exact_frozen_domain() -> None:
+    validation, semantics = E._static_goal_view_semantics_and_validation()
+    assert validation == E.CONTRACT.GOAL_VIEW_STATIC_VALIDATION_SUCCESS
+    assert set(semantics) == {f"purpose-{index}" for index in range(48)}
+    assert semantics["purpose-18"]["path_cells"] == [12, 11, 20]
+    assert semantics["purpose-18"]["goal_cell_block_classification"] == (
+        "BEACON_ENDPOINT"
+    )
+
+
+def test_cpu_worker_allocator_mitigation_preserves_32_worker_contract() -> None:
+    environment = E._worker_environment()
+    expected = E.CONTRACT.EXECUTION_WATCHDOGS["cpu_worker_environment"]
+    assert environment["MALLOC_ARENA_MAX"] == expected["MALLOC_ARENA_MAX"] == "1"
+    assert expected["workers"] == 32
+    assert expected["dynamic_worker_fallback"] is False
+    assert expected["scientific_semantics_change"] is False
+
+
 def test_process_identity_does_not_match_parent_shell_text() -> None:
     name = "evaluate_jepa_local_waypoint_planning_cost_qualification_v1.py"
     assert not E._argv_is_experiment(["zsh", "-lc", f"python {name} execute"])
@@ -117,6 +195,15 @@ def test_preexecution_schema_rejects_contract_disclosure_tamper() -> None:
     spec = E.CONTRACT.build_output_schema()["files"]["preexecution_receipt"]
     value = {key: None for key in spec["required_keys"] if key != "content_digest"}
     value["schema"] = spec["schema"]
+    value["goal_view_execution_amendment_binding"] = copy.deepcopy(
+        spec["goal_view_execution_amendment_binding_exact"]
+    )
+    value["goal_view_static_validation"] = copy.deepcopy(
+        spec["goal_view_static_validation_exact"]
+    )
+    value["cpu_worker_environment"] = copy.deepcopy(
+        spec["cpu_worker_environment_exact"]
+    )
     value["preexecution_custody"] = {
         "contract_disclosure": copy.deepcopy(
             spec["preexecution_contract_disclosure_exact"]
@@ -164,6 +251,11 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
     monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
     monkeypatch.setattr(
         E.CONTRACT,
+        "load_and_validate_goal_view_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "load_and_validate_fixture_receipt",
         lambda: {"pass": True, "executed_checks": {"synthetic": True}},
     )
@@ -187,6 +279,27 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
         E.validate_frozen_receipts()
 
 
+def test_frozen_receipts_fail_closed_when_goal_view_amendment_is_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT, "load_and_validate_goal_view_execution_amendment", absent
+    )
+    with pytest.raises(E.QualificationError, match="amendment is absent or invalid"):
+        E.validate_frozen_receipts()
+
+
 def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys() -> None:
     spec = E.CONTRACT.build_output_schema()["files"]["result"]
     value = {key: None for key in spec["required_keys"] if key != "result_content_sha256"}
@@ -199,6 +312,18 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     }
     value["runtime_s"] = {key: 0.0 for key in spec["runtime_required_keys"]}
     value["storage"] = {key: 0 for key in spec["storage_required_keys"]}
+    value["goal_view_execution_amendment_binding"] = copy.deepcopy(
+        spec["goal_view_execution_amendment_binding_exact"]
+    )
+    value["goal_pose_semantics"] = copy.deepcopy(
+        spec["goal_pose_semantics_exact"]
+    )
+    value["goal_cell_classification_counts"] = copy.deepcopy(
+        spec["goal_cell_classification_counts_exact"]
+    )
+    value["goal_cell_classification_validation"] = copy.deepcopy(
+        spec["goal_cell_classification_validation_exact"]
+    )
     value["historical_renderer_limitations"] = dict(
         E.CONTRACT.HISTORICAL_RENDERER_LIMITATIONS
     )
@@ -216,6 +341,49 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     value["storage"].pop("peak_vram_bytes")
     value = E.attach_digest(value, "result_content_sha256")
     with pytest.raises(E.QualificationError, match="storage lacks required keys"):
+        E._validate_schema_value("result", value)
+
+
+def test_result_schema_rejects_goal_cell_classification_validation_drift() -> None:
+    spec = E.CONTRACT.build_output_schema()["files"]["result"]
+    value = {key: None for key in spec["required_keys"] if key != "result_content_sha256"}
+    value["schema"] = spec["schema"]
+    value["materialisation_counts"] = {
+        key: 0 for key in spec["materialisation_count_required_keys"]
+    }
+    value["goal_view_counts"] = {
+        key: 0 for key in spec["goal_view_count_required_keys"]
+    }
+    value["runtime_s"] = {key: 0.0 for key in spec["runtime_required_keys"]}
+    value["storage"] = {key: 0 for key in spec["storage_required_keys"]}
+    value["goal_view_execution_amendment_binding"] = copy.deepcopy(
+        spec["goal_view_execution_amendment_binding_exact"]
+    )
+    value["goal_pose_semantics"] = copy.deepcopy(spec["goal_pose_semantics_exact"])
+    value["goal_cell_classification_counts"] = copy.deepcopy(
+        spec["goal_cell_classification_counts_exact"]
+    )
+    value["goal_cell_classification_validation"] = copy.deepcopy(
+        spec["goal_cell_classification_validation_exact"]
+    )
+    value["historical_renderer_limitations"] = copy.deepcopy(
+        E.CONTRACT.HISTORICAL_RENDERER_LIMITATIONS
+    )
+    value["reconstruction_prefix_custody"] = copy.deepcopy(
+        E.CONTRACT.RECONSTRUCTION_PREFIX_CUSTODY
+    )
+    value["controller_execution_custody"] = copy.deepcopy(
+        E.CONTRACT.CONTROLLER_EXECUTION_CUSTODY
+    )
+    value["execution_watchdog_status"] = copy.deepcopy(
+        E.CONTRACT.EXECUTION_WATCHDOG_STATUS_SUCCESS
+    )
+    value = E.attach_digest(value, "result_content_sha256")
+    E._validate_schema_value("result", value)
+
+    value["goal_cell_classification_validation"]["endpoint_reachable"] = 47
+    value = E.attach_digest(value, "result_content_sha256")
+    with pytest.raises(E.QualificationError, match="classification validation"):
         E._validate_schema_value("result", value)
 
 
@@ -361,12 +529,26 @@ def test_result_cross_binding_rejects_contract_digest_drift(
                 "TWO_STEP_PREDICTED": 1728,
             },
         },
-        "goal_view_index": {"states": 48, "records": [{}] * 48, "failed_state_ids": []},
+        "goal_view_index": {
+            "states": 48,
+            "records": [{}] * 48,
+            "failed_state_ids": [],
+            "goal_pose_semantics": copy.deepcopy(E.GOAL_POSE_SEMANTICS),
+            "goal_cell_classification_counts": copy.deepcopy(
+                E.CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS
+            ),
+            "goal_cell_classification_validation": copy.deepcopy(
+                E.CONTRACT.GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+            ),
+        },
         "context_reconstruction_index": {
             "branch_snapshot_authority_validation": {"passed": 48}
         },
         "persistence_receipt": {
             "row_reproduction": reproduction,
+            "goal_view_execution_amendment_binding": copy.deepcopy(
+                E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+            ),
             "prohibition_counters": E.prohibition_counters(),
         },
     }
@@ -384,6 +566,16 @@ def test_result_cross_binding_rejects_contract_digest_drift(
         "seed": E.CONTRACT.SEED,
         "fixture_sha256": E.sha256_file(fixture),
         "source_closure_sha256": E.sha256_file(closure),
+        "goal_view_execution_amendment_binding": copy.deepcopy(
+            E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "goal_pose_semantics": copy.deepcopy(E.GOAL_POSE_SEMANTICS),
+        "goal_cell_classification_counts": copy.deepcopy(
+            E.CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS
+        ),
+        "goal_cell_classification_validation": copy.deepcopy(
+            E.CONTRACT.GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+        ),
         "metrics": {"path": str(E.AGGREGATE_REL), "bound": True},
         "gpu_inference_custody": {"path": str(E.GPU_INFERENCE_REL), "bound": True},
         "gpu_environment_receipt_binding": {
@@ -484,6 +676,9 @@ def test_persistence_manifest_binds_report_and_has_exact_exclusions(
         "result.json",
         "receipts/RUNNING.json",
     ]
+    assert receipt["goal_view_execution_amendment_binding"] == (
+        E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+    )
 
 
 def _install_execute_stubs(

@@ -30,6 +30,9 @@ FIXTURE_SCHEMA_VERSION = "jepa_local_waypoint_planning_cost_qualification_v1.fix
 SOURCE_CLOSURE_SCHEMA_VERSION = (
     "jepa_local_waypoint_planning_cost_qualification_v1.source_closure.v1"
 )
+GOAL_VIEW_AMENDMENT_SCHEMA_VERSION = (
+    "jepa_local_waypoint_planning_cost_qualification_v1.goal_view_amendment.v1"
+)
 
 STARTING_HEAD = "b29eae1929725a4cc26a35d95662b545daee4553"
 STAGE_A_FREEZE_COMMIT = "e9e8c41a327ddbe51c38fa04f05ae1d30266720b"
@@ -150,6 +153,10 @@ TRACKED_FIXTURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "fixture_2026-08-26.json"
 )
+TRACKED_GOAL_VIEW_AMENDMENT_PATH = Path(
+    "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
+    "goal_view_amendment_2026-08-26.json"
+)
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "source_closure_2026-08-26.json"
@@ -165,6 +172,90 @@ TRACKED_REPORT_PATH = Path(
 ENTRYPOINT_PATH = Path(
     "scripts/evaluate_jepa_local_waypoint_planning_cost_qualification_v1.py"
 )
+
+
+ORIGINAL_FREEZE_COMMIT = "184e192f35740a2b300a771097c2c5c8d68ce4f9"
+GOAL_VIEW_RENDER_SEMANTICS = (
+    "VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE"
+)
+GOAL_CELL_BLOCK_CLASSIFICATIONS = (
+    "UNBLOCKED",
+    "BEACON_ENDPOINT",
+    "LOW_CLEARANCE_TRANSIT_BLOCKED",
+)
+GOAL_CELL_CLASSIFICATION_COUNTS: dict[str, int] = {
+    "states": 48,
+    "endpoint_reachable": 48,
+    "nav_blocked": 14,
+    "beacon_endpoint": 13,
+    "low_clearance_transit_blocked": 1,
+    "unblocked": 34,
+}
+GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS: dict[str, Any] = {
+    "valid_node_ids": 48,
+    "consecutive_route_edges_traversable": 48,
+    "endpoint_reachable": 48,
+    "nav_blocked_diagnostic_only": True,
+    "path1_position_substitutions": 0,
+    "state_drops_or_alternate_goals": 0,
+    "fresh_execution_only": True,
+    "pass": True,
+}
+GOAL_CELL_BLOCKED_STATE_IDS: dict[str, list[str]] = {
+    "beacon_endpoint": [
+        "purpose-13",
+        "purpose-14",
+        "purpose-18",
+        "purpose-34",
+        "purpose-36",
+        "purpose-38",
+        "purpose-39",
+        "purpose-40",
+        "purpose-41",
+        "purpose-43",
+        "purpose-45",
+        "purpose-46",
+        "purpose-47",
+    ],
+    "low_clearance_transit_blocked": ["purpose-44"],
+}
+GOAL_VIEW_STATIC_VALIDATION_SUCCESS: dict[str, Any] = {
+    "states": 48,
+    "valid_node_ids": 48,
+    "consecutive_route_edges_traversable": 48,
+    "endpoint_reachable": 48,
+    "nav_blocked": 14,
+    "beacon_endpoint": 13,
+    "low_clearance_transit_blocked": 1,
+    "unblocked": 34,
+    "blocked_state_ids": copy.deepcopy(GOAL_CELL_BLOCKED_STATE_IDS),
+    "optional_manifest_waypoint_xy_present": 22,
+    "optional_manifest_waypoint_xy_exact_matches": 22,
+    "path1_position_substitutions": 0,
+    "state_drops_or_alternate_goals": 0,
+    "route_outcome_rows_read": 0,
+    "pass": True,
+}
+
+FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".jepa_local_waypoint_planning_cost_qualification_v1."
+    "failed-1787772621443348948-337116"
+)
+FAILED_GOAL_VIEW_ATTEMPT_INVENTORY: dict[str, Any] = {
+    "record_fields": ["path", "sha256", "bytes"],
+    "record_order": "ascending archive-relative POSIX path",
+    "aggregate_algorithm": (
+        "SHA-256 of compact canonical JSON bytes of the ordered record array, with "
+        "object keys sorted and without terminal LF"
+    ),
+    "record_count": 41,
+    "total_bytes": 1365155,
+    "canonical_records_bytes": 5594,
+    "aggregate_sha256": (
+        "6442c13416dc1badd811ac4b19a0fd802fad4708c3698c7dcfada44d552469bb"
+    ),
+}
 
 
 FOUNDATIONAL_PACKAGE_CLOSURE_POLICY: dict[str, Any] = {
@@ -580,6 +671,13 @@ CONTROLLER_EXECUTION_CUSTODY: dict[str, Any] = {
 }
 
 EXECUTION_WATCHDOGS: dict[str, Any] = {
+    "cpu_worker_environment": {
+        "MALLOC_ARENA_MAX": "1",
+        "workers": 32,
+        "dynamic_worker_fallback": False,
+        "purpose": "allocator fragmentation mitigation only",
+        "scientific_semantics_change": False,
+    },
     "cpu_worker_no_progress_timeout_s": 3600,
     "cpu_materialization_global_timeout_s": 10800,
     "gpu_preflight_timeout_s": 600,
@@ -691,6 +789,183 @@ def validate_content_digest(value: Mapping[str, Any]) -> dict[str, Any]:
     if canonical_json_sha256(payload) != declared:
         raise ContractError("content_digest mismatch")
     return copy.deepcopy(dict(value))
+
+
+def _goal_view_execution_amendment_core() -> dict[str, Any]:
+    return {
+        "schema": GOAL_VIEW_AMENDMENT_SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "date": "2026-08-26",
+        "status": "PROSPECTIVE_BEFORE_FRESH_REEXECUTION",
+        "original_freeze": {
+            "commit": ORIGINAL_FREEZE_COMMIT,
+            "contract": {
+                "path": str(TRACKED_CONTRACT_RECEIPT_PATH),
+                "sha256": "719544317108e9ae8f93972187a6da9feac4b7f659b3aa03bcc5dcfd76043f42",
+                "bytes": 59563,
+                "digest_field": "contract_sha256",
+                "content_digest": "88b1dc179dc1c7dc7f74cff1c89e1631a81b78aad2a1bcf72398d51d6bd405ae",
+            },
+            "output_schema": {
+                "path": str(TRACKED_OUTPUT_SCHEMA_PATH),
+                "sha256": "e83027a9847bcc364c1e2cf69150e1cfe169a71cdba25fdf88e0d44ab6fa0d28",
+                "bytes": 34798,
+                "digest_field": "output_schema_sha256",
+                "content_digest": "2b2d85bfa21ec5b2d6f136a9e1ba5b798cf39c30736c1033a37276c4ba03b59f",
+            },
+            "fixture": {
+                "path": str(TRACKED_FIXTURE_PATH),
+                "sha256": "90c1d9320377ed88dc94cfdea8de3ce4c7c5ca139c8e0ed992397c0b2230038d",
+                "bytes": 7280,
+                "digest_field": "content_digest",
+                "content_digest": "5e644abc0b538ad857543bcadc995f274b53d3230498d790b4c40f59cb85928a",
+            },
+            "source_closure": {
+                "path": str(TRACKED_SOURCE_CLOSURE_PATH),
+                "sha256": "e72f8545ca5a408ded829cd0503692ee57fcd04a4a0e954aebe9b8691b43b9bc",
+                "bytes": 12927,
+                "digest_field": "content_digest",
+                "content_digest": "2e79c122098b4805e88804aa2cadff9a939515dcd962a050273f8093c59fed6e",
+                "rows": 82,
+            },
+        },
+        "failed_attempt": {
+            "archive_path": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "sha256": "63aad5c1d1a2e8902088cff647465be7c17ef56b4d12705b42ee0135cdd925a0",
+                "bytes": 43448,
+                "content_digest": "fb1b810fff46781243c0d0d36e4d3520789dd045f4f27fa6f353f43da51dbe64",
+                "phase": "MATERIALIZATION",
+                "error_type": "QualificationError",
+                "terminal_error": (
+                    "purpose-18: frozen path[2] goal cell is not free and reachable"
+                ),
+                "partial_artifacts_reusable": False,
+                "nothing_running": True,
+            },
+            "archive_inventory": copy.deepcopy(FAILED_GOAL_VIEW_ATTEMPT_INVENTORY),
+            "artifact_summary": {
+                "worker_logs": 32,
+                "partial_context_rgb_files": 3,
+                "partial_context_rgb_state_ids": ["purpose-18"],
+                "preexecution_or_environment_receipts": 3,
+                "cpu_runtime_input_inventory_receipts": 1,
+                "failure_or_running_marker_receipts": 2,
+            },
+            "terminal_absences": [
+                "materialization/context_reconstruction_index.json",
+                "materialization/dense_route_replay_input_index.json",
+                "materialization/oracle_admissibility_fanout_index.json",
+                "goal_views/index.json",
+                "latents/tensor_index.json",
+                "receipts/gpu_inference.json",
+                "evidence/candidate_evidence.jsonl.gz",
+                "evidence/selection_evidence.jsonl.gz",
+                "evidence/paired_effect_evidence.jsonl.gz",
+                "aggregates/metrics.json",
+                "receipts/persistence.json",
+                "result.json",
+                "report.md",
+            ],
+            "scientific_result_published": False,
+            "aggregate_metrics_or_gates_computed": False,
+            "gpu_predictor_inference_executed": False,
+            "canonical_output_root_absent": True,
+            "scientific_phase_or_shard_reuse": False,
+        },
+        "static_diagnosis": {
+            "sources": [
+                "frozen state manifest",
+                "frozen scene manifests",
+                "SceneGraph endpoint semantics",
+                "purpose-built waypoint collector source",
+                "Route-Intent V2 input source",
+            ],
+            "route_outcome_rows_read_or_used": 0,
+            "checkpoint_tensors_opened": 0,
+            "predictor_inference_calls": 0,
+            "finding": (
+                "the frozen local waypoint is exactly cell_center(waypoint_path_cells[2]); "
+                "a SceneGraph nav-blocked cell can be a reachable route endpoint"
+            ),
+            "goal_cell_classification_counts": copy.deepcopy(
+                GOAL_CELL_CLASSIFICATION_COUNTS
+            ),
+            "blocked_state_ids": copy.deepcopy(GOAL_CELL_BLOCKED_STATE_IDS),
+            "all_optional_manifest_waypoint_xy_fields_match_path2": True,
+            "optional_manifest_waypoint_xy_fields_present": 22,
+        },
+        "amended_goal_pose_semantics": {
+            "position_world_xy": "exact frozen SceneGraph cell_center(waypoint_path_cells[2])",
+            "position_world_z": "exact frozen snapshot base z",
+            "yaw": "atan2 from cell_center(path[0]) to cell_center(path[1])",
+            "roll_rad": 0.0,
+            "pitch_rad": 0.0,
+            "candidate_independent": True,
+            "goal_render_semantics": GOAL_VIEW_RENDER_SEMANTICS,
+            "endpoint_reachability_rule": (
+                "SceneGraph.bfs_distance(path[0], path[2], "
+                "transit_blocked=nav_blocked_cells) is not None; a blocked goal may be "
+                "reached as an endpoint but is never asserted free or transit-safe"
+            ),
+            "block_classification_precedence": (
+                "BEACON_ENDPOINT when path[2] is a beacon cell; otherwise "
+                "LOW_CLEARANCE_TRANSIT_BLOCKED when path[2] is nav-blocked; otherwise UNBLOCKED"
+            ),
+            "block_classification_ids": list(GOAL_CELL_BLOCK_CLASSIFICATIONS),
+            "physical_executability_claim": False,
+            "robot_reachability_or_stopping_claim": False,
+            "physical_sensor_pose_claim": False,
+            "counterfactual_render_only": True,
+            "historical_floor_plane_only_renderer_limitation_preserved": True,
+        },
+        "prohibitions": {
+            "path1_position_substitution": True,
+            "alternate_standoff_or_goal_search": True,
+            "state_drop_or_replacement": True,
+            "candidate_role_label_or_route_outcome_change": True,
+            "outcome_use_for_amendment": True,
+            "partial_attempt_reuse": True,
+            "training_or_checkpoint_change": True,
+            "untouched_g2_or_stage_b_access": True,
+        },
+        "execution_lifecycle": {
+            "commit_strategy": (
+                "retain the original freeze commit as an ancestor because it binds the "
+                "archived failed attempt, then create one separate prospective "
+                "goal-view contract-correction commit before fresh preflight"
+            ),
+            "original_freeze_commit_remains_ancestor": True,
+            "new_correction_commit_is_future_source_authority": True,
+            "result_commit_message_remains": (
+                "Evaluate JEPA local waypoint planning cost qualification"
+            ),
+            "new_hidden_attempt_namespace": True,
+            "canonical_output_root_must_be_absent": True,
+            "prior_state_phase_or_shard_reuse": False,
+            "automatic_retry": False,
+            "fresh_preflight_required": True,
+            "fresh_complete_execution_required": True,
+        },
+    }
+
+
+def build_goal_view_execution_amendment() -> dict[str, Any]:
+    return attach_content_digest(_goal_view_execution_amendment_core())
+
+
+def goal_view_execution_amendment_receipt_bytes() -> bytes:
+    return canonical_json_bytes(build_goal_view_execution_amendment()) + b"\n"
+
+
+GOAL_VIEW_EXECUTION_AMENDMENT = build_goal_view_execution_amendment()
+GOAL_VIEW_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
+    "path": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(goal_view_execution_amendment_receipt_bytes()).hexdigest(),
+    "bytes": len(goal_view_execution_amendment_receipt_bytes()),
+    "content_digest": GOAL_VIEW_EXECUTION_AMENDMENT["content_digest"],
+}
 
 
 def _self_digest(value: Mapping[str, Any], key: str) -> dict[str, Any]:
@@ -1046,6 +1321,28 @@ def _contract_core() -> dict[str, Any]:
             "historical_renderer_limitations": copy.deepcopy(
                 HISTORICAL_RENDERER_LIMITATIONS
             ),
+            "goal_view_render_semantics": GOAL_VIEW_RENDER_SEMANTICS,
+            "goal_view_physical_executability_or_reachability_claim": False,
+        },
+        "goal_view_execution_amendment": {
+            "receipt_binding": copy.deepcopy(GOAL_VIEW_EXECUTION_AMENDMENT_BINDING),
+            "original_freeze_commit": ORIGINAL_FREEZE_COMMIT,
+            "failed_attempt_archive": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
+            "goal_pose_semantics": copy.deepcopy(
+                GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
+            ),
+            "goal_cell_classification_counts": copy.deepcopy(
+                GOAL_CELL_CLASSIFICATION_COUNTS
+            ),
+            "goal_cell_classification_validation_success": copy.deepcopy(
+                GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+            ),
+            "preworker_static_validation_success": copy.deepcopy(
+                GOAL_VIEW_STATIC_VALIDATION_SUCCESS
+            ),
+            "blocked_state_ids": copy.deepcopy(GOAL_CELL_BLOCKED_STATE_IDS),
+            "fresh_execution_only": True,
+            "prior_phase_or_shard_reuse": False,
         },
         "preexecution_custody": {
             "outcome_barrier": (
@@ -1113,6 +1410,8 @@ def _contract_core() -> dict[str, Any]:
                 "outcome_values_used_for_contract_derivation": 0,
                 "untouched_g2_reads": 0,
                 "training_steps": 0,
+                "goal_view_execution_amendment_bound": True,
+                "archived_failed_attempt_reuse": 0,
             },
         },
         "frozen_panel": {
@@ -1480,7 +1779,7 @@ def _contract_core() -> dict[str, Any]:
             "count": "exactly one candidate-independent goal view per frozen state",
             "position_world": {
                 "x_y": (
-                    "deterministic frozen scene-graph cell_center of "
+                    "deterministic frozen SceneGraph cell_center of "
                     "waypoint_path_cells[2]"
                 ),
                 "z": "snapshot base z",
@@ -1509,11 +1808,29 @@ def _contract_core() -> dict[str, Any]:
             ),
             "preconditions": [
                 "waypoint_path_cells has length at least three",
-                "any present manifest waypoint_xy equals the scene-graph free-cell centre of path[2]",
-                "path[2] is free and reachable in the frozen graph",
+                "any present manifest waypoint_xy equals the exact SceneGraph cell centre of path[2]",
+                (
+                    "path[2] is endpoint-reachable from path[0] under frozen SceneGraph "
+                    "nav-blocked endpoint semantics; it need not be free or transit-safe"
+                ),
                 "snapshot start/base z is finite",
                 "render and encoded tokens are finite",
             ],
+            "goal_pose_semantics": copy.deepcopy(
+                GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
+            ),
+            "goal_cell_classification_counts": copy.deepcopy(
+                GOAL_CELL_CLASSIFICATION_COUNTS
+            ),
+            "blocked_state_ids": copy.deepcopy(GOAL_CELL_BLOCKED_STATE_IDS),
+            "source_semantic_validation": {
+                "path2_position_substitution": "forbidden",
+                "path1_position_substitution": "forbidden",
+                "state_drop_or_alternate_goal_search": "forbidden",
+                "endpoint_reachability_required": True,
+                "nav_blocked_is_diagnostic_not_failure": True,
+                "all_48_endpoint_reachable": True,
+            },
             "renderer": {
                 "source": "lewm/oracle/go2_textured_v03_renderer.py",
                 "source_sha256": STATIC_FILE_BINDINGS["renderer"]["sha256"],
@@ -1524,6 +1841,8 @@ def _contract_core() -> dict[str, Any]:
                 "mount": "frozen nominal textured-v03 camera mount",
                 "jitter_retraction_resize": "none",
                 "robot_visibility": "no-robot static view; explicitly not an embodied self-view",
+                "goal_render_semantics": GOAL_VIEW_RENDER_SEMANTICS,
+                "physical_executability_claim": False,
                 "effective_scene_geometry": "FLOOR_PLANE_ONLY",
                 "structural_geometry_omission": (
                     "the exact historical caller passes genesis_scene.json, whose "
@@ -2233,6 +2552,7 @@ def _contract_core() -> dict[str, Any]:
             "contract": str(TRACKED_CONTRACT_RECEIPT_PATH),
             "output_schema": str(TRACKED_OUTPUT_SCHEMA_PATH),
             "fixture": str(TRACKED_FIXTURE_PATH),
+            "goal_view_amendment": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
             "source_closure": str(TRACKED_SOURCE_CLOSURE_PATH),
             "result": str(TRACKED_RESULT_PATH),
             "report": str(TRACKED_REPORT_PATH),
@@ -2260,6 +2580,8 @@ _OUTPUT_FILES = {
             "output_schema",
             "fixture",
             "source_closure",
+            "goal_view_execution_amendment_binding",
+            "goal_view_static_validation",
             "preexecution_custody",
             "panel_bindings",
             "cpu_runtime_input_inventory_binding",
@@ -2270,6 +2592,7 @@ _OUTPUT_FILES = {
             "canonical_output_root",
             "hidden_attempt_root",
             "execution_watchdog_config",
+            "cpu_worker_environment",
             "prohibition_counters",
             "pass",
             "content_digest",
@@ -2297,6 +2620,15 @@ _OUTPUT_FILES = {
             "fixture_pass": True,
         },
         "execution_watchdog_config_exact": copy.deepcopy(EXECUTION_WATCHDOGS),
+        "goal_view_execution_amendment_binding_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "goal_view_static_validation_exact": copy.deepcopy(
+            GOAL_VIEW_STATIC_VALIDATION_SUCCESS
+        ),
+        "cpu_worker_environment_exact": copy.deepcopy(
+            EXECUTION_WATCHDOGS["cpu_worker_environment"]
+        ),
     },
     "environment_receipt": {
         "path": "receipts/environment.json",
@@ -2844,6 +3176,10 @@ _OUTPUT_FILES = {
             *_PHASE_RECEIPT_REQUIRED_KEYS,
             "states",
             "records",
+            "goal_view_execution_amendment_binding",
+            "goal_pose_semantics",
+            "goal_cell_classification_counts",
+            "goal_cell_classification_validation",
             "renderer_sha256",
             "encoder_checkpoint_sha256",
             "candidate_independence_validation",
@@ -2859,6 +3195,13 @@ _OUTPUT_FILES = {
             "snapshot_base_z",
             "waypoint_path_cells",
             "path_cell_centers_world_xy",
+            "goal_cell_preconditions",
+            "goal_cell_endpoint_reachable",
+            "goal_cell_nav_blocked",
+            "goal_cell_block_classification",
+            "goal_cell_is_beacon_endpoint",
+            "goal_cell_is_low_clearance_transit_blocked",
+            "goal_render_semantics",
             "goal_pose_world_xyz_rpy",
             "branch_snapshot_digest_expected",
             "snapshot_digest_observed",
@@ -2872,6 +3215,38 @@ _OUTPUT_FILES = {
             "token_shape",
             "pass",
         ],
+        "goal_view_execution_amendment_binding_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "goal_pose_semantics_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
+        ),
+        "goal_cell_classification_ids": list(GOAL_CELL_BLOCK_CLASSIFICATIONS),
+        "goal_cell_classification_counts_exact": copy.deepcopy(
+            GOAL_CELL_CLASSIFICATION_COUNTS
+        ),
+        "goal_cell_classification_validation_exact": copy.deepcopy(
+            GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+        ),
+        "goal_cell_precondition_required_keys": [
+            "path_cells",
+            "path_cell_centers_world_xy",
+            "goal_cell",
+            "goal_path_cell_ids_valid",
+            "goal_path_consecutive_edge_pairs",
+            "goal_path_consecutive_edges_traversable",
+            "goal_cell_endpoint_reachable",
+            "goal_cell_endpoint_bfs_hops",
+            "goal_cell_nav_blocked",
+            "goal_cell_block_classification",
+            "goal_cell_is_beacon_endpoint",
+            "goal_cell_is_low_clearance_transit_blocked",
+            "goal_render_semantics",
+            "pass",
+        ],
+        "goal_render_semantics_exact": GOAL_VIEW_RENDER_SEMANTICS,
+        "path1_position_substitution": "forbidden",
+        "state_drop_or_alternate_goal_search": "forbidden",
     },
     "candidate_evidence": {
         "path": "evidence/candidate_evidence.jsonl.gz",
@@ -3102,9 +3477,13 @@ _OUTPUT_FILES = {
             "output_schema_sha256",
             "fixture_sha256",
             "source_closure_sha256",
+            "goal_view_execution_amendment_binding",
             "seed",
             "materialisation_counts",
             "goal_view_counts",
+            "goal_pose_semantics",
+            "goal_cell_classification_counts",
+            "goal_cell_classification_validation",
             "gpu_inference_custody",
             "gpu_environment_receipt_binding",
             "dense_route_replay_input_index_binding",
@@ -3153,6 +3532,18 @@ _OUTPUT_FILES = {
             "paired_effect_evidence_rows",
         ],
         "goal_view_count_required_keys": ["states", "views", "failed"],
+        "goal_view_execution_amendment_binding_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "goal_pose_semantics_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
+        ),
+        "goal_cell_classification_counts_exact": copy.deepcopy(
+            GOAL_CELL_CLASSIFICATION_COUNTS
+        ),
+        "goal_cell_classification_validation_exact": copy.deepcopy(
+            GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS
+        ),
         "historical_renderer_limitation_required_keys": [
             "effective_scene_geometry",
             "input_schema",
@@ -3196,6 +3587,7 @@ _OUTPUT_FILES = {
         "required_sections": [
             "Bindings and custody",
             "Goal-view and predictor input reconstruction",
+            "Goal-view amendment and virtual-pose limitation",
             "Historical renderer limitation",
             "Controller execution custody",
             "Population and materialisation counts",
@@ -3220,6 +3612,7 @@ _OUTPUT_FILES = {
             "row_counts",
             "row_reproduction",
             "context_reconstruction_index_binding",
+            "goal_view_execution_amendment_binding",
             "dense_route_replay_input_index_binding",
             "cpu_runtime_input_inventory_binding",
             "oracle_admissibility_fanout_index_binding",
@@ -3243,6 +3636,9 @@ _OUTPUT_FILES = {
         ],
         "execution_watchdog_status_exact": copy.deepcopy(
             EXECUTION_WATCHDOG_STATUS_SUCCESS
+        ),
+        "goal_view_execution_amendment_binding_exact": copy.deepcopy(
+            GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
         ),
         "report_integrity": (
             "report.md is included in artifact_manifest with exact path, SHA-256 and bytes"
@@ -3311,6 +3707,12 @@ def _output_schema_core() -> dict[str, Any]:
                 "hidden namespace and reuses no scientific phase or shard; partial phase "
                 "evidence is never resumed or copied into the canonical output"
             ),
+            "bound_prior_failed_attempt": {
+                "original_freeze_commit": ORIGINAL_FREEZE_COMMIT,
+                "archive_path": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
+                "inventory": copy.deepcopy(FAILED_GOAL_VIEW_ATTEMPT_INVENTORY),
+                "reuse": False,
+            },
         },
         "storage_ceilings_gb": {"temporary": 20, "final": 12},
         "prohibition_counter_ids": list(PROHIBITION_COUNTER_IDS),
@@ -3459,6 +3861,60 @@ def _run_contract_fixture_checks() -> dict[str, bool]:
             "selected_route_progress_sum_m": 0.0,
         }
     )
+    counts = GOAL_CELL_CLASSIFICATION_COUNTS
+    checks["goal_cell_classification_partition"] = (
+        counts["nav_blocked"]
+        == counts["beacon_endpoint"] + counts["low_clearance_transit_blocked"]
+        and counts["states"] == counts["nav_blocked"] + counts["unblocked"]
+        and counts["endpoint_reachable"] == counts["states"] == 48
+    )
+    checks["goal_cell_blocked_identity_partition"] = (
+        len(GOAL_CELL_BLOCKED_STATE_IDS["beacon_endpoint"]) == 13
+        and len(GOAL_CELL_BLOCKED_STATE_IDS["low_clearance_transit_blocked"]) == 1
+        and len(
+            set(GOAL_CELL_BLOCKED_STATE_IDS["beacon_endpoint"])
+            | set(GOAL_CELL_BLOCKED_STATE_IDS["low_clearance_transit_blocked"])
+        )
+        == 14
+    )
+    checks["goal_view_amendment_is_prospective_and_no_reuse"] = (
+        GOAL_VIEW_EXECUTION_AMENDMENT["status"]
+        == "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        and GOAL_VIEW_EXECUTION_AMENDMENT["failed_attempt"][
+            "scientific_phase_or_shard_reuse"
+        ]
+        is False
+        and GOAL_VIEW_EXECUTION_AMENDMENT["static_diagnosis"][
+            "route_outcome_rows_read_or_used"
+        ]
+        == 0
+    )
+    artifact_summary = GOAL_VIEW_EXECUTION_AMENDMENT["failed_attempt"][
+        "artifact_summary"
+    ]
+    checks["failed_attempt_artifact_summary_matches_inventory"] = (
+        artifact_summary["worker_logs"]
+        + artifact_summary["partial_context_rgb_files"]
+        + artifact_summary["preexecution_or_environment_receipts"]
+        + artifact_summary["cpu_runtime_input_inventory_receipts"]
+        + artifact_summary["failure_or_running_marker_receipts"]
+        == FAILED_GOAL_VIEW_ATTEMPT_INVENTORY["record_count"]
+        == 41
+    )
+    checks["goal_view_preworker_static_validation"] = (
+        GOAL_VIEW_STATIC_VALIDATION_SUCCESS["pass"] is True
+        and GOAL_VIEW_STATIC_VALIDATION_SUCCESS["route_outcome_rows_read"] == 0
+        and GOAL_VIEW_STATIC_VALIDATION_SUCCESS["blocked_state_ids"]
+        == GOAL_CELL_BLOCKED_STATE_IDS
+    )
+    checks["cpu_worker_allocator_mitigation"] = (
+        EXECUTION_WATCHDOGS["cpu_worker_environment"]["MALLOC_ARENA_MAX"] == "1"
+        and EXECUTION_WATCHDOGS["cpu_worker_environment"]["workers"] == 32
+        and EXECUTION_WATCHDOGS["cpu_worker_environment"][
+            "scientific_semantics_change"
+        ]
+        is False
+    )
     checks["canonical_byte_regeneration"] = canonical_json_bytes(
         {"z": 2, "a": [True, None, 1.25]}
     ) == b'{"a":[true,null,1.25],"z":2}'
@@ -3520,6 +3976,16 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "path2_world_xy_and_body_coordinates": "PASS_REQUIRED",
                 "optional_manifest_waypoint_absent": "PASS_REQUIRED",
                 "present_manifest_waypoint_mismatch": "FAIL_CLOSED",
+                "path2_nav_blocked_but_endpoint_reachable": "PASS_WITH_BLOCK_CLASSIFICATION",
+                "path2_endpoint_unreachable": "FAIL_CLOSED",
+                "path1_position_substitution": "FAIL_CLOSED",
+                "goal_render_semantics": GOAL_VIEW_RENDER_SEMANTICS,
+                "goal_cell_classification_counts": copy.deepcopy(
+                    GOAL_CELL_CLASSIFICATION_COUNTS
+                ),
+                "preworker_static_validation": copy.deepcopy(
+                    GOAL_VIEW_STATIC_VALIDATION_SUCCESS
+                ),
                 "candidate_independence": "BYTE_IDENTICAL_ACROSS_12_CANDIDATES",
             },
             "predictor_input": {
@@ -3645,6 +4111,15 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "canonical_root_present_before_terminal_pass": False,
                 "same_filesystem_atomic_rename": "PASS_REQUIRED",
                 "failed_attempt_reuse": False,
+                "bound_failed_attempt_archive": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
+                "fresh_hidden_attempt_after_goal_view_amendment": "PASS_REQUIRED",
+            },
+            "cpu_worker_allocator": {
+                "environment": copy.deepcopy(
+                    EXECUTION_WATCHDOGS["cpu_worker_environment"]
+                ),
+                "worker_count_unchanged": 32,
+                "fallback": "FORBIDDEN",
             },
             "tensor_index": {
                 "logical_records": 5424,
@@ -3696,6 +4171,24 @@ def validate_fixture_receipt(value: Mapping[str, Any]) -> dict[str, Any]:
     return copy.deepcopy(dict(value))
 
 
+def validate_goal_view_execution_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_content_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        build_goal_view_execution_amendment()
+    ):
+        raise ContractError("goal-view execution amendment differs from its authority")
+    if (
+        value.get("status") != "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        or value.get("static_diagnosis", {}).get("route_outcome_rows_read_or_used") != 0
+        or value.get("failed_attempt", {}).get("scientific_phase_or_shard_reuse")
+        is not False
+    ):
+        raise ContractError("goal-view execution amendment violates prospective custody")
+    return copy.deepcopy(dict(value))
+
+
 def _write_immutable(path: Path, payload: bytes, label: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -3716,6 +4209,16 @@ def write_output_schema(path: str | Path = TRACKED_OUTPUT_SCHEMA_PATH) -> Path:
 
 def write_fixture_receipt(path: str | Path = TRACKED_FIXTURE_PATH) -> Path:
     return _write_immutable(Path(path), fixture_receipt_bytes(), "fixture receipt")
+
+
+def write_goal_view_execution_amendment(
+    path: str | Path = TRACKED_GOAL_VIEW_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        goal_view_execution_amendment_receipt_bytes(),
+        "goal-view execution amendment",
+    )
 
 
 def _load_exact(path: Path, expected: bytes, label: str) -> dict[str, Any]:
@@ -3756,6 +4259,18 @@ def load_and_validate_fixture_receipt(
     )
 
 
+def load_and_validate_goal_view_execution_amendment(
+    path: str | Path = TRACKED_GOAL_VIEW_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    return validate_goal_view_execution_amendment(
+        _load_exact(
+            Path(path),
+            goal_view_execution_amendment_receipt_bytes(),
+            "goal-view execution amendment",
+        )
+    )
+
+
 SOURCE_CLOSURE_DEFAULT_PATHS = (
     "lewm/__init__.py",
     "lewm/safety/__init__.py",
@@ -3766,6 +4281,7 @@ SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_CONTRACT_RECEIPT_PATH),
     str(TRACKED_OUTPUT_SCHEMA_PATH),
     str(TRACKED_FIXTURE_PATH),
+    str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
     str(ENTRYPOINT_PATH),
     "scripts/run_jepa_local_waypoint_planning_cost_inference_v1.py",
     "lewm/safety/jepa_local_waypoint_planning_cost_metrics_v1.py",
@@ -3922,6 +4438,17 @@ __all__ = [
     "FOUNDATIONAL_PACKAGE_CLOSURE_POLICY",
     "GPU_FOUNDATIONAL_PACKAGE_BINDINGS",
     "GPU_WATCHDOG_STATUS_SUCCESS",
+    "GOAL_CELL_BLOCK_CLASSIFICATIONS",
+    "GOAL_CELL_BLOCKED_STATE_IDS",
+    "GOAL_CELL_CLASSIFICATION_COUNTS",
+    "GOAL_CELL_CLASSIFICATION_VALIDATION_SUCCESS",
+    "GOAL_VIEW_AMENDMENT_SCHEMA_VERSION",
+    "GOAL_VIEW_EXECUTION_AMENDMENT",
+    "GOAL_VIEW_EXECUTION_AMENDMENT_BINDING",
+    "GOAL_VIEW_RENDER_SEMANTICS",
+    "GOAL_VIEW_STATIC_VALIDATION_SUCCESS",
+    "FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE",
+    "FAILED_GOAL_VIEW_ATTEMPT_INVENTORY",
     "HARD_FAMILY_IDS",
     "HISTORICAL_RENDERER_LIMITATIONS",
     "INTERPRETER_BINARY_BINDING",
@@ -3931,6 +4458,7 @@ __all__ = [
     "OUTPUT_SCHEMA",
     "OUTPUT_SCHEMA_RECEIPT_SHA256",
     "OUTPUT_SCHEMA_SHA256",
+    "ORIGINAL_FREEZE_COMMIT",
     "PAIRED_COMPARISON_IDS",
     "POPULATION_IDS",
     "PRIMARY_CLASSIFICATIONS",
@@ -3946,6 +4474,7 @@ __all__ = [
     "STATIC_FILE_BINDINGS",
     "TRACKED_CONTRACT_RECEIPT_PATH",
     "TRACKED_FIXTURE_PATH",
+    "TRACKED_GOAL_VIEW_AMENDMENT_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
     "TRACKED_REPORT_PATH",
@@ -3956,6 +4485,7 @@ __all__ = [
     "attach_content_digest",
     "build_contract",
     "build_fixture_receipt",
+    "build_goal_view_execution_amendment",
     "build_output_schema",
     "build_source_closure",
     "canonical_json_bytes",
@@ -3966,8 +4496,10 @@ __all__ = [
     "derive_primary_classification",
     "family_complete_collapse",
     "fixture_receipt_bytes",
+    "goal_view_execution_amendment_receipt_bytes",
     "load_and_validate_contract",
     "load_and_validate_fixture_receipt",
+    "load_and_validate_goal_view_execution_amendment",
     "load_and_validate_output_schema",
     "no_family_complete_collapse",
     "output_schema_receipt_bytes",
@@ -3977,9 +4509,11 @@ __all__ = [
     "validate_content_digest",
     "validate_contract",
     "validate_fixture_receipt",
+    "validate_goal_view_execution_amendment",
     "validate_output_schema",
     "write_contract",
     "write_fixture_receipt",
+    "write_goal_view_execution_amendment",
     "write_output_schema",
     "write_source_closure",
 ]

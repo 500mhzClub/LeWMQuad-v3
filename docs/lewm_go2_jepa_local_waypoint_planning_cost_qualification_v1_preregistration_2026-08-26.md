@@ -91,6 +91,38 @@ assert zero outcome values used for contract derivation, zero checkpoint tensors
 opened before freeze, zero inference calls, zero G2 reads and zero training
 steps.
 
+## Failed first attempt and prospective goal-view amendment
+
+The original freeze commit
+`184e192f35740a2b300a771097c2c5c8d68ce4f9` remains an immutable ancestor.
+Its first hidden execution failed closed during CPU materialisation at
+`purpose-18: frozen path[2] goal cell is not free and reachable`. The untouched
+attempt is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787772621443348948-337116`.
+Its failure receipt is 43,448 bytes, file SHA-256
+`63aad5c1d1a2e8902088cff647465be7c17ef56b4d12705b42ee0135cdd925a0`
+and content digest
+`fb1b810fff46781243c0d0d36e4d3520789dd045f4f27fa6f353f43da51dbe64`.
+The 41-file, 1,365,155-byte archive inventory is bound by canonical-record
+aggregate SHA-256
+`6442c13416dc1badd811ac4b19a0fd802fad4708c3698c7dcfada44d552469bb`.
+
+That attempt published no canonical output, state index, oracle fanout, GPU
+inference receipt, evidence ledger, aggregate metric, gate, classification or
+result. Its three partial context images and every other partial file remain
+archived and are non-reusable. No automatic retry or phase/shard resume is
+permitted. The next attempt must start from a fresh empty hidden namespace after
+a new prospective correction commit and fresh preflight.
+
+The correction is based only on frozen state/scene metadata and source
+semantics, with zero route-outcome rows, checkpoint tensors or predictor calls
+used. Across all 48 fixed states, path[2] is endpoint-reachable in all 48 but
+nav-blocked in 14: 13 are deliberately reachable beacon endpoints and one is a
+low-clearance transit-blocked cell; the other 34 are unblocked. A SceneGraph
+blocked goal may be reached as an endpoint without being free or transit-safe.
+The amendment is frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_goal_view_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -300,20 +332,36 @@ previously evaluated; the eight-seed experiment is not rerun.
 
 Construct exactly one candidate-independent goal view per state:
 
-- world x/y is the frozen scene-graph free-cell centre of
+- world x/y is the exact frozen SceneGraph cell centre of
   `waypoint_path_cells[2]`;
 - z is the replayed frozen start/base z;
 - roll and pitch are zero;
 - yaw is `atan2` from the centre of path cell 0 to path cell 1.
 
-Require path length at least three and path[2] free/reachable. If optional
-manifest `waypoint_xy` or `waypoint_body_xy` exists, audit exact equality;
-absence is permitted. Persist world pose and body-frame delta x/y plus
+Require path length at least three, valid node identities, consecutive frozen
+route edges, and endpoint reachability from path[0] to path[2] under the frozen
+SceneGraph nav-blocked endpoint semantics. Do not require path[2] to be free.
+Persist per state whether it is nav-blocked and classify it exactly as
+`UNBLOCKED`, `BEACON_ENDPOINT`, or `LOW_CLEARANCE_TRANSIT_BLOCKED`, with beacon
+precedence. The complete index must reproduce 48 endpoint-reachable, 14 blocked,
+13 beacon-endpoint, one low-clearance and 34 unblocked states.
+
+This goal image is a
+`VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE`.
+It does not claim that the robot, camera or physical range sensor can occupy or
+reach the pose, and it does not establish stopping or transit safety. In
+particular, some path[2] coordinates lie inside a landmark footprint, while the
+preserved historical renderer is floor-plane-only. This limitation is reported,
+not repaired.
+
+If optional manifest `waypoint_xy` or `waypoint_body_xy` exists, audit exact
+equality; absence is permitted. Persist world pose and body-frame delta x/y plus
 sin/cos of wrapped goal-yaw minus start-yaw, matching the existing local
 waypoint `g_t`. Render with the frozen no-robot textured-v03 renderer/camera and
 the same crop, preprocessing and encoder as context/targets. A missing,
-non-finite, unrenderable or unencodable goal fails the state before model
-inference; no alternate goal is chosen.
+non-finite, endpoint-unreachable, unrenderable or unencodable goal fails the
+state before model inference. Substituting path[1], searching a standoff or
+alternate goal, or dropping/replacing a state is forbidden.
 
 ## Cost and sources
 
@@ -610,6 +658,13 @@ receipts. Any timeout terminates and then kills experiment children, archives
 the untouched hidden attempt, performs no automatic retry, and permits no phase
 or shard resume.
 
+Launch all 32 CPU state workers with `MALLOC_ARENA_MAX=1`. This is frozen only
+as a glibc allocator-fragmentation mitigation after the failed attempt; it does
+not change the simulator, state, action, render, oracle or scientific reduction
+semantics. The worker count remains exactly 32, dynamic worker fallback is
+forbidden, and preexecution plus terminal custody must validate the exact worker
+environment.
+
 A failed hidden attempt namespace is archived untouched with a self-digesting
 failure receipt. A later execution starts from a new empty hidden namespace and
 reuses no scientific phase or shard; partial evidence is never resumed or
@@ -624,10 +679,11 @@ binds the source-freeze commit, contract digest and output-schema digest.
 
 ## Commit and stop rules
 
-Prospective commits:
-
-1. `Freeze JEPA local waypoint planning cost qualification`;
-2. `Evaluate JEPA local waypoint planning cost qualification`.
+The original `Freeze JEPA local waypoint planning cost qualification` commit
+remains an ancestor because it binds the archived first attempt. Make one
+separate prospective goal-view contract-correction commit before fresh
+preflight. The final result commit message remains exactly
+`Evaluate JEPA local waypoint planning cost qualification`.
 
 Stop after row evidence, aggregates, gates, classifications, runtime/storage
 and result custody. Do not train or select a model; collect a panel; read G2;
