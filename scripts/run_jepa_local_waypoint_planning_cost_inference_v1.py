@@ -527,6 +527,9 @@ def _gpu_environment_binding_for_inference(
     path = output_root / GPU_ENVIRONMENT_REL
     value = load_json(path)
     validate_phase(value, source_freeze_commit)
+    serialization_check = _gpu_receipt_serialization_preinference_check(
+        validate_frozen_source_closure()
+    )
     live = _live_gpu_environment_identity()
     observed_foundational = _foundational_package_roots()
     if value.get("foundational_package_roots") != observed_foundational:
@@ -560,6 +563,8 @@ def _gpu_environment_binding_for_inference(
         or value.get("torch") != live["torch"]
         or value.get("packages") != live["packages"]
         or value.get("device") != live["device"]
+        or value.get("gpu_receipt_serialization_preinference_check")
+        != serialization_check
         or value.get("checkpoint_tensor_open_count") != 0
         or value.get("predictor_inference_calls") != 0
         or value.get("genesis_imported") is not False
@@ -575,12 +580,77 @@ def _gpu_environment_binding_for_inference(
     }
 
 
+def _source_closure_receipt_binding(
+    source_closure: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Return the JSON-safe source-closure binding for the GPU receipt."""
+
+    path = ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH
+    return {
+        "path": str(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH),
+        "sha256": sha256_file(path),
+        "content_digest": source_closure["content_digest"],
+        "complete": True,
+    }
+
+
+def _gpu_receipt_serialization_preinference_check(
+    source_closure: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Prove the amended receipt fragment is canonical-JSON-safe pre-inference."""
+
+    policy = CONTRACT.GPU_RECEIPT_SERIALIZATION_POLICY
+    binding = _source_closure_receipt_binding(source_closure)
+    path = binding.get("path")
+    if (
+        policy.get("field") != "source_closure_binding.path"
+        or policy.get("required_json_type") != "string"
+        or policy.get("construction_rule")
+        != (
+            "convert CONTRACT.TRACKED_SOURCE_CLOSURE_PATH with str() at the GPU "
+            "receipt construction site before attach_digest"
+        )
+        or policy.get("canonical_serializer_change") is not False
+        or policy.get("canonical_serializer_continues_to_reject_path_objects")
+        is not True
+        or policy.get("preinference_static_serialization_check_required") is not True
+        or type(path) is not str
+        or path != policy.get("required_exact_value")
+    ):
+        raise InferenceError("GPU receipt serialization policy drift")
+    probe = attach_digest(
+        {
+            "schema": "jepa_local_waypoint_gpu_receipt_serialization_probe_v1",
+            "source_closure_binding": binding,
+            "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
+                CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+            ),
+            "pass": True,
+        }
+    )
+    validate_digest(probe)
+    return {
+        "receipt": policy["receipt"],
+        "field": policy["field"],
+        "required_json_type": policy["required_json_type"],
+        "observed_json_type": "string",
+        "observed_exact_value": path,
+        "canonical_serializer_change": False,
+        "canonicalization_succeeded": True,
+        "pass": True,
+    }
+
+
 def preflight(
     source_freeze_commit: str, *, output_root: Path, receipt: Path
 ) -> dict[str, Any]:
     """Hash and import closure only; checkpoint tensors remain unopened."""
 
     validate_source_commit(source_freeze_commit, require_live_head=True)
+    source_closure = validate_frozen_source_closure()
+    serialization_check = _gpu_receipt_serialization_preinference_check(
+        source_closure
+    )
     bindings = _checkpoint_bindings()
     import torch
     import yaml
@@ -686,6 +756,7 @@ def preflight(
             "genesis_imported": False,
             "checkpoint_file_hashes": bindings,
             "encoder_source_repository_binding": encoder_source,
+            "gpu_receipt_serialization_preinference_check": serialization_check,
             "checkpoint_tensor_open_count": 0,
             "predictor_inference_calls": 0,
             "pass": True,
@@ -1367,6 +1438,12 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
     gpu_environment_binding = _gpu_environment_binding_for_inference(
         source_freeze_commit, output_root=output_root
     )
+    source_closure_receipt_binding = _source_closure_receipt_binding(
+        source_closure
+    )
+    canonical_json_bytes(
+        {"source_closure_binding": source_closure_receipt_binding}
+    )
     _preflight_child_binding = _gpu_child_preflight_receipt_binding(
         source_freeze_commit, output_root=output_root
     )
@@ -1614,14 +1691,12 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
             },
             "checkpoint_bindings": bindings,
             "encoder_source_repository_binding": encoder_source,
-            "source_closure_binding": {
-                "path": CONTRACT.TRACKED_SOURCE_CLOSURE_PATH,
-                "sha256": sha256_file(ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH),
-                "content_digest": source_closure["content_digest"],
-                "complete": True,
-            },
+            "source_closure_binding": source_closure_receipt_binding,
             "current_token_execution_amendment_binding": copy.deepcopy(
                 CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
+                CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
             ),
             "current_token_authority_policy": copy.deepcopy(
                 CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -1872,10 +1947,12 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
     if (
         gpu_receipt.get("current_token_execution_amendment_binding")
         != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        or gpu_receipt.get("gpu_receipt_serialization_amendment_binding")
+        != CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
         or gpu_receipt.get("current_token_authority_policy")
         != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
     ):
-        raise InferenceError("GPU inference current-token amendment drift")
+        raise InferenceError("GPU inference execution-amendment custody drift")
     if gpu_receipt.get("training_steps") != 0:
         raise InferenceError("GPU inference receipt reports training")
     if gpu_receipt.get("parameter_state_unchanged") != {

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import importlib.util
+import inspect
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -415,6 +416,13 @@ def test_gpu_inference_revalidates_and_binds_preflight_environment(
         G, "_live_gpu_environment_identity", lambda: copy.deepcopy(live)
     )
     monkeypatch.setattr(G, "_assert_gpu_process_separation", lambda: None)
+    serialization_check = {"canonicalization_succeeded": True, "pass": True}
+    monkeypatch.setattr(G, "validate_frozen_source_closure", lambda: {})
+    monkeypatch.setattr(
+        G,
+        "_gpu_receipt_serialization_preinference_check",
+        lambda _closure: copy.deepcopy(serialization_check),
+    )
     value = G.attach_digest(
         {
             **G.phase_core(
@@ -428,6 +436,9 @@ def test_gpu_inference_revalidates_and_binds_preflight_environment(
             "device": live["device"],
             "foundational_package_roots": copy.deepcopy(roots),
             "foundational_package_closure_policy": copy.deepcopy(policy),
+            "gpu_receipt_serialization_preinference_check": copy.deepcopy(
+                serialization_check
+            ),
             "checkpoint_tensor_open_count": 0,
             "predictor_inference_calls": 0,
             "genesis_imported": False,
@@ -448,3 +459,87 @@ def test_gpu_inference_revalidates_and_binds_preflight_environment(
     G.atomic_json(path, G.attach_digest(drifted))
     with pytest.raises(G.InferenceError, match="between preflight and inference"):
         G._gpu_environment_binding_for_inference(commit, output_root=tmp_path)
+
+
+def test_gpu_receipt_source_closure_binding_is_json_safe(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    relative = Path("docs/source_closure.json")
+    source = tmp_path / relative
+    source.parent.mkdir(parents=True)
+    source.write_bytes(b"frozen-source-closure\n")
+    monkeypatch.setattr(G, "ROOT", tmp_path)
+    monkeypatch.setattr(G.CONTRACT, "TRACKED_SOURCE_CLOSURE_PATH", relative)
+    serialization_policy = copy.deepcopy(G.CONTRACT.GPU_RECEIPT_SERIALIZATION_POLICY)
+    serialization_policy["required_exact_value"] = str(relative)
+    monkeypatch.setattr(
+        G.CONTRACT, "GPU_RECEIPT_SERIALIZATION_POLICY", serialization_policy
+    )
+
+    binding = G._source_closure_receipt_binding(
+        {"content_digest": "a" * 64}
+    )
+
+    assert binding == {
+        "path": str(relative),
+        "sha256": G.sha256_file(source),
+        "content_digest": "a" * 64,
+        "complete": True,
+    }
+    assert isinstance(binding["path"], str)
+    receipt = G.attach_digest(
+        {
+            **G.phase_core(
+                "jepa_local_waypoint_planning_cost_gpu_inference_v1", "a" * 40
+            ),
+            "source_closure_binding": binding,
+            "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
+                G.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+            ),
+            "pass": True,
+        }
+    )
+    G.validate_digest(receipt)
+    assert (
+        receipt["gpu_receipt_serialization_amendment_binding"]
+        == G.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+    )
+    static_check = G._gpu_receipt_serialization_preinference_check(
+        {"content_digest": "a" * 64}
+    )
+    assert static_check["observed_json_type"] == "string"
+    assert static_check["observed_exact_value"] == str(relative)
+    assert static_check["canonicalization_succeeded"] is True
+
+    monkeypatch.setattr(
+        G,
+        "_source_closure_receipt_binding",
+        lambda _closure: {
+            "path": relative,
+            "sha256": "b" * 64,
+            "content_digest": "a" * 64,
+            "complete": True,
+        },
+    )
+    with pytest.raises(G.InferenceError, match="serialization policy drift"):
+        G._gpu_receipt_serialization_preinference_check(
+            {"content_digest": "a" * 64}
+        )
+
+
+def test_gpu_receipt_binding_is_canonicalized_before_checkpoint_open_and_reused() -> None:
+    preflight_source = inspect.getsource(G.preflight)
+    assert preflight_source.index(
+        "_gpu_receipt_serialization_preinference_check"
+    ) < preflight_source.index("bindings = _checkpoint_bindings()")
+
+    materialize_source = inspect.getsource(G.materialize)
+    construction = materialize_source.index(
+        "source_closure_receipt_binding = _source_closure_receipt_binding"
+    )
+    canonicalization = materialize_source.index("canonical_json_bytes(", construction)
+    checkpoint_open = materialize_source.index("bindings = _checkpoint_bindings()")
+    final_receipt_reuse = materialize_source.index(
+        '"source_closure_binding": source_closure_receipt_binding', checkpoint_open
+    )
+    assert construction < canonicalization < checkpoint_open < final_receipt_reuse

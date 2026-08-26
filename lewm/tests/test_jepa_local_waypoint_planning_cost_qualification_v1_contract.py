@@ -563,6 +563,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "cpu_runtime_input_inventory_binding",
         "goal_view_execution_amendment_binding",
         "current_token_execution_amendment_binding",
+        "gpu_receipt_serialization_amendment_binding",
         "current_token_authority_policy",
         "gpu_child_execution_receipts",
     } <= set(files["preexecution_receipt"]["required_keys"])
@@ -592,6 +593,9 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert preexecution["current_token_execution_amendment_binding_exact"] == (
         contract.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
     )
+    assert preexecution[
+        "gpu_receipt_serialization_amendment_binding_exact"
+    ] == contract.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
     assert preexecution["current_token_authority_policy_exact"] == (
         contract.CURRENT_TOKEN_AUTHORITY_POLICY
     )
@@ -681,6 +685,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "requirements_custody" in result_keys
     assert "goal_view_execution_amendment_binding" in result_keys
     assert "current_token_execution_amendment_binding" in result_keys
+    assert "gpu_receipt_serialization_amendment_binding" in result_keys
     assert "current_token_authority_policy" in result_keys
     assert "gpu_child_execution_receipts" in result_keys
     assert "goal_pose_semantics" in result_keys
@@ -730,6 +735,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "training_steps" in gpu_keys
     assert "future_input_fields" in gpu_keys
     assert "current_token_execution_amendment_binding" in gpu_keys
+    assert "gpu_receipt_serialization_amendment_binding" in gpu_keys
     assert "current_token_authority_policy" in gpu_keys
     assert "gpu_child_execution_receipts" not in gpu_keys
     assert files["gpu_inference_receipt"]["interpreter_entrypoint_exact"] == (
@@ -769,6 +775,9 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "required_keys"
     ]
     assert "current_token_execution_amendment_binding" in persistence_schema[
+        "required_keys"
+    ]
+    assert "gpu_receipt_serialization_amendment_binding" in persistence_schema[
         "required_keys"
     ]
     assert "current_token_authority_policy" in persistence_schema["required_keys"]
@@ -1059,17 +1068,130 @@ def test_current_token_amendment_binds_second_failure_and_exact_new_policy() -> 
     ] is False
 
 
+def test_gpu_receipt_serialization_amendment_binds_third_failure_and_no_reuse() -> None:
+    root = Path(__file__).resolve().parents[2]
+    value = contract.build_gpu_receipt_serialization_execution_amendment()
+    contract.validate_gpu_receipt_serialization_execution_amendment(value)
+    binding = contract.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+    tracked = root / binding["path"]
+    tracked_payload = tracked.read_bytes()
+    assert tracked_payload == (
+        contract.gpu_receipt_serialization_execution_amendment_receipt_bytes()
+    )
+    assert len(tracked_payload) == binding["bytes"]
+    assert hashlib.sha256(tracked_payload).hexdigest() == binding["sha256"]
+    assert value["content_digest"] == binding["content_digest"]
+    assert value["prior_source_freeze"]["commit"] == (
+        contract.CURRENT_TOKEN_CORRECTION_COMMIT
+    )
+
+    for artifact in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "current_token_amendment",
+        "source_closure",
+    ):
+        row = value["prior_source_freeze"][artifact]
+        git_payload = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{contract.CURRENT_TOKEN_CORRECTION_COMMIT}:{row['path']}",
+            ],
+            cwd=root,
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+        assert len(git_payload) == row["bytes"]
+        assert hashlib.sha256(git_payload).hexdigest() == row["sha256"]
+
+    archive = Path(value["failed_attempt"]["archive_path"])
+    rows = []
+    for path in sorted(item for item in archive.rglob("*") if item.is_file()):
+        file_hash = hashlib.sha256()
+        file_bytes = 0
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                file_hash.update(block)
+                file_bytes += len(block)
+        rows.append(
+            {
+                "path": path.relative_to(archive).as_posix(),
+                "sha256": file_hash.hexdigest(),
+                "bytes": file_bytes,
+            }
+        )
+    inventory = value["failed_attempt"]["archive_inventory"]
+    canonical = contract.canonical_json_bytes(rows)
+    assert len(rows) == inventory["record_count"] == 5729
+    assert sum(row["bytes"] for row in rows) == inventory["total_bytes"]
+    assert len(canonical) == inventory["canonical_records_bytes"]
+    assert hashlib.sha256(canonical).hexdigest() == inventory["aggregate_sha256"]
+
+    failed = value["failed_attempt"]
+    for receipt_id in (
+        "failure_receipt",
+        "failed_child_execution_receipt",
+        "failed_running_marker",
+    ):
+        row = failed[receipt_id]
+        payload = (archive / row["path"]).read_bytes()
+        assert len(payload) == row["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == row["sha256"]
+        parsed = json.loads(payload)
+        assert parsed["content_digest"] == row["content_digest"]
+        contract.validate_content_digest(parsed)
+    child = failed["failed_child_execution_receipt"]
+    for stream_id in ("stdout", "stderr"):
+        row = child[stream_id]
+        payload = (archive / row["path"]).read_bytes()
+        assert len(payload) == row["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == row["sha256"]
+
+    summary = failed["artifact_summary"]
+    assert sum(summary[group]["files"] for group in (
+        "goal_views", "latents", "materialization", "receipts"
+    )) == summary["total_files"] == 5729
+    assert sum(summary[group]["bytes"] for group in (
+        "goal_views", "latents", "materialization", "receipts"
+    )) == summary["total_bytes"] == 8479825606
+    assert all(not (archive / relative).exists() for relative in failed["terminal_absences"])
+    assert failed["scientific_phase_or_shard_reuse"] is False
+    assert failed["aggregate_metrics_gates_or_classifications_computed"] is False
+    assert failed["intermediate_tensor_payloads_are_qualified_results"] is False
+
+    policy = value["amended_serialization_semantics"]
+    assert policy == contract.GPU_RECEIPT_SERIALIZATION_POLICY
+    assert policy["field"] == "source_closure_binding.path"
+    assert policy["required_exact_value"] == str(contract.TRACKED_SOURCE_CLOSURE_PATH)
+    assert policy["canonical_serializer_change"] is False
+    with pytest.raises(contract.ContractError, match="unsupported JSON type PosixPath"):
+        contract.canonical_json_bytes({"path": contract.TRACKED_SOURCE_CLOSURE_PATH})
+    assert contract.canonical_json_bytes(
+        {"path": str(contract.TRACKED_SOURCE_CLOSURE_PATH)}
+    ) == (
+        b'{"path":"docs/lewm_go2_jepa_local_waypoint_planning_cost_'
+        b'qualification_v1_source_closure_2026-08-26.json"}'
+    )
+
+
 def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     contract_path = tmp_path / "contract.json"
     schema_path = tmp_path / "schema.json"
     fixture_path = tmp_path / "fixture.json"
     amendment_path = tmp_path / "amendment.json"
     current_amendment_path = tmp_path / "current-amendment.json"
+    serialization_amendment_path = tmp_path / "serialization-amendment.json"
     contract.write_contract(contract_path)
     contract.write_output_schema(schema_path)
     contract.write_fixture_receipt(fixture_path)
     contract.write_goal_view_execution_amendment(amendment_path)
     contract.write_current_token_execution_amendment(current_amendment_path)
+    contract.write_gpu_receipt_serialization_execution_amendment(
+        serialization_amendment_path
+    )
     assert contract.load_and_validate_contract(contract_path) == contract.build_contract()
     assert contract.load_and_validate_output_schema(schema_path) == contract.build_output_schema()
     assert contract.load_and_validate_fixture_receipt(fixture_path) == (
@@ -1081,6 +1203,9 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     assert contract.load_and_validate_current_token_execution_amendment(
         current_amendment_path
     ) == contract.build_current_token_execution_amendment()
+    assert contract.load_and_validate_gpu_receipt_serialization_execution_amendment(
+        serialization_amendment_path
+    ) == contract.build_gpu_receipt_serialization_execution_amendment()
     assert json.loads(contract_path.read_bytes())["experiment_id"] == contract.EXPERIMENT_ID
     contract_path.write_bytes(b"{}\n")
     with pytest.raises(contract.ContractError, match="refusing to overwrite"):
@@ -1338,6 +1463,12 @@ def test_cpu_runtime_inventory_and_raw_continuation_are_schema_bound() -> None:
         "predictor_inference_calls": 0,
         "pass": True,
     }
+    assert "gpu_receipt_serialization_preinference_check" in gpu_environment[
+        "required_keys"
+    ]
+    assert gpu_environment[
+        "gpu_receipt_serialization_preinference_check_exact"
+    ] == contract.GPU_RECEIPT_SERIALIZATION_PREINFERENCE_CHECK_SUCCESS
     assert gpu_environment["interpreter_binding_exact"] == (
         contract.INTERPRETER_BINARY_BINDING
     )
@@ -1423,6 +1554,7 @@ def test_source_closure_builder_never_traverses_generated_or_outcomes() -> None:
     )
     assert str(contract.TRACKED_GOAL_VIEW_AMENDMENT_PATH) in paths
     assert str(contract.TRACKED_CURRENT_TOKEN_AMENDMENT_PATH) in paths
+    assert str(contract.TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH) in paths
     assert not any("route_intent_v2_result" in path for path in paths)
     with pytest.raises(contract.ContractError, match="duplicate"):
         contract.build_source_closure(

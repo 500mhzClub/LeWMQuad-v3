@@ -185,6 +185,46 @@ new frames in exactly nine batches of 16. Logical tensor counts remain 144
 frozen in
 `docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_current_token_amendment_2026-08-26.json`.
 
+## Failed third attempt and prospective GPU-receipt serialization amendment
+
+The current-token correction source freeze
+`131aa118ec77c4ff636b7135950aaf2bc8070742` also remains an immutable
+ancestor. Its fresh hidden execution completed CPU materialisation and GPU
+tensor materialisation, then failed closed while self-digesting the GPU
+inference receipt. The untouched attempt is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787777177552931441-380180`.
+Its complete 5,729-file, 8,479,825,606-byte inventory has 936,558 canonical
+record bytes and aggregate SHA-256
+`eaf8c65df1608cebedd30b0885749b50568ce7e22261b5c7bafe301bc6c578da`.
+The failure receipt is 3,465 bytes, file SHA-256
+`c87e7d69b7530b258e6555a5d65630fb98b74fb0491be5a26b6a6e7f01a64713`
+and content digest
+`ca269afb4969bdab3a54e2974a7761fb91e48eed7e926def0b3c19dae078a5f6`.
+Its bound failed materialise-child receipt is 3,739 bytes, file SHA-256
+`b606a6f315fdd61bc746002b374791c02edc3c326743664e1078598cc783e2cd`
+and content digest
+`d6fc4724fa8c5dcdf64cc190838f83d3e7548b18d58f5b9687d2c92e25f0b05e`;
+the complete 2,218-byte stderr is bound by SHA-256
+`daedc318ae4226c213358d5435a2a0fb9f8938d085e9d0ae529e298c079fe51f`.
+
+The exact defect is ordinary receipt metadata serialization. At the prior
+source line 1618, `gpu_inference.source_closure_binding.path` received
+`CONTRACT.TRACKED_SOURCE_CLOSURE_PATH` as a `pathlib.PosixPath`, while the
+canonical JSON encoder intentionally accepts only JSON primitives. The minimal
+prospective correction converts that value with `str(...)` at the receipt
+construction site. The canonical serializer remains strict and continues to
+reject Path objects. This changes no tensor, cost, population, metric, gate,
+classification, checkpoint or execution order.
+
+The archived attempt contains 1,728 true-future and 3,456 predicted FP16 payload
+files, plus a self-digesting 5,424-record tensor index, but those are incomplete,
+unqualified failed-attempt artifacts. It contains no GPU inference receipt,
+dense-replay input index, evidence ledger, aggregate metric, gate,
+classification, persistence receipt, report or result. No phase, shard, tensor,
+receipt or other file may be reused. A new correction commit, fresh preflight
+and entirely new empty hidden attempt are required. This amendment is frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_gpu_receipt_serialization_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -755,11 +795,11 @@ and metadata only in the outer failure archive/receipt.
 
 ## Commit and stop rules
 
-The original freeze and goal-view correction commits remain ancestors because
-they bind the two archived failed attempts. Make a separate prospective
-current-token contract-correction commit before a new fresh preflight; do not
-amend or orphan either ancestor and do not reuse a prior phase or shard. The
-final result commit message remains exactly
+The original freeze, goal-view correction and current-token correction commits
+remain ancestors because they bind the three archived failed attempts. Make one
+separate prospective GPU-receipt serialization correction commit before a new
+fresh preflight; do not amend or orphan any ancestor and do not reuse a prior
+phase, shard, tensor or receipt. The final result commit message remains exactly
 `Evaluate JEPA local waypoint planning cost qualification`.
 
 Stop after row evidence, aggregates, gates, classifications, runtime/storage

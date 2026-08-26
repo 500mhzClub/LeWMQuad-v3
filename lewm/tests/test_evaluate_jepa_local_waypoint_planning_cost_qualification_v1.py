@@ -48,6 +48,14 @@ def _populate_current_token_schema_fields(
         value["current_token_authority_policy"] = copy.deepcopy(
             spec["current_token_authority_policy_exact"]
         )
+    if "gpu_receipt_serialization_amendment_binding_exact" in spec:
+        value["gpu_receipt_serialization_amendment_binding"] = copy.deepcopy(
+            spec["gpu_receipt_serialization_amendment_binding_exact"]
+        )
+    if "gpu_receipt_serialization_preinference_check_exact" in spec:
+        value["gpu_receipt_serialization_preinference_check"] = copy.deepcopy(
+            spec["gpu_receipt_serialization_preinference_check_exact"]
+        )
     phases = spec.get("gpu_child_execution_receipts_required_phase_ids")
     if phases is not None:
         value["gpu_child_execution_receipts"] = _synthetic_child_bindings(
@@ -295,6 +303,13 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "load_and_validate_gpu_receipt_serialization_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT
+        ),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "load_and_validate_fixture_receipt",
         lambda: {"pass": True, "executed_checks": {"synthetic": True}},
     )
@@ -365,6 +380,39 @@ def test_frozen_receipts_fail_closed_when_current_token_amendment_is_absent(
         E.validate_frozen_receipts()
 
 
+def test_frozen_receipts_fail_closed_when_gpu_receipt_amendment_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_goal_view_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_current_token_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT),
+    )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_gpu_receipt_serialization_execution_amendment",
+        absent,
+    )
+    with pytest.raises(E.QualificationError, match="GPU receipt serialization.*absent"):
+        E.validate_frozen_receipts()
+
+
 def test_freeze_writes_both_amendments_before_source_closure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -388,6 +436,11 @@ def test_freeze_writes_both_amendments_before_source_closure(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "write_gpu_receipt_serialization_execution_amendment",
+        lambda *_args: calls.append("gpu_receipt_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "build_source_closure",
         lambda *_args, **_kwargs: calls.append("build_closure") or {},
     )
@@ -403,6 +456,9 @@ def test_freeze_writes_both_amendments_before_source_closure(
             "fixture": {"content_digest": "f"},
             "goal_view_execution_amendment": {"content_digest": "g"},
             "current_token_execution_amendment": {"content_digest": "c"},
+            "gpu_receipt_serialization_execution_amendment": {
+                "content_digest": "r"
+            },
             "source_closure": {"content_digest": "s"},
         },
     )
@@ -413,10 +469,17 @@ def test_freeze_writes_both_amendments_before_source_closure(
         "fixture",
         "goal_amendment",
         "current_amendment",
+        "gpu_receipt_amendment",
         "build_closure",
         "write_closure",
     ]
     assert receipt["current_token_execution_amendment_content_digest"] == "c"
+    assert (
+        receipt[
+            "gpu_receipt_serialization_execution_amendment_content_digest"
+        ]
+        == "r"
+    )
 
 
 def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys() -> None:
@@ -462,6 +525,66 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     value = E.attach_digest(value, "result_content_sha256")
     with pytest.raises(E.QualificationError, match="storage lacks required keys"):
         E._validate_schema_value("result", value)
+
+
+def test_gpu_environment_schema_requires_exact_serialization_preinference_check() -> None:
+    spec = E.CONTRACT.build_output_schema()["files"]["gpu_environment_receipt"]
+    value = {key: None for key in spec["required_keys"] if key != "content_digest"}
+    value["schema"] = spec["schema"]
+    expected_environment = E.CONTRACT.build_contract()["execution"][
+        "environments"
+    ]["encoder_predictor"]
+    value["executable"] = expected_environment["interpreter"]
+    value["interpreter_binding"] = copy.deepcopy(
+        spec["interpreter_binding_exact"]
+    )
+    value["torch"] = expected_environment["torch"]
+    value["device"] = {
+        key: None for key in spec["device_required_keys"]
+    }
+    value["packages"] = {
+        package_id: expected_environment[package_id]
+        for package_id in spec["package_ids"]
+    }
+    value["import_closure"] = copy.deepcopy(spec["import_closure_exact"])
+    value.update(copy.deepcopy(spec["preinference_exact"]))
+    foundational = {}
+    for package_id, package in E.CONTRACT.GPU_FOUNDATIONAL_PACKAGE_BINDINGS.items():
+        package_root = Path(package["package_root"]).resolve()
+        foundational[package_id] = {
+            **copy.deepcopy(package),
+            "package_root": str(package_root),
+            "import_resolution": {
+                "import_name": package["import_name"],
+                "find_spec_origin": str(package_root / "__init__.py"),
+                "submodule_search_locations": [str(package_root)],
+                "live_module_file": str(package_root / "__init__.py"),
+                "expected_package_root": str(package_root),
+                "resolved_inside_frozen_package_root": True,
+                "pass": True,
+            },
+        }
+    value["foundational_package_roots"] = foundational
+    value["foundational_package_closure_policy"] = copy.deepcopy(
+        E.CONTRACT.FOUNDATIONAL_PACKAGE_CLOSURE_POLICY
+    )
+    _populate_current_token_schema_fields(value, spec)
+    value = E.attach_digest(value)
+    E._validate_schema_value("gpu_environment_receipt", value)
+
+    missing = copy.deepcopy(value)
+    missing.pop("gpu_receipt_serialization_preinference_check")
+    missing = E.attach_digest(missing)
+    with pytest.raises(E.QualificationError, match="lacks required keys"):
+        E._validate_schema_value("gpu_environment_receipt", missing)
+
+    tampered = copy.deepcopy(value)
+    tampered["gpu_receipt_serialization_preinference_check"][
+        "observed_json_type"
+    ] = "pathlib.PosixPath"
+    tampered = E.attach_digest(tampered)
+    with pytest.raises(E.QualificationError, match="preinference check drift"):
+        E._validate_schema_value("gpu_environment_receipt", tampered)
 
 
 def test_result_schema_rejects_goal_cell_classification_validation_drift() -> None:
@@ -684,6 +807,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
                 "current_token_execution_amendment_binding": copy.deepcopy(
                     E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
                 ),
+                "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+                ),
                 "current_token_authority_policy": copy.deepcopy(
                     E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
                 ),
@@ -710,6 +836,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             ),
             "current_token_execution_amendment_binding": copy.deepcopy(
                 E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
+                E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
             ),
             "current_token_authority_policy": copy.deepcopy(
                 E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
