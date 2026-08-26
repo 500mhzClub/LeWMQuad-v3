@@ -40,6 +40,10 @@ GPU_RECEIPT_SERIALIZATION_AMENDMENT_SCHEMA_VERSION = (
     "jepa_local_waypoint_planning_cost_qualification_v1."
     "gpu_receipt_serialization_amendment.v1"
 )
+GPU_CHILD_RECEIPT_ORDER_AMENDMENT_SCHEMA_VERSION = (
+    "jepa_local_waypoint_planning_cost_qualification_v1."
+    "gpu_child_receipt_order_amendment.v1"
+)
 
 STARTING_HEAD = "b29eae1929725a4cc26a35d95662b545daee4553"
 STAGE_A_FREEZE_COMMIT = "e9e8c41a327ddbe51c38fa04f05ae1d30266720b"
@@ -172,6 +176,10 @@ TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "gpu_receipt_serialization_amendment_2026-08-26.json"
 )
+TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH = Path(
+    "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
+    "gpu_child_receipt_order_amendment_2026-08-26.json"
+)
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "source_closure_2026-08-26.json"
@@ -192,6 +200,9 @@ ENTRYPOINT_PATH = Path(
 ORIGINAL_FREEZE_COMMIT = "184e192f35740a2b300a771097c2c5c8d68ce4f9"
 GOAL_VIEW_CORRECTION_COMMIT = "e81ef67763d1daeff9be6cef32ad031465bc57e8"
 CURRENT_TOKEN_CORRECTION_COMMIT = "131aa118ec77c4ff636b7135950aaf2bc8070742"
+GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT = (
+    "700c55482233f48d2ff8d93faf6c69948c0cecb9"
+)
 GOAL_VIEW_RENDER_SEMANTICS = (
     "VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE"
 )
@@ -314,6 +325,26 @@ FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_INVENTORY: dict[str, Any] = {
     ),
 }
 
+FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".jepa_local_waypoint_planning_cost_qualification_v1."
+    "failed-1787779458317502376-427544"
+)
+FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY: dict[str, Any] = {
+    "record_fields": ["path", "sha256", "bytes"],
+    "record_order": "ascending archive-relative POSIX path",
+    "aggregate_algorithm": (
+        "SHA-256 of compact canonical JSON bytes of the ordered record array, with "
+        "object keys sorted and without terminal LF"
+    ),
+    "record_count": 5737,
+    "total_bytes": 8488784594,
+    "canonical_records_bytes": 937603,
+    "aggregate_sha256": (
+        "596b591e1126bf00e0b12ec585d1ec55253bbfe48ff04218e2685d40bd90f97d"
+    ),
+}
+
 GPU_RECEIPT_SERIALIZATION_POLICY: dict[str, Any] = {
     "classification": "CONSTRUCTION_SITE_PATH_TO_CANONICAL_JSON_STRING",
     "receipt": "receipts/gpu_inference.json",
@@ -405,6 +436,29 @@ CURRENT_TOKEN_AUTHORITY_POLICY: dict[str, Any] = {
 }
 
 GPU_CHILD_PHASE_IDS = ("PREFLIGHT", "MATERIALIZE")
+GPU_CHILD_RECEIPT_ORDER_POLICY: dict[str, Any] = {
+    "classification": "JSON_OBJECT_MEMBER_ORDER_NONSEMANTIC_EXACT_PHASE_BINDING",
+    "field": "gpu_child_execution_receipts",
+    "applies_to": ["preexecution", "result", "persistence"],
+    "frozen_phase_authority": list(GPU_CHILD_PHASE_IDS),
+    "required_phase_key_set_by_artifact": {
+        "preexecution": ["PREFLIGHT"],
+        "result": sorted(GPU_CHILD_PHASE_IDS),
+        "persistence": sorted(GPU_CHILD_PHASE_IDS),
+    },
+    "writer_insertion_order": list(GPU_CHILD_PHASE_IDS),
+    "canonical_json_object_keys_sorted": True,
+    "canonical_reload_iteration_order": sorted(GPU_CHILD_PHASE_IDS),
+    "loaded_mapping_insertion_order_semantic": False,
+    "validation_rule": (
+        "require the exact phase key set; iterate frozen_phase_authority and require "
+        "the exact binding value for each phase; never compare loaded mapping key order"
+    ),
+    "exact_per_phase_binding_values_required": True,
+    "terminal_validator_only_change": True,
+    "canonical_serialization_change": False,
+    "scientific_tensor_cost_metric_gate_or_classification_change": False,
+}
 GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS = (
     "schema",
     "experiment_id",
@@ -922,6 +976,35 @@ EXECUTION_WATCHDOG_STATUS_SUCCESS: dict[str, Any] = {
 
 class ContractError(ValueError):
     """Raised when a frozen contract or receipt fails closed."""
+
+
+def validate_gpu_child_execution_receipt_mapping(
+    value: Mapping[str, Any],
+    required_phase_ids: Sequence[str],
+    *,
+    expected_bindings: Mapping[str, Mapping[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Validate phase membership and values without treating mapping order as data."""
+
+    phase_ids = tuple(str(phase) for phase in required_phase_ids)
+    if len(set(phase_ids)) != len(phase_ids):
+        raise ContractError("GPU child phase authority contains duplicates")
+    if not isinstance(value, Mapping) or set(value) != set(phase_ids):
+        raise ContractError("GPU child receipt phase key set drift")
+    if expected_bindings is not None and set(expected_bindings) != set(phase_ids):
+        raise ContractError("expected GPU child receipt phase key set drift")
+    result: dict[str, Any] = {}
+    required_keys = set(GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS)
+    for phase in phase_ids:
+        binding = value[phase]
+        if not isinstance(binding, Mapping) or set(binding) != required_keys:
+            raise ContractError(f"GPU child receipt binding schema drift: {phase}")
+        if expected_bindings is not None and dict(binding) != dict(
+            expected_bindings[phase]
+        ):
+            raise ContractError(f"GPU child receipt binding value drift: {phase}")
+        result[phase] = copy.deepcopy(dict(binding))
+    return result
 
 
 def _validate_json_value(value: Any, location: str = "$") -> None:
@@ -1625,6 +1708,239 @@ GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
 }
 
 
+def _gpu_child_receipt_order_execution_amendment_core() -> dict[str, Any]:
+    return {
+        "schema": GPU_CHILD_RECEIPT_ORDER_AMENDMENT_SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "date": "2026-08-26",
+        "status": "PROSPECTIVE_BEFORE_FRESH_REEXECUTION",
+        "prior_source_freeze": {
+            "commit": GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT,
+            "contract": {
+                "path": str(TRACKED_CONTRACT_RECEIPT_PATH),
+                "sha256": "17bf416daa152e62d31d5a05064ed3e881f335bc02e6733b76e54f84278d2479",
+                "bytes": 73828,
+                "digest_field": "contract_sha256",
+                "content_digest": "f1e9a4248d4f1b7670d803e5430fc7fdb3a1f974072894121906ab1c60ca5244",
+            },
+            "output_schema": {
+                "path": str(TRACKED_OUTPUT_SCHEMA_PATH),
+                "sha256": "0e46875e1b9c79270e6ae2627f0a10c7366b8fb3ce041260e855b96a9e3164ae",
+                "bytes": 64504,
+                "digest_field": "output_schema_sha256",
+                "content_digest": "63fd9a19865132a31f934e1201b6fe83780f92bccf86d62b95154d86520a2e15",
+            },
+            "fixture": {
+                "path": str(TRACKED_FIXTURE_PATH),
+                "sha256": "f2b6e2af5607f235322af52447597699ba719558b3de649fe5d179a501f7e02c",
+                "bytes": 12780,
+                "digest_field": "content_digest",
+                "content_digest": "06dd3c49a859ee1452aa37adba9224e861f3dc7eb0ab75d9cece17e64ed86021",
+            },
+            "goal_view_amendment": {
+                "path": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+                "sha256": "f05aa92c439fced757014043a07df60b31e602d23aec6edf5d8b8921fe5548aa",
+                "bytes": 6599,
+                "digest_field": "content_digest",
+                "content_digest": "a816c4229539ea3966875cb09843b61f2867bb793a1501e96e2c529132da3812",
+            },
+            "current_token_amendment": {
+                "path": str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
+                "sha256": "2ccad35e809cccff52973ccddc6acf0f0a624173d71c0f7c00113d31bf7301cd",
+                "bytes": 11084,
+                "digest_field": "content_digest",
+                "content_digest": "3b426c945ac827a2e1e49cd312cd6d40d8af92b4cdec968afa867b3f51d907db",
+            },
+            "gpu_receipt_serialization_amendment": {
+                "path": str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
+                "sha256": "6970b4f4b238f04d217fbaad776627402a2d7c56e40f83ea2d0bd6d0aca5449d",
+                "bytes": 8678,
+                "digest_field": "content_digest",
+                "content_digest": "75be21487c3f051f0495ab53788c8b43e7e8fe91dfc513f226117ef9085a4def",
+            },
+            "source_closure": {
+                "path": str(TRACKED_SOURCE_CLOSURE_PATH),
+                "sha256": "cded36d1948b32e8ff489fa8649f2e8c506b832987b90e745e2ee098447c81d2",
+                "bytes": 13552,
+                "digest_field": "content_digest",
+                "content_digest": "304e018d7596070fe2abd221b15b85d9fff39ef5791f254a3dfd517366ad0a75",
+                "rows": 85,
+            },
+        },
+        "failed_attempt": {
+            "archive_path": str(FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE),
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "schema": "jepa_local_waypoint_planning_cost_failed_attempt_v1",
+                "sha256": "f1545a3938bd6b612d1ab8f60f3f928d407833053cb1657129bf2a0eb887b6e3",
+                "bytes": 1189,
+                "content_digest": "7ca3e23e88ad96991c299b77cff4cbcd04ca149251d011988e2c75d3bfb912e4",
+                "source_freeze_commit": GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT,
+                "phase": "DEEP_PREPUBLICATION_CHECK",
+                "error_type": "QualificationError",
+                "error_message": "result GPU child receipt bindings drift",
+                "failed_child_execution_receipt": None,
+                "partial_artifacts_reusable": False,
+                "nothing_running": True,
+            },
+            "archive_inventory": copy.deepcopy(
+                FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY
+            ),
+            "artifact_summary": {
+                "materialization": {"files": 344, "bytes": 20342422},
+                "latents": {"files": 5378, "bytes": 8459285178},
+                "goal_views": {"files": 1, "bytes": 110941},
+                "receipts": {"files": 8, "bytes": 1012568},
+                "evidence": {"files": 3, "bytes": 661130},
+                "aggregates": {"files": 1, "bytes": 7281659},
+                "report": {"files": 1, "bytes": 15752},
+                "result": {"files": 1, "bytes": 74944},
+                "total_files": 5737,
+                "total_bytes": 8488784594,
+            },
+            "nonreusable_terminal_artifacts": {
+                "dense_route_replay_input_index": {
+                    "path": "materialization/dense_route_replay_input_index.json",
+                    "sha256": "01a96587fa030713efcdcacd13f2b684baec8785c45110aadb243f01afe5be54",
+                    "bytes": 37235,
+                    "content_digest": "9316b8583c5de8eb97dd3e07a37017e287ce13dd73d738350768de02b126a38b",
+                },
+                "batch_manifest": {
+                    "path": "latents/batch_manifest.json",
+                    "sha256": "63b92a8e4a51fbb07bfe42552cfbe27e1ec26d621518e315233074a7d6a965d6",
+                    "bytes": 32787,
+                    "content_digest": "b7a567b52d8aa95c2b0da6d623aef638cd16ae181b0fbb9c685d6e4a56d5b65b",
+                },
+                "tensor_index": {
+                    "path": "latents/tensor_index.json",
+                    "sha256": "0b2afa0f03be1038118f931962946bb870a930b8ce9c6abbfbaba6f86b73f461",
+                    "bytes": 2847399,
+                    "content_digest": "630d9a620da1c9752828f398fd8d4fb76e467e5a417803fafe5c250f908c1898",
+                },
+                "gpu_inference": {
+                    "path": "receipts/gpu_inference.json",
+                    "sha256": "53b5521853a1db67e45d1aa82a10777449bebb12e7ca3f2bd6f01fcb2b57f3b4",
+                    "bytes": 8194,
+                    "content_digest": "1117c7432e1db69bd6e43e18d677660a6fd1365057bf5107f7f47ef59f0340d2",
+                },
+                "candidate_evidence": {
+                    "path": "evidence/candidate_evidence.jsonl.gz",
+                    "sha256": "9084b501f2d47a4d366c5739caf55bbe5f103f36e97023ea7db081103c4efe02",
+                    "bytes": 603913,
+                },
+                "selection_evidence": {
+                    "path": "evidence/selection_evidence.jsonl.gz",
+                    "sha256": "fb8914810a3683e6dd290b12930e993f015f1034bd7a283b202c137f853bfd09",
+                    "bytes": 54753,
+                },
+                "paired_effect_evidence": {
+                    "path": "evidence/paired_effect_evidence.jsonl.gz",
+                    "sha256": "fda75a6b9e93c05da15d81ee8c20528299356d7314a22b8a7b78835fd01c8123",
+                    "bytes": 2464,
+                },
+                "aggregate_metrics": {
+                    "path": "aggregates/metrics.json",
+                    "sha256": "4cacc1ffd3bd16fae6371f697cf995f42ab65ba4e7d5b64cbf085e18e6e73f77",
+                    "bytes": 7281659,
+                    "content_digest": "0d0d7ec26acd5cb8e9873ae0c1bdb72e7ff99056560ad2ed33900823fa5e5dc6",
+                },
+                "persistence": {
+                    "path": "receipts/persistence.json",
+                    "sha256": "9525407b95a15ee10177e8bc2a1321ed312ab58eace379dc64a38d87f6b1f954",
+                    "bytes": 947448,
+                    "content_digest": "09003172f079207ba8bb0c8c9b5db66eb04c729014b646b3dcfca280e9fd95b8",
+                },
+                "result": {
+                    "path": "result.json",
+                    "sha256": "a1480f6d42b7658d45248cd7a14d53a08c3d0da8f35f0c5fd0418ee694057685",
+                    "bytes": 74944,
+                    "result_content_sha256": (
+                        "fc976b3b119e8ab519bf9a5da85d3f275fc5c67ebfd02b1868bccf57341b5bcc"
+                    ),
+                },
+                "report": {
+                    "path": "report.md",
+                    "sha256": "99c1c239ca75433a3590da8ec0472e5a4befe4f0d10fd3ccce81956f99ec23d4",
+                    "bytes": 15752,
+                },
+            },
+            "running_marker_present": False,
+            "failed_running_marker_present": False,
+            "successful_terminal_check_receipt_or_artifact_present": False,
+            "canonical_output_root_absent": True,
+            "hidden_result_persistence_and_report_published_canonically": False,
+            "hidden_result_persistence_and_report_reusable": False,
+            "scientific_phase_shard_tensor_receipt_or_result_reuse": False,
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment": 0,
+            "prohibition_counters_all_zero": True,
+            "scientific_result_published": False,
+        },
+        "static_diagnosis": {
+            "route_outcome_metric_gate_or_classification_values_read_or_used": 0,
+            "source_file": (
+                "scripts/evaluate_jepa_local_waypoint_planning_cost_qualification_v1.py"
+            ),
+            "source_line_at_prior_commit": 5344,
+            "field": "gpu_child_execution_receipts",
+            "writer_insertion_order": list(GPU_CHILD_PHASE_IDS),
+            "canonical_reload_iteration_order": sorted(GPU_CHILD_PHASE_IDS),
+            "prior_validation_expression": "list(child_receipts) != expected_phases",
+            "terminal_phase": "DEEP_PREPUBLICATION_CHECK",
+            "terminal_error": "result GPU child receipt bindings drift",
+            "finding": (
+                "canonical JSON sorted the object member names and JSON reload preserved "
+                "that nonsemantic order; the generic validator incorrectly compared "
+                "mapping iteration order instead of exact phase membership and values"
+            ),
+        },
+        "amended_terminal_mapping_semantics": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
+        "prohibitions": {
+            "mapping_order_as_scientific_semantics": True,
+            "canonical_json_sort_order_change": True,
+            "prior_attempt_phase_shard_tensor_receipt_or_result_reuse": True,
+            "scientific_tensor_cost_metric_gate_or_classification_change": True,
+            "training_checkpoint_or_candidate_change": True,
+            "untouched_g2_stage_b_memory_navigation_routing_or_beacon_capture": True,
+        },
+        "execution_lifecycle": {
+            "retain_all_prior_freeze_and_correction_commits_as_ancestors": True,
+            "new_terminal_validator_correction_commit_is_future_source_authority": True,
+            "new_hidden_attempt_namespace": True,
+            "canonical_output_root_must_be_absent": True,
+            "prior_phase_shard_tensor_receipt_or_result_reuse": False,
+            "automatic_retry": False,
+            "fresh_preflight_required": True,
+            "fresh_complete_execution_required": True,
+            "result_commit_message_remains": (
+                "Evaluate JEPA local waypoint planning cost qualification"
+            ),
+        },
+    }
+
+
+def build_gpu_child_receipt_order_execution_amendment() -> dict[str, Any]:
+    return attach_content_digest(_gpu_child_receipt_order_execution_amendment_core())
+
+
+def gpu_child_receipt_order_execution_amendment_receipt_bytes() -> bytes:
+    return canonical_json_bytes(build_gpu_child_receipt_order_execution_amendment()) + b"\n"
+
+
+GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT = (
+    build_gpu_child_receipt_order_execution_amendment()
+)
+GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
+    "path": str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(
+        gpu_child_receipt_order_execution_amendment_receipt_bytes()
+    ).hexdigest(),
+    "bytes": len(gpu_child_receipt_order_execution_amendment_receipt_bytes()),
+    "content_digest": GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT["content_digest"],
+}
+
+
 def _self_digest(value: Mapping[str, Any], key: str) -> dict[str, Any]:
     payload = copy.deepcopy(dict(value))
     payload.pop(key, None)
@@ -2034,6 +2350,22 @@ def _contract_core() -> dict[str, Any]:
             ),
             "fresh_execution_only": True,
             "prior_phase_shard_tensor_or_receipt_reuse": False,
+        },
+        "gpu_child_receipt_order_execution_amendment": {
+            "receipt_binding": copy.deepcopy(
+                GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+            ),
+            "prior_source_freeze_commit": (
+                GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT
+            ),
+            "failed_attempt_archive": str(
+                FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE
+            ),
+            "terminal_mapping_order_policy": copy.deepcopy(
+                GPU_CHILD_RECEIPT_ORDER_POLICY
+            ),
+            "fresh_execution_only": True,
+            "prior_phase_shard_tensor_receipt_or_result_reuse": False,
         },
         "preexecution_custody": {
             "outcome_barrier": (
@@ -3258,6 +3590,9 @@ def _contract_core() -> dict[str, Any]:
             "gpu_receipt_serialization_amendment": str(
                 TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH
             ),
+            "gpu_child_receipt_order_amendment": str(
+                TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH
+            ),
             "source_closure": str(TRACKED_SOURCE_CLOSURE_PATH),
             "result": str(TRACKED_RESULT_PATH),
             "report": str(TRACKED_REPORT_PATH),
@@ -3288,6 +3623,7 @@ _OUTPUT_FILES = {
             "goal_view_execution_amendment_binding",
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
+            "gpu_child_receipt_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "goal_view_static_validation",
@@ -3338,12 +3674,18 @@ _OUTPUT_FILES = {
         "gpu_receipt_serialization_amendment_binding_exact": copy.deepcopy(
             GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
         ),
+        "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
         "gpu_child_execution_receipts_required_phase_ids": ["PREFLIGHT"],
         "gpu_child_execution_receipt_binding_required_keys": list(
             GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
+        ),
+        "gpu_child_receipt_order_policy_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_POLICY
         ),
         "goal_view_static_validation_exact": copy.deepcopy(
             GOAL_VIEW_STATIC_VALIDATION_SUCCESS
@@ -4323,6 +4665,7 @@ _OUTPUT_FILES = {
             "goal_view_execution_amendment_binding",
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
+            "gpu_child_receipt_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "seed",
@@ -4392,6 +4735,9 @@ _OUTPUT_FILES = {
         "gpu_receipt_serialization_amendment_binding_exact": copy.deepcopy(
             GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
         ),
+        "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -4401,6 +4747,9 @@ _OUTPUT_FILES = {
         ],
         "gpu_child_execution_receipt_binding_required_keys": list(
             GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
+        ),
+        "gpu_child_receipt_order_policy_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_POLICY
         ),
         "goal_pose_semantics_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
@@ -4457,6 +4806,7 @@ _OUTPUT_FILES = {
             "Goal-view amendment and virtual-pose limitation",
             "Current-token authority amendment and BF16 cohort limitation",
             "GPU receipt serialization amendment and failed-attempt custody",
+            "GPU child receipt order amendment and failed-attempt custody",
             "Historical renderer limitation",
             "Controller execution custody",
             "Population and materialisation counts",
@@ -4484,6 +4834,7 @@ _OUTPUT_FILES = {
             "goal_view_execution_amendment_binding",
             "current_token_execution_amendment_binding",
             "gpu_receipt_serialization_amendment_binding",
+            "gpu_child_receipt_order_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "dense_route_replay_input_index_binding",
@@ -4519,6 +4870,9 @@ _OUTPUT_FILES = {
         "gpu_receipt_serialization_amendment_binding_exact": copy.deepcopy(
             GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
         ),
+        "gpu_child_receipt_order_amendment_binding_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -4528,6 +4882,9 @@ _OUTPUT_FILES = {
         ],
         "gpu_child_execution_receipt_binding_required_keys": list(
             GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
+        ),
+        "gpu_child_receipt_order_policy_exact": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_POLICY
         ),
         "report_integrity": (
             "report.md is included in artifact_manifest with exact path, SHA-256 and bytes"
@@ -4542,6 +4899,9 @@ def _output_schema_core() -> dict[str, Any]:
         "experiment_id": EXPERIMENT_ID,
         "output_root": str(OUTPUT_ROOT),
         "canonical_json": "UTF-8, sorted keys, compact separators, one trailing LF",
+        "gpu_child_execution_receipt_mapping_semantics": copy.deepcopy(
+            GPU_CHILD_RECEIPT_ORDER_POLICY
+        ),
         "row_ledgers": "gzip JSONL; one canonical compact JSON object plus LF per row",
         "files": copy.deepcopy(_OUTPUT_FILES),
         "candidate_evidence_cardinality": {
@@ -4615,6 +4975,18 @@ def _output_schema_core() -> dict[str, Any]:
                 ),
                 "inventory": copy.deepcopy(
                     FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_INVENTORY
+                ),
+                "reuse": False,
+            },
+            "bound_gpu_child_receipt_order_failed_attempt": {
+                "source_freeze_commit": (
+                    GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT
+                ),
+                "archive_path": str(
+                    FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE
+                ),
+                "inventory": copy.deepcopy(
+                    FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY
                 ),
                 "reuse": False,
             },
@@ -4907,6 +5279,70 @@ def _run_contract_fixture_checks() -> dict[str, bool]:
         is False
         and GPU_RECEIPT_SERIALIZATION_POLICY[
             "scientific_tensor_cost_metric_gate_or_classification_change"
+        ]
+        is False
+    )
+    order_amendment = GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT
+    order_summary = order_amendment["failed_attempt"]["artifact_summary"]
+    order_groups = (
+        "materialization",
+        "latents",
+        "goal_views",
+        "receipts",
+        "evidence",
+        "aggregates",
+        "report",
+        "result",
+    )
+    checks["gpu_child_receipt_order_amendment_is_terminal_only_and_no_reuse"] = (
+        order_amendment["status"] == "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        and order_amendment["prior_source_freeze"]["commit"]
+        == GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT
+        and order_amendment["failed_attempt"][
+            "scientific_phase_shard_tensor_receipt_or_result_reuse"
+        ]
+        is False
+        and order_amendment["failed_attempt"][
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        ]
+        == 0
+        and GPU_CHILD_RECEIPT_ORDER_POLICY["terminal_validator_only_change"]
+        is True
+        and GPU_CHILD_RECEIPT_ORDER_POLICY[
+            "scientific_tensor_cost_metric_gate_or_classification_change"
+        ]
+        is False
+    )
+    checks["gpu_child_receipt_order_failed_archive_partition"] = (
+        sum(order_summary[group]["files"] for group in order_groups)
+        == order_summary["total_files"]
+        == FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY["record_count"]
+        == 5737
+        and sum(order_summary[group]["bytes"] for group in order_groups)
+        == order_summary["total_bytes"]
+        == FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY["total_bytes"]
+    )
+    ordered_probe = {
+        phase: {
+            "path": f"receipts/{phase.lower()}.json",
+            "sha256": phase.lower(),
+            "bytes": 1,
+            "content_digest": phase,
+        }
+        for phase in GPU_CHILD_PHASE_IDS
+    }
+    reloaded_probe = json.loads(canonical_json_bytes(ordered_probe))
+    checks["gpu_child_receipt_mapping_order_is_nonsemantic"] = (
+        list(ordered_probe) == list(GPU_CHILD_PHASE_IDS)
+        and list(reloaded_probe) == sorted(GPU_CHILD_PHASE_IDS)
+        and validate_gpu_child_execution_receipt_mapping(
+            reloaded_probe,
+            GPU_CHILD_PHASE_IDS,
+            expected_bindings=ordered_probe,
+        )
+        == ordered_probe
+        and GPU_CHILD_RECEIPT_ORDER_POLICY[
+            "loaded_mapping_insertion_order_semantic"
         ]
         is False
     )
@@ -5275,6 +5711,39 @@ def validate_gpu_receipt_serialization_execution_amendment(
     return copy.deepcopy(dict(value))
 
 
+def validate_gpu_child_receipt_order_execution_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_content_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        build_gpu_child_receipt_order_execution_amendment()
+    ):
+        raise ContractError(
+            "GPU-child receipt order execution amendment differs from its authority"
+        )
+    failed = value.get("failed_attempt", {})
+    diagnosis = value.get("static_diagnosis", {})
+    policy = value.get("amended_terminal_mapping_semantics", {})
+    if (
+        value.get("status") != "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        or value.get("prior_source_freeze", {}).get("commit")
+        != GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT
+        or failed.get("scientific_phase_shard_tensor_receipt_or_result_reuse")
+        is not False
+        or failed.get(
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        )
+        != 0
+        or diagnosis.get(
+            "route_outcome_metric_gate_or_classification_values_read_or_used"
+        )
+        != 0
+        or policy != GPU_CHILD_RECEIPT_ORDER_POLICY
+    ):
+        raise ContractError("GPU-child receipt order amendment violates custody")
+    return copy.deepcopy(dict(value))
+
+
 def _write_immutable(path: Path, payload: bytes, label: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -5324,6 +5793,16 @@ def write_gpu_receipt_serialization_execution_amendment(
         Path(path),
         gpu_receipt_serialization_execution_amendment_receipt_bytes(),
         "GPU-receipt serialization execution amendment",
+    )
+
+
+def write_gpu_child_receipt_order_execution_amendment(
+    path: str | Path = TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        gpu_child_receipt_order_execution_amendment_receipt_bytes(),
+        "GPU-child receipt order execution amendment",
     )
 
 
@@ -5401,6 +5880,18 @@ def load_and_validate_gpu_receipt_serialization_execution_amendment(
     )
 
 
+def load_and_validate_gpu_child_receipt_order_execution_amendment(
+    path: str | Path = TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    return validate_gpu_child_receipt_order_execution_amendment(
+        _load_exact(
+            Path(path),
+            gpu_child_receipt_order_execution_amendment_receipt_bytes(),
+            "GPU-child receipt order execution amendment",
+        )
+    )
+
+
 SOURCE_CLOSURE_DEFAULT_PATHS = (
     "lewm/__init__.py",
     "lewm/safety/__init__.py",
@@ -5414,6 +5905,7 @@ SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
     str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
     str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
+    str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
     str(ENTRYPOINT_PATH),
     "scripts/run_jepa_local_waypoint_planning_cost_inference_v1.py",
     "lewm/safety/jepa_local_waypoint_planning_cost_metrics_v1.py",
@@ -5566,6 +6058,7 @@ __all__ = [
     "CURRENT_TOKEN_EXECUTION_AMENDMENT",
     "CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING",
     "CURRENT_TOKEN_CORRECTION_COMMIT",
+    "GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT",
     "DENSE_ROUTE_REPLAY_INPUT_BINDINGS",
     "ENTRYPOINT_PATH",
     "EXECUTION_WATCHDOGS",
@@ -5590,6 +6083,8 @@ __all__ = [
     "FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY",
     "FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_ARCHIVE",
     "FAILED_GPU_RECEIPT_SERIALIZATION_ATTEMPT_INVENTORY",
+    "FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE",
+    "FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY",
     "GOAL_VIEW_CORRECTION_COMMIT",
     "GPU_CHILD_EXECUTION_RECEIPTS",
     "GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS",
@@ -5602,6 +6097,10 @@ __all__ = [
     "GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING",
     "GPU_RECEIPT_SERIALIZATION_POLICY",
     "GPU_RECEIPT_SERIALIZATION_PREINFERENCE_CHECK_SUCCESS",
+    "GPU_CHILD_RECEIPT_ORDER_AMENDMENT_SCHEMA_VERSION",
+    "GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT",
+    "GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING",
+    "GPU_CHILD_RECEIPT_ORDER_POLICY",
     "HARD_FAMILY_IDS",
     "HISTORICAL_RENDERER_LIMITATIONS",
     "INTERPRETER_BINARY_BINDING",
@@ -5630,6 +6129,7 @@ __all__ = [
     "TRACKED_GOAL_VIEW_AMENDMENT_PATH",
     "TRACKED_CURRENT_TOKEN_AMENDMENT_PATH",
     "TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH",
+    "TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
     "TRACKED_REPORT_PATH",
@@ -5643,6 +6143,7 @@ __all__ = [
     "build_goal_view_execution_amendment",
     "build_current_token_execution_amendment",
     "build_gpu_receipt_serialization_execution_amendment",
+    "build_gpu_child_receipt_order_execution_amendment",
     "build_output_schema",
     "build_source_closure",
     "canonical_json_bytes",
@@ -5656,11 +6157,13 @@ __all__ = [
     "goal_view_execution_amendment_receipt_bytes",
     "current_token_execution_amendment_receipt_bytes",
     "gpu_receipt_serialization_execution_amendment_receipt_bytes",
+    "gpu_child_receipt_order_execution_amendment_receipt_bytes",
     "load_and_validate_contract",
     "load_and_validate_fixture_receipt",
     "load_and_validate_goal_view_execution_amendment",
     "load_and_validate_current_token_execution_amendment",
     "load_and_validate_gpu_receipt_serialization_execution_amendment",
+    "load_and_validate_gpu_child_receipt_order_execution_amendment",
     "load_and_validate_output_schema",
     "no_family_complete_collapse",
     "output_schema_receipt_bytes",
@@ -5673,12 +6176,15 @@ __all__ = [
     "validate_goal_view_execution_amendment",
     "validate_current_token_execution_amendment",
     "validate_gpu_receipt_serialization_execution_amendment",
+    "validate_gpu_child_receipt_order_execution_amendment",
+    "validate_gpu_child_execution_receipt_mapping",
     "validate_output_schema",
     "write_contract",
     "write_fixture_receipt",
     "write_goal_view_execution_amendment",
     "write_current_token_execution_amendment",
     "write_gpu_receipt_serialization_execution_amendment",
+    "write_gpu_child_receipt_order_execution_amendment",
     "write_output_schema",
     "write_source_closure",
 ]

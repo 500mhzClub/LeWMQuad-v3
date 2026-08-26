@@ -407,6 +407,14 @@ def validate_frozen_receipts() -> dict[str, Any]:
         raise QualificationError(
             "frozen GPU receipt serialization execution amendment is absent or invalid"
         ) from exc
+    try:
+        gpu_child_receipt_order_amendment = (
+            CONTRACT.load_and_validate_gpu_child_receipt_order_execution_amendment()
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "frozen GPU child receipt order execution amendment is absent or invalid"
+        ) from exc
     checks = fixture.get("executed_checks")
     if fixture.get("pass") is not True or not isinstance(checks, Mapping) or not checks:
         raise QualificationError("frozen fixture receipt did not execute and pass checks")
@@ -438,6 +446,9 @@ def validate_frozen_receipts() -> dict[str, Any]:
         "current_token_execution_amendment": current_token_amendment,
         "gpu_receipt_serialization_execution_amendment": (
             gpu_receipt_serialization_amendment
+        ),
+        "gpu_child_receipt_order_execution_amendment": (
+            gpu_child_receipt_order_amendment
         ),
         "source_closure": closure,
     }
@@ -1009,6 +1020,214 @@ def validate_gpu_receipt_serialization_execution_amendment_custody(
     if require_canonical_output_absent and OUTPUT_ROOT.exists():
         raise QualificationError(
             "canonical output root exists before GPU receipt serialization corrected execution"
+        )
+    return amendment
+
+
+def validate_gpu_child_receipt_order_execution_amendment_custody(
+    source_freeze_commit: str,
+    *,
+    require_canonical_output_absent: bool,
+) -> dict[str, Any]:
+    """Validate the terminal-only order correction and failed-run no-reuse chain."""
+
+    try:
+        amendment = (
+            CONTRACT.load_and_validate_gpu_child_receipt_order_execution_amendment()
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "GPU child receipt order execution amendment is invalid"
+        ) from exc
+    amendment_path = ROOT / CONTRACT.TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH
+    if _receipt_binding(amendment_path, digest_key="content_digest") != (
+        CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+    ):
+        raise QualificationError("GPU child receipt order amendment binding drift")
+
+    prior_commit = str(amendment["prior_source_freeze"]["commit"])
+    if prior_commit != CONTRACT.GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT:
+        raise QualificationError("GPU child receipt order prior source commit drift")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", prior_commit, source_freeze_commit],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if ancestry.returncode != 0 or source_freeze_commit == prior_commit:
+        raise QualificationError(
+            "GPU child receipt order correction must descend from the failed source freeze"
+        )
+    for artifact_id in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "current_token_amendment",
+        "gpu_receipt_serialization_amendment",
+        "source_closure",
+    ):
+        expected = amendment["prior_source_freeze"][artifact_id]
+        raw = _git_blob(prior_commit, str(expected["path"]))
+        if (
+            len(raw) != int(expected["bytes"])
+            or hashlib.sha256(raw).hexdigest() != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"GPU child receipt order prior-freeze {artifact_id} binding drift"
+            )
+        try:
+            prior_value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise QualificationError(
+                f"GPU child receipt order prior-freeze {artifact_id} is not JSON"
+            ) from exc
+        if prior_value.get(str(expected["digest_field"])) != expected[
+            "content_digest"
+        ]:
+            raise QualificationError(
+                f"GPU child receipt order prior-freeze {artifact_id} digest drift"
+            )
+
+    failed = amendment["failed_attempt"]
+    archive = Path(str(failed["archive_path"]))
+    if archive.resolve() != CONTRACT.FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_ARCHIVE.resolve():
+        raise QualificationError("GPU child receipt order failed archive path drift")
+    if not archive.is_dir() or archive.resolve() == OUTPUT_ROOT.resolve():
+        raise QualificationError(
+            "GPU child receipt order failed archive is absent or aliases canonical output"
+        )
+    archive_rows = [
+        {
+            "path": path.relative_to(archive).as_posix(),
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+        for path in sorted(
+            (candidate for candidate in archive.rglob("*") if candidate.is_file()),
+            key=lambda candidate: candidate.relative_to(archive).as_posix(),
+        )
+    ]
+    archive_payload = canonical_json_bytes(archive_rows)[:-1]
+    frozen_inventory = CONTRACT.FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY
+    observed_inventory = {
+        **{
+            key: value
+            for key, value in frozen_inventory.items()
+            if key in ("record_fields", "record_order", "aggregate_algorithm")
+        },
+        "record_count": len(archive_rows),
+        "total_bytes": sum(int(row["bytes"]) for row in archive_rows),
+        "canonical_records_bytes": len(archive_payload),
+        "aggregate_sha256": hashlib.sha256(archive_payload).hexdigest(),
+    }
+    if observed_inventory != frozen_inventory or failed.get(
+        "archive_inventory"
+    ) != frozen_inventory:
+        raise QualificationError("GPU child receipt order failed archive inventory drift")
+
+    summary = {
+        key: {"files": 0, "bytes": 0}
+        for key in (
+            "materialization",
+            "latents",
+            "goal_views",
+            "receipts",
+            "evidence",
+            "aggregates",
+            "report",
+            "result",
+        )
+    }
+    for row in archive_rows:
+        relative = str(row["path"])
+        if relative == "report.md":
+            artifact_id = "report"
+        elif relative == "result.json":
+            artifact_id = "result"
+        else:
+            artifact_id = relative.split("/", 1)[0]
+        if artifact_id not in summary:
+            raise QualificationError(
+                f"GPU child receipt order failed archive has unexpected partition {artifact_id}"
+            )
+        summary[artifact_id]["files"] += 1
+        summary[artifact_id]["bytes"] += int(row["bytes"])
+    summary["total_files"] = len(archive_rows)
+    summary["total_bytes"] = sum(int(row["bytes"]) for row in archive_rows)
+    if summary != failed.get("artifact_summary"):
+        raise QualificationError("GPU child receipt order artifact summary drift")
+
+    failure_expected = failed["failure_receipt"]
+    failure_path = archive / str(failure_expected["path"])
+    if (
+        not failure_path.is_file()
+        or failure_path.stat().st_size != int(failure_expected["bytes"])
+        or sha256_file(failure_path) != failure_expected["sha256"]
+    ):
+        raise QualificationError("GPU child receipt order failure receipt binding drift")
+    failure = load_json(failure_path)
+    validate_digest(failure)
+    if (
+        failure.get("content_digest") != failure_expected["content_digest"]
+        or failure.get("schema") != failure_expected["schema"]
+        or failure.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or failure.get("source_freeze_commit") != prior_commit
+        or failure.get("phase") != failure_expected["phase"]
+        or failure.get("error_type") != failure_expected["error_type"]
+        or failure.get("error_message") != failure_expected["error_message"]
+        or failure.get("failed_child_execution_receipt") is not None
+        or failure.get("partial_artifacts_reusable") is not False
+        or failure.get("nothing_running") is not True
+        or failure.get("active_experiment_processes") != []
+        or failure.get("prohibition_counters") != prohibition_counters()
+    ):
+        raise QualificationError("GPU child receipt order failure receipt custody drift")
+
+    for artifact_id, expected in failed["nonreusable_terminal_artifacts"].items():
+        path = archive / str(expected["path"])
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(expected["bytes"])
+            or sha256_file(path) != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"GPU child receipt order nonreusable {artifact_id} binding drift"
+            )
+    if (
+        (archive / RUNNING_REL).exists()
+        or (archive / "receipts/FAILED_RUNNING_MARKER.json").exists()
+        or failed.get("running_marker_present") is not False
+        or failed.get("failed_running_marker_present") is not False
+        or failed.get("successful_terminal_check_receipt_or_artifact_present")
+        is not False
+        or failed.get("canonical_output_root_absent") is not True
+        or failed.get("hidden_result_persistence_and_report_published_canonically")
+        is not False
+        or failed.get("hidden_result_persistence_and_report_reusable") is not False
+        or failed.get("scientific_phase_shard_tensor_receipt_or_result_reuse")
+        is not False
+        or failed.get(
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        )
+        != 0
+        or failed.get("prohibition_counters_all_zero") is not True
+        or failed.get("scientific_result_published") is not False
+        or amendment["execution_lifecycle"].get(
+            "prior_phase_shard_tensor_receipt_or_result_reuse"
+        )
+        is not False
+        or amendment["execution_lifecycle"].get("automatic_retry") is not False
+        or amendment.get("amended_terminal_mapping_semantics")
+        != CONTRACT.GPU_CHILD_RECEIPT_ORDER_POLICY
+    ):
+        raise QualificationError(
+            "GPU child receipt order failed-attempt no-reuse custody drift"
+        )
+    if require_canonical_output_absent and OUTPUT_ROOT.exists():
+        raise QualificationError(
+            "canonical output root exists before GPU child receipt order corrected execution"
         )
     return amendment
 
@@ -1727,6 +1946,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
     CONTRACT.write_gpu_receipt_serialization_execution_amendment(
         ROOT / CONTRACT.TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH
     )
+    CONTRACT.write_gpu_child_receipt_order_execution_amendment(
+        ROOT / CONTRACT.TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH
+    )
     closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
     CONTRACT.write_source_closure(closure, ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
     frozen = validate_frozen_receipts()
@@ -1743,6 +1965,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
         ]["content_digest"],
         "gpu_receipt_serialization_execution_amendment_content_digest": frozen[
             "gpu_receipt_serialization_execution_amendment"
+        ]["content_digest"],
+        "gpu_child_receipt_order_execution_amendment_content_digest": frozen[
+            "gpu_child_receipt_order_execution_amendment"
         ]["content_digest"],
         "source_closure_content_digest": frozen["source_closure"]["content_digest"],
         "outcome_rows_read": 0,
@@ -2028,6 +2253,10 @@ def preflight(
         source_freeze_commit,
         require_canonical_output_absent=True,
     )
+    validate_gpu_child_receipt_order_execution_amendment_custody(
+        source_freeze_commit,
+        require_canonical_output_absent=True,
+    )
     inputs = validate_input_hashes()
     if output_root.exists() and any(output_root.iterdir()):
         existing = output_root / PREEXEC_REL
@@ -2244,6 +2473,9 @@ def preflight(
                 ),
                 "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
                     CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+                ),
+                "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+                    CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
                 ),
                 "current_token_authority_policy": copy.deepcopy(
                     CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -5303,6 +5535,63 @@ def _validate_goal_view_semantics(value: Mapping[str, Any]) -> None:
         raise QualificationError("goal-view persisted classification count drift")
 
 
+def _validate_gpu_child_execution_receipt_mapping(
+    file_id: str,
+    value: Mapping[str, Any],
+    spec: Mapping[str, Any],
+) -> None:
+    """Validate phase identity without depending on JSON object key order."""
+
+    child_receipts = value.get("gpu_child_execution_receipts")
+    expected_phases = tuple(
+        str(phase)
+        for phase in spec["gpu_child_execution_receipts_required_phase_ids"]
+    )
+    required_binding_keys = set(
+        spec["gpu_child_execution_receipt_binding_required_keys"]
+    )
+    if spec.get("gpu_child_receipt_order_policy_exact") != (
+        CONTRACT.GPU_CHILD_RECEIPT_ORDER_POLICY
+    ):
+        raise QualificationError(f"{file_id} GPU child receipt order policy drift")
+    try:
+        CONTRACT.validate_gpu_child_execution_receipt_mapping(
+            child_receipts,
+            expected_phases,
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            f"{file_id} GPU child receipt bindings drift"
+        ) from exc
+    if (
+        not isinstance(child_receipts, Mapping)
+        or len(child_receipts) != len(expected_phases)
+        or set(child_receipts) != set(expected_phases)
+    ):
+        raise QualificationError(f"{file_id} GPU child receipt bindings drift")
+    for phase in expected_phases:
+        binding = child_receipts[phase]
+        if (
+            not isinstance(binding, Mapping)
+            or set(binding) != required_binding_keys
+            or binding.get("path")
+            != CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS[phase]["path"]
+            or not isinstance(binding.get("bytes"), int)
+            or isinstance(binding.get("bytes"), bool)
+            or int(binding["bytes"]) < 0
+            or any(
+                not isinstance(binding.get(digest_id), str)
+                or len(str(binding[digest_id])) != 64
+                or any(
+                    character not in "0123456789abcdef"
+                    for character in str(binding[digest_id])
+                )
+                for digest_id in ("sha256", "content_digest")
+            )
+        ):
+            raise QualificationError(f"{file_id} GPU child receipt bindings drift")
+
+
 def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
     spec = CONTRACT.build_output_schema()["files"][file_id]
     missing = sorted(set(spec.get("required_keys", ())) - set(value))
@@ -5330,6 +5619,12 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         raise QualificationError(
             f"{file_id} GPU receipt serialization amendment binding drift"
         )
+    if "gpu_child_receipt_order_amendment_binding_exact" in spec and value.get(
+        "gpu_child_receipt_order_amendment_binding"
+    ) != spec["gpu_child_receipt_order_amendment_binding_exact"]:
+        raise QualificationError(
+            f"{file_id} GPU child receipt order amendment binding drift"
+        )
     if "gpu_receipt_serialization_preinference_check_exact" in spec and value.get(
         "gpu_receipt_serialization_preinference_check"
     ) != spec["gpu_receipt_serialization_preinference_check_exact"]:
@@ -5337,19 +5632,7 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
             f"{file_id} GPU receipt serialization preinference check drift"
         )
     if "gpu_child_execution_receipts_required_phase_ids" in spec:
-        child_receipts = value.get("gpu_child_execution_receipts")
-        expected_phases = list(
-            spec["gpu_child_execution_receipts_required_phase_ids"]
-        )
-        if not isinstance(child_receipts, Mapping) or list(child_receipts) != (
-            expected_phases
-        ) or any(
-            not isinstance(child_receipts[phase], Mapping)
-            or set(child_receipts[phase])
-            != {"path", "sha256", "bytes", "content_digest"}
-            for phase in expected_phases
-        ):
-            raise QualificationError(f"{file_id} GPU child receipt bindings drift")
+        _validate_gpu_child_execution_receipt_mapping(file_id, value, spec)
     if file_id in {
         "gpu_child_preflight_receipt",
         "gpu_child_materialize_receipt",
@@ -6062,6 +6345,12 @@ def _markdown_report(result: Mapping[str, Any], aggregates: Mapping[str, Any]) -
         "",
         "The prior fresh run completed its nonreusable tensor materialisation but failed closed before publishing `receipts/gpu_inference.json`: `source_closure_binding.path` was a `pathlib.PosixPath`, which the canonical JSON serializer correctly rejected. The correction converts only that construction-site field with `str(...)`; the serializer remains strict, and no tensor, cost, metric, gate, classification, checkpoint, goal, candidate, or route-outcome rule changed. The full failed archive and its durable child error streams are byte-bound, no prior phase/shard/tensor/receipt is reused, and the corrected run is wholly fresh.",
         "",
+        "## GPU child receipt order amendment and failed-attempt custody",
+        "",
+        f"Amendment binding: `{json.dumps(result['gpu_child_receipt_order_amendment_binding'], sort_keys=True)}`.",
+        "",
+        "The prior fresh run completed all scientific phases and created hidden result, persistence, and report artifacts, but failed closed before canonical publication because canonical JSON reload sorted the `gpu_child_execution_receipts` object keys. The corrected terminal validator treats JSON object member order as nonsemantic, requires the exact phase key set, and validates each frozen phase binding separately. The canonical serializer and all scientific tensors, costs, metrics, gates, classifications, checkpoints, goals, candidates, and route-outcome rules remain unchanged; the complete failed archive is byte-bound and none of it is reused.",
+        "",
         "## Historical renderer limitation",
         "",
         "The frozen renderer receives `genesis_scene.json`, where structural geometry is under `objects`, while its historical builder reads only top-level `walls`, `obstacles`, and `landmarks`. Those keys are absent, so the effective rendered scene geometry is the textured floor plane only. This is preserved to require byte-identical current/true-future token compatibility; the experiment makes no explicit wall or landmark visual-reasoning claim.",
@@ -6295,6 +6584,9 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
         "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
             CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
         ),
+        "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+            CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy": copy.deepcopy(
             CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -6482,6 +6774,9 @@ def _build_persistence_receipt(
             "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
                 CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
             ),
+            "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+                CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+            ),
             "current_token_authority_policy": copy.deepcopy(
                 CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
             ),
@@ -6552,6 +6847,9 @@ def _validate_result_cross_bindings(
         ),
         "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
             CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+        ),
+        "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+            CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
         "current_token_authority_policy": copy.deepcopy(
             CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -6690,6 +6988,8 @@ def _validate_result_cross_bindings(
         != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
         or persistence.get("gpu_receipt_serialization_amendment_binding")
         != CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+        or persistence.get("gpu_child_receipt_order_amendment_binding")
+        != CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         or persistence.get("current_token_authority_policy")
         != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
         or persistence.get("gpu_child_execution_receipts")
@@ -6787,6 +7087,10 @@ def check(
         require_canonical_output_absent=False,
     )
     validate_gpu_receipt_serialization_execution_amendment_custody(
+        frozen_commit,
+        require_canonical_output_absent=False,
+    )
+    validate_gpu_child_receipt_order_execution_amendment_custody(
         frozen_commit,
         require_canonical_output_absent=False,
     )

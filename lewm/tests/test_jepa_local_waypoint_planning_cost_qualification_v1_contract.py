@@ -564,6 +564,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "goal_view_execution_amendment_binding",
         "current_token_execution_amendment_binding",
         "gpu_receipt_serialization_amendment_binding",
+        "gpu_child_receipt_order_amendment_binding",
         "current_token_authority_policy",
         "gpu_child_execution_receipts",
     } <= set(files["preexecution_receipt"]["required_keys"])
@@ -596,6 +597,12 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert preexecution[
         "gpu_receipt_serialization_amendment_binding_exact"
     ] == contract.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+    assert preexecution[
+        "gpu_child_receipt_order_amendment_binding_exact"
+    ] == contract.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+    assert preexecution["gpu_child_receipt_order_policy_exact"] == (
+        contract.GPU_CHILD_RECEIPT_ORDER_POLICY
+    )
     assert preexecution["current_token_authority_policy_exact"] == (
         contract.CURRENT_TOKEN_AUTHORITY_POLICY
     )
@@ -686,6 +693,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "goal_view_execution_amendment_binding" in result_keys
     assert "current_token_execution_amendment_binding" in result_keys
     assert "gpu_receipt_serialization_amendment_binding" in result_keys
+    assert "gpu_child_receipt_order_amendment_binding" in result_keys
     assert "current_token_authority_policy" in result_keys
     assert "gpu_child_execution_receipts" in result_keys
     assert "goal_pose_semantics" in result_keys
@@ -780,6 +788,21 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "gpu_receipt_serialization_amendment_binding" in persistence_schema[
         "required_keys"
     ]
+    assert "gpu_child_receipt_order_amendment_binding" in persistence_schema[
+        "required_keys"
+    ]
+    assert result_schema["gpu_child_receipt_order_policy_exact"] == (
+        contract.GPU_CHILD_RECEIPT_ORDER_POLICY
+    )
+    assert persistence_schema["gpu_child_receipt_order_policy_exact"] == (
+        contract.GPU_CHILD_RECEIPT_ORDER_POLICY
+    )
+    assert schema["gpu_child_execution_receipt_mapping_semantics"] == (
+        contract.GPU_CHILD_RECEIPT_ORDER_POLICY
+    )
+    assert "GPU child receipt order amendment and failed-attempt custody" in files[
+        "report"
+    ]["required_sections"]
     assert "current_token_authority_policy" in persistence_schema["required_keys"]
     assert "gpu_child_execution_receipts" in persistence_schema["required_keys"]
     assert "artifact_manifest_exclusions" in persistence_schema["required_keys"]
@@ -1177,6 +1200,152 @@ def test_gpu_receipt_serialization_amendment_binds_third_failure_and_no_reuse() 
     )
 
 
+def test_gpu_child_receipt_order_amendment_binds_fourth_failure_and_no_reuse() -> None:
+    root = Path(__file__).resolve().parents[2]
+    value = contract.build_gpu_child_receipt_order_execution_amendment()
+    contract.validate_gpu_child_receipt_order_execution_amendment(value)
+    binding = contract.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+    tracked = root / binding["path"]
+    tracked_payload = tracked.read_bytes()
+    assert tracked_payload == (
+        contract.gpu_child_receipt_order_execution_amendment_receipt_bytes()
+    )
+    assert len(tracked_payload) == binding["bytes"]
+    assert hashlib.sha256(tracked_payload).hexdigest() == binding["sha256"]
+    assert value["content_digest"] == binding["content_digest"]
+    assert value["prior_source_freeze"]["commit"] == (
+        contract.GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT
+    )
+
+    for artifact in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "current_token_amendment",
+        "gpu_receipt_serialization_amendment",
+        "source_closure",
+    ):
+        row = value["prior_source_freeze"][artifact]
+        git_payload = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{contract.GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT}:{row['path']}",
+            ],
+            cwd=root,
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+        assert len(git_payload) == row["bytes"]
+        assert hashlib.sha256(git_payload).hexdigest() == row["sha256"]
+
+    failed = value["failed_attempt"]
+    archive = Path(failed["archive_path"])
+    rows = []
+    for path in sorted(item for item in archive.rglob("*") if item.is_file()):
+        file_hash = hashlib.sha256()
+        file_bytes = 0
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                file_hash.update(block)
+                file_bytes += len(block)
+        rows.append(
+            {
+                "path": path.relative_to(archive).as_posix(),
+                "sha256": file_hash.hexdigest(),
+                "bytes": file_bytes,
+            }
+        )
+    inventory = failed["archive_inventory"]
+    canonical = contract.canonical_json_bytes(rows)
+    assert len(rows) == inventory["record_count"] == 5737
+    assert sum(row["bytes"] for row in rows) == inventory["total_bytes"]
+    assert len(canonical) == inventory["canonical_records_bytes"]
+    assert hashlib.sha256(canonical).hexdigest() == inventory["aggregate_sha256"]
+
+    failure = failed["failure_receipt"]
+    failure_payload = (archive / failure["path"]).read_bytes()
+    assert len(failure_payload) == failure["bytes"]
+    assert hashlib.sha256(failure_payload).hexdigest() == failure["sha256"]
+    parsed_failure = json.loads(failure_payload)
+    contract.validate_content_digest(parsed_failure)
+    assert parsed_failure["content_digest"] == failure["content_digest"]
+    assert parsed_failure["phase"] == "DEEP_PREPUBLICATION_CHECK"
+    assert parsed_failure["error_message"] == (
+        "result GPU child receipt bindings drift"
+    )
+    assert parsed_failure["failed_child_execution_receipt"] is None
+    assert set(parsed_failure["prohibition_counters"]) == set(
+        contract.PROHIBITION_COUNTER_IDS
+    )
+    assert all(value == 0 for value in parsed_failure["prohibition_counters"].values())
+
+    summary = failed["artifact_summary"]
+    groups = (
+        "materialization",
+        "latents",
+        "goal_views",
+        "receipts",
+        "evidence",
+        "aggregates",
+        "report",
+        "result",
+    )
+    assert sum(summary[group]["files"] for group in groups) == 5737
+    assert sum(summary[group]["bytes"] for group in groups) == 8488784594
+    for row in failed["nonreusable_terminal_artifacts"].values():
+        payload = (archive / row["path"]).read_bytes()
+        assert len(payload) == row["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == row["sha256"]
+    result = failed["nonreusable_terminal_artifacts"]["result"]
+    result_payload = (archive / result["path"]).read_bytes()
+    assert (
+        b'"result_content_sha256":"'
+        + result["result_content_sha256"].encode("ascii")
+        + b'"'
+    ) in result_payload
+    assert not (archive / "receipts/RUNNING.json").exists()
+    assert not (archive / "receipts/FAILED_RUNNING_MARKER.json").exists()
+    assert failed["scientific_phase_shard_tensor_receipt_or_result_reuse"] is False
+    assert failed[
+        "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+    ] == 0
+
+    policy = value["amended_terminal_mapping_semantics"]
+    assert policy == contract.GPU_CHILD_RECEIPT_ORDER_POLICY
+    ordered = {
+        phase: {
+            "path": f"receipts/{phase.lower()}.json",
+            "sha256": phase.lower(),
+            "bytes": 1,
+            "content_digest": phase,
+        }
+        for phase in contract.GPU_CHILD_PHASE_IDS
+    }
+    reloaded = json.loads(contract.canonical_json_bytes(ordered))
+    assert list(ordered) == ["PREFLIGHT", "MATERIALIZE"]
+    assert list(reloaded) == ["MATERIALIZE", "PREFLIGHT"]
+    assert contract.validate_gpu_child_execution_receipt_mapping(
+        reloaded,
+        contract.GPU_CHILD_PHASE_IDS,
+        expected_bindings=ordered,
+    ) == ordered
+    with pytest.raises(contract.ContractError, match="phase key set drift"):
+        contract.validate_gpu_child_execution_receipt_mapping(
+            {"PREFLIGHT": ordered["PREFLIGHT"]},
+            contract.GPU_CHILD_PHASE_IDS,
+        )
+    tampered = copy.deepcopy(reloaded)
+    tampered["MATERIALIZE"]["sha256"] = "tampered"
+    with pytest.raises(contract.ContractError, match="binding value drift"):
+        contract.validate_gpu_child_execution_receipt_mapping(
+            tampered,
+            contract.GPU_CHILD_PHASE_IDS,
+            expected_bindings=ordered,
+        )
+
+
 def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     contract_path = tmp_path / "contract.json"
     schema_path = tmp_path / "schema.json"
@@ -1184,6 +1353,7 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     amendment_path = tmp_path / "amendment.json"
     current_amendment_path = tmp_path / "current-amendment.json"
     serialization_amendment_path = tmp_path / "serialization-amendment.json"
+    order_amendment_path = tmp_path / "order-amendment.json"
     contract.write_contract(contract_path)
     contract.write_output_schema(schema_path)
     contract.write_fixture_receipt(fixture_path)
@@ -1191,6 +1361,9 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     contract.write_current_token_execution_amendment(current_amendment_path)
     contract.write_gpu_receipt_serialization_execution_amendment(
         serialization_amendment_path
+    )
+    contract.write_gpu_child_receipt_order_execution_amendment(
+        order_amendment_path
     )
     assert contract.load_and_validate_contract(contract_path) == contract.build_contract()
     assert contract.load_and_validate_output_schema(schema_path) == contract.build_output_schema()
@@ -1206,6 +1379,9 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     assert contract.load_and_validate_gpu_receipt_serialization_execution_amendment(
         serialization_amendment_path
     ) == contract.build_gpu_receipt_serialization_execution_amendment()
+    assert contract.load_and_validate_gpu_child_receipt_order_execution_amendment(
+        order_amendment_path
+    ) == contract.build_gpu_child_receipt_order_execution_amendment()
     assert json.loads(contract_path.read_bytes())["experiment_id"] == contract.EXPERIMENT_ID
     contract_path.write_bytes(b"{}\n")
     with pytest.raises(contract.ContractError, match="refusing to overwrite"):
@@ -1555,6 +1731,8 @@ def test_source_closure_builder_never_traverses_generated_or_outcomes() -> None:
     assert str(contract.TRACKED_GOAL_VIEW_AMENDMENT_PATH) in paths
     assert str(contract.TRACKED_CURRENT_TOKEN_AMENDMENT_PATH) in paths
     assert str(contract.TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH) in paths
+    assert str(contract.TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH) in paths
+    assert receipt["row_count"] == len(paths) == 86
     assert not any("route_intent_v2_result" in path for path in paths)
     with pytest.raises(contract.ContractError, match="duplicate"):
         contract.build_source_closure(

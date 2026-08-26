@@ -225,6 +225,46 @@ receipt or other file may be reused. A new correction commit, fresh preflight
 and entirely new empty hidden attempt are required. This amendment is frozen in
 `docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_gpu_receipt_serialization_amendment_2026-08-26.json`.
 
+## Failed fourth attempt and prospective terminal mapping-order amendment
+
+The GPU-receipt serialization correction source freeze
+`700c55482233f48d2ff8d93faf6c69948c0cecb9` remains an immutable ancestor.
+Its fresh hidden execution reached the deep prepublication check and failed
+closed with `QualificationError: result GPU child receipt bindings drift`.
+The untouched attempt is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787779458317502376-427544`.
+Its complete 5,737-file, 8,488,784,594-byte inventory has 937,603 canonical
+record bytes and aggregate SHA-256
+`596b591e1126bf00e0b12ec585d1ec55253bbfe48ff04218e2685d40bd90f97d`.
+The failure receipt is 1,189 bytes, file SHA-256
+`f1545a3938bd6b612d1ab8f60f3f928d407833053cb1657129bf2a0eb887b6e3`
+and content digest
+`7ca3e23e88ad96991c299b77cff4cbcd04ca149251d011988e2c75d3bfb912e4`.
+It records phase `DEEP_PREPUBLICATION_CHECK`, no failed child receipt,
+`partial_artifacts_reusable=false`, `nothing_running=true`, and all eleven
+prohibition counters at zero. `RUNNING.json` and `FAILED_RUNNING_MARKER.json`
+are absent.
+
+The exact defect is terminal-only. The writer constructed
+`gpu_child_execution_receipts` in frozen phase-authority order
+`PREFLIGHT,MATERIALIZE`; canonical JSON correctly sorted object member names,
+and JSON reload therefore exposed iteration order `MATERIALIZE,PREFLIGHT`.
+The generic validator at prior source line 5344 incorrectly required
+`list(child_receipts) == expected_phases`. JSON object member order is not
+semantic. The prospective correction requires the exact phase key set, then
+iterates the frozen phase authority and requires each phase's exact binding
+value. It never depends on loaded mapping insertion order. Canonical JSON
+sorting remains unchanged.
+
+The hidden archive contains complete materialisation, tensor, evidence,
+aggregate, persistence, result and report artifacts, but none was published to
+the canonical output or tracked result paths. No scientific value from those
+artifacts was used to define this amendment, and every archived phase, shard,
+tensor, receipt, aggregate, result and report remains nonreusable. A new
+correction commit, fresh preflight and entirely new empty hidden attempt are
+required. This amendment is frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_gpu_child_receipt_order_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -795,11 +835,12 @@ and metadata only in the outer failure archive/receipt.
 
 ## Commit and stop rules
 
-The original freeze, goal-view correction and current-token correction commits
-remain ancestors because they bind the three archived failed attempts. Make one
-separate prospective GPU-receipt serialization correction commit before a new
-fresh preflight; do not amend or orphan any ancestor and do not reuse a prior
-phase, shard, tensor or receipt. The final result commit message remains exactly
+The original freeze and all three prior correction commits remain ancestors
+because they bind the four archived failed attempts. Make one separate
+prospective terminal mapping-order correction commit before a new fresh
+preflight; do not amend or orphan any ancestor and do not reuse a prior phase,
+shard, tensor, receipt, aggregate, result or report. The final result commit
+message remains exactly
 `Evaluate JEPA local waypoint planning cost qualification`.
 
 Stop after row evidence, aggregates, gates, classifications, runtime/storage

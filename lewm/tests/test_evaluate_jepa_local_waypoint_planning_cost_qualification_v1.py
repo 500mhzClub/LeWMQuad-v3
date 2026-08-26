@@ -52,6 +52,10 @@ def _populate_current_token_schema_fields(
         value["gpu_receipt_serialization_amendment_binding"] = copy.deepcopy(
             spec["gpu_receipt_serialization_amendment_binding_exact"]
         )
+    if "gpu_child_receipt_order_amendment_binding_exact" in spec:
+        value["gpu_child_receipt_order_amendment_binding"] = copy.deepcopy(
+            spec["gpu_child_receipt_order_amendment_binding_exact"]
+        )
     if "gpu_receipt_serialization_preinference_check_exact" in spec:
         value["gpu_receipt_serialization_preinference_check"] = copy.deepcopy(
             spec["gpu_receipt_serialization_preinference_check_exact"]
@@ -310,6 +314,13 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "load_and_validate_gpu_child_receipt_order_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT
+        ),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "load_and_validate_fixture_receipt",
         lambda: {"pass": True, "executed_checks": {"synthetic": True}},
     )
@@ -413,6 +424,46 @@ def test_frozen_receipts_fail_closed_when_gpu_receipt_amendment_is_absent(
         E.validate_frozen_receipts()
 
 
+def test_frozen_receipts_fail_closed_when_gpu_child_order_amendment_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_goal_view_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_current_token_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_gpu_receipt_serialization_execution_amendment",
+        lambda: copy.deepcopy(
+            E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT
+        ),
+    )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_gpu_child_receipt_order_execution_amendment",
+        absent,
+    )
+    with pytest.raises(E.QualificationError, match="GPU child receipt order.*absent"):
+        E.validate_frozen_receipts()
+
+
 def test_freeze_writes_both_amendments_before_source_closure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -441,6 +492,11 @@ def test_freeze_writes_both_amendments_before_source_closure(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "write_gpu_child_receipt_order_execution_amendment",
+        lambda *_args: calls.append("gpu_child_order_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "build_source_closure",
         lambda *_args, **_kwargs: calls.append("build_closure") or {},
     )
@@ -459,6 +515,9 @@ def test_freeze_writes_both_amendments_before_source_closure(
             "gpu_receipt_serialization_execution_amendment": {
                 "content_digest": "r"
             },
+            "gpu_child_receipt_order_execution_amendment": {
+                "content_digest": "o"
+            },
             "source_closure": {"content_digest": "s"},
         },
     )
@@ -470,6 +529,7 @@ def test_freeze_writes_both_amendments_before_source_closure(
         "goal_amendment",
         "current_amendment",
         "gpu_receipt_amendment",
+        "gpu_child_order_amendment",
         "build_closure",
         "write_closure",
     ]
@@ -479,6 +539,10 @@ def test_freeze_writes_both_amendments_before_source_closure(
             "gpu_receipt_serialization_execution_amendment_content_digest"
         ]
         == "r"
+    )
+    assert (
+        receipt["gpu_child_receipt_order_execution_amendment_content_digest"]
+        == "o"
     )
 
 
@@ -585,6 +649,55 @@ def test_gpu_environment_schema_requires_exact_serialization_preinference_check(
     tampered = E.attach_digest(tampered)
     with pytest.raises(E.QualificationError, match="preinference check drift"):
         E._validate_schema_value("gpu_environment_receipt", tampered)
+
+
+def test_gpu_child_receipt_mapping_survives_canonical_json_key_order() -> None:
+    roundtripped = json.loads(
+        E.canonical_json_bytes(
+            {"gpu_child_execution_receipts": _synthetic_child_bindings()}
+        )
+    )
+    assert list(roundtripped["gpu_child_execution_receipts"]) == [
+        "MATERIALIZE",
+        "PREFLIGHT",
+    ]
+    for file_id in ("result", "persistence_receipt"):
+        spec = E.CONTRACT.build_output_schema()["files"][file_id]
+        E._validate_gpu_child_execution_receipt_mapping(
+            file_id, roundtripped, spec
+        )
+
+        missing = copy.deepcopy(roundtripped)
+        missing["gpu_child_execution_receipts"].pop("MATERIALIZE")
+        with pytest.raises(E.QualificationError, match="receipt bindings drift"):
+            E._validate_gpu_child_execution_receipt_mapping(
+                file_id, missing, spec
+            )
+
+        extra = copy.deepcopy(roundtripped)
+        extra["gpu_child_execution_receipts"]["TERMINAL"] = copy.deepcopy(
+            extra["gpu_child_execution_receipts"]["PREFLIGHT"]
+        )
+        with pytest.raises(E.QualificationError, match="receipt bindings drift"):
+            E._validate_gpu_child_execution_receipt_mapping(file_id, extra, spec)
+
+        wrong_phase = copy.deepcopy(roundtripped)
+        preflight_path = wrong_phase["gpu_child_execution_receipts"]["PREFLIGHT"][
+            "path"
+        ]
+        materialize_path = wrong_phase["gpu_child_execution_receipts"][
+            "MATERIALIZE"
+        ]["path"]
+        wrong_phase["gpu_child_execution_receipts"]["PREFLIGHT"][
+            "path"
+        ] = materialize_path
+        wrong_phase["gpu_child_execution_receipts"]["MATERIALIZE"][
+            "path"
+        ] = preflight_path
+        with pytest.raises(E.QualificationError, match="receipt bindings drift"):
+            E._validate_gpu_child_execution_receipt_mapping(
+                file_id, wrong_phase, spec
+            )
 
 
 def test_result_schema_rejects_goal_cell_classification_validation_drift() -> None:
@@ -810,6 +923,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
                 "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
                     E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
                 ),
+                "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
+                ),
                 "current_token_authority_policy": copy.deepcopy(
                     E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
                 ),
@@ -839,6 +955,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             ),
             "gpu_receipt_serialization_amendment_binding": copy.deepcopy(
                 E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT_BINDING
+            ),
+            "gpu_child_receipt_order_amendment_binding": copy.deepcopy(
+                E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
             ),
             "current_token_authority_policy": copy.deepcopy(
                 E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
