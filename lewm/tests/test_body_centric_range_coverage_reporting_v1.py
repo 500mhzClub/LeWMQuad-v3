@@ -147,6 +147,19 @@ def test_progress_and_regret_are_not_artificially_capped_at_one() -> None:
     assert result["checks"]["normalized_regret"]["pass"] is False
 
 
+def test_signed_backward_route_progress_is_preserved_as_a_gate_failure() -> None:
+    metrics = _passing_metrics()
+    metrics["viability"]["oracle_progress_fraction"] = -0.1
+    result = R.evaluate_true_future_gate(metrics)
+    assert result["pass"] is False
+    check = result["checks"]["h3_route_progress_fraction"]
+    assert check["value"] == -0.1
+    assert check["operator"] == ">="
+    assert check["threshold"] == 0.8
+    assert check["pass"] is False
+    assert "h3_route_progress_fraction" in result["failed_checks"]
+
+
 @pytest.mark.parametrize(
     ("family_patch", "failed_family_check"),
     [

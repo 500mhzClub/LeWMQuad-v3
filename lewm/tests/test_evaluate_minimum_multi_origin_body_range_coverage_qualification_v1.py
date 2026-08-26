@@ -824,3 +824,18 @@ def test_execution_plan_remains_bound_to_freeze_commit_after_head_moves(
         assert "execution-plan" in str(error)
     else:  # pragma: no cover
         raise AssertionError("execution plan accepted a different source freeze commit")
+
+
+def test_signed_h3_reporting_amendment_binds_failed_attempt_custody() -> None:
+    bindings = EVALUATOR._implementation_amendment_bindings()
+    reporting = bindings["signed_h3_progress_reporting"]
+    assert reporting["path"].endswith(
+        "minimum_multi_origin_body_range_coverage_qualification_v1_"
+        "reporting_amendment_2026-08-26.json"
+    )
+    assert reporting["sha256"] == EVALUATOR.sha256_file(
+        EVALUATOR.TRACKED_REPORTING_AMENDMENT
+    )
+    amendment = json.loads(EVALUATOR.TRACKED_REPORTING_AMENDMENT.read_text())
+    assert reporting["content_digest"] == amendment["content_digest"]
+    assert amendment["custody_and_retry"]["restart_from_state_zero"] is True

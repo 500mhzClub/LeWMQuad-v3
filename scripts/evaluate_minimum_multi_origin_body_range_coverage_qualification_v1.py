@@ -53,6 +53,7 @@ TRACKED_MOUNTS = ROOT / CONTRACT.TRACKED_MOUNT_LIBRARY_PATH
 TRACKED_CLOSURE = ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH
 TRACKED_FIXTURE = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_fixture_2026-08-26.json"
 TRACKED_IMPLEMENTATION_AMENDMENT = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_implementation_amendment_2026-08-26.json"
+TRACKED_REPORTING_AMENDMENT = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_reporting_amendment_2026-08-26.json"
 RESULT_JSON = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_result_2026-08-26.json"
 RESULT_MD = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_result_2026-08-26.md"
 PREDECESSOR_RESULT = ROOT / "docs/lewm_go2_body_centric_range_coverage_qualification_v1_result_2026-08-25.json"
@@ -292,12 +293,14 @@ def _source_paths() -> tuple[Path, ...]:
         ROOT / "lewm/tests/test_minimum_multi_origin_body_range_coverage_metrics_v1.py",
         ROOT / "lewm/tests/test_minimum_multi_origin_body_range_coverage_qualification_v1_contract.py",
         ROOT / "lewm/tests/test_evaluate_minimum_multi_origin_body_range_coverage_qualification_v1.py",
+        ROOT / "lewm/tests/test_body_centric_range_coverage_reporting_v1.py",
         TRACKED_PREREG,
         TRACKED_CONTRACT,
         TRACKED_SCHEMA,
         TRACKED_MOUNTS,
         TRACKED_FIXTURE,
         TRACKED_IMPLEMENTATION_AMENDMENT,
+        TRACKED_REPORTING_AMENDMENT,
     )
 
 
@@ -348,6 +351,50 @@ def _combined_fixture_receipt() -> dict[str, Any]:
     return value
 
 
+def _implementation_amendment_bindings() -> dict[str, Any]:
+    reporting = json.loads(TRACKED_REPORTING_AMENDMENT.read_text())
+    reporting_core = dict(reporting)
+    declared = reporting_core.pop("content_digest", None)
+    if declared != content_digest(reporting_core):
+        raise RuntimeError("signed-H3 reporting amendment self-digest mismatch")
+    failed = reporting.get("failed_attempt", {})
+    failed_receipt_path = Path(str(failed.get("receipt_path", "")))
+    if (
+        reporting.get("status")
+        != "REPORTING_DOMAIN_DEFECT_FIXED_AFTER_FAILED_CLOSED_PARTIAL_EXECUTION"
+        or reporting.get("scientific_contract_unchanged") is not True
+        or reporting.get("threshold_algorithm_or_gate_changed") is not False
+        or reporting.get("materialization_or_scientific_metric_reducer_changed")
+        is not False
+        or reporting.get("custody_and_retry", {}).get("restart_from_state_zero")
+        is not True
+        or not failed_receipt_path.is_file()
+        or failed_receipt_path.stat().st_size != failed.get("receipt_bytes")
+        or sha256_file(failed_receipt_path) != failed.get("receipt_sha256")
+    ):
+        raise RuntimeError("signed-H3 reporting amendment custody mismatch")
+    failed_receipt = json.loads(failed_receipt_path.read_text())
+    failed_core = dict(failed_receipt)
+    failed_declared = failed_core.pop("content_digest", None)
+    if (
+        failed_declared != content_digest(failed_core)
+        or failed_declared != failed.get("receipt_content_digest")
+        or failed_receipt.get("failure_stage") != "THREE_HELDOUT_GATE_REPORTING"
+    ):
+        raise RuntimeError("signed-H3 failed-attempt receipt mismatch")
+    return {
+        "layout_p05": {
+            "path": str(TRACKED_IMPLEMENTATION_AMENDMENT.relative_to(ROOT)),
+            "sha256": sha256_file(TRACKED_IMPLEMENTATION_AMENDMENT),
+        },
+        "signed_h3_progress_reporting": {
+            "path": str(TRACKED_REPORTING_AMENDMENT.relative_to(ROOT)),
+            "sha256": sha256_file(TRACKED_REPORTING_AMENDMENT),
+            "content_digest": declared,
+        },
+    }
+
+
 def write_freeze_receipts() -> dict[str, Any]:
     from lewm.safety import minimum_multi_origin_body_range_coverage_v1 as core
 
@@ -373,6 +420,7 @@ def write_freeze_receipts() -> dict[str, Any]:
         "fixture_sha256": sha256_file(TRACKED_FIXTURE),
         "source_closure_sha256": sha256_file(TRACKED_CLOSURE),
         "source_closure_content_digest": closure["content_digest"],
+        "implementation_amendments": _implementation_amendment_bindings(),
     }
 
 
@@ -520,6 +568,7 @@ def preflight() -> dict[str, Any]:
         "fixture_sha256": sha256_file(TRACKED_FIXTURE),
         "fixture_content_digest": fixture["content_digest"],
         "source_closure_sha256": sha256_file(TRACKED_CLOSURE),
+        "implementation_amendments": _implementation_amendment_bindings(),
         "source_closure_content_digest": closure["content_digest"],
         "predecessor_result_content_digest": predecessor["result_content_sha256"],
         "predecessor_bindings": {
@@ -6200,6 +6249,7 @@ def evaluate(*, execution_started: float | None = None) -> dict[str, Any]:
         "mount_library_receipt_sha256": sha256_file(TRACKED_MOUNTS),
         "mount_library_content_digest": mounts["content_digest"],
         "source_closure_sha256": sha256_file(TRACKED_CLOSURE),
+        "implementation_amendments": preexecution["implementation_amendments"],
         "corpus_bindings": {
             **EXPECTED,
             "result_commit": PREDECESSOR_RESULT_COMMIT,

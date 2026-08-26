@@ -343,7 +343,11 @@ def evaluate_true_future_gate(metrics: Mapping[str, Any]) -> dict[str, Any]:
         ),
         "viability.selected_oracle_nonviable_successors",
     )
-    progress = _nonnegative_or_none(
+    # H3 route progress is signed.  A sensor-derived filter can retain only
+    # backward-progress actions even when the exact-geometry authority has
+    # positive progress.  Preserve that scientifically meaningful negative
+    # value so the unchanged >= 0.80 gate fails honestly.
+    progress = _number_or_none(
         _value(
             viability,
             (
