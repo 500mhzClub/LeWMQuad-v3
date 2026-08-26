@@ -23,6 +23,38 @@ E = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(E)
 
 
+def _synthetic_child_bindings(
+    phases: tuple[str, ...] = ("PREFLIGHT", "MATERIALIZE"),
+) -> dict[str, dict[str, object]]:
+    return {
+        phase: {
+            "path": f"receipts/gpu_child_{phase.lower()}.json",
+            "sha256": ("a" if phase == "PREFLIGHT" else "b") * 64,
+            "bytes": 123,
+            "content_digest": ("c" if phase == "PREFLIGHT" else "d") * 64,
+        }
+        for phase in phases
+    }
+
+
+def _populate_current_token_schema_fields(
+    value: dict[str, object], spec: dict[str, object]
+) -> None:
+    if "current_token_execution_amendment_binding_exact" in spec:
+        value["current_token_execution_amendment_binding"] = copy.deepcopy(
+            spec["current_token_execution_amendment_binding_exact"]
+        )
+    if "current_token_authority_policy_exact" in spec:
+        value["current_token_authority_policy"] = copy.deepcopy(
+            spec["current_token_authority_policy_exact"]
+        )
+    phases = spec.get("gpu_child_execution_receipts_required_phase_ids")
+    if phases is not None:
+        value["gpu_child_execution_receipts"] = _synthetic_child_bindings(
+            tuple(str(phase) for phase in phases)
+        )
+
+
 def test_control_history_is_exact_contiguous_applied_k_minus_one_slice() -> None:
     blocks = {
         index: np.asarray(
@@ -183,6 +215,7 @@ def test_schema_validator_rejects_one_dropped_required_key() -> None:
     value["interpreter_entrypoint"] = E.CONTRACT.build_contract()["execution"][
         "environments"
     ]["encoder_predictor"]["interpreter"]
+    _populate_current_token_schema_fields(value, spec)
     value = E.attach_digest(value)
     E._validate_schema_value("gpu_inference_receipt", value)
     value.pop("training_steps")
@@ -215,6 +248,7 @@ def test_preexecution_schema_rejects_contract_disclosure_tamper() -> None:
             ),
         },
     }
+    _populate_current_token_schema_fields(value, spec)
     value = E.attach_digest(value)
     E._validate_schema_value("preexecution_receipt", value)
     value["preexecution_custody"]["contract_disclosure"].pop(
@@ -253,6 +287,11 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
         E.CONTRACT,
         "load_and_validate_goal_view_execution_amendment",
         lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_current_token_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT),
     )
     monkeypatch.setattr(
         E.CONTRACT,
@@ -300,6 +339,86 @@ def test_frozen_receipts_fail_closed_when_goal_view_amendment_is_absent(
         E.validate_frozen_receipts()
 
 
+def test_frozen_receipts_fail_closed_when_current_token_amendment_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_goal_view_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT),
+    )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT, "load_and_validate_current_token_execution_amendment", absent
+    )
+    with pytest.raises(E.QualificationError, match="current-token.*absent or invalid"):
+        E.validate_frozen_receipts()
+
+
+def test_freeze_writes_both_amendments_before_source_closure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    monkeypatch.setattr(E.CONTRACT, "write_contract", lambda *_args: calls.append("contract"))
+    monkeypatch.setattr(
+        E.CONTRACT, "write_output_schema", lambda *_args: calls.append("schema")
+    )
+    monkeypatch.setattr(
+        E.CONTRACT, "write_fixture_receipt", lambda *_args: calls.append("fixture")
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "write_goal_view_execution_amendment",
+        lambda *_args: calls.append("goal_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "write_current_token_execution_amendment",
+        lambda *_args: calls.append("current_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "build_source_closure",
+        lambda *_args, **_kwargs: calls.append("build_closure") or {},
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "write_source_closure",
+        lambda *_args: calls.append("write_closure"),
+    )
+    monkeypatch.setattr(
+        E,
+        "validate_frozen_receipts",
+        lambda: {
+            "fixture": {"content_digest": "f"},
+            "goal_view_execution_amendment": {"content_digest": "g"},
+            "current_token_execution_amendment": {"content_digest": "c"},
+            "source_closure": {"content_digest": "s"},
+        },
+    )
+    receipt = E.freeze(E.ROOT)
+    assert calls == [
+        "contract",
+        "schema",
+        "fixture",
+        "goal_amendment",
+        "current_amendment",
+        "build_closure",
+        "write_closure",
+    ]
+    assert receipt["current_token_execution_amendment_content_digest"] == "c"
+
+
 def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys() -> None:
     spec = E.CONTRACT.build_output_schema()["files"]["result"]
     value = {key: None for key in spec["required_keys"] if key != "result_content_sha256"}
@@ -336,6 +455,7 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     value["execution_watchdog_status"] = dict(
         E.CONTRACT.EXECUTION_WATCHDOG_STATUS_SUCCESS
     )
+    _populate_current_token_schema_fields(value, spec)
     value = E.attach_digest(value, "result_content_sha256")
     E._validate_schema_value("result", value)
     value["storage"].pop("peak_vram_bytes")
@@ -378,6 +498,7 @@ def test_result_schema_rejects_goal_cell_classification_validation_drift() -> No
     value["execution_watchdog_status"] = copy.deepcopy(
         E.CONTRACT.EXECUTION_WATCHDOG_STATUS_SUCCESS
     )
+    _populate_current_token_schema_fields(value, spec)
     value = E.attach_digest(value, "result_content_sha256")
     E._validate_schema_value("result", value)
 
@@ -470,6 +591,12 @@ def test_result_cross_binding_rejects_contract_digest_drift(
     monkeypatch.setattr(
         E, "_binding", lambda relative, _root: {"path": str(relative), "bound": True}
     )
+    child_bindings = _synthetic_child_bindings()
+    monkeypatch.setattr(
+        E,
+        "_gpu_child_execution_receipt_bindings",
+        lambda *_args, **_kwargs: copy.deepcopy(child_bindings),
+    )
     classification = {
         "true_future_gate_classification": "TRUE_FUTURE_LATENT_GOAL_COST_NO_GO",
         "two_step_gate_passed": False,
@@ -522,12 +649,17 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             "cpu_watchdog_status": cpu_watchdog,
         },
         "gpu_inference_receipt": {"gpu_watchdog_status": gpu_watchdog},
-        "latent_tensor_index": {
-            "total_records": 5424,
-            "counts_by_kind": {
-                "ONE_STEP_PREDICTED": 1728,
-                "TWO_STEP_PREDICTED": 1728,
-            },
+            "latent_tensor_index": {
+                "total_records": 5424,
+                "counts_by_kind": {
+                    "ONE_STEP_PREDICTED": 1728,
+                    "TWO_STEP_PREDICTED": 1728,
+                },
+                "physical_encoder_materialisation_counts": {
+                    "total_new_encoder_frames": 144,
+                    "batches": 9,
+                    "authority_current_payload_copies": 48,
+                },
         },
         "goal_view_index": {
             "states": 48,
@@ -546,10 +678,17 @@ def test_result_cross_binding_rejects_contract_digest_drift(
         },
         "persistence_receipt": {
             "row_reproduction": reproduction,
-            "goal_view_execution_amendment_binding": copy.deepcopy(
-                E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
-            ),
-            "prohibition_counters": E.prohibition_counters(),
+                "goal_view_execution_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+                ),
+                "current_token_execution_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+                ),
+                "current_token_authority_policy": copy.deepcopy(
+                    E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+                ),
+                "gpu_child_execution_receipts": copy.deepcopy(child_bindings),
+                "prohibition_counters": E.prohibition_counters(),
         },
     }
     execution_watchdog = E._successful_execution_watchdog_status(
@@ -566,9 +705,16 @@ def test_result_cross_binding_rejects_contract_digest_drift(
         "seed": E.CONTRACT.SEED,
         "fixture_sha256": E.sha256_file(fixture),
         "source_closure_sha256": E.sha256_file(closure),
-        "goal_view_execution_amendment_binding": copy.deepcopy(
-            E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
-        ),
+            "goal_view_execution_amendment_binding": copy.deepcopy(
+                E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+            ),
+            "current_token_execution_amendment_binding": copy.deepcopy(
+                E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "current_token_authority_policy": copy.deepcopy(
+                E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+            ),
+            "gpu_child_execution_receipts": copy.deepcopy(child_bindings),
         "goal_pose_semantics": copy.deepcopy(E.GOAL_POSE_SEMANTICS),
         "goal_cell_classification_counts": copy.deepcopy(
             E.CONTRACT.GOAL_CELL_CLASSIFICATION_COUNTS
@@ -606,7 +752,11 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             "oracle_fanout_physics_frames": 1_080_000,
             "total_simulator_blocks": 6_240,
             "total_simulator_physics_frames": 1_560_000,
-            "snapshot_reproductions": 48,
+                "snapshot_reproductions": 48,
+                "new_encoder_frames": 144,
+                "new_encoder_batches": 9,
+                "current_authority_payload_copies": 48,
+                "current_token_reencodes": 0,
             "latent_tensors": 5424,
             "predicted_tensors": 3456,
             "candidate_evidence_rows": 1728,
@@ -655,6 +805,11 @@ def test_persistence_manifest_binds_report_and_has_exact_exclusions(
     root.mkdir()
     (root / "stable.bin").write_bytes(b"stable")
     monkeypatch.setattr(E, "_binding", lambda *_args, **_kwargs: {"bound": True})
+    monkeypatch.setattr(
+        E,
+        "_gpu_child_execution_receipt_bindings",
+        lambda *_args, **_kwargs: _synthetic_child_bindings(),
+    )
     monkeypatch.setattr(E, "validate_input_hashes", lambda: {})
     monkeypatch.setattr(
         E,
@@ -1019,7 +1174,7 @@ def test_prefreeze_byte_inventory_roundtrip_validates_before_parse(
 
 
 def test_gpu_child_watchdogs_use_frozen_phase_timeouts_and_fail_closed(
-    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     observed: list[int] = []
 
@@ -1027,16 +1182,124 @@ def test_gpu_child_watchdogs_use_frozen_phase_timeouts_and_fail_closed(
         observed.append(int(kwargs["timeout"]))
         if len(observed) == 2:
             raise E.subprocess.TimeoutExpired(cmd="gpu", timeout=kwargs["timeout"])
-        return SimpleNamespace(stdout="", returncode=0)
+        return SimpleNamespace(stdout="", stderr="", returncode=0)
 
     monkeypatch.setattr(E.subprocess, "run", fake_run)
-    E._run_gpu_child(["preflight"])
+    root = tmp_path / "attempt"
+    root.mkdir()
+    common = [
+        "--source-freeze-commit",
+        "a" * 40,
+        "--output-root",
+        str(root),
+    ]
+    E._run_gpu_child(["preflight", *common])
     assert observed == [E.CONTRACT.EXECUTION_WATCHDOGS["gpu_preflight_timeout_s"]]
-    with pytest.raises(E.QualificationError, match="materialize watchdog"):
-        E._run_gpu_child(["materialize"])
+    preflight = E.load_json(root / "receipts/gpu_child_preflight.json")
+    assert preflight["phase"] == "PREFLIGHT"
+    bindings = E._gpu_child_execution_receipt_bindings(
+        root, "a" * 40, ("PREFLIGHT",)
+    )
+    assert bindings == {
+        "PREFLIGHT": E._binding(Path("receipts/gpu_child_preflight.json"), root)
+    }
+    with pytest.raises(E.GPUChildExecutionError, match="materialize watchdog"):
+        E._run_gpu_child(["materialize", *common])
     assert observed[-1] == E.CONTRACT.EXECUTION_WATCHDOGS[
         "gpu_materialization_timeout_s"
     ]
+    receipt = E.load_json(root / "receipts/gpu_child_materialize.json")
+    assert receipt["timed_out"] is True
+    assert receipt["returncode"] is None
+    assert receipt["pass"] is False
+    E.validate_digest(receipt)
+
+
+def test_gpu_child_failure_streams_survive_whole_attempt_archive(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_commit = "b" * 40
+    attempt = tmp_path / ".attempt"
+    attempt.mkdir()
+    stdout = "partial child output\n"
+    stderr = "Traceback\nexact GPU failure marker\n"
+
+    def fail(*args: object, **_kwargs: object) -> object:
+        raise E.subprocess.CalledProcessError(
+            7, args[0], output=stdout, stderr=stderr
+        )
+
+    monkeypatch.setattr(E.subprocess, "run", fail)
+    with pytest.raises(
+        E.GPUChildExecutionError, match="exact GPU failure marker"
+    ) as caught:
+        E._run_gpu_child(
+            [
+                "materialize",
+                "--source-freeze-commit",
+                source_commit,
+                "--output-root",
+                str(attempt),
+            ]
+        )
+    child = E.load_json(attempt / "receipts/gpu_child_materialize.json")
+    assert child["returncode"] == 7
+    assert child["stderr"]["tail_utf8"].endswith(
+        "exact GPU failure marker\n"
+    )
+    assert (attempt / child["stdout"]["path"]).read_text() == stdout
+    assert (attempt / child["stderr"]["path"]).read_text() == stderr
+    E.validate_digest(child)
+
+    monkeypatch.setattr(E, "_active_experiment_processes", lambda: [])
+    archive = E._archive_failed_attempt(
+        attempt,
+        source_freeze_commit=source_commit,
+        phase="MATERIALIZATION",
+        error=caught.value,
+    )
+    assert archive is not None and not attempt.exists()
+    archived_failure = E.load_json(archive / "receipts/failure.json")
+    binding = archived_failure["failed_child_execution_receipt"]
+    assert binding == E._binding(
+        E.Path("receipts/gpu_child_materialize.json"), archive
+    )
+    assert "exact GPU failure marker" in archived_failure["error_message"]
+    assert (
+        archive / "materialization/logs/gpu_materialize.stderr.log"
+    ).read_text() == stderr
+
+
+def test_successful_gpu_terminal_check_is_observational(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "final"
+    root.mkdir()
+    monkeypatch.setattr(
+        E.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            stdout='{"pass":true}\n', stderr="", returncode=0
+        ),
+    )
+    result = E._run_gpu_child(
+        [
+            "check",
+            "--source-freeze-commit",
+            "c" * 40,
+            "--output-root",
+            str(root),
+        ]
+    )
+    assert result.returncode == 0
+    assert list(root.rglob("*")) == []
+
+
+def test_report_source_contains_exact_current_token_amendment_section() -> None:
+    source = inspect.getsource(E._markdown_report)
+    assert "## Current-token authority amendment and BF16 cohort limitation" in source
+    assert "144 frames in nine fixed batches of 16" in source
+    assert "Current-token re-encodes are zero" in source
 
 
 def test_successful_watchdog_status_is_exact_and_rejects_partial_resume() -> None:

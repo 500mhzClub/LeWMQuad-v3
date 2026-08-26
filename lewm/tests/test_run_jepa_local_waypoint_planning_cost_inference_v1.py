@@ -53,6 +53,116 @@ def test_context_inventory_fails_closed_on_missing_slot() -> None:
         G._context_frame_map(rows)
 
 
+def test_new_encoder_inventory_excludes_current_and_forms_nine_full_batches() -> None:
+    rows = _mixed_frames()
+    encoded = G._new_encoder_frame_inventory(rows)
+    assert len(encoded) == 144
+    assert len(encoded) // G.ENCODER_BATCH == 9
+    assert all(
+        row["kind"] == "GOAL" or int(row["slot"]) in (0, 1)
+        for row in encoded
+    )
+    assert sum(row["kind"] == "CONTEXT" for row in encoded) == 96
+    assert sum(row["kind"] == "GOAL" for row in encoded) == 48
+    assert not any(
+        row["kind"] == "CONTEXT" and int(row["slot"]) == 2
+        for row in encoded
+    )
+
+
+def test_frozen_current_is_copied_once_and_context_current_are_exact_aliases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    shape = (2, 3)
+    monkeypatch.setattr(G, "TENSOR_SHAPE", shape)
+    monkeypatch.setattr(G, "TENSOR_DTYPE", np.dtype(np.float16))
+    authority: dict[str, dict[str, object]] = {}
+    rows = _mixed_frames()
+    for row in rows:
+        if row["kind"] == "CONTEXT":
+            row["family"] = "family"
+            row["role"] = "heldout"
+            if row["slot"] == 2:
+                rgb = tmp_path / "rgb" / f"{row['state_id']}.png"
+                rgb.parent.mkdir(parents=True, exist_ok=True)
+                rgb.write_bytes(f"rgb-{row['state_id']}".encode())
+                row["rgb_path"] = str(rgb)
+                row["rgb_sha256"] = G.sha256_file(rgb)
+    for state in range(48):
+        state_id = f"purpose-{state}"
+        value = np.asarray(
+            [[state, state + 0.25, state + 0.5], [1.0, -2.0, 3.0]],
+            dtype=np.float16,
+        )
+        path = tmp_path / "authority" / f"{state_id}.f16"
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(value.tobytes(order="C"))
+        rgb_sha = next(
+            str(row["rgb_sha256"])
+            for row in rows
+            if row["kind"] == "CONTEXT"
+            and row["state_id"] == state_id
+            and row["slot"] == 2
+        )
+        authority[state_id] = {
+            "rgb_sha256": rgb_sha,
+            "token_path": str(path),
+            "token_sha256": G.sha256_file(path),
+        }
+    monkeypatch.setattr(G, "_dense_current_authority", lambda: authority)
+
+    context, current = G._copy_current_and_validate(rows, output_root=tmp_path)
+    assert len(context) == len(current) == 48
+    assert len({row["path"] for row in [*context, *current]}) == 48
+    for context_row, current_row in zip(context, current, strict=True):
+        assert context_row["kind"] == "CONTEXT"
+        assert context_row["horizon_or_null"] == 0
+        assert current_row["kind"] == "CURRENT"
+        assert current_row["horizon_or_null"] is None
+        assert {
+            key: context_row[key] for key in ("path", "sha256", "bytes")
+        } == {key: current_row[key] for key in ("path", "sha256", "bytes")}
+        external = current_row["external_existing_artifact"]
+        assert external["raw_payload_byte_exact"] is True
+        assert external["copied_to_attempt_once"] is True
+        assert external["reencoded"] is False
+
+
+def test_frozen_current_copy_rejects_rgb_authority_drift(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rows = _mixed_frames()
+    for row in rows:
+        if row["kind"] == "CONTEXT":
+            row["family"] = "family"
+            row["role"] = "heldout"
+            if row["slot"] == 2:
+                rgb = tmp_path / "rgb" / f"{row['state_id']}.png"
+                rgb.parent.mkdir(parents=True, exist_ok=True)
+                rgb.write_bytes(f"rgb-{row['state_id']}".encode())
+                row["rgb_path"] = str(rgb)
+                row["rgb_sha256"] = G.sha256_file(rgb)
+    authority = {}
+    for state in range(48):
+        state_id = f"purpose-{state}"
+        context = next(
+            row
+            for row in rows
+            if row["kind"] == "CONTEXT"
+            and row["state_id"] == state_id
+            and row["slot"] == 2
+        )
+        authority[state_id] = {
+            "rgb_sha256": context["rgb_sha256"],
+            "token_path": str(tmp_path / "absent.f16"),
+            "token_sha256": "0" * 64,
+        }
+    monkeypatch.setattr(G, "_dense_current_authority", lambda: authority)
+    (tmp_path / "rgb/purpose-0.png").write_bytes(b"tampered")
+    with pytest.raises(G.InferenceError, match="current RGB SHA"):
+        G._copy_current_and_validate(rows, output_root=tmp_path)
+
+
 def test_canonical_frame_order_is_digest_then_kind_state_slot() -> None:
     rows = _mixed_frames()
     observed = sorted(rows, key=G._canonical_frame_key)

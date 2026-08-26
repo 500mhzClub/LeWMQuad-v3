@@ -158,6 +158,23 @@ class QualificationError(RuntimeError):
     """Fail-closed execution or custody error."""
 
 
+class GPUChildExecutionError(QualificationError):
+    """A GPU subprocess failure with lossless captured-stream custody."""
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        receipt: Mapping[str, Any],
+        stdout_payload: bytes,
+        stderr_payload: bytes,
+    ) -> None:
+        super().__init__(message)
+        self.child_execution_receipt = copy.deepcopy(dict(receipt))
+        self.child_stdout_payload = bytes(stdout_payload)
+        self.child_stderr_payload = bytes(stderr_payload)
+
+
 GOAL_RENDER_SEMANTICS = CONTRACT.GOAL_VIEW_RENDER_SEMANTICS
 GOAL_POSE_SEMANTICS = CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT[
     "amended_goal_pose_semantics"
@@ -374,6 +391,14 @@ def validate_frozen_receipts() -> dict[str, Any]:
         raise QualificationError(
             "frozen goal-view execution amendment is absent or invalid"
         ) from exc
+    try:
+        current_token_amendment = (
+            CONTRACT.load_and_validate_current_token_execution_amendment()
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "frozen current-token execution amendment is absent or invalid"
+        ) from exc
     checks = fixture.get("executed_checks")
     if fixture.get("pass") is not True or not isinstance(checks, Mapping) or not checks:
         raise QualificationError("frozen fixture receipt did not execute and pass checks")
@@ -402,6 +427,7 @@ def validate_frozen_receipts() -> dict[str, Any]:
         "output_schema": schema,
         "fixture": fixture,
         "goal_view_execution_amendment": amendment,
+        "current_token_execution_amendment": current_token_amendment,
         "source_closure": closure,
     }
 
@@ -538,6 +564,158 @@ def validate_goal_view_execution_amendment_custody(
     if require_canonical_output_absent and OUTPUT_ROOT.exists():
         raise QualificationError(
             "canonical output root exists before corrected fresh execution"
+        )
+    return amendment
+
+
+def validate_current_token_execution_amendment_custody(
+    source_freeze_commit: str,
+    *,
+    require_canonical_output_absent: bool,
+) -> dict[str, Any]:
+    """Validate the prospective token correction and its failed-run archive."""
+
+    try:
+        amendment = CONTRACT.load_and_validate_current_token_execution_amendment()
+    except CONTRACT.ContractError as exc:
+        raise QualificationError("current-token execution amendment is invalid") from exc
+    amendment_path = ROOT / CONTRACT.TRACKED_CURRENT_TOKEN_AMENDMENT_PATH
+    observed_binding = _receipt_binding(amendment_path, digest_key="content_digest")
+    if observed_binding != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING:
+        raise QualificationError("current-token execution amendment binding drift")
+
+    prior_commit = str(amendment["prior_source_freeze"]["commit"])
+    if prior_commit != CONTRACT.GOAL_VIEW_CORRECTION_COMMIT:
+        raise QualificationError("current-token amendment prior source commit drift")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", prior_commit, source_freeze_commit],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if ancestry.returncode != 0 or source_freeze_commit == prior_commit:
+        raise QualificationError(
+            "current-token correction must descend from the failed source freeze"
+        )
+    for artifact_id in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "source_closure",
+    ):
+        expected = amendment["prior_source_freeze"][artifact_id]
+        raw = _git_blob(prior_commit, str(expected["path"]))
+        if (
+            len(raw) != int(expected["bytes"])
+            or hashlib.sha256(raw).hexdigest() != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"current-token prior-freeze {artifact_id} binding drift"
+            )
+        try:
+            prior_value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise QualificationError(
+                f"current-token prior-freeze {artifact_id} is not JSON"
+            ) from exc
+        digest_field = str(expected["digest_field"])
+        if prior_value.get(digest_field) != expected["content_digest"]:
+            raise QualificationError(
+                f"current-token prior-freeze {artifact_id} digest drift"
+            )
+
+    archive = Path(str(amendment["failed_attempt"]["archive_path"]))
+    if archive.resolve() != CONTRACT.FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE.resolve():
+        raise QualificationError("current-token failed archive path drift")
+    if not archive.is_dir():
+        raise QualificationError("current-token failed archive is absent")
+    archive_rows = [
+        {
+            "path": path.relative_to(archive).as_posix(),
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+        for path in sorted(
+            (candidate for candidate in archive.rglob("*") if candidate.is_file()),
+            key=lambda candidate: candidate.relative_to(archive).as_posix(),
+        )
+    ]
+    archive_payload = canonical_json_bytes(archive_rows)[:-1]
+    frozen_inventory = CONTRACT.FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY
+    observed_inventory = {
+        **{
+            key: value
+            for key, value in frozen_inventory.items()
+            if key in ("record_fields", "record_order", "aggregate_algorithm")
+        },
+        "record_count": len(archive_rows),
+        "total_bytes": sum(int(row["bytes"]) for row in archive_rows),
+        "canonical_records_bytes": len(archive_payload),
+        "aggregate_sha256": hashlib.sha256(archive_payload).hexdigest(),
+    }
+    if observed_inventory != frozen_inventory:
+        raise QualificationError("current-token failed archive inventory drift")
+
+    failure_expected = amendment["failed_attempt"]["failure_receipt"]
+    failure_path = archive / str(failure_expected["path"])
+    if (
+        not failure_path.is_file()
+        or failure_path.stat().st_size != int(failure_expected["bytes"])
+        or sha256_file(failure_path) != failure_expected["sha256"]
+    ):
+        raise QualificationError("current-token failed receipt binding drift")
+    failure = load_json(failure_path)
+    validate_digest(failure)
+    if (
+        failure.get("content_digest") != failure_expected["content_digest"]
+        or failure.get("schema") != failure_expected["schema"]
+        or failure.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or failure.get("source_freeze_commit")
+        != failure_expected["source_freeze_commit"]
+        or failure.get("phase") != failure_expected["phase"]
+        or failure.get("error_type") != failure_expected["error_type"]
+        or failure.get("partial_artifacts_reusable") is not False
+        or failure.get("nothing_running") is not True
+        or failure.get("active_experiment_processes") != []
+        or failure.get("prohibition_counters") != prohibition_counters()
+    ):
+        raise QualificationError("current-token failed receipt custody drift")
+    marker_expected = amendment["failed_attempt"]["failed_running_marker"]
+    marker_path = archive / str(marker_expected["path"])
+    if (
+        not marker_path.is_file()
+        or marker_path.stat().st_size != int(marker_expected["bytes"])
+        or sha256_file(marker_path) != marker_expected["sha256"]
+    ):
+        raise QualificationError("current-token failed RUNNING marker drift")
+    marker = load_json(marker_path)
+    validate_digest(marker)
+    if marker.get("phase") != marker_expected["phase"]:
+        raise QualificationError("current-token failed RUNNING phase drift")
+    if any(
+        archive.joinpath(relative).exists()
+        for relative in (
+            "receipts/gpu_child_preflight.json",
+            "receipts/gpu_child_materialize.json",
+            "materialization/logs/gpu_preflight.stdout.log",
+            "materialization/logs/gpu_preflight.stderr.log",
+            "materialization/logs/gpu_materialize.stdout.log",
+            "materialization/logs/gpu_materialize.stderr.log",
+        )
+    ):
+        raise QualificationError(
+            "current-token failed archive unexpectedly contains child streams"
+        )
+    for relative in amendment["failed_attempt"]["terminal_absences"]:
+        if archive.joinpath(str(relative)).exists():
+            raise QualificationError(
+                f"current-token failed attempt unexpectedly contains {relative}"
+            )
+    if require_canonical_output_absent and OUTPUT_ROOT.exists():
+        raise QualificationError(
+            "canonical output root exists before current-token corrected execution"
         )
     return amendment
 
@@ -1250,6 +1428,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
     CONTRACT.write_goal_view_execution_amendment(
         ROOT / CONTRACT.TRACKED_GOAL_VIEW_AMENDMENT_PATH
     )
+    CONTRACT.write_current_token_execution_amendment(
+        ROOT / CONTRACT.TRACKED_CURRENT_TOKEN_AMENDMENT_PATH
+    )
     closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
     CONTRACT.write_source_closure(closure, ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
     frozen = validate_frozen_receipts()
@@ -1261,11 +1442,73 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
         "goal_view_execution_amendment_content_digest": frozen[
             "goal_view_execution_amendment"
         ]["content_digest"],
+        "current_token_execution_amendment_content_digest": frozen[
+            "current_token_execution_amendment"
+        ]["content_digest"],
         "source_closure_content_digest": frozen["source_closure"]["content_digest"],
         "outcome_rows_read": 0,
         "checkpoint_tensors_opened": 0,
         "predictor_inference_calls": 0,
     }
+
+
+def _gpu_child_argument(arguments: Sequence[str], name: str) -> str:
+    try:
+        index = list(arguments).index(name)
+        return str(arguments[index + 1])
+    except (ValueError, IndexError) as exc:
+        raise QualificationError(f"GPU child command lacks {name}") from exc
+
+
+def _child_text_payload(value: str | bytes | None) -> bytes:
+    if value is None:
+        return b""
+    if isinstance(value, bytes):
+        return value
+    return value.encode("utf-8", errors="surrogateescape")
+
+
+def _gpu_child_stream_receipt(
+    relative_path: Path, payload: bytes
+) -> dict[str, Any]:
+    return {
+        "path": str(relative_path),
+        "sha256": hashlib.sha256(payload).hexdigest(),
+        "bytes": len(payload),
+        "tail_utf8": payload[-8192:].decode("utf-8", errors="replace"),
+    }
+
+
+def _gpu_child_receipt_paths(phase: str) -> tuple[Path, Path, Path]:
+    phase = phase.lower()
+    if phase not in {"preflight", "materialize", "check"}:
+        raise QualificationError(f"unknown GPU child phase: {phase!r}")
+    return (
+        Path(f"receipts/gpu_child_{phase}.json"),
+        Path(f"materialization/logs/gpu_{phase}.stdout.log"),
+        Path(f"materialization/logs/gpu_{phase}.stderr.log"),
+    )
+
+
+def _persist_gpu_child_execution_capture(
+    output_root: Path,
+    receipt: Mapping[str, Any],
+    *,
+    stdout_payload: bytes,
+    stderr_payload: bytes,
+) -> dict[str, Any]:
+    phase = str(receipt["phase"])
+    receipt_path, stdout_path, stderr_path = _gpu_child_receipt_paths(phase)
+    if receipt.get("stdout") != _gpu_child_stream_receipt(
+        stdout_path, stdout_payload
+    ) or receipt.get("stderr") != _gpu_child_stream_receipt(
+        stderr_path, stderr_payload
+    ):
+        raise QualificationError("GPU child stream receipt payload drift")
+    atomic_bytes(output_root / stdout_path, stdout_payload)
+    atomic_bytes(output_root / stderr_path, stderr_payload)
+    atomic_json(output_root / receipt_path, receipt)
+    return _binding(receipt_path, output_root)
 
 
 def _run_gpu_child(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]:
@@ -1291,20 +1534,164 @@ def _run_gpu_child(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]
             "NUMEXPR_NUM_THREADS": "1",
         }
     )
+    phase = str(arguments[0])
+    source_freeze_commit = _gpu_child_argument(
+        arguments, "--source-freeze-commit"
+    )
+    output_root = Path(_gpu_child_argument(arguments, "--output-root"))
+    command = [str(GPU_INTERPRETER), str(GPU_ENTRYPOINT), *arguments]
+    started_wall = time.time()
+    started_at_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(started_wall))
+    result: subprocess.CompletedProcess[str] | None = None
+    returncode: int | None = None
+    timed_out = False
+    stdout_payload = b""
+    stderr_payload = b""
     try:
-        return subprocess.run(
-            [str(GPU_INTERPRETER), str(GPU_ENTRYPOINT), *arguments],
+        result = subprocess.run(
+            command,
             cwd=ROOT,
             env=environment,
-            check=True,
+            check=False,
             text=True,
             capture_output=True,
             timeout=timeout_s,
         )
+        returncode = int(result.returncode)
+        stdout_payload = _child_text_payload(result.stdout)
+        stderr_payload = _child_text_payload(result.stderr)
+    except subprocess.CalledProcessError as exc:
+        # Synthetic tests and alternate subprocess wrappers may still raise
+        # despite check=False.  Preserve their captured streams identically.
+        returncode = int(exc.returncode)
+        stdout_payload = _child_text_payload(exc.stdout)
+        stderr_payload = _child_text_payload(exc.stderr)
     except subprocess.TimeoutExpired as exc:
-        raise QualificationError(
-            f"GPU {arguments[0]} watchdog exceeded {timeout_s} s"
-        ) from exc
+        timed_out = True
+        stdout_payload = _child_text_payload(exc.stdout)
+        stderr_payload = _child_text_payload(exc.stderr)
+    finished_wall = time.time()
+    finished_at_utc = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(finished_wall))
+    receipt_path, stdout_path, stderr_path = _gpu_child_receipt_paths(phase)
+    passed = not timed_out and returncode == 0
+    receipt = attach_digest(
+        {
+            **_phase_core(
+                "jepa_local_waypoint_gpu_child_execution_v1",
+                source_freeze_commit,
+            ),
+            "phase": phase.upper(),
+            "command": command,
+            "interpreter_entrypoint": str(GPU_INTERPRETER),
+            "timeout_s": timeout_s,
+            "started_at_utc": started_at_utc,
+            "finished_at_utc": finished_at_utc,
+            "runtime_s": finished_wall - started_wall,
+            "returncode": returncode,
+            "timed_out": timed_out,
+            "stdout": _gpu_child_stream_receipt(stdout_path, stdout_payload),
+            "stderr": _gpu_child_stream_receipt(stderr_path, stderr_payload),
+            "pass": passed,
+        }
+    )
+    # Successful terminal checks must be observational: mutating a finalized
+    # output would invalidate its persistence manifest.  Preflight and GPU
+    # materialization are persisted before result construction; failed checks
+    # are persisted only after the whole attempt is moved into its archive.
+    if phase != "check":
+        _persist_gpu_child_execution_capture(
+            output_root,
+            receipt,
+            stdout_payload=stdout_payload,
+            stderr_payload=stderr_payload,
+        )
+    if not passed:
+        if timed_out:
+            summary = f"GPU {phase} watchdog exceeded {timeout_s} s"
+        else:
+            summary = f"GPU {phase} child exited with status {returncode}"
+        stderr_tail = receipt["stderr"]["tail_utf8"]
+        if stderr_tail:
+            summary += f"; stderr tail: {stderr_tail[-2000:]}"
+        raise GPUChildExecutionError(
+            summary,
+            receipt=receipt,
+            stdout_payload=stdout_payload,
+            stderr_payload=stderr_payload,
+        )
+    if result is None:
+        raise QualificationError("GPU child reported success without a process result")
+    return result
+
+
+def _gpu_child_execution_receipt_bindings(
+    output_root: Path,
+    source_freeze_commit: str,
+    phases: Sequence[str],
+) -> dict[str, dict[str, Any]]:
+    """Validate persisted child captures and return exact phase bindings."""
+
+    expected_timeout = {
+        "PREFLIGHT": int(
+            CONTRACT.EXECUTION_WATCHDOGS["gpu_preflight_timeout_s"]
+        ),
+        "MATERIALIZE": int(
+            CONTRACT.EXECUTION_WATCHDOGS["gpu_materialization_timeout_s"]
+        ),
+    }
+    output: dict[str, dict[str, Any]] = {}
+    for raw_phase in phases:
+        phase = str(raw_phase).upper()
+        if phase not in CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS:
+            raise QualificationError(f"unknown persisted GPU child phase {phase!r}")
+        paths = CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS[phase]
+        receipt_relative = Path(paths["path"])
+        receipt = load_json(output_root / receipt_relative)
+        validate_phase_binding(receipt, source_freeze_commit)
+        file_id = (
+            "gpu_child_preflight_receipt"
+            if phase == "PREFLIGHT"
+            else "gpu_child_materialize_receipt"
+        )
+        _validate_schema_value(file_id, receipt)
+        command = receipt.get("command")
+        if (
+            receipt.get("phase") != phase
+            or receipt.get("interpreter_entrypoint") != str(GPU_INTERPRETER)
+            or receipt.get("timeout_s") != expected_timeout[phase]
+            or receipt.get("returncode") != 0
+            or receipt.get("timed_out") is not False
+            or receipt.get("pass") is not True
+            or not isinstance(receipt.get("runtime_s"), (int, float))
+            or float(receipt["runtime_s"]) < 0.0
+            or not isinstance(receipt.get("started_at_utc"), str)
+            or not isinstance(receipt.get("finished_at_utc"), str)
+            or not isinstance(command, list)
+            or command[:3]
+            != [str(GPU_INTERPRETER), str(GPU_ENTRYPOINT), phase.lower()]
+            or _gpu_child_argument(command[2:], "--source-freeze-commit")
+            != source_freeze_commit
+            or Path(_gpu_child_argument(command[2:], "--output-root")).resolve()
+            != output_root.resolve()
+        ):
+            raise QualificationError(f"GPU {phase} child execution custody drift")
+        for stream_id in ("stdout", "stderr"):
+            stream = receipt.get(stream_id)
+            expected_path = Path(paths[f"{stream_id}_path"])
+            if not isinstance(stream, Mapping) or set(stream) != set(
+                CONTRACT.GPU_CHILD_STREAM_REQUIRED_KEYS
+            ) or stream.get("path") != str(expected_path):
+                raise QualificationError(f"GPU {phase} {stream_id} receipt drift")
+            path = output_root / expected_path
+            payload = path.read_bytes() if path.is_file() else None
+            if payload is None or stream != _gpu_child_stream_receipt(
+                expected_path, payload
+            ):
+                raise QualificationError(f"GPU {phase} {stream_id} log drift")
+        output[phase] = _binding(receipt_relative, output_root)
+    if list(output) != [str(phase).upper() for phase in phases]:
+        raise QualificationError("GPU child receipt phase order drift")
+    return output
 
 
 def preflight(
@@ -1331,6 +1718,10 @@ def preflight(
     cpu_interpreter_binding = _validate_cpu_interpreter_entrypoint()
     frozen = validate_frozen_receipts()
     validate_goal_view_execution_amendment_custody(
+        source_freeze_commit,
+        require_canonical_output_absent=True,
+    )
+    validate_current_token_execution_amendment_custody(
         source_freeze_commit,
         require_canonical_output_absent=True,
     )
@@ -1383,6 +1774,11 @@ def preflight(
                 "--receipt",
                 str(gpu_receipt),
             ]
+        )
+        gpu_child_preflight_receipts = _gpu_child_execution_receipt_bindings(
+            output_root,
+            source_freeze_commit,
+            ("PREFLIGHT",),
         )
         gpu = load_json(gpu_receipt)
         validate_phase_binding(gpu, source_freeze_commit)
@@ -1540,6 +1936,13 @@ def preflight(
                 "goal_view_execution_amendment_binding": copy.deepcopy(
                     CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
                 ),
+                "current_token_execution_amendment_binding": copy.deepcopy(
+                    CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+                ),
+                "current_token_authority_policy": copy.deepcopy(
+                    CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+                ),
+                "gpu_child_execution_receipts": gpu_child_preflight_receipts,
                 "goal_view_static_validation": goal_view_static_validation,
                 "preexecution_custody": {
                     "contract_disclosure": copy.deepcopy(
@@ -1588,6 +1991,7 @@ def preflight(
                 "pass": True,
             }
         )
+        _validate_schema_value("preexecution_receipt", receipt)
         atomic_json(output_root / PREEXEC_REL, receipt)
         return receipt
     except BaseException:
@@ -3130,6 +3534,13 @@ def materialize(
     validate_input_hashes()
     pre = load_json(output_root / PREEXEC_REL)
     validate_phase_binding(pre, source_freeze_commit)
+    preflight_child_receipts = _gpu_child_execution_receipt_bindings(
+        output_root,
+        source_freeze_commit,
+        ("PREFLIGHT",),
+    )
+    if pre.get("gpu_child_execution_receipts") != preflight_child_receipts:
+        raise QualificationError("preexecution GPU child-receipt binding drift")
     if pre.get("pass") is not True:
         raise QualificationError("preexecution did not pass")
     validate_cpu_runtime_input_inventory(
@@ -3209,8 +3620,17 @@ def materialize(
             str(output_root),
         ]
     )
+    _gpu_child_execution_receipt_bindings(
+        output_root,
+        source_freeze_commit,
+        CONTRACT.GPU_CHILD_PHASE_IDS,
+    )
+    gpu_inference = load_json(output_root / GPU_INFERENCE_REL)
+    validate_phase_binding(gpu_inference, source_freeze_commit)
+    _validate_schema_value("gpu_inference_receipt", gpu_inference)
     latent = load_json(output_root / LATENT_INDEX_REL)
     validate_phase_binding(latent, source_freeze_commit)
+    _validate_schema_value("latent_tensor_index", latent)
     validate_latent_tensor_index(latent, output_root=output_root, deep=True)
     validate_cpu_runtime_input_inventory(
         source_freeze_commit,
@@ -3346,22 +3766,45 @@ def validate_latent_tensor_index(
             if current[key] != context[key]:
                 raise QualificationError(f"CURRENT/context alias drift: {state_id}:{key}")
         external = current.get("external_existing_artifact")
-        if not isinstance(external, Mapping) or any(
+        context_external = context.get("external_existing_artifact")
+        if (
+            not isinstance(external, Mapping)
+            or context_external != external
+            or any(
             external.get(key) is not True
             for key in (
                 "byte_exact_array_equality",
                 "raw_payload_byte_exact",
+                "copied_to_attempt_once",
             )
-        ) or external.get("raw_payload_sha256_expected") != external.get(
-            "raw_payload_sha256_observed"
+            )
+            or external.get("reencoded") is not False
+            or external.get("raw_payload_sha256_expected")
+            != external.get("raw_payload_sha256_observed")
         ):
             raise QualificationError(f"CURRENT external authority drift: {state_id}")
+        authority_path = Path(str(external.get("path")))
+        if (
+            not authority_path.is_file()
+            or sha256_file(authority_path) != external.get("sha256")
+        ):
+            raise QualificationError(f"CURRENT authority file drift: {state_id}")
+        persisted = output_root / Path(str(context["path"]))
+        persisted_array = np.load(persisted, allow_pickle=False)
+        persisted_raw_sha = hashlib.sha256(
+            np.ascontiguousarray(persisted_array).tobytes(order="C")
+        ).hexdigest()
+        if persisted_raw_sha != external.get("raw_payload_sha256_expected"):
+            raise QualificationError(f"CURRENT copied raw payload drift: {state_id}")
     for identity, row in by_identity.items():
         kind = str(identity[0])
         external = row.get("external_existing_artifact")
         if kind == "TRUE_FUTURE":
             if not isinstance(external, Mapping) or external.get("array_equality") is not True:
                 raise QualificationError(f"true-future external authority drift: {identity}")
+        elif kind == "CONTEXT" and identity[3] == 0:
+            if not isinstance(external, Mapping):
+                raise QualificationError(f"current-context authority drift: {identity}")
         elif kind != "CURRENT" and external is not False:
             raise QualificationError(f"unexpected external tensor authority: {identity}")
 
@@ -3423,7 +3866,7 @@ def validate_latent_tensor_index(
         "batch_size": 16,
         "padding": False,
         "dynamic_fallback": False,
-        "calls": 12,
+        "calls": 9,
     }:
         raise QualificationError("encoder batch contract drift")
     encoder_rows: list[Mapping[str, Any]] = []
@@ -3433,12 +3876,12 @@ def validate_latent_tensor_index(
         ) != 16 or len(manifest_batch.get("records", [])) != 16:
             raise QualificationError("encoder batch cardinality/order drift")
         encoder_rows.extend(manifest_batch["records"])
-    if len(encoder_rows) != 192:
-        raise QualificationError("encoder batch manifest does not cover 192 frames")
+    if len(encoder_rows) != 144:
+        raise QualificationError("encoder batch manifest does not cover 144 new frames")
     expected_frame_domain = {
         ("CONTEXT", state_id, slot)
         for state_id in state_ids
-        for slot in (0, 1, 2)
+        for slot in (0, 1)
     } | {("GOAL", state_id, None) for state_id in state_ids}
     observed_frame_domain = {
         (str(row.get("kind")), str(row.get("state_id")), row.get("slot"))
@@ -3509,7 +3952,7 @@ def validate_latent_tensor_index(
         ("checkpoint_tensor_open_count", 3),
         ("predictor_inference_calls", 96),
         ("predictor_model_forward_calls", 288),
-        ("encoder_inference_calls", 12),
+        ("encoder_inference_calls", 9),
         ("training_steps", 0),
     ):
         if value.get(key) != expected_value:
@@ -4565,6 +5008,49 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         value,
         "result_content_sha256" if file_id == "result" else "content_digest",
     )
+    if "current_token_execution_amendment_binding_exact" in spec and value.get(
+        "current_token_execution_amendment_binding"
+    ) != spec["current_token_execution_amendment_binding_exact"]:
+        raise QualificationError(
+            f"{file_id} current-token amendment binding drift"
+        )
+    if "current_token_authority_policy_exact" in spec and value.get(
+        "current_token_authority_policy"
+    ) != spec["current_token_authority_policy_exact"]:
+        raise QualificationError(f"{file_id} current-token authority policy drift")
+    if "gpu_child_execution_receipts_required_phase_ids" in spec:
+        child_receipts = value.get("gpu_child_execution_receipts")
+        expected_phases = list(
+            spec["gpu_child_execution_receipts_required_phase_ids"]
+        )
+        if not isinstance(child_receipts, Mapping) or list(child_receipts) != (
+            expected_phases
+        ) or any(
+            not isinstance(child_receipts[phase], Mapping)
+            or set(child_receipts[phase])
+            != {"path", "sha256", "bytes", "content_digest"}
+            for phase in expected_phases
+        ):
+            raise QualificationError(f"{file_id} GPU child receipt bindings drift")
+    if file_id in {
+        "gpu_child_preflight_receipt",
+        "gpu_child_materialize_receipt",
+    }:
+        if (
+            value.get("phase") != spec["phase_exact"]
+            or {
+                key: value.get(key)
+                for key in spec["successful_terminal_values"]
+            }
+            != spec["successful_terminal_values"]
+        ):
+            raise QualificationError(f"{file_id} successful execution values drift")
+        for stream_id in ("stdout", "stderr"):
+            stream = value.get(stream_id)
+            if not isinstance(stream, Mapping) or set(stream) != set(
+                spec["stream_required_keys"]
+            ) or stream.get("path") != spec[f"{stream_id}_path_exact"]:
+                raise QualificationError(f"{file_id} {stream_id} schema drift")
     if file_id == "preexecution_receipt":
         if value.get("goal_view_execution_amendment_binding") != spec[
             "goal_view_execution_amendment_binding_exact"
@@ -4977,6 +5463,10 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
             CONTRACT.RECONSTRUCTION_PREFIX_CUSTODY
         ):
             raise QualificationError("context reconstruction-prefix custody drift")
+        if value.get("current_token_authority_reproduction") != spec[
+            "current_token_authority_reproduction_exact"
+        ]:
+            raise QualificationError("context current-token authority receipt drift")
         action_validation = value.get(
             "requested_applied_action_authority_validation"
         )
@@ -5020,6 +5510,15 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
     if file_id == "oracle_admissibility_fanout_index":
         if value.get("cpu_watchdog_status") != spec["cpu_watchdog_status_exact"]:
             raise QualificationError("CPU fanout watchdog-status drift")
+    if file_id == "latent_tensor_index":
+        if value.get("physical_encoder_materialisation_counts") != spec[
+            "physical_encoder_materialisation_counts_exact"
+        ]:
+            raise QualificationError("latent physical encoder count drift")
+        if value.get("current_token_alias_validation") != spec[
+            "current_token_alias_validation_exact"
+        ]:
+            raise QualificationError("latent current-token alias receipt drift")
     if file_id == "result":
         if value.get("goal_view_execution_amendment_binding") != spec[
             "goal_view_execution_amendment_binding_exact"
@@ -5231,6 +5730,14 @@ def _markdown_report(result: Mapping[str, Any], aggregates: Mapping[str, Any]) -
         "",
         "The exact path[2] cell centre is a candidate-independent virtual counterfactual render pose, not a physically executable robot or sensor pose. Nav-blocked cells remain valid reachable endpoints: 13 are beacon endpoints and one is low-clearance transit-blocked. No path[1] substitution, alternate standoff search, state drop, or prior failed-shard reuse occurred.",
         "",
+        "## Current-token authority amendment and BF16 cohort limitation",
+        "",
+        f"Amendment binding: `{json.dumps(result['current_token_execution_amendment_binding'], sort_keys=True)}`.",
+        "",
+        "The GPU encoder newly processes exactly 144 frames in nine fixed batches of 16: 96 context slots 0/1 and 48 goal views. Each of the 48 frozen dense current FP16 authorities is byte-validated and copied once; CONTEXT horizon 0 and CURRENT are logical path/SHA/bytes aliases of that single copy. Current-token re-encodes are zero, the current RGB byte gate remains exact, and no scientific cost, gate, or classification changed.",
+        "",
+        f"BF16 cohort limitation: {result['current_token_authority_policy']['device_batch_cohort_limitation']}",
+        "",
         "## Historical renderer limitation",
         "",
         "The frozen renderer receives `genesis_scene.json`, where structural geometry is under `objects`, while its historical builder reads only top-level `walls`, `obstacles`, and `landmarks`. Those keys are absent, so the effective rendered scene geometry is the textured floor plane only. This is preserved to require byte-identical current/true-future token compatibility; the experiment makes no explicit wall or landmark visual-reasoning claim.",
@@ -5376,6 +5883,15 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
     )
     pre = load_json(output_root / PREEXEC_REL)
     validate_phase_binding(pre, source_freeze_commit)
+    gpu_child_execution_receipts = _gpu_child_execution_receipt_bindings(
+        output_root,
+        source_freeze_commit,
+        CONTRACT.GPU_CHILD_PHASE_IDS,
+    )
+    if pre.get("gpu_child_execution_receipts") != {
+        "PREFLIGHT": gpu_child_execution_receipts["PREFLIGHT"]
+    }:
+        raise QualificationError("preexecution GPU child binding drift at evaluation")
     started = time.time()
     (
         candidate_rows,
@@ -5449,6 +5965,13 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
         "goal_view_execution_amendment_binding": copy.deepcopy(
             CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
         ),
+        "current_token_execution_amendment_binding": copy.deepcopy(
+            CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy": copy.deepcopy(
+            CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "gpu_child_execution_receipts": gpu_child_execution_receipts,
         "seed": CONTRACT.SEED,
         "materialisation_counts": {
             "states": 48,
@@ -5464,6 +5987,10 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
             "total_simulator_blocks": 6240,
             "total_simulator_physics_frames": 1560000,
             "snapshot_reproductions": 48,
+            "new_encoder_frames": 144,
+            "new_encoder_batches": 9,
+            "current_authority_payload_copies": 48,
+            "current_token_reencodes": 0,
             "latent_tensors": latent["total_records"],
             "predicted_tensors": 3456,
             "candidate_evidence_rows": 1728,
@@ -5622,6 +6149,17 @@ def _build_persistence_receipt(
             "goal_view_execution_amendment_binding": copy.deepcopy(
                 CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
             ),
+            "current_token_execution_amendment_binding": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "current_token_authority_policy": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+            ),
+            "gpu_child_execution_receipts": _gpu_child_execution_receipt_bindings(
+                output_root,
+                source_freeze_commit,
+                CONTRACT.GPU_CHILD_PHASE_IDS,
+            ),
             "context_reconstruction_index_binding": _binding(
                 CONTEXT_INDEX_REL, output_root
             ),
@@ -5678,6 +6216,17 @@ def _validate_result_cross_bindings(
     exact_bindings = {
         "goal_view_execution_amendment_binding": copy.deepcopy(
             CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_execution_amendment_binding": copy.deepcopy(
+            CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy": copy.deepcopy(
+            CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "gpu_child_execution_receipts": _gpu_child_execution_receipt_bindings(
+            output_root,
+            str(result["source_freeze_commit"]),
+            CONTRACT.GPU_CHILD_PHASE_IDS,
         ),
         "goal_pose_semantics": copy.deepcopy(goal["goal_pose_semantics"]),
         "goal_cell_classification_counts": copy.deepcopy(
@@ -5751,6 +6300,20 @@ def _validate_result_cross_bindings(
             loaded["context_reconstruction_index"]
             ["branch_snapshot_authority_validation"]["passed"]
         ),
+        "new_encoder_frames": int(
+            latent["physical_encoder_materialisation_counts"][
+                "total_new_encoder_frames"
+            ]
+        ),
+        "new_encoder_batches": int(
+            latent["physical_encoder_materialisation_counts"]["batches"]
+        ),
+        "current_authority_payload_copies": int(
+            latent["physical_encoder_materialisation_counts"][
+                "authority_current_payload_copies"
+            ]
+        ),
+        "current_token_reencodes": 0,
         "latent_tensors": int(latent["total_records"]),
         "predicted_tensors": int(latent["counts_by_kind"]["ONE_STEP_PREDICTED"])
         + int(latent["counts_by_kind"]["TWO_STEP_PREDICTED"]),
@@ -5789,6 +6352,15 @@ def _validate_result_cross_bindings(
         CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
     ):
         raise QualificationError("persistence goal-view amendment custody drift")
+    if (
+        persistence.get("current_token_execution_amendment_binding")
+        != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        or persistence.get("current_token_authority_policy")
+        != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+        or persistence.get("gpu_child_execution_receipts")
+        != result.get("gpu_child_execution_receipts")
+    ):
+        raise QualificationError("persistence current-token/child custody drift")
     if result.get("head") != result.get("source_freeze_commit"):
         raise QualificationError("result head/source-freeze binding drift")
     if result.get("experiment_id") != CONTRACT.EXPERIMENT_ID:
@@ -5875,6 +6447,10 @@ def check(
         frozen_commit,
         require_canonical_output_absent=False,
     )
+    validate_current_token_execution_amendment_custody(
+        frozen_commit,
+        require_canonical_output_absent=False,
+    )
     current_input_bindings = validate_input_hashes()
     validate_cpu_runtime_input_inventory(
         frozen_commit,
@@ -5885,6 +6461,14 @@ def check(
         ("preexecution_receipt", PREEXEC_REL),
         ("environment_receipt", ENVIRONMENT_REL),
         ("gpu_environment_receipt", GPU_ENVIRONMENT_REL),
+        (
+            "gpu_child_preflight_receipt",
+            Path(CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS["PREFLIGHT"]["path"]),
+        ),
+        (
+            "gpu_child_materialize_receipt",
+            Path(CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS["MATERIALIZE"]["path"]),
+        ),
         ("cpu_runtime_input_inventory", CPU_RUNTIME_INPUT_INVENTORY_REL),
         ("context_reconstruction_index", CONTEXT_INDEX_REL),
         ("dense_route_replay_input_index", DENSE_REPLAY_INPUT_INDEX_REL),
@@ -6128,9 +6712,14 @@ def check(
     }:
         raise QualificationError("GPU preprocessing custody drift")
     if gpu["encoder_call_counts"] != {
-        "frames": 192,
+        "frames": 144,
+        "new_context_frames": 96,
+        "goal_frames": 48,
+        "frozen_current_authority_payload_copies": 48,
+        "current_payload_reencodes": 0,
+        "current_logical_aliases": 48,
         "batch_size": 16,
-        "batches": 12,
+        "batches": 9,
         "preprocessing_digest": expected_preprocessing,
     }:
         raise QualificationError("GPU encoder call-count custody drift")
@@ -6364,6 +6953,14 @@ def _archive_failed_attempt(
     if running.exists():
         os.replace(running, archive / "receipts/FAILED_RUNNING_MARKER.json")
     active = _active_experiment_processes()
+    failed_child_execution_receipt: dict[str, Any] | None = None
+    if isinstance(error, GPUChildExecutionError):
+        failed_child_execution_receipt = _persist_gpu_child_execution_capture(
+            archive,
+            error.child_execution_receipt,
+            stdout_payload=error.child_stdout_payload,
+            stderr_payload=error.child_stderr_payload,
+        )
     receipt = attach_digest(
         {
             **_phase_core(
@@ -6378,6 +6975,7 @@ def _archive_failed_attempt(
             "active_experiment_processes": active,
             "nothing_running": not active,
             "prohibition_counters": prohibition_counters(),
+            "failed_child_execution_receipt": failed_child_execution_receipt,
         }
     )
     atomic_json(archive / "receipts/failure.json", receipt)

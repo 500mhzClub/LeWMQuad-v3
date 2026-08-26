@@ -123,6 +123,68 @@ blocked goal may be reached as an endpoint without being free or transit-safe.
 The amendment is frozen in
 `docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_goal_view_amendment_2026-08-26.json`.
 
+## Failed second attempt and prospective current-token amendment
+
+The goal-view correction source freeze
+`e81ef67763d1daeff9be6cef32ad031465bc57e8` also remains an immutable
+ancestor. Its fresh hidden execution completed the CPU materialisation and
+rendered-current RGB reproduction, then failed closed in GPU materialisation
+before true-future copying, predictor tensor deserialization or predictor
+inference. The untouched attempt
+is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787774675034819483-355288`.
+The failure receipt is 1,552 bytes, file SHA-256
+`48d77d46b91924cd97c9c064619261905763d8e73a21af5f945a7e00f76e2ba2`
+and content digest
+`3cd263684ab000934f776ce1591582ffbd2d80179371d5982790c2f8b9037d9c`.
+Its complete 537-file, 322,350,756-byte inventory is bound by canonical-record
+aggregate SHA-256
+`b82763e28831814a48120a84aa0d209aa837f2911551dd27fc1b5738d325e71d`.
+It contains no true-future or predicted latent directory, tensor index, GPU
+inference receipt, evidence ledger, aggregate metric, gate, classification,
+report or result. No file or phase from it is reusable.
+
+All 48 newly rendered current RGB files matched their bound authority exactly.
+Both predictor checkpoint files were SHA-hashed as pre-inference custody, but
+zero predictor checkpoint tensors were deserialized and zero predictor calls
+ran. All 48 newly encoded current token grids failed byte equality before any
+predictor tensor load or inference. The historical current tokens were encoded inside
+the bound 7,154-frame historical cohort; the failed attempt introduced a new
+192-frame mixed context/goal cohort. BF16 output bytes can depend on device,
+runtime, kernels and the complete cohort. The historical cohort/order and exact
+token bytes are persisted and bound; only bitwise re-execution equivalence under
+the changed cohort was unproven. Re-encoding is therefore unnecessary and is
+not a current-token authority.
+
+For diagnostic custody only, archived and authoritative FP16 grids were cast to
+float64. Flattened cosine is the float64 dot product divided by the product of
+float64 norms; token-mean cosine applies that operation independently to every
+width-1024 token then takes a float64 mean. Across 48 states the flattened range
+was `[0.9999043258031383, 0.9999475581155232]` with mean
+`0.9999380251025588`; token-mean range was
+`[0.9999058101016667, 0.9999499438888875]` with NumPy float64 mean
+`0.9999401111347598`. Float64 per-state `mean(abs(archived-authority))` had
+range `[0.012470918548312207, 0.017233230190110287]` and mean
+`0.013817019145041817`; float64
+`sqrt(mean(square(archived-authority)))` had range
+`[0.01791116887331469, 0.024418504702133508]` and mean
+`0.019687519709368287`. These are input-compatibility diagnostics only and do
+not alter any scientific gate, cost, metric or classification.
+
+The prospective authority rule retains the exact 48/48 current-RGB gate, then
+validates each bound historical raw `.f16` current array, then writes exactly one
+canonical attempt-local NPY per state whose C-order FP16 array payload bytes are
+identical to the authority. The NPY container has its own file SHA-256. That one
+attempt-local payload backs both logical context slot 2 and logical `CURRENT`;
+their tensor-index records must alias the same NPY path, SHA-256 and byte count.
+Current-token re-encoding, tolerance and post-hoc numeric acceptance are
+forbidden. Encode only the 96 missing context slots 0/1 and 48 goal frames: 144
+new frames in exactly nine batches of 16. Logical tensor counts remain 144
+`CONTEXT`, 48 `CURRENT`, 48 `GOAL`, and 1,728 for each of `TRUE_FUTURE`,
+`ONE_STEP_PREDICTED` and `TWO_STEP_PREDICTED`, totaling 5,424. This amendment is
+frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_current_token_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -274,12 +336,13 @@ mismatches, so absence or mismatch cannot drop or replace a state.
 
 The bound dense token index contains exactly one current-view occurrence for
 each of all 48 state IDs. Newly rendered post-block40/current RGB must match its
-existing current RGB byte SHA exactly. Newly encoded current FP16 tokens under
-the exact batch-16 encoder path must match the existing current-token C-order
-raw FP16 payload SHA exactly. The newly persisted NPY container has its own file
-SHA; container-format bytes are not compared with the existing raw `.f16` file.
-There is no numeric tolerance or alternate view. The equality-validated new
-current tensor is both predictor context slot 3 and `CURRENT` cost. Any required
+existing current RGB byte SHA exactly. Validate the bound raw `.f16` token
+SHA/shape/dtype, load it as a C-order FP16 array, and write one canonical
+attempt-local NPY whose array payload bytes are identical. The NPY container has
+its own file SHA; container-format bytes are not compared with the raw `.f16`
+file. There is no current-token re-encoding, numeric tolerance or alternate
+view. That one copied payload is both predictor context slot 3 and `CURRENT`
+cost through two logical records that alias the same path/SHA/bytes. Any required
 state reconstruction failure aborts the whole qualification before inference;
 no state is silently omitted or replaced.
 
@@ -314,11 +377,12 @@ identical parameter-state digests before and after inference for each model.
 Digest encoder, predictor parameters and buffers from the complete sorted
 `state_dict` under namespace `JEPA_LOCAL_WAYPOINT_PARAMETER_STATE_V1\0`, with
 length-prefixed key, dtype, shape and contiguous CPU C-order tensor bytes.
-Batching is frozen because BF16 kernels can depend on batch shape. Encode the
-192 new context-plus-goal records in ascending RGB SHA-256 order, then kind,
-numeric state identity and context slot, matching the existing target encoder,
-at batch size 16 (12 batches); current aliases context slot 2 and true-future tokens are not
-re-encoded. For each checkpoint, process one numeric-ordered state at a time as
+Batching is frozen because BF16 kernels can depend on batch shape and cohort.
+Encode only 144 new records—96 context slots 0/1 and 48 goals—in ascending RGB
+SHA-256 order, then kind, numeric state identity and context slot, at batch size
+16 (nine batches). Copy each bound historical current payload exactly once;
+context slot 2 and `CURRENT` logically alias it. Current and true-future tokens
+are not re-encoded. For each checkpoint, process one numeric-ordered state at a time as
 one exact 12-candidate batch and unroll H1→H2→H3. Run the one-step checkpoint
 before the rollout checkpoint: 48 unroll calls and 144 internal model forwards
 per checkpoint. A dynamic OOM batch fallback is forbidden and fails closed.
@@ -677,12 +741,25 @@ The terminal persistence manifest hashes every noncircular artifact, including
 self-digesting `result.json`, and the removed running marker. Every phase receipt
 binds the source-freeze commit, contract digest and output-schema digest.
 
+GPU child stdout and stderr must never again be discarded. For `PREFLIGHT` and
+`MATERIALIZE`, invoke with non-raising subprocess status capture and atomically
+persist full stdout, full stderr and a self-digesting execution receipt on
+success, nonzero exit or timeout before returning or raising. The preexecution
+receipt binds the completed preflight child receipt. The child-produced GPU
+inference receipt binds neither parent execution receipt; parent-produced result
+and persistence receipts bind both preflight and materialise receipts after the
+materialise child exits. A successful terminal `CHECK` may not
+mutate the finalized manifest: capture it only in ephemeral non-output storage
+and remove that capture on success. On check failure, bind its captured streams
+and metadata only in the outer failure archive/receipt.
+
 ## Commit and stop rules
 
-The original `Freeze JEPA local waypoint planning cost qualification` commit
-remains an ancestor because it binds the archived first attempt. Make one
-separate prospective goal-view contract-correction commit before fresh
-preflight. The final result commit message remains exactly
+The original freeze and goal-view correction commits remain ancestors because
+they bind the two archived failed attempts. Make a separate prospective
+current-token contract-correction commit before a new fresh preflight; do not
+amend or orphan either ancestor and do not reuse a prior phase or shard. The
+final result commit message remains exactly
 `Evaluate JEPA local waypoint planning cost qualification`.
 
 Stop after row evidence, aggregates, gates, classifications, runtime/storage

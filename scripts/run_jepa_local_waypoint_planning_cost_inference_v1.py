@@ -277,6 +277,50 @@ def validate_phase(value: Mapping[str, Any], source_freeze_commit: str) -> None:
         raise InferenceError("phase output-schema digest mismatch")
 
 
+def _gpu_child_preflight_receipt_binding(
+    source_freeze_commit: str, *, output_root: Path
+) -> dict[str, Any]:
+    paths = CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS["PREFLIGHT"]
+    relative = Path(paths["path"])
+    receipt = load_json(output_root / relative)
+    validate_phase(receipt, source_freeze_commit)
+    required = set(CONTRACT.GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS)
+    if (
+        not required.issubset(receipt)
+        or receipt.get("schema") != "jepa_local_waypoint_gpu_child_execution_v1"
+        or receipt.get("phase") != "PREFLIGHT"
+        or receipt.get("returncode") != 0
+        or receipt.get("timed_out") is not False
+        or receipt.get("pass") is not True
+    ):
+        raise InferenceError("GPU preflight child-execution receipt drift")
+    for stream_id in ("stdout", "stderr"):
+        stream = receipt.get(stream_id)
+        stream_relative = Path(paths[f"{stream_id}_path"])
+        stream_path = output_root / stream_relative
+        if (
+            not isinstance(stream, Mapping)
+            or set(stream) != set(CONTRACT.GPU_CHILD_STREAM_REQUIRED_KEYS)
+            or stream.get("path") != str(stream_relative)
+            or not stream_path.is_file()
+        ):
+            raise InferenceError(f"GPU preflight {stream_id} receipt drift")
+        payload = stream_path.read_bytes()
+        if (
+            stream.get("sha256") != hashlib.sha256(payload).hexdigest()
+            or stream.get("bytes") != len(payload)
+            or stream.get("tail_utf8")
+            != payload[-8192:].decode("utf-8", errors="replace")
+        ):
+            raise InferenceError(f"GPU preflight {stream_id} log drift")
+    return {
+        "path": str(relative),
+        "sha256": sha256_file(output_root / relative),
+        "bytes": (output_root / relative).stat().st_size,
+        "content_digest": receipt["content_digest"],
+    }
+
+
 def _checkpoint_bindings() -> dict[str, Any]:
     contract = CONTRACT.build_contract()["predictor_bindings"]
     output: dict[str, Any] = {}
@@ -719,6 +763,43 @@ def _context_frame_map(
     return output
 
 
+def _new_encoder_frame_inventory(
+    mixed_frames: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Return only frames without an existing frozen token authority.
+
+    Context slot 2 is the frozen current view.  Its exact dense FP16 payload is
+    copied below and logically shared by CONTEXT horizon 0 and CURRENT, so it
+    must never be re-encoded under a different BF16 batch cohort.
+    """
+
+    _context_frame_map(mixed_frames)
+    goals = [row for row in mixed_frames if row.get("kind") == "GOAL"]
+    if len(goals) != STATE_COUNT or len(
+        {str(row.get("state_id")) for row in goals}
+    ) != STATE_COUNT:
+        raise InferenceError("mixed frame inventory lacks exactly 48 goal views")
+    output = [
+        dict(row)
+        for row in mixed_frames
+        if row.get("kind") == "GOAL"
+        or (row.get("kind") == "CONTEXT" and int(row.get("slot", -1)) in (0, 1))
+    ]
+    context_slots = [
+        (str(row["state_id"]), int(row["slot"]))
+        for row in output
+        if row["kind"] == "CONTEXT"
+    ]
+    if (
+        len(output) != 144
+        or len(context_slots) != 96
+        or len(set(context_slots)) != 96
+        or {slot for _state, slot in context_slots} != {0, 1}
+    ):
+        raise InferenceError("new encoder inventory is not 96 context plus 48 goal frames")
+    return output
+
+
 def _encode_frames(
     frames: list[dict[str, Any]],
     *,
@@ -731,8 +812,18 @@ def _encode_frames(
         preprocessing_hash,
     )
 
-    if len(frames) != 192:
-        raise InferenceError(f"encoder expected 192 context/goal frames, got {len(frames)}")
+    if len(frames) != 144:
+        raise InferenceError(
+            f"encoder expected 144 missing-context/goal frames, got {len(frames)}"
+        )
+    context_rows = [row for row in frames if row.get("kind") == "CONTEXT"]
+    goal_rows = [row for row in frames if row.get("kind") == "GOAL"]
+    if (
+        len(context_rows) != 96
+        or len(goal_rows) != 48
+        or {int(row.get("slot", -1)) for row in context_rows} != {0, 1}
+    ):
+        raise InferenceError("encoder input includes current slot 2 or has axis drift")
     # Exact canonical encoder order: RGB identity first, then semantic identity.
     frames.sort(key=_canonical_frame_key)
     if any(
@@ -762,7 +853,7 @@ def _encode_frames(
     for offset in range(0, len(frames), ENCODER_BATCH):
         batch = frames[offset : offset + ENCODER_BATCH]
         if len(batch) != ENCODER_BATCH:
-            raise InferenceError("192-frame encoder phase must have no partial batch")
+            raise InferenceError("144-frame encoder phase must have no partial batch")
         pixels = torch.stack(
             [
                 arm.preprocess(str(_artifact_path(row["rgb_path"], output_root)))
@@ -853,29 +944,35 @@ def _dense_current_authority() -> dict[str, dict[str, Any]]:
 
 
 def _copy_current_and_validate(
-    context_records: list[dict[str, Any]],
-    tensor_records: list[dict[str, Any]],
+    context_records: Sequence[Mapping[str, Any]],
     *,
     output_root: Path,
-) -> list[dict[str, Any]]:
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    """Copy the frozen current-token authority once and emit two aliases.
+
+    The dense current token was encoded under the original global frame-batch
+    ordering.  Re-encoding the same RGB in this qualification's smaller frame
+    inventory is not byte-stable under BF16 batching, so CONTEXT horizon 0 and
+    CURRENT must share one attempt-local copy of the frozen FP16 payload.
+    """
+
     authority = _dense_current_authority()
-    output: list[dict[str, Any]] = []
+    context_output: list[dict[str, Any]] = []
+    current_output: list[dict[str, Any]] = []
     context_by_state_slot = _context_frame_map(context_records)
-    metadata = {
-        (str(row["state_id"]), int(row["horizon_or_null"])): row
-        for row in tensor_records
-        if row["kind"] == "CONTEXT"
-    }
     for state_id in sorted(authority, key=_numeric_state_key):
         context = context_by_state_slot[(state_id, 2)]
         external = authority[state_id]
-        if context["rgb_sha256"] != external["rgb_sha256"]:
+        context_rgb_path = _artifact_path(str(context["rgb_path"]), output_root)
+        if (
+            not context_rgb_path.is_file()
+            or sha256_file(context_rgb_path) != context["rgb_sha256"]
+            or context["rgb_sha256"] != external["rgb_sha256"]
+        ):
             raise InferenceError(f"{state_id}: rerendered current RGB SHA differs exactly")
-        current_context_path = _artifact_path(
-            metadata[(state_id, 0)]["path"], output_root
-        )
-        observed = np.load(current_context_path, allow_pickle=False)
         external_path = Path(external["token_path"])
+        if not external_path.is_file():
+            raise InferenceError(f"{state_id}: frozen current token is absent")
         if external_path.suffix == ".npy":
             expected = np.load(external_path, allow_pickle=False)
         else:
@@ -884,43 +981,67 @@ def _copy_current_and_validate(
             )
         if expected.shape != TENSOR_SHAPE or expected.dtype != TENSOR_DTYPE:
             raise InferenceError(f"{state_id}: current authority token contract mismatch")
-        if not np.array_equal(observed, expected):
-            raise InferenceError(f"{state_id}: re-encoded current token differs byte-exactly")
+        expected_raw_sha = str(external["token_sha256"])
+        expected_array = np.ascontiguousarray(expected, dtype=np.float16)
+        actual_authority_sha = hashlib.sha256(
+            expected_array.tobytes(order="C")
+        ).hexdigest()
+        if actual_authority_sha != expected_raw_sha:
+            raise InferenceError(
+                f"{state_id}: frozen current raw FP16 payload SHA differs exactly"
+            )
+        path = output_root / "latents/context" / state_id / "slot_2.npy"
+        atomic_npy(path, expected_array)
+        observed = np.load(path, allow_pickle=False)
         observed_raw_sha = hashlib.sha256(
             np.ascontiguousarray(observed).tobytes(order="C")
         ).hexdigest()
-        expected_raw_sha = str(external["token_sha256"])
-        if observed_raw_sha != expected_raw_sha:
+        if not np.array_equal(observed, expected_array) or (
+            observed_raw_sha != expected_raw_sha
+        ):
             raise InferenceError(
-                f"{state_id}: re-encoded current raw FP16 payload SHA differs exactly"
+                f"{state_id}: attempt-local current authority copy differs exactly"
             )
-        # CURRENT is a logical alias of context slot at elapsed 0 s.  The
-        # contract forbids duplicating the identical 48 payloads.
-        path = current_context_path
-        template = metadata[(state_id, 0)]
-        output.append(
-            _tensor_record(
-                kind="CURRENT",
-                state_id=state_id,
-                family=str(template["family"]),
-                role=str(template["role"]),
-                candidate_index=None,
-                horizon=None,
-                source=None,
-                path=path,
-                external={
-                    "path": str(external_path),
-                    "sha256": str(external["token_sha256"]),
-                    "rgb_sha256": str(external["rgb_sha256"]),
-                    "byte_exact_array_equality": True,
-                    "raw_payload_sha256_expected": expected_raw_sha,
-                    "raw_payload_sha256_observed": observed_raw_sha,
-                    "raw_payload_byte_exact": True,
-                },
-                output_root=output_root,
-            )
+        external_binding = {
+            "path": str(external_path),
+            "sha256": expected_raw_sha,
+            "rgb_sha256": str(external["rgb_sha256"]),
+            "byte_exact_array_equality": True,
+            "raw_payload_sha256_expected": expected_raw_sha,
+            "raw_payload_sha256_observed": observed_raw_sha,
+            "raw_payload_byte_exact": True,
+            "copied_to_attempt_once": True,
+            "reencoded": False,
+        }
+        common = {
+            "state_id": state_id,
+            "family": str(context["family"]),
+            "role": str(context["role"]),
+            "candidate_index": None,
+            "source": None,
+            "path": path,
+            "external": external_binding,
+            "output_root": output_root,
+        }
+        context_output.append(
+            _tensor_record(kind="CONTEXT", horizon=0, **common)
         )
-    return output
+        current_output.append(
+            _tensor_record(kind="CURRENT", horizon=None, **common)
+        )
+    if len(context_output) != STATE_COUNT or len(current_output) != STATE_COUNT:
+        raise InferenceError("current authority alias cardinality mismatch")
+    for context_row, current_row in zip(
+        context_output, current_output, strict=True
+    ):
+        if (
+            context_row["state_id"] != current_row["state_id"]
+            or context_row["path"] != current_row["path"]
+            or context_row["sha256"] != current_row["sha256"]
+            or context_row["bytes"] != current_row["bytes"]
+        ):
+            raise InferenceError("CONTEXT horizon-0/CURRENT alias identity drift")
+    return context_output, current_output
 
 
 def _copy_true_future(
@@ -1216,23 +1337,37 @@ def _update_context_index(
         "records": audit_rows,
     }
     context_index["current_token_authority_reproduction"] = {
-        "status": "PASS",
-        "states_expected": 48,
-        "states_exact": 48,
-        "mismatches": 0,
-        "array_equality": "exact float16 payload equality",
+        "states": 48,
+        "current_rgb_exact_matches": 48,
+        "current_rgb_mismatches": 0,
+        "external_current_payloads_validated": 48,
+        "authority_payload_copies": 48,
+        "current_token_reencodes": 0,
+        "context_slot_2_aliases": 48,
+        "current_cost_aliases": 48,
+        "numeric_tolerance": 0.0,
+        "pass": True,
     }
+    context_index["current_token_execution_amendment_binding"] = copy.deepcopy(
+        CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+    )
+    context_index["current_token_authority_policy"] = copy.deepcopy(
+        CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+    )
     updated = attach_digest(context_index)
     atomic_json(output_root / CONTEXT_INDEX_REL, updated)
     return updated
 
 
 def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, Any]:
-    """Encode 192 frames, copy true targets, then run both frozen predictors."""
+    """Encode 144 missing frames, bind current authority, then predict."""
 
     validate_source_commit(source_freeze_commit, require_live_head=True)
     source_closure = validate_frozen_source_closure()
     gpu_environment_binding = _gpu_environment_binding_for_inference(
+        source_freeze_commit, output_root=output_root
+    )
+    _preflight_child_binding = _gpu_child_preflight_receipt_binding(
         source_freeze_commit, output_root=output_root
     )
     live_gpu_environment = _live_gpu_environment_identity()
@@ -1284,12 +1419,16 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
     import torch
 
     torch.cuda.reset_peak_memory_stats(torch.device("cuda:0"))
+    encoder_frames = _new_encoder_frame_inventory(frames)
     tensor_records, encoder_batches, _arm, encoder_custody = _encode_frames(
-        frames, output_root=output_root, source_freeze_commit=source_freeze_commit
+        encoder_frames,
+        output_root=output_root,
+        source_freeze_commit=source_freeze_commit,
     )
-    current_records = _copy_current_and_validate(
-        frames, tensor_records, output_root=output_root
+    current_context_records, current_records = _copy_current_and_validate(
+        frames, output_root=output_root
     )
+    tensor_records.extend(current_context_records)
     tensor_records.extend(current_records)
     updated_context = _update_context_index(
         context_index, current_records, output_root=output_root
@@ -1368,7 +1507,7 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
         }
     )
     atomic_json(output_root / BATCH_MANIFEST_REL, batch_manifest)
-    updated_goal = _update_goal_index(goal_index, frames, output_root)
+    updated_goal = _update_goal_index(goal_index, encoder_frames, output_root)
     index = attach_digest(
         {
             **phase_core(
@@ -1399,6 +1538,29 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
                 "path": str(BATCH_MANIFEST_REL),
                 "sha256": sha256_file(output_root / BATCH_MANIFEST_REL),
                 "content_digest": batch_manifest["content_digest"],
+            },
+            "current_token_execution_amendment_binding": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "current_token_authority_policy": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+            ),
+            "physical_encoder_materialisation_counts": {
+                "context_slots_0_and_1": 96,
+                "goal": 48,
+                "current": 0,
+                "total_new_encoder_frames": 144,
+                "batch_size": 16,
+                "batches": 9,
+                "authority_current_payload_copies": 48,
+            },
+            "current_token_alias_validation": {
+                "states": 48,
+                "context_slot_2_records": 48,
+                "current_records": 48,
+                "shared_path_sha_bytes_aliases": 48,
+                "duplicate_physical_current_payloads": 0,
+                "pass": True,
             },
             "shape_dtype_validation": {
                 "records": 5424,
@@ -1458,6 +1620,12 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
                 "content_digest": source_closure["content_digest"],
                 "complete": True,
             },
+            "current_token_execution_amendment_binding": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "current_token_authority_policy": copy.deepcopy(
+                CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+            ),
             "gpu_environment_receipt_binding": gpu_environment_binding,
             "gpu_environment_revalidation": {
                 "interpreter_exact": True,
@@ -1500,7 +1668,12 @@ def materialize(source_freeze_commit: str, *, output_root: Path) -> dict[str, An
                 "two_step": two_custody["parameter_state_unchanged"],
             },
             "encoder_call_counts": {
-                "frames": 192,
+                "frames": 144,
+                "new_context_frames": 96,
+                "goal_frames": 48,
+                "frozen_current_authority_payload_copies": 48,
+                "current_payload_reencodes": 0,
+                "current_logical_aliases": 48,
                 "batch_size": 16,
                 "batches": len(encoder_batches),
                 "preprocessing_digest": encoder_custody["preprocessing_digest"],
@@ -1565,6 +1738,7 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
     if int(value.get("total_records", -1)) != 5424:
         raise InferenceError("latent index total is not 5424")
     identities: set[tuple[Any, ...]] = set()
+    by_identity: dict[tuple[Any, ...], Mapping[str, Any]] = {}
     for row in value["records"]:
         identity = (
             row["kind"],
@@ -1575,11 +1749,84 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
         if identity in identities:
             raise InferenceError(f"duplicate tensor identity {identity}")
         identities.add(identity)
+        by_identity[identity] = row
         path = _artifact_path(row["path"], output_root)
         if not path.is_file() or path.stat().st_size != int(row["bytes"]):
             raise InferenceError(f"tensor byte drift {identity}")
         if deep and sha256_file(path) != row["sha256"]:
             raise InferenceError(f"tensor SHA drift {identity}")
+    expected_counts = {
+        "CONTEXT": 144,
+        "CURRENT": 48,
+        "GOAL": 48,
+        "TRUE_FUTURE": 1728,
+        "ONE_STEP_PREDICTED": 1728,
+        "TWO_STEP_PREDICTED": 1728,
+    }
+    observed_counts = {
+        kind: sum(identity[0] == kind for identity in identities)
+        for kind in expected_counts
+    }
+    if observed_counts != expected_counts or value.get("counts_by_kind") != expected_counts:
+        raise InferenceError("latent logical tensor kind counts drift")
+    if (
+        value.get("current_token_execution_amendment_binding")
+        != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        or value.get("current_token_authority_policy")
+        != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+        or value.get("physical_encoder_materialisation_counts")
+        != {
+            "context_slots_0_and_1": 96,
+            "goal": 48,
+            "current": 0,
+            "total_new_encoder_frames": 144,
+            "batch_size": 16,
+            "batches": 9,
+            "authority_current_payload_copies": 48,
+        }
+        or value.get("current_token_alias_validation")
+        != {
+            "states": 48,
+            "context_slot_2_records": 48,
+            "current_records": 48,
+            "shared_path_sha_bytes_aliases": 48,
+            "duplicate_physical_current_payloads": 0,
+            "pass": True,
+        }
+    ):
+        raise InferenceError("latent current-token amendment custody drift")
+    for state_index in range(STATE_COUNT):
+        state_id = f"purpose-{state_index}"
+        context = by_identity.get(("CONTEXT", state_id, None, 0))
+        current = by_identity.get(("CURRENT", state_id, None, None))
+        if context is None or current is None:
+            raise InferenceError(f"{state_id}: current alias identity is absent")
+        if any(
+            context[key] != current[key]
+            for key in ("path", "sha256", "bytes", "shape", "dtype")
+        ) or context.get("external_existing_artifact") != current.get(
+            "external_existing_artifact"
+        ):
+            raise InferenceError(f"{state_id}: current logical alias drift")
+        external = current.get("external_existing_artifact")
+        if not isinstance(external, Mapping):
+            raise InferenceError(f"{state_id}: current authority binding is absent")
+        authority_path = Path(str(external.get("path")))
+        persisted_path = _artifact_path(str(current["path"]), output_root)
+        persisted = np.load(persisted_path, allow_pickle=False)
+        raw_sha = hashlib.sha256(
+            np.ascontiguousarray(persisted).tobytes(order="C")
+        ).hexdigest()
+        if (
+            not authority_path.is_file()
+            or sha256_file(authority_path) != external.get("sha256")
+            or raw_sha != external.get("raw_payload_sha256_expected")
+            or external.get("raw_payload_sha256_observed") != raw_sha
+            or external.get("raw_payload_byte_exact") is not True
+            or external.get("copied_to_attempt_once") is not True
+            or external.get("reencoded") is not False
+        ):
+            raise InferenceError(f"{state_id}: current authority payload drift")
     gpu_receipt = load_json(output_root / GPU_INFERENCE_REL)
     validate_phase(gpu_receipt, source_freeze_commit)
     gpu_environment_binding = _gpu_environment_binding_for_inference(
@@ -1622,6 +1869,13 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
         CONTRACT.GPU_WATCHDOG_STATUS_SUCCESS
     ):
         raise InferenceError("GPU inference watchdog receipt drift")
+    if (
+        gpu_receipt.get("current_token_execution_amendment_binding")
+        != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        or gpu_receipt.get("current_token_authority_policy")
+        != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+    ):
+        raise InferenceError("GPU inference current-token amendment drift")
     if gpu_receipt.get("training_steps") != 0:
         raise InferenceError("GPU inference receipt reports training")
     if gpu_receipt.get("parameter_state_unchanged") != {
@@ -1630,6 +1884,20 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
         "two_step": True,
     }:
         raise InferenceError("GPU parameter-state custody is not unchanged")
+    if gpu_receipt.get("encoder_call_counts") != {
+        "frames": 144,
+        "new_context_frames": 96,
+        "goal_frames": 48,
+        "frozen_current_authority_payload_copies": 48,
+        "current_payload_reencodes": 0,
+        "current_logical_aliases": 48,
+        "batch_size": 16,
+        "batches": 9,
+        "preprocessing_digest": CONTRACT.build_contract()["latent_bindings"][
+            "encoder"
+        ]["preprocessing_digest"],
+    }:
+        raise InferenceError("GPU encoder/current-authority call custody drift")
     latent_binding = gpu_receipt.get("latent_tensor_index_binding", {})
     if latent_binding.get("sha256") != sha256_file(output_root / LATENT_INDEX_REL):
         raise InferenceError("GPU receipt latent-index binding drift")
@@ -1637,6 +1905,52 @@ def check(source_freeze_commit: str, *, output_root: Path, deep: bool) -> dict[s
         "encoder_source_repository_binding"
     ) != _encoder_source_repository_binding():
         raise InferenceError("GPU encoder source repository receipt drift")
+    context_index = load_json(output_root / CONTEXT_INDEX_REL)
+    validate_phase(context_index, source_freeze_commit)
+    if (
+        context_index.get("current_token_execution_amendment_binding")
+        != CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        or context_index.get("current_token_authority_policy")
+        != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
+        or context_index.get("current_token_authority_reproduction")
+        != {
+            "states": 48,
+            "current_rgb_exact_matches": 48,
+            "current_rgb_mismatches": 0,
+            "external_current_payloads_validated": 48,
+            "authority_payload_copies": 48,
+            "current_token_reencodes": 0,
+            "context_slot_2_aliases": 48,
+            "current_cost_aliases": 48,
+            "numeric_tolerance": 0.0,
+            "pass": True,
+        }
+    ):
+        raise InferenceError("context current-token authority custody drift")
+    context_by_state = {
+        str(row.get("state_id")): row for row in context_index.get("records", [])
+    }
+    authority = _dense_current_authority()
+    if set(context_by_state) != set(authority):
+        raise InferenceError("context/current RGB authority state domain drift")
+    for state_id in sorted(authority, key=_numeric_state_key):
+        context = context_by_state[state_id]
+        paths = context.get("context_rgb_paths")
+        digests = context.get("context_rgb_sha256s")
+        if (
+            not isinstance(paths, list)
+            or len(paths) != 3
+            or not isinstance(digests, list)
+            or len(digests) != 3
+        ):
+            raise InferenceError(f"{state_id}: context RGB inventory drift")
+        current_rgb = _artifact_path(str(paths[2]), output_root)
+        if (
+            not current_rgb.is_file()
+            or sha256_file(current_rgb) != digests[2]
+            or digests[2] != authority[state_id]["rgb_sha256"]
+        ):
+            raise InferenceError(f"{state_id}: terminal current RGB byte drift")
     _assert_gpu_process_separation()
     return {
         "pass": True,

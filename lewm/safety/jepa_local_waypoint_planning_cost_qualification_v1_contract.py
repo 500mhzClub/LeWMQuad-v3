@@ -33,6 +33,9 @@ SOURCE_CLOSURE_SCHEMA_VERSION = (
 GOAL_VIEW_AMENDMENT_SCHEMA_VERSION = (
     "jepa_local_waypoint_planning_cost_qualification_v1.goal_view_amendment.v1"
 )
+CURRENT_TOKEN_AMENDMENT_SCHEMA_VERSION = (
+    "jepa_local_waypoint_planning_cost_qualification_v1.current_token_amendment.v1"
+)
 
 STARTING_HEAD = "b29eae1929725a4cc26a35d95662b545daee4553"
 STAGE_A_FREEZE_COMMIT = "e9e8c41a327ddbe51c38fa04f05ae1d30266720b"
@@ -157,6 +160,10 @@ TRACKED_GOAL_VIEW_AMENDMENT_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "goal_view_amendment_2026-08-26.json"
 )
+TRACKED_CURRENT_TOKEN_AMENDMENT_PATH = Path(
+    "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
+    "current_token_amendment_2026-08-26.json"
+)
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "source_closure_2026-08-26.json"
@@ -175,6 +182,7 @@ ENTRYPOINT_PATH = Path(
 
 
 ORIGINAL_FREEZE_COMMIT = "184e192f35740a2b300a771097c2c5c8d68ce4f9"
+GOAL_VIEW_CORRECTION_COMMIT = "e81ef67763d1daeff9be6cef32ad031465bc57e8"
 GOAL_VIEW_RENDER_SEMANTICS = (
     "VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE"
 )
@@ -255,6 +263,130 @@ FAILED_GOAL_VIEW_ATTEMPT_INVENTORY: dict[str, Any] = {
     "aggregate_sha256": (
         "6442c13416dc1badd811ac4b19a0fd802fad4708c3698c7dcfada44d552469bb"
     ),
+}
+
+FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".jepa_local_waypoint_planning_cost_qualification_v1."
+    "failed-1787774675034819483-355288"
+)
+FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY: dict[str, Any] = {
+    "record_fields": ["path", "sha256", "bytes"],
+    "record_order": "ascending archive-relative POSIX path",
+    "aggregate_algorithm": (
+        "SHA-256 of compact canonical JSON bytes of the ordered record array, with "
+        "object keys sorted and without terminal LF"
+    ),
+    "record_count": 537,
+    "total_bytes": 322350756,
+    "canonical_records_bytes": 79439,
+    "aggregate_sha256": (
+        "b82763e28831814a48120a84aa0d209aa837f2911551dd27fc1b5738d325e71d"
+    ),
+}
+
+CURRENT_TOKEN_AUTHORITY_POLICY: dict[str, Any] = {
+    "classification": "BOUND_HISTORICAL_CURRENT_TOKEN_REUSE_WITH_LOGICAL_ALIAS",
+    "states": 48,
+    "current_rgb_exact_matches_required": 48,
+    "external_current_payloads_validated_before_copy": 48,
+    "external_current_payload_validation": {
+        "authority": (
+            ".generated/dense_temporal_true_future_safety_observability_v1/"
+            "token_index.json current occurrences and their bound records"
+        ),
+        "fields": ["state_id", "rgb_sha256", "token_path", "token_sha256"],
+        "shape": [768, 1024],
+        "dtype": "float16",
+        "byte_sha256_exact": True,
+        "numeric_tolerance": 0.0,
+    },
+    "new_encoder_frames": {
+        "context_slots_0_and_1": 96,
+        "goal": 48,
+        "current": 0,
+        "total": 144,
+        "batch_size": 16,
+        "batches": 9,
+        "batch_order": (
+            "ascending RGB SHA-256, then kind, numeric state identity and context slot"
+        ),
+        "dynamic_batch_fallback": False,
+    },
+    "current_payload_materialisation": {
+        "authority_payload_copies": 48,
+        "copies_per_state": 1,
+        "copy_semantics": (
+            "load the bound external raw .f16 array after exact SHA/shape/dtype validation, "
+            "write one canonical attempt-local NPY container whose C-order float16 array "
+            "payload bytes equal the authority payload exactly; the NPY container has its "
+            "own file SHA-256"
+        ),
+        "context_slot_2": "logical alias of the one copied state payload",
+        "current_cost": "logical alias of the same copied state payload",
+        "duplicate_physical_current_payloads": 0,
+    },
+    "logical_tensor_counts": {
+        "CONTEXT": 144,
+        "CURRENT": 48,
+        "GOAL": 48,
+        "TRUE_FUTURE": 1728,
+        "ONE_STEP_PREDICTED": 1728,
+        "TWO_STEP_PREDICTED": 1728,
+        "total": 5424,
+    },
+    "current_reencoding_for_equality_gate": "forbidden",
+    "current_rgb_byte_equality_gate_retained": True,
+    "scientific_cost_gate_metric_or_classification_change": False,
+    "device_batch_cohort_limitation": (
+        "BF16 encoder output bytes can depend on device, runtime, kernels and complete "
+        "batch cohort. The historical 7154-frame cohort/order and exact token bytes are "
+        "persisted and bound, but bitwise re-execution equivalence under a changed cohort "
+        "was never established. Re-encoding is unnecessary and is not an authority; the "
+        "bound historical current payload is reused without numerical reinterpretation."
+    ),
+}
+
+GPU_CHILD_PHASE_IDS = ("PREFLIGHT", "MATERIALIZE")
+GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS = (
+    "schema",
+    "experiment_id",
+    "source_freeze_commit",
+    "contract_sha256",
+    "output_schema_sha256",
+    "phase",
+    "command",
+    "interpreter_entrypoint",
+    "timeout_s",
+    "started_at_utc",
+    "finished_at_utc",
+    "runtime_s",
+    "returncode",
+    "timed_out",
+    "stdout",
+    "stderr",
+    "pass",
+    "content_digest",
+)
+GPU_CHILD_STREAM_REQUIRED_KEYS = ("path", "sha256", "bytes", "tail_utf8")
+GPU_CHILD_STREAM_TAIL_BYTES = 8192
+GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS = (
+    "path",
+    "sha256",
+    "bytes",
+    "content_digest",
+)
+GPU_CHILD_EXECUTION_RECEIPTS: dict[str, dict[str, str]] = {
+    "PREFLIGHT": {
+        "path": "receipts/gpu_child_preflight.json",
+        "stdout_path": "materialization/logs/gpu_preflight.stdout.log",
+        "stderr_path": "materialization/logs/gpu_preflight.stderr.log",
+    },
+    "MATERIALIZE": {
+        "path": "receipts/gpu_child_materialize.json",
+        "stdout_path": "materialization/logs/gpu_materialize.stdout.log",
+        "stderr_path": "materialization/logs/gpu_materialize.stderr.log",
+    },
 }
 
 
@@ -968,6 +1100,244 @@ GOAL_VIEW_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
 }
 
 
+def _current_token_execution_amendment_core() -> dict[str, Any]:
+    return {
+        "schema": CURRENT_TOKEN_AMENDMENT_SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "date": "2026-08-26",
+        "status": "PROSPECTIVE_BEFORE_FRESH_REEXECUTION",
+        "prior_source_freeze": {
+            "commit": GOAL_VIEW_CORRECTION_COMMIT,
+            "contract": {
+                "path": str(TRACKED_CONTRACT_RECEIPT_PATH),
+                "sha256": "bb6c82f1c8479bd17467f1c4890db3210d40391ca747dcc3f48d571f1cc1e6de",
+                "bytes": 65171,
+                "digest_field": "contract_sha256",
+                "content_digest": "7845ff34f64a4b9e09415477be103a10c0046fe000225bc935593efba9c2c1d2",
+            },
+            "output_schema": {
+                "path": str(TRACKED_OUTPUT_SCHEMA_PATH),
+                "sha256": "067ab4b1f41f1865a0490d4a88b6a9fcacd4db3178fdef1db2173a3831fc33ec",
+                "bytes": 42697,
+                "digest_field": "output_schema_sha256",
+                "content_digest": "93088dd242d17cb3bf42a38d7c7b12ab9bd6cf3f8e7f1fe8fcbddfd274bf370f",
+            },
+            "fixture": {
+                "path": str(TRACKED_FIXTURE_PATH),
+                "sha256": "2e6181fe31663250118c0461ae1feb47330d2ac6a175353bc3f962e4fd454bea",
+                "bytes": 9137,
+                "digest_field": "content_digest",
+                "content_digest": "28478bfa20b94a8c88e98783d344feddd89ce6990ff950f1295261f26a093315",
+            },
+            "goal_view_amendment": {
+                "path": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+                "sha256": "f05aa92c439fced757014043a07df60b31e602d23aec6edf5d8b8921fe5548aa",
+                "bytes": 6599,
+                "digest_field": "content_digest",
+                "content_digest": "a816c4229539ea3966875cb09843b61f2867bb793a1501e96e2c529132da3812",
+            },
+            "source_closure": {
+                "path": str(TRACKED_SOURCE_CLOSURE_PATH),
+                "sha256": "2a1e97a15b617b641cbc2cee9fdce9b79701b7134b5429b13a933e32d759eacc",
+                "bytes": 13128,
+                "digest_field": "content_digest",
+                "content_digest": "0e26933c577d275ac1564e2dfb822ae2579919fed53055dbee21640b335336cf",
+                "rows": 83,
+            },
+        },
+        "failed_attempt": {
+            "archive_path": str(FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE),
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "schema": "jepa_local_waypoint_planning_cost_failed_attempt_v1",
+                "sha256": "48d77d46b91924cd97c9c064619261905763d8e73a21af5f945a7e00f76e2ba2",
+                "bytes": 1552,
+                "content_digest": "3cd263684ab000934f776ce1591582ffbd2d80179371d5982790c2f8b9037d9c",
+                "source_freeze_commit": GOAL_VIEW_CORRECTION_COMMIT,
+                "phase": "MATERIALIZATION",
+                "error_type": "CalledProcessError",
+                "child_error_streams_persisted": False,
+                "partial_artifacts_reusable": False,
+                "nothing_running": True,
+            },
+            "failed_running_marker": {
+                "path": "receipts/FAILED_RUNNING_MARKER.json",
+                "schema": "jepa_local_waypoint_planning_cost_running_marker_v1",
+                "sha256": "bbd6b914427ccc9c2d0a262f35d22d1a13c106feef3de41ee3b8a3311464822e",
+                "bytes": 545,
+                "content_digest": "6c1a9438f7ba71bc10af3ae4a987663413e32ebbb344eda8af8933dc7711284f",
+                "source_freeze_commit": GOAL_VIEW_CORRECTION_COMMIT,
+                "phase": "GPU_ENCODING_AND_INFERENCE",
+            },
+            "archive_inventory": copy.deepcopy(FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY),
+            "artifact_summary": {
+                "goal_view_files": 1,
+                "latent_files": 192,
+                "context_latent_files": 144,
+                "goal_latent_files": 48,
+                "materialization_files": 339,
+                "state_materialization_files": 288,
+                "worker_logs": 48,
+                "materialization_indices_or_inventory": 3,
+                "receipts": 5,
+                "total": 537,
+            },
+            "terminal_absences": [
+                "materialization/dense_route_replay_input_index.json",
+                "latents/true_future",
+                "latents/predicted",
+                "latents/batch_manifest.json",
+                "latents/tensor_index.json",
+                "receipts/gpu_inference.json",
+                "evidence/candidate_evidence.jsonl.gz",
+                "evidence/selection_evidence.jsonl.gz",
+                "evidence/paired_effect_evidence.jsonl.gz",
+                "aggregates/metrics.json",
+                "receipts/persistence.json",
+                "result.json",
+                "report.md",
+            ],
+            "scientific_result_published": False,
+            "aggregate_metrics_or_gates_computed": False,
+            "predictor_checkpoint_files_hashed": 2,
+            "predictor_checkpoint_tensor_deserializations": 0,
+            "predictor_inference_executed": False,
+            "encoder_checkpoint_executed": True,
+            "canonical_output_root_absent": True,
+            "scientific_phase_or_shard_reuse": False,
+            "prohibition_counters_all_zero": True,
+        },
+        "static_diagnosis": {
+            "route_outcome_rows_read_or_used": 0,
+            "predictor_checkpoint_tensors_opened": 0,
+            "predictor_inference_calls": 0,
+            "current_rgb_exact_matches": 48,
+            "current_rgb_mismatches": 0,
+            "reencoded_current_token_exact_matches": 0,
+            "reencoded_current_token_mismatches": 48,
+            "first_failure_state_id": "purpose-0",
+            "failure_before_true_future_copy": True,
+            "failure_before_predictor_tensor_deserialization": True,
+            "failure_before_predictor_inference": True,
+            "historical_encoder_cohort_frames": 7154,
+            "failed_attempt_encoder_cohort_frames": 192,
+            "failed_attempt_encoder_batch_size": 16,
+            "failed_attempt_encoder_batches": 12,
+            "diagnostic_cosine_algorithm": (
+                "load archived and authoritative float16 grids, cast both to float64; "
+                "flat cosine is float64 dot(flattened grids) divided by the product of "
+                "float64 L2 norms; per-token mean cosine computes the same float64 "
+                "cosine independently over each width-1024 token then takes a float64 mean"
+            ),
+            "diagnostic_residual_algorithm": (
+                "on the same float64 grids, per-state MAE is float64 mean(abs(archived - "
+                "authority)); per-state RMSE is sqrt(float64 mean(square(archived - "
+                "authority))); reported range and mean reduce the 48 per-state scalars "
+                "in numeric state-id order using float64"
+            ),
+            "flat_cosine_range": [0.9999043258031383, 0.9999475581155232],
+            "flat_cosine_mean": 0.9999380251025588,
+            "per_token_mean_cosine_range": [
+                0.9999058101016667,
+                0.9999499438888875,
+            ],
+            "per_token_mean_cosine_mean": 0.9999401111347598,
+            "mae_range": [0.012470918548312207, 0.017233230190110287],
+            "mae_mean": 0.013817019145041817,
+            "rmse_range": [0.01791116887331469, 0.024418504702133508],
+            "rmse_mean": 0.019687519709368287,
+            "differing_elements": 36629242,
+            "total_elements": 37748736,
+            "differing_element_fraction": 0.9703435368008084,
+            "finding": (
+                "the exact RGB gate passed 48/48, but a newly invented 192-frame BF16 "
+                "batch cohort did not byte-reproduce any of the 48 historical current "
+                "tokens generated inside the prior 7154-frame cohort"
+            ),
+            "scientific_interpretation": (
+                "input-materialisation compatibility failure only; no route-cost, ranking, "
+                "gate or predictor result was computed"
+            ),
+        },
+        "amended_current_token_semantics": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "durable_gpu_child_error_capture": {
+            "phase_ids": list(GPU_CHILD_PHASE_IDS),
+            "receipts": copy.deepcopy(GPU_CHILD_EXECUTION_RECEIPTS),
+            "capture_policy": (
+                "invoke the child with check disabled and captured streams; atomically "
+                "persist complete stdout, stderr and a self-digesting execution receipt on "
+                "success, nonzero exit or timeout before returning or raising for PREFLIGHT "
+                "and MATERIALIZE"
+            ),
+            "receipt_required_keys": list(
+                GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS
+            ),
+            "stream_required_keys": list(GPU_CHILD_STREAM_REQUIRED_KEYS),
+            "stream_tail_max_bytes": GPU_CHILD_STREAM_TAIL_BYTES,
+            "failure_receipt_binding": "failed_child_execution_receipt",
+            "terminal_check_capture": {
+                "canonical_success_receipt_or_log": False,
+                "success_capture": (
+                    "ephemeral non-output capture removed before successful return"
+                ),
+                "failure_capture": (
+                    "captured streams and metadata are bound only into the outer failure "
+                    "archive/receipt, never added to a finalized canonical output"
+                ),
+                "reason": (
+                    "a terminal check must not mutate the finalized persistence manifest"
+                ),
+            },
+            "timeout_cleanup_and_archive_unchanged": True,
+        },
+        "prohibitions": {
+            "prior_attempt_phase_or_shard_reuse": True,
+            "current_token_reencoding_for_equivalence": True,
+            "numeric_tolerance_or_posthoc_acceptance": True,
+            "new_current_view_or_authority": True,
+            "goal_pose_or_renderer_change": True,
+            "candidate_role_label_or_route_outcome_change": True,
+            "gate_metric_or_classification_change": True,
+            "training_checkpoint_change_or_selection": True,
+            "untouched_g2_stage_b_memory_navigation_routing_or_beacon_capture": True,
+        },
+        "execution_lifecycle": {
+            "retain_prior_freeze_commits_as_ancestors": True,
+            "new_contract_correction_commit_is_future_source_authority": True,
+            "new_hidden_attempt_namespace": True,
+            "canonical_output_root_must_be_absent": True,
+            "prior_state_phase_or_shard_reuse": False,
+            "automatic_retry": False,
+            "fresh_preflight_required": True,
+            "fresh_complete_execution_required": True,
+            "result_commit_message_remains": (
+                "Evaluate JEPA local waypoint planning cost qualification"
+            ),
+        },
+    }
+
+
+def build_current_token_execution_amendment() -> dict[str, Any]:
+    return attach_content_digest(_current_token_execution_amendment_core())
+
+
+def current_token_execution_amendment_receipt_bytes() -> bytes:
+    return canonical_json_bytes(build_current_token_execution_amendment()) + b"\n"
+
+
+CURRENT_TOKEN_EXECUTION_AMENDMENT = build_current_token_execution_amendment()
+CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
+    "path": str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(
+        current_token_execution_amendment_receipt_bytes()
+    ).hexdigest(),
+    "bytes": len(current_token_execution_amendment_receipt_bytes()),
+    "content_digest": CURRENT_TOKEN_EXECUTION_AMENDMENT["content_digest"],
+}
+
+
 def _self_digest(value: Mapping[str, Any], key: str) -> dict[str, Any]:
     payload = copy.deepcopy(dict(value))
     payload.pop(key, None)
@@ -1323,6 +1693,9 @@ def _contract_core() -> dict[str, Any]:
             ),
             "goal_view_render_semantics": GOAL_VIEW_RENDER_SEMANTICS,
             "goal_view_physical_executability_or_reachability_claim": False,
+            "current_token_device_batch_cohort_limitation": (
+                CURRENT_TOKEN_AUTHORITY_POLICY["device_batch_cohort_limitation"]
+            ),
         },
         "goal_view_execution_amendment": {
             "receipt_binding": copy.deepcopy(GOAL_VIEW_EXECUTION_AMENDMENT_BINDING),
@@ -1341,6 +1714,23 @@ def _contract_core() -> dict[str, Any]:
                 GOAL_VIEW_STATIC_VALIDATION_SUCCESS
             ),
             "blocked_state_ids": copy.deepcopy(GOAL_CELL_BLOCKED_STATE_IDS),
+            "fresh_execution_only": True,
+            "prior_phase_or_shard_reuse": False,
+        },
+        "current_token_execution_amendment": {
+            "receipt_binding": copy.deepcopy(
+                CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+            ),
+            "prior_source_freeze_commit": GOAL_VIEW_CORRECTION_COMMIT,
+            "failed_attempt_archive": str(FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE),
+            "current_token_authority_policy": copy.deepcopy(
+                CURRENT_TOKEN_AUTHORITY_POLICY
+            ),
+            "durable_gpu_child_error_capture": copy.deepcopy(
+                CURRENT_TOKEN_EXECUTION_AMENDMENT[
+                    "durable_gpu_child_error_capture"
+                ]
+            ),
             "fresh_execution_only": True,
             "prior_phase_or_shard_reuse": False,
         },
@@ -1411,6 +1801,7 @@ def _contract_core() -> dict[str, Any]:
                 "untouched_g2_reads": 0,
                 "training_steps": 0,
                 "goal_view_execution_amendment_bound": True,
+                "current_token_execution_amendment_bound": True,
                 "archived_failed_attempt_reuse": 0,
             },
         },
@@ -1637,14 +2028,17 @@ def _contract_core() -> dict[str, Any]:
                 ),
                 "current_view_reproduction": (
                     "newly rendered post-block40/current RGB must match the existing "
-                    "48-state current occurrence file SHA exactly; the newly encoded "
-                    "C-order FP16 raw tensor payload at encoder batch size 16 must match "
-                    "the existing raw token payload SHA exactly even when the new file "
-                    "uses an NPY container; zero tolerance and no substitution"
+                    "48-state current occurrence file SHA exactly; then validate and copy "
+                    "the bound historical raw FP16 current token payload exactly once per "
+                    "state; no current-token re-encoding or numeric tolerance is permitted"
                 ),
                 "current_tensor_use": (
-                    "the newly encoded, equality-validated current tensor is both context "
-                    "slot 3 and CURRENT cost; equality makes old/new reuse immaterial"
+                    "the single copied historical current payload is aliased logically by "
+                    "context slot 3 and CURRENT cost; both records must bind identical "
+                    "path, SHA-256 and byte count"
+                ),
+                "current_token_authority_policy": copy.deepcopy(
+                    CURRENT_TOKEN_AUTHORITY_POLICY
                 ),
                 "duplication_or_fabrication": "forbidden",
             },
@@ -1741,9 +2135,14 @@ def _contract_core() -> dict[str, Any]:
                             "context slot; this matches the existing target-encoder "
                             "RGB-identity-first ordering"
                         ),
-                        "records": 192,
-                        "batches": 12,
-                        "current": "alias of context slot 2; not re-encoded",
+                        "records": 144,
+                        "batches": 9,
+                        "context_slots_0_and_1": 96,
+                        "goal": 48,
+                        "current": (
+                            "48 exact historical payload copies; context slot 2 and CURRENT "
+                            "are logical aliases; not re-encoded"
+                        ),
                         "true_future": "existing bound tokens; not re-encoded",
                     },
                     "predictor": {
@@ -2553,6 +2952,7 @@ def _contract_core() -> dict[str, Any]:
             "output_schema": str(TRACKED_OUTPUT_SCHEMA_PATH),
             "fixture": str(TRACKED_FIXTURE_PATH),
             "goal_view_amendment": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+            "current_token_amendment": str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
             "source_closure": str(TRACKED_SOURCE_CLOSURE_PATH),
             "result": str(TRACKED_RESULT_PATH),
             "report": str(TRACKED_REPORT_PATH),
@@ -2581,6 +2981,9 @@ _OUTPUT_FILES = {
             "fixture",
             "source_closure",
             "goal_view_execution_amendment_binding",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
+            "gpu_child_execution_receipts",
             "goal_view_static_validation",
             "preexecution_custody",
             "panel_bindings",
@@ -2622,6 +3025,16 @@ _OUTPUT_FILES = {
         "execution_watchdog_config_exact": copy.deepcopy(EXECUTION_WATCHDOGS),
         "goal_view_execution_amendment_binding_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "gpu_child_execution_receipts_required_phase_ids": ["PREFLIGHT"],
+        "gpu_child_execution_receipt_binding_required_keys": list(
+            GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
         ),
         "goal_view_static_validation_exact": copy.deepcopy(
             GOAL_VIEW_STATIC_VALIDATION_SUCCESS
@@ -2734,6 +3147,44 @@ _OUTPUT_FILES = {
             "pass": True,
         },
     },
+    "gpu_child_preflight_receipt": {
+        "path": GPU_CHILD_EXECUTION_RECEIPTS["PREFLIGHT"]["path"],
+        "schema": "jepa_local_waypoint_gpu_child_execution_v1",
+        "required_keys": list(GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS),
+        "stream_required_keys": list(GPU_CHILD_STREAM_REQUIRED_KEYS),
+        "stream_tail_max_bytes": GPU_CHILD_STREAM_TAIL_BYTES,
+        "phase_exact": "PREFLIGHT",
+        "stdout_path_exact": GPU_CHILD_EXECUTION_RECEIPTS["PREFLIGHT"][
+            "stdout_path"
+        ],
+        "stderr_path_exact": GPU_CHILD_EXECUTION_RECEIPTS["PREFLIGHT"][
+            "stderr_path"
+        ],
+        "successful_terminal_values": {
+            "returncode": 0,
+            "timed_out": False,
+            "pass": True,
+        },
+    },
+    "gpu_child_materialize_receipt": {
+        "path": GPU_CHILD_EXECUTION_RECEIPTS["MATERIALIZE"]["path"],
+        "schema": "jepa_local_waypoint_gpu_child_execution_v1",
+        "required_keys": list(GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS),
+        "stream_required_keys": list(GPU_CHILD_STREAM_REQUIRED_KEYS),
+        "stream_tail_max_bytes": GPU_CHILD_STREAM_TAIL_BYTES,
+        "phase_exact": "MATERIALIZE",
+        "stdout_path_exact": GPU_CHILD_EXECUTION_RECEIPTS["MATERIALIZE"][
+            "stdout_path"
+        ],
+        "stderr_path_exact": GPU_CHILD_EXECUTION_RECEIPTS["MATERIALIZE"][
+            "stderr_path"
+        ],
+        "successful_terminal_values": {
+            "returncode": 0,
+            "timed_out": False,
+            "pass": True,
+        },
+    },
     "gpu_inference_receipt": {
         "path": "receipts/gpu_inference.json",
         "schema": "jepa_local_waypoint_planning_cost_gpu_inference_v1",
@@ -2760,6 +3211,8 @@ _OUTPUT_FILES = {
             "batch_manifest",
             "batch_order_validation",
             "source_closure_binding",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
             "gpu_environment_receipt_binding",
             "gpu_environment_revalidation",
             "gpu_watchdog_status",
@@ -2782,6 +3235,12 @@ _OUTPUT_FILES = {
             "pass": True,
         },
         "gpu_watchdog_status_exact": copy.deepcopy(GPU_WATCHDOG_STATUS_SUCCESS),
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
     },
     "cpu_runtime_input_inventory": {
         "path": "materialization/cpu_runtime_input_inventory.json",
@@ -2956,6 +3415,8 @@ _OUTPUT_FILES = {
             "manifest_snapshot_descriptive_audit",
             "current_rgb_authority_reproduction",
             "current_token_authority_reproduction",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
             "control_history_index_timestamp_validation",
             "requested_applied_action_authority_validation",
             "failed_state_ids",
@@ -2988,6 +3449,36 @@ _OUTPUT_FILES = {
         "reconstruction_prefix_custody_exact": copy.deepcopy(
             RECONSTRUCTION_PREFIX_CUSTODY
         ),
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "current_token_authority_reproduction_required_keys": [
+            "states",
+            "current_rgb_exact_matches",
+            "current_rgb_mismatches",
+            "external_current_payloads_validated",
+            "authority_payload_copies",
+            "current_token_reencodes",
+            "context_slot_2_aliases",
+            "current_cost_aliases",
+            "numeric_tolerance",
+            "pass",
+        ],
+        "current_token_authority_reproduction_exact": {
+            "states": 48,
+            "current_rgb_exact_matches": 48,
+            "current_rgb_mismatches": 0,
+            "external_current_payloads_validated": 48,
+            "authority_payload_copies": 48,
+            "current_token_reencodes": 0,
+            "context_slot_2_aliases": 48,
+            "current_cost_aliases": 48,
+            "numeric_tolerance": 0.0,
+            "pass": True,
+        },
     },
     "dense_route_replay_input_index": {
         "path": "materialization/dense_route_replay_input_index.json",
@@ -3123,6 +3614,10 @@ _OUTPUT_FILES = {
             "encoder_binding",
             "checkpoint_bindings",
             "batch_manifest",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
+            "physical_encoder_materialisation_counts",
+            "current_token_alias_validation",
             "shape_dtype_validation",
             "failed_records",
             "content_digest",
@@ -3159,6 +3654,37 @@ _OUTPUT_FILES = {
             "TWO_STEP_PREDICTED": 1728,
             "total": 5424,
         },
+        "physical_encoder_materialisation_counts_exact": {
+            "context_slots_0_and_1": 96,
+            "goal": 48,
+            "current": 0,
+            "total_new_encoder_frames": 144,
+            "batch_size": 16,
+            "batches": 9,
+            "authority_current_payload_copies": 48,
+        },
+        "current_token_alias_validation_required_keys": [
+            "states",
+            "context_slot_2_records",
+            "current_records",
+            "shared_path_sha_bytes_aliases",
+            "duplicate_physical_current_payloads",
+            "pass",
+        ],
+        "current_token_alias_validation_exact": {
+            "states": 48,
+            "context_slot_2_records": 48,
+            "current_records": 48,
+            "shared_path_sha_bytes_aliases": 48,
+            "duplicate_physical_current_payloads": 0,
+            "pass": True,
+        },
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
         "current_alias_rule": (
             "each CURRENT logical record is an exact path/SHA/bytes alias of that "
             "state's context slot at elapsed 0 s (post block 40); do not duplicate bytes"
@@ -3478,6 +4004,9 @@ _OUTPUT_FILES = {
             "fixture_sha256",
             "source_closure_sha256",
             "goal_view_execution_amendment_binding",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
+            "gpu_child_execution_receipts",
             "seed",
             "materialisation_counts",
             "goal_view_counts",
@@ -3525,6 +4054,10 @@ _OUTPUT_FILES = {
             "successor_blocks",
             "total_oracle_blocks",
             "physics_frames",
+            "new_encoder_frames",
+            "new_encoder_batches",
+            "current_authority_payload_copies",
+            "current_token_reencodes",
             "latent_tensors",
             "predicted_tensors",
             "candidate_evidence_rows",
@@ -3534,6 +4067,19 @@ _OUTPUT_FILES = {
         "goal_view_count_required_keys": ["states", "views", "failed"],
         "goal_view_execution_amendment_binding_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "gpu_child_execution_receipts_required_phase_ids": [
+            "PREFLIGHT",
+            "MATERIALIZE",
+        ],
+        "gpu_child_execution_receipt_binding_required_keys": list(
+            GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
         ),
         "goal_pose_semantics_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
@@ -3588,6 +4134,7 @@ _OUTPUT_FILES = {
             "Bindings and custody",
             "Goal-view and predictor input reconstruction",
             "Goal-view amendment and virtual-pose limitation",
+            "Current-token authority amendment and BF16 cohort limitation",
             "Historical renderer limitation",
             "Controller execution custody",
             "Population and materialisation counts",
@@ -3613,6 +4160,9 @@ _OUTPUT_FILES = {
             "row_reproduction",
             "context_reconstruction_index_binding",
             "goal_view_execution_amendment_binding",
+            "current_token_execution_amendment_binding",
+            "current_token_authority_policy",
+            "gpu_child_execution_receipts",
             "dense_route_replay_input_index_binding",
             "cpu_runtime_input_inventory_binding",
             "oracle_admissibility_fanout_index_binding",
@@ -3639,6 +4189,19 @@ _OUTPUT_FILES = {
         ),
         "goal_view_execution_amendment_binding_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_execution_amendment_binding_exact": copy.deepcopy(
+            CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING
+        ),
+        "current_token_authority_policy_exact": copy.deepcopy(
+            CURRENT_TOKEN_AUTHORITY_POLICY
+        ),
+        "gpu_child_execution_receipts_required_phase_ids": [
+            "PREFLIGHT",
+            "MATERIALIZE",
+        ],
+        "gpu_child_execution_receipt_binding_required_keys": list(
+            GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS
         ),
         "report_integrity": (
             "report.md is included in artifact_manifest with exact path, SHA-256 and bytes"
@@ -3711,6 +4274,12 @@ def _output_schema_core() -> dict[str, Any]:
                 "original_freeze_commit": ORIGINAL_FREEZE_COMMIT,
                 "archive_path": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
                 "inventory": copy.deepcopy(FAILED_GOAL_VIEW_ATTEMPT_INVENTORY),
+                "reuse": False,
+            },
+            "bound_current_token_failed_attempt": {
+                "source_freeze_commit": GOAL_VIEW_CORRECTION_COMMIT,
+                "archive_path": str(FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE),
+                "inventory": copy.deepcopy(FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY),
                 "reuse": False,
             },
         },
@@ -3915,6 +4484,56 @@ def _run_contract_fixture_checks() -> dict[str, bool]:
         ]
         is False
     )
+    current_policy = CURRENT_TOKEN_AUTHORITY_POLICY
+    encoded = current_policy["new_encoder_frames"]
+    logical = current_policy["logical_tensor_counts"]
+    checks["current_token_authority_copy_and_alias_counts"] = (
+        encoded["context_slots_0_and_1"] == 48 * 2 == 96
+        and encoded["goal"] == 48
+        and encoded["current"] == 0
+        and encoded["total"] == 144
+        and encoded["batches"] * encoded["batch_size"] == 144
+        and logical["CONTEXT"] == 144
+        and logical["CURRENT"] == 48
+        and sum(logical[kind] for kind in logical if kind != "total")
+        == logical["total"]
+        == 5424
+        and current_policy["current_payload_materialisation"][
+            "authority_payload_copies"
+        ]
+        == 48
+        and current_policy["current_payload_materialisation"][
+            "duplicate_physical_current_payloads"
+        ]
+        == 0
+    )
+    checks["current_token_amendment_is_prospective_and_no_reuse"] = (
+        CURRENT_TOKEN_EXECUTION_AMENDMENT["status"]
+        == "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        and CURRENT_TOKEN_EXECUTION_AMENDMENT["failed_attempt"][
+            "scientific_phase_or_shard_reuse"
+        ]
+        is False
+        and CURRENT_TOKEN_EXECUTION_AMENDMENT["static_diagnosis"][
+            "route_outcome_rows_read_or_used"
+        ]
+        == 0
+        and CURRENT_TOKEN_EXECUTION_AMENDMENT["static_diagnosis"][
+            "predictor_inference_calls"
+        ]
+        == 0
+    )
+    checks["gpu_child_durable_error_capture"] = (
+        set(GPU_CHILD_EXECUTION_RECEIPTS) == {"PREFLIGHT", "MATERIALIZE"}
+        and all(
+            set(row) == {"path", "stdout_path", "stderr_path"}
+            for row in GPU_CHILD_EXECUTION_RECEIPTS.values()
+        )
+        and CURRENT_TOKEN_EXECUTION_AMENDMENT["durable_gpu_child_error_capture"][
+            "terminal_check_capture"
+        ]["canonical_success_receipt_or_log"]
+        is False
+    )
     checks["canonical_byte_regeneration"] = canonical_json_bytes(
         {"z": 2, "a": [True, None, 1.25]}
     ) == b'{"a":[true,null,1.25],"z":2}'
@@ -4087,6 +4706,15 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "optimizer": None,
                 "training_steps": 0,
                 "future_input_fields": [],
+                "current_token_authority_policy": copy.deepcopy(
+                    CURRENT_TOKEN_AUTHORITY_POLICY
+                ),
+                "new_encoder_frames": 144,
+                "encoder_batches": 9,
+                "authority_current_payload_copies": 48,
+                "current_reencodes": 0,
+                "durable_child_receipt_phase_ids": list(GPU_CHILD_PHASE_IDS),
+                "terminal_check_success_output_mutation": False,
             },
             "dense_route_replay_custody": {
                 "state_files": 48,
@@ -4112,7 +4740,11 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "same_filesystem_atomic_rename": "PASS_REQUIRED",
                 "failed_attempt_reuse": False,
                 "bound_failed_attempt_archive": str(FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE),
+                "bound_current_token_failed_attempt_archive": str(
+                    FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE
+                ),
                 "fresh_hidden_attempt_after_goal_view_amendment": "PASS_REQUIRED",
+                "fresh_hidden_attempt_after_current_token_amendment": "PASS_REQUIRED",
             },
             "cpu_worker_allocator": {
                 "environment": copy.deepcopy(
@@ -4123,6 +4755,9 @@ def build_fixture_receipt() -> dict[str, Any]:
             },
             "tensor_index": {
                 "logical_records": 5424,
+                "new_encoder_frames": 144,
+                "new_encoder_batches": 9,
+                "authority_current_payload_copies": 48,
                 "unique_payloads": "derive from unique path/SHA pairs",
                 "current_aliases_context_slot_2": True,
                 "tampered_sha_shape_dtype_or_bytes": "FAIL_CLOSED",
@@ -4189,6 +4824,29 @@ def validate_goal_view_execution_amendment(
     return copy.deepcopy(dict(value))
 
 
+def validate_current_token_execution_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_content_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        build_current_token_execution_amendment()
+    ):
+        raise ContractError("current-token execution amendment differs from its authority")
+    failed = value.get("failed_attempt", {})
+    diagnosis = value.get("static_diagnosis", {})
+    policy = value.get("amended_current_token_semantics", {})
+    if (
+        value.get("status") != "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        or failed.get("scientific_phase_or_shard_reuse") is not False
+        or failed.get("predictor_inference_executed") is not False
+        or diagnosis.get("route_outcome_rows_read_or_used") != 0
+        or diagnosis.get("predictor_inference_calls") != 0
+        or policy != CURRENT_TOKEN_AUTHORITY_POLICY
+    ):
+        raise ContractError("current-token execution amendment violates custody")
+    return copy.deepcopy(dict(value))
+
+
 def _write_immutable(path: Path, payload: bytes, label: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -4218,6 +4876,16 @@ def write_goal_view_execution_amendment(
         Path(path),
         goal_view_execution_amendment_receipt_bytes(),
         "goal-view execution amendment",
+    )
+
+
+def write_current_token_execution_amendment(
+    path: str | Path = TRACKED_CURRENT_TOKEN_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        current_token_execution_amendment_receipt_bytes(),
+        "current-token execution amendment",
     )
 
 
@@ -4271,6 +4939,18 @@ def load_and_validate_goal_view_execution_amendment(
     )
 
 
+def load_and_validate_current_token_execution_amendment(
+    path: str | Path = TRACKED_CURRENT_TOKEN_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    return validate_current_token_execution_amendment(
+        _load_exact(
+            Path(path),
+            current_token_execution_amendment_receipt_bytes(),
+            "current-token execution amendment",
+        )
+    )
+
+
 SOURCE_CLOSURE_DEFAULT_PATHS = (
     "lewm/__init__.py",
     "lewm/safety/__init__.py",
@@ -4282,6 +4962,7 @@ SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_OUTPUT_SCHEMA_PATH),
     str(TRACKED_FIXTURE_PATH),
     str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+    str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
     str(ENTRYPOINT_PATH),
     "scripts/run_jepa_local_waypoint_planning_cost_inference_v1.py",
     "lewm/safety/jepa_local_waypoint_planning_cost_metrics_v1.py",
@@ -4429,6 +5110,10 @@ __all__ = [
     "CPU_WATCHDOG_STATUS_SUCCESS",
     "CPU_FOUNDATIONAL_PACKAGE_BINDINGS",
     "CPU_RUNTIME_INPUT_BINDINGS",
+    "CURRENT_TOKEN_AMENDMENT_SCHEMA_VERSION",
+    "CURRENT_TOKEN_AUTHORITY_POLICY",
+    "CURRENT_TOKEN_EXECUTION_AMENDMENT",
+    "CURRENT_TOKEN_EXECUTION_AMENDMENT_BINDING",
     "DENSE_ROUTE_REPLAY_INPUT_BINDINGS",
     "ENTRYPOINT_PATH",
     "EXECUTION_WATCHDOGS",
@@ -4449,6 +5134,15 @@ __all__ = [
     "GOAL_VIEW_STATIC_VALIDATION_SUCCESS",
     "FAILED_GOAL_VIEW_ATTEMPT_ARCHIVE",
     "FAILED_GOAL_VIEW_ATTEMPT_INVENTORY",
+    "FAILED_CURRENT_TOKEN_ATTEMPT_ARCHIVE",
+    "FAILED_CURRENT_TOKEN_ATTEMPT_INVENTORY",
+    "GOAL_VIEW_CORRECTION_COMMIT",
+    "GPU_CHILD_EXECUTION_RECEIPTS",
+    "GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS",
+    "GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS",
+    "GPU_CHILD_PHASE_IDS",
+    "GPU_CHILD_STREAM_REQUIRED_KEYS",
+    "GPU_CHILD_STREAM_TAIL_BYTES",
     "HARD_FAMILY_IDS",
     "HISTORICAL_RENDERER_LIMITATIONS",
     "INTERPRETER_BINARY_BINDING",
@@ -4475,6 +5169,7 @@ __all__ = [
     "TRACKED_CONTRACT_RECEIPT_PATH",
     "TRACKED_FIXTURE_PATH",
     "TRACKED_GOAL_VIEW_AMENDMENT_PATH",
+    "TRACKED_CURRENT_TOKEN_AMENDMENT_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
     "TRACKED_REPORT_PATH",
@@ -4486,6 +5181,7 @@ __all__ = [
     "build_contract",
     "build_fixture_receipt",
     "build_goal_view_execution_amendment",
+    "build_current_token_execution_amendment",
     "build_output_schema",
     "build_source_closure",
     "canonical_json_bytes",
@@ -4497,9 +5193,11 @@ __all__ = [
     "family_complete_collapse",
     "fixture_receipt_bytes",
     "goal_view_execution_amendment_receipt_bytes",
+    "current_token_execution_amendment_receipt_bytes",
     "load_and_validate_contract",
     "load_and_validate_fixture_receipt",
     "load_and_validate_goal_view_execution_amendment",
+    "load_and_validate_current_token_execution_amendment",
     "load_and_validate_output_schema",
     "no_family_complete_collapse",
     "output_schema_receipt_bytes",
@@ -4510,10 +5208,12 @@ __all__ = [
     "validate_contract",
     "validate_fixture_receipt",
     "validate_goal_view_execution_amendment",
+    "validate_current_token_execution_amendment",
     "validate_output_schema",
     "write_contract",
     "write_fixture_receipt",
     "write_goal_view_execution_amendment",
+    "write_current_token_execution_amendment",
     "write_output_schema",
     "write_source_closure",
 ]
