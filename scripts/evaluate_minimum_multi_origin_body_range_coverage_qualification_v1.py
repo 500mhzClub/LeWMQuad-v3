@@ -23,7 +23,7 @@ import shutil
 import subprocess
 import sys
 import time
-from typing import Any, Iterable, Sequence
+from typing import Any, Iterable, Mapping, Sequence
 import zipfile
 
 import numpy as np
@@ -52,6 +52,7 @@ TRACKED_SCHEMA = ROOT / CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH
 TRACKED_MOUNTS = ROOT / CONTRACT.TRACKED_MOUNT_LIBRARY_PATH
 TRACKED_CLOSURE = ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH
 TRACKED_FIXTURE = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_fixture_2026-08-26.json"
+TRACKED_IMPLEMENTATION_AMENDMENT = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_implementation_amendment_2026-08-26.json"
 RESULT_JSON = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_result_2026-08-26.json"
 RESULT_MD = ROOT / "docs/lewm_go2_minimum_multi_origin_body_range_coverage_qualification_v1_result_2026-08-26.md"
 PREDECESSOR_RESULT = ROOT / "docs/lewm_go2_body_centric_range_coverage_qualification_v1_result_2026-08-25.json"
@@ -296,6 +297,7 @@ def _source_paths() -> tuple[Path, ...]:
         TRACKED_SCHEMA,
         TRACKED_MOUNTS,
         TRACKED_FIXTURE,
+        TRACKED_IMPLEMENTATION_AMENDMENT,
     )
 
 
@@ -1627,7 +1629,10 @@ def _layout_selection_state_worker(state_id: str) -> dict[str, Any]:
     protected_link_names = tuple(corpus_adapter.PROTECTED_LINK_NAMES)
     accumulators = {
         layout_id: {
-            "transition_support": np.zeros(state.transition_count, np.float32),
+            # Layout selection is count-defined.  Keep the convenience
+            # fraction in float64 so it cannot silently quantize the P05
+            # selection key away from the authoritative integer ledger.
+            "transition_support": np.zeros(state.transition_count, np.float64),
             "transition_supported_count": np.zeros(state.transition_count, np.int16),
             "transition_total_count": np.zeros(state.transition_count, np.int16),
             "transition_nominal_count": np.zeros(state.transition_count, np.int16),
@@ -2183,6 +2188,27 @@ def _persist_training_layout_evidence(
     return binding
 
 
+def _count_derived_transition_support(
+    rows: Sequence[Mapping[str, Any]],
+) -> np.ndarray:
+    """Return exact float64 fractions from the row-ledger integer authority."""
+
+    transition_supported = np.concatenate(
+        [np.asarray(row["transition_supported_count"], np.int64) for row in rows]
+    )
+    transition_total = np.concatenate(
+        [np.asarray(row["transition_total_count"], np.int64) for row in rows]
+    )
+    if (
+        len(transition_supported) != len(transition_total)
+        or np.any(transition_total <= 0)
+        or np.any(transition_supported < 0)
+        or np.any(transition_supported > transition_total)
+    ):
+        raise RuntimeError("layout-selection transition-count drift")
+    return transition_supported.astype(np.float64) / transition_total
+
+
 def select_layouts() -> dict[str, Any]:
     preexecution = validate_preflight()
     existing = OUTPUT_ROOT / "layout_selection/selected_layouts.json"
@@ -2246,9 +2272,10 @@ def select_layouts() -> dict[str, Any]:
     scores: dict[str, Any] = {}
     for layout_id in layout_ids:
         rows = [records[state_id]["layouts"][layout_id] for state_id in state_ids]
-        transition_support = np.concatenate(
-            [np.asarray(row["transition_support"], np.float64) for row in rows]
-        )
+        # Derive the selection key from the same integer authority persisted
+        # to the row ledger.  The former float32 convenience array shifted P05
+        # by up to ~2.5e-8 and correctly failed exact ledger regeneration.
+        transition_support = _count_derived_transition_support(rows)
         region_supported = {
             region: sum(int(row["region_supported"][region]) for row in rows)
             for region in _region_link_masks()

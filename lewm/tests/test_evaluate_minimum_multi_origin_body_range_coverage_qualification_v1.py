@@ -550,6 +550,35 @@ def test_training_layout_ledger_roundtrip_and_tamper_detection(
         raise AssertionError("tampered training-layout binding did not fail")
 
 
+def test_layout_selection_p05_uses_integer_counts_without_float32_drift() -> None:
+    rows = [
+        {
+            "transition_supported_count": [341, 342, 343],
+            "transition_total_count": [650, 650, 650],
+            # This field reproduces the former worker-side float32 convenience
+            # representation and must not be authoritative for selection.
+            "transition_support": np.asarray(
+                [341 / 650, 342 / 650, 343 / 650], np.float32
+            ).tolist(),
+        }
+    ]
+    support = EVALUATOR._count_derived_transition_support(rows)
+    exact_p05 = float(np.percentile(support, 5, method="linear"))
+    quantized_p05 = float(
+        np.percentile(
+            np.asarray(rows[0]["transition_support"], np.float64),
+            5,
+            method="linear",
+        )
+    )
+    expected = float(
+        np.percentile(np.asarray([341 / 650, 342 / 650, 343 / 650]), 5)
+    )
+    assert support.dtype == np.float64
+    assert exact_p05 == expected
+    assert exact_p05 != quantized_p05
+
+
 def test_layout_reuse_is_exact_geometry_only_and_requires_no_contact_arrays() -> None:
     qpos = np.zeros((3, 2, 19), np.float32)
     link = np.zeros((3, 2, 13, 7), np.float32)
