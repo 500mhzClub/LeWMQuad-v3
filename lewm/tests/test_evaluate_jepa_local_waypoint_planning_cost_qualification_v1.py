@@ -60,6 +60,10 @@ def _populate_current_token_schema_fields(
         value["markdown_report_order_amendment_binding"] = copy.deepcopy(
             spec["markdown_report_order_amendment_binding_exact"]
         )
+    if "atomic_relocation_amendment_binding_exact" in spec:
+        value["atomic_relocation_amendment_binding"] = copy.deepcopy(
+            spec["atomic_relocation_amendment_binding_exact"]
+        )
     if "gpu_receipt_serialization_preinference_check_exact" in spec:
         value["gpu_receipt_serialization_preinference_check"] = copy.deepcopy(
             spec["gpu_receipt_serialization_preinference_check_exact"]
@@ -332,6 +336,11 @@ def test_frozen_source_closure_is_regenerated_over_the_exact_path_domain(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "load_and_validate_atomic_relocation_execution_amendment",
+        lambda: copy.deepcopy(E.CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "load_and_validate_fixture_receipt",
         lambda: {"pass": True, "executed_checks": {"synthetic": True}},
     )
@@ -522,6 +531,56 @@ def test_frozen_receipts_fail_closed_when_markdown_order_amendment_is_absent(
         E.validate_frozen_receipts()
 
 
+def test_frozen_receipts_fail_closed_when_atomic_relocation_amendment_is_absent(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_contract", lambda: {})
+    monkeypatch.setattr(E.CONTRACT, "load_and_validate_output_schema", lambda: {})
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_fixture_receipt",
+        lambda: {"pass": True, "executed_checks": {"synthetic": True}},
+    )
+    for loader_name, value in (
+        (
+            "load_and_validate_goal_view_execution_amendment",
+            E.CONTRACT.GOAL_VIEW_EXECUTION_AMENDMENT,
+        ),
+        (
+            "load_and_validate_current_token_execution_amendment",
+            E.CONTRACT.CURRENT_TOKEN_EXECUTION_AMENDMENT,
+        ),
+        (
+            "load_and_validate_gpu_receipt_serialization_execution_amendment",
+            E.CONTRACT.GPU_RECEIPT_SERIALIZATION_EXECUTION_AMENDMENT,
+        ),
+        (
+            "load_and_validate_gpu_child_receipt_order_execution_amendment",
+            E.CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT,
+        ),
+        (
+            "load_and_validate_markdown_report_order_execution_amendment",
+            E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT,
+        ),
+    ):
+        monkeypatch.setattr(
+            E.CONTRACT,
+            loader_name,
+            lambda value=value: copy.deepcopy(value),
+        )
+
+    def absent() -> dict[str, object]:
+        raise E.CONTRACT.ContractError("absent")
+
+    monkeypatch.setattr(
+        E.CONTRACT,
+        "load_and_validate_atomic_relocation_execution_amendment",
+        absent,
+    )
+    with pytest.raises(E.QualificationError, match="atomic relocation.*absent"):
+        E.validate_frozen_receipts()
+
+
 def test_freeze_writes_all_amendments_before_source_closure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -560,6 +619,11 @@ def test_freeze_writes_all_amendments_before_source_closure(
     )
     monkeypatch.setattr(
         E.CONTRACT,
+        "write_atomic_relocation_execution_amendment",
+        lambda *_args: calls.append("atomic_relocation_amendment"),
+    )
+    monkeypatch.setattr(
+        E.CONTRACT,
         "build_source_closure",
         lambda *_args, **_kwargs: calls.append("build_closure") or {},
     )
@@ -584,6 +648,9 @@ def test_freeze_writes_all_amendments_before_source_closure(
             "markdown_report_order_execution_amendment": {
                 "content_digest": "m"
             },
+            "atomic_relocation_execution_amendment": {
+                "content_digest": "a"
+            },
             "source_closure": {"content_digest": "s"},
         },
     )
@@ -597,6 +664,7 @@ def test_freeze_writes_all_amendments_before_source_closure(
         "gpu_receipt_amendment",
         "gpu_child_order_amendment",
         "markdown_order_amendment",
+        "atomic_relocation_amendment",
         "build_closure",
         "write_closure",
     ]
@@ -615,6 +683,7 @@ def test_freeze_writes_all_amendments_before_source_closure(
         receipt["markdown_report_order_execution_amendment_content_digest"]
         == "m"
     )
+    assert receipt["atomic_relocation_execution_amendment_content_digest"] == "a"
 
 
 def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys() -> None:
@@ -661,6 +730,12 @@ def test_result_schema_validator_requires_all_nested_count_runtime_storage_keys(
     tampered["markdown_report_order_amendment_binding"]["sha256"] = "0" * 64
     tampered = E.attach_digest(tampered, "result_content_sha256")
     with pytest.raises(E.QualificationError, match="Markdown report order.*drift"):
+        E._validate_schema_value("result", tampered)
+
+    tampered = copy.deepcopy(value)
+    tampered["atomic_relocation_amendment_binding"]["sha256"] = "0" * 64
+    tampered = E.attach_digest(tampered, "result_content_sha256")
+    with pytest.raises(E.QualificationError, match="atomic relocation.*drift"):
         E._validate_schema_value("result", tampered)
 
     value["storage"].pop("peak_vram_bytes")
@@ -1007,6 +1082,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
                 "markdown_report_order_amendment_binding": copy.deepcopy(
                     E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
                 ),
+                "atomic_relocation_amendment_binding": copy.deepcopy(
+                    E.CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+                ),
                 "current_token_authority_policy": copy.deepcopy(
                     E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
                 ),
@@ -1042,6 +1120,9 @@ def test_result_cross_binding_rejects_contract_digest_drift(
             ),
             "markdown_report_order_amendment_binding": copy.deepcopy(
                 E.CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+            ),
+            "atomic_relocation_amendment_binding": copy.deepcopy(
+                E.CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
             ),
             "current_token_authority_policy": copy.deepcopy(
                 E.CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -1547,6 +1628,151 @@ def test_gpu_child_watchdogs_use_frozen_phase_timeouts_and_fail_closed(
     E.validate_digest(receipt)
 
 
+def _write_synthetic_relocation_preexecution(
+    root: Path,
+    *,
+    source_commit: str,
+    hidden_root: Path,
+    canonical_root: Path,
+) -> None:
+    E.atomic_json(
+        root / E.PREEXEC_REL,
+        E.attach_digest(
+            {
+                "schema": "jepa_local_waypoint_planning_cost_preexecution_v1",
+                "experiment_id": E.CONTRACT.EXPERIMENT_ID,
+                "source_freeze_commit": source_commit,
+                "contract_sha256": E.CONTRACT.CONTRACT_SHA256,
+                "output_schema_sha256": E.CONTRACT.OUTPUT_SCHEMA_SHA256,
+                "head": source_commit,
+                "hidden_attempt_root": str(hidden_root),
+                "canonical_output_root": str(canonical_root),
+                "canonical_output_fresh": True,
+                "pass": True,
+            }
+        ),
+    )
+
+
+def test_gpu_child_receipt_origin_survives_atomic_publication(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_commit = "a" * 40
+    hidden = tmp_path / ".attempt"
+    canonical = tmp_path / "canonical"
+    hidden.mkdir()
+    monkeypatch.setattr(E, "OUTPUT_ROOT", canonical)
+    monkeypatch.setattr(
+        E.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            stdout="preflight\n", stderr="", returncode=0
+        ),
+    )
+    E._run_gpu_child(
+        [
+            "preflight",
+            "--source-freeze-commit",
+            source_commit,
+            "--output-root",
+            str(hidden),
+        ]
+    )
+    _write_synthetic_relocation_preexecution(
+        hidden,
+        source_commit=source_commit,
+        hidden_root=hidden,
+        canonical_root=canonical,
+    )
+    receipt_before = (hidden / "receipts/gpu_child_preflight.json").read_bytes()
+    prepublication = E._gpu_child_execution_receipt_bindings(
+        hidden, source_commit, ("PREFLIGHT",)
+    )
+
+    E.os.replace(hidden, canonical)
+    postpublication = E._gpu_child_execution_receipt_bindings(
+        canonical, source_commit, ("PREFLIGHT",)
+    )
+
+    assert postpublication == prepublication
+    assert (canonical / "receipts/gpu_child_preflight.json").read_bytes() == (
+        receipt_before
+    )
+    receipt = E.load_json(canonical / "receipts/gpu_child_preflight.json")
+    assert E._gpu_child_argument(receipt["command"][2:], "--output-root") == str(
+        hidden
+    )
+
+
+def test_gpu_child_relocation_fails_closed_on_prepublication_target_presence(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_commit = "b" * 40
+    hidden = tmp_path / ".attempt"
+    canonical = tmp_path / "canonical"
+    hidden.mkdir()
+    canonical.mkdir()
+    monkeypatch.setattr(E, "OUTPUT_ROOT", canonical)
+    _write_synthetic_relocation_preexecution(
+        hidden,
+        source_commit=source_commit,
+        hidden_root=hidden,
+        canonical_root=canonical,
+    )
+    with pytest.raises(E.QualificationError, match="prepublication relocation"):
+        E._gpu_child_execution_origin_root(hidden, source_commit)
+
+
+def test_gpu_child_relocation_fails_closed_on_postpublication_origin_or_path_tamper(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source_commit = "c" * 40
+    hidden = tmp_path / ".attempt"
+    canonical = tmp_path / "canonical"
+    hidden.mkdir()
+    monkeypatch.setattr(E, "OUTPUT_ROOT", canonical)
+    monkeypatch.setattr(
+        E.subprocess,
+        "run",
+        lambda *_args, **_kwargs: SimpleNamespace(
+            stdout="preflight\n", stderr="", returncode=0
+        ),
+    )
+    E._run_gpu_child(
+        [
+            "preflight",
+            "--source-freeze-commit",
+            source_commit,
+            "--output-root",
+            str(hidden),
+        ]
+    )
+    _write_synthetic_relocation_preexecution(
+        hidden,
+        source_commit=source_commit,
+        hidden_root=hidden,
+        canonical_root=canonical,
+    )
+    E.os.replace(hidden, canonical)
+    hidden.mkdir()
+    with pytest.raises(E.QualificationError, match="postpublication relocation"):
+        E._gpu_child_execution_origin_root(canonical, source_commit)
+    hidden.rmdir()
+
+    preexecution = E.load_json(canonical / E.PREEXEC_REL)
+    preexecution["hidden_attempt_root"] = str(tmp_path / ".wrong-attempt")
+    E.atomic_json(canonical / E.PREEXEC_REL, E.attach_digest(preexecution))
+    with pytest.raises(E.QualificationError, match="child execution custody"):
+        E._gpu_child_execution_receipt_bindings(
+            canonical, source_commit, ("PREFLIGHT",)
+        )
+    preexecution = E.load_json(canonical / E.PREEXEC_REL)
+    preexecution["canonical_output_root"] = str(tmp_path / "wrong-canonical")
+    E.atomic_json(canonical / E.PREEXEC_REL, E.attach_digest(preexecution))
+    with pytest.raises(E.QualificationError, match="atomic-relocation custody"):
+        E._gpu_child_execution_origin_root(canonical, source_commit)
+
+
 def test_gpu_child_failure_streams_survive_whole_attempt_archive(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1631,6 +1857,7 @@ def test_report_source_contains_exact_current_token_amendment_section() -> None:
     source = inspect.getsource(E._markdown_report)
     assert "## Current-token authority amendment and BF16 cohort limitation" in source
     assert "## Markdown report order amendment and failed-attempt custody" in source
+    assert "## Atomic relocation amendment and failed-attempt custody" in source
     assert "json.dumps(result['diagnostic_flags'], sort_keys=True)" in source
     assert "144 frames in nine fixed batches of 16" in source
     assert "Current-token re-encodes are zero" in source
@@ -1741,6 +1968,7 @@ def test_markdown_report_survives_canonical_json_key_order_roundtrip() -> None:
         "gpu_receipt_serialization_amendment_binding": {"path": "gpu.json"},
         "gpu_child_receipt_order_amendment_binding": {"path": "child.json"},
         "markdown_report_order_amendment_binding": {"path": "markdown.json"},
+        "atomic_relocation_amendment_binding": {"path": "relocation.json"},
         "historical_renderer_limitations": {"preserved": True},
         "controller_execution_custody": {"training": 0},
         "gates": {"true_future": {"pass": False}},

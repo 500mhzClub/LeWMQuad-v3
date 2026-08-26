@@ -310,6 +310,57 @@ correction commit, fresh preflight and entirely new empty hidden attempt are
 required. This amendment is frozen in
 `docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_markdown_report_order_amendment_2026-08-26.json`.
 
+## Failed sixth attempt and prospective atomic-relocation amendment
+
+The Markdown report-order correction source freeze
+`829db39c5cbb263fed0156d8b4c1d91490382f74` remains an immutable ancestor.
+Its fresh hidden execution passed the deep prepublication check, completed the
+same-filesystem atomic rename into the canonical output, and then failed closed
+during the postpublication check with
+`QualificationError: GPU PREFLIGHT child execution custody drift`. The
+untouched attempt is archived at
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.failed-1787783473866687627-505745`.
+Its complete 5,737-file, 8,488,686,827-byte inventory has 937,603 canonical
+record bytes and aggregate SHA-256
+`cb42f1b7fe729ba4aa361ac1bb87ad3e712a20b99a6a32d2c887298e72b019ae`.
+The failure receipt is 1,189 bytes, file SHA-256
+`9d212fefc0eb7f6d26bc2076d69847391498198725774093ea42d11def3004a1`
+and content digest
+`65b73dcfd07de7e304acd961ea022138f78e258dd6efc13b3754015fe8d06663`.
+It records phase `POSTPUBLICATION_CHECK`, no failed child receipt,
+`partial_artifacts_reusable=false`, `nothing_running=true`, and all eleven
+prohibition counters at zero. Failure cleanup moved the published tree into the
+archive and removed the byte-identical tracked result/report; the canonical
+root, original hidden root, `RUNNING.json`, `FAILED_RUNNING_MARKER.json`, and
+active experiment processes are all absent.
+
+The exact defect is postpublication path custody only. Both successful GPU
+child receipts immutably and correctly record their actual execution origin:
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.jepa_local_waypoint_planning_cost_qualification_v1.attempt-829db39c5cbb-1787783031046613115-505745`.
+The prior generic validator compared that historical `--output-root` command
+argument directly to its current root. This is correct before publication, but
+after the authorized `os.replace(hidden_attempt_root, canonical_output_root)`
+the current root is the canonical sibling and the historical origin is absent.
+All other child command, source, timeout, status, stream and receipt predicates
+passed.
+
+The prospective correction never rewrites a child command or receipt. It
+requires the immutable command origin to equal
+`preexecution.hidden_attempt_root`. Before publication, the current root must
+be that present origin while the canonical target is absent. After publication,
+the current root must equal the frozen `preexecution.canonical_output_root`, the
+origin must be absent, the canonical target present, both paths must be siblings
+under the same parent/filesystem authority used immediately before `os.replace`,
+and source identity plus all receipt/stream bindings must remain exact. Any
+other relocation fails closed. This changes no tensor, cost, population,
+metric, gate, classification, checkpoint, candidate, route outcome, serializer
+or report rule.
+
+Every archived phase, shard, tensor, receipt, aggregate, result and report is
+nonreusable. A new correction commit, fresh preflight and entirely new empty
+hidden attempt are required. This amendment is frozen in
+`docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_atomic_relocation_amendment_2026-08-26.json`.
+
 ## Frozen panel
 
 Use exactly the existing Route-Intent V2 identities:
@@ -880,9 +931,9 @@ and metadata only in the outer failure archive/receipt.
 
 ## Commit and stop rules
 
-The original freeze and all four prior correction commits remain ancestors
-because they bind the five archived failed attempts. Make one separate
-prospective terminal Markdown report-order correction commit before a new fresh
+The original freeze and all five prior correction commits remain ancestors
+because they bind the six archived failed attempts. Make one separate
+prospective atomic-relocation validator correction commit before a new fresh
 preflight; do not amend or orphan any ancestor and do not reuse a prior phase,
 shard, tensor, receipt, aggregate, result or report. The final result commit
 message remains exactly

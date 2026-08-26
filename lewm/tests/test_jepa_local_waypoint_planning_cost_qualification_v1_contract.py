@@ -566,6 +566,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
         "gpu_receipt_serialization_amendment_binding",
         "gpu_child_receipt_order_amendment_binding",
         "markdown_report_order_amendment_binding",
+        "atomic_relocation_amendment_binding",
         "current_token_authority_policy",
         "gpu_child_execution_receipts",
     } <= set(files["preexecution_receipt"]["required_keys"])
@@ -604,11 +605,17 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert preexecution[
         "markdown_report_order_amendment_binding_exact"
     ] == contract.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+    assert preexecution[
+        "atomic_relocation_amendment_binding_exact"
+    ] == contract.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
     assert preexecution["gpu_child_receipt_order_policy_exact"] == (
         contract.GPU_CHILD_RECEIPT_ORDER_POLICY
     )
     assert preexecution["markdown_report_order_policy_exact"] == (
         contract.MARKDOWN_REPORT_ORDER_POLICY
+    )
+    assert preexecution["atomic_relocation_policy_exact"] == (
+        contract.ATOMIC_RELOCATION_POLICY
     )
     assert preexecution["current_token_authority_policy_exact"] == (
         contract.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -702,6 +709,7 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "gpu_receipt_serialization_amendment_binding" in result_keys
     assert "gpu_child_receipt_order_amendment_binding" in result_keys
     assert "markdown_report_order_amendment_binding" in result_keys
+    assert "atomic_relocation_amendment_binding" in result_keys
     assert "current_token_authority_policy" in result_keys
     assert "gpu_child_execution_receipts" in result_keys
     assert "goal_pose_semantics" in result_keys
@@ -802,6 +810,9 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert "markdown_report_order_amendment_binding" in persistence_schema[
         "required_keys"
     ]
+    assert "atomic_relocation_amendment_binding" in persistence_schema[
+        "required_keys"
+    ]
     assert result_schema["gpu_child_receipt_order_policy_exact"] == (
         contract.GPU_CHILD_RECEIPT_ORDER_POLICY
     )
@@ -814,16 +825,28 @@ def test_output_schema_persists_rows_raw_latents_and_reproduction() -> None:
     assert persistence_schema["markdown_report_order_policy_exact"] == (
         contract.MARKDOWN_REPORT_ORDER_POLICY
     )
+    assert result_schema["atomic_relocation_policy_exact"] == (
+        contract.ATOMIC_RELOCATION_POLICY
+    )
+    assert persistence_schema["atomic_relocation_policy_exact"] == (
+        contract.ATOMIC_RELOCATION_POLICY
+    )
     assert schema["gpu_child_execution_receipt_mapping_semantics"] == (
         contract.GPU_CHILD_RECEIPT_ORDER_POLICY
     )
     assert schema["markdown_report_json_fragment_semantics"] == (
         contract.MARKDOWN_REPORT_ORDER_POLICY
     )
+    assert schema["atomic_relocation_semantics"] == (
+        contract.ATOMIC_RELOCATION_POLICY
+    )
     assert "GPU child receipt order amendment and failed-attempt custody" in files[
         "report"
     ]["required_sections"]
     assert "Markdown report order amendment and failed-attempt custody" in files[
+        "report"
+    ]["required_sections"]
+    assert "Atomic relocation amendment and failed-attempt custody" in files[
         "report"
     ]["required_sections"]
     assert "current_token_authority_policy" in persistence_schema["required_keys"]
@@ -1505,6 +1528,160 @@ def test_markdown_report_order_amendment_binds_fifth_failure_and_no_reuse() -> N
     assert policy["scientific_tensor_cost_metric_gate_or_classification_change"] is False
 
 
+def test_atomic_relocation_amendment_binds_sixth_failure_and_no_reuse() -> None:
+    root = Path(__file__).resolve().parents[2]
+    value = contract.build_atomic_relocation_execution_amendment()
+    contract.validate_atomic_relocation_execution_amendment(value)
+    binding = contract.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+    tracked = root / binding["path"]
+    tracked_payload = tracked.read_bytes()
+    assert tracked_payload == contract.atomic_relocation_execution_amendment_receipt_bytes()
+    assert len(tracked_payload) == binding["bytes"]
+    assert hashlib.sha256(tracked_payload).hexdigest() == binding["sha256"]
+    assert value["content_digest"] == binding["content_digest"]
+    assert value["prior_source_freeze"]["commit"] == (
+        contract.MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+    )
+
+    for artifact in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "current_token_amendment",
+        "gpu_receipt_serialization_amendment",
+        "gpu_child_receipt_order_amendment",
+        "markdown_report_order_amendment",
+        "source_closure",
+    ):
+        row = value["prior_source_freeze"][artifact]
+        git_payload = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{contract.MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT}:{row['path']}",
+            ],
+            cwd=root,
+            check=True,
+            stdout=subprocess.PIPE,
+        ).stdout
+        assert len(git_payload) == row["bytes"]
+        assert hashlib.sha256(git_payload).hexdigest() == row["sha256"]
+
+    failed = value["failed_attempt"]
+    archive = Path(failed["archive_path"])
+    rows = []
+    for path in sorted(item for item in archive.rglob("*") if item.is_file()):
+        file_hash = hashlib.sha256()
+        file_bytes = 0
+        with path.open("rb") as handle:
+            for block in iter(lambda: handle.read(8 * 1024 * 1024), b""):
+                file_hash.update(block)
+                file_bytes += len(block)
+        rows.append(
+            {
+                "path": path.relative_to(archive).as_posix(),
+                "sha256": file_hash.hexdigest(),
+                "bytes": file_bytes,
+            }
+        )
+    inventory = failed["archive_inventory"]
+    canonical = contract.canonical_json_bytes(rows)
+    assert len(rows) == inventory["record_count"] == 5737
+    assert sum(row["bytes"] for row in rows) == inventory["total_bytes"]
+    assert len(canonical) == inventory["canonical_records_bytes"]
+    assert hashlib.sha256(canonical).hexdigest() == inventory["aggregate_sha256"]
+
+    failure = failed["failure_receipt"]
+    failure_payload = (archive / failure["path"]).read_bytes()
+    assert len(failure_payload) == failure["bytes"]
+    assert hashlib.sha256(failure_payload).hexdigest() == failure["sha256"]
+    parsed_failure = json.loads(failure_payload)
+    contract.validate_content_digest(parsed_failure)
+    assert parsed_failure["content_digest"] == failure["content_digest"]
+    assert parsed_failure["phase"] == "POSTPUBLICATION_CHECK"
+    assert parsed_failure["error_message"] == (
+        "GPU PREFLIGHT child execution custody drift"
+    )
+    assert parsed_failure["failed_child_execution_receipt"] is None
+    assert parsed_failure["active_experiment_processes"] == []
+    assert set(parsed_failure["prohibition_counters"]) == set(
+        contract.PROHIBITION_COUNTER_IDS
+    )
+    assert all(item == 0 for item in parsed_failure["prohibition_counters"].values())
+
+    summary = failed["artifact_summary"]
+    groups = (
+        "materialization",
+        "latents",
+        "goal_views",
+        "receipts",
+        "evidence",
+        "aggregates",
+        "report",
+        "result",
+    )
+    assert sum(summary[group]["files"] for group in groups) == 5737
+    assert sum(summary[group]["bytes"] for group in groups) == 8488686827
+    for row in (
+        list(failed["child_execution_receipts"].values())
+        + list(failed["nonreusable_terminal_artifacts"].values())
+    ):
+        payload = (archive / row["path"]).read_bytes()
+        assert len(payload) == row["bytes"]
+        assert hashlib.sha256(payload).hexdigest() == row["sha256"]
+    result = failed["nonreusable_terminal_artifacts"]["result"]
+    result_payload = (archive / result["path"]).read_bytes()
+    assert (
+        b'"result_content_sha256":"'
+        + result["result_content_sha256"].encode("ascii")
+        + b'"'
+    ) in result_payload
+
+    origin = Path(failed["original_hidden_attempt_root"])
+    preexecution = json.loads(
+        (archive / failed["nonreusable_terminal_artifacts"]["preexecution"]["path"])
+        .read_bytes()
+    )
+    assert Path(preexecution["hidden_attempt_root"]) == origin
+    assert Path(preexecution["canonical_output_root"]) == contract.OUTPUT_ROOT
+    assert origin.parent == contract.OUTPUT_ROOT.parent
+    assert origin.name.startswith(f".{contract.OUTPUT_ROOT.name}.attempt-")
+    for phase, row in failed["child_execution_receipts"].items():
+        receipt = json.loads((archive / row["path"]).read_bytes())
+        command = receipt["command"]
+        output_index = command.index("--output-root") + 1
+        source_index = command.index("--source-freeze-commit") + 1
+        assert Path(command[output_index]) == origin
+        assert command[source_index] == contract.MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+        assert receipt["phase"] == phase
+        assert receipt["returncode"] == 0
+        assert receipt["pass"] is True
+    assert not origin.exists()
+    assert not contract.OUTPUT_ROOT.exists()
+    assert not (archive / "receipts/RUNNING.json").exists()
+    assert not (archive / "receipts/FAILED_RUNNING_MARKER.json").exists()
+    assert failed["deep_prepublication_check_passed"] is True
+    assert failed["atomic_rename_completed"] is True
+    assert failed["tracked_result_and_report_were_removed_after_failure"] is True
+    assert failed[
+        "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+    ] is False
+
+    policy = value["amended_atomic_relocation_semantics"]
+    assert policy == contract.ATOMIC_RELOCATION_POLICY
+    assert policy["command_receipt_rewrite"] is False
+    assert policy["postpublication_validation"] == {
+        "current_output_root": "canonical_output_root",
+        "command_output_root": "hidden_attempt_root",
+        "hidden_attempt_root_present": False,
+        "canonical_output_root_present": True,
+        "source_freeze_identity_exact": True,
+        "receipt_and_stream_bindings_validated_from_canonical_root": True,
+    }
+    assert policy["scientific_tensor_cost_metric_gate_or_classification_change"] is False
+
+
 def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     contract_path = tmp_path / "contract.json"
     schema_path = tmp_path / "schema.json"
@@ -1514,6 +1691,7 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     serialization_amendment_path = tmp_path / "serialization-amendment.json"
     order_amendment_path = tmp_path / "order-amendment.json"
     report_order_amendment_path = tmp_path / "report-order-amendment.json"
+    relocation_amendment_path = tmp_path / "relocation-amendment.json"
     contract.write_contract(contract_path)
     contract.write_output_schema(schema_path)
     contract.write_fixture_receipt(fixture_path)
@@ -1527,6 +1705,9 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     )
     contract.write_markdown_report_order_execution_amendment(
         report_order_amendment_path
+    )
+    contract.write_atomic_relocation_execution_amendment(
+        relocation_amendment_path
     )
     assert contract.load_and_validate_contract(contract_path) == contract.build_contract()
     assert contract.load_and_validate_output_schema(schema_path) == contract.build_output_schema()
@@ -1548,6 +1729,9 @@ def test_write_and_load_helpers_are_immutable(tmp_path: Path) -> None:
     assert contract.load_and_validate_markdown_report_order_execution_amendment(
         report_order_amendment_path
     ) == contract.build_markdown_report_order_execution_amendment()
+    assert contract.load_and_validate_atomic_relocation_execution_amendment(
+        relocation_amendment_path
+    ) == contract.build_atomic_relocation_execution_amendment()
     assert json.loads(contract_path.read_bytes())["experiment_id"] == contract.EXPERIMENT_ID
     contract_path.write_bytes(b"{}\n")
     with pytest.raises(contract.ContractError, match="refusing to overwrite"):
@@ -1899,7 +2083,8 @@ def test_source_closure_builder_never_traverses_generated_or_outcomes() -> None:
     assert str(contract.TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH) in paths
     assert str(contract.TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH) in paths
     assert str(contract.TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH) in paths
-    assert receipt["row_count"] == len(paths) == 87
+    assert str(contract.TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH) in paths
+    assert receipt["row_count"] == len(paths) == 88
     assert not any("route_intent_v2_result" in path for path in paths)
     with pytest.raises(contract.ContractError, match="duplicate"):
         contract.build_source_closure(

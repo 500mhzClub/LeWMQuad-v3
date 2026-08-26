@@ -48,6 +48,10 @@ MARKDOWN_REPORT_ORDER_AMENDMENT_SCHEMA_VERSION = (
     "jepa_local_waypoint_planning_cost_qualification_v1."
     "markdown_report_order_amendment.v1"
 )
+ATOMIC_RELOCATION_AMENDMENT_SCHEMA_VERSION = (
+    "jepa_local_waypoint_planning_cost_qualification_v1."
+    "atomic_relocation_amendment.v1"
+)
 
 STARTING_HEAD = "b29eae1929725a4cc26a35d95662b545daee4553"
 STAGE_A_FREEZE_COMMIT = "e9e8c41a327ddbe51c38fa04f05ae1d30266720b"
@@ -188,6 +192,10 @@ TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "markdown_report_order_amendment_2026-08-26.json"
 )
+TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH = Path(
+    "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
+    "atomic_relocation_amendment_2026-08-26.json"
+)
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_go2_jepa_local_waypoint_planning_cost_qualification_v1_"
     "source_closure_2026-08-26.json"
@@ -213,6 +221,9 @@ GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT = (
 )
 GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT = (
     "15c470f2e80430a5d39d6c9067a2405d17e50059"
+)
+MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT = (
+    "829db39c5cbb263fed0156d8b4c1d91490382f74"
 )
 GOAL_VIEW_RENDER_SEMANTICS = (
     "VIRTUAL_COUNTERFACTUAL_GOAL_VIEW_NOT_A_PHYSICALLY_EXECUTABLE_SENSOR_POSE"
@@ -376,6 +387,26 @@ FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY: dict[str, Any] = {
     ),
 }
 
+FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".jepa_local_waypoint_planning_cost_qualification_v1."
+    "failed-1787783473866687627-505745"
+)
+FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY: dict[str, Any] = {
+    "record_fields": ["path", "sha256", "bytes"],
+    "record_order": "ascending archive-relative POSIX path",
+    "aggregate_algorithm": (
+        "SHA-256 of compact canonical JSON bytes of the ordered record array, with "
+        "object keys sorted and without terminal LF"
+    ),
+    "record_count": 5737,
+    "total_bytes": 8488686827,
+    "canonical_records_bytes": 937603,
+    "aggregate_sha256": (
+        "cb42f1b7fe729ba4aa361ac1bb87ad3e712a20b99a6a32d2c887298e72b019ae"
+    ),
+}
+
 GPU_RECEIPT_SERIALIZATION_POLICY: dict[str, Any] = {
     "classification": "CONSTRUCTION_SITE_PATH_TO_CANONICAL_JSON_STRING",
     "receipt": "receipts/gpu_inference.json",
@@ -508,6 +539,44 @@ MARKDOWN_REPORT_ORDER_POLICY: dict[str, Any] = {
     "failed_attempt_report_bytes_before_and_after": 16795,
     "canonical_result_serialization_change": False,
     "terminal_markdown_renderer_only_change": True,
+    "scientific_tensor_cost_metric_gate_or_classification_change": False,
+}
+ATOMIC_RELOCATION_POLICY: dict[str, Any] = {
+    "classification": "IMMUTABLE_CHILD_COMMAND_ORIGIN_PLUS_AUTHORIZED_ATOMIC_RELOCATION",
+    "field": "gpu_child_execution_receipts[*].command --output-root",
+    "phase_ids": list(GPU_CHILD_PHASE_IDS),
+    "command_origin_authority": "receipts/preexecution.json.hidden_attempt_root",
+    "canonical_target_authority": "receipts/preexecution.json.canonical_output_root",
+    "frozen_canonical_target": str(OUTPUT_ROOT),
+    "command_receipt_rewrite": False,
+    "publication_primitive": "os.replace(hidden_attempt_root, canonical_output_root)",
+    "same_filesystem_rule": (
+        "origin and target are sibling paths with the same parent and the publisher "
+        "requires equal parent st_dev before os.replace"
+    ),
+    "prepublication_validation": {
+        "current_output_root": "hidden_attempt_root",
+        "command_output_root": "hidden_attempt_root",
+        "hidden_attempt_root_present": True,
+        "canonical_output_root_present": False,
+    },
+    "postpublication_validation": {
+        "current_output_root": "canonical_output_root",
+        "command_output_root": "hidden_attempt_root",
+        "hidden_attempt_root_present": False,
+        "canonical_output_root_present": True,
+        "source_freeze_identity_exact": True,
+        "receipt_and_stream_bindings_validated_from_canonical_root": True,
+    },
+    "validation_rule": (
+        "require the immutable command root to equal the preexecution hidden-attempt "
+        "origin; accept a different current root only for the frozen canonical sibling "
+        "after the authorized same-filesystem atomic rename, with origin absent, target "
+        "present and exact source identity; never rewrite a child receipt"
+    ),
+    "postpublication_validator_only_change": True,
+    "child_command_or_receipt_change": False,
+    "canonical_serialization_change": False,
     "scientific_tensor_cost_metric_gate_or_classification_change": False,
 }
 GPU_CHILD_EXECUTION_RECEIPT_REQUIRED_KEYS = (
@@ -2239,6 +2308,303 @@ MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
 }
 
 
+def _atomic_relocation_execution_amendment_core() -> dict[str, Any]:
+    return {
+        "schema": ATOMIC_RELOCATION_AMENDMENT_SCHEMA_VERSION,
+        "experiment_id": EXPERIMENT_ID,
+        "date": "2026-08-26",
+        "status": "PROSPECTIVE_BEFORE_FRESH_REEXECUTION",
+        "prior_source_freeze": {
+            "commit": MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT,
+            "contract": {
+                "path": str(TRACKED_CONTRACT_RECEIPT_PATH),
+                "sha256": "5f37420e305f53ce171d24ccee870076b4be3a10278d7aac5aa02e44fdf5e4a5",
+                "bytes": 77233,
+                "digest_field": "contract_sha256",
+                "content_digest": "9a043c45c0d37fad7f1c6a4f556420dae7659697273d62550a225cc6bd4353ca",
+            },
+            "output_schema": {
+                "path": str(TRACKED_OUTPUT_SCHEMA_PATH),
+                "sha256": "9999c79383e819af48af6d8cc9599235438d8277fdab3506a322481825d5081a",
+                "bytes": 75339,
+                "digest_field": "output_schema_sha256",
+                "content_digest": "af65be820e51310e1df85beb44e28f0524e151b82c704ffa9bfafba1c7122c0e",
+            },
+            "fixture": {
+                "path": str(TRACKED_FIXTURE_PATH),
+                "sha256": "d8eaa8cc3e3add400a60746b752a2f63a7f6927a26d83090d367c0336b71f590",
+                "bytes": 14580,
+                "digest_field": "content_digest",
+                "content_digest": "b79c4f204e201e20f3864ebf11d4b0a657c2757fa39b393da116c004d181b9f3",
+            },
+            "goal_view_amendment": {
+                "path": str(TRACKED_GOAL_VIEW_AMENDMENT_PATH),
+                "sha256": "f05aa92c439fced757014043a07df60b31e602d23aec6edf5d8b8921fe5548aa",
+                "bytes": 6599,
+                "digest_field": "content_digest",
+                "content_digest": "a816c4229539ea3966875cb09843b61f2867bb793a1501e96e2c529132da3812",
+            },
+            "current_token_amendment": {
+                "path": str(TRACKED_CURRENT_TOKEN_AMENDMENT_PATH),
+                "sha256": "2ccad35e809cccff52973ccddc6acf0f0a624173d71c0f7c00113d31bf7301cd",
+                "bytes": 11084,
+                "digest_field": "content_digest",
+                "content_digest": "3b426c945ac827a2e1e49cd312cd6d40d8af92b4cdec968afa867b3f51d907db",
+            },
+            "gpu_receipt_serialization_amendment": {
+                "path": str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
+                "sha256": "6970b4f4b238f04d217fbaad776627402a2d7c56e40f83ea2d0bd6d0aca5449d",
+                "bytes": 8678,
+                "digest_field": "content_digest",
+                "content_digest": "75be21487c3f051f0495ab53788c8b43e7e8fe91dfc513f226117ef9085a4def",
+            },
+            "gpu_child_receipt_order_amendment": {
+                "path": str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
+                "sha256": "481bcc88876267261fcff0e794b95330222ba18b32a0d3ada4311d063f20904b",
+                "bytes": 9673,
+                "digest_field": "content_digest",
+                "content_digest": "4c708696bc9e30f26ebecb43fc2ca0350f8e89bef788f5b3d91aafa0bfddce9c",
+            },
+            "markdown_report_order_amendment": {
+                "path": str(TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH),
+                "sha256": "51023a3a3938d197a1ee6ca4e8f441fa7bebfbf6fcdd23fcaf27000d916bf7ae",
+                "bytes": 9970,
+                "digest_field": "content_digest",
+                "content_digest": "d64bc54f75b5305b5c70a0d354c9e66c6801a162afadfc090ef0c529272f2d44",
+            },
+            "source_closure": {
+                "path": str(TRACKED_SOURCE_CLOSURE_PATH),
+                "sha256": "65f7b816763b28a5797b6454984edf605dc5dcd6696488fcd462318703fd2d21",
+                "bytes": 13980,
+                "digest_field": "content_digest",
+                "content_digest": "5fe85fb1b01bcd82dfc1b72bc9f09748e7b503f50af8216ced953bff57a51254",
+                "rows": 87,
+            },
+        },
+        "failed_attempt": {
+            "archive_path": str(FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE),
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "schema": "jepa_local_waypoint_planning_cost_failed_attempt_v1",
+                "sha256": "9d212fefc0eb7f6d26bc2076d69847391498198725774093ea42d11def3004a1",
+                "bytes": 1189,
+                "content_digest": "65b73dcfd07de7e304acd961ea022138f78e258dd6efc13b3754015fe8d06663",
+                "source_freeze_commit": MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT,
+                "phase": "POSTPUBLICATION_CHECK",
+                "error_type": "QualificationError",
+                "error_message": "GPU PREFLIGHT child execution custody drift",
+                "failed_child_execution_receipt": None,
+                "partial_artifacts_reusable": False,
+                "nothing_running": True,
+            },
+            "archive_inventory": copy.deepcopy(
+                FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY
+            ),
+            "artifact_summary": {
+                "materialization": {"files": 344, "bytes": 20240206},
+                "latents": {"files": 5378, "bytes": 8459285178},
+                "goal_views": {"files": 1, "bytes": 110941},
+                "receipts": {"files": 8, "bytes": 1014297},
+                "evidence": {"files": 3, "bytes": 661130},
+                "aggregates": {"files": 1, "bytes": 7281659},
+                "report": {"files": 1, "bytes": 17789},
+                "result": {"files": 1, "bytes": 75627},
+                "total_files": 5737,
+                "total_bytes": 8488686827,
+            },
+            "original_hidden_attempt_root": (
+                "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+                ".jepa_local_waypoint_planning_cost_qualification_v1."
+                "attempt-829db39c5cbb-1787783031046613115-505745"
+            ),
+            "child_execution_receipts": {
+                "PREFLIGHT": {
+                    "path": "receipts/gpu_child_preflight.json",
+                    "sha256": "9d6446cb4e00bea39f24be57a9d06d6801824d2e75a5101ad80251b80ae5b399",
+                    "bytes": 10468,
+                    "content_digest": "0c2530bfea36240c74f4ddf9d7a7946915c0ed5aef98c890262f588b1025330a",
+                    "returncode": 0,
+                    "pass": True,
+                },
+                "MATERIALIZE": {
+                    "path": "receipts/gpu_child_materialize.json",
+                    "sha256": "a54d2b056e3f97d85b48a4716ca1db4512e0e407ed16cc7b4fdf9e11f1f55b6f",
+                    "bytes": 2037,
+                    "content_digest": "9ff9d99f689b5f59ec7df219bc55acbc2807cef99042c593982c3929906a8a9e",
+                    "returncode": 0,
+                    "pass": True,
+                },
+            },
+            "nonreusable_terminal_artifacts": {
+                "preexecution": {
+                    "path": "receipts/preexecution.json",
+                    "sha256": "0c899713e7dc9c6980fdef21d8f4a495d2850c403ea40423f3ee3fac6a54a2cb",
+                    "bytes": 14332,
+                    "content_digest": "25bb17038b667b27a9a4424e1c0807a457c96eb8e4b2ce209a68403fb8950dc6",
+                },
+                "environment": {
+                    "path": "receipts/environment.json",
+                    "sha256": "91e125a94caa38dc061131a83020485c15f3c810f24e4530cf2f2f7c5af2eabe",
+                    "bytes": 21245,
+                    "content_digest": "9cbd5c2b5c6618cf79bd2e3374d693338aeb24816d975e6ecda90e7c3dcce381",
+                },
+                "gpu_environment": {
+                    "path": "receipts/gpu_environment.json",
+                    "sha256": "d419da3727060b603aa5673fa605cbd165163808076c4bd5a637eaceaa76f5f6",
+                    "bytes": 8702,
+                    "content_digest": "063d7b4458de7a89a6a175d9d8985c4a556b755aba0df45f122cf6262712dfe8",
+                },
+                "cpu_runtime_input_inventory": {
+                    "path": "materialization/cpu_runtime_input_inventory.json",
+                    "sha256": "4f85901c3ea37d9018a05b4fde562721386dae78ce94ccf8d9e8a3d50daac63e",
+                    "bytes": 143850,
+                    "content_digest": "43be7a5f4659174d2eb218cde9f45c6fec67bc1f4524a75a331e674350063430",
+                },
+                "dense_route_replay_input_index": {
+                    "path": "materialization/dense_route_replay_input_index.json",
+                    "sha256": "522c18b8e9d1d25c49629d153b60d6598130773646ef1dd08c67d0d3b40cbd0d",
+                    "bytes": 37235,
+                    "content_digest": "5e003d57d7d69ad9216fc40c5d7a343da89bc7427054bb0fe3ff3cea25b33e5a",
+                },
+                "batch_manifest": {
+                    "path": "latents/batch_manifest.json",
+                    "sha256": "d941d8d212415427304f809638236be68f5b33fc3922de59aa97ac41bd538bab",
+                    "bytes": 32787,
+                    "content_digest": "cba45ee90ad443c6976176a43f6a30148d1a2fd27a464b3b7bc23489bb6d92b5",
+                },
+                "tensor_index": {
+                    "path": "latents/tensor_index.json",
+                    "sha256": "54afb68db1e103416670e72f561d5aa7c6ce73f4b96b6a986a5f92c6df4b1128",
+                    "bytes": 2847399,
+                    "content_digest": "272e85bb33a895c031d6d1513be7e200d466bc3a7d527d5ef77a357a77fbff08",
+                },
+                "gpu_inference": {
+                    "path": "receipts/gpu_inference.json",
+                    "sha256": "0f872a14b7b7f583d6bcce41f6cc33857714672f6c41aeb0a2a3437a2be5aba0",
+                    "bytes": 8194,
+                    "content_digest": "615d2daa0d8d1b9fe35aebc8f27de29bdf98ba9936dd7881d0bdd4d07dddd2ec",
+                },
+                "candidate_evidence": {
+                    "path": "evidence/candidate_evidence.jsonl.gz",
+                    "sha256": "9084b501f2d47a4d366c5739caf55bbe5f103f36e97023ea7db081103c4efe02",
+                    "bytes": 603913,
+                },
+                "selection_evidence": {
+                    "path": "evidence/selection_evidence.jsonl.gz",
+                    "sha256": "fb8914810a3683e6dd290b12930e993f015f1034bd7a283b202c137f853bfd09",
+                    "bytes": 54753,
+                },
+                "paired_effect_evidence": {
+                    "path": "evidence/paired_effect_evidence.jsonl.gz",
+                    "sha256": "fda75a6b9e93c05da15d81ee8c20528299356d7314a22b8a7b78835fd01c8123",
+                    "bytes": 2464,
+                },
+                "aggregate_metrics": {
+                    "path": "aggregates/metrics.json",
+                    "sha256": "e2b9b44dce9c01cce5b4962d5e345aa85a3e068a0a22495769b847e8ac2d5a42",
+                    "bytes": 7281659,
+                    "content_digest": "388d0a45f1a3eb2f1c1dafb19d05692d3891c03b824299c772ae592326ebb58b",
+                },
+                "persistence": {
+                    "path": "receipts/persistence.json",
+                    "sha256": "ab3f57c19eb66eda53e23425f77e2a7e9c34cca9f0efdd2c409ff8e686016a56",
+                    "bytes": 948130,
+                    "content_digest": "6f95662b03343e3cc1d45c74e7a868314fa76a9568ca9a00cfec79220e960ba4",
+                },
+                "result": {
+                    "path": "result.json",
+                    "sha256": "f0bfcee280758ea6b34a4bdef55eb8f641dc9ab433386cf59c6d56623793c86c",
+                    "bytes": 75627,
+                    "result_content_sha256": "0945cc377c9066b856fce0cb9161c7c94b7089ddae8ef4ec59415af2de796dee",
+                },
+                "report": {
+                    "path": "report.md",
+                    "sha256": "aba0d08a0521a56c718c77c776bb069047801754f737a5ebc0e0c51ef78a4348",
+                    "bytes": 17789,
+                },
+            },
+            "deep_prepublication_check_passed": True,
+            "atomic_rename_completed": True,
+            "tracked_result_and_report_were_removed_after_failure": True,
+            "running_marker_present": False,
+            "failed_running_marker_present": False,
+            "canonical_output_root_absent_after_archive": True,
+            "original_hidden_attempt_root_absent_after_archive": True,
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment": 0,
+            "prohibition_counters_all_zero": True,
+            "scientific_result_published": False,
+        },
+        "static_diagnosis": {
+            "route_outcome_metric_gate_or_classification_values_read_or_used": 0,
+            "source_file": (
+                "scripts/evaluate_jepa_local_waypoint_planning_cost_qualification_v1.py"
+            ),
+            "source_lines_at_prior_commit": [2426, 2427, 2429],
+            "receipt_field": "command --output-root",
+            "command_origin": (
+                "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+                ".jepa_local_waypoint_planning_cost_qualification_v1."
+                "attempt-829db39c5cbb-1787783031046613115-505745"
+            ),
+            "postpublication_current_root": str(OUTPUT_ROOT),
+            "prior_validation_rule": "resolved command output root equals current output root",
+            "terminal_phase": "POSTPUBLICATION_CHECK",
+            "terminal_error": "GPU PREFLIGHT child execution custody drift",
+            "finding": (
+                "the immutable child receipt correctly records the hidden execution "
+                "origin, but after authorized atomic rename the generic validator "
+                "incorrectly required that historical command argument to equal the "
+                "current canonical path"
+            ),
+        },
+        "amended_atomic_relocation_semantics": copy.deepcopy(
+            ATOMIC_RELOCATION_POLICY
+        ),
+        "prohibitions": {
+            "child_command_or_receipt_rewrite": True,
+            "postpublication_acceptance_without_exact_origin_and_target_custody": True,
+            "cross_filesystem_or_nonatomic_publication": True,
+            "prior_attempt_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": True,
+            "scientific_tensor_cost_metric_gate_or_classification_change": True,
+            "training_checkpoint_or_candidate_change": True,
+            "untouched_g2_stage_b_memory_navigation_routing_or_beacon_capture": True,
+        },
+        "execution_lifecycle": {
+            "retain_all_prior_freeze_and_correction_commits_as_ancestors": True,
+            "new_atomic_relocation_validator_correction_commit_is_future_source_authority": True,
+            "new_hidden_attempt_namespace": True,
+            "canonical_output_root_must_be_absent": True,
+            "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
+            "automatic_retry": False,
+            "fresh_preflight_required": True,
+            "fresh_complete_execution_required": True,
+            "result_commit_message_remains": (
+                "Evaluate JEPA local waypoint planning cost qualification"
+            ),
+        },
+    }
+
+
+def build_atomic_relocation_execution_amendment() -> dict[str, Any]:
+    return attach_content_digest(_atomic_relocation_execution_amendment_core())
+
+
+def atomic_relocation_execution_amendment_receipt_bytes() -> bytes:
+    return canonical_json_bytes(build_atomic_relocation_execution_amendment()) + b"\n"
+
+
+ATOMIC_RELOCATION_EXECUTION_AMENDMENT = build_atomic_relocation_execution_amendment()
+ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING: dict[str, Any] = {
+    "path": str(TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(
+        atomic_relocation_execution_amendment_receipt_bytes()
+    ).hexdigest(),
+    "bytes": len(atomic_relocation_execution_amendment_receipt_bytes()),
+    "content_digest": ATOMIC_RELOCATION_EXECUTION_AMENDMENT["content_digest"],
+}
+
+
 def _self_digest(value: Mapping[str, Any], key: str) -> dict[str, Any]:
     payload = copy.deepcopy(dict(value))
     payload.pop(key, None)
@@ -2677,6 +3043,22 @@ def _contract_core() -> dict[str, Any]:
             ),
             "terminal_markdown_order_policy": copy.deepcopy(
                 MARKDOWN_REPORT_ORDER_POLICY
+            ),
+            "fresh_execution_only": True,
+            "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
+        },
+        "atomic_relocation_execution_amendment": {
+            "receipt_binding": copy.deepcopy(
+                ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+            ),
+            "prior_source_freeze_commit": (
+                MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+            ),
+            "failed_attempt_archive": str(
+                FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE
+            ),
+            "atomic_relocation_policy": copy.deepcopy(
+                ATOMIC_RELOCATION_POLICY
             ),
             "fresh_execution_only": True,
             "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse": False,
@@ -3910,6 +4292,9 @@ def _contract_core() -> dict[str, Any]:
             "markdown_report_order_amendment": str(
                 TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH
             ),
+            "atomic_relocation_amendment": str(
+                TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH
+            ),
             "source_closure": str(TRACKED_SOURCE_CLOSURE_PATH),
             "result": str(TRACKED_RESULT_PATH),
             "report": str(TRACKED_REPORT_PATH),
@@ -3942,6 +4327,7 @@ _OUTPUT_FILES = {
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
             "markdown_report_order_amendment_binding",
+            "atomic_relocation_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "goal_view_static_validation",
@@ -3998,6 +4384,9 @@ _OUTPUT_FILES = {
         "markdown_report_order_amendment_binding_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "atomic_relocation_amendment_binding_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -4010,6 +4399,9 @@ _OUTPUT_FILES = {
         ),
         "markdown_report_order_policy_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_POLICY
+        ),
+        "atomic_relocation_policy_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_POLICY
         ),
         "goal_view_static_validation_exact": copy.deepcopy(
             GOAL_VIEW_STATIC_VALIDATION_SUCCESS
@@ -4991,6 +5383,7 @@ _OUTPUT_FILES = {
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
             "markdown_report_order_amendment_binding",
+            "atomic_relocation_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "seed",
@@ -5066,6 +5459,9 @@ _OUTPUT_FILES = {
         "markdown_report_order_amendment_binding_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "atomic_relocation_amendment_binding_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -5081,6 +5477,9 @@ _OUTPUT_FILES = {
         ),
         "markdown_report_order_policy_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_POLICY
+        ),
+        "atomic_relocation_policy_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_POLICY
         ),
         "goal_pose_semantics_exact": copy.deepcopy(
             GOAL_VIEW_EXECUTION_AMENDMENT["amended_goal_pose_semantics"]
@@ -5139,6 +5538,7 @@ _OUTPUT_FILES = {
             "GPU receipt serialization amendment and failed-attempt custody",
             "GPU child receipt order amendment and failed-attempt custody",
             "Markdown report order amendment and failed-attempt custody",
+            "Atomic relocation amendment and failed-attempt custody",
             "Historical renderer limitation",
             "Controller execution custody",
             "Population and materialisation counts",
@@ -5168,6 +5568,7 @@ _OUTPUT_FILES = {
             "gpu_receipt_serialization_amendment_binding",
             "gpu_child_receipt_order_amendment_binding",
             "markdown_report_order_amendment_binding",
+            "atomic_relocation_amendment_binding",
             "current_token_authority_policy",
             "gpu_child_execution_receipts",
             "dense_route_replay_input_index_binding",
@@ -5209,6 +5610,9 @@ _OUTPUT_FILES = {
         "markdown_report_order_amendment_binding_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "atomic_relocation_amendment_binding_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy_exact": copy.deepcopy(
             CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -5224,6 +5628,9 @@ _OUTPUT_FILES = {
         ),
         "markdown_report_order_policy_exact": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_POLICY
+        ),
+        "atomic_relocation_policy_exact": copy.deepcopy(
+            ATOMIC_RELOCATION_POLICY
         ),
         "report_integrity": (
             "report.md is included in artifact_manifest with exact path, SHA-256 and bytes"
@@ -5243,6 +5650,9 @@ def _output_schema_core() -> dict[str, Any]:
         ),
         "markdown_report_json_fragment_semantics": copy.deepcopy(
             MARKDOWN_REPORT_ORDER_POLICY
+        ),
+        "atomic_relocation_semantics": copy.deepcopy(
+            ATOMIC_RELOCATION_POLICY
         ),
         "row_ledgers": "gzip JSONL; one canonical compact JSON object plus LF per row",
         "files": copy.deepcopy(_OUTPUT_FILES),
@@ -5342,6 +5752,18 @@ def _output_schema_core() -> dict[str, Any]:
                 ),
                 "inventory": copy.deepcopy(
                     FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY
+                ),
+                "reuse": False,
+            },
+            "bound_atomic_relocation_failed_attempt": {
+                "source_freeze_commit": (
+                    MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+                ),
+                "archive_path": str(
+                    FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE
+                ),
+                "inventory": copy.deepcopy(
+                    FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY
                 ),
                 "reuse": False,
             },
@@ -5760,6 +6182,67 @@ def _run_contract_fixture_checks() -> dict[str, bool]:
         ]
         is True
     )
+    relocation_amendment = ATOMIC_RELOCATION_EXECUTION_AMENDMENT
+    relocation_summary = relocation_amendment["failed_attempt"]["artifact_summary"]
+    relocation_groups = (
+        "materialization",
+        "latents",
+        "goal_views",
+        "receipts",
+        "evidence",
+        "aggregates",
+        "report",
+        "result",
+    )
+    checks["atomic_relocation_amendment_is_terminal_only_and_no_reuse"] = (
+        relocation_amendment["status"] == "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        and relocation_amendment["prior_source_freeze"]["commit"]
+        == MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+        and relocation_amendment["failed_attempt"]["deep_prepublication_check_passed"]
+        is True
+        and relocation_amendment["failed_attempt"]["atomic_rename_completed"]
+        is True
+        and relocation_amendment["failed_attempt"][
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        ]
+        is False
+        and relocation_amendment["failed_attempt"][
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        ]
+        == 0
+        and ATOMIC_RELOCATION_POLICY["postpublication_validator_only_change"]
+        is True
+        and ATOMIC_RELOCATION_POLICY["command_receipt_rewrite"] is False
+        and ATOMIC_RELOCATION_POLICY[
+            "scientific_tensor_cost_metric_gate_or_classification_change"
+        ]
+        is False
+    )
+    checks["atomic_relocation_failed_archive_partition"] = (
+        sum(relocation_summary[group]["files"] for group in relocation_groups)
+        == relocation_summary["total_files"]
+        == FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY["record_count"]
+        == 5737
+        and sum(relocation_summary[group]["bytes"] for group in relocation_groups)
+        == relocation_summary["total_bytes"]
+        == FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY["total_bytes"]
+    )
+    relocation_origin = Path(
+        relocation_amendment["failed_attempt"]["original_hidden_attempt_root"]
+    )
+    checks["atomic_relocation_origin_and_target_are_siblings"] = (
+        relocation_origin.parent == OUTPUT_ROOT.parent
+        and relocation_origin != OUTPUT_ROOT
+        and relocation_origin.name.startswith(f".{OUTPUT_ROOT.name}.attempt-")
+        and ATOMIC_RELOCATION_POLICY["postpublication_validation"][
+            "hidden_attempt_root_present"
+        ]
+        is False
+        and ATOMIC_RELOCATION_POLICY["postpublication_validation"][
+            "canonical_output_root_present"
+        ]
+        is True
+    )
     checks["gpu_child_durable_error_capture"] = (
         set(GPU_CHILD_EXECUTION_RECEIPTS) == {"PREFLIGHT", "MATERIALIZE"}
         and all(
@@ -5994,6 +6477,9 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "bound_markdown_report_order_failed_attempt_archive": str(
                     FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE
                 ),
+                "bound_atomic_relocation_failed_attempt_archive": str(
+                    FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE
+                ),
                 "fresh_hidden_attempt_after_goal_view_amendment": "PASS_REQUIRED",
                 "fresh_hidden_attempt_after_current_token_amendment": "PASS_REQUIRED",
                 "fresh_hidden_attempt_after_gpu_receipt_serialization_amendment": (
@@ -6005,12 +6491,23 @@ def build_fixture_receipt() -> dict[str, Any]:
                 "fresh_hidden_attempt_after_markdown_report_order_amendment": (
                     "PASS_REQUIRED"
                 ),
+                "fresh_hidden_attempt_after_atomic_relocation_amendment": (
+                    "PASS_REQUIRED"
+                ),
             },
             "terminal_markdown_regeneration": {
                 "policy": copy.deepcopy(MARKDOWN_REPORT_ORDER_POLICY),
                 "in_memory_and_canonical_roundtrip_report_exact": "PASS_REQUIRED",
                 "diagnostic_flags_fragment_key_order": "SORTED",
                 "report_byte_drift": "FAIL_CLOSED",
+            },
+            "postpublication_atomic_relocation": {
+                "policy": copy.deepcopy(ATOMIC_RELOCATION_POLICY),
+                "immutable_child_command_origin": "PASS_REQUIRED",
+                "authorized_sibling_atomic_target": "PASS_REQUIRED",
+                "origin_absent_target_present_after_rename": "PASS_REQUIRED",
+                "receipt_rewrite": "FORBIDDEN",
+                "unrelated_current_root": "FAIL_CLOSED",
             },
             "cpu_worker_allocator": {
                 "environment": copy.deepcopy(
@@ -6211,6 +6708,42 @@ def validate_markdown_report_order_execution_amendment(
     return copy.deepcopy(dict(value))
 
 
+def validate_atomic_relocation_execution_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_content_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        build_atomic_relocation_execution_amendment()
+    ):
+        raise ContractError(
+            "atomic-relocation execution amendment differs from its authority"
+        )
+    failed = value.get("failed_attempt", {})
+    diagnosis = value.get("static_diagnosis", {})
+    policy = value.get("amended_atomic_relocation_semantics", {})
+    if (
+        value.get("status") != "PROSPECTIVE_BEFORE_FRESH_REEXECUTION"
+        or value.get("prior_source_freeze", {}).get("commit")
+        != MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT
+        or failed.get(
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        )
+        is not False
+        or failed.get(
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        )
+        != 0
+        or failed.get("atomic_rename_completed") is not True
+        or diagnosis.get(
+            "route_outcome_metric_gate_or_classification_values_read_or_used"
+        )
+        != 0
+        or policy != ATOMIC_RELOCATION_POLICY
+    ):
+        raise ContractError("atomic-relocation amendment violates custody")
+    return copy.deepcopy(dict(value))
+
+
 def _write_immutable(path: Path, payload: bytes, label: str) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists():
@@ -6280,6 +6813,16 @@ def write_markdown_report_order_execution_amendment(
         Path(path),
         markdown_report_order_execution_amendment_receipt_bytes(),
         "Markdown-report order execution amendment",
+    )
+
+
+def write_atomic_relocation_execution_amendment(
+    path: str | Path = TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        atomic_relocation_execution_amendment_receipt_bytes(),
+        "atomic-relocation execution amendment",
     )
 
 
@@ -6381,6 +6924,18 @@ def load_and_validate_markdown_report_order_execution_amendment(
     )
 
 
+def load_and_validate_atomic_relocation_execution_amendment(
+    path: str | Path = TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    return validate_atomic_relocation_execution_amendment(
+        _load_exact(
+            Path(path),
+            atomic_relocation_execution_amendment_receipt_bytes(),
+            "atomic-relocation execution amendment",
+        )
+    )
+
+
 SOURCE_CLOSURE_DEFAULT_PATHS = (
     "lewm/__init__.py",
     "lewm/safety/__init__.py",
@@ -6396,6 +6951,7 @@ SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH),
     str(TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH),
     str(TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH),
+    str(TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH),
     str(ENTRYPOINT_PATH),
     "scripts/run_jepa_local_waypoint_planning_cost_inference_v1.py",
     "lewm/safety/jepa_local_waypoint_planning_cost_metrics_v1.py",
@@ -6532,6 +7088,10 @@ def write_source_closure(
 
 
 __all__ = [
+    "ATOMIC_RELOCATION_AMENDMENT_SCHEMA_VERSION",
+    "ATOMIC_RELOCATION_EXECUTION_AMENDMENT",
+    "ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING",
+    "ATOMIC_RELOCATION_POLICY",
     "BOOTSTRAP_REPLICATES",
     "COMPARATOR_IDS",
     "CONTRACT",
@@ -6550,6 +7110,7 @@ __all__ = [
     "CURRENT_TOKEN_CORRECTION_COMMIT",
     "GPU_RECEIPT_SERIALIZATION_CORRECTION_COMMIT",
     "GPU_CHILD_RECEIPT_ORDER_CORRECTION_COMMIT",
+    "MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT",
     "DENSE_ROUTE_REPLAY_INPUT_BINDINGS",
     "ENTRYPOINT_PATH",
     "EXECUTION_WATCHDOGS",
@@ -6578,6 +7139,8 @@ __all__ = [
     "FAILED_GPU_CHILD_RECEIPT_ORDER_ATTEMPT_INVENTORY",
     "FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_ARCHIVE",
     "FAILED_MARKDOWN_REPORT_ORDER_ATTEMPT_INVENTORY",
+    "FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE",
+    "FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY",
     "GOAL_VIEW_CORRECTION_COMMIT",
     "GPU_CHILD_EXECUTION_RECEIPTS",
     "GPU_CHILD_EXECUTION_BINDING_REQUIRED_KEYS",
@@ -6628,6 +7191,7 @@ __all__ = [
     "TRACKED_GPU_RECEIPT_SERIALIZATION_AMENDMENT_PATH",
     "TRACKED_GPU_CHILD_RECEIPT_ORDER_AMENDMENT_PATH",
     "TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH",
+    "TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
     "TRACKED_REPORT_PATH",
@@ -6643,6 +7207,7 @@ __all__ = [
     "build_gpu_receipt_serialization_execution_amendment",
     "build_gpu_child_receipt_order_execution_amendment",
     "build_markdown_report_order_execution_amendment",
+    "build_atomic_relocation_execution_amendment",
     "build_output_schema",
     "build_source_closure",
     "canonical_json_bytes",
@@ -6658,6 +7223,7 @@ __all__ = [
     "gpu_receipt_serialization_execution_amendment_receipt_bytes",
     "gpu_child_receipt_order_execution_amendment_receipt_bytes",
     "markdown_report_order_execution_amendment_receipt_bytes",
+    "atomic_relocation_execution_amendment_receipt_bytes",
     "load_and_validate_contract",
     "load_and_validate_fixture_receipt",
     "load_and_validate_goal_view_execution_amendment",
@@ -6665,6 +7231,7 @@ __all__ = [
     "load_and_validate_gpu_receipt_serialization_execution_amendment",
     "load_and_validate_gpu_child_receipt_order_execution_amendment",
     "load_and_validate_markdown_report_order_execution_amendment",
+    "load_and_validate_atomic_relocation_execution_amendment",
     "load_and_validate_output_schema",
     "no_family_complete_collapse",
     "output_schema_receipt_bytes",
@@ -6679,6 +7246,7 @@ __all__ = [
     "validate_gpu_receipt_serialization_execution_amendment",
     "validate_gpu_child_receipt_order_execution_amendment",
     "validate_markdown_report_order_execution_amendment",
+    "validate_atomic_relocation_execution_amendment",
     "validate_gpu_child_execution_receipt_mapping",
     "validate_output_schema",
     "write_contract",
@@ -6688,6 +7256,7 @@ __all__ = [
     "write_gpu_receipt_serialization_execution_amendment",
     "write_gpu_child_receipt_order_execution_amendment",
     "write_markdown_report_order_execution_amendment",
+    "write_atomic_relocation_execution_amendment",
     "write_output_schema",
     "write_source_closure",
 ]

@@ -423,6 +423,14 @@ def validate_frozen_receipts() -> dict[str, Any]:
         raise QualificationError(
             "frozen Markdown report order execution amendment is absent or invalid"
         ) from exc
+    try:
+        atomic_relocation_amendment = (
+            CONTRACT.load_and_validate_atomic_relocation_execution_amendment()
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "frozen atomic relocation execution amendment is absent or invalid"
+        ) from exc
     checks = fixture.get("executed_checks")
     if fixture.get("pass") is not True or not isinstance(checks, Mapping) or not checks:
         raise QualificationError("frozen fixture receipt did not execute and pass checks")
@@ -461,6 +469,7 @@ def validate_frozen_receipts() -> dict[str, Any]:
         "markdown_report_order_execution_amendment": (
             markdown_report_order_amendment
         ),
+        "atomic_relocation_execution_amendment": atomic_relocation_amendment,
         "source_closure": closure,
     }
 
@@ -1454,6 +1463,267 @@ def validate_markdown_report_order_execution_amendment_custody(
     return amendment
 
 
+def validate_atomic_relocation_execution_amendment_custody(
+    source_freeze_commit: str,
+    *,
+    require_canonical_output_absent: bool,
+) -> dict[str, Any]:
+    """Validate the relocation-only correction and sixth failed-run chain."""
+
+    try:
+        amendment = CONTRACT.load_and_validate_atomic_relocation_execution_amendment()
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            "atomic relocation execution amendment is invalid"
+        ) from exc
+    amendment_path = ROOT / CONTRACT.TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH
+    if _receipt_binding(amendment_path, digest_key="content_digest") != (
+        CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+    ):
+        raise QualificationError("atomic relocation amendment binding drift")
+
+    prior_commit = str(amendment["prior_source_freeze"]["commit"])
+    if prior_commit != CONTRACT.MARKDOWN_REPORT_ORDER_CORRECTION_COMMIT:
+        raise QualificationError("atomic relocation prior source commit drift")
+    ancestry = subprocess.run(
+        ["git", "merge-base", "--is-ancestor", prior_commit, source_freeze_commit],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if ancestry.returncode != 0 or source_freeze_commit == prior_commit:
+        raise QualificationError(
+            "atomic relocation correction must descend from the failed source freeze"
+        )
+    for artifact_id in (
+        "contract",
+        "output_schema",
+        "fixture",
+        "goal_view_amendment",
+        "current_token_amendment",
+        "gpu_receipt_serialization_amendment",
+        "gpu_child_receipt_order_amendment",
+        "markdown_report_order_amendment",
+        "source_closure",
+    ):
+        expected = amendment["prior_source_freeze"][artifact_id]
+        raw = _git_blob(prior_commit, str(expected["path"]))
+        if (
+            len(raw) != int(expected["bytes"])
+            or hashlib.sha256(raw).hexdigest() != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"atomic relocation prior-freeze {artifact_id} binding drift"
+            )
+        try:
+            prior_value = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            raise QualificationError(
+                f"atomic relocation prior-freeze {artifact_id} is not JSON"
+            ) from exc
+        if prior_value.get(str(expected["digest_field"])) != expected[
+            "content_digest"
+        ]:
+            raise QualificationError(
+                f"atomic relocation prior-freeze {artifact_id} digest drift"
+            )
+
+    failed = amendment["failed_attempt"]
+    archive = Path(str(failed["archive_path"]))
+    if archive.resolve() != CONTRACT.FAILED_ATOMIC_RELOCATION_ATTEMPT_ARCHIVE.resolve():
+        raise QualificationError("atomic relocation failed archive path drift")
+    if not archive.is_dir() or archive.resolve() == OUTPUT_ROOT.resolve():
+        raise QualificationError(
+            "atomic relocation failed archive is absent or aliases canonical output"
+        )
+    archive_rows = [
+        {
+            "path": path.relative_to(archive).as_posix(),
+            "sha256": sha256_file(path),
+            "bytes": path.stat().st_size,
+        }
+        for path in sorted(
+            (candidate for candidate in archive.rglob("*") if candidate.is_file()),
+            key=lambda candidate: candidate.relative_to(archive).as_posix(),
+        )
+    ]
+    archive_payload = canonical_json_bytes(archive_rows)[:-1]
+    frozen_inventory = CONTRACT.FAILED_ATOMIC_RELOCATION_ATTEMPT_INVENTORY
+    observed_inventory = {
+        **{
+            key: value
+            for key, value in frozen_inventory.items()
+            if key in ("record_fields", "record_order", "aggregate_algorithm")
+        },
+        "record_count": len(archive_rows),
+        "total_bytes": sum(int(row["bytes"]) for row in archive_rows),
+        "canonical_records_bytes": len(archive_payload),
+        "aggregate_sha256": hashlib.sha256(archive_payload).hexdigest(),
+    }
+    if observed_inventory != frozen_inventory or failed.get(
+        "archive_inventory"
+    ) != frozen_inventory:
+        raise QualificationError("atomic relocation failed archive inventory drift")
+
+    summary = {
+        key: {"files": 0, "bytes": 0}
+        for key in (
+            "materialization",
+            "latents",
+            "goal_views",
+            "receipts",
+            "evidence",
+            "aggregates",
+            "report",
+            "result",
+        )
+    }
+    for row in archive_rows:
+        relative = str(row["path"])
+        if relative == "report.md":
+            artifact_id = "report"
+        elif relative == "result.json":
+            artifact_id = "result"
+        else:
+            artifact_id = relative.split("/", 1)[0]
+        if artifact_id not in summary:
+            raise QualificationError(
+                f"atomic relocation failed archive has unexpected partition {artifact_id}"
+            )
+        summary[artifact_id]["files"] += 1
+        summary[artifact_id]["bytes"] += int(row["bytes"])
+    summary["total_files"] = len(archive_rows)
+    summary["total_bytes"] = sum(int(row["bytes"]) for row in archive_rows)
+    if summary != failed.get("artifact_summary"):
+        raise QualificationError("atomic relocation artifact summary drift")
+
+    failure_expected = failed["failure_receipt"]
+    failure_path = archive / str(failure_expected["path"])
+    if (
+        not failure_path.is_file()
+        or failure_path.stat().st_size != int(failure_expected["bytes"])
+        or sha256_file(failure_path) != failure_expected["sha256"]
+    ):
+        raise QualificationError("atomic relocation failure receipt binding drift")
+    failure = load_json(failure_path)
+    validate_digest(failure)
+    if (
+        failure.get("content_digest") != failure_expected["content_digest"]
+        or failure.get("schema") != failure_expected["schema"]
+        or failure.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or failure.get("source_freeze_commit") != prior_commit
+        or failure.get("phase") != failure_expected["phase"]
+        or failure.get("error_type") != failure_expected["error_type"]
+        or failure.get("error_message") != failure_expected["error_message"]
+        or failure.get("failed_child_execution_receipt") is not None
+        or failure.get("partial_artifacts_reusable") is not False
+        or failure.get("nothing_running") is not True
+        or failure.get("active_experiment_processes") != []
+        or failure.get("prohibition_counters") != prohibition_counters()
+    ):
+        raise QualificationError("atomic relocation failure receipt custody drift")
+
+    for artifact_id, expected in failed["nonreusable_terminal_artifacts"].items():
+        path = archive / str(expected["path"])
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(expected["bytes"])
+            or sha256_file(path) != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"atomic relocation nonreusable {artifact_id} binding drift"
+            )
+
+    origin = Path(str(failed["original_hidden_attempt_root"])).absolute()
+    if origin.exists() or origin.parent != OUTPUT_ROOT.absolute().parent:
+        raise QualificationError("atomic relocation original-origin cleanup drift")
+    for phase, expected in failed["child_execution_receipts"].items():
+        receipt_path = archive / str(expected["path"])
+        if (
+            not receipt_path.is_file()
+            or receipt_path.stat().st_size != int(expected["bytes"])
+            or sha256_file(receipt_path) != expected["sha256"]
+        ):
+            raise QualificationError(
+                f"atomic relocation {phase} child receipt binding drift"
+            )
+        receipt = load_json(receipt_path)
+        validate_digest(receipt)
+        command = receipt.get("command")
+        if (
+            receipt.get("content_digest") != expected["content_digest"]
+            or receipt.get("phase") != phase
+            or receipt.get("returncode") != expected["returncode"]
+            or receipt.get("pass") != expected["pass"]
+            or receipt.get("source_freeze_commit") != prior_commit
+            or not isinstance(command, list)
+            or command[:3]
+            != [str(GPU_INTERPRETER), str(GPU_ENTRYPOINT), phase.lower()]
+            or _gpu_child_argument(command[2:], "--source-freeze-commit")
+            != prior_commit
+            or Path(_gpu_child_argument(command[2:], "--output-root")).absolute()
+            != origin
+        ):
+            raise QualificationError(
+                f"atomic relocation {phase} immutable child command drift"
+            )
+        for stream_id in ("stdout", "stderr"):
+            stream = receipt.get(stream_id)
+            expected_path = Path(
+                CONTRACT.GPU_CHILD_EXECUTION_RECEIPTS[phase][f"{stream_id}_path"]
+            )
+            payload_path = archive / expected_path
+            if (
+                not isinstance(stream, Mapping)
+                or not payload_path.is_file()
+                or stream != _gpu_child_stream_receipt(
+                    expected_path, payload_path.read_bytes()
+                )
+            ):
+                raise QualificationError(
+                    f"atomic relocation {phase} child {stream_id} drift"
+                )
+
+    if (
+        (archive / RUNNING_REL).exists()
+        or (archive / "receipts/FAILED_RUNNING_MARKER.json").exists()
+        or failed.get("deep_prepublication_check_passed") is not True
+        or failed.get("atomic_rename_completed") is not True
+        or failed.get("tracked_result_and_report_were_removed_after_failure")
+        is not True
+        or failed.get("running_marker_present") is not False
+        or failed.get("failed_running_marker_present") is not False
+        or failed.get("canonical_output_root_absent_after_archive") is not True
+        or failed.get("original_hidden_attempt_root_absent_after_archive") is not True
+        or failed.get(
+            "scientific_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        )
+        is not False
+        or failed.get(
+            "aggregate_metric_gate_or_classification_values_read_or_used_for_amendment"
+        )
+        != 0
+        or failed.get("prohibition_counters_all_zero") is not True
+        or failed.get("scientific_result_published") is not False
+        or amendment["execution_lifecycle"].get(
+            "prior_phase_shard_tensor_receipt_aggregate_result_or_report_reuse"
+        )
+        is not False
+        or amendment["execution_lifecycle"].get("automatic_retry") is not False
+        or amendment.get("amended_atomic_relocation_semantics")
+        != CONTRACT.ATOMIC_RELOCATION_POLICY
+    ):
+        raise QualificationError(
+            "atomic relocation failed-attempt no-reuse custody drift"
+        )
+    if require_canonical_output_absent and OUTPUT_ROOT.exists():
+        raise QualificationError(
+            "canonical output root exists before atomic relocation corrected execution"
+        )
+    return amendment
+
+
 def _validated_interpreter_binary_binding(
     executable: str | Path,
 ) -> dict[str, Any]:
@@ -2174,6 +2444,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
     CONTRACT.write_markdown_report_order_execution_amendment(
         ROOT / CONTRACT.TRACKED_MARKDOWN_REPORT_ORDER_AMENDMENT_PATH
     )
+    CONTRACT.write_atomic_relocation_execution_amendment(
+        ROOT / CONTRACT.TRACKED_ATOMIC_RELOCATION_AMENDMENT_PATH
+    )
     closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
     CONTRACT.write_source_closure(closure, ROOT / CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
     frozen = validate_frozen_receipts()
@@ -2196,6 +2469,9 @@ def freeze(repo_root: Path = ROOT) -> dict[str, Any]:
         ]["content_digest"],
         "markdown_report_order_execution_amendment_content_digest": frozen[
             "markdown_report_order_execution_amendment"
+        ]["content_digest"],
+        "atomic_relocation_execution_amendment_content_digest": frozen[
+            "atomic_relocation_execution_amendment"
         ]["content_digest"],
         "source_closure_content_digest": frozen["source_closure"]["content_digest"],
         "outcome_rows_read": 0,
@@ -2376,6 +2652,63 @@ def _run_gpu_child(arguments: Sequence[str]) -> subprocess.CompletedProcess[str]
     return result
 
 
+def _gpu_child_execution_origin_root(
+    output_root: Path,
+    source_freeze_commit: str,
+) -> Path:
+    """Return immutable child command origin across atomic publication."""
+
+    current_root = Path(output_root).absolute()
+    preexecution_path = current_root / PREEXEC_REL
+    if not preexecution_path.is_file():
+        # GPU preflight runs before the preexecution receipt is committed.
+        if not current_root.is_dir():
+            raise QualificationError("GPU child execution root is absent")
+        return current_root
+
+    preexecution = load_json(preexecution_path)
+    validate_phase_binding(preexecution, source_freeze_commit)
+    hidden_value = preexecution.get("hidden_attempt_root")
+    canonical_value = preexecution.get("canonical_output_root")
+    if not isinstance(hidden_value, str) or not isinstance(canonical_value, str):
+        raise QualificationError("GPU child atomic-relocation roots are malformed")
+    hidden_root = Path(hidden_value).absolute()
+    canonical_root = Path(canonical_value).absolute()
+    if (
+        preexecution.get("head") != source_freeze_commit
+        or preexecution.get("pass") is not True
+        or preexecution.get("canonical_output_fresh") is not True
+        or canonical_root != Path(OUTPUT_ROOT).absolute()
+        or hidden_root == canonical_root
+        or hidden_root.parent != canonical_root.parent
+    ):
+        raise QualificationError("GPU child atomic-relocation custody drift")
+
+    if current_root == hidden_root:
+        if (
+            not hidden_root.is_dir()
+            or canonical_root.exists()
+            or os.stat(hidden_root).st_dev
+            != os.stat(canonical_root.parent).st_dev
+        ):
+            raise QualificationError(
+                "GPU child prepublication relocation custody drift"
+            )
+    elif current_root == canonical_root:
+        if (
+            hidden_root.exists()
+            or not canonical_root.is_dir()
+            or os.stat(canonical_root).st_dev
+            != os.stat(hidden_root.parent).st_dev
+        ):
+            raise QualificationError(
+                "GPU child postpublication relocation custody drift"
+            )
+    else:
+        raise QualificationError("GPU child current publication root is unbound")
+    return hidden_root
+
+
 def _gpu_child_execution_receipt_bindings(
     output_root: Path,
     source_freeze_commit: str,
@@ -2391,6 +2724,10 @@ def _gpu_child_execution_receipt_bindings(
             CONTRACT.EXECUTION_WATCHDOGS["gpu_materialization_timeout_s"]
         ),
     }
+    execution_origin_root = _gpu_child_execution_origin_root(
+        output_root,
+        source_freeze_commit,
+    )
     output: dict[str, dict[str, Any]] = {}
     for raw_phase in phases:
         phase = str(raw_phase).upper()
@@ -2423,8 +2760,8 @@ def _gpu_child_execution_receipt_bindings(
             != [str(GPU_INTERPRETER), str(GPU_ENTRYPOINT), phase.lower()]
             or _gpu_child_argument(command[2:], "--source-freeze-commit")
             != source_freeze_commit
-            or Path(_gpu_child_argument(command[2:], "--output-root")).resolve()
-            != output_root.resolve()
+            or Path(_gpu_child_argument(command[2:], "--output-root")).absolute()
+            != execution_origin_root
         ):
             raise QualificationError(f"GPU {phase} child execution custody drift")
         for stream_id in ("stdout", "stderr"):
@@ -2486,6 +2823,10 @@ def preflight(
         require_canonical_output_absent=True,
     )
     validate_markdown_report_order_execution_amendment_custody(
+        source_freeze_commit,
+        require_canonical_output_absent=True,
+    )
+    validate_atomic_relocation_execution_amendment_custody(
         source_freeze_commit,
         require_canonical_output_absent=True,
     )
@@ -2711,6 +3052,9 @@ def preflight(
                 ),
                 "markdown_report_order_amendment_binding": copy.deepcopy(
                     CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+                ),
+                "atomic_relocation_amendment_binding": copy.deepcopy(
+                    CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
                 ),
                 "current_token_authority_policy": copy.deepcopy(
                     CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -5870,6 +6214,16 @@ def _validate_schema_value(file_id: str, value: Mapping[str, Any]) -> None:
         "markdown_report_order_policy_exact"
     ) != CONTRACT.MARKDOWN_REPORT_ORDER_POLICY:
         raise QualificationError(f"{file_id} Markdown report order policy drift")
+    if "atomic_relocation_amendment_binding_exact" in spec and value.get(
+        "atomic_relocation_amendment_binding"
+    ) != spec["atomic_relocation_amendment_binding_exact"]:
+        raise QualificationError(
+            f"{file_id} atomic relocation amendment binding drift"
+        )
+    if spec.get("atomic_relocation_policy_exact") is not None and spec.get(
+        "atomic_relocation_policy_exact"
+    ) != CONTRACT.ATOMIC_RELOCATION_POLICY:
+        raise QualificationError(f"{file_id} atomic relocation policy drift")
     if "gpu_receipt_serialization_preinference_check_exact" in spec and value.get(
         "gpu_receipt_serialization_preinference_check"
     ) != spec["gpu_receipt_serialization_preinference_check_exact"]:
@@ -6602,6 +6956,12 @@ def _markdown_report(result: Mapping[str, Any], aggregates: Mapping[str, Any]) -
         "",
         "The prior fresh run completed all scientific phases and created hidden result, persistence, and report artifacts, but failed closed before canonical publication because one Markdown JSON fragment inherited in-memory object insertion order while canonical result reload sorted object keys. The corrected renderer sorts only the `diagnostic_flags` fragment keys. Canonical result serialization and all scientific tensors, costs, metrics, gates, classifications, checkpoints, goals, candidates, and route-outcome rules remain unchanged; the complete failed archive is byte-bound and none of it is reused.",
         "",
+        "## Atomic relocation amendment and failed-attempt custody",
+        "",
+        f"Amendment binding: `{json.dumps(result['atomic_relocation_amendment_binding'], sort_keys=True)}`.",
+        "",
+        "The prior fresh run passed the complete deep prepublication check and atomically renamed its hidden attempt to the canonical output path, but the postpublication validator incorrectly compared each immutable GPU child command origin with the renamed path. The corrected validator preserves the exact hidden command origin and accepts the canonical path only after an authorized same-parent, same-filesystem atomic relocation with the origin absent and target present. Child receipts are never rewritten; scientific tensors, costs, metrics, gates, classifications, checkpoints, goals, candidates, and route-outcome rules remain unchanged; the complete failed archive is byte-bound and none of it is reused.",
+        "",
         "## Historical renderer limitation",
         "",
         "The frozen renderer receives `genesis_scene.json`, where structural geometry is under `objects`, while its historical builder reads only top-level `walls`, `obstacles`, and `landmarks`. Those keys are absent, so the effective rendered scene geometry is the textured floor plane only. This is preserved to require byte-identical current/true-future token compatibility; the experiment makes no explicit wall or landmark visual-reasoning claim.",
@@ -6841,6 +7201,9 @@ def evaluate(source_freeze_commit: str, *, output_root: Path = OUTPUT_ROOT) -> d
         "markdown_report_order_amendment_binding": copy.deepcopy(
             CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
         ),
+        "atomic_relocation_amendment_binding": copy.deepcopy(
+            CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+        ),
         "current_token_authority_policy": copy.deepcopy(
             CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
         ),
@@ -7034,6 +7397,9 @@ def _build_persistence_receipt(
             "markdown_report_order_amendment_binding": copy.deepcopy(
                 CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
             ),
+            "atomic_relocation_amendment_binding": copy.deepcopy(
+                CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
+            ),
             "current_token_authority_policy": copy.deepcopy(
                 CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
             ),
@@ -7110,6 +7476,9 @@ def _validate_result_cross_bindings(
         ),
         "markdown_report_order_amendment_binding": copy.deepcopy(
             CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+        ),
+        "atomic_relocation_amendment_binding": copy.deepcopy(
+            CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
         ),
         "current_token_authority_policy": copy.deepcopy(
             CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
@@ -7252,6 +7621,8 @@ def _validate_result_cross_bindings(
         != CONTRACT.GPU_CHILD_RECEIPT_ORDER_EXECUTION_AMENDMENT_BINDING
         or persistence.get("markdown_report_order_amendment_binding")
         != CONTRACT.MARKDOWN_REPORT_ORDER_EXECUTION_AMENDMENT_BINDING
+        or persistence.get("atomic_relocation_amendment_binding")
+        != CONTRACT.ATOMIC_RELOCATION_EXECUTION_AMENDMENT_BINDING
         or persistence.get("current_token_authority_policy")
         != CONTRACT.CURRENT_TOKEN_AUTHORITY_POLICY
         or persistence.get("gpu_child_execution_receipts")
@@ -7357,6 +7728,10 @@ def check(
         require_canonical_output_absent=False,
     )
     validate_markdown_report_order_execution_amendment_custody(
+        frozen_commit,
+        require_canonical_output_absent=False,
+    )
+    validate_atomic_relocation_execution_amendment_custody(
         frozen_commit,
         require_canonical_output_absent=False,
     )
