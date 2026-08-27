@@ -127,6 +127,730 @@ class _LifecycleStop(RuntimeError):
     pass
 
 
+def test_canonical_utf8_self_digest_matches_contract_and_preserves_framing() -> None:
+    value = {
+        "ascii": "unchanged",
+        "predecessor_narrative": "fidelity at H1–H4",
+        "nested": {"z": 2, "a": 1},
+    }
+    expected_payload = (
+        b'{"ascii":"unchanged","nested":{"a":1,"z":2},'
+        b'"predecessor_narrative":"fidelity at H1\xe2\x80\x93H4"}'
+    )
+    assert evaluator.canonical_json_bytes(value) == expected_payload
+    assert evaluator.canonical_bytes(value) == expected_payload + b"\n"
+    assert b"\\u2013" not in evaluator.canonical_json_bytes(value)
+
+    signed = evaluator.attach_digest(value)
+    assert signed["content_digest"] == evaluator.hashlib.sha256(
+        expected_payload
+    ).hexdigest()
+    assert signed == evaluator.CONTRACT.attach_self_digest(value)
+
+    ascii_only = {"b": [2, 1], "a": "H1-H4"}
+    historical_ascii_bytes = (
+        evaluator.json.dumps(
+            ascii_only,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+    assert evaluator.canonical_bytes(ascii_only) == historical_ascii_bytes
+
+    frozen_vector = evaluator.CONTRACT.EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR
+    vector_bytes = evaluator.canonical_json_bytes(frozen_vector["value"])
+    assert len(vector_bytes) == frozen_vector["canonical_utf8_bytes"]
+    assert evaluator.hashlib.sha256(vector_bytes).hexdigest() == frozen_vector[
+        "canonical_utf8_sha256"
+    ]
+
+
+def test_canonical_utf8_serializer_rejects_nonfinite_values() -> None:
+    with pytest.raises(evaluator.CONTRACT.ContractError):
+        evaluator.canonical_json_bytes({"value": float("nan")})
+
+
+def test_canonical_utf8_serializer_equivalent_literals_regenerate_byte_exact(
+    tmp_path: Path,
+) -> None:
+    raw_unicode = evaluator.json.loads(
+        '{"text":"H1–H4","items":[true,false,null,7,1.25],'
+        '"escaped":"quote=\\\" slash=\\\\ newline=\\n",'
+        '"nested":{"z":2,"a":1}}'
+    )
+    escaped_unicode_reordered = evaluator.json.loads(
+        '{"nested":{"a":1,"z":2},'
+        '"escaped":"quote=\\\" slash=\\\\ newline=\\n",'
+        '"items":[true,false,null,7,1.25],"text":"H1\\u2013H4"}'
+    )
+    first = evaluator.canonical_json_bytes(raw_unicode)
+    assert first == evaluator.canonical_json_bytes(escaped_unicode_reordered)
+    assert first == evaluator.CONTRACT.canonical_json_bytes(raw_unicode)
+    assert b"H1\xe2\x80\x93H4" in first
+    assert b"\\u2013" not in first
+    assert b'"items":[true,false,null,7,1.25]' in first
+    assert b'quote=\\\" slash=\\\\ newline=\\n' in first
+    assert all(evaluator.canonical_json_bytes(raw_unicode) == first for _ in range(8))
+    target = tmp_path / "canonical.json"
+    evaluator.atomic_json(target, raw_unicode)
+    persisted = target.read_bytes()
+    evaluator.atomic_json(target, escaped_unicode_reordered)
+    assert target.read_bytes() == persisted == first + b"\n"
+    assert evaluator.attach_digest(raw_unicode) == evaluator.CONTRACT.attach_self_digest(
+        escaped_unicode_reordered
+    )
+
+
+def test_process_roles_require_complete_frozen_argv_grammar(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    python = str(evaluator.EVALUATOR_INTERPRETER)
+    evaluator_script = str(evaluator.EVALUATOR_SCRIPT)
+    helper_script = str(evaluator.CONDITIONAL_HELPER_SCRIPT)
+    canonical = tmp_path / "qualification"
+    attempt = tmp_path / ".qualification.attempt-frozen"
+    exit_receipt = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    launcher = {"pid": 123, "start_time_ticks": 456}
+    scientific = evaluator._expected_scientific_argv(launcher)
+    finalizer = evaluator._expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=exit_receipt,
+    )
+    assert evaluator._classify_experiment_argv(scientific) == "SCIENTIFIC_EVALUATOR"
+    assert evaluator._classify_experiment_argv(finalizer) == "TERMINAL_FINALIZER"
+    assert evaluator._classify_experiment_argv(
+        [python, evaluator_script, evaluator.LAUNCHER_SUBCOMMAND]
+    ) == "NONSCIENTIFIC_LAUNCHER"
+    assert evaluator._classify_experiment_argv([
+        python,
+        evaluator_script,
+        "check",
+        "--output-root",
+        str(canonical.resolve()),
+    ]) == "POST_FINALIZER_CHECKER"
+    helper = [
+        str(evaluator.CONDITIONAL_GPU_INTERPRETER),
+        "-E",
+        "-s",
+        helper_script,
+        "run-stage-b",
+        "--stage-b-authorised",
+        "--gate-receipt",
+        str(attempt / "receipts/stage_b_gate.json"),
+        "--execution-correction-replay-receipt",
+        str(attempt / "receipts/execution_correction_replay.json"),
+        "--output-root",
+        str(attempt),
+        "--workers",
+        str(evaluator.CONTRACT.CPU_WORKER_BENCHMARK["selected_workers"]),
+    ]
+    assert evaluator._classify_experiment_argv(helper) == (
+        "CONDITIONAL_SCIENTIFIC_HELPER"
+    )
+    assert evaluator._classify_experiment_argv(
+        [str(evaluator.CONDITIONAL_CPU_INTERPRETER), *helper[1:]]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        ["/usr/bin/python3", *helper[1:]]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    context_helper = [
+        str(evaluator.CONDITIONAL_CPU_INTERPRETER),
+        "-E",
+        "-s",
+        helper_script,
+        "context-state",
+        "--stage-b-authorised",
+        "--gate-receipt",
+        str(attempt / "receipts/stage_b_gate.json"),
+        "--execution-correction-replay-receipt",
+        str(attempt / "receipts/execution_correction_replay.json"),
+        "--output-root",
+        str(attempt),
+        "--state-index",
+        "0",
+    ]
+    assert evaluator._classify_experiment_argv(context_helper) == (
+        "CONDITIONAL_SCIENTIFIC_HELPER"
+    )
+    assert evaluator._classify_experiment_argv(
+        [str(evaluator.CONDITIONAL_GPU_INTERPRETER), *context_helper[1:]]
+    ) == "INVALID_EXPERIMENT_ARGV"
+
+    # Monitor shells never match; malformed exact prefixes remain active/error.
+    monitor = (
+        f"ps aux | rg '{evaluator_script} "
+        f"{evaluator.SCIENTIFIC_EVALUATOR_SUBCOMMAND}'"
+    )
+    assert evaluator._classify_experiment_argv(["/bin/sh", "-c", monitor]) is None
+    invalid_variants = [
+        scientific[:3],
+        [*scientific, "--extra"],
+        [*scientific[:3], scientific[5], scientific[6], scientific[3], scientific[4]],
+        [*scientific[:4], "0123", *scientific[5:]],
+        [*finalizer[:4], str(tmp_path / "wrong"), *finalizer[5:]],
+        [*finalizer[:-1], str(attempt / "receipts/wrong.json")],
+        [python, evaluator_script, "check"],
+        [*helper, "--extra"],
+        [*helper[:5], helper[7], *helper[6:7], *helper[8:]],
+    ]
+    assert all(
+        evaluator._classify_experiment_argv(value) == "INVALID_EXPERIMENT_ARGV"
+        for value in invalid_variants
+    )
+    assert evaluator._classify_experiment_argv(
+        [python, f"prefix-{evaluator_script}", evaluator.SCIENTIFIC_EVALUATOR_SUBCOMMAND]
+    ) is None
+    assert evaluator._classify_experiment_argv(
+        ["/opt/unbound/python", evaluator_script, evaluator.LAUNCHER_SUBCOMMAND]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        [
+            python,
+            "/tmp/unrelated.py",
+            "monitor",
+            evaluator_script,
+            evaluator.SCIENTIFIC_EVALUATOR_SUBCOMMAND,
+        ]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        [python, "-E", evaluator_script, evaluator.LAUNCHER_SUBCOMMAND]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        [
+            str(evaluator.CONDITIONAL_GPU_INTERPRETER),
+            "-E",
+            "-s",
+            helper_script,
+            "run-stage-b",
+        ]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        [str(evaluator.CONDITIONAL_GPU_INTERPRETER), helper_script, *helper[4:]]
+    ) == "INVALID_EXPERIMENT_ARGV"
+    assert evaluator._classify_experiment_argv(
+        [
+            str(evaluator.CONDITIONAL_GPU_INTERPRETER),
+            "-s",
+            "-E",
+            helper_script,
+            *helper[4:],
+        ]
+    ) == "INVALID_EXPERIMENT_ARGV"
+
+
+def test_process_identity_binds_pid_reuse_fields_and_exact_argv() -> None:
+    observed = evaluator._process_identity(evaluator.os.getpid())
+    assert observed["pid"] == evaluator.os.getpid()
+    assert observed["process_group_id"] > 0
+    assert observed["start_time_ticks"] > 0
+    assert observed["argv"]
+    assert observed["argv_sha256"] == evaluator.CONTRACT.canonical_json_sha256(
+        observed["argv"]
+    )
+    assert evaluator._process_identity_is_live(observed)
+
+    tampered = copy.deepcopy(observed)
+    tampered["start_time_ticks"] = int(tampered["start_time_ticks"]) + 1
+    assert not evaluator._process_identity_is_live(tampered)
+
+
+def test_isolated_phase_binds_exact_process_and_proves_group_cleanup(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    script = tmp_path / "synthetic_evaluator.py"
+    script.write_text(
+        "import json, time\n"
+        "time.sleep(0.2)\n"
+        "print(json.dumps({'pass': True}, sort_keys=True))\n",
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(evaluator, "EVALUATOR_SCRIPT", script)
+    command = evaluator._expected_scientific_argv(
+        {"pid": evaluator.os.getpid(), "start_time_ticks": 1}
+    )
+    receipt = evaluator._run_exact_isolated_process(
+        command,
+        expected_role="SCIENTIFIC_EVALUATOR",
+        phase="SYNTHETIC_SCIENTIFIC_EVALUATOR",
+    )
+    assert receipt["argv"] == command
+    assert receipt["process_identity"]["argv"] == command
+    assert receipt["process_identity"]["process_group_id"] == receipt[
+        "process_identity"
+    ]["pid"]
+    assert receipt["cleanup"]["process_group_members_after_wait"] == []
+    assert receipt["cleanup"]["scoped_dev_kfd_holders_after_wait"] == []
+    assert evaluator.json.loads(receipt["stdout"])["pass"] is True
+
+
+def test_two_phase_argv_builders_are_complete_and_position_frozen(
+    tmp_path: Path,
+) -> None:
+    launcher = {"pid": 123, "start_time_ticks": 456}
+    assert evaluator._expected_launcher_argv() == [
+        str(evaluator.EVALUATOR_INTERPRETER),
+        str(evaluator.EVALUATOR_SCRIPT),
+        "execute",
+    ]
+    assert evaluator._expected_scientific_argv(launcher) == [
+        str(evaluator.EVALUATOR_INTERPRETER),
+        str(evaluator.EVALUATOR_SCRIPT),
+        "execute-scientific",
+        "--launcher-pid",
+        "123",
+        "--launcher-start-time-ticks",
+        "456",
+    ]
+    attempt = tmp_path / "attempt"
+    exit_receipt = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    assert evaluator._expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=exit_receipt,
+    ) == [
+        str(evaluator.EVALUATOR_INTERPRETER),
+        str(evaluator.EVALUATOR_SCRIPT),
+        "finalize-correction-2",
+        "--attempt",
+        str(attempt.absolute()),
+        "--launcher-pid",
+        "123",
+        "--launcher-start-time-ticks",
+        "456",
+        "--scientific-exit-receipt",
+        str(exit_receipt.absolute()),
+    ]
+
+
+def test_phase_stdout_requires_one_passing_json_object() -> None:
+    assert evaluator._single_phase_json_payload(
+        '{"pass":true,"phase":"synthetic"}\n', phase="SYNTHETIC"
+    ) == {"pass": True, "phase": "synthetic"}
+    with pytest.raises(evaluator.QualificationError, match="exactly one"):
+        evaluator._single_phase_json_payload("{}\n{}\n", phase="SYNTHETIC")
+    with pytest.raises(evaluator.QualificationError, match="not canonical JSON"):
+        evaluator._single_phase_json_payload("not-json\n", phase="SYNTHETIC")
+    with pytest.raises(evaluator.QualificationError, match="not a passing"):
+        evaluator._single_phase_json_payload('{"pass":false}\n', phase="SYNTHETIC")
+    with pytest.raises(evaluator.QualificationError, match="not canonical UTF-8"):
+        evaluator._single_phase_json_payload('{ "pass": true }\n', phase="SYNTHETIC")
+
+
+def _synthetic_process_identity(
+    *, role: str, argv: list[str], pid: int, start: int = 456
+) -> dict[str, object]:
+    return {
+        "pid": pid,
+        "process_group_id": pid,
+        "start_time_ticks": start,
+        "argv": argv,
+        "argv_sha256": evaluator.CONTRACT.canonical_json_sha256(argv),
+        "executable": str(evaluator.EVALUATOR_INTERPRETER.resolve()),
+        "role": role,
+    }
+
+
+def test_launcher_orders_science_then_finalizer_and_never_spawns_check(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    canonical = tmp_path / "qualification"
+    attempt = tmp_path / ".qualification.attempt-1"
+    attempt.mkdir()
+    (attempt / "receipts").mkdir()
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    launcher = _synthetic_process_identity(
+        role="NONSCIENTIFIC_LAUNCHER",
+        argv=evaluator._expected_launcher_argv(),
+        pid=123,
+    )
+    science_argv = evaluator._expected_scientific_argv(launcher)
+    science_identity = _synthetic_process_identity(
+        role="SCIENTIFIC_EVALUATOR", argv=science_argv, pid=124
+    )
+    exit_path = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    finalizer_argv = evaluator._expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=exit_path,
+    )
+    finalizer_identity = _synthetic_process_identity(
+        role="TERMINAL_FINALIZER", argv=finalizer_argv, pid=125
+    )
+    staging_path = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    evaluator.atomic_json(staging_path, evaluator.attach_digest({"phase": "staging"}))
+    staging_binding = evaluator._artifact_binding_with_digest(
+        staging_path, root=attempt
+    )
+    events: list[str] = []
+    monkeypatch.setattr(evaluator, "_process_identity", lambda *_a, **_k: launcher)
+    monkeypatch.setattr(
+        evaluator,
+        "_runtime_execution_correction_2_custody",
+        lambda: events.append("preflight") or {},
+    )
+    monkeypatch.setattr(evaluator, "_assert_publication_destinations_absent", lambda: None)
+    monkeypatch.setattr(evaluator, "_active_experiment_processes", lambda **_k: [])
+
+    handoff = {
+        "attempt": str(attempt),
+        "terminal_staging": staging_binding,
+        "pass": True,
+    }
+
+    def isolated(argv: list[str], **kwargs: object) -> dict[str, object]:
+        role = kwargs["expected_role"]
+        events.append(str(role))
+        if role == "SCIENTIFIC_EVALUATOR":
+            assert argv == science_argv
+            return {
+                "process_identity": science_identity,
+                "returncode": 0,
+                "stdout": evaluator.canonical_json_bytes(handoff).decode() + "\n",
+                "cleanup": {},
+            }
+        assert role == "TERMINAL_FINALIZER"
+        assert argv == finalizer_argv
+        evaluator.os.replace(attempt, canonical)
+        terminal = {
+            "canonical_output_root": str(canonical.resolve()),
+            "nothing_scientific_running": True,
+            "official_post_finalizer_check_spawned": False,
+            "report": {"path": "report.md"},
+            "result": {"path": "result.json"},
+            "source_freeze_commit": "f" * 40,
+            "pass": True,
+        }
+        return {
+            "process_identity": finalizer_identity,
+            "returncode": 0,
+            "stdout": evaluator.canonical_json_bytes(terminal).decode() + "\n",
+            "cleanup": {},
+        }
+
+    monkeypatch.setattr(evaluator, "_run_exact_isolated_process", isolated)
+
+    def write_exit(**_kwargs: object) -> dict[str, object]:
+        events.append("SCIENTIFIC_EXIT_RECEIPT")
+        value = evaluator.attach_digest({"phase": "exit"})
+        evaluator.atomic_json(exit_path, value)
+        return value
+
+    monkeypatch.setattr(evaluator, "_write_scientific_exit_receipt", write_exit)
+    result = evaluator._execute_launcher_lifecycle()
+    assert events == [
+        "preflight",
+        "SCIENTIFIC_EVALUATOR",
+        "SCIENTIFIC_EXIT_RECEIPT",
+        "TERMINAL_FINALIZER",
+    ]
+    assert result["official_post_finalizer_check_spawned"] is False
+    assert result["official_post_finalizer_check_required_after_result_commit"] is True
+
+
+def test_launcher_archives_malformed_handoff_without_retry_or_partial_publication(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    canonical = tmp_path / "qualification"
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    launcher = _synthetic_process_identity(
+        role="NONSCIENTIFIC_LAUNCHER",
+        argv=evaluator._expected_launcher_argv(),
+        pid=223,
+    )
+    monkeypatch.setattr(evaluator, "_process_identity", lambda *_a, **_k: launcher)
+    monkeypatch.setattr(evaluator, "_active_experiment_processes", lambda **_k: [])
+    monkeypatch.setattr(evaluator, "git_output", lambda *_a: "a" * 40)
+    tracked = (tmp_path / "tracked-result.json", tmp_path / "tracked-report.md")
+    monkeypatch.setattr(evaluator, "_tracked_publication_paths", lambda: tracked)
+
+    def malformed() -> dict[str, object]:
+        attempt = tmp_path / ".qualification.attempt-1"
+        attempt.mkdir()
+        for path in tracked:
+            path.write_bytes(b"partial")
+        raise evaluator.QualificationError("malformed scientific handoff")
+
+    monkeypatch.setattr(evaluator, "_execute_launcher_lifecycle", malformed)
+    with pytest.raises(evaluator.QualificationError, match="no retry authorised"):
+        evaluator.execute()
+    assert not canonical.exists()
+    assert all(not path.exists() for path in tracked)
+    assert not list(tmp_path.glob(".qualification.attempt-*"))
+    archives = list(tmp_path.glob(".qualification.failed-*"))
+    assert len(archives) == 1
+    terminal = evaluator.load_json(
+        archives[0] / "receipts/terminal_failure_finalization.json"
+    )
+    assert terminal["partial_artifacts_reusable"] is False
+    assert terminal["no_further_retry"] is True
+    assert terminal["nothing_scientific_running"] is True
+    assert terminal["all_process_zero_claimed"] is False
+
+
+def test_finalizer_uses_terminal_stage_a_reproduction_not_pre_b_absence_scan(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    canonical = tmp_path / "qualification"
+    attempt = tmp_path / ".qualification.attempt-1"
+    (attempt / "receipts").mkdir(parents=True)
+    (attempt / "staging").mkdir()
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    launcher = _synthetic_process_identity(
+        role="NONSCIENTIFIC_LAUNCHER",
+        argv=evaluator._expected_launcher_argv(),
+        pid=323,
+    )
+    exit_path = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    finalizer_argv = evaluator._expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=exit_path,
+    )
+    finalizer = _synthetic_process_identity(
+        role="TERMINAL_FINALIZER", argv=finalizer_argv, pid=324
+    )
+    stage_a = evaluator.attach_digest({"phase": "a"})
+    stage_b = evaluator.attach_digest({"phase": "b"})
+    result_core = evaluator.attach_digest({"stage_execution": {}})
+    for key, value in (("stage_a_replay", stage_a), ("stage_b_replay", stage_b)):
+        evaluator.atomic_json(
+            attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[key],
+            value,
+        )
+    result_core_path = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    evaluator.atomic_json(result_core_path, result_core)
+    staging = {
+        "attempt": str(attempt),
+        "source_freeze_commit": "f" * 40,
+        "launcher_process_identity": launcher,
+        "scientific_process_identity": _synthetic_process_identity(
+            role="SCIENTIFIC_EVALUATOR",
+            argv=evaluator._expected_scientific_argv(launcher),
+            pid=322,
+        ),
+        "result_core": evaluator._artifact_binding_with_digest(
+            result_core_path, root=attempt
+        ),
+    }
+    scientific_exit = {
+        "attempt": str(attempt),
+        "launcher_process_identity": launcher,
+        "scientific_process_identity": staging["scientific_process_identity"],
+    }
+    staging_path = attempt / evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    evaluator.atomic_json(staging_path, evaluator.attach_digest(staging))
+    evaluator.atomic_json(exit_path, evaluator.attach_digest(scientific_exit))
+    monkeypatch.setattr(evaluator, "_require_exact_live_launcher", lambda **_k: launcher)
+    monkeypatch.setattr(evaluator, "_process_identity", lambda *_a, **_k: finalizer)
+    monkeypatch.setattr(evaluator, "_process_identity_is_live", lambda _v: False)
+    monkeypatch.setattr(evaluator, "_active_experiment_processes", lambda **_k: [])
+    monkeypatch.setattr(evaluator, "_assert_publication_destinations_absent", lambda: None)
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_terminal_staging",
+        lambda _v: None,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_scientific_exit",
+        lambda _v: None,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_replay_receipt",
+        lambda _v: None,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_stage_b_replay_receipt",
+        lambda _v: None,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_replay",
+        lambda *_a, **_k: (_ for _ in ()).throw(AssertionError("strict pre-B scan")),
+    )
+    observed: list[str] = []
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_stage_a_terminal_reproduction",
+        lambda _attempt: observed.append("terminal-a")
+        or {
+            "pass": True,
+            "persisted_pre_b_receipt_content_digest": stage_a["content_digest"],
+            "persisted_stage_b_receipt_content_digest": stage_b["content_digest"],
+        },
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_stage_b_reproduction",
+        lambda *_a, **_k: observed.append("terminal-b") or stage_b,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "build_execution_correction_2_terminal_finalization",
+        lambda **_k: (_ for _ in ()).throw(_LifecycleStop("after replay")),
+    )
+    with pytest.raises(_LifecycleStop, match="after replay"):
+        evaluator._finalize_correction_2(
+            attempt=attempt,
+            launcher_pid=323,
+            launcher_start_time_ticks=456,
+            scientific_exit_receipt=exit_path,
+        )
+    assert observed == ["terminal-a", "terminal-b"]
+
+
+def test_official_check_is_external_after_zero_producers_and_binds_launcher(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    canonical = tmp_path / "qualification"
+    canonical.mkdir()
+    tracked_result = tmp_path / "docs/result.json"
+    tracked_report = tmp_path / "docs/report.md"
+    witness = tmp_path / "postcheck.json"
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    monkeypatch.setitem(
+        evaluator.CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS,
+        "post_finalizer_check",
+        str(witness),
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_tracked_publication_paths",
+        lambda: (tracked_result, tracked_report),
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_artifact_binding_with_digest",
+        lambda path, **_kwargs: {
+            "path": str(evaluator.CONTRACT.TRACKED_RESULT_PATH),
+            "sha256": evaluator.sha256_file(path),
+            "bytes": path.stat().st_size,
+            "content_digest": evaluator.load_json(path)["content_digest"],
+        },
+    )
+    original_binding = evaluator.binding
+
+    def synthetic_binding(path: Path, *, relative_to: Path | None = None) -> dict[str, object]:
+        if path == tracked_report:
+            return {
+                "path": str(evaluator.CONTRACT.TRACKED_REPORT_PATH),
+                "sha256": evaluator.sha256_file(path),
+                "bytes": path.stat().st_size,
+            }
+        return original_binding(path, relative_to=relative_to)
+
+    monkeypatch.setattr(evaluator, "binding", synthetic_binding)
+    launcher = _synthetic_process_identity(
+        role="NONSCIENTIFIC_LAUNCHER",
+        argv=evaluator._expected_launcher_argv(),
+        pid=423,
+    )
+    finalizer = _synthetic_process_identity(
+        role="TERMINAL_FINALIZER",
+        argv=[str(evaluator.EVALUATOR_INTERPRETER), str(evaluator.EVALUATOR_SCRIPT), "synthetic"],
+        pid=424,
+    )
+    checker = _synthetic_process_identity(
+        role="POST_FINALIZER_CHECKER",
+        argv=[
+            str(evaluator.EVALUATOR_INTERPRETER),
+            str(evaluator.EVALUATOR_SCRIPT),
+            "check",
+            "--output-root",
+            str(canonical.resolve()),
+        ],
+        pid=425,
+    )
+    result = evaluator.attach_digest(
+        {
+            "source_freeze_commit": "f" * 40,
+            "stage_execution": {
+                "execution_correction_2_custody": {
+                    "terminal_finalization": {
+                        "path": "receipts/terminal_finalization.json",
+                        "sha256": "1" * 64,
+                        "bytes": 1,
+                        "content_digest": "2" * 64,
+                    },
+                    "live_non_scientific_processes": [finalizer, launcher],
+                }
+            },
+        }
+    )
+    evaluator.atomic_json(canonical / "result.json", result)
+    evaluator.atomic_bytes(canonical / "report.md", b"report\n")
+    tracked_result.parent.mkdir(parents=True)
+    tracked_result.write_bytes((canonical / "result.json").read_bytes())
+    tracked_report.write_bytes((canonical / "report.md").read_bytes())
+    monkeypatch.setattr(evaluator, "_process_identity", lambda *_a, **_k: checker)
+    monkeypatch.setattr(
+        evaluator,
+        "_literal_producer_role_matches",
+        lambda: {
+            role: []
+            for role in evaluator.CONTRACT.EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+        },
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_result_receipt",
+        lambda _value: None,
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "deep_check",
+        lambda _root: {"pass": True, "scientific_values_opened": False},
+    )
+    captured: dict[str, object] = {}
+
+    def build(**kwargs: object) -> dict[str, object]:
+        captured.update(kwargs)
+        return evaluator.attach_digest({"schema": "synthetic-postcheck", "pass": True})
+
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "build_execution_correction_2_post_finalizer_check",
+        build,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_2_post_finalizer_check",
+        lambda _value, **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "write_execution_correction_2_post_finalizer_check",
+        lambda value, **_kwargs: evaluator.exclusive_json(witness, value) or witness,
+    )
+    observed = evaluator._official_post_finalizer_check(canonical)
+    assert captured["launcher_process_identity"] == launcher
+    assert captured["checker_process_identity"] == checker
+    assert all(not rows for rows in captured["producer_role_matches"].values())
+    assert observed["literal_zero_all_producer_roles"] is True
+    assert observed["launcher_spawned_or_execed_checker"] is False
+    assert witness.is_file()
+
+
 def _synthetic_source_closure(
     rows: list[dict[str, object]],
 ) -> dict[str, object]:
@@ -513,6 +1237,45 @@ def test_execute_opens_splits_only_after_durable_lifecycle_barriers(
     events: list[str] = []
     attempt = tmp_path / "attempt"
 
+    launcher = {
+        "pid": 123,
+        "process_group_id": 123,
+        "start_time_ticks": 456,
+        "argv": evaluator._expected_launcher_argv(),
+        "argv_sha256": evaluator.CONTRACT.canonical_json_sha256(
+            evaluator._expected_launcher_argv()
+        ),
+        "executable": str(evaluator.EVALUATOR_INTERPRETER.resolve()),
+        "role": "NONSCIENTIFIC_LAUNCHER",
+    }
+    scientific_argv = evaluator._expected_scientific_argv(launcher)
+    scientific = {
+        **launcher,
+        "pid": 789,
+        "process_group_id": 789,
+        "argv": scientific_argv,
+        "argv_sha256": evaluator.CONTRACT.canonical_json_sha256(scientific_argv),
+        "role": "SCIENTIFIC_EVALUATOR",
+    }
+    monkeypatch.setattr(
+        evaluator, "_require_exact_live_launcher", lambda **_kwargs: launcher
+    )
+    monkeypatch.setattr(evaluator, "_process_identity", lambda *_args, **_kwargs: scientific)
+    monkeypatch.setattr(
+        evaluator,
+        "_runtime_execution_correction_2_custody",
+        lambda: {"execution_correction_2_commit": "a" * 40},
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_legacy_execution_correction_custody_from_v2",
+        lambda _value: {
+            "source_freeze_commit": "a" * 40,
+            "conditional_child_environment_preflight": None,
+            "execution_correction_replay": None,
+        },
+    )
+
     monkeypatch.setattr(
         evaluator,
         "_runtime_execution_correction_custody",
@@ -610,7 +1373,9 @@ def test_execute_opens_splits_only_after_durable_lifecycle_barriers(
     monkeypatch.setattr(evaluator, "write_evaluation_contract", evaluation_contract)
 
     with pytest.raises(_LifecycleStop):
-        evaluator.execute()
+        evaluator.execute_scientific(
+            launcher_pid=123, launcher_start_time_ticks=456
+        )
 
     assert events == expected
     if stop_at == "contract":
@@ -624,7 +1389,7 @@ def test_execute_opens_splits_only_after_durable_lifecycle_barriers(
     assert len(failures) == 1
     failure = evaluator.load_json(failures[0] / "receipts/failure.json")
     assert failure["partial_artifacts_reusable"] is False
-    assert failure["nothing_running"] is True
+    assert failure["nothing_running"] is False
     assert failure["source_freeze_commit"] == "a" * 40
     assert failure["error_type"] == "_LifecycleStop"
     assert "synthetic" in failure["error_message"]
@@ -2495,8 +3260,87 @@ def test_stage_b_never_starts_helper_without_correction_custody(
             stage_a_metrics={},
             stage_a_decisions={"true_future_gate": {"pass": True}},
             execution_correction_custody={},
+            execution_correction_2_custody={},
         )
     assert helper_started is False
+
+
+def test_stage_c_cannot_start_before_stage_b_reproduction_receipt(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """The immediate Stage-B equality gate dominates every Stage-C branch."""
+
+    gate = tmp_path / "receipts/stage_b_gate.json"
+    gate.parent.mkdir(parents=True)
+    evaluator.atomic_json(gate, evaluator.attach_digest({"gate": "b"}))
+    monkeypatch.setattr(evaluator, "_conditional_helper", lambda: object())
+    monkeypatch.setattr(
+        evaluator,
+        "_publish_stage_b_gate",
+        lambda **_kwargs: (gate, {"content_digest": "a" * 64}),
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_publish_execution_correction_replay_gate",
+        lambda **_kwargs: {"content_digest": "b" * 64},
+    )
+    replay = tmp_path / "receipts/execution_correction_replay.json"
+    evaluator.atomic_json(replay, evaluator.attach_digest({"replay": True}))
+    monkeypatch.setattr(
+        evaluator,
+        "_publish_execution_correction_2_stage_a_replay_gate",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        evaluator, "_run_conditional_helper_cli", lambda **_kwargs: {"pass": True}
+    )
+    monkeypatch.setattr(
+        evaluator, "_validate_stage_b_materialisation", lambda **_kwargs: ({}, {})
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_score_conditional_sources",
+        lambda **_kwargs: ({}, {}, {evaluator.HELDOUT: {}}),
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_conditional_ledger_rows",
+        lambda **_kwargs: [{} for _ in range(2_304)],
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_stage_b_decisions",
+        lambda **_kwargs: {"proprioception_gate": {"pass": True}},
+    )
+    stage_c_started = False
+
+    def forbidden_stage_c(**_kwargs: object) -> tuple[Path, dict[str, object]]:
+        nonlocal stage_c_started
+        stage_c_started = True
+        raise AssertionError("Stage C crossed failed Stage-B replay gate")
+
+    monkeypatch.setattr(evaluator, "_publish_stage_c_gate", forbidden_stage_c)
+    monkeypatch.setattr(
+        evaluator,
+        "_publish_execution_correction_2_stage_b_replay_gate",
+        lambda **_kwargs: (_ for _ in ()).throw(
+            evaluator.QualificationError("synthetic Stage-B reproduction drift")
+        ),
+    )
+    with pytest.raises(evaluator.QualificationError, match="Stage-B reproduction"):
+        evaluator._execute_conditional_stage_b(
+            attempt=tmp_path,
+            source_freeze="c" * 40,
+            datasets={},
+            models={},
+            tensor_rows={},
+            evaluation_contract={},
+            stage_a_metrics={evaluator.HELDOUT: {}},
+            stage_a_decisions={"true_future_gate": {"pass": True}},
+            execution_correction_custody={"archive": "bound"},
+            execution_correction_2_custody={"archive": "bound"},
+        )
+    assert stage_c_started is False
 
 
 def test_correction_authority_validation_uses_amendment_closure_for_live_code(

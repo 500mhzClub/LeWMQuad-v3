@@ -50,11 +50,50 @@ EXECUTION_CORRECTION_FIXTURE_SCHEMA_VERSION = (
 EXECUTION_CORRECTION_SOURCE_CLOSURE_SCHEMA_VERSION = (
     "plan_aware_monotone_jepa_cost_v1.execution_correction_source_closure.v1"
 )
+EXECUTION_CORRECTION_2_AMENDMENT_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_amendment.v1"
+)
+EXECUTION_CORRECTION_2_REPLAY_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_replay.v1"
+)
+EXECUTION_CORRECTION_2_STAGE_B_REPLAY_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_stage_b_replay.v1"
+)
+EXECUTION_CORRECTION_2_STAGE_A_TERMINAL_REVALIDATION_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_stage_a_terminal_revalidation.v1"
+)
+EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_output.v1"
+)
+EXECUTION_CORRECTION_2_FIXTURE_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_fixture.v1"
+)
+EXECUTION_CORRECTION_2_SOURCE_CLOSURE_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_source_closure.v1"
+)
+EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_custody.v1"
+)
+EXECUTION_CORRECTION_2_TERMINAL_STAGING_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_terminal_staging.v1"
+)
+EXECUTION_CORRECTION_2_SCIENTIFIC_EXIT_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_scientific_exit.v1"
+)
+EXECUTION_CORRECTION_2_TERMINAL_FINALIZATION_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_terminal_finalization.v1"
+)
+EXECUTION_CORRECTION_2_POST_FINALIZER_CHECK_SCHEMA_VERSION = (
+    "plan_aware_monotone_jepa_cost_v1.execution_correction_2_post_finalizer_check.v1"
+)
 
 SOURCE_COMMIT = "1d799eb24d8171cb6d90bc0d0e375d9e1b0cc4f0"
 REQUIRED_REQUIREMENTS_ANCESTOR = "b29eae1929725a4cc26a35d95662b545daee4553"
 PREDECESSOR_EXECUTION_FREEZE_COMMIT = "b06905c2724a1ecb825db25b54ec1b3a43336bbf"
 INITIAL_EXECUTION_FREEZE_COMMIT = "9c1c3adcfb8382c33e8da8895dc345e006e92e43"
+INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT = (
+    "14625958c0fcc21af05b33fd30c6cc2fc8537745"
+)
 SCIENTIFIC_AUTHORITY_CONTRACT_SHA256 = (
     "1667f325be2c835a6222dc90bb684f373a06b365d59b70e9746fd7adb052c382"
 )
@@ -65,6 +104,12 @@ RESULT_COMMIT_BINDING_POLICY = "ENCLOSING_GIT_COMMIT_AFTER_BYTE_FINALIZATION"
 CONTRACT_FREEZE_COMMIT_SUBJECT = "Freeze plan-aware monotone JEPA route cost"
 EXECUTION_CORRECTION_FREEZE_COMMIT_SUBJECT = (
     "Freeze plan-aware JEPA execution correction amendment"
+)
+EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT = (
+    "Correct canonical UTF-8 result persistence and terminal custody"
+)
+EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT = (
+    "Evaluate plan-aware monotone JEPA route cost"
 )
 CONTRACT_FREEZE_ANCESTRY_POLICY = (
     "normally execution HEAD is the clean direct single-parent contract-freeze "
@@ -573,6 +618,436 @@ EXECUTION_CORRECTION_REQUIRED_CHANGED_PATHS = (
     "execution_correction_amendment_source_closure.json",
 )
 
+# Second execution-only correction.  Everything in this section is a separate
+# overlay and is deliberately absent from ``build_contract()`` so the frozen
+# scientific CONTRACT payload and digest cannot change.
+EXECUTION_CORRECTION_2_FAILED_ARCHIVE = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    ".plan_aware_monotone_jepa_cost_v1.failed-1787840583990734770-659206"
+)
+EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY = {
+    "files": 217,
+    "bytes": 5_458_962_421,
+    "manifest_sha256": (
+        "8c4c7ccfee0474aa931b72eb50ecb6c11de97cf0aad2a8053ba1c19118d35155"
+    ),
+}
+EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS = {
+    "failure": {
+        "path": "receipts/failure.json",
+        "sha256": "3ecb60b9c9a24c58bb5c050e238860cde66d84bcca80db5eeb653919d487a743",
+        "bytes": 829,
+        "content_digest": (
+            "056dea987f0e3a1105624943b331d148a08a4576bb93ad51ccc20c47425d83b5"
+        ),
+    },
+    "preexecution": {
+        "path": "receipts/preexecution.json",
+        "sha256": "597b957ed0c7b711bddccb2f8574a73a9d97238e82c4115d5d3c9d5b74d507ab",
+        "bytes": 12_959,
+        "content_digest": (
+            "79cd6f4f01e8d3f248d66838b0f0a7f215489e1634b23c1760c62e0bebacd405"
+        ),
+    },
+    "persistence": {
+        "path": "receipts/persistence.json",
+        "sha256": "d0c973f59845e2e19967499118d82c4e1ea3e4380d2bc52ea4f78e4137a5c5c1",
+        "bytes": 37_619,
+        "content_digest": (
+            "5fd630de9c738244b6f9ae79e18d2cae29a082ad6fee57c51dbdbf63b3b1ac34"
+        ),
+    },
+    "stage_a_replay": {
+        "path": "receipts/execution_correction_replay.json",
+        "sha256": "9fa7db323188bf824be5077081a80482acfccae696bfe2447ca135f30c9e569c",
+        "bytes": 2_815,
+        "content_digest": (
+            "6d5de918c03da21fb4d306e48cd155f98042110aa2dde38c8ddc20a276c9093b"
+        ),
+    },
+    "stage_b_materialisation": {
+        "path": "receipts/stage_b_proprio_predictor_materialisation.json",
+        "sha256": "522ddd74fef4ea7b2ced7e5a17e76ebb28f61848fa225b100e3b905c3f8f0fc0",
+        "bytes": 3_533,
+        "content_digest": (
+            "58cae7d2400cd10a713af5961398b617890fc2bd5790f12036169c119abbdb91"
+        ),
+    },
+    "stage_b_ledger": {
+        "path": "ledgers/stage_b_predictor_substitution.jsonl",
+        "sha256": "11483ba6b255735a592a43fd8aacdae799809f8c6ce56485a1ea93e2e16c816c",
+        "bytes": 9_253_873,
+        "rows": 2_304,
+    },
+    "proprio_context_index": {
+        "path": "stage_b/proprio_context/index.json",
+        "sha256": "0953be5e46d320c7b5e53729077fd6ea804bbd2c53882ceb61804d3cc1d5b1c4",
+        "bytes": 19_246,
+        "content_digest": (
+            "5cb3c14686d089a3f2596fff7bba167d00870bb05596e01677d3ffeb2e6ff5df"
+        ),
+    },
+    "p1_prediction_index": {
+        "path": "stage_b/predictions/P1_PROPRIO_ONE_STEP/index.json",
+        "sha256": "1d30295ae01c3dacfdbaa2f9735945f8899728b8c2ab0d8f79efb57595340bfc",
+        "bytes": 807_848,
+        "content_digest": (
+            "2edf3c8ab6c8ab098bd2f8dbaec879fc7447269e7baad0c7238ed65fe4f6c3f2"
+        ),
+    },
+    "pr_prediction_index": {
+        "path": "stage_b/predictions/PR_PROPRIO_ROLLOUT/index.json",
+        "sha256": "6f4b10052da5e4f5d2d629e8f2279f2f3ecffea3e6dcb1bc90ecc1aa32efe53b",
+        "bytes": 804_242,
+        "content_digest": (
+            "f47bfbac7cab5571423eca2dcad265375d0e3c167f29027572cbc984c3320a71"
+        ),
+    },
+}
+EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS = {
+    "preregistration": {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_preregistration_2026-08-27.md"
+        ),
+        "sha256": "07f5ba63738b6b732df46b087b054b5c9496eb2c8b235202717f6ec4183bac9f",
+        "bytes": 2_532,
+    },
+    "amendment": {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_contract.json"
+        ),
+        "sha256": "b2206eaa40323ec1f6edd20d3917b220ab77f50c2c23a44024647f647745e90f",
+        "bytes": 13_894,
+        "content_digest": (
+            "037615a951ad9047d2366820db1707ea0e0bf0f78e89ea7bd773e2c18b86b530"
+        ),
+    },
+    "output_schema": {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_output_schema.json"
+        ),
+        "sha256": "66300553589c2c5a6351b6158451861317357733dc56649f781e35b21bd4c8f9",
+        "bytes": 7_778,
+        "content_digest": (
+            "32b5d460f2421135dae523ccbdbe5817b28b193286bcba35c7bdf13572b4a10d"
+        ),
+    },
+    "fixture": {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_evaluator_fixture.json"
+        ),
+        "sha256": "330f21cd7a9fabd22212f968c2b84b9f94c5a8221d7b2a1a0200aadcaa749c19",
+        "bytes": 1_472,
+        "content_digest": (
+            "dd8be65f216c15248bad013d28151412a151c19bfca89fc567d450d0de866ec7"
+        ),
+    },
+    "source_closure": {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_source_closure.json"
+        ),
+        "sha256": "fc0b281b1c92ad8e1f4e28d3c5af4005f002af2348cbe734467b3ed24adb9931",
+        "bytes": 21_986,
+        "content_digest": (
+            "ebc86e6788a54914ab24bf8ac6d41e98605c4f1a89dfcf2be7f7491b4d21fc72"
+        ),
+        "rows": 91,
+    },
+}
+EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR = {
+    "value": {"symbol": "≥", "text": "H1–H4"},
+    "canonical_utf8_sha256": (
+        "1df6e36a5e1cc80ebbee8894d1df516650a08dea7dce8b5ca06272f392ffe166"
+    ),
+    "canonical_utf8_bytes": 33,
+    "ensure_ascii": False,
+    "encoding": "UTF-8",
+    "newline_in_self_digest": False,
+}
+EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS = (
+    *EXECUTION_CORRECTION_BYTE_EXACT_REPLAY_PATHS,
+)
+EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_EXCLUSIONS = copy.deepcopy(
+    EXECUTION_CORRECTION_NORMALIZED_REPLAY_EXCLUSIONS
+)
+EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS = copy.deepcopy(
+    EXECUTION_CORRECTION_NORMALIZED_REPLAY_DIGESTS
+)
+EXECUTION_CORRECTION_2_STAGE_B_PROJECTIONS = {
+    "aggregates/metrics.json#stage_b": {
+        "excluded_keys": [
+            "execution_correction_replay",
+            "gate_content_digest",
+            "gate_receipt",
+            "helper_execution",
+            "ledger",
+            "materialisation_custody",
+        ],
+        "scientific_content_digest": (
+            "c183ae9205a7af219f955768100f9acd0cee0d648c1db06b521c28ac612c2b34"
+        ),
+        "canonical_bytes": 3_492_176,
+    },
+    "stage_b/predictions/P1_PROPRIO_ONE_STEP/index.json": {
+        "excluded_keys": ["runtime_s", "stage_b_gate_digest", "content_digest"],
+        "scientific_content_digest": (
+            "15fb55c34b1a4e7a85182f1fb4d94d54b48a4ebfb149931b57d1fe6d3a017aae"
+        ),
+        "canonical_bytes": 807_644,
+        "states": 48,
+        "logical_records": 1_728,
+    },
+    "stage_b/predictions/PR_PROPRIO_ROLLOUT/index.json": {
+        "excluded_keys": ["runtime_s", "stage_b_gate_digest", "content_digest"],
+        "scientific_content_digest": (
+            "2231be9fb25d74b16f23f12bba66446850f111a93c5f64ffc4b221b44e604397"
+        ),
+        "canonical_bytes": 804_038,
+        "states": 48,
+        "logical_records": 1_728,
+    },
+    "receipts/stage_b_proprio_predictor_materialisation.json": {
+        "excluded_keys": [
+            "content_digest",
+            "execution_correction_replay",
+            "prediction_indexes",
+            "proprio_context_index",
+            "stage_b_gate",
+            "nothing_running_at_receipt_write",
+        ],
+        "scientific_content_digest": (
+            "b1e95c1ecd074803cdca4d6d0dfe46931da392f31bd4d8a3caf42ac53d668665"
+        ),
+        "canonical_bytes": 2_411,
+    },
+}
+EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY = {
+    "states": 48,
+    "state_ids_sha256": (
+        "a8d4b5c2e5d4ffc6093dc9148963c2dac7f967d6e9799d49377d7f247d91ecb6"
+    ),
+    "array_content_manifest_sha256": (
+        "52852912f7948df0011453a39bdec6e9d9be8e3fa86c09af2c1d17249b0f8d7a"
+    ),
+    "array_content_manifest_canonical_bytes": 32_091,
+    "arrays_per_state": {
+        "control_history_normalized": {"dtype": "float32", "shape": [3, 5, 2]},
+        "control_history_raw": {"dtype": "float32", "shape": [3, 5, 2]},
+        "normalized": {"dtype": "float32", "shape": [3, 5, 30]},
+        "raw": {"dtype": "float32", "shape": [3, 5, 30]},
+    },
+    "npz_container_byte_equality_required": False,
+    "array_digest": "SHA256 of C-contiguous uncompressed array bytes",
+    "identity_order": "numeric purpose-0 through purpose-47",
+}
+EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY = {
+    "sources": ["P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT"],
+    "states_per_source": 48,
+    "raw_npy_byte_equality_required": True,
+    "prediction_npy_files": 96,
+}
+EXECUTION_CORRECTION_2_RUNTIME_PATHS = {
+    "stage_a_replay": "receipts/execution_correction_2_replay.json",
+    "stage_b_replay": "receipts/execution_correction_2_stage_b_replay.json",
+    "result_core": "staging/result_core.json",
+    "terminal_staging": "receipts/terminal_staging.json",
+    "scientific_exit": "receipts/scientific_exit.json",
+    "terminal_finalization": "receipts/terminal_finalization.json",
+    "post_finalizer_check": (
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+        ".plan_aware_monotone_jepa_cost_v1.post-finalizer-check.json"
+    ),
+}
+EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES = (
+    "SCIENTIFIC_EVALUATOR",
+    "CONDITIONAL_SCIENTIFIC_HELPER",
+    "TERMINAL_FINALIZER",
+    "NONSCIENTIFIC_LAUNCHER",
+)
+EXECUTION_CORRECTION_2_ARGV_CONTRACT = {
+    "interpreter": (
+        "the launcher's resolved absolute sys.executable; identical for launcher, "
+        "scientific evaluator, finalizer and external checker"
+    ),
+    "script": (
+        "the resolved absolute scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+    ),
+    "launcher": ["<interpreter>", "<script>", "execute"],
+    "scientific": [
+        "<interpreter>",
+        "<script>",
+        "execute-scientific",
+        "--launcher-pid",
+        "<launcher_pid_decimal>",
+        "--launcher-start-time-ticks",
+        "<launcher_start_time_ticks_decimal>",
+    ],
+    "finalizer": [
+        "<interpreter>",
+        "<script>",
+        "finalize-correction-2",
+        "--attempt",
+        "<absolute_attempt_path>",
+        "--launcher-pid",
+        "<launcher_pid_decimal>",
+        "--launcher-start-time-ticks",
+        "<launcher_start_time_ticks_decimal>",
+        "--scientific-exit-receipt",
+        "<absolute_scientific_exit_receipt_path>",
+    ],
+    "official_checker": [
+        "<interpreter>",
+        "<script>",
+        "check",
+        "--output-root",
+        (
+            "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+            "plan_aware_monotone_jepa_cost_v1"
+        ),
+    ],
+    "matching": "complete argv equality plus /proc/exe, PID and start-time ticks",
+    "substring_matching": False,
+}
+EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP = {
+    "run-stage-b": {
+        "role": "CONDITIONAL_SCIENTIFIC_HELPER",
+        "interpreter_class": "GPU_TINYQUAD",
+        "interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+    },
+    "context-state": {
+        "role": "CONDITIONAL_SCIENTIFIC_HELPER",
+        "interpreter_class": "CPU_GENESIS",
+        "interpreter": (
+            "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/"
+            "genesis_render_vulkan/bin/python"
+        ),
+    },
+    "predict-source": {
+        "role": "CONDITIONAL_SCIENTIFIC_HELPER",
+        "interpreter_class": "GPU_TINYQUAD",
+        "interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+    },
+    "run-stage-c": {
+        "role": "CONDITIONAL_SCIENTIFIC_HELPER",
+        "interpreter_class": "GPU_TINYQUAD",
+        "interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+    },
+}
+EXECUTION_CORRECTION_2_POLICY = {
+    "authorisation": "ONE_FINAL_FRESH_EXECUTION_ONLY_CORRECTION_ATTEMPT",
+    "fresh_attempt_required": True,
+    "failed_archive_files_reused": 0,
+    "direct_checkpoint_ledger_tensor_or_receipt_reuse": False,
+    "fresh_artifact_custody": {
+        "relative_paths_only": True,
+        "attempt_root_containment_required": True,
+        "symlinks_forbidden": True,
+        "hardlinks_to_failed_archive_forbidden": True,
+        "compared_artifacts": (
+            "every Stage-A byte-exact or normalized artifact; every Stage-B "
+            "ledger, projection JSON, context index/shard and prediction NPY"
+        ),
+    },
+    "maximum_fresh_attempts": 1,
+    "automatic_retry": False,
+    "failure_after_this_attempt": "NO_FURTHER_RETRY",
+    "permitted_execution_semantic_change": (
+        "canonical UTF-8 self-digest agreement plus two-phase scientific evaluator/"
+        "independent terminal-finalizer lifecycle and exact process custody"
+    ),
+    "scientific_change": False,
+    "hyperparameter_gate_model_metric_or_target_change": False,
+    "stage_a_reproduction": {
+        "against": str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE),
+        "must_pass_before_stage_b": True,
+        "byte_exact_paths": list(EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS),
+        "normalized_paths": copy.deepcopy(
+            {
+                path: list(exclusions)
+                for path, exclusions in (
+                    EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_EXCLUSIONS.items()
+                )
+            }
+        ),
+    },
+    "stage_b_reproduction": {
+        "against": str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE),
+        "must_pass_immediately_after_stage_b_before_stage_c": True,
+        "ledger_rows": 2_304,
+        "context_states": 48,
+        "prediction_npy_files": 96,
+        "stage_c_may_start_before_pass": False,
+    },
+    "prior_stage_c_disposition": {
+        "executed": False,
+        "files": 0,
+        "result_used": False,
+    },
+    "terminal_lifecycle": {
+        "argv_contract": copy.deepcopy(EXECUTION_CORRECTION_2_ARGV_CONTRACT),
+        "launcher_subcommand": "execute",
+        "scientific_subcommand": "execute-scientific",
+        "finalizer_subcommand": "finalize-correction-2",
+        "official_checker_subcommand": "check",
+        "scientific_evaluator_publishes_terminal_result": False,
+        "finalizer_atomically_publishes_canonical_and_tracked_result": True,
+        "post_finalizer_check_is_external_to_canonical_fixed_point": True,
+        "process_identity_fields": [
+            "pid",
+            "process_group_id",
+            "start_time_ticks",
+            "argv",
+            "argv_sha256",
+            "executable",
+            "role",
+        ],
+        "exact_argv_matching_without_substrings": True,
+        "terminal_result_nothing_running_scope": [
+            "SCIENTIFIC_EVALUATOR",
+            "CONDITIONAL_SCIENTIFIC_HELPER",
+        ],
+        "live_non_scientific_identities_disclosed": [
+            "TERMINAL_FINALIZER",
+            "NONSCIENTIFIC_LAUNCHER",
+        ],
+        "official_postcheck_requires_literal_zero_all_roles": list(
+            EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+        ),
+        "official_postcheck_invocation": (
+            "independent external invocation only after the launcher and finalizer "
+            "have both exited; the launcher must not spawn or exec the checker"
+        ),
+        "atomic_relocation_policy": {
+            "file_read_root": "current canonical or prepublication root",
+            "persisted_fresh_attempt_identity": (
+                "the original absolute attempt root bound by terminal_staging"
+            ),
+            "scientific_reproduction_after_relocation": True,
+            "pre_stage_b_fresh_attempt_validation_weakened": False,
+        },
+    },
+    "conditional_helper_interpreters": copy.deepcopy(
+        EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP
+    ),
+}
+EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS = (
+    "lewm/safety/plan_aware_monotone_jepa_cost_v1_contract.py",
+    "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py",
+    "lewm/tests/test_plan_aware_monotone_jepa_cost_v1_contract.py",
+    "lewm/tests/test_evaluate_plan_aware_monotone_jepa_cost_v1.py",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_execution_correction_2_preregistration_2026-08-27.md",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_execution_correction_2_contract.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_execution_correction_2_output_schema.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_execution_correction_2_evaluator_fixture.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_execution_correction_2_source_closure.json",
+)
+EXECUTION_CORRECTION_2_REQUIRED_CHANGED_PATHS = EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS
+
 CONDITION_IDS = (
     "KINEMATIC_PLUS_NO_LATENT_RESIDUAL",
     "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL",
@@ -690,6 +1165,26 @@ TRACKED_EXECUTION_CORRECTION_FIXTURE_PATH = Path(
 TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
     "execution_correction_amendment_source_closure.json"
+)
+TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+    "execution_correction_2_contract.json"
+)
+TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+    "execution_correction_2_preregistration_2026-08-27.md"
+)
+TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+    "execution_correction_2_output_schema.json"
+)
+TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+    "execution_correction_2_evaluator_fixture.json"
+)
+TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+    "execution_correction_2_source_closure.json"
 )
 TRACKED_RESULT_PATH = Path(
     "docs/lewm_plan_aware_monotone_jepa_cost_v1_result_2026-08-27.json"
@@ -3186,7 +3681,9 @@ def validate_execution_correction_freeze_custody(
     return {
         "source_commit": SOURCE_COMMIT,
         "source_freeze_commit": head,
-        "contract_freeze_commit": head,
+        "contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+        "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+        "execution_correction_2_commit": head,
         "base_source_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
         "head_subject": subject,
         "sole_parent": INITIAL_EXECUTION_FREEZE_COMMIT,
@@ -3215,6 +3712,2576 @@ def validate_execution_correction_freeze_custody(
             amendment and correction_schema and correction_fixture and correction_closure
         ),
     }
+
+
+def _validate_correction_2_bound_file(
+    path: Path, binding: Mapping[str, Any], label: str
+) -> None:
+    if not path.is_file():
+        raise ContractError(f"{label} is absent: {path}")
+    sha256, size = _sha256_file(path)
+    if sha256 != binding.get("sha256") or size != binding.get("bytes"):
+        raise ContractError(f"{label} raw SHA/byte binding drift")
+
+
+def _validate_execution_correction_2_fresh_artifact(
+    attempt_root: str | Path,
+    relative_path: str,
+    *,
+    archive_root: str | Path | None = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+    require_file: bool = True,
+) -> Path:
+    """Return one contained, nonlinked final-attempt artifact.
+
+    A digest match alone does not demonstrate a fresh deterministic replay: a
+    symlink, a parent-directory symlink, or a hardlink could expose the failed
+    archive's bytes directly.  Every artifact compared by correction 2 passes
+    this custody check before it is parsed or hashed.
+    """
+
+    if not isinstance(relative_path, str) or not relative_path:
+        raise ContractError("execution-correction-2 artifact path is malformed")
+    relative = Path(relative_path)
+    if (
+        relative.is_absolute()
+        or relative.as_posix() != relative_path
+        or any(part in ("", ".", "..") for part in relative.parts)
+    ):
+        raise ContractError(
+            f"execution-correction-2 artifact path is not canonical relative: "
+            f"{relative_path}"
+        )
+    attempt = Path(attempt_root).resolve()
+    candidate = attempt / relative
+    current = attempt
+    for part in relative.parts:
+        current = current / part
+        if current.is_symlink():
+            raise ContractError(
+                f"execution-correction-2 artifact symlink is forbidden: "
+                f"{relative_path}"
+            )
+    if require_file and not candidate.is_file():
+        raise ContractError(
+            f"execution-correction-2 artifact is absent: {relative_path}"
+        )
+    try:
+        resolved = candidate.resolve(strict=require_file)
+        resolved.relative_to(attempt)
+    except (FileNotFoundError, RuntimeError, ValueError) as exc:
+        raise ContractError(
+            f"execution-correction-2 artifact escapes attempt root: {relative_path}"
+        ) from exc
+    if resolved != candidate:
+        raise ContractError(
+            f"execution-correction-2 artifact has a noncanonical resolved path: "
+            f"{relative_path}"
+        )
+    if archive_root is not None and require_file:
+        archive = Path(archive_root).resolve()
+        reference = archive / relative
+        if not reference.is_file():
+            raise ContractError(
+                f"execution-correction-2 archive counterpart is absent: "
+                f"{relative_path}"
+            )
+        candidate_stat = candidate.stat(follow_symlinks=False)
+        reference_stat = reference.stat(follow_symlinks=False)
+        if (candidate_stat.st_dev, candidate_stat.st_ino) == (
+            reference_stat.st_dev,
+            reference_stat.st_ino,
+        ):
+            raise ContractError(
+                f"execution-correction-2 hardlink reuse is forbidden: "
+                f"{relative_path}"
+            )
+    return candidate
+
+
+def _execution_correction_2_fresh_attempt_identity(
+    current_root: str | Path,
+    persisted_identity: object,
+    supplied_identity: str | Path | None,
+) -> str:
+    """Validate the original attempt identity across an atomic root rename."""
+
+    current = Path(current_root).resolve()
+    expected = current if supplied_identity is None else Path(supplied_identity)
+    if (
+        not expected.is_absolute()
+        or str(expected) != str(expected.resolve(strict=False))
+        or persisted_identity != str(expected)
+    ):
+        raise ContractError(
+            "execution-correction-2 persisted fresh-attempt identity drift"
+        )
+    return str(expected)
+
+
+def validate_base_execution_correction_authorities(
+    repo_root: str | Path,
+) -> dict[str, Any]:
+    """Require the complete first correction authority suite byte-exact."""
+
+    root = Path(repo_root).resolve()
+    rows: list[dict[str, Any]] = []
+    for label, binding in EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS.items():
+        path = root / str(binding["path"])
+        _validate_correction_2_bound_file(
+            path, binding, f"base execution-correction {label}"
+        )
+        if "content_digest" in binding:
+            try:
+                value = json.loads(path.read_bytes())
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ContractError(
+                    f"base execution-correction {label} JSON is invalid"
+                ) from exc
+            if not isinstance(value, Mapping):
+                raise ContractError(
+                    f"base execution-correction {label} is not an object"
+                )
+            digest_key = {
+                "output_schema": "output_schema_sha256",
+                "fixture": "fixture_sha256",
+            }.get(label, "content_digest")
+            validate_self_digest(value, digest_key)
+            if value.get(digest_key) != binding["content_digest"]:
+                raise ContractError(
+                    f"base execution-correction {label} content digest drift"
+                )
+        rows.append(
+            {
+                "label": label,
+                "path": str(binding["path"]),
+                "sha256": str(binding["sha256"]),
+                "bytes": int(binding["bytes"]),
+            }
+        )
+    return {
+        "freeze_commit": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+        "authorities": rows,
+        "pass": True,
+    }
+
+
+def _archive_inventory_rows(root: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for path in sorted(
+        (path for path in root.rglob("*") if path.is_file()),
+        key=lambda item: str(item.relative_to(root)),
+    ):
+        sha256, size = _sha256_file(path)
+        rows.append(
+            {
+                "path": str(path.relative_to(root)),
+                "sha256": sha256,
+                "bytes": size,
+            }
+        )
+    return rows
+
+
+def validate_execution_correction_2_archive(
+    archive_root: str | Path = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+    *,
+    verify_full_inventory: bool = True,
+) -> dict[str, Any]:
+    """Validate the immutable second failed archive without interpreting outcomes."""
+
+    root = Path(archive_root).resolve()
+    if root != EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve():
+        raise ContractError("execution-correction-2 archive path drift")
+    if not root.is_dir():
+        raise ContractError("execution-correction-2 failed archive is absent")
+    for label, binding in EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS.items():
+        _validate_correction_2_bound_file(
+            root / str(binding["path"]),
+            binding,
+            f"execution-correction-2 archive {label}",
+        )
+        if "content_digest" in binding:
+            try:
+                value = json.loads((root / str(binding["path"])).read_bytes())
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ContractError(
+                    f"execution-correction-2 archive {label} JSON is invalid"
+                ) from exc
+            if not isinstance(value, Mapping) or value.get("content_digest") != binding[
+                "content_digest"
+            ]:
+                raise ContractError(
+                    f"execution-correction-2 archive {label} content binding drift"
+                )
+    inventory = copy.deepcopy(EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY)
+    if verify_full_inventory:
+        rows = _archive_inventory_rows(root)
+        observed = {
+            "files": len(rows),
+            "bytes": sum(int(row["bytes"]) for row in rows),
+            "manifest_sha256": canonical_json_sha256(rows),
+        }
+        if observed != inventory:
+            raise ContractError(
+                "execution-correction-2 full archive inventory binding drift"
+            )
+    try:
+        failure = json.loads((root / "receipts/failure.json").read_bytes())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ContractError("execution-correction-2 failure receipt is invalid") from exc
+    expected_failure = {
+        "schema": "plan_aware_monotone_jepa_failure_v1",
+        "source_freeze_commit": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+        "phase": "PERSISTENCE",
+        "error_type": "ContractError",
+        "full_training_epochs_completed": 60,
+        "calibration_rows_opened": 96,
+        "heldout_rows_opened": 96,
+        "final_checkpoint_published": True,
+        "partial_artifacts_reusable": False,
+        "nothing_running": False,
+    }
+    if any(failure.get(key) != expected for key, expected in expected_failure.items()):
+        raise ContractError("execution-correction-2 failure barrier drift")
+    counters = failure.get("prohibition_counters")
+    if not isinstance(counters, Mapping) or any(int(value) != 0 for value in counters.values()):
+        raise ContractError("execution-correction-2 failure prohibition drift")
+    stage_c_files = sorted(
+        str(path.relative_to(root))
+        for path in root.rglob("*")
+        if path.is_file()
+        and (
+            str(path.relative_to(root)).startswith("stage_c/")
+            or str(path.relative_to(root)).startswith("ledgers/stage_c_")
+            or str(path.relative_to(root)).startswith("receipts/stage_c_")
+            or str(path.relative_to(root)).startswith("aggregates/stage_c_")
+            or str(path.relative_to(root)).startswith("logs/stage_c_")
+        )
+    )
+    if stage_c_files:
+        raise ContractError("execution-correction-2 archive unexpectedly contains Stage C")
+    return {
+        "archive_path": str(root),
+        "source_freeze_commit": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+        "inventory": inventory,
+        "failure_receipt": copy.deepcopy(
+            EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["failure"]
+        ),
+        "persistence_receipt": copy.deepcopy(
+            EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["persistence"]
+        ),
+        "stage_c_executed": False,
+        "files_reused": 0,
+        "partial_artifacts_reusable": False,
+        "full_inventory_verified": verify_full_inventory,
+        "pass": True,
+    }
+
+
+def _correction_2_archive_binding(relative_path: str) -> dict[str, Any]:
+    for binding in EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS.values():
+        if binding["path"] == relative_path:
+            return copy.deepcopy(binding)
+    raise ContractError(f"unknown correction-2 archive key binding: {relative_path}")
+
+
+def build_execution_correction_2_amendment() -> dict[str, Any]:
+    """Build the separate gate-aware, outcome-value-blind second amendment."""
+
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_AMENDMENT_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "date": DATE,
+            "status": "PROSPECTIVE_EXECUTION_ONLY_CORRECTION_2_NOT_EXECUTED",
+            "scientific_authority": {
+                "contract_sha256": SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
+                "original_authorities": copy.deepcopy(BASE_SCIENTIFIC_AUTHORITY_BINDINGS),
+                "first_correction_authorities": copy.deepcopy(
+                    EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS
+                ),
+                "byte_exact_immutability": True,
+                "overlay_excluded_from_scientific_contract_payload": True,
+            },
+            "failed_attempts": [
+                {
+                    "archive_path": str(EXECUTION_CORRECTION_FAILED_ARCHIVE),
+                    "source_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+                    "inventory": copy.deepcopy(EXECUTION_CORRECTION_ARCHIVE_INVENTORY),
+                    "files_reused": 0,
+                    "partial_artifacts_reusable": False,
+                },
+                {
+                    "archive_path": str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE),
+                    "source_freeze_commit": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+                    "inventory": copy.deepcopy(EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY),
+                    "failure_receipt": _correction_2_archive_binding(
+                        "receipts/failure.json"
+                    ),
+                    "persistence_receipt": _correction_2_archive_binding(
+                        "receipts/persistence.json"
+                    ),
+                    "files_reused": 0,
+                    "partial_artifacts_reusable": False,
+                },
+            ],
+            "failure_diagnosis": {
+                "classification": "CANONICAL_UTF8_SELF_DIGEST_AGREEMENT_FAILURE",
+                "observed_phase": "PERSISTENCE",
+                "exception_type": "ContractError",
+                "scientific_values_opened_to_author_correction": False,
+                "metric_values_opened_to_author_correction": False,
+                "binary_gate_status_already_authorised_and_known": True,
+                "test_vector": copy.deepcopy(EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR),
+                "required_serializer": (
+                    "sorted compact JSON, ensure_ascii=False, allow_nan=False, UTF-8, "
+                    "no trailing newline inside the self-digest"
+                ),
+            },
+            "stage_reproduction_authority": {
+                "target_archive": str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE),
+                "stage_a": {
+                    "byte_exact_paths": list(
+                        EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS
+                    ),
+                    "normalized_scientific_digests": copy.deepcopy(
+                        EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS
+                    ),
+                    "must_pass_before_stage_b": True,
+                },
+                "stage_b": {
+                    "projections": copy.deepcopy(
+                        EXECUTION_CORRECTION_2_STAGE_B_PROJECTIONS
+                    ),
+                    "context_array_authority": copy.deepcopy(
+                        EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY
+                    ),
+                    "prediction_array_policy": copy.deepcopy(
+                        EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY
+                    ),
+                    "ledger": copy.deepcopy(
+                        EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["stage_b_ledger"]
+                    ),
+                    "must_pass_before_stage_c": True,
+                },
+            },
+            "policy": copy.deepcopy(EXECUTION_CORRECTION_2_POLICY),
+            "custody_boundary": {
+                "outcome_values_used": False,
+                "metric_values_used": False,
+                "tensors_opened_to_author_correction": False,
+                "gate_status_aware": True,
+                "scientific_interpretation_changed": False,
+            },
+            "commit_binding_policy": (
+                "bound by the enclosing correction-2 Git commit after byte "
+                "finalization; no circular future commit hash is embedded"
+            ),
+        }
+    )
+
+
+EXECUTION_CORRECTION_2_AMENDMENT = build_execution_correction_2_amendment()
+EXECUTION_CORRECTION_2_AMENDMENT_RECEIPT_BYTES = (
+    canonical_json_bytes(EXECUTION_CORRECTION_2_AMENDMENT) + b"\n"
+)
+EXECUTION_CORRECTION_2_AMENDMENT_BINDING = {
+    "path": str(TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH),
+    "sha256": hashlib.sha256(
+        EXECUTION_CORRECTION_2_AMENDMENT_RECEIPT_BYTES
+    ).hexdigest(),
+    "content_digest": EXECUTION_CORRECTION_2_AMENDMENT["content_digest"],
+    "bytes": len(EXECUTION_CORRECTION_2_AMENDMENT_RECEIPT_BYTES),
+    "schema": EXECUTION_CORRECTION_2_AMENDMENT_SCHEMA_VERSION,
+}
+
+
+def validate_execution_correction_2_amendment(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        EXECUTION_CORRECTION_2_AMENDMENT
+    ):
+        raise ContractError("execution-correction-2 amendment value drift")
+    return copy.deepcopy(dict(value))
+
+
+def execution_correction_2_amendment_receipt_bytes() -> bytes:
+    validate_execution_correction_2_amendment(EXECUTION_CORRECTION_2_AMENDMENT)
+    return EXECUTION_CORRECTION_2_AMENDMENT_RECEIPT_BYTES
+
+
+def _load_json_object(path: Path, label: str) -> dict[str, Any]:
+    try:
+        value = json.loads(path.read_bytes())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ContractError(f"{label} is invalid JSON") from exc
+    if not isinstance(value, dict):
+        raise ContractError(f"{label} must be a JSON object")
+    return value
+
+
+def validate_execution_correction_2_replay_receipt(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    if value.get("schema") != EXECUTION_CORRECTION_2_REPLAY_SCHEMA_VERSION:
+        raise ContractError("execution-correction-2 Stage-A replay schema drift")
+    if value.get("experiment_id") != EXPERIMENT_ID:
+        raise ContractError("execution-correction-2 Stage-A replay identity drift")
+    if value.get("amendment") != EXECUTION_CORRECTION_2_AMENDMENT_BINDING:
+        raise ContractError("execution-correction-2 Stage-A amendment binding drift")
+    if value.get("failed_archive") != str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE):
+        raise ContractError("execution-correction-2 Stage-A target archive drift")
+    if value.get("files_reused") != 0 or value.get("pass") is not True:
+        raise ContractError("execution-correction-2 Stage-A replay did not pass")
+    if value.get("fresh_artifact_custody") != {
+        "attempt_root_containment_verified": True,
+        "symlinks_rejected": True,
+        "hardlinks_to_failed_archive_rejected": True,
+    }:
+        raise ContractError("execution-correction-2 Stage-A freshness proof drift")
+    byte_rows = value.get("byte_exact_replay")
+    normalized_rows = value.get("normalized_scientific_replay")
+    if (
+        not isinstance(byte_rows, list)
+        or [row.get("path") for row in byte_rows]
+        != list(EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS)
+        or not isinstance(normalized_rows, list)
+        or [row.get("path") for row in normalized_rows]
+        != list(EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS)
+    ):
+        raise ContractError("execution-correction-2 Stage-A replay path-set drift")
+    if value.get("stage_b_started_before_replay_gate") is not False or value.get(
+        "stage_c_started_before_replay_gate"
+    ) is not False:
+        raise ContractError("execution-correction-2 Stage-A barrier was crossed early")
+    return copy.deepcopy(dict(value))
+
+
+def validate_execution_correction_2_replay(
+    attempt_root: str | Path,
+    archive_root: str | Path = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+    *,
+    verify_archive: bool = True,
+) -> dict[str, Any]:
+    """Reproduce Stage A from scratch before any Stage-B/C child starts."""
+
+    attempt = Path(attempt_root).resolve()
+    archive = Path(archive_root).resolve()
+    if archive != EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve():
+        raise ContractError("execution-correction-2 Stage-A archive path drift")
+    if verify_archive:
+        validate_execution_correction_2_archive(archive)
+    if not attempt.is_dir() or attempt == archive:
+        raise ContractError("execution-correction-2 Stage-A requires a fresh attempt")
+    byte_rows: list[dict[str, Any]] = []
+    for relative_path in EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS:
+        candidate = _validate_execution_correction_2_fresh_artifact(
+            attempt, relative_path, archive_root=archive
+        )
+        reference = archive / relative_path
+        candidate_sha, candidate_bytes = _sha256_file(candidate)
+        reference_sha, reference_bytes = _sha256_file(reference)
+        if (candidate_sha, candidate_bytes) != (reference_sha, reference_bytes):
+            raise ContractError(
+                f"execution-correction-2 Stage-A byte replay drift: {relative_path}"
+            )
+        byte_rows.append(
+            {"path": relative_path, "sha256": candidate_sha, "bytes": candidate_bytes}
+        )
+    normalized_rows: list[dict[str, Any]] = []
+    for relative_path, expected_digest in (
+        EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS.items()
+    ):
+        candidate = _validate_execution_correction_2_fresh_artifact(
+            attempt, relative_path, archive_root=archive
+        )
+        value = _load_json_object(
+            candidate,
+            f"execution-correction-2 Stage-A {relative_path}",
+        )
+        observed = scientific_content_digest(relative_path, value)
+        if observed != expected_digest:
+            raise ContractError(
+                f"execution-correction-2 Stage-A scientific replay drift: {relative_path}"
+            )
+        normalized_rows.append(
+            {
+                "path": relative_path,
+                "excluded_paths": list(
+                    EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_EXCLUSIONS[
+                        relative_path
+                    ]
+                ),
+                "scientific_content_digest": observed,
+            }
+        )
+    observed_files = [
+        str(path.relative_to(attempt))
+        for path in attempt.rglob("*")
+        if path.is_file()
+    ]
+    premature = sorted(
+        relative_path
+        for relative_path in observed_files
+        if any(
+            relative_path.startswith(prefix)
+            for prefix in EXECUTION_CORRECTION_FORBIDDEN_BEFORE_REPLAY_PREFIXES
+        )
+        or any(
+            Path(relative_path).match(pattern)
+            for pattern in EXECUTION_CORRECTION_FORBIDDEN_BEFORE_REPLAY_GLOBS
+        )
+    )
+    if premature:
+        raise ContractError(
+            f"Stage-B/C artifact exists before correction-2 replay: {premature}"
+        )
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_REPLAY_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "failed_archive": str(archive),
+            "fresh_attempt": str(attempt),
+            "files_reused": 0,
+            "fresh_artifact_custody": {
+                "attempt_root_containment_verified": True,
+                "symlinks_rejected": True,
+                "hardlinks_to_failed_archive_rejected": True,
+            },
+            "byte_exact_replay": byte_rows,
+            "normalized_scientific_replay": normalized_rows,
+            "stage_b_started_before_replay_gate": False,
+            "stage_c_started_before_replay_gate": False,
+            "pass": True,
+        }
+    )
+
+
+def validate_execution_correction_2_stage_a_terminal_reproduction(
+    attempt_root: str | Path,
+    archive_root: str | Path = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+    *,
+    fresh_attempt_identity: str | Path | None = None,
+) -> dict[str, Any]:
+    """Recheck Stage-A content after Stage B without reapplying the pre-B scan."""
+
+    attempt = Path(attempt_root).resolve()
+    archive = Path(archive_root).resolve()
+    if archive != EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve():
+        raise ContractError("correction-2 terminal Stage-A archive path drift")
+    pre_b_receipt_path = _validate_execution_correction_2_fresh_artifact(
+        attempt,
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+        archive_root=None,
+    )
+    pre_b_receipt = _load_json_object(
+        pre_b_receipt_path,
+        "correction-2 persisted pre-B Stage-A receipt",
+    )
+    validate_execution_correction_2_replay_receipt(pre_b_receipt)
+    original_attempt = _execution_correction_2_fresh_attempt_identity(
+        attempt, pre_b_receipt.get("fresh_attempt"), fresh_attempt_identity
+    )
+    byte_rows: list[dict[str, Any]] = []
+    for relative_path in EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS:
+        candidate = _validate_execution_correction_2_fresh_artifact(
+            attempt, relative_path, archive_root=archive
+        )
+        candidate_sha, candidate_bytes = _sha256_file(candidate)
+        reference_sha, reference_bytes = _sha256_file(archive / relative_path)
+        if (candidate_sha, candidate_bytes) != (reference_sha, reference_bytes):
+            raise ContractError(
+                f"correction-2 terminal Stage-A byte drift: {relative_path}"
+            )
+        byte_rows.append(
+            {"path": relative_path, "sha256": candidate_sha, "bytes": candidate_bytes}
+        )
+    normalized_rows: list[dict[str, Any]] = []
+    for relative_path, expected_digest in (
+        EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS.items()
+    ):
+        candidate = _validate_execution_correction_2_fresh_artifact(
+            attempt, relative_path, archive_root=archive
+        )
+        value = _load_json_object(
+            candidate,
+            f"correction-2 terminal Stage-A {relative_path}",
+        )
+        observed = scientific_content_digest(relative_path, value)
+        if observed != expected_digest:
+            raise ContractError(
+                f"correction-2 terminal Stage-A projection drift: {relative_path}"
+            )
+        normalized_rows.append(
+            {"path": relative_path, "scientific_content_digest": observed}
+        )
+    stage_b_receipt_path = _validate_execution_correction_2_fresh_artifact(
+        attempt,
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"],
+        archive_root=None,
+    )
+    stage_b_receipt = _load_json_object(
+        stage_b_receipt_path,
+        "correction-2 persisted Stage-B replay receipt",
+    )
+    validate_execution_correction_2_stage_b_replay_receipt(stage_b_receipt)
+    if stage_b_receipt.get("fresh_attempt") != original_attempt or stage_b_receipt.get(
+        "stage_a_replay"
+    ) != {
+        "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+        "content_digest": pre_b_receipt["content_digest"],
+    }:
+        raise ContractError("correction-2 terminal Stage-A/Stage-B linkage drift")
+    return attach_self_digest(
+        {
+            "schema": (
+                EXECUTION_CORRECTION_2_STAGE_A_TERMINAL_REVALIDATION_SCHEMA_VERSION
+            ),
+            "experiment_id": EXPERIMENT_ID,
+            "current_content_root": str(attempt),
+            "fresh_attempt_identity": original_attempt,
+            "fresh_attempt": original_attempt,
+            "failed_archive": str(archive),
+            "persisted_pre_b_receipt_content_digest": pre_b_receipt[
+                "content_digest"
+            ],
+            "persisted_stage_b_receipt_content_digest": stage_b_receipt[
+                "content_digest"
+            ],
+            "pre_b_barrier_booleans_revalidated": True,
+            "byte_exact_replay": byte_rows,
+            "normalized_scientific_replay": normalized_rows,
+            "late_stage_b_paths_ignored_for_pre_b_absence_scan": True,
+            "files_reused": 0,
+            "pass": True,
+        }
+    )
+
+
+def _numeric_purpose_key(state_id: str) -> int:
+    prefix = "purpose-"
+    if not state_id.startswith(prefix):
+        raise ContractError(f"unexpected Stage-B state identity: {state_id}")
+    try:
+        value = int(state_id[len(prefix) :])
+    except ValueError as exc:
+        raise ContractError(f"invalid Stage-B state identity: {state_id}") from exc
+    if f"{prefix}{value}" != state_id:
+        raise ContractError(f"noncanonical Stage-B state identity: {state_id}")
+    return value
+
+
+def build_execution_correction_2_context_array_manifest(
+    attempt_root: str | Path,
+    *,
+    archive_root: str | Path = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+) -> dict[str, Any]:
+    """Hash deterministic uncompressed array contents, never NPZ containers."""
+
+    import numpy as np
+
+    attempt = Path(attempt_root).resolve()
+    archive = Path(archive_root).resolve()
+    index_path = _validate_execution_correction_2_fresh_artifact(
+        attempt,
+        "stage_b/proprio_context/index.json",
+        archive_root=archive,
+    )
+    index = _load_json_object(
+        index_path,
+        "execution-correction-2 proprio context index",
+    )
+    state_records = index.get("state_records")
+    if not isinstance(state_records, list) or len(state_records) != 48:
+        raise ContractError("execution-correction-2 context state cardinality drift")
+    ordered = sorted(state_records, key=lambda row: _numeric_purpose_key(str(row["state_id"])))
+    manifest: list[dict[str, Any]] = []
+    for record in ordered:
+        state_id = str(record["state_id"])
+        shard_binding = record.get("shard")
+        if not isinstance(shard_binding, Mapping) or not isinstance(
+            shard_binding.get("path"), str
+        ):
+            raise ContractError(
+                f"execution-correction-2 context shard binding drift: {state_id}"
+            )
+        expected_relative_path = (
+            f"stage_b/proprio_context/states/{state_id}.npz"
+        )
+        if shard_binding["path"] != expected_relative_path:
+            raise ContractError(
+                f"execution-correction-2 context shard path drift: {state_id}"
+            )
+        shard = _validate_execution_correction_2_fresh_artifact(
+            attempt, expected_relative_path, archive_root=archive
+        )
+        _validate_correction_2_bound_file(
+            shard,
+            shard_binding,
+            f"execution-correction-2 context shard {state_id}",
+        )
+        arrays: list[dict[str, Any]] = []
+        with np.load(shard, allow_pickle=False) as payload:
+            if sorted(payload.files) != sorted(
+                EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY["arrays_per_state"]
+            ):
+                raise ContractError(
+                    f"execution-correction-2 context array key drift: {state_id}"
+                )
+            for name in sorted(payload.files):
+                array = np.ascontiguousarray(payload[name])
+                expected = EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY[
+                    "arrays_per_state"
+                ][name]
+                shape = [int(value) for value in array.shape]
+                dtype = str(array.dtype)
+                if shape != expected["shape"] or dtype != expected["dtype"]:
+                    raise ContractError(
+                        f"execution-correction-2 context array schema drift: "
+                        f"{state_id}/{name}"
+                    )
+                arrays.append(
+                    {
+                        "name": name,
+                        "dtype": dtype,
+                        "shape": shape,
+                        "c_order_sha256": hashlib.sha256(array.tobytes(order="C")).hexdigest(),
+                    }
+                )
+        manifest.append(
+            {
+                "state_id": state_id,
+                "family": record["family"],
+                "split_role": record["split_role"],
+                "arrays": arrays,
+            }
+        )
+    state_ids = [row["state_id"] for row in manifest]
+    digest = canonical_json_sha256(manifest)
+    if canonical_json_sha256(state_ids) != EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY[
+        "state_ids_sha256"
+    ]:
+        raise ContractError("execution-correction-2 context state identity drift")
+    if digest != EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY[
+        "array_content_manifest_sha256"
+    ] or len(canonical_json_bytes(manifest)) != EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY[
+        "array_content_manifest_canonical_bytes"
+    ]:
+        raise ContractError("execution-correction-2 context array-content drift")
+    return {
+        "states": len(manifest),
+        "state_ids_sha256": canonical_json_sha256(state_ids),
+        "array_content_manifest_sha256": digest,
+        "array_content_manifest_canonical_bytes": len(canonical_json_bytes(manifest)),
+        "array_schema": copy.deepcopy(
+            EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY["arrays_per_state"]
+        ),
+        "npz_container_byte_equality_required": False,
+    }
+
+
+def _project_exact_top_level_keys(
+    value: Mapping[str, Any], excluded_keys: Sequence[str]
+) -> dict[str, Any]:
+    if len(excluded_keys) != len(set(excluded_keys)):
+        raise ContractError("correction-2 projection repeats an excluded key")
+    projected = copy.deepcopy(dict(value))
+    for key in excluded_keys:
+        if key not in projected:
+            raise ContractError(f"correction-2 projection exclusion is absent: {key}")
+        del projected[key]
+    return projected
+
+
+def validate_execution_correction_2_stage_b_replay_receipt(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    if value.get("schema") != EXECUTION_CORRECTION_2_STAGE_B_REPLAY_SCHEMA_VERSION:
+        raise ContractError("execution-correction-2 Stage-B replay schema drift")
+    if value.get("experiment_id") != EXPERIMENT_ID or value.get(
+        "amendment"
+    ) != EXECUTION_CORRECTION_2_AMENDMENT_BINDING:
+        raise ContractError("execution-correction-2 Stage-B replay identity drift")
+    if value.get("failed_archive") != str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE):
+        raise ContractError("execution-correction-2 Stage-B target archive drift")
+    if value.get("files_reused") != 0 or value.get("pass") is not True:
+        raise ContractError("execution-correction-2 Stage-B replay did not pass")
+    if value.get("fresh_artifact_custody") != {
+        "attempt_root_containment_verified": True,
+        "symlinks_rejected": True,
+        "hardlinks_to_failed_archive_rejected": True,
+    }:
+        raise ContractError("execution-correction-2 Stage-B freshness proof drift")
+    if value.get("stage_c_started_before_replay_gate") is not False:
+        raise ContractError("execution-correction-2 Stage C started before replay")
+    ledger = value.get("ledger")
+    if not isinstance(ledger, Mapping) or ledger.get("rows") != 2_304:
+        raise ContractError("execution-correction-2 Stage-B ledger custody drift")
+    if value.get("context_arrays", {}).get("states") != 48:
+        raise ContractError("execution-correction-2 Stage-B context custody drift")
+    prediction_arrays = value.get("prediction_arrays")
+    if not isinstance(prediction_arrays, list) or len(prediction_arrays) != 96:
+        raise ContractError("execution-correction-2 Stage-B prediction custody drift")
+    return copy.deepcopy(dict(value))
+
+
+def validate_execution_correction_2_stage_b_reproduction(
+    attempt_root: str | Path,
+    archive_root: str | Path = EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+    *,
+    verify_archive: bool = False,
+    stage_b_metrics: Mapping[str, Any] | None = None,
+    fresh_attempt_identity: str | Path | None = None,
+) -> dict[str, Any]:
+    """Require complete Stage-B reproduction before any Stage-C execution."""
+
+    attempt = Path(attempt_root).resolve()
+    archive = Path(archive_root).resolve()
+    if archive != EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve():
+        raise ContractError("execution-correction-2 Stage-B archive path drift")
+    if verify_archive:
+        validate_execution_correction_2_archive(archive)
+    stage_a_receipt_path = _validate_execution_correction_2_fresh_artifact(
+        attempt,
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+        archive_root=None,
+    )
+    stage_a_receipt = _load_json_object(
+        stage_a_receipt_path,
+        "execution-correction-2 Stage-A replay receipt",
+    )
+    validate_execution_correction_2_replay_receipt(stage_a_receipt)
+    original_attempt = _execution_correction_2_fresh_attempt_identity(
+        attempt, stage_a_receipt.get("fresh_attempt"), fresh_attempt_identity
+    )
+    stage_c_files = sorted(
+        str(path.relative_to(attempt))
+        for path in attempt.rglob("*")
+        if path.is_file()
+        and (
+            str(path.relative_to(attempt)).startswith("stage_c/")
+            or str(path.relative_to(attempt)).startswith("ledgers/stage_c_")
+            or str(path.relative_to(attempt)).startswith("receipts/stage_c_")
+            or str(path.relative_to(attempt)).startswith("aggregates/stage_c_")
+            or str(path.relative_to(attempt)).startswith("logs/stage_c_")
+        )
+    )
+    if stage_c_files:
+        raise ContractError("Stage C exists before correction-2 Stage-B replay gate")
+
+    ledger_binding = EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["stage_b_ledger"]
+    ledger_path = _validate_execution_correction_2_fresh_artifact(
+        attempt, str(ledger_binding["path"]), archive_root=archive
+    )
+    _validate_correction_2_bound_file(
+        ledger_path, ledger_binding, "correction-2 Stage-B ledger"
+    )
+    with ledger_path.open("rb") as stream:
+        ledger_rows = sum(1 for line in stream if line.rstrip(b"\n"))
+    if ledger_rows != ledger_binding["rows"]:
+        raise ContractError("execution-correction-2 Stage-B ledger row-count drift")
+    ledger = {
+        "path": str(ledger_binding["path"]),
+        "sha256": str(ledger_binding["sha256"]),
+        "bytes": int(ledger_binding["bytes"]),
+        "rows": ledger_rows,
+        "excluded_fields": [],
+        "canonical_scientific_projection": "ENTIRE_CANONICAL_JSONL",
+    }
+
+    projections: list[dict[str, Any]] = []
+    for path_fragment, authority in EXECUTION_CORRECTION_2_STAGE_B_PROJECTIONS.items():
+        if "#" in path_fragment:
+            relative_path, fragment = path_fragment.split("#", 1)
+            if path_fragment == "aggregates/metrics.json#stage_b" and stage_b_metrics is not None:
+                metric_candidate = attempt / relative_path
+                if metric_candidate.exists() or metric_candidate.is_symlink():
+                    _validate_execution_correction_2_fresh_artifact(
+                        attempt, relative_path, archive_root=archive
+                    )
+                source_value = copy.deepcopy(dict(stage_b_metrics))
+            else:
+                candidate = _validate_execution_correction_2_fresh_artifact(
+                    attempt, relative_path, archive_root=archive
+                )
+                value = _load_json_object(
+                    candidate,
+                    f"execution-correction-2 Stage-B {path_fragment}",
+                )
+                if fragment not in value or not isinstance(value[fragment], Mapping):
+                    raise ContractError(
+                        f"execution-correction-2 Stage-B fragment absent: {path_fragment}"
+                    )
+                source_value = value[fragment]
+        else:
+            relative_path = path_fragment
+            fragment = None
+            candidate = _validate_execution_correction_2_fresh_artifact(
+                attempt, relative_path, archive_root=archive
+            )
+            source_value = _load_json_object(
+                candidate,
+                f"execution-correction-2 Stage-B {relative_path}",
+            )
+        projected = _project_exact_top_level_keys(
+            source_value, authority["excluded_keys"]
+        )
+        observed_digest = canonical_json_sha256(projected)
+        observed_bytes = len(canonical_json_bytes(projected))
+        if observed_digest != authority["scientific_content_digest"] or observed_bytes != authority[
+            "canonical_bytes"
+        ]:
+            raise ContractError(
+                f"execution-correction-2 Stage-B projection drift: {path_fragment}"
+            )
+        if "states" in authority and source_value.get("states") != authority["states"]:
+            raise ContractError(
+                f"execution-correction-2 Stage-B state count drift: {path_fragment}"
+            )
+        if "logical_records" in authority and source_value.get(
+            "logical_records_count"
+        ) != authority["logical_records"]:
+            raise ContractError(
+                f"execution-correction-2 logical record count drift: {path_fragment}"
+            )
+        projections.append(
+            {
+                "path": relative_path,
+                "fragment": fragment,
+                "excluded_keys": list(authority["excluded_keys"]),
+                "scientific_content_digest": observed_digest,
+                "canonical_bytes": observed_bytes,
+            }
+        )
+
+    context_arrays = build_execution_correction_2_context_array_manifest(
+        attempt, archive_root=archive
+    )
+    prediction_arrays: list[dict[str, Any]] = []
+    for source in EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY["sources"]:
+        for state_index in range(48):
+            relative_path = f"stage_b/predictions/{source}/purpose-{state_index}.npy"
+            candidate = _validate_execution_correction_2_fresh_artifact(
+                attempt, relative_path, archive_root=archive
+            )
+            reference = archive / relative_path
+            candidate_sha, candidate_bytes = _sha256_file(candidate)
+            reference_sha, reference_bytes = _sha256_file(reference)
+            if (candidate_sha, candidate_bytes) != (reference_sha, reference_bytes):
+                raise ContractError(
+                    f"execution-correction-2 prediction NPY drift: {relative_path}"
+                )
+            prediction_arrays.append(
+                {"path": relative_path, "sha256": candidate_sha, "bytes": candidate_bytes}
+            )
+    receipt = attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_STAGE_B_REPLAY_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "failed_archive": str(archive),
+            "fresh_attempt": original_attempt,
+            "files_reused": 0,
+            "fresh_artifact_custody": {
+                "attempt_root_containment_verified": True,
+                "symlinks_rejected": True,
+                "hardlinks_to_failed_archive_rejected": True,
+            },
+            "stage_a_replay": {
+                "path": "receipts/execution_correction_2_replay.json",
+                "content_digest": stage_a_receipt["content_digest"],
+            },
+            "ledger": ledger,
+            "normalized_scientific_projections": projections,
+            "context_arrays": context_arrays,
+            "prediction_arrays": prediction_arrays,
+            "stage_c_started_before_replay_gate": False,
+            "prior_stage_c_executed": False,
+            "pass": True,
+        }
+    )
+    return validate_execution_correction_2_stage_b_replay_receipt(receipt)
+
+
+def validate_execution_correction_2_freeze_custody(
+    repo_root: str | Path,
+    *,
+    verify_full_archives: bool = True,
+) -> dict[str, Any]:
+    """Validate the exact direct-child correction-2 freeze and unused namespace."""
+
+    root = Path(repo_root).resolve()
+
+    def git(*args: str) -> str:
+        completed = subprocess.run(
+            ["git", *args], cwd=root, check=True, capture_output=True, text=True
+        )
+        return completed.stdout.strip()
+
+    head = git("rev-parse", "HEAD")
+    if git("status", "--porcelain=v1"):
+        raise ContractError("execution-correction-2 freeze worktree is dirty")
+    lineage = git("rev-list", "--parents", "-n", "1", head).split()
+    if (
+        len(lineage) != 2
+        or lineage[0] != head
+        or lineage[1] != INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT
+    ):
+        raise ContractError(
+            "execution-correction-2 freeze must be the direct single-parent child "
+            f"of {INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT}"
+        )
+    subject = git("show", "-s", "--format=%s", head)
+    if subject != EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT:
+        raise ContractError("execution-correction-2 freeze subject drift")
+    changed_paths = tuple(
+        path
+        for path in git(
+            "diff",
+            "--name-only",
+            INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+            head,
+        ).splitlines()
+        if path
+    )
+    if set(changed_paths) != set(EXECUTION_CORRECTION_2_REQUIRED_CHANGED_PATHS):
+        raise ContractError(
+            "execution-correction-2 freeze path set differs from exact allowlist"
+        )
+    validate_base_scientific_authorities(root)
+    first_amendment_authorities = validate_base_execution_correction_authorities(root)
+    load_and_validate_execution_correction_2_amendment(
+        root / TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH
+    )
+    load_and_validate_execution_correction_2_output_schema(
+        root / TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH
+    )
+    load_and_validate_execution_correction_2_fixture(
+        root / TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH
+    )
+    closure = load_and_validate_execution_correction_2_source_closure(
+        root / TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    closure_sha256, closure_bytes = _sha256_file(
+        root / TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    for row in closure["rows"]:
+        _validate_correction_2_bound_file(
+            root / str(row["path"]), row, "execution-correction-2 closure row"
+        )
+    preregistration = root / TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH
+    if not preregistration.is_file() or preregistration.read_bytes() != (
+        build_execution_correction_2_preregistration_markdown().encode("utf-8")
+    ):
+        raise ContractError("execution-correction-2 preregistration bytes drift")
+    first_archive = validate_execution_correction_archive()
+    second_archive = validate_execution_correction_2_archive(
+        verify_full_inventory=verify_full_archives
+    )
+    parent = OUTPUT_ROOT.parent
+    attempts = sorted(parent.glob(f".{OUTPUT_ROOT.name}.attempt-*"))
+    failures = sorted(parent.glob(f".{OUTPUT_ROOT.name}.failed-*"))
+    expected_failures = sorted(
+        [EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve(), EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve()]
+    )
+    if OUTPUT_ROOT.exists() or attempts or sorted(path.resolve() for path in failures) != expected_failures:
+        raise ContractError("execution-correction-2 final-attempt namespace is not pristine")
+    postcheck_witness = Path(
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if postcheck_witness.exists():
+        raise ContractError(
+            "execution-correction-2 post-finalizer witness path is stale"
+        )
+    return {
+        "source_commit": SOURCE_COMMIT,
+        "source_freeze_commit": head,
+        "contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+        "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+        "execution_correction_2_commit": head,
+        "base_execution_correction_freeze_commit": (
+            INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT
+        ),
+        "head_subject": subject,
+        "sole_parent": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+        "changed_paths": list(changed_paths),
+        "scientific_authority_contract_sha256": SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
+        "first_amendment_authorities": first_amendment_authorities,
+        "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            "path": str(TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH),
+            "sha256": closure_sha256,
+            "bytes": closure_bytes,
+            "content_digest": closure["content_digest"],
+            "rows": closure["row_count"],
+        },
+        "failed_archives": [first_archive, second_archive],
+        "failed_archives_count": 2,
+        "files_reused": 0,
+        "fresh_attempts_authorised": 1,
+        "fresh_attempts_already_consumed": 0,
+        "post_finalizer_witness_absent": True,
+        "no_further_retry": True,
+        "clean": True,
+        "pass": True,
+    }
+
+
+EXECUTION_CORRECTION_2_PROCESS_IDENTITY_FIELDS = (
+    "pid",
+    "process_group_id",
+    "start_time_ticks",
+    "argv",
+    "argv_sha256",
+    "executable",
+    "role",
+)
+EXECUTION_CORRECTION_2_ARTIFACT_BINDING_FIELDS = (
+    "path",
+    "sha256",
+    "bytes",
+    "content_digest",
+)
+
+
+def validate_execution_correction_2_process_identity(
+    value: Mapping[str, Any], *, expected_role: str
+) -> dict[str, Any]:
+    if set(value) != set(EXECUTION_CORRECTION_2_PROCESS_IDENTITY_FIELDS):
+        raise ContractError("execution-correction-2 process identity key-set drift")
+    for key in ("pid", "process_group_id", "start_time_ticks"):
+        if isinstance(value[key], bool) or not isinstance(value[key], int) or value[key] <= 0:
+            raise ContractError(f"execution-correction-2 process {key} drift")
+    argv = value["argv"]
+    if (
+        not isinstance(argv, list)
+        or not argv
+        or any(not isinstance(item, str) or not item for item in argv)
+        or value["argv_sha256"] != canonical_json_sha256(argv)
+    ):
+        raise ContractError("execution-correction-2 process argv binding drift")
+    if not isinstance(value["executable"], str) or not Path(value["executable"]).is_absolute():
+        raise ContractError("execution-correction-2 process executable drift")
+    if value["role"] != expected_role:
+        raise ContractError(
+            f"execution-correction-2 process role {value['role']!r} != {expected_role!r}"
+        )
+    return copy.deepcopy(dict(value))
+
+
+def validate_execution_correction_2_helper_interpreter(
+    value: Mapping[str, Any], *, subcommand: str
+) -> dict[str, Any]:
+    """Bind the exact helper interpreter and complete frozen argv grammar."""
+
+    if subcommand not in EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP:
+        raise ContractError("unknown correction-2 helper subcommand")
+    identity = validate_execution_correction_2_process_identity(
+        value, expected_role="CONDITIONAL_SCIENTIFIC_HELPER"
+    )
+    authority = EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP[subcommand]
+    helper_script = str(
+        (
+            Path(__file__).resolve().parents[2]
+            / "scripts/materialize_plan_aware_proprio_predictor_substitution_v1.py"
+        ).resolve()
+    )
+    argv = identity["argv"]
+    if argv[:5] != [
+        authority["interpreter"],
+        "-E",
+        "-s",
+        helper_script,
+        subcommand,
+    ]:
+        raise ContractError("correction-2 helper interpreter/subcommand drift")
+    if str(Path(identity["executable"]).resolve()) != str(
+        Path(authority["interpreter"]).resolve()
+    ):
+        raise ContractError("correction-2 helper executable drift")
+
+    def output_and_receipts(
+        *, output_index: int, gate_index: int, replay_index: int
+    ) -> Path | None:
+        if max(output_index, gate_index, replay_index) >= len(argv):
+            return None
+        output_text = argv[output_index]
+        output = Path(output_text)
+        if (
+            not output.is_absolute()
+            or str(output) != output_text
+            or ".." in output.parts
+            or output.parent.resolve() != OUTPUT_ROOT.parent.resolve()
+            or not output.name.startswith(f".{OUTPUT_ROOT.name}.attempt-")
+            or argv[gate_index] != str(output / "receipts/stage_b_gate.json")
+            or argv[replay_index]
+            != str(output / "receipts/execution_correction_replay.json")
+        ):
+            return None
+        return output
+
+    valid = False
+    if subcommand == "run-stage-b":
+        valid = bool(
+            len(argv) == 14
+            and argv[5:7] == ["--stage-b-authorised", "--gate-receipt"]
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12:14]
+            == ["--workers", str(CPU_WORKER_BENCHMARK["selected_workers"])]
+            and output_and_receipts(
+                output_index=11, gate_index=7, replay_index=9
+            )
+            is not None
+        )
+    elif subcommand == "context-state":
+        state_index = argv[13] if len(argv) == 14 else ""
+        valid = bool(
+            len(argv) == 14
+            and argv[5:7] == ["--stage-b-authorised", "--gate-receipt"]
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--state-index"
+            and state_index.isascii()
+            and state_index.isdigit()
+            and str(int(state_index)) == state_index
+            and 0 <= int(state_index) < 48
+            and output_and_receipts(
+                output_index=11, gate_index=7, replay_index=9
+            )
+            is not None
+        )
+    elif subcommand == "predict-source":
+        output = output_and_receipts(
+            output_index=11, gate_index=7, replay_index=9
+        )
+        base = bool(
+            len(argv) in (14, 19)
+            and argv[5:7] == ["--stage-b-authorised", "--gate-receipt"]
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--source-id"
+            and argv[13] in ("P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT")
+            and output is not None
+        )
+        if base and len(argv) == 14:
+            valid = True
+        elif base and output is not None:
+            valid = bool(
+                argv[13] == "PR_PROPRIO_ROLLOUT"
+                and argv[14:18]
+                == [
+                    "--stage-c-authorised",
+                    "--stage-c-gate-receipt",
+                    str(output / "receipts/stage_c_gate.json"),
+                    "--ablation",
+                ]
+                and argv[18] in STAGE_C_ABLATION_INPUTS
+            )
+    elif subcommand == "run-stage-c":
+        if len(argv) == 15:
+            output = Path(argv[14])
+            valid = bool(
+                argv[5:8]
+                == [
+                    "--stage-b-authorised",
+                    "--stage-c-authorised",
+                    "--gate-receipt",
+                ]
+                and argv[9] == "--stage-c-gate-receipt"
+                and argv[11] == "--execution-correction-replay-receipt"
+                and argv[13] == "--output-root"
+                and output_and_receipts(
+                    output_index=14, gate_index=8, replay_index=12
+                )
+                is not None
+                and argv[10] == str(output / "receipts/stage_c_gate.json")
+            )
+    if not valid:
+        raise ContractError("correction-2 helper exact argv grammar drift")
+    return identity
+
+
+def _validate_execution_correction_2_evaluator_argv(
+    identity: Mapping[str, Any],
+    *,
+    role: str,
+    launcher: Mapping[str, Any] | None = None,
+    attempt_root: str | Path | None = None,
+    scientific_exit_receipt: str | Path | None = None,
+) -> None:
+    validated = validate_execution_correction_2_process_identity(
+        identity, expected_role=role
+    )
+    argv = validated["argv"]
+    interpreter = argv[0]
+    resolved_interpreter = str(Path(interpreter).resolve())
+    script = str(
+        (
+            Path(__file__).resolve().parents[2]
+            / "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+        ).resolve()
+    )
+    if str(Path(validated["executable"]).resolve()) != resolved_interpreter:
+        raise ContractError("execution-correction-2 argv/executable mismatch")
+    if role == "NONSCIENTIFIC_LAUNCHER":
+        expected = [interpreter, script, "execute"]
+    elif role == "SCIENTIFIC_EVALUATOR":
+        if launcher is None:
+            raise ContractError("scientific argv requires launcher identity")
+        launcher_value = validate_execution_correction_2_process_identity(
+            launcher, expected_role="NONSCIENTIFIC_LAUNCHER"
+        )
+        expected = [
+            interpreter,
+            script,
+            "execute-scientific",
+            "--launcher-pid",
+            str(launcher_value["pid"]),
+            "--launcher-start-time-ticks",
+            str(launcher_value["start_time_ticks"]),
+        ]
+    elif role == "TERMINAL_FINALIZER":
+        if launcher is None or attempt_root is None or scientific_exit_receipt is None:
+            raise ContractError("finalizer argv requires launcher, attempt and exit receipt")
+        launcher_value = validate_execution_correction_2_process_identity(
+            launcher, expected_role="NONSCIENTIFIC_LAUNCHER"
+        )
+        expected = [
+            interpreter,
+            script,
+            "finalize-correction-2",
+            "--attempt",
+            str(Path(attempt_root).resolve()),
+            "--launcher-pid",
+            str(launcher_value["pid"]),
+            "--launcher-start-time-ticks",
+            str(launcher_value["start_time_ticks"]),
+            "--scientific-exit-receipt",
+            str(Path(scientific_exit_receipt).resolve()),
+        ]
+    elif role == "POST_FINALIZER_CHECKER":
+        expected = [
+            interpreter,
+            script,
+            "check",
+            "--output-root",
+            str(OUTPUT_ROOT.resolve()),
+        ]
+    else:
+        raise ContractError(f"unsupported correction-2 evaluator role: {role}")
+    if argv != expected:
+        raise ContractError(f"execution-correction-2 exact {role} argv drift")
+    if launcher is not None:
+        launcher_value = validate_execution_correction_2_process_identity(
+            launcher, expected_role="NONSCIENTIFIC_LAUNCHER"
+        )
+        if (
+            argv[0] != launcher_value["argv"][0]
+            or str(Path(validated["executable"]).resolve())
+            != str(Path(launcher_value["executable"]).resolve())
+        ):
+            raise ContractError(
+                f"execution-correction-2 {role} interpreter differs from launcher"
+            )
+
+
+def validate_execution_correction_2_artifact_binding(
+    value: Mapping[str, Any], *, expected_path: str | None = None
+) -> dict[str, Any]:
+    if set(value) != set(EXECUTION_CORRECTION_2_ARTIFACT_BINDING_FIELDS):
+        raise ContractError("execution-correction-2 artifact binding key-set drift")
+    if expected_path is not None and value["path"] != expected_path:
+        raise ContractError("execution-correction-2 artifact path drift")
+    if (
+        not isinstance(value["path"], str)
+        or not isinstance(value["sha256"], str)
+        or len(value["sha256"]) != 64
+        or isinstance(value["bytes"], bool)
+        or not isinstance(value["bytes"], int)
+        or value["bytes"] < 0
+        or not isinstance(value["content_digest"], str)
+        or len(value["content_digest"]) != 64
+    ):
+        raise ContractError("execution-correction-2 artifact binding value drift")
+    return copy.deepcopy(dict(value))
+
+
+def execution_correction_2_failed_archive_custody() -> list[dict[str, Any]]:
+    return [
+        {
+            "archive_path": str(EXECUTION_CORRECTION_FAILED_ARCHIVE),
+            "source_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+            "inventory": copy.deepcopy(EXECUTION_CORRECTION_ARCHIVE_INVENTORY),
+            "failure_receipt": _binding_with_content_digest("receipts/failure.json"),
+            "files_reused": 0,
+            "partial_artifacts_reusable": False,
+        },
+        {
+            "archive_path": str(EXECUTION_CORRECTION_2_FAILED_ARCHIVE),
+            "source_freeze_commit": INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+            "inventory": copy.deepcopy(EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY),
+            "failure_receipt": copy.deepcopy(
+                EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["failure"]
+            ),
+            "files_reused": 0,
+            "partial_artifacts_reusable": False,
+        },
+    ]
+
+
+def build_execution_correction_2_runtime_custody(
+    *,
+    execution_correction_2_commit: str,
+    amendment_source_closure: Mapping[str, Any],
+    stage_a_replay: Mapping[str, Any] | None = None,
+    stage_b_replay: Mapping[str, Any] | None = None,
+    terminal_staging: Mapping[str, Any] | None = None,
+    scientific_exit: Mapping[str, Any] | None = None,
+    terminal_finalization: Mapping[str, Any] | None = None,
+    nothing_scientific_running: bool = False,
+    live_non_scientific_processes: Sequence[Mapping[str, Any]] = (),
+) -> dict[str, Any]:
+    """Build the one progressive custody key set persisted in every phase."""
+
+    _validate_hex_commit(
+        execution_correction_2_commit, "execution_correction_2_commit"
+    )
+    expected_closure_fields = {"path", "sha256", "bytes", "content_digest", "rows"}
+    if set(amendment_source_closure) != expected_closure_fields:
+        raise ContractError("correction-2 amendment source-closure binding drift")
+    if amendment_source_closure.get("path") != str(
+        TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    ):
+        raise ContractError("correction-2 amendment source-closure path drift")
+    live = [copy.deepcopy(dict(value)) for value in live_non_scientific_processes]
+    for value in live:
+        if value.get("role") not in {"TERMINAL_FINALIZER", "NONSCIENTIFIC_LAUNCHER"}:
+            raise ContractError("correction-2 live non-scientific role drift")
+        validate_execution_correction_2_process_identity(
+            value, expected_role=str(value["role"])
+        )
+    bindings: dict[str, Mapping[str, Any] | None] = {
+        "stage_a_replay": stage_a_replay,
+        "stage_b_replay": stage_b_replay,
+        "terminal_staging": terminal_staging,
+        "scientific_exit": scientific_exit,
+        "terminal_finalization": terminal_finalization,
+    }
+    for key, binding_value in bindings.items():
+        if binding_value is not None:
+            validate_execution_correction_2_artifact_binding(
+                binding_value, expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS[key]
+            )
+    return {
+        "schema": EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION,
+        "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+        "amendment_source_closure": copy.deepcopy(dict(amendment_source_closure)),
+        "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+        "execution_correction_2_commit": execution_correction_2_commit,
+        "failed_archives": execution_correction_2_failed_archive_custody(),
+        "files_reused": 0,
+        **{
+            key: None if value is None else copy.deepcopy(dict(value))
+            for key, value in bindings.items()
+        },
+        "nothing_running_scope": [
+            "SCIENTIFIC_EVALUATOR",
+            "CONDITIONAL_SCIENTIFIC_HELPER",
+        ],
+        "nothing_scientific_running": bool(nothing_scientific_running),
+        "live_non_scientific_processes": live,
+        "post_finalizer_check": {
+            "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"],
+            "inside_canonical_output_fixed_point": False,
+            "status_at_result_publication": "PENDING_PRODUCER_EXIT",
+        },
+    }
+
+
+def validate_execution_correction_2_runtime_custody(
+    value: Mapping[str, Any], *, phase: str
+) -> dict[str, Any]:
+    phases = {
+        "PREEXECUTION": (),
+        "STAGE_A_REPLAY": ("stage_a_replay",),
+        "STAGE_B_REPLAY": ("stage_a_replay", "stage_b_replay"),
+        "TERMINAL_STAGING": (
+            "stage_a_replay",
+            "stage_b_replay",
+            "terminal_staging",
+        ),
+        "SCIENTIFIC_EXIT": (
+            "stage_a_replay",
+            "stage_b_replay",
+            "terminal_staging",
+            "scientific_exit",
+        ),
+        "TERMINAL_FINALIZATION": (
+            "stage_a_replay",
+            "stage_b_replay",
+            "terminal_staging",
+            "scientific_exit",
+            "terminal_finalization",
+        ),
+    }
+    if phase not in phases:
+        raise ContractError("unknown correction-2 custody phase")
+    required = {
+        "schema",
+        "amendment",
+        "amendment_source_closure",
+        "scientific_contract_freeze_commit",
+        "execution_correction_2_commit",
+        "failed_archives",
+        "files_reused",
+        "stage_a_replay",
+        "stage_b_replay",
+        "terminal_staging",
+        "scientific_exit",
+        "terminal_finalization",
+        "nothing_running_scope",
+        "nothing_scientific_running",
+        "live_non_scientific_processes",
+        "post_finalizer_check",
+    }
+    if set(value) != required:
+        raise ContractError("correction-2 progressive custody key-set drift")
+    rebuilt = build_execution_correction_2_runtime_custody(
+        execution_correction_2_commit=value["execution_correction_2_commit"],
+        amendment_source_closure=value["amendment_source_closure"],
+        stage_a_replay=value["stage_a_replay"],
+        stage_b_replay=value["stage_b_replay"],
+        terminal_staging=value["terminal_staging"],
+        scientific_exit=value["scientific_exit"],
+        terminal_finalization=value["terminal_finalization"],
+        nothing_scientific_running=value["nothing_scientific_running"],
+        live_non_scientific_processes=value["live_non_scientific_processes"],
+    )
+    if canonical_json_bytes(value) != canonical_json_bytes(rebuilt):
+        raise ContractError("correction-2 progressive custody value drift")
+    nonnull = tuple(
+        key
+        for key in (
+            "stage_a_replay",
+            "stage_b_replay",
+            "terminal_staging",
+            "scientific_exit",
+            "terminal_finalization",
+        )
+        if value[key] is not None
+    )
+    if nonnull != phases[phase]:
+        raise ContractError("correction-2 progressive custody phase drift")
+    if phase in {"PREEXECUTION", "STAGE_A_REPLAY", "STAGE_B_REPLAY", "TERMINAL_STAGING"}:
+        if value["nothing_scientific_running"] is not False:
+            raise ContractError("correction-2 custody prematurely claims science quiescence")
+    if phase == "TERMINAL_FINALIZATION":
+        if value["nothing_scientific_running"] is not True:
+            raise ContractError("correction-2 final custody lacks scoped quiescence")
+        if [item["role"] for item in value["live_non_scientific_processes"]] != [
+            "TERMINAL_FINALIZER",
+            "NONSCIENTIFIC_LAUNCHER",
+        ]:
+            raise ContractError("correction-2 final live-process disclosure drift")
+    return copy.deepcopy(dict(value))
+
+
+def build_execution_correction_2_terminal_staging(
+    *,
+    attempt_root: str | Path,
+    source_freeze_commit: str,
+    scientific_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    stage_a_replay: Mapping[str, Any],
+    stage_b_replay: Mapping[str, Any],
+    result_core: Mapping[str, Any],
+    scientific_processes_at_write: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Build the evaluator handoff; it never publishes a terminal result."""
+
+    _validate_hex_commit(source_freeze_commit, "correction-2 source_freeze_commit")
+    launcher = validate_execution_correction_2_process_identity(
+        launcher_process_identity, expected_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    scientific = validate_execution_correction_2_process_identity(
+        scientific_process_identity, expected_role="SCIENTIFIC_EVALUATOR"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        launcher, role="NONSCIENTIFIC_LAUNCHER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        scientific, role="SCIENTIFIC_EVALUATOR", launcher=launcher
+    )
+    processes = [
+        validate_execution_correction_2_process_identity(
+            item, expected_role=str(item.get("role"))
+        )
+        for item in scientific_processes_at_write
+    ]
+    if processes != [scientific]:
+        raise ContractError(
+            "terminal staging must disclose exactly the live scientific evaluator"
+        )
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_TERMINAL_STAGING_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "attempt": str(Path(attempt_root).resolve()),
+            "source_freeze_commit": source_freeze_commit,
+            "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "scientific_process_identity": scientific,
+            "launcher_process_identity": launcher,
+            "stage_a_replay": validate_execution_correction_2_artifact_binding(
+                stage_a_replay,
+                expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+            ),
+            "stage_b_replay": validate_execution_correction_2_artifact_binding(
+                stage_b_replay,
+                expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"],
+            ),
+            "result_core": validate_execution_correction_2_artifact_binding(
+                result_core,
+                expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS["result_core"],
+            ),
+            "scientific_processes_at_write": processes,
+            "canonical_published": False,
+            "tracked_published": False,
+            "finalizer_started": False,
+            "pass": True,
+        }
+    )
+
+
+def validate_execution_correction_2_terminal_staging(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    required = {
+        "schema",
+        "experiment_id",
+        "attempt",
+        "source_freeze_commit",
+        "scientific_contract_freeze_commit",
+        "amendment",
+        "scientific_process_identity",
+        "launcher_process_identity",
+        "stage_a_replay",
+        "stage_b_replay",
+        "result_core",
+        "scientific_processes_at_write",
+        "canonical_published",
+        "tracked_published",
+        "finalizer_started",
+        "pass",
+        "content_digest",
+    }
+    if set(value) != required:
+        raise ContractError("execution-correction-2 terminal staging key-set drift")
+    rebuilt = build_execution_correction_2_terminal_staging(
+        attempt_root=value["attempt"],
+        source_freeze_commit=value["source_freeze_commit"],
+        scientific_process_identity=value["scientific_process_identity"],
+        launcher_process_identity=value["launcher_process_identity"],
+        stage_a_replay=value["stage_a_replay"],
+        stage_b_replay=value["stage_b_replay"],
+        result_core=value["result_core"],
+        scientific_processes_at_write=value["scientific_processes_at_write"],
+    )
+    if canonical_json_bytes(value) != canonical_json_bytes(rebuilt):
+        raise ContractError("execution-correction-2 terminal staging value drift")
+    return copy.deepcopy(dict(value))
+
+
+def build_execution_correction_2_scientific_exit(
+    *,
+    attempt_root: str | Path,
+    scientific_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    cleanup: Mapping[str, Any],
+    returncode: int,
+) -> dict[str, Any]:
+    launcher = validate_execution_correction_2_process_identity(
+        launcher_process_identity, expected_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    scientific = validate_execution_correction_2_process_identity(
+        scientific_process_identity, expected_role="SCIENTIFIC_EVALUATOR"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        launcher, role="NONSCIENTIFIC_LAUNCHER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        scientific, role="SCIENTIFIC_EVALUATOR", launcher=launcher
+    )
+    expected_cleanup = {
+        "process_group_members_after_wait": [],
+        "scoped_dev_kfd_holders_after_wait": [],
+        "exact_scientific_role_matches_after_wait": [],
+    }
+    if dict(cleanup) != expected_cleanup or returncode != 0:
+        raise ContractError("execution-correction-2 scientific process cleanup drift")
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_SCIENTIFIC_EXIT_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "attempt": str(Path(attempt_root).resolve()),
+            "scientific_process_identity": scientific,
+            "launcher_process_identity": launcher,
+            "cleanup": expected_cleanup,
+            "returncode": 0,
+            "pass": True,
+        }
+    )
+
+
+def validate_execution_correction_2_scientific_exit(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    required = {
+        "schema",
+        "experiment_id",
+        "attempt",
+        "scientific_process_identity",
+        "launcher_process_identity",
+        "cleanup",
+        "returncode",
+        "pass",
+        "content_digest",
+    }
+    if set(value) != required:
+        raise ContractError("execution-correction-2 scientific-exit key-set drift")
+    rebuilt = build_execution_correction_2_scientific_exit(
+        attempt_root=value["attempt"],
+        scientific_process_identity=value["scientific_process_identity"],
+        launcher_process_identity=value["launcher_process_identity"],
+        cleanup=value["cleanup"],
+        returncode=value["returncode"],
+    )
+    if canonical_json_bytes(value) != canonical_json_bytes(rebuilt):
+        raise ContractError("execution-correction-2 scientific-exit value drift")
+    return copy.deepcopy(dict(value))
+
+
+def build_execution_correction_2_terminal_finalization(
+    *,
+    attempt_root: str | Path,
+    source_freeze_commit: str,
+    terminal_staging: Mapping[str, Any],
+    scientific_exit: Mapping[str, Any],
+    finalizer_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    scientific_processes_at_write: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    _validate_hex_commit(source_freeze_commit, "correction-2 source_freeze_commit")
+    attempt = Path(attempt_root).resolve()
+    launcher = validate_execution_correction_2_process_identity(
+        launcher_process_identity, expected_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    finalizer = validate_execution_correction_2_process_identity(
+        finalizer_process_identity, expected_role="TERMINAL_FINALIZER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        launcher, role="NONSCIENTIFIC_LAUNCHER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        finalizer,
+        role="TERMINAL_FINALIZER",
+        launcher=launcher,
+        attempt_root=attempt,
+        scientific_exit_receipt=(
+            attempt / EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        ),
+    )
+    if list(scientific_processes_at_write):
+        raise ContractError("terminal finalizer observed a live scientific producer")
+    staging_binding = validate_execution_correction_2_artifact_binding(
+        terminal_staging,
+        expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"],
+    )
+    exit_binding = validate_execution_correction_2_artifact_binding(
+        scientific_exit,
+        expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"],
+    )
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_TERMINAL_FINALIZATION_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "attempt": str(attempt),
+            "source_freeze_commit": source_freeze_commit,
+            "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "terminal_staging": staging_binding,
+            "scientific_exit": exit_binding,
+            "finalizer_process_identity": finalizer,
+            "launcher_process_identity": launcher,
+            "scientific_processes_at_write": [],
+            "nothing_running_scope": [
+                "SCIENTIFIC_EVALUATOR",
+                "CONDITIONAL_SCIENTIFIC_HELPER",
+            ],
+            "nothing_scientific_running": True,
+            "live_non_scientific_processes": [finalizer, launcher],
+            "finalizer_live_at_write": True,
+            "launcher_live_at_write": True,
+            "canonical_publication_authorised": True,
+            "tracked_publication_authorised": True,
+            "publication_by_enclosing_atomic_finalizer_after_receipt_write": True,
+            "all_producer_roles_zero_claimed": False,
+            "pass": True,
+        }
+    )
+
+
+def validate_execution_correction_2_terminal_finalization(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    required = {
+        "schema",
+        "experiment_id",
+        "attempt",
+        "source_freeze_commit",
+        "scientific_contract_freeze_commit",
+        "amendment",
+        "terminal_staging",
+        "scientific_exit",
+        "finalizer_process_identity",
+        "launcher_process_identity",
+        "scientific_processes_at_write",
+        "nothing_running_scope",
+        "nothing_scientific_running",
+        "live_non_scientific_processes",
+        "finalizer_live_at_write",
+        "launcher_live_at_write",
+        "canonical_publication_authorised",
+        "tracked_publication_authorised",
+        "publication_by_enclosing_atomic_finalizer_after_receipt_write",
+        "all_producer_roles_zero_claimed",
+        "pass",
+        "content_digest",
+    }
+    if set(value) != required:
+        raise ContractError("execution-correction-2 terminal finalization key-set drift")
+    rebuilt = build_execution_correction_2_terminal_finalization(
+        attempt_root=value["attempt"],
+        source_freeze_commit=value["source_freeze_commit"],
+        terminal_staging=value["terminal_staging"],
+        scientific_exit=value["scientific_exit"],
+        finalizer_process_identity=value["finalizer_process_identity"],
+        launcher_process_identity=value["launcher_process_identity"],
+        scientific_processes_at_write=value["scientific_processes_at_write"],
+    )
+    if canonical_json_bytes(value) != canonical_json_bytes(rebuilt):
+        raise ContractError("execution-correction-2 terminal finalization value drift")
+    return copy.deepcopy(dict(value))
+
+
+def build_execution_correction_2_post_finalizer_check(
+    *,
+    repo_root: str | Path,
+    source_freeze_commit: str,
+    terminal_finalization: Mapping[str, Any],
+    checker_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    producer_role_matches: Mapping[str, Sequence[Mapping[str, Any]]],
+    tracked_result: Mapping[str, Any],
+    tracked_report: Mapping[str, Any],
+    deep_check: Mapping[str, Any],
+) -> dict[str, Any]:
+    _validate_hex_commit(source_freeze_commit, "correction-2 source_freeze_commit")
+    checker = validate_execution_correction_2_process_identity(
+        checker_process_identity, expected_role="POST_FINALIZER_CHECKER"
+    )
+    launcher = validate_execution_correction_2_process_identity(
+        launcher_process_identity, expected_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        checker, role="POST_FINALIZER_CHECKER"
+    )
+    _validate_execution_correction_2_evaluator_argv(
+        launcher, role="NONSCIENTIFIC_LAUNCHER"
+    )
+    if (
+        checker["argv"][0] != launcher["argv"][0]
+        or str(Path(checker["executable"]).resolve())
+        != str(Path(launcher["executable"]).resolve())
+    ):
+        raise ContractError(
+            "post-finalizer checker interpreter differs from the launcher"
+        )
+    if set(producer_role_matches) != set(EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES):
+        raise ContractError("correction-2 postcheck producer-role key-set drift")
+    if any(list(matches) for matches in producer_role_matches.values()):
+        raise ContractError("correction-2 postcheck observed a live producer")
+    root = Path(repo_root).resolve()
+
+    terminal_binding = validate_execution_correction_2_artifact_binding(
+        terminal_finalization,
+        expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+            "terminal_finalization"
+        ],
+    )
+    terminal_path = OUTPUT_ROOT / str(terminal_binding["path"])
+    _validate_correction_2_bound_file(
+        terminal_path, terminal_binding, "correction-2 terminal finalization"
+    )
+    terminal_value = _load_json_object(
+        terminal_path, "correction-2 terminal finalization"
+    )
+    validate_execution_correction_2_terminal_finalization(terminal_value)
+    if terminal_value.get("content_digest") != terminal_binding["content_digest"]:
+        raise ContractError("correction-2 terminal finalization content drift")
+    if terminal_value.get("launcher_process_identity") != launcher:
+        raise ContractError("postcheck launcher differs from terminal finalization")
+    if terminal_value.get("source_freeze_commit") != source_freeze_commit:
+        raise ContractError("postcheck source freeze differs from terminal finalization")
+
+    def git(*args: str) -> str:
+        completed = subprocess.run(
+            ["git", *args], cwd=root, check=True, capture_output=True, text=True
+        )
+        return completed.stdout.strip()
+
+    result_binding = validate_execution_correction_2_artifact_binding(
+        tracked_result, expected_path=str(TRACKED_RESULT_PATH)
+    )
+    if set(tracked_report) != {"path", "sha256", "bytes"} or tracked_report.get(
+        "path"
+    ) != str(TRACKED_REPORT_PATH):
+        raise ContractError("correction-2 tracked report binding drift")
+    if (
+        not isinstance(tracked_report.get("sha256"), str)
+        or len(tracked_report["sha256"]) != 64
+        or isinstance(tracked_report.get("bytes"), bool)
+        or not isinstance(tracked_report["bytes"], int)
+        or tracked_report["bytes"] < 0
+    ):
+        raise ContractError("correction-2 tracked report binding value drift")
+    _validate_correction_2_bound_file(
+        root / TRACKED_RESULT_PATH, result_binding, "tracked result"
+    )
+    _validate_correction_2_bound_file(
+        root / TRACKED_REPORT_PATH, tracked_report, "tracked report"
+    )
+    canonical_result_path = OUTPUT_ROOT / "result.json"
+    canonical_report_path = OUTPUT_ROOT / "report.md"
+    _validate_correction_2_bound_file(
+        canonical_result_path, result_binding, "canonical result"
+    )
+    _validate_correction_2_bound_file(
+        canonical_report_path, tracked_report, "canonical report"
+    )
+    if canonical_result_path.read_bytes() != (root / TRACKED_RESULT_PATH).read_bytes():
+        raise ContractError("canonical and tracked result bytes differ")
+    if canonical_report_path.read_bytes() != (root / TRACKED_REPORT_PATH).read_bytes():
+        raise ContractError("canonical and tracked report bytes differ")
+    expected_deep_check = {
+        "pass": True,
+        "canonical_output_root": str(OUTPUT_ROOT.resolve()),
+        "tracked_result_sha256": result_binding["sha256"],
+        "tracked_report_sha256": tracked_report["sha256"],
+    }
+    if dict(deep_check) != expected_deep_check:
+        raise ContractError("correction-2 official deep-check evidence drift")
+    result_commit = git("rev-parse", "HEAD")
+    lineage = git("rev-list", "--parents", "-n", "1", result_commit).split()
+    if (
+        len(lineage) != 2
+        or lineage[0] != result_commit
+        or lineage[1] != source_freeze_commit
+    ):
+        raise ContractError(
+            "correction-2 result commit is not the direct child of the freeze"
+        )
+    if git("show", "-s", "--format=%s", result_commit) != (
+        EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT
+    ):
+        raise ContractError("correction-2 result commit subject drift")
+    if git("status", "--porcelain=v1"):
+        raise ContractError("correction-2 postcheck repository is dirty")
+    changed = sorted(
+        path
+        for path in git("diff", "--name-only", source_freeze_commit, result_commit).splitlines()
+        if path
+    )
+    if changed != sorted([str(TRACKED_RESULT_PATH), str(TRACKED_REPORT_PATH)]):
+        raise ContractError("correction-2 result commit path-set drift")
+    for ancestor in (
+        SOURCE_COMMIT,
+        REQUIRED_REQUIREMENTS_ANCESTOR,
+        INITIAL_EXECUTION_FREEZE_COMMIT,
+        INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+        source_freeze_commit,
+    ):
+        completed = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor, result_commit],
+            cwd=root,
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if completed.returncode:
+            raise ContractError(
+                f"correction-2 result required ancestor absent: {ancestor}"
+            )
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_POST_FINALIZER_CHECK_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "source_freeze_commit": source_freeze_commit,
+            "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+            "canonical_output_root": str(OUTPUT_ROOT.resolve()),
+            "external_witness_path": EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+                "post_finalizer_check"
+            ],
+            "terminal_finalization": terminal_binding,
+            "checker_process_identity": checker,
+            "launcher_process_identity": launcher,
+            "same_interpreter_as_launcher": True,
+            "tracked_result": result_binding,
+            "tracked_report": copy.deepcopy(dict(tracked_report)),
+            "canonical_result": {
+                **copy.deepcopy(result_binding),
+                "path": "result.json",
+            },
+            "canonical_report": {
+                **copy.deepcopy(dict(tracked_report)),
+                "path": "report.md",
+            },
+            "canonical_tracked_bytes_equal": True,
+            "official_deep_check": expected_deep_check,
+            "result_commit_custody": {
+                "result_commit": result_commit,
+                "sole_parent": source_freeze_commit,
+                "subject": EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT,
+                "changed_paths": changed,
+                "clean": True,
+                "required_ancestors": [
+                    SOURCE_COMMIT,
+                    REQUIRED_REQUIREMENTS_ANCESTOR,
+                    INITIAL_EXECUTION_FREEZE_COMMIT,
+                    INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+                    source_freeze_commit,
+                ],
+            },
+            "producer_role_matches": {
+                role: [] for role in EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+            },
+            "literal_zero_all_producer_roles": True,
+            "inside_canonical_output_fixed_point": False,
+            "launcher_spawned_or_execed_checker": False,
+            "pass": True,
+        }
+    )
+
+
+def validate_execution_correction_2_post_finalizer_check(
+    value: Mapping[str, Any],
+    *,
+    repo_root: str | Path,
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    rebuilt = build_execution_correction_2_post_finalizer_check(
+        repo_root=repo_root,
+        source_freeze_commit=value["source_freeze_commit"],
+        terminal_finalization=value["terminal_finalization"],
+        checker_process_identity=value["checker_process_identity"],
+        launcher_process_identity=value["launcher_process_identity"],
+        producer_role_matches=value["producer_role_matches"],
+        tracked_result=value["tracked_result"],
+        tracked_report=value["tracked_report"],
+        deep_check=value["official_deep_check"],
+    )
+    if canonical_json_bytes(value) != canonical_json_bytes(rebuilt):
+        raise ContractError("execution-correction-2 post-finalizer check drift")
+    return copy.deepcopy(dict(value))
+
+
+def validate_execution_correction_2_result_receipt(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the base result plus final correction-2 terminal custody."""
+
+    validate_self_digest(value, "content_digest")
+    if value.get("nothing_running") is not False:
+        raise ContractError(
+            "correction-2 result must not make a false all-process-zero claim"
+        )
+    base_compatibility = copy.deepcopy(dict(value))
+    base_compatibility["nothing_running"] = True
+    base_compatibility = attach_self_digest(base_compatibility)
+    validate_result_receipt(base_compatibility)
+    validated = copy.deepcopy(dict(value))
+    stage_execution = validated.get("stage_execution")
+    if not isinstance(stage_execution, Mapping):
+        raise ContractError("correction-2 result stage_execution drift")
+    custody = stage_execution.get("execution_correction_2_custody")
+    if not isinstance(custody, Mapping):
+        raise ContractError("correction-2 result custody is absent")
+    required = {
+        "schema",
+        "amendment",
+        "amendment_source_closure",
+        "scientific_contract_freeze_commit",
+        "execution_correction_2_commit",
+        "failed_archives",
+        "files_reused",
+        "stage_a_replay",
+        "stage_b_replay",
+        "terminal_staging",
+        "scientific_exit",
+        "terminal_finalization",
+        "nothing_running_scope",
+        "nothing_scientific_running",
+        "live_non_scientific_processes",
+        "post_finalizer_check",
+    }
+    if set(custody) != required:
+        raise ContractError("correction-2 result custody key-set drift")
+    validate_execution_correction_2_runtime_custody(
+        custody, phase="TERMINAL_FINALIZATION"
+    )
+    if custody["schema"] != EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION:
+        raise ContractError("correction-2 result custody schema drift")
+    if custody["amendment"] != EXECUTION_CORRECTION_2_AMENDMENT_BINDING:
+        raise ContractError("correction-2 result amendment binding drift")
+    if custody["scientific_contract_freeze_commit"] != INITIAL_EXECUTION_FREEZE_COMMIT:
+        raise ContractError("correction-2 result scientific freeze drift")
+    if custody["execution_correction_2_commit"] != validated["source_freeze_commit"]:
+        raise ContractError("correction-2 result source-freeze drift")
+    if custody["files_reused"] != 0 or len(custody["failed_archives"]) != 2:
+        raise ContractError("correction-2 result failed-archive custody drift")
+    for record in custody["failed_archives"]:
+        if record.get("files_reused") != 0 or record.get("partial_artifacts_reusable") is not False:
+            raise ContractError("correction-2 result archive reuse drift")
+    for key in (
+        "stage_a_replay",
+        "stage_b_replay",
+        "terminal_staging",
+        "scientific_exit",
+        "terminal_finalization",
+    ):
+        validate_execution_correction_2_artifact_binding(
+            custody[key], expected_path=EXECUTION_CORRECTION_2_RUNTIME_PATHS[key]
+        )
+    if custody["nothing_running_scope"] != [
+        "SCIENTIFIC_EVALUATOR",
+        "CONDITIONAL_SCIENTIFIC_HELPER",
+    ] or custody["nothing_scientific_running"] is not True:
+        raise ContractError("correction-2 result scoped quiescence drift")
+    live = custody["live_non_scientific_processes"]
+    if not isinstance(live, list) or len(live) != 2:
+        raise ContractError("correction-2 result live process disclosure drift")
+    validate_execution_correction_2_process_identity(
+        live[0], expected_role="TERMINAL_FINALIZER"
+    )
+    validate_execution_correction_2_process_identity(
+        live[1], expected_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    if custody["post_finalizer_check"] != {
+        "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"],
+        "inside_canonical_output_fixed_point": False,
+        "status_at_result_publication": "PENDING_PRODUCER_EXIT",
+    }:
+        raise ContractError("correction-2 result postcheck policy drift")
+    return validated
+
+
+def build_execution_correction_2_output_schema() -> dict[str, Any]:
+    """Build the non-scientific correction-2 overlay output schema."""
+
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "base_output_schema": copy.deepcopy(
+                BASE_SCIENTIFIC_AUTHORITY_BINDINGS["output_schema"]
+            ),
+            "first_correction_output_schema": copy.deepcopy(
+                EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS[
+                    "output_schema"
+                ]
+            ),
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "scientific_metric_and_decision_fields_unchanged": True,
+            "base_result_key_set_unchanged": True,
+            "legacy_execution_metadata_override": {
+                "field": "nothing_running",
+                "persisted_value": False,
+                "reason": (
+                    "the independent finalizer and non-scientific launcher are live "
+                    "during publication"
+                ),
+                "base_validator_compatibility": (
+                    "normalize only this field to true in a temporary copy and "
+                    "recompute only its dependent self-digest; never persist the copy"
+                ),
+                "replacement_truth": (
+                    "execution_correction_2_custody.nothing_scientific_running=true "
+                    "under the exact science/helper scope, with live publisher "
+                    "identities disclosed and external postcheck pending"
+                ),
+            },
+            "canonical_json": {
+                "sort_keys": True,
+                "separators": [",", ":"],
+                "ensure_ascii": False,
+                "allow_nan": False,
+                "encoding": "UTF-8",
+                "self_digest_excludes_trailing_newline": True,
+                "test_vector": copy.deepcopy(EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR),
+            },
+            "runtime_receipts": {
+                "stage_a_replay": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+                    "schema": EXECUTION_CORRECTION_2_REPLAY_SCHEMA_VERSION,
+                    "writer": "scientific evaluator before Stage B",
+                    "validator": "validate_execution_correction_2_replay_receipt",
+                    "fresh_artifact_custody_required": {
+                        "attempt_root_containment_verified": True,
+                        "symlinks_rejected": True,
+                        "hardlinks_to_failed_archive_rejected": True,
+                    },
+                },
+                "stage_b_replay": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"],
+                    "schema": EXECUTION_CORRECTION_2_STAGE_B_REPLAY_SCHEMA_VERSION,
+                    "writer": "scientific evaluator immediately after Stage B",
+                    "validator": (
+                        "validate_execution_correction_2_stage_b_replay_receipt"
+                    ),
+                    "must_exist_before_stage_c": True,
+                    "fresh_artifact_custody_required": {
+                        "attempt_root_containment_verified": True,
+                        "symlinks_rejected": True,
+                        "hardlinks_to_failed_archive_rejected": True,
+                    },
+                },
+                "terminal_staging": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"],
+                    "schema": EXECUTION_CORRECTION_2_TERMINAL_STAGING_SCHEMA_VERSION,
+                    "writer": "scientific evaluator",
+                    "canonical_or_tracked_publication": False,
+                },
+                "scientific_exit": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"],
+                    "schema": EXECUTION_CORRECTION_2_SCIENTIFIC_EXIT_SCHEMA_VERSION,
+                    "writer": "non-scientific launcher after evaluator exit",
+                    "required_returncode": 0,
+                },
+                "terminal_finalization": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+                        "terminal_finalization"
+                    ],
+                    "schema": (
+                        EXECUTION_CORRECTION_2_TERMINAL_FINALIZATION_SCHEMA_VERSION
+                    ),
+                    "writer": "independent terminal finalizer",
+                    "publication": "atomic canonical and tracked publication",
+                    "nothing_running_scope": [
+                        "SCIENTIFIC_EVALUATOR",
+                        "CONDITIONAL_SCIENTIFIC_HELPER",
+                    ],
+                    "live_non_scientific_processes_required": [
+                        "TERMINAL_FINALIZER",
+                        "NONSCIENTIFIC_LAUNCHER",
+                    ],
+                },
+                "post_finalizer_check": {
+                    "path": EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+                        "post_finalizer_check"
+                    ],
+                    "schema": (
+                        EXECUTION_CORRECTION_2_POST_FINALIZER_CHECK_SCHEMA_VERSION
+                    ),
+                    "writer": "independent external checker after launcher exit",
+                    "inside_canonical_output_fixed_point": False,
+                    "required_zero_roles": list(
+                        EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+                    ),
+                    "canonical_tracked_result_report_byte_equality": True,
+                    "official_deep_check_pass_required": True,
+                    "result_commit": {
+                        "sole_parent": "execution_correction_2_commit",
+                        "subject": EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT,
+                        "changed_paths": [
+                            str(TRACKED_RESULT_PATH),
+                            str(TRACKED_REPORT_PATH),
+                        ],
+                        "clean": True,
+                        "required_ancestors": [
+                            SOURCE_COMMIT,
+                            REQUIRED_REQUIREMENTS_ANCESTOR,
+                            INITIAL_EXECUTION_FREEZE_COMMIT,
+                            INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT,
+                            "execution_correction_2_commit",
+                        ],
+                    },
+                },
+            },
+            "result_custody": {
+                "location": "stage_execution.execution_correction_2_custody",
+                "schema": EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION,
+                "required_fields": [
+                    "schema",
+                    "amendment",
+                    "amendment_source_closure",
+                    "scientific_contract_freeze_commit",
+                    "execution_correction_2_commit",
+                    "failed_archives",
+                    "files_reused",
+                    "stage_a_replay",
+                    "stage_b_replay",
+                    "terminal_staging",
+                    "scientific_exit",
+                    "terminal_finalization",
+                    "nothing_running_scope",
+                    "nothing_scientific_running",
+                    "live_non_scientific_processes",
+                    "post_finalizer_check",
+                ],
+                "failed_archives": 2,
+                "files_reused": 0,
+                "nothing_running_scope": [
+                    "SCIENTIFIC_EVALUATOR",
+                    "CONDITIONAL_SCIENTIFIC_HELPER",
+                ],
+                "nothing_scientific_running": True,
+                "legacy_top_level_nothing_running": False,
+                "all_producer_roles_zero_claimed_at_publication": False,
+            },
+            "stage_b_reproduction": {
+                "ledger": copy.deepcopy(
+                    EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["stage_b_ledger"]
+                ),
+                "normalized_projections": copy.deepcopy(
+                    EXECUTION_CORRECTION_2_STAGE_B_PROJECTIONS
+                ),
+                "context_arrays": copy.deepcopy(
+                    EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY
+                ),
+                "prediction_arrays": copy.deepcopy(
+                    EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY
+                ),
+                "postpublication_revalidation": {
+                    "current_content_root": "canonical output root",
+                    "fresh_attempt_identity": (
+                        "original attempt path from terminal_staging.attempt"
+                    ),
+                    "persisted_replay_receipt_must_remain_byte_equivalent": True,
+                },
+            },
+            "forbidden": {
+                "result_or_report_published_by_scientific_evaluator": True,
+                "finalizer_or_launcher_absence_claim_while_live": True,
+                "postcheck_inside_canonical_manifest": True,
+                "artifact_reuse_from_either_failed_archive": True,
+                "retry_after_correction_2": True,
+            },
+        },
+        "output_schema_sha256",
+    )
+
+
+EXECUTION_CORRECTION_2_OUTPUT_SCHEMA = build_execution_correction_2_output_schema()
+EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_RECEIPT_BYTES = (
+    canonical_json_bytes(EXECUTION_CORRECTION_2_OUTPUT_SCHEMA) + b"\n"
+)
+EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_BINDING = {
+    "path": str(TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH),
+    "sha256": hashlib.sha256(
+        EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_RECEIPT_BYTES
+    ).hexdigest(),
+    "output_schema_sha256": EXECUTION_CORRECTION_2_OUTPUT_SCHEMA[
+        "output_schema_sha256"
+    ],
+    "bytes": len(EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_RECEIPT_BYTES),
+    "schema": EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_VERSION,
+}
+
+
+def build_execution_correction_2_fixture() -> dict[str, Any]:
+    utf8_payload = canonical_json_bytes(EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR["value"])
+    checks = {
+        "scientific_contract_digest_unchanged": (
+            BASE_SCIENTIFIC_AUTHORITY_BINDINGS["contract"]["content_digest"]
+            == SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+        ),
+        "utf8_test_vector_digest_exact": (
+            hashlib.sha256(utf8_payload).hexdigest()
+            == EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR["canonical_utf8_sha256"]
+        ),
+        "utf8_test_vector_bytes_exact": (
+            len(utf8_payload)
+            == EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR["canonical_utf8_bytes"]
+        ),
+        "two_failed_archives_bound": (
+            EXECUTION_CORRECTION_ARCHIVE_INVENTORY["files"] == 15
+            and EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY["files"] == 217
+        ),
+        "zero_reuse": (
+            EXECUTION_CORRECTION_2_POLICY["failed_archive_files_reused"] == 0
+        ),
+        "freshness_link_guards": (
+            EXECUTION_CORRECTION_2_POLICY["fresh_artifact_custody"]
+            ["attempt_root_containment_required"]
+            and EXECUTION_CORRECTION_2_POLICY["fresh_artifact_custody"]
+            ["symlinks_forbidden"]
+            and EXECUTION_CORRECTION_2_POLICY["fresh_artifact_custody"]
+            ["hardlinks_to_failed_archive_forbidden"]
+        ),
+        "one_final_attempt": (
+            EXECUTION_CORRECTION_2_POLICY["maximum_fresh_attempts"] == 1
+            and EXECUTION_CORRECTION_2_POLICY["failure_after_this_attempt"]
+            == "NO_FURTHER_RETRY"
+        ),
+        "stage_a_before_stage_b": (
+            EXECUTION_CORRECTION_2_POLICY["stage_a_reproduction"][
+                "must_pass_before_stage_b"
+            ]
+            is True
+        ),
+        "stage_b_before_stage_c": (
+            EXECUTION_CORRECTION_2_POLICY["stage_b_reproduction"][
+                "must_pass_immediately_after_stage_b_before_stage_c"
+            ]
+            is True
+        ),
+        "stage_b_ledger_rows_exact": (
+            EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS["stage_b_ledger"]["rows"]
+            == 2_304
+        ),
+        "context_array_not_npz_container": (
+            EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY[
+                "npz_container_byte_equality_required"
+            ]
+            is False
+        ),
+        "prediction_npy_bytes_exact": (
+            EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY[
+                "raw_npy_byte_equality_required"
+            ]
+            is True
+        ),
+        "terminal_science_scope_exact": (
+            EXECUTION_CORRECTION_2_POLICY["terminal_lifecycle"][
+                "terminal_result_nothing_running_scope"
+            ]
+            == ["SCIENTIFIC_EVALUATOR", "CONDITIONAL_SCIENTIFIC_HELPER"]
+        ),
+        "external_postcheck_after_launcher_exit": (
+            "after the launcher and finalizer have both exited"
+            in EXECUTION_CORRECTION_2_POLICY["terminal_lifecycle"][
+                "official_postcheck_invocation"
+            ]
+        ),
+        "terminal_relocation_replay_safe": (
+            EXECUTION_CORRECTION_2_POLICY["terminal_lifecycle"]
+            ["atomic_relocation_policy"]
+            ["scientific_reproduction_after_relocation"]
+            is True
+            and EXECUTION_CORRECTION_2_POLICY["terminal_lifecycle"]
+            ["atomic_relocation_policy"]
+            ["pre_stage_b_fresh_attempt_validation_weakened"]
+            is False
+        ),
+        "helper_interpreter_map_exact": (
+            {
+                key: value["interpreter_class"]
+                for key, value in EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP.items()
+            }
+            == {
+                "run-stage-b": "GPU_TINYQUAD",
+                "context-state": "CPU_GENESIS",
+                "predict-source": "GPU_TINYQUAD",
+                "run-stage-c": "GPU_TINYQUAD",
+            }
+        ),
+        "path_allowlist_exact": (
+            len(EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS)
+            == len(set(EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS))
+            == 9
+        ),
+    }
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_FIXTURE_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "output_schema": copy.deepcopy(
+                EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_BINDING
+            ),
+            "checks": checks,
+        },
+        "fixture_sha256",
+    )
+
+
+EXECUTION_CORRECTION_2_FIXTURE = build_execution_correction_2_fixture()
+EXECUTION_CORRECTION_2_FIXTURE_RECEIPT_BYTES = (
+    canonical_json_bytes(EXECUTION_CORRECTION_2_FIXTURE) + b"\n"
+)
+EXECUTION_CORRECTION_2_FIXTURE_BINDING = {
+    "path": str(TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH),
+    "sha256": hashlib.sha256(
+        EXECUTION_CORRECTION_2_FIXTURE_RECEIPT_BYTES
+    ).hexdigest(),
+    "fixture_sha256": EXECUTION_CORRECTION_2_FIXTURE["fixture_sha256"],
+    "bytes": len(EXECUTION_CORRECTION_2_FIXTURE_RECEIPT_BYTES),
+    "schema": EXECUTION_CORRECTION_2_FIXTURE_SCHEMA_VERSION,
+}
+
+
+def build_execution_correction_2_preregistration_markdown() -> str:
+    return "\n".join(
+        [
+            "# PLAN_AWARE_MONOTONE_JEPA_COST_V1 execution correction 2",
+            "",
+            "Status: prospective execution-only correction; no scientific result has been rerun.",
+            "",
+            "This separate amendment corrects canonical UTF-8 result persistence and terminal custody. It does not alter the frozen scientific contract, model, loss, data, metric, gate, classification, or next-decision rule.",
+            "",
+            f"Scientific contract freeze: `{INITIAL_EXECUTION_FREEZE_COMMIT}`; contract digest: `{SCIENTIFIC_AUTHORITY_CONTRACT_SHA256}`.",
+            f"First execution-correction freeze: `{INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT}`.",
+            f"Required correction-2 commit subject: `{EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT}`.",
+            "",
+            "Both immutable failed archives are bound and nonreusable. One wholly fresh final attempt is authorised; every file, checkpoint, tensor, ledger and receipt from both archives has reuse count zero. Every compared replay artifact must be a canonical attempt-contained path, may not be a symlink, and may not share a device/inode pair with its failed-archive counterpart. A further retry is not authorised.",
+            "",
+            "The second failure occurred during terminal persistence after Stage B. The amendment was authored without opening scientific metric values, row outcome values, or tensors; it is gate-status-aware. Canonical self-digests use compact sorted JSON with `ensure_ascii=False`, `allow_nan=False`, UTF-8 bytes and no trailing newline inside the digest.",
+            "",
+            "The fresh attempt must reproduce Stage A before Stage B. Immediately after Stage B and before any Stage C child, it must reproduce all 2,304 Stage-B ledger rows, normalized scientific projections, 48 context identities/shapes/dtypes/array-content digests, and 96 stable NPY byte bindings against the immediately preceding failed archive. NPZ container bytes are deliberately not compared.",
+            "",
+            "The scientific evaluator writes a nonpublishing terminal staging handoff and exits. The launcher proves its process-group and device cleanup, then starts a separate finalizer. The finalizer records zero scientific evaluator/helper matches while disclosing its own and the still-live launcher's exact identities, and atomically publishes canonical and tracked outputs. Reproduction after that atomic rename reads the canonical root while preserving the original attempt identity bound in terminal staging. Only after both producer processes exit may an independent external checker record literal zero exact matches for all producer roles; that witness remains outside the canonical storage fixed point.",
+            "",
+            f"The external checker also requires canonical and tracked result/report byte equality, an official deep-check pass, and a clean result commit that is the direct child of the correction-2 freeze, has subject `{EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT}`, and changes only `{TRACKED_RESULT_PATH}` and `{TRACKED_REPORT_PATH}`.",
+            "",
+            f"Amendment content digest: `{EXECUTION_CORRECTION_2_AMENDMENT['content_digest']}`.",
+            f"Overlay schema digest: `{EXECUTION_CORRECTION_2_OUTPUT_SCHEMA['output_schema_sha256']}`.",
+            f"Fixture digest: `{EXECUTION_CORRECTION_2_FIXTURE['fixture_sha256']}`.",
+            "",
+        ]
+    )
+
+
+def execution_correction_2_output_schema_receipt_bytes() -> bytes:
+    validate_self_digest(
+        EXECUTION_CORRECTION_2_OUTPUT_SCHEMA, "output_schema_sha256"
+    )
+    return EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_RECEIPT_BYTES
+
+
+def execution_correction_2_fixture_receipt_bytes() -> bytes:
+    validate_self_digest(EXECUTION_CORRECTION_2_FIXTURE, "fixture_sha256")
+    if not all(EXECUTION_CORRECTION_2_FIXTURE["checks"].values()):
+        raise ContractError("execution-correction-2 fixture contains a failed check")
+    return EXECUTION_CORRECTION_2_FIXTURE_RECEIPT_BYTES
 
 
 def build_role_map(split_payload: Mapping[str, Any]) -> dict[str, str]:
@@ -5038,6 +8105,14 @@ EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS = (
     str(TRACKED_EXECUTION_CORRECTION_OUTPUT_SCHEMA_PATH),
     str(TRACKED_EXECUTION_CORRECTION_FIXTURE_PATH),
 )
+EXECUTION_CORRECTION_2_SOURCE_CLOSURE_DEFAULT_PATHS = (
+    *EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS,
+    str(TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH),
+    str(TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH),
+    str(TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH),
+    str(TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH),
+    str(TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH),
+)
 
 
 def build_source_closure(
@@ -5216,6 +8291,155 @@ def execution_correction_source_closure_receipt_bytes(
     value: Mapping[str, Any],
 ) -> bytes:
     validate_execution_correction_source_closure(value)
+    return canonical_json_bytes(value) + b"\n"
+
+
+def build_execution_correction_2_source_closure(
+    repo_root: str | Path,
+    *,
+    paths: Iterable[str | Path] | None = None,
+    require_complete: bool = True,
+) -> dict[str, Any]:
+    """Hash the second overlay and every transitive prior closure authority."""
+
+    root = Path(repo_root).resolve()
+    selected = [
+        Path(value)
+        for value in (
+            EXECUTION_CORRECTION_2_SOURCE_CLOSURE_DEFAULT_PATHS
+            if paths is None
+            else paths
+        )
+    ]
+    if len({str(path) for path in selected}) != len(selected):
+        raise ContractError("execution-correction-2 source closure repeats a path")
+    rows: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for relative in selected:
+        if relative.is_absolute() or ".." in relative.parts:
+            raise ContractError(
+                "execution-correction-2 source paths must be repository-relative"
+            )
+        absolute = root / relative
+        if not absolute.is_file():
+            missing.append(str(relative))
+            continue
+        sha256, size = _sha256_file(absolute)
+        rows.append({"path": str(relative), "sha256": sha256, "bytes": size})
+    if require_complete and missing:
+        raise ContractError(
+            f"execution-correction-2 source closure is incomplete: {missing}"
+        )
+    return attach_self_digest(
+        {
+            "schema": EXECUTION_CORRECTION_2_SOURCE_CLOSURE_SCHEMA_VERSION,
+            "experiment_id": EXPERIMENT_ID,
+            "scientific_contract_freeze_commit": INITIAL_EXECUTION_FREEZE_COMMIT,
+            "base_execution_correction_freeze_commit": (
+                INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT
+            ),
+            "scientific_authority_contract_sha256": (
+                SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+            ),
+            "amendment": copy.deepcopy(EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+            "amendment_output_schema": copy.deepcopy(
+                EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_BINDING
+            ),
+            "amendment_fixture": copy.deepcopy(
+                EXECUTION_CORRECTION_2_FIXTURE_BINDING
+            ),
+            "correction_2_commit_binding_policy": (
+                "bound by the enclosing Git correction-2 commit after byte "
+                "finalization; no circular future commit hash is embedded"
+            ),
+            "declared_paths": [str(path) for path in selected],
+            "rows": rows,
+            "row_count": len(rows),
+            "missing_paths": missing,
+            "complete": not missing,
+            "self_path_excluded_to_avoid_circular_digest": str(
+                TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+            ),
+            "original_scientific_authorities_immutable": copy.deepcopy(
+                BASE_SCIENTIFIC_AUTHORITY_BINDINGS
+            ),
+            "first_correction_authorities_immutable": copy.deepcopy(
+                EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS
+            ),
+            "scientific_value_handling": {
+                "canonical_machine_json_projection_and_hashing": True,
+                "values_inspected_by_amendment_authors": False,
+                "values_interpreted_by_amendment_authors": False,
+                "values_used_to_choose_or_alter_science": False,
+                "binary_gate_status_known": True,
+                "tensors_opened_by_amendment_authors": False,
+            },
+            "failed_archives_hashed_only": True,
+        }
+    )
+
+
+def validate_execution_correction_2_source_closure(
+    value: Mapping[str, Any],
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    if value.get("schema") != EXECUTION_CORRECTION_2_SOURCE_CLOSURE_SCHEMA_VERSION:
+        raise ContractError("execution-correction-2 source closure schema drift")
+    if value.get("scientific_contract_freeze_commit") != INITIAL_EXECUTION_FREEZE_COMMIT:
+        raise ContractError("execution-correction-2 scientific freeze drift")
+    if value.get("base_execution_correction_freeze_commit") != (
+        INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT
+    ):
+        raise ContractError("execution-correction-2 base correction freeze drift")
+    if value.get("scientific_authority_contract_sha256") != (
+        SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+    ):
+        raise ContractError("execution-correction-2 scientific digest drift")
+    if value.get("complete") is not True or value.get("missing_paths") != []:
+        raise ContractError("execution-correction-2 source closure is incomplete")
+    declared = value.get("declared_paths")
+    rows = value.get("rows")
+    if (
+        declared != list(EXECUTION_CORRECTION_2_SOURCE_CLOSURE_DEFAULT_PATHS)
+        or len(declared) != len(set(declared))
+        or not isinstance(rows, list)
+        or value.get("row_count") != len(rows)
+        or [row.get("path") for row in rows] != declared
+    ):
+        raise ContractError("execution-correction-2 source closure path-set drift")
+    for row in rows:
+        if (
+            not isinstance(row, Mapping)
+            or set(row) != {"path", "sha256", "bytes"}
+            or not isinstance(row["sha256"], str)
+            or len(row["sha256"]) != 64
+            or isinstance(row["bytes"], bool)
+            or not isinstance(row["bytes"], int)
+            or row["bytes"] < 0
+        ):
+            raise ContractError("execution-correction-2 source closure row drift")
+    if value.get("original_scientific_authorities_immutable") != (
+        BASE_SCIENTIFIC_AUTHORITY_BINDINGS
+    ) or value.get("first_correction_authorities_immutable") != (
+        EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS
+    ):
+        raise ContractError("execution-correction-2 immutable authority drift")
+    if value.get("scientific_value_handling") != {
+        "canonical_machine_json_projection_and_hashing": True,
+        "values_inspected_by_amendment_authors": False,
+        "values_interpreted_by_amendment_authors": False,
+        "values_used_to_choose_or_alter_science": False,
+        "binary_gate_status_known": True,
+        "tensors_opened_by_amendment_authors": False,
+    }:
+        raise ContractError("execution-correction-2 source closure crossed barrier")
+    return copy.deepcopy(dict(value))
+
+
+def execution_correction_2_source_closure_receipt_bytes(
+    value: Mapping[str, Any],
+) -> bytes:
+    validate_execution_correction_2_source_closure(value)
     return canonical_json_bytes(value) + b"\n"
 
 
@@ -5461,6 +8685,128 @@ def write_execution_correction_authorities(repo_root: str | Path) -> dict[str, P
     return paths
 
 
+def write_execution_correction_2_amendment(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        execution_correction_2_amendment_receipt_bytes(),
+        "execution-correction-2 amendment",
+    )
+
+
+def write_execution_correction_2_output_schema(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        execution_correction_2_output_schema_receipt_bytes(),
+        "execution-correction-2 output schema",
+    )
+
+
+def write_execution_correction_2_fixture(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        execution_correction_2_fixture_receipt_bytes(),
+        "execution-correction-2 fixture",
+    )
+
+
+def write_execution_correction_2_preregistration(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        build_execution_correction_2_preregistration_markdown().encode("utf-8"),
+        "execution-correction-2 preregistration",
+    )
+
+
+def write_execution_correction_2_source_closure(
+    value: Mapping[str, Any],
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH,
+) -> Path:
+    return _write_immutable(
+        Path(path),
+        execution_correction_2_source_closure_receipt_bytes(value),
+        "execution-correction-2 source closure",
+    )
+
+
+def write_execution_correction_2_authorities(
+    repo_root: str | Path,
+) -> dict[str, Path]:
+    """Write only prospective correction-2 authorities; never base authorities."""
+
+    root = Path(repo_root)
+    validate_base_scientific_authorities(root)
+    validate_base_execution_correction_authorities(root)
+    paths = {
+        "preregistration": write_execution_correction_2_preregistration(
+            root / TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH
+        ),
+        "amendment": write_execution_correction_2_amendment(
+            root / TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH
+        ),
+        "output_schema": write_execution_correction_2_output_schema(
+            root / TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH
+        ),
+        "fixture": write_execution_correction_2_fixture(
+            root / TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH
+        ),
+    }
+    closure = build_execution_correction_2_source_closure(root, require_complete=True)
+    paths["source_closure"] = write_execution_correction_2_source_closure(
+        closure, root / TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    return paths
+
+
+def write_execution_correction_2_post_finalizer_check(
+    value: Mapping[str, Any],
+    path: str | Path = Path(
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    ),
+    *,
+    repo_root: str | Path | None = None,
+) -> Path:
+    """Atomically create the one external witness; stale overwrite is forbidden."""
+
+    target = Path(path)
+    if target.resolve() != Path(
+        EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    ).resolve():
+        raise ContractError("execution-correction-2 postcheck witness path drift")
+    validate_execution_correction_2_post_finalizer_check(
+        value,
+        repo_root=(
+            Path(__file__).resolve().parents[2]
+            if repo_root is None
+            else Path(repo_root)
+        ),
+    )
+    payload = canonical_json_bytes(value) + b"\n"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        descriptor = os.open(target, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    except FileExistsError as exc:
+        raise ContractError(
+            "execution-correction-2 postcheck witness already exists"
+        ) from exc
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+    except BaseException:
+        target.unlink(missing_ok=True)
+        raise
+    return target
+
+
 def _load_exact(path: Path, expected: bytes, label: str) -> dict[str, Any]:
     observed = path.read_bytes()
     if observed != expected:
@@ -5564,6 +8910,66 @@ def load_and_validate_execution_correction_source_closure(
     return validate_execution_correction_source_closure(value)
 
 
+def load_and_validate_execution_correction_2_amendment(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH,
+) -> dict[str, Any]:
+    value = _load_exact(
+        Path(path),
+        execution_correction_2_amendment_receipt_bytes(),
+        "execution-correction-2 amendment",
+    )
+    return validate_execution_correction_2_amendment(value)
+
+
+def load_and_validate_execution_correction_2_output_schema(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH,
+) -> dict[str, Any]:
+    value = _load_exact(
+        Path(path),
+        execution_correction_2_output_schema_receipt_bytes(),
+        "execution-correction-2 output schema",
+    )
+    validate_self_digest(value, "output_schema_sha256")
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        EXECUTION_CORRECTION_2_OUTPUT_SCHEMA
+    ):
+        raise ContractError("execution-correction-2 output schema value drift")
+    return value
+
+
+def load_and_validate_execution_correction_2_fixture(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH,
+) -> dict[str, Any]:
+    value = _load_exact(
+        Path(path),
+        execution_correction_2_fixture_receipt_bytes(),
+        "execution-correction-2 fixture",
+    )
+    validate_self_digest(value, "fixture_sha256")
+    if canonical_json_bytes(value) != canonical_json_bytes(
+        EXECUTION_CORRECTION_2_FIXTURE
+    ) or not all(value["checks"].values()):
+        raise ContractError("execution-correction-2 fixture value drift")
+    return value
+
+
+def load_and_validate_execution_correction_2_source_closure(
+    path: str | Path = TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH,
+) -> dict[str, Any]:
+    observed = Path(path).read_bytes()
+    try:
+        value = json.loads(observed)
+    except json.JSONDecodeError as exc:
+        raise ContractError("execution-correction-2 source closure is invalid") from exc
+    if not isinstance(value, dict):
+        raise ContractError("execution-correction-2 source closure must be an object")
+    if observed != execution_correction_2_source_closure_receipt_bytes(value):
+        raise ContractError(
+            "execution-correction-2 source closure bytes are not canonical"
+        )
+    return validate_execution_correction_2_source_closure(value)
+
+
 __all__ = [
     "ACTIVE_POLICIES",
     "ACCIDENTAL_EXPOSURES",
@@ -5610,6 +9016,35 @@ __all__ = [
     "EXECUTION_CORRECTION_REQUIRED_CHANGED_PATHS",
     "EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS",
     "EXECUTION_CORRECTION_SOURCE_CLOSURE_SCHEMA_VERSION",
+    "EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS",
+    "EXECUTION_CORRECTION_2_AMENDMENT",
+    "EXECUTION_CORRECTION_2_AMENDMENT_BINDING",
+    "EXECUTION_CORRECTION_2_AMENDMENT_SCHEMA_VERSION",
+    "EXECUTION_CORRECTION_2_ARCHIVE_INVENTORY",
+    "EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS",
+    "EXECUTION_CORRECTION_2_ARGV_CONTRACT",
+    "EXECUTION_CORRECTION_2_BASE_AMENDMENT_AUTHORITY_BINDINGS",
+    "EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY",
+    "EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION",
+    "EXECUTION_CORRECTION_2_FAILED_ARCHIVE",
+    "EXECUTION_CORRECTION_2_FIXTURE",
+    "EXECUTION_CORRECTION_2_FIXTURE_BINDING",
+    "EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT",
+    "EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP",
+    "EXECUTION_CORRECTION_2_OUTPUT_SCHEMA",
+    "EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_BINDING",
+    "EXECUTION_CORRECTION_2_POLICY",
+    "EXECUTION_CORRECTION_2_REQUIRED_CHANGED_PATHS",
+    "EXECUTION_CORRECTION_2_RESULT_COMMIT_SUBJECT",
+    "EXECUTION_CORRECTION_2_RUNTIME_PATHS",
+    "EXECUTION_CORRECTION_2_SOURCE_CLOSURE_DEFAULT_PATHS",
+    "EXECUTION_CORRECTION_2_STAGE_A_BYTE_EXACT_REPLAY_PATHS",
+    "EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_DIGESTS",
+    "EXECUTION_CORRECTION_2_STAGE_A_NORMALIZED_EXCLUSIONS",
+    "EXECUTION_CORRECTION_2_STAGE_B_PREDICTION_ARRAY_POLICY",
+    "EXECUTION_CORRECTION_2_STAGE_B_PROJECTIONS",
+    "EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES",
+    "EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR",
     "EXPERIMENT_ID",
     "EXECUTION_RETRY_POLICY",
     "FAMILY_IDS",
@@ -5661,6 +9096,7 @@ __all__ = [
     "SOURCE_CLOSURE_DEFAULT_PATHS",
     "SOURCE_COMMIT",
     "INITIAL_EXECUTION_FREEZE_COMMIT",
+    "INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT",
     "SCIENTIFIC_AUTHORITY_CONTRACT_SHA256",
     "SHARED_BASE_SEED_SUBKEY",
     "STAGE_POLICY",
@@ -5671,6 +9107,11 @@ __all__ = [
     "TRACKED_EXECUTION_CORRECTION_OUTPUT_SCHEMA_PATH",
     "TRACKED_EXECUTION_CORRECTION_PREREGISTRATION_PATH",
     "TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH",
+    "TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH",
+    "TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH",
+    "TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH",
+    "TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH",
+    "TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH",
     "TRACKED_FIXTURE_PATH",
     "TRACKED_OUTPUT_SCHEMA_PATH",
     "TRACKED_PREREGISTRATION_PATH",
@@ -5694,6 +9135,16 @@ __all__ = [
     "build_execution_correction_output_schema",
     "build_execution_correction_preregistration_markdown",
     "build_execution_correction_source_closure",
+    "build_execution_correction_2_amendment",
+    "build_execution_correction_2_context_array_manifest",
+    "build_execution_correction_2_fixture",
+    "build_execution_correction_2_output_schema",
+    "build_execution_correction_2_post_finalizer_check",
+    "build_execution_correction_2_preregistration_markdown",
+    "build_execution_correction_2_scientific_exit",
+    "build_execution_correction_2_source_closure",
+    "build_execution_correction_2_terminal_finalization",
+    "build_execution_correction_2_terminal_staging",
     "build_evaluator_fixture",
     "build_output_schema",
     "build_preregistration_markdown",
@@ -5714,6 +9165,11 @@ __all__ = [
     "execution_correction_fixture_receipt_bytes",
     "execution_correction_output_schema_receipt_bytes",
     "execution_correction_source_closure_receipt_bytes",
+    "execution_correction_2_amendment_receipt_bytes",
+    "execution_correction_2_fixture_receipt_bytes",
+    "execution_correction_2_failed_archive_custody",
+    "execution_correction_2_output_schema_receipt_bytes",
+    "execution_correction_2_source_closure_receipt_bytes",
     "extract_route_only_rows",
     "fit_state_optimization_status",
     "load_and_validate_contract",
@@ -5721,6 +9177,10 @@ __all__ = [
     "load_and_validate_execution_correction_fixture",
     "load_and_validate_execution_correction_output_schema",
     "load_and_validate_execution_correction_source_closure",
+    "load_and_validate_execution_correction_2_amendment",
+    "load_and_validate_execution_correction_2_fixture",
+    "load_and_validate_execution_correction_2_output_schema",
+    "load_and_validate_execution_correction_2_source_closure",
     "load_and_validate_evaluator_fixture",
     "load_and_validate_output_schema",
     "load_and_validate_route_role_authority",
@@ -5748,6 +9208,24 @@ __all__ = [
     "validate_execution_correction_freeze_custody",
     "validate_execution_correction_replay",
     "validate_execution_correction_source_closure",
+    "validate_execution_correction_2_amendment",
+    "validate_execution_correction_2_archive",
+    "validate_execution_correction_2_artifact_binding",
+    "validate_execution_correction_2_freeze_custody",
+    "validate_execution_correction_2_helper_interpreter",
+    "validate_execution_correction_2_post_finalizer_check",
+    "validate_execution_correction_2_process_identity",
+    "validate_execution_correction_2_replay",
+    "validate_execution_correction_2_replay_receipt",
+    "validate_execution_correction_2_result_receipt",
+    "validate_execution_correction_2_runtime_custody",
+    "validate_execution_correction_2_scientific_exit",
+    "validate_execution_correction_2_source_closure",
+    "validate_execution_correction_2_stage_a_terminal_reproduction",
+    "validate_execution_correction_2_stage_b_replay_receipt",
+    "validate_execution_correction_2_stage_b_reproduction",
+    "validate_execution_correction_2_terminal_finalization",
+    "validate_execution_correction_2_terminal_staging",
     "validate_base_scientific_authorities",
     "validate_no_duplicate_literal_dict_keys",
     "validate_evaluator_fixture",
@@ -5765,6 +9243,14 @@ __all__ = [
     "write_execution_correction_output_schema",
     "write_execution_correction_preregistration",
     "write_execution_correction_source_closure",
+    "write_execution_correction_2_amendment",
+    "write_execution_correction_2_authorities",
+    "write_execution_correction_2_fixture",
+    "write_execution_correction_2_output_schema",
+    "write_execution_correction_2_post_finalizer_check",
+    "write_execution_correction_2_preregistration",
+    "write_execution_correction_2_source_closure",
+    "build_execution_correction_2_runtime_custody",
     "write_evaluator_fixture",
     "write_output_schema",
     "write_preregistration",

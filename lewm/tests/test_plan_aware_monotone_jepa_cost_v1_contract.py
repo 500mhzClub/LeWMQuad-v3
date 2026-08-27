@@ -3,7 +3,10 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import pytest
@@ -1531,3 +1534,502 @@ def test_condition_keyed_seed_derivation_is_exact_and_shared_base_is_distinct() 
     assert shared["torch_seed"] == 3832252565419500328
     assert C.NO_LATENT_PARAMETER_COUNT == 26_113
     assert C.LATENT_PARAMETER_COUNT == 232_514
+
+
+def _correction_2_identity(
+    role: str, argv: list[str], *, pid: int
+) -> dict[str, object]:
+    return {
+        "pid": pid,
+        "process_group_id": pid,
+        "start_time_ticks": pid * 100,
+        "argv": argv,
+        "argv_sha256": C.canonical_json_sha256(argv),
+        "executable": str(Path(argv[0]).resolve()),
+        "role": role,
+    }
+
+
+def _correction_2_binding(path: str, marker: str = "a") -> dict[str, object]:
+    return {
+        "path": path,
+        "sha256": marker * 64,
+        "bytes": 7,
+        "content_digest": marker * 64,
+    }
+
+
+def test_execution_correction_2_preserves_every_prior_authority_digest() -> None:
+    assert C.CONTRACT_SHA256 == C.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256 == (
+        "1667f325be2c835a6222dc90bb684f373a06b365d59b70e9746fd7adb052c382"
+    )
+    assert C.EXECUTION_CORRECTION_AMENDMENT_BINDING == {
+        "path": (
+            "docs/lewm_plan_aware_monotone_jepa_cost_v1_"
+            "execution_correction_amendment_contract.json"
+        ),
+        "sha256": "b2206eaa40323ec1f6edd20d3917b220ab77f50c2c23a44024647f647745e90f",
+        "content_digest": (
+            "037615a951ad9047d2366820db1707ea0e0bf0f78e89ea7bd773e2c18b86b530"
+        ),
+        "bytes": 13_894,
+        "schema": C.EXECUTION_CORRECTION_AMENDMENT_SCHEMA_VERSION,
+    }
+    repo_root = Path(__file__).resolve().parents[2]
+    assert C.validate_base_scientific_authorities(repo_root)["pass"] is True
+    assert C.validate_base_execution_correction_authorities(repo_root)["pass"] is True
+
+
+def test_execution_correction_2_raw_archive_key_bindings_are_exact() -> None:
+    root = C.EXECUTION_CORRECTION_2_FAILED_ARCHIVE
+    assert root.is_dir()
+    for binding in C.EXECUTION_CORRECTION_2_ARCHIVE_KEY_BINDINGS.values():
+        path = root / binding["path"]
+        assert path.is_file()
+        assert path.stat().st_size == binding["bytes"]
+        digest = hashlib.sha256()
+        with path.open("rb") as stream:
+            for block in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+                digest.update(block)
+        assert digest.hexdigest() == binding["sha256"]
+    assert C.validate_execution_correction_2_archive(
+        verify_full_inventory=False
+    )["pass"] is True
+
+
+def test_execution_correction_2_canonical_utf8_vector_is_exact() -> None:
+    vector = C.EXECUTION_CORRECTION_2_UTF8_TEST_VECTOR
+    payload = C.canonical_json_bytes(vector["value"])
+    assert payload == b'{"symbol":"\xe2\x89\xa5","text":"H1\xe2\x80\x93H4"}'
+    assert len(payload) == vector["canonical_utf8_bytes"] == 33
+    assert hashlib.sha256(payload).hexdigest() == vector["canonical_utf8_sha256"]
+    assert b"\\u" not in payload
+
+
+def test_execution_correction_2_builders_are_self_consistent_and_prospective() -> None:
+    assert C.validate_execution_correction_2_amendment(
+        C.EXECUTION_CORRECTION_2_AMENDMENT
+    ) == C.EXECUTION_CORRECTION_2_AMENDMENT
+    C.validate_self_digest(
+        C.EXECUTION_CORRECTION_2_OUTPUT_SCHEMA, "output_schema_sha256"
+    )
+    C.validate_self_digest(C.EXECUTION_CORRECTION_2_FIXTURE, "fixture_sha256")
+    assert all(C.EXECUTION_CORRECTION_2_FIXTURE["checks"].values())
+    assert C.EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT == (
+        "Correct canonical UTF-8 result persistence and terminal custody"
+    )
+    assert len(C.EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS) == 9
+    assert len(C.EXECUTION_CORRECTION_2_SOURCE_CLOSURE_DEFAULT_PATHS) == 96
+    closure = C.build_execution_correction_2_source_closure(
+        Path(__file__).resolve().parents[2], require_complete=False
+    )
+    generated_paths = [
+        str(C.TRACKED_EXECUTION_CORRECTION_2_PREREGISTRATION_PATH),
+        str(C.TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH),
+        str(C.TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH),
+        str(C.TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH),
+    ]
+    repo_root = Path(__file__).resolve().parents[2]
+    expected_missing = [
+        path for path in generated_paths if not (repo_root / path).is_file()
+    ]
+    assert closure["row_count"] == 96 - len(expected_missing)
+    assert closure["missing_paths"] == expected_missing
+    assert closure["complete"] is (not expected_missing)
+
+
+def test_execution_correction_2_context_manifest_uses_bound_shard_paths(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    np = pytest.importorskip("numpy")
+    state_records: list[dict[str, object]] = []
+    manifest: list[dict[str, object]] = []
+    arrays_by_name = {
+        "control_history_normalized": np.zeros((3, 5, 2), dtype=np.float32),
+        "control_history_raw": np.zeros((3, 5, 2), dtype=np.float32),
+        "normalized": np.zeros((3, 5, 30), dtype=np.float32),
+        "raw": np.zeros((3, 5, 30), dtype=np.float32),
+    }
+    for index in range(48):
+        state_id = f"purpose-{index}"
+        relative = Path("stage_b/proprio_context/states") / f"{state_id}.npz"
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        np.savez(path, **arrays_by_name)
+        raw = path.read_bytes()
+        state_records.append(
+            {
+                "state_id": state_id,
+                "family": C.FAMILY_IDS[index % 4],
+                "split_role": "fit" if index < 32 else "heldout",
+                "shard": {
+                    "path": str(relative),
+                    "sha256": hashlib.sha256(raw).hexdigest(),
+                    "bytes": len(raw),
+                },
+            }
+        )
+        manifest.append(
+            {
+                "state_id": state_id,
+                "family": C.FAMILY_IDS[index % 4],
+                "split_role": "fit" if index < 32 else "heldout",
+                "arrays": [
+                    {
+                        "name": name,
+                        "dtype": "float32",
+                        "shape": list(array.shape),
+                        "c_order_sha256": hashlib.sha256(
+                            array.tobytes(order="C")
+                        ).hexdigest(),
+                    }
+                    for name, array in sorted(arrays_by_name.items())
+                ],
+            }
+        )
+    index_path = tmp_path / "stage_b/proprio_context/index.json"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    index_path.write_text(json.dumps({"state_records": state_records}), encoding="utf-8")
+    authority = copy.deepcopy(C.EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY)
+    authority["state_ids_sha256"] = C.canonical_json_sha256(
+        [f"purpose-{index}" for index in range(48)]
+    )
+    authority["array_content_manifest_sha256"] = C.canonical_json_sha256(manifest)
+    authority["array_content_manifest_canonical_bytes"] = len(
+        C.canonical_json_bytes(manifest)
+    )
+    monkeypatch.setattr(C, "EXECUTION_CORRECTION_2_CONTEXT_ARRAY_AUTHORITY", authority)
+    observed = C.build_execution_correction_2_context_array_manifest(tmp_path)
+    assert observed["states"] == 48
+    assert observed["array_content_manifest_sha256"] == authority[
+        "array_content_manifest_sha256"
+    ]
+    broken = copy.deepcopy(state_records)
+    broken[0]["shard"] = str(broken[0]["shard"])
+    index_path.write_text(json.dumps({"state_records": broken}), encoding="utf-8")
+    with pytest.raises(C.ContractError, match="shard binding"):
+        C.build_execution_correction_2_context_array_manifest(tmp_path)
+
+
+def test_execution_correction_2_terminal_process_contract_uses_raw_venv_argv0(
+    tmp_path: Path,
+) -> None:
+    raw_python = tmp_path / "venv-python"
+    raw_python.symlink_to(Path(sys.executable).resolve())
+    script = str(
+        Path(__file__).resolve().parents[2]
+        / "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+    )
+    launcher = _correction_2_identity(
+        "NONSCIENTIFIC_LAUNCHER",
+        [str(raw_python), script, "execute"],
+        pid=101,
+    )
+    scientific = _correction_2_identity(
+        "SCIENTIFIC_EVALUATOR",
+        [
+            str(raw_python),
+            script,
+            "execute-scientific",
+            "--launcher-pid",
+            "101",
+            "--launcher-start-time-ticks",
+            "10100",
+        ],
+        pid=102,
+    )
+    staging = C.build_execution_correction_2_terminal_staging(
+        attempt_root=tmp_path / "attempt",
+        source_freeze_commit="1" * 40,
+        scientific_process_identity=scientific,
+        launcher_process_identity=launcher,
+        stage_a_replay=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"]
+        ),
+        stage_b_replay=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"], "b"
+        ),
+        result_core=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["result_core"], "c"
+        ),
+        scientific_processes_at_write=[scientific],
+    )
+    assert C.validate_execution_correction_2_terminal_staging(staging) == staging
+    alternative = tmp_path / "other-venv-python"
+    alternative.symlink_to(Path(sys.executable).resolve())
+    changed = copy.deepcopy(scientific)
+    changed["argv"][0] = str(alternative)
+    changed["argv_sha256"] = C.canonical_json_sha256(changed["argv"])
+    with pytest.raises(C.ContractError, match="argv drift|differs from launcher"):
+        C.build_execution_correction_2_terminal_staging(
+            attempt_root=tmp_path / "attempt",
+            source_freeze_commit="1" * 40,
+            scientific_process_identity=changed,
+            launcher_process_identity=launcher,
+            stage_a_replay=staging["stage_a_replay"],
+            stage_b_replay=staging["stage_b_replay"],
+            result_core=staging["result_core"],
+            scientific_processes_at_write=[changed],
+        )
+
+
+def test_execution_correction_2_result_uses_truthful_scoped_quiescence(
+    tmp_path: Path,
+) -> None:
+    raw_python = tmp_path / "python"
+    raw_python.symlink_to(Path(sys.executable).resolve())
+    script = str(
+        Path(__file__).resolve().parents[2]
+        / "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+    )
+    launcher = _correction_2_identity(
+        "NONSCIENTIFIC_LAUNCHER", [str(raw_python), script, "execute"], pid=201
+    )
+    finalizer = _correction_2_identity(
+        "TERMINAL_FINALIZER",
+        [str(raw_python), script, "finalize-correction-2"],
+        pid=202,
+    )
+    binding_keys = (
+        "stage_a_replay",
+        "stage_b_replay",
+        "terminal_staging",
+        "scientific_exit",
+        "terminal_finalization",
+    )
+    custody = {
+        "schema": C.EXECUTION_CORRECTION_2_CUSTODY_SCHEMA_VERSION,
+        "amendment": copy.deepcopy(C.EXECUTION_CORRECTION_2_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            "path": str(C.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH),
+            "sha256": "d" * 64,
+            "bytes": 1,
+            "content_digest": "e" * 64,
+            "rows": 96,
+        },
+        "scientific_contract_freeze_commit": C.INITIAL_EXECUTION_FREEZE_COMMIT,
+        "execution_correction_2_commit": "1" * 40,
+        "failed_archives": C.execution_correction_2_failed_archive_custody(),
+        "files_reused": 0,
+        **{
+            key: _correction_2_binding(C.EXECUTION_CORRECTION_2_RUNTIME_PATHS[key])
+            for key in binding_keys
+        },
+        "nothing_running_scope": [
+            "SCIENTIFIC_EVALUATOR",
+            "CONDITIONAL_SCIENTIFIC_HELPER",
+        ],
+        "nothing_scientific_running": True,
+        "live_non_scientific_processes": [finalizer, launcher],
+        "post_finalizer_check": {
+            "path": C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"],
+            "inside_canonical_output_fixed_point": False,
+            "status_at_result_publication": "PENDING_PRODUCER_EXIT",
+        },
+    }
+    result = _valid_result()
+    result["stage_execution"] = {"execution_correction_2_custody": custody}
+    result["nothing_running"] = False
+    result = C.attach_self_digest(result)
+    assert C.validate_execution_correction_2_result_receipt(result) == result
+    false_claim = copy.deepcopy(result)
+    false_claim["nothing_running"] = True
+    false_claim = C.attach_self_digest(false_claim)
+    with pytest.raises(C.ContractError, match="false all-process-zero"):
+        C.validate_execution_correction_2_result_receipt(false_claim)
+
+
+def test_execution_correction_2_postcheck_writer_never_overwrites(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    witness = tmp_path / "witness.json"
+    monkeypatch.setitem(
+        C.EXECUTION_CORRECTION_2_RUNTIME_PATHS,
+        "post_finalizer_check",
+        str(witness),
+    )
+    monkeypatch.setattr(
+        C,
+        "validate_execution_correction_2_post_finalizer_check",
+        lambda value, repo_root: dict(value),
+    )
+    value = C.attach_self_digest({"pass": True})
+    assert C.write_execution_correction_2_post_finalizer_check(
+        value, witness, repo_root=tmp_path
+    ) == witness
+    with pytest.raises(C.ContractError, match="already exists"):
+        C.write_execution_correction_2_post_finalizer_check(
+            value, witness, repo_root=tmp_path
+        )
+
+
+def test_execution_correction_2_progressive_custody_has_one_stable_key_set(
+    tmp_path: Path,
+) -> None:
+    closure = {
+        "path": str(C.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH),
+        "sha256": "a" * 64,
+        "bytes": 10,
+        "content_digest": "b" * 64,
+        "rows": 96,
+    }
+    pre = C.build_execution_correction_2_runtime_custody(
+        execution_correction_2_commit="1" * 40,
+        amendment_source_closure=closure,
+    )
+    assert C.validate_execution_correction_2_runtime_custody(
+        pre, phase="PREEXECUTION"
+    ) == pre
+    assert all(
+        pre[key] is None
+        for key in (
+            "stage_a_replay",
+            "stage_b_replay",
+            "terminal_staging",
+            "scientific_exit",
+            "terminal_finalization",
+        )
+    )
+    interpreter = str(Path(sys.executable).resolve())
+    launcher = _correction_2_identity(
+        "NONSCIENTIFIC_LAUNCHER", [interpreter, "script", "execute"], pid=301
+    )
+    finalizer = _correction_2_identity(
+        "TERMINAL_FINALIZER", [interpreter, "script", "finalize"], pid=302
+    )
+    final = C.build_execution_correction_2_runtime_custody(
+        execution_correction_2_commit="1" * 40,
+        amendment_source_closure=closure,
+        stage_a_replay=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"]
+        ),
+        stage_b_replay=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"]
+        ),
+        terminal_staging=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"]
+        ),
+        scientific_exit=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        ),
+        terminal_finalization=_correction_2_binding(
+            C.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_finalization"]
+        ),
+        nothing_scientific_running=True,
+        live_non_scientific_processes=[finalizer, launcher],
+    )
+    assert set(final) == set(pre)
+    assert C.validate_execution_correction_2_runtime_custody(
+        final, phase="TERMINAL_FINALIZATION"
+    ) == final
+    with pytest.raises(C.ContractError, match="phase drift"):
+        C.validate_execution_correction_2_runtime_custody(final, phase="STAGE_B_REPLAY")
+
+
+def test_execution_correction_2_helper_interpreter_map_includes_isolation_flags() -> None:
+    helper = str(
+        Path(__file__).resolve().parents[2]
+        / "scripts/materialize_plan_aware_proprio_predictor_substitution_v1.py"
+    )
+    output = C.OUTPUT_ROOT.parent / f".{C.OUTPUT_ROOT.name}.attempt-contract-test"
+    common = [
+        "--stage-b-authorised",
+        "--gate-receipt",
+        str(output / "receipts/stage_b_gate.json"),
+        "--execution-correction-replay-receipt",
+        str(output / "receipts/execution_correction_replay.json"),
+        "--output-root",
+        str(output),
+    ]
+    suffixes = {
+        "run-stage-b": [*common, "--workers", str(C.CPU_WORKER_BENCHMARK["selected_workers"])],
+        "context-state": [*common, "--state-index", "0"],
+        "predict-source": [*common, "--source-id", "P1_PROPRIO_ONE_STEP"],
+        "run-stage-c": [
+            "--stage-b-authorised",
+            "--stage-c-authorised",
+            "--gate-receipt",
+            str(output / "receipts/stage_b_gate.json"),
+            "--stage-c-gate-receipt",
+            str(output / "receipts/stage_c_gate.json"),
+            "--execution-correction-replay-receipt",
+            str(output / "receipts/execution_correction_replay.json"),
+            "--output-root",
+            str(output),
+        ],
+    }
+    for subcommand, authority in C.EXECUTION_CORRECTION_2_HELPER_INTERPRETER_MAP.items():
+        argv = [
+            authority["interpreter"],
+            "-E",
+            "-s",
+            helper,
+            subcommand,
+            *suffixes[subcommand],
+        ]
+        identity = _correction_2_identity(
+            "CONDITIONAL_SCIENTIFIC_HELPER", argv, pid=400 + len(subcommand)
+        )
+        assert C.validate_execution_correction_2_helper_interpreter(
+            identity, subcommand=subcommand
+        ) == identity
+        missing_flag = copy.deepcopy(identity)
+        missing_flag["argv"] = [authority["interpreter"], helper, subcommand]
+        missing_flag["argv_sha256"] = C.canonical_json_sha256(missing_flag["argv"])
+        with pytest.raises(C.ContractError, match="interpreter/subcommand"):
+            C.validate_execution_correction_2_helper_interpreter(
+                missing_flag, subcommand=subcommand
+            )
+
+
+def test_execution_correction_2_rejects_traversal_symlink_and_archive_hardlink(
+    tmp_path: Path,
+) -> None:
+    archive = tmp_path / "archive"
+    attempt = tmp_path / "attempt"
+    archive.mkdir()
+    attempt.mkdir()
+    relative = "rows/example.json"
+    archive_file = archive / relative
+    archive_file.parent.mkdir()
+    archive_file.write_bytes(b"frozen")
+    attempt_file = attempt / relative
+    attempt_file.parent.mkdir()
+    attempt_file.write_bytes(b"fresh")
+    assert C._validate_execution_correction_2_fresh_artifact(
+        attempt, relative, archive_root=archive
+    ) == attempt_file
+
+    with pytest.raises(C.ContractError, match="canonical relative"):
+        C._validate_execution_correction_2_fresh_artifact(
+            attempt, "../archive/rows/example.json", archive_root=archive
+        )
+
+    attempt_file.unlink()
+    attempt_file.symlink_to(archive_file)
+    with pytest.raises(C.ContractError, match="symlink"):
+        C._validate_execution_correction_2_fresh_artifact(
+            attempt, relative, archive_root=archive
+        )
+
+    attempt_file.unlink()
+    os.link(archive_file, attempt_file)
+    with pytest.raises(C.ContractError, match="hardlink reuse"):
+        C._validate_execution_correction_2_fresh_artifact(
+            attempt, relative, archive_root=archive
+        )
+
+
+def test_execution_correction_2_attempt_identity_survives_atomic_relocation(
+    tmp_path: Path,
+) -> None:
+    current = tmp_path / "canonical"
+    current.mkdir()
+    original = tmp_path / ".attempt-original"
+    assert C._execution_correction_2_fresh_attempt_identity(
+        current, str(original), original
+    ) == str(original)
+    with pytest.raises(C.ContractError, match="fresh-attempt identity"):
+        C._execution_correction_2_fresh_attempt_identity(
+            current, str(original), tmp_path / ".attempt-other"
+        )

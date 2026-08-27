@@ -23,6 +23,7 @@ import math
 import os
 from pathlib import Path
 import re
+import signal
 import shutil
 import subprocess
 import sys
@@ -78,6 +79,24 @@ TENSOR_DTYPE = np.dtype(np.float16)
 MACRO_TO_PRIMITIVE = (3, 2, 1, 7, 8, 5, 6, 5, 6, 2, 4, 0)
 ROUTE_LINE_STATE = re.compile(rb'"state_id"\s*:\s*"([^"]+)"')
 ROUTE_LINE_CANDIDATE = re.compile(rb'"candidate_index"\s*:\s*([0-9]+)')
+EVALUATOR_SCRIPT = Path(__file__).absolute()
+EVALUATOR_INTERPRETER = Path(sys.executable).absolute()
+CONDITIONAL_HELPER_SCRIPT = (
+    ROOT / "scripts/materialize_plan_aware_proprio_predictor_substitution_v1.py"
+).absolute()
+CONDITIONAL_CPU_INTERPRETER = (
+    ROOT / ".generated/venvs/genesis_render_vulkan/bin/python"
+).absolute()
+CONDITIONAL_GPU_INTERPRETER = Path(
+    "/home/andrewknowles/TinyQuadJEPA/bin/python"
+).absolute()
+SCIENTIFIC_EVALUATOR_SUBCOMMAND = "execute-scientific"
+TERMINAL_FINALIZER_SUBCOMMAND = "finalize-correction-2"
+LAUNCHER_SUBCOMMAND = "execute"
+POST_FINALIZER_CHECK_SUBCOMMAND = "check"
+CONDITIONAL_HELPER_SUBCOMMANDS = frozenset(
+    {"run-stage-b", "context-state", "predict-source", "run-stage-c"}
+)
 
 
 def sha256_file(path: Path) -> str:
@@ -88,17 +107,28 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def canonical_json_bytes(value: Any) -> bytes:
+    """Return the contract-equivalent canonical UTF-8 JSON payload.
+
+    Self-digests cover these bytes exactly: sorted compact JSON, no ASCII
+    escaping, no NaN/Infinity, and no trailing newline.  Persisted JSON and
+    JSONL retain their historical single-newline framing through
+    :func:`canonical_bytes` below.
+    """
+
+    return CONTRACT.canonical_json_bytes(value)
+
+
 def canonical_bytes(value: Any) -> bytes:
-    return (
-        json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
-        + "\n"
-    ).encode("utf-8")
+    """Return canonical JSON followed by exactly one newline."""
+
+    return canonical_json_bytes(value) + b"\n"
 
 
 def content_digest(value: Mapping[str, Any]) -> str:
     core = copy.deepcopy(dict(value))
     core.pop("content_digest", None)
-    return hashlib.sha256(canonical_bytes(core)[:-1]).hexdigest()
+    return CONTRACT.canonical_json_sha256(core)
 
 
 def attach_digest(value: Mapping[str, Any]) -> dict[str, Any]:
@@ -119,6 +149,17 @@ def atomic_bytes(path: Path, payload: bytes) -> None:
 
 def atomic_json(path: Path, value: Mapping[str, Any]) -> None:
     atomic_bytes(path, canonical_bytes(value))
+
+
+def exclusive_json(path: Path, value: Mapping[str, Any]) -> None:
+    """Create one immutable external witness, rejecting every stale path."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = canonical_bytes(value)
+    with path.open("xb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
 
 
 def atomic_jsonl_gz(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
@@ -1241,7 +1282,7 @@ def train_rankers(
             "parameter_count": counts[condition],
             "epoch": CONTRACT.TRAINING["epochs"],
             "fit_optimization_digest": hashlib.sha256(
-                canonical_bytes(fit_optimization)[:-1]
+                canonical_json_bytes(fit_optimization)
             ).hexdigest(),
         }
         histories[condition] = history
@@ -1360,7 +1401,7 @@ def write_evaluation_contract(
             line_index.items(), key=lambda item: (numeric_state_key(item[0][0]), item[0][1])
         )
     ]
-    route_record_digest = hashlib.sha256(canonical_bytes(route_records)[:-1]).hexdigest()
+    route_record_digest = hashlib.sha256(canonical_json_bytes(route_records)).hexdigest()
     future_maps = {
         state_id: future_derangement(state_id, experiment_digest)
         for role in SPLIT_ROLES
@@ -1426,7 +1467,7 @@ def _load_checkpoint_receipt(
             checkpoint.get("training_history"), fit_optimization
         )
     fit_optimization_digest = (
-        hashlib.sha256(canonical_bytes(fit_optimization)[:-1]).hexdigest()
+        hashlib.sha256(canonical_json_bytes(fit_optimization)).hexdigest()
         if isinstance(fit_optimization, Mapping)
         else None
     )
@@ -1671,7 +1712,9 @@ def _tracked_path(path: Path) -> Path:
 
 
 def _validate_frozen_authorities(
-    *, execution_correction_custody: Mapping[str, Any] | None = None
+    *,
+    execution_correction_custody: Mapping[str, Any] | None = None,
+    execution_correction_2_custody: Mapping[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate only prospectively frozen bytes; calculate no route metric."""
 
@@ -1693,7 +1736,15 @@ def _validate_frozen_authorities(
     # separate amendment closure instead of pretending they still match the
     # original freeze's historical source rows.
     active_closure = closure
-    if execution_correction_custody is not None:
+    if execution_correction_2_custody is not None:
+        active_closure = (
+            CONTRACT.load_and_validate_execution_correction_2_source_closure(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+                )
+            )
+        )
+    elif execution_correction_custody is not None:
         active_closure = CONTRACT.load_and_validate_execution_correction_source_closure(
             _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
         )
@@ -1752,6 +1803,9 @@ def _validate_frozen_authorities(
         "execution_correction_source_closure": (
             active_closure if execution_correction_custody is not None else None
         ),
+        "execution_correction_2_source_closure": (
+            active_closure if execution_correction_2_custody is not None else None
+        ),
         "route_role_authority": route_role_authority,
     }
 
@@ -1806,6 +1860,95 @@ def _runtime_execution_correction_custody() -> dict[str, Any]:
     }
 
 
+def _runtime_execution_correction_2_custody() -> dict[str, Any]:
+    """Validate the sole final correction attempt before namespace creation."""
+
+    try:
+        runtime = CONTRACT.validate_execution_correction_2_freeze_custody(
+            ROOT, verify_full_archives=True
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        runtime.get("pass") is not True
+        or runtime.get("fresh_attempts_authorised") != 1
+        or runtime.get("fresh_attempts_already_consumed") != 0
+        or runtime.get("files_reused") != 0
+        or runtime.get("no_further_retry") is not True
+        or runtime.get("failed_archives_count") != 2
+        or not isinstance(runtime.get("failed_archives"), list)
+    ):
+        raise QualificationError("execution-correction-2 runtime custody drift")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    try:
+        closure = CONTRACT.load_and_validate_execution_correction_2_source_closure(
+            closure_path
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    amendment_source_closure = {
+            **binding(closure_path, relative_to=ROOT),
+            "content_digest": closure["content_digest"],
+            "rows": closure["row_count"],
+    }
+    try:
+        custody = CONTRACT.build_execution_correction_2_runtime_custody(
+            execution_correction_2_commit=str(runtime["source_freeze_commit"]),
+            amendment_source_closure=amendment_source_closure,
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            custody, phase="PREEXECUTION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return custody
+
+
+def _legacy_execution_correction_custody_from_v2(
+    correction_2: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Retain the helper-facing first-amendment receipt contract inside V2."""
+
+    first = next(
+        (
+            record
+            for record in correction_2["failed_archives"]
+            if record.get("archive_path")
+            == str(CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve())
+        ),
+        None,
+    )
+    if not isinstance(first, Mapping):
+        raise QualificationError("correction-2 custody omits the first failed archive")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+    )
+    try:
+        closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            closure_path
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(closure_path, relative_to=ROOT),
+            "content_digest": closure["content_digest"],
+            "rows": closure["row_count"],
+        },
+        "archive_path": str(first["archive_path"]),
+        "archive_inventory": copy.deepcopy(first["inventory"]),
+        "failure_receipt": copy.deepcopy(first["failure_receipt"]),
+        "source_freeze_commit": str(correction_2["execution_correction_2_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": None,
+        "execution_correction_replay": None,
+        "pass": True,
+    }
+
+
 def _tracked_publication_paths() -> tuple[Path, Path]:
     return (
         _tracked_path(CONTRACT.TRACKED_RESULT_PATH),
@@ -1847,7 +1990,7 @@ def _failed_archive_inventory(archive: Path) -> dict[str, Any]:
     return {
         "files": len(records),
         "bytes": sum(int(record["bytes"]) for record in records),
-        "manifest_sha256": hashlib.sha256(canonical_bytes(records)[:-1]).hexdigest(),
+        "manifest_sha256": hashlib.sha256(canonical_json_bytes(records)).hexdigest(),
     }
 
 
@@ -1948,6 +2091,7 @@ def _new_attempt(
     source_freeze: str,
     *,
     execution_correction_custody: Mapping[str, Any] | None = None,
+    execution_correction_2_custody: Mapping[str, Any] | None = None,
 ) -> Path:
     if output_root.resolve() != CONTRACT.OUTPUT_ROOT.resolve():
         raise QualificationError("canonical output path differs from the frozen contract")
@@ -1957,7 +2101,43 @@ def _new_attempt(
     siblings = list(output_root.parent.glob(f".{output_root.name}.attempt-*"))
     if siblings:
         raise QualificationError(f"a live/abandoned attempt already exists: {siblings}")
-    if execution_correction_custody is None:
+    if (
+        execution_correction_custody is not None
+        and execution_correction_2_custody is not None
+    ):
+        raise QualificationError("attempt cannot consume two correction modes")
+    if execution_correction_2_custody is not None:
+        try:
+            runtime = CONTRACT.validate_execution_correction_2_freeze_custody(
+                ROOT, verify_full_archives=False
+            )
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        expected_failures = sorted(
+            [
+                CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve(),
+                CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve(),
+            ]
+        )
+        failed_archives = sorted(
+            path.resolve()
+            for path in output_root.parent.glob(f".{output_root.name}.failed-*")
+        )
+        if (
+            source_freeze != execution_correction_2_custody.get(
+                "execution_correction_2_commit"
+            )
+            or source_freeze != runtime.get("source_freeze_commit")
+            or execution_correction_2_custody.get("failed_archives")
+            != runtime.get("failed_archives")
+            or execution_correction_2_custody.get("files_reused") != 0
+            or failed_archives != expected_failures
+            or _active_experiment_processes(include_finalizer=True)
+        ):
+            raise QualificationError(
+                "execution-correction-2 fresh-attempt custody or namespace drift"
+            )
+    elif execution_correction_custody is None:
         _validated_prior_smoke_failure_custody(
             output_root, source_freeze=source_freeze
         )
@@ -2054,6 +2234,7 @@ def _preexecution_receipt(
     frozen: Mapping[str, Any],
     conditional_child_environment_preflight: Mapping[str, Any],
     execution_correction_custody: dict[str, Any],
+    execution_correction_2_custody: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     stat = os.statvfs(attempt.parent)
     # Preserve the exact closure in the attempt itself so a smoke-failure
@@ -2093,6 +2274,9 @@ def _preexecution_receipt(
             },
             "execution_correction_custody": copy.deepcopy(
                 execution_correction_custody
+            ),
+            "execution_correction_2_custody": copy.deepcopy(
+                execution_correction_2_custody
             ),
             "panel_bindings": copy.deepcopy(CONTRACT.PANEL_BINDINGS),
             "encoder_binding": copy.deepcopy(CONTRACT.ENCODER_BINDING),
@@ -2537,7 +2721,7 @@ def _predecessor_raw_goal_score_maps(
         "score_transform": "higher_is_better_score = -cost_h3",
         "successor_ordering_metric": "population_conditioned_margin_borda_v1",
         "projected_row_content_digest": hashlib.sha256(
-            canonical_bytes(projected_rows)[:-1]
+            canonical_json_bytes(projected_rows)
         ).hexdigest(),
         "raw_cosine_inference_executions": 0,
         "historical_predecessor_aggregate_reused_for_successor_metric": False,
@@ -2864,32 +3048,536 @@ def _manifest(root: Path, *, excluded: Sequence[str] = ()) -> list[dict[str, Any
     return rows
 
 
-def _active_experiment_processes() -> list[dict[str, Any]]:
+def _process_argv(pid: int) -> tuple[str, ...]:
+    """Read one process argv without shell-string or substring interpretation."""
+
+    payload = (Path("/proc") / str(pid) / "cmdline").read_bytes()
+    return tuple(
+        item.decode("utf-8", errors="surrogateescape")
+        for item in payload.split(b"\x00")
+        if item
+    )
+
+
+def _process_stat_identity(pid: int) -> tuple[int, int]:
+    """Return Linux process-group ID and start ticks for PID reuse custody."""
+
+    payload = (Path("/proc") / str(pid) / "stat").read_text(encoding="utf-8")
+    try:
+        _prefix, fields_payload = payload.rsplit(")", 1)
+        fields = fields_payload.strip().split()
+        # fields[0] is field 3 (state), so pgrp field 5 and starttime field 22
+        # are indexes 2 and 19 respectively.
+        return int(fields[2]), int(fields[19])
+    except (ValueError, IndexError) as exc:
+        raise QualificationError(f"malformed /proc stat record for PID {pid}") from exc
+
+
+def _canonical_positive_decimal(value: str) -> bool:
+    return value.isascii() and value.isdigit() and value != "0" and str(int(value)) == value
+
+
+def _canonical_attempt_path(value: str) -> Path | None:
+    path = Path(value)
+    if (
+        not path.is_absolute()
+        or str(path) != value
+        or ".." in path.parts
+        or path.parent.resolve() != CONTRACT.OUTPUT_ROOT.parent.resolve()
+        or not path.name.startswith(f".{CONTRACT.OUTPUT_ROOT.name}.attempt-")
+    ):
+        return None
+    return path
+
+
+def _valid_conditional_helper_argv(argv: Sequence[str]) -> bool:
+    if len(argv) < 5 or argv[4] not in CONDITIONAL_HELPER_SUBCOMMANDS:
+        return False
+    command = str(argv[4])
+
+    def exact_output_and_common(
+        *, output_index: int, gate_index: int, replay_index: int
+    ) -> Path | None:
+        output = _canonical_attempt_path(str(argv[output_index]))
+        if output is None:
+            return None
+        if (
+            Path(str(argv[gate_index])) != output / "receipts/stage_b_gate.json"
+            or Path(str(argv[replay_index]))
+            != output / "receipts/execution_correction_replay.json"
+        ):
+            return None
+        return output
+
+    if command == "run-stage-b":
+        expected_flags = (
+            len(argv) == 14
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--workers"
+            and argv[13] == str(CONTRACT.CPU_WORKER_BENCHMARK["selected_workers"])
+        )
+        return bool(expected_flags) and exact_output_and_common(
+            output_index=11, gate_index=7, replay_index=9
+        ) is not None
+    if command == "context-state":
+        expected_flags = (
+            len(argv) == 14
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--state-index"
+            and argv[13].isdigit()
+            and str(int(argv[13])) == argv[13]
+            and 0 <= int(argv[13]) < STATE_COUNT
+        )
+        return bool(expected_flags) and exact_output_and_common(
+            output_index=11, gate_index=7, replay_index=9
+        ) is not None
+    if command == "predict-source":
+        base = (
+            len(argv) in (14, 19)
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--source-id"
+            and argv[13] in ("P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT")
+            and exact_output_and_common(
+                output_index=11, gate_index=7, replay_index=9
+            )
+            is not None
+        )
+        if not base:
+            return False
+        if len(argv) == 14:
+            return True
+        output = Path(str(argv[11]))
+        return (
+            argv[13] == "PR_PROPRIO_ROLLOUT"
+            and argv[14] == "--stage-c-authorised"
+            and argv[15] == "--stage-c-gate-receipt"
+            and Path(str(argv[16])) == output / "receipts/stage_c_gate.json"
+            and argv[17] == "--ablation"
+            and argv[18] in STAGE_C_SOURCE_IDS
+        )
+    if command == "run-stage-c":
+        if (
+            len(argv) != 15
+            or argv[5] != "--stage-b-authorised"
+            or argv[6] != "--stage-c-authorised"
+            or argv[7] != "--gate-receipt"
+            or argv[9] != "--stage-c-gate-receipt"
+            or argv[11] != "--execution-correction-replay-receipt"
+            or argv[13] != "--output-root"
+        ):
+            return False
+        output = _canonical_attempt_path(str(argv[14]))
+        return output is not None and (
+            Path(str(argv[8])) == output / "receipts/stage_b_gate.json"
+            and Path(str(argv[10])) == output / "receipts/stage_c_gate.json"
+            and Path(str(argv[12]))
+            == output / "receipts/execution_correction_replay.json"
+        )
+    return False
+
+
+def _classify_experiment_argv(
+    argv: Sequence[str], *, executable: str | None = None
+) -> str | None:
+    """Classify only frozen argv positions, prefixes, and interpreter executables."""
+
+    evaluator_prefix = len(argv) >= 2 and argv[1] == str(EVALUATOR_SCRIPT)
+    if evaluator_prefix:
+        if argv[0] != str(EVALUATOR_INTERPRETER):
+            return "INVALID_EXPERIMENT_ARGV"
+        if (
+            executable is not None
+            and Path(executable).resolve() != EVALUATOR_INTERPRETER.resolve()
+        ):
+            return "INVALID_EXPERIMENT_ARGV"
+        if len(argv) < 3:
+            return "INVALID_EXPERIMENT_ARGV"
+        subcommand = str(argv[2])
+        if (
+            subcommand == SCIENTIFIC_EVALUATOR_SUBCOMMAND
+            and len(argv) == 7
+            and list(argv[3:4]) == ["--launcher-pid"]
+            and _canonical_positive_decimal(argv[4])
+            and list(argv[5:6]) == ["--launcher-start-time-ticks"]
+            and _canonical_positive_decimal(argv[6])
+        ):
+            return "SCIENTIFIC_EVALUATOR"
+        if (
+            subcommand == TERMINAL_FINALIZER_SUBCOMMAND
+            and len(argv) == 11
+            and argv[3] == "--attempt"
+            and _canonical_attempt_path(argv[4]) is not None
+            and argv[5] == "--launcher-pid"
+            and _canonical_positive_decimal(argv[6])
+            and argv[7] == "--launcher-start-time-ticks"
+            and _canonical_positive_decimal(argv[8])
+            and argv[9] == "--scientific-exit-receipt"
+            and Path(argv[10])
+            == _canonical_attempt_path(argv[4])
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        ):
+            return "TERMINAL_FINALIZER"
+        if subcommand == LAUNCHER_SUBCOMMAND and len(argv) == 3:
+            return "NONSCIENTIFIC_LAUNCHER"
+        if (
+            subcommand == POST_FINALIZER_CHECK_SUBCOMMAND
+            and list(argv[3:])
+            == ["--output-root", str(CONTRACT.OUTPUT_ROOT.resolve())]
+        ):
+            return "POST_FINALIZER_CHECKER"
+        return "INVALID_EXPERIMENT_ARGV"
+    if str(EVALUATOR_SCRIPT) in argv:
+        # An exact script element in any non-frozen position is a malformed
+        # experiment invocation, not an ignorable monitor command.
+        return "INVALID_EXPERIMENT_ARGV"
+    helper_interpreters = {
+        str(CONDITIONAL_CPU_INTERPRETER): CONDITIONAL_CPU_INTERPRETER,
+        str(CONDITIONAL_GPU_INTERPRETER): CONDITIONAL_GPU_INTERPRETER,
+    }
+    helper_interpreter = helper_interpreters.get(str(argv[0])) if argv else None
+    helper_prefix = len(argv) >= 4 and list(argv[1:4]) == [
+        "-E",
+        "-s",
+        str(CONDITIONAL_HELPER_SCRIPT),
+    ]
+    if helper_prefix:
+        if helper_interpreter is None:
+            return "INVALID_EXPERIMENT_ARGV"
+        if (
+            executable is not None
+            and Path(executable).resolve() != helper_interpreter.resolve()
+        ):
+            return "INVALID_EXPERIMENT_ARGV"
+        command = str(argv[4]) if len(argv) > 4 else ""
+        expected_interpreter = {
+            "run-stage-b": CONDITIONAL_GPU_INTERPRETER,
+            "context-state": CONDITIONAL_CPU_INTERPRETER,
+            "predict-source": CONDITIONAL_GPU_INTERPRETER,
+            "run-stage-c": CONDITIONAL_GPU_INTERPRETER,
+        }.get(command)
+        if (
+            expected_interpreter is not None
+            and helper_interpreter == expected_interpreter
+            and _valid_conditional_helper_argv(argv)
+        ):
+            return "CONDITIONAL_SCIENTIFIC_HELPER"
+        return "INVALID_EXPERIMENT_ARGV"
+    if str(CONDITIONAL_HELPER_SCRIPT) in argv:
+        return "INVALID_EXPERIMENT_ARGV"
+    return None
+
+
+def _process_identity(pid: int, *, require_role: str | None = None) -> dict[str, Any]:
+    argv = _process_argv(pid)
+    pgrp, start_ticks = _process_stat_identity(pid)
+    try:
+        executable = str((Path("/proc") / str(pid) / "exe").resolve(strict=True))
+    except (FileNotFoundError, PermissionError, ProcessLookupError, OSError) as exc:
+        raise QualificationError(f"cannot bind executable for PID {pid}") from exc
+    role = _classify_experiment_argv(argv, executable=executable)
+    if require_role is not None and role != require_role:
+        raise QualificationError(
+            f"PID {pid} role {role!r} != required {require_role!r}"
+        )
+    return {
+        "pid": pid,
+        "process_group_id": pgrp,
+        "start_time_ticks": start_ticks,
+        "argv": list(argv),
+        "argv_sha256": CONTRACT.canonical_json_sha256(list(argv)),
+        "executable": executable,
+        "role": role,
+    }
+
+
+def _process_identity_is_live(identity: Mapping[str, Any]) -> bool:
+    try:
+        observed = _process_identity(int(identity["pid"]))
+    except (
+        FileNotFoundError,
+        PermissionError,
+        ProcessLookupError,
+        QualificationError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ):
+        return False
+    return observed == dict(identity)
+
+
+def _expected_launcher_argv() -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        LAUNCHER_SUBCOMMAND,
+    ]
+
+
+def _expected_scientific_argv(launcher_identity: Mapping[str, Any]) -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        SCIENTIFIC_EVALUATOR_SUBCOMMAND,
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+    ]
+
+
+def _expected_finalizer_argv(
+    *,
+    attempt: Path,
+    launcher_identity: Mapping[str, Any],
+    scientific_exit_receipt: Path,
+) -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        TERMINAL_FINALIZER_SUBCOMMAND,
+        "--attempt",
+        str(attempt.absolute()),
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+        "--scientific-exit-receipt",
+        str(scientific_exit_receipt.absolute()),
+    ]
+
+
+def _require_exact_live_launcher(
+    *, pid: int, start_time_ticks: int
+) -> dict[str, Any]:
+    identity = _process_identity(pid, require_role="NONSCIENTIFIC_LAUNCHER")
+    if (
+        int(identity["start_time_ticks"]) != start_time_ticks
+        or identity["argv"] != _expected_launcher_argv()
+        or not _process_identity_is_live(identity)
+    ):
+        raise QualificationError("launcher PID/start-time/argv custody drift")
+    return identity
+
+
+def _active_experiment_processes(
+    *,
+    include_finalizer: bool = True,
+    include_launcher: bool = False,
+    include_checker: bool = False,
+) -> list[dict[str, Any]]:
+    """List exact evaluator/helper argv roles; monitoring shells never match."""
+
+    accepted = {
+        "SCIENTIFIC_EVALUATOR",
+        "CONDITIONAL_SCIENTIFIC_HELPER",
+        "INVALID_EXPERIMENT_ARGV",
+    }
+    if include_finalizer:
+        accepted.add("TERMINAL_FINALIZER")
+    if include_launcher:
+        accepted.add("NONSCIENTIFIC_LAUNCHER")
+    if include_checker:
+        accepted.add("POST_FINALIZER_CHECKER")
     output: list[dict[str, Any]] = []
     own = os.getpid()
-    needles = (
-        Path(__file__).name,
-        "materialize_plan_aware_proprio_predictor_substitution_v1.py",
-    )
     for entry in Path("/proc").iterdir():
         if not entry.name.isdigit() or int(entry.name) == own:
             continue
         try:
-            command = (entry / "cmdline").read_bytes().replace(b"\x00", b" ").decode()
-        except (FileNotFoundError, PermissionError, ProcessLookupError, UnicodeDecodeError):
-            continue
-        if any(needle in command for needle in needles) and any(
-            phase in command
-            for phase in (
-                "execute",
-                "run-stage-b",
-                "context-state",
-                "predict-source",
-                "run-stage-c",
-            )
+            record = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
         ):
-            output.append({"pid": int(entry.name), "command": command})
-    return output
+            continue
+        if record["role"] in accepted:
+            output.append(record)
+    return sorted(output, key=lambda row: int(row["pid"]))
+
+
+def _process_group_members(process_group_id: int) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == os.getpid():
+            continue
+        try:
+            record = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        if int(record["process_group_id"]) == process_group_id:
+            output.append(record)
+    return sorted(output, key=lambda row: int(row["pid"]))
+
+
+def _device_holder_pids(device: Path, *, scoped_pids: Iterable[int]) -> list[int]:
+    expected = device.resolve(strict=False)
+    holders: list[int] = []
+    for pid in sorted(set(int(value) for value in scoped_pids)):
+        directory = Path("/proc") / str(pid) / "fd"
+        try:
+            descriptors = list(directory.iterdir())
+        except (FileNotFoundError, PermissionError, ProcessLookupError):
+            continue
+        for descriptor in descriptors:
+            try:
+                if descriptor.resolve(strict=True) == expected:
+                    holders.append(pid)
+                    break
+            except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
+                continue
+    return holders
+
+
+def _assert_completed_process_group_quiescent(
+    identity: Mapping[str, Any], *, phase: str
+) -> dict[str, Any]:
+    pgrp = int(identity["process_group_id"])
+    members = _process_group_members(pgrp)
+    exact_roles = _active_experiment_processes(include_finalizer=True)
+    scoped_pids = {int(row["pid"]) for row in members}
+    scoped_pids.update(int(row["pid"]) for row in exact_roles)
+    kfd_holders = _device_holder_pids(Path("/dev/kfd"), scoped_pids=scoped_pids)
+    if members or exact_roles or kfd_holders:
+        raise QualificationError(
+            f"{phase} process cleanup failed: pgrp={members}, "
+            f"exact_roles={exact_roles}, kfd_holders={kfd_holders}"
+        )
+    return {
+        "completed_process": copy.deepcopy(dict(identity)),
+        "process_group_members_after_wait": [],
+        "exact_scientific_or_finalizer_matches_after_wait": [],
+        "scoped_dev_kfd_holders_after_wait": [],
+        "pass": True,
+    }
+
+
+def _run_exact_isolated_process(
+    argv: Sequence[str],
+    *,
+    expected_role: str,
+    phase: str,
+    environment: Mapping[str, str] | None = None,
+    require_zero_returncode: bool = True,
+) -> dict[str, Any]:
+    """Run one exact evaluator phase in its own session and prove cleanup."""
+
+    command = [str(item) for item in argv]
+    if not command:
+        raise QualificationError(f"{phase} argv is empty")
+    started = time.time()
+    process = subprocess.Popen(
+        command,
+        cwd=ROOT,
+        env=None if environment is None else dict(environment),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    try:
+        identity: dict[str, Any] | None = None
+        identity_deadline = time.monotonic() + 5.0
+        while time.monotonic() < identity_deadline:
+            if process.poll() is not None:
+                break
+            try:
+                candidate = _process_identity(process.pid)
+            except (
+                FileNotFoundError,
+                PermissionError,
+                ProcessLookupError,
+                QualificationError,
+            ):
+                time.sleep(0.01)
+                continue
+            if candidate.get("role") == expected_role:
+                identity = candidate
+                break
+            time.sleep(0.01)
+        if identity is None:
+            raise QualificationError(
+                f"{phase} child never acquired exact role {expected_role!r}"
+            )
+        if identity["argv"] != command:
+            raise QualificationError(f"{phase} child argv drift")
+        if int(identity["process_group_id"]) != process.pid:
+            raise QualificationError(f"{phase} child did not lead its new session")
+        stdout, _stderr = process.communicate()
+    except BaseException as exc:
+        if process.poll() is None:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait(timeout=10)
+        try:
+            _assert_completed_process_group_quiescent(
+                identity or {"process_group_id": process.pid},
+                phase=f"{phase}_EXCEPTION_CLEANUP",
+            )
+        except BaseException as cleanup_exc:
+            raise QualificationError(
+                f"{phase} raised and process-group cleanup failed: {cleanup_exc}"
+            ) from exc
+        wrapped = QualificationError(f"{phase} child lifecycle failed: {exc}")
+        setattr(wrapped, "phase_process_started", True)
+        setattr(wrapped, "phase_process_identity", copy.deepcopy(identity))
+        setattr(wrapped, "phase_process_group_id", process.pid)
+        raise wrapped from exc
+    cleanup = _assert_completed_process_group_quiescent(identity, phase=phase)
+    if process.returncode and require_zero_returncode:
+        raise QualificationError(
+            f"{phase} failed ({process.returncode}): {stdout[-8000:]}"
+        )
+    return {
+        "argv": command,
+        "process_identity": identity,
+        "returncode": process.returncode,
+        "runtime_s": time.time() - started,
+        "stdout": stdout,
+        "cleanup": cleanup,
+    }
+
+
+def _single_phase_json_payload(stdout: str, *, phase: str) -> dict[str, Any]:
+    lines = [line for line in stdout.splitlines() if line.strip()]
+    if len(lines) != 1:
+        raise QualificationError(
+            f"{phase} emitted {len(lines)} non-empty stdout lines; exactly one required"
+        )
+    try:
+        value = json.loads(lines[0])
+    except json.JSONDecodeError as exc:
+        raise QualificationError(f"{phase} stdout is not canonical JSON") from exc
+    if not isinstance(value, dict) or value.get("pass") is not True:
+        raise QualificationError(f"{phase} terminal payload is not a passing object")
+    if lines[0].encode("utf-8") != canonical_json_bytes(value):
+        raise QualificationError(f"{phase} stdout is not canonical UTF-8 JSON")
+    return value
 
 
 def _primary_and_secondaries(
@@ -2996,6 +3684,7 @@ def _report_markdown(result: Mapping[str, Any]) -> str:
         f"- Secondary: {', '.join(f'`{value}`' for value in result['secondary_classifications']) or 'none'}.",
         f"- Next experiment: `{result['next_experiment']}` (specified, not run).",
         f"- Validated prior smoke-only failure archives: {len(result.get('prior_smoke_failure_custody', []))}; reused files: 0.",
+        "- Publication-time process claim: scientific evaluator and conditional helpers were absent; the independent finalizer and launcher were still live and disclosed, so all-process zero was not claimed. The literal-zero official post-finalizer check is external and pending until after their exit and the result commit.",
         "",
         "## Exact next-experiment specification",
         "",
@@ -3876,6 +4565,269 @@ def _validate_execution_correction_output_custody(
     return expected_terminal
 
 
+def _validate_execution_correction_2_output_custody(
+    output_root: Path,
+    *,
+    frozen: Mapping[str, Any],
+    preexecution: Mapping[str, Any],
+    persistence: Mapping[str, Any],
+    result: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reconcile the final correction's replay and two-phase terminal custody."""
+
+    result_custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
+    )
+    preexecution_custody = preexecution.get("execution_correction_2_custody")
+    persistence_custody = persistence.get("execution_correction_2_custody")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (
+            result_custody,
+            preexecution_custody,
+            persistence_custody,
+        )
+    ):
+        raise QualificationError("execution-correction-2 custody is absent")
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            preexecution_custody, phase="PREEXECUTION"
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            persistence_custody, phase="TERMINAL_FINALIZATION"
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            result_custody, phase="TERMINAL_FINALIZATION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if persistence_custody != result_custody:
+        raise QualificationError(
+            "execution-correction-2 result/persistence custody drift"
+        )
+
+    closure = frozen.get("execution_correction_2_source_closure")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    if not isinstance(closure, Mapping):
+        raise QualificationError("execution-correction-2 source closure is absent")
+    expected_closure_binding = {
+        **binding(closure_path, relative_to=ROOT),
+        "content_digest": closure["content_digest"],
+        "rows": closure["row_count"],
+    }
+    immutable_fields = (
+        "schema",
+        "amendment",
+        "amendment_source_closure",
+        "scientific_contract_freeze_commit",
+        "execution_correction_2_commit",
+        "failed_archives",
+        "files_reused",
+        "nothing_running_scope",
+        "post_finalizer_check",
+    )
+    if any(
+        preexecution_custody.get(key) != result_custody.get(key)
+        for key in immutable_fields
+    ) or result_custody.get("amendment_source_closure") != expected_closure_binding:
+        raise QualificationError(
+            "execution-correction-2 progressive immutable custody drift"
+        )
+    if (
+        result.get("source_freeze_commit")
+        != result_custody.get("execution_correction_2_commit")
+        or result_custody.get("scientific_contract_freeze_commit")
+        != CONTRACT.INITIAL_EXECUTION_FREEZE_COMMIT
+        or result_custody.get("files_reused") != 0
+        or result.get("nothing_running") is not False
+        or persistence.get("nothing_running") is not False
+        or persistence.get("nothing_scientific_running") is not True
+        or persistence.get("nothing_running_scope")
+        != result_custody.get("nothing_running_scope")
+        or persistence.get("live_non_scientific_processes")
+        != result_custody.get("live_non_scientific_processes")
+    ):
+        raise QualificationError("execution-correction-2 terminal scope drift")
+
+    def bound_json(
+        key: str,
+        validator: Any,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        path = output_root / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[key]
+        value = load_json(path)
+        try:
+            validated = validator(value)
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        observed_binding = _artifact_binding_with_digest(path, root=output_root)
+        if observed_binding != result_custody.get(key):
+            raise QualificationError(
+                f"execution-correction-2 {key} artifact binding drift"
+            )
+        return validated, observed_binding
+
+    stage_a_replay, stage_a_binding = bound_json(
+        "stage_a_replay", CONTRACT.validate_execution_correction_2_replay_receipt
+    )
+    stage_b_replay, stage_b_binding = bound_json(
+        "stage_b_replay",
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt,
+    )
+    terminal_staging, terminal_staging_binding = bound_json(
+        "terminal_staging",
+        CONTRACT.validate_execution_correction_2_terminal_staging,
+    )
+    scientific_exit, scientific_exit_binding = bound_json(
+        "scientific_exit", CONTRACT.validate_execution_correction_2_scientific_exit
+    )
+    terminal_finalization, terminal_finalization_binding = bound_json(
+        "terminal_finalization",
+        CONTRACT.validate_execution_correction_2_terminal_finalization,
+    )
+
+    try:
+        terminal_stage_a = (
+            CONTRACT.validate_execution_correction_2_stage_a_terminal_reproduction(
+                output_root,
+                fresh_attempt_identity=terminal_staging["attempt"],
+            )
+        )
+        reproduced_stage_b = (
+            CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+                output_root,
+                verify_archive=False,
+                stage_b_metrics=metrics.get("stage_b"),
+                fresh_attempt_identity=terminal_staging["attempt"],
+            )
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        terminal_stage_a.get("pass") is not True
+        or terminal_stage_a.get("persisted_pre_b_receipt_content_digest")
+        != stage_a_replay.get("content_digest")
+        or terminal_stage_a.get("persisted_stage_b_receipt_content_digest")
+        != stage_b_replay.get("content_digest")
+        or reproduced_stage_b != stage_b_replay
+        or stage_b_replay.get("ledger", {}).get("rows") != 2_304
+        or stage_b_replay.get("stage_c_started_before_replay_gate") is not False
+        or stage_b_replay.get("prior_stage_c_executed") is not False
+        or metrics.get("stage_c") is not None
+    ):
+        raise QualificationError(
+            "execution-correction-2 scientific reproduction/disposition drift"
+        )
+
+    result_core_path = output_root / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    result_core_binding = _artifact_binding_with_digest(
+        result_core_path, root=output_root
+    )
+    if (
+        terminal_staging.get("stage_a_replay") != stage_a_binding
+        or terminal_staging.get("stage_b_replay") != stage_b_binding
+        or terminal_staging.get("result_core") != result_core_binding
+        or terminal_staging.get("launcher_process_identity")
+        != scientific_exit.get("launcher_process_identity")
+        or terminal_staging.get("scientific_process_identity")
+        != scientific_exit.get("scientific_process_identity")
+        or terminal_finalization.get("terminal_staging")
+        != terminal_staging_binding
+        or terminal_finalization.get("scientific_exit")
+        != scientific_exit_binding
+        or terminal_finalization.get("launcher_process_identity")
+        != terminal_staging.get("launcher_process_identity")
+        or terminal_finalization.get("live_non_scientific_processes")
+        != result_custody.get("live_non_scientific_processes")
+        or terminal_finalization_binding
+        != result_custody.get("terminal_finalization")
+    ):
+        raise QualificationError("execution-correction-2 terminal-chain drift")
+
+    live_disclosure = result_custody["live_non_scientific_processes"]
+    finalizer_identity, launcher_identity = live_disclosure
+    own_identity = _process_identity(os.getpid())
+    active_scientific = _active_experiment_processes(
+        include_finalizer=False,
+        include_launcher=False,
+        include_checker=False,
+    )
+    if active_scientific:
+        raise QualificationError(
+            f"scientific producer remains active during deep check: {active_scientific}"
+        )
+    active_all = _active_experiment_processes(
+        include_finalizer=True,
+        include_launcher=True,
+        include_checker=True,
+    )
+    if own_identity.get("role") == "TERMINAL_FINALIZER":
+        if (
+            own_identity != finalizer_identity
+            or not _process_identity_is_live(launcher_identity)
+            or active_all != [launcher_identity]
+        ):
+            raise QualificationError(
+                "terminal finalizer live-process disclosure drift"
+            )
+        process_state = "SCOPED_SCIENCE_ZERO_EXTERNAL_POSTCHECK_PENDING"
+        literal_zero_all_producers = False
+    else:
+        if (
+            _process_identity_is_live(finalizer_identity)
+            or _process_identity_is_live(launcher_identity)
+            or active_all
+        ):
+            raise QualificationError(
+                "producer remains active during post-finalizer deep check"
+            )
+        process_state = "LITERAL_ZERO_ALL_PRODUCER_ROLES"
+        literal_zero_all_producers = True
+
+    result_core = load_json(result_core_path)
+    if result_core.get("content_digest") != content_digest(result_core):
+        raise QualificationError("execution-correction-2 result-core digest drift")
+    canonical_digest_agreement = all(
+        value.get("content_digest")
+        == CONTRACT.canonical_json_sha256(
+            {key: item for key, item in value.items() if key != "content_digest"}
+        )
+        for value in (
+            result,
+            persistence,
+            stage_a_replay,
+            stage_b_replay,
+            terminal_staging,
+            scientific_exit,
+            terminal_finalization,
+            result_core,
+        )
+    )
+    if not canonical_digest_agreement:
+        raise QualificationError(
+            "execution-correction-2 canonical UTF-8 digest-consumer drift"
+        )
+    return {
+        "stage_a_terminal_reproduction": terminal_stage_a,
+        "stage_b_reproduction": reproduced_stage_b,
+        "stage_b_rows": 2_304,
+        "stage_c_disposition": "NOT_ENTERED_REPRODUCED",
+        "terminal_staging": terminal_staging_binding,
+        "scientific_exit": scientific_exit_binding,
+        "terminal_finalization": terminal_finalization_binding,
+        "canonical_utf8_digest_consumer_agreement": True,
+        "nothing_scientific_running": True,
+        "process_state": process_state,
+        "literal_zero_all_producer_roles": literal_zero_all_producers,
+        "active_scientific_processes": [],
+        "pass": True,
+    }
+
+
 def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str, Any]:
     """Reproduce all aggregates from persisted rows without model inference."""
 
@@ -3886,10 +4838,21 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
     )
     if not isinstance(result_custody, Mapping):
         raise QualificationError("result lacks mandatory execution-correction custody")
-    frozen = _validate_frozen_authorities(
-        execution_correction_custody=result_custody
+    result_correction_2_custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
     )
-    CONTRACT.validate_result_receipt(result)
+    if not isinstance(result_correction_2_custody, Mapping):
+        raise QualificationError(
+            "result lacks mandatory execution-correction-2 custody"
+        )
+    frozen = _validate_frozen_authorities(
+        execution_correction_custody=result_custody,
+        execution_correction_2_custody=result_correction_2_custody,
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
     metrics = load_json(output_root / "aggregates/metrics.json")
     if metrics.get("content_digest") != content_digest(metrics):
         raise QualificationError("metrics self-digest drift")
@@ -3937,6 +4900,14 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
         preexecution=preexecution,
         persistence=persistence,
         result=result,
+    )
+    correction_2 = _validate_execution_correction_2_output_custody(
+        output_root,
+        frozen=frozen,
+        preexecution=preexecution,
+        persistence=persistence,
+        result=result,
+        metrics=metrics,
     )
     expected_metrics_binding = binding(
         output_root / "aggregates/metrics.json", relative_to=output_root
@@ -4074,7 +5045,7 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
         ):
             raise QualificationError("Stage-B authorisation is not the reproduced Stage-A gate")
         expected_stage_a_summary_digest = hashlib.sha256(
-            canonical_bytes(reproduced[HELDOUT])[:-1]
+            canonical_json_bytes(reproduced[HELDOUT])
         ).hexdigest()
         if (
             stage_a_gate_evidence.get("heldout_stage_a_summary_sha256")
@@ -4157,7 +5128,7 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
                     "Stage-C authorisation is not the reproduced Stage-B gate"
                 )
             expected_stage_b_summary_digest = hashlib.sha256(
-                canonical_bytes(reproduced_stage_b[HELDOUT])[:-1]
+                canonical_json_bytes(reproduced_stage_b[HELDOUT])
             ).hexdigest()
             if (
                 stage_b_gate_evidence.get("heldout_stage_b_summary_sha256")
@@ -4270,8 +5241,6 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
     expected_report = _report_markdown(result).encode("utf-8")
     if (output_root / "report.md").read_bytes() != expected_report:
         raise QualificationError("Markdown report regeneration drift")
-    if _active_experiment_processes():
-        raise QualificationError("experiment process remains active during terminal check")
     checks = {
         "schema_and_self_digests": True,
         "source_closure_revalidated": frozen["source_closure"]["complete"],
@@ -4310,10 +5279,30 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
             0 if stage_c is None else 4 * STATE_COUNT * len(HORIZONS)
         ),
         "terminal_decision_reproduced": True,
+        "canonical_utf8_digest_consumer_agreement": correction_2[
+            "canonical_utf8_digest_consumer_agreement"
+        ],
+        "execution_correction_2_stage_a_reproduced": True,
+        "execution_correction_2_stage_b_rows_reproduced": correction_2[
+            "stage_b_rows"
+        ],
+        "execution_correction_2_stage_c_disposition_reproduced": correction_2[
+            "stage_c_disposition"
+        ],
+        "execution_correction_2_terminal_chain_revalidated": True,
+        "nothing_scientific_running": correction_2[
+            "nothing_scientific_running"
+        ],
+        "terminal_process_state": correction_2["process_state"],
+        "literal_zero_all_producer_roles": correction_2[
+            "literal_zero_all_producer_roles"
+        ],
         "report_regenerated_byte_exact": True,
         "output_files": len(output_files),
         "output_bytes": output_bytes,
-        "active_experiment_processes": [],
+        "active_experiment_processes": correction_2[
+            "active_scientific_processes"
+        ],
         "pass": True,
     }
     return checks
@@ -4344,6 +5333,389 @@ def _build_result_with_exact_storage(
                 raise QualificationError("result storage fixed point drift")
             return final, final_report
     raise QualificationError("result storage fixed point did not converge")
+
+
+def _artifact_binding_with_digest(path: Path, *, root: Path) -> dict[str, Any]:
+    value = load_json(path)
+    if value.get("content_digest") != content_digest(value):
+        raise QualificationError(f"artifact self-digest drift: {path}")
+    return {
+        **binding(path, relative_to=root),
+        "content_digest": value["content_digest"],
+    }
+
+
+def _write_scientific_terminal_staging(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    result_core: Mapping[str, Any],
+    scientific_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    execution_correction_2_custody: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist an evaluator handoff without publishing result/report/persistence."""
+
+    unexpected = _active_experiment_processes(include_finalizer=True)
+    if unexpected:
+        raise QualificationError(
+            f"scientific staging observed another producer: {unexpected}"
+        )
+    result_core_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    atomic_json(result_core_path, attach_digest(result_core))
+    result_core_binding = _artifact_binding_with_digest(
+        result_core_path, root=attempt
+    )
+    try:
+        staging = CONTRACT.build_execution_correction_2_terminal_staging(
+            attempt_root=attempt,
+            source_freeze_commit=source_freeze,
+            scientific_process_identity=scientific_process_identity,
+            launcher_process_identity=launcher_process_identity,
+            stage_a_replay=execution_correction_2_custody["stage_a_replay"],
+            stage_b_replay=execution_correction_2_custody["stage_b_replay"],
+            result_core=result_core_binding,
+            scientific_processes_at_write=[scientific_process_identity],
+        )
+        CONTRACT.validate_execution_correction_2_terminal_staging(staging)
+    except (KeyError, CONTRACT.ContractError) as exc:
+        raise QualificationError(str(exc)) from exc
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    atomic_json(staging_path, staging)
+    roundtrip = load_json(staging_path)
+    try:
+        CONTRACT.validate_execution_correction_2_terminal_staging(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != staging:
+        raise QualificationError("terminal-staging roundtrip drift")
+    execution_correction_2_custody["terminal_staging"] = (
+        _artifact_binding_with_digest(staging_path, root=attempt)
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="TERMINAL_STAGING"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.scientific_handoff.v1",
+        "source_freeze_commit": source_freeze,
+        "attempt": str(attempt),
+        "terminal_staging": copy.deepcopy(
+            execution_correction_2_custody["terminal_staging"]
+        ),
+        "result_core": result_core_binding,
+        "canonical_published": False,
+        "tracked_published": False,
+        "required_next_subcommand": TERMINAL_FINALIZER_SUBCOMMAND,
+        "pass": True,
+    }
+
+
+def _write_scientific_exit_receipt(
+    *,
+    attempt: Path,
+    scientific_execution: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+) -> dict[str, Any]:
+    cleanup_value = scientific_execution.get("cleanup")
+    if not isinstance(cleanup_value, Mapping):
+        raise QualificationError("scientific execution lacks cleanup custody")
+    cleanup = {
+        "process_group_members_after_wait": copy.deepcopy(
+            cleanup_value.get("process_group_members_after_wait")
+        ),
+        "scoped_dev_kfd_holders_after_wait": copy.deepcopy(
+            cleanup_value.get("scoped_dev_kfd_holders_after_wait")
+        ),
+        "exact_scientific_role_matches_after_wait": copy.deepcopy(
+            cleanup_value.get(
+                "exact_scientific_or_finalizer_matches_after_wait"
+            )
+        ),
+    }
+    try:
+        receipt = CONTRACT.build_execution_correction_2_scientific_exit(
+            attempt_root=attempt,
+            scientific_process_identity=scientific_execution["process_identity"],
+            launcher_process_identity=launcher_process_identity,
+            cleanup=cleanup,
+            returncode=int(scientific_execution["returncode"]),
+        )
+        CONTRACT.validate_execution_correction_2_scientific_exit(receipt)
+    except (KeyError, TypeError, ValueError, CONTRACT.ContractError) as exc:
+        raise QualificationError(str(exc)) from exc
+    path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    if path.exists():
+        raise QualificationError("scientific-exit receipt already exists")
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_scientific_exit(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("scientific-exit receipt roundtrip drift")
+    return receipt
+
+
+def _terminal_row_counts(result_core: Mapping[str, Any]) -> dict[str, int]:
+    stage_b = result_core["metrics"].get("stage_b")
+    stage_c = result_core["metrics"].get("stage_c")
+    return {
+        "route_only_targets": 576,
+        "training_epochs": 120,
+        "stage_a": 576,
+        "stage_a_raw_cost_rereduced": 1_728,
+        "stage_b": 0 if stage_b is None else int(stage_b["row_count"]),
+        "stage_c": 0 if stage_c is None else int(stage_c["row_count"]),
+        "stage_c_direct_fidelity": (
+            0 if stage_c is None else int(stage_c["direct_fidelity_rows"])
+        ),
+        "stage_c_candidate_action_sensitivity": (
+            0
+            if stage_c is None
+            else int(stage_c["candidate_action_sensitivity"]["raw_evidence"]["rows"])
+        ),
+    }
+
+
+def _finalize_correction_2(
+    *,
+    attempt: Path,
+    launcher_pid: int,
+    launcher_start_time_ticks: int,
+    scientific_exit_receipt: Path,
+) -> dict[str, Any]:
+    """Independently construct and atomically publish the terminal witnesses."""
+
+    attempt = attempt.resolve()
+    launcher = _require_exact_live_launcher(
+        pid=launcher_pid, start_time_ticks=launcher_start_time_ticks
+    )
+    finalizer = _process_identity(os.getpid(), require_role="TERMINAL_FINALIZER")
+    expected_argv = _expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=scientific_exit_receipt,
+    )
+    if finalizer["argv"] != expected_argv:
+        raise QualificationError("terminal finalizer exact argv custody drift")
+    if (
+        _canonical_attempt_path(str(attempt)) != attempt
+        or scientific_exit_receipt.resolve()
+        != attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        or not attempt.is_dir()
+        or CONTRACT.OUTPUT_ROOT.exists()
+    ):
+        raise QualificationError("terminal finalizer attempt/path custody drift")
+    _assert_publication_destinations_absent()
+    postcheck_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if postcheck_path.exists():
+        raise QualificationError("stale post-finalizer witness exists")
+
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    staging = load_json(staging_path)
+    scientific_exit = load_json(scientific_exit_receipt)
+    try:
+        CONTRACT.validate_execution_correction_2_terminal_staging(staging)
+        CONTRACT.validate_execution_correction_2_scientific_exit(scientific_exit)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        staging.get("attempt") != str(attempt)
+        or scientific_exit.get("attempt") != str(attempt)
+        or staging.get("launcher_process_identity") != launcher
+        or scientific_exit.get("launcher_process_identity") != launcher
+        or _process_identity_is_live(staging["scientific_process_identity"])
+        or _process_identity_is_live(scientific_exit["scientific_process_identity"])
+    ):
+        raise QualificationError("terminal handoff process custody drift")
+    active_science = _active_experiment_processes(include_finalizer=False)
+    if active_science:
+        raise QualificationError(
+            f"scientific producer remains active before finalization: {active_science}"
+        )
+
+    stage_a_replay_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "stage_a_replay"
+    ]
+    stage_b_replay_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "stage_b_replay"
+    ]
+    persisted_stage_a = load_json(stage_a_replay_path)
+    persisted_stage_b = load_json(stage_b_replay_path)
+    try:
+        CONTRACT.validate_execution_correction_2_replay_receipt(persisted_stage_a)
+        terminal_stage_a = (
+            CONTRACT.validate_execution_correction_2_stage_a_terminal_reproduction(
+                attempt
+            )
+        )
+        reproduced_stage_b = (
+            CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+                attempt, verify_archive=False
+            )
+        )
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(
+            persisted_stage_b
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        terminal_stage_a.get("pass") is not True
+        or terminal_stage_a.get("persisted_pre_b_receipt_content_digest")
+        != persisted_stage_a.get("content_digest")
+        or terminal_stage_a.get("persisted_stage_b_receipt_content_digest")
+        != persisted_stage_b.get("content_digest")
+    ):
+        raise QualificationError("terminal Stage-A content reproduction drift")
+    if persisted_stage_b != reproduced_stage_b:
+        raise QualificationError("terminal stage_b_replay reproduction drift")
+
+    result_core_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    result_core = load_json(result_core_path)
+    if (
+        _artifact_binding_with_digest(result_core_path, root=attempt)
+        != staging["result_core"]
+    ):
+        raise QualificationError("terminal staged result-core binding drift")
+    result_core.pop("content_digest", None)
+
+    try:
+        finalization = CONTRACT.build_execution_correction_2_terminal_finalization(
+            attempt_root=attempt,
+            source_freeze_commit=str(staging["source_freeze_commit"]),
+            terminal_staging=_artifact_binding_with_digest(
+                staging_path, root=attempt
+            ),
+            scientific_exit=_artifact_binding_with_digest(
+                scientific_exit_receipt, root=attempt
+            ),
+            finalizer_process_identity=finalizer,
+            launcher_process_identity=launcher,
+            scientific_processes_at_write=[],
+        )
+        CONTRACT.validate_execution_correction_2_terminal_finalization(finalization)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    finalization_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_finalization"
+    ]
+    atomic_json(finalization_path, finalization)
+    if load_json(finalization_path) != finalization:
+        raise QualificationError("terminal-finalization roundtrip drift")
+
+    preexecution = load_json(attempt / "receipts/preexecution.json")
+    custody = copy.deepcopy(preexecution["execution_correction_2_custody"])
+    custody.update(
+        {
+            "stage_a_replay": _artifact_binding_with_digest(
+                attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+                root=attempt,
+            ),
+            "stage_b_replay": _artifact_binding_with_digest(
+                attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"],
+                root=attempt,
+            ),
+            "terminal_staging": _artifact_binding_with_digest(
+                staging_path, root=attempt
+            ),
+            "scientific_exit": _artifact_binding_with_digest(
+                scientific_exit_receipt, root=attempt
+            ),
+            "terminal_finalization": _artifact_binding_with_digest(
+                finalization_path, root=attempt
+            ),
+            "nothing_scientific_running": True,
+            "live_non_scientific_processes": [finalizer, launcher],
+        }
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            custody, phase="TERMINAL_FINALIZATION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    result_core["stage_execution"]["execution_correction_2_custody"] = custody
+    result_core["nothing_running"] = False
+
+    persistence = attach_digest(
+        {
+            "schema": "plan_aware_persistence_receipt_v1",
+            "artifact_manifest": _manifest(
+                attempt,
+                excluded=("receipts/persistence.json", "result.json", "report.md"),
+            ),
+            "row_counts": _terminal_row_counts(result_core),
+            "row_to_aggregate_reproduction": True,
+            "source_commit": SOURCE_COMMIT,
+            "source_freeze_commit": result_core["source_freeze_commit"],
+            "contract_freeze_commit": result_core["contract_freeze_commit"],
+            "result_commit": None,
+            "result_commit_binding_policy": CONTRACT.RESULT_COMMIT_BINDING_POLICY,
+            "ancestry_validation": copy.deepcopy(
+                result_core["ancestry_validation"]
+            ),
+            "nothing_running": False,
+            "nothing_running_scope": copy.deepcopy(custody["nothing_running_scope"]),
+            "nothing_scientific_running": True,
+            "live_non_scientific_processes": [finalizer, launcher],
+            "prior_smoke_failure_custody": copy.deepcopy(
+                result_core["prior_smoke_failure_custody"]
+            ),
+            "execution_correction_custody": copy.deepcopy(
+                result_core["stage_execution"]["execution_correction_custody"]
+            ),
+            "execution_correction_2_custody": copy.deepcopy(custody),
+            "prohibition_counters": _prohibition_counters(),
+        }
+    )
+    atomic_json(attempt / "receipts/persistence.json", persistence)
+    result, report_bytes = _build_result_with_exact_storage(
+        result_core, attempt=attempt
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(attempt / "result.json", result)
+    atomic_bytes(attempt / "report.md", report_bytes)
+    checks = deep_check(attempt)
+    os.replace(attempt, CONTRACT.OUTPUT_ROOT)
+    try:
+        final_checks = deep_check(CONTRACT.OUTPUT_ROOT)
+        _publish_tracked_result_and_report(CONTRACT.OUTPUT_ROOT)
+    except BaseException:
+        for tracked_path in _tracked_publication_paths():
+            tracked_path.unlink(missing_ok=True)
+        raise
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.finalizer_terminal.v1",
+        "source_freeze_commit": result["source_freeze_commit"],
+        "canonical_output_root": str(CONTRACT.OUTPUT_ROOT),
+        "result": binding(CONTRACT.OUTPUT_ROOT / "result.json"),
+        "report": binding(CONTRACT.OUTPUT_ROOT / "report.md"),
+        "prepublication_deep_check": checks,
+        "postpublication_deep_check": final_checks,
+        "nothing_scientific_running": True,
+        "live_non_scientific_processes": [finalizer, launcher],
+        "official_post_finalizer_check_spawned": False,
+        "pass": True,
+    }
 
 
 PREDICTED_SOURCE_KIND = {
@@ -4384,7 +5756,7 @@ def _write_stage_a_gate_evidence(
             "source_freeze_commit": source_freeze,
             "evaluation_contract_content_digest": evaluation_contract["content_digest"],
             "heldout_stage_a_summary_sha256": hashlib.sha256(
-                canonical_bytes(stage_a_metrics[HELDOUT])[:-1]
+                canonical_json_bytes(stage_a_metrics[HELDOUT])
             ).hexdigest(),
             "true_future_gate": copy.deepcopy(stage_a_decisions["true_future_gate"]),
             "true_incremental_value": copy.deepcopy(
@@ -5468,7 +6840,7 @@ def _publish_stage_c_gate(
             "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
             "source_freeze_commit": source_freeze,
             "heldout_stage_b_summary_sha256": hashlib.sha256(
-                canonical_bytes(heldout_summaries)[:-1]
+                canonical_json_bytes(heldout_summaries)
             ).hexdigest(),
             "proprioception_gate": copy.deepcopy(
                 stage_b_decisions["proprioception_gate"]
@@ -5811,6 +7183,91 @@ def _publish_execution_correction_replay_gate(
     return receipt
 
 
+def _publish_execution_correction_2_stage_a_replay_gate(
+    *, attempt: Path, execution_correction_2_custody: dict[str, Any]
+) -> dict[str, Any]:
+    """Reproduce bound Stage-A evidence before any Stage-B/C child exists."""
+
+    if not execution_correction_2_custody:
+        raise QualificationError("correction-2 Stage-A replay lacks archive custody")
+    path = attempt / "receipts/execution_correction_2_replay.json"
+    if path.exists():
+        raise QualificationError("correction-2 Stage-A replay receipt already exists")
+    try:
+        receipt = CONTRACT.validate_execution_correction_2_replay(
+            attempt,
+            archive_root=CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+            # Runtime freeze custody already rehashed both complete archives.
+            verify_archive=False,
+        )
+        CONTRACT.validate_execution_correction_2_replay_receipt(receipt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_replay_receipt(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("correction-2 Stage-A replay roundtrip drift")
+    execution_correction_2_custody["stage_a_replay"] = {
+        **binding(path, relative_to=attempt),
+        "content_digest": receipt["content_digest"],
+    }
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="STAGE_A_REPLAY"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return receipt
+
+
+def _publish_execution_correction_2_stage_b_replay_gate(
+    *,
+    attempt: Path,
+    stage_b: Mapping[str, Any],
+    execution_correction_2_custody: dict[str, Any],
+) -> dict[str, Any]:
+    """Reproduce complete Stage B immediately before any Stage-C child."""
+
+    if not execution_correction_2_custody.get("stage_a_replay"):
+        raise QualificationError("correction-2 Stage B lacks its Stage-A replay gate")
+    path = attempt / "receipts/execution_correction_2_stage_b_replay.json"
+    if path.exists():
+        raise QualificationError("correction-2 Stage-B replay receipt already exists")
+    try:
+        receipt = CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+            attempt,
+            archive_root=CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+            stage_b_metrics=stage_b,
+            verify_archive=False,
+        )
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(receipt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("correction-2 Stage-B replay roundtrip drift")
+    execution_correction_2_custody["stage_b_replay"] = {
+        **binding(path, relative_to=attempt),
+        "content_digest": receipt["content_digest"],
+    }
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="STAGE_B_REPLAY"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return receipt
+
+
 def _execute_conditional_stage_b(
     *,
     attempt: Path,
@@ -5822,6 +7279,7 @@ def _execute_conditional_stage_b(
     stage_a_metrics: Mapping[str, Any],
     stage_a_decisions: Mapping[str, Any],
     execution_correction_custody: dict[str, Any],
+    execution_correction_2_custody: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Late import prevents any P1/PR materialisation before the true gate."""
 
@@ -5848,6 +7306,10 @@ def _execute_conditional_stage_b(
         **binding(replay_receipt_path, relative_to=attempt),
         "content_digest": replay_receipt["content_digest"],
     }
+    _publish_execution_correction_2_stage_a_replay_gate(
+        attempt=attempt,
+        execution_correction_2_custody=execution_correction_2_custody,
+    )
     execution = _run_conditional_helper_cli(
         attempt=attempt,
         arguments=(
@@ -5915,6 +7377,11 @@ def _execute_conditional_stage_b(
         "predictor_training_steps": 0,
         "fresh_states_or_candidates": 0,
     }
+    _publish_execution_correction_2_stage_b_replay_gate(
+        attempt=attempt,
+        stage_b=stage_b,
+        execution_correction_2_custody=execution_correction_2_custody,
+    )
 
     if not decisions["proprioception_gate"]["pass"]:
         return stage_b, None
@@ -6060,17 +7527,34 @@ def _execute_conditional_stage_b(
     return stage_b, stage_c
 
 
-def execute() -> dict[str, Any]:
+def execute_scientific(
+    *, launcher_pid: int, launcher_start_time_ticks: int
+) -> dict[str, Any]:
     started = time.time()
-    execution_correction_custody = _runtime_execution_correction_custody()
-    source_freeze = str(execution_correction_custody["source_freeze_commit"])
+    launcher_process_identity = _require_exact_live_launcher(
+        pid=launcher_pid, start_time_ticks=launcher_start_time_ticks
+    )
+    scientific_process_identity = _process_identity(
+        os.getpid(), require_role="SCIENTIFIC_EVALUATOR"
+    )
+    if scientific_process_identity["argv"] != _expected_scientific_argv(
+        launcher_process_identity
+    ):
+        raise QualificationError("scientific evaluator exact argv custody drift")
+    execution_correction_2_custody = _runtime_execution_correction_2_custody()
+    execution_correction_custody = _legacy_execution_correction_custody_from_v2(
+        execution_correction_2_custody
+    )
+    source_freeze = str(
+        execution_correction_2_custody["execution_correction_2_commit"]
+    )
     frozen = _validate_frozen_authorities(
-        execution_correction_custody=execution_correction_custody
+        execution_correction_2_custody=execution_correction_2_custody
     )
     attempt = _new_attempt(
         CONTRACT.OUTPUT_ROOT,
         source_freeze,
-        execution_correction_custody=execution_correction_custody,
+        execution_correction_2_custody=execution_correction_2_custody,
     )
     publication_happened = False
     tracked_publication_happened = False
@@ -6102,6 +7586,7 @@ def execute() -> dict[str, Any]:
                 child_environment_preflight
             ),
             execution_correction_custody=execution_correction_custody,
+            execution_correction_2_custody=execution_correction_2_custody,
         )
         ids = split_ids()
         line_index = route_line_index()
@@ -6236,6 +7721,7 @@ def execute() -> dict[str, Any]:
                 stage_a_metrics=summaries_by_role,
                 stage_a_decisions=stage_a_decisions,
                 execution_correction_custody=execution_correction_custody,
+                execution_correction_2_custody=execution_correction_2_custody,
             )
         else:
             raise QualificationError(
@@ -6293,57 +7779,7 @@ def execute() -> dict[str, Any]:
         )
         atomic_json(attempt / "receipts/evaluation.json", evaluation_receipt)
 
-        phase = "PERSISTENCE"
-        artifact_manifest = _manifest(
-            attempt,
-            excluded=("receipts/persistence.json", "result.json", "report.md"),
-        )
-        persistence = attach_digest(
-            {
-                "schema": "plan_aware_persistence_receipt_v1",
-                "artifact_manifest": artifact_manifest,
-                "row_counts": {
-                    "route_only_targets": 576,
-                    "training_epochs": 120,
-                    "stage_a": len(stage_a_rows),
-                    "stage_a_raw_cost_rereduced": len(raw_cost_rows),
-                    "stage_b": 0 if stage_b is None else int(stage_b["row_count"]),
-                    "stage_c": 0 if stage_c is None else int(stage_c["row_count"]),
-                    "stage_c_direct_fidelity": (
-                        0 if stage_c is None else int(stage_c["direct_fidelity_rows"])
-                    ),
-                    "stage_c_candidate_action_sensitivity": (
-                        0
-                        if stage_c is None
-                        else int(
-                            stage_c["candidate_action_sensitivity"]["raw_evidence"][
-                                "rows"
-                            ]
-                        )
-                    ),
-                },
-                "row_to_aggregate_reproduction": True,
-                "source_commit": SOURCE_COMMIT,
-                "source_freeze_commit": source_freeze,
-                "contract_freeze_commit": source_freeze,
-                "result_commit": None,
-                "result_commit_binding_policy": CONTRACT.RESULT_COMMIT_BINDING_POLICY,
-                "ancestry_validation": {
-                    "requirements_ancestor_to_source": True,
-                    "source_to_contract_freeze": True,
-                    "result_commit_pending": True,
-                },
-                "nothing_running": not bool(_active_experiment_processes()),
-                "prior_smoke_failure_custody": copy.deepcopy(
-                    preexecution["prior_smoke_failure_custody"]
-                ),
-                "execution_correction_custody": copy.deepcopy(
-                    execution_correction_custody
-                ),
-                "prohibition_counters": _prohibition_counters(),
-            }
-        )
-        atomic_json(attempt / "receipts/persistence.json", persistence)
+        phase = "TERMINAL_STAGING"
         runtime = {
             "total_s": time.time() - started,
             "training_and_evaluation_s": time.time() - fit_opened_at,
@@ -6425,40 +7861,21 @@ def execute() -> dict[str, Any]:
             ),
             "prohibition_counters": _prohibition_counters(),
             "runtime_and_storage": runtime,
-            "nothing_running": not bool(_active_experiment_processes()),
+            # This is a staged core, not the terminal result.  The independent
+            # finalizer records scoped producer quiescence and constructs the
+            # final self-digested result only after this evaluator exits.
+            "nothing_running": False,
         }
-        result, report_bytes = _build_result_with_exact_storage(result_core, attempt=attempt)
-        CONTRACT.validate_result_receipt(result)
-        atomic_json(attempt / "result.json", result)
-        atomic_bytes(attempt / "report.md", report_bytes)
-        phase = "PREPUBLICATION_DEEP_CHECK"
-        checks = deep_check(attempt)
-        # The check result is returned to the caller rather than persisted into
-        # its own manifest, avoiding a circular receipt and keeping the exact
-        # output byte total fixed before atomic publication.
-        phase = "CANONICAL_PUBLICATION"
-        os.replace(attempt, CONTRACT.OUTPUT_ROOT)
-        publication_happened = True
-        phase = "POSTPUBLICATION_DEEP_CHECK"
-        final_checks = deep_check(CONTRACT.OUTPUT_ROOT)
-        terminal_payload = {
-            "source_freeze_commit": source_freeze,
-            "primary_classification": primary,
-            "secondary_classifications": secondaries,
-            "next_experiment": next_experiment,
-            "stage_execution": result["stage_execution"],
-            "result": binding(CONTRACT.OUTPUT_ROOT / "result.json"),
-            "report": binding(CONTRACT.OUTPUT_ROOT / "report.md"),
-            "runtime_and_storage": result["runtime_and_storage"],
-            "deep_check": final_checks,
-            "nothing_running": not bool(_active_experiment_processes()),
-            "pass": True,
-        }
-        phase = "TRACKED_RESULT_PUBLICATION"
-        _publish_tracked_result_and_report(CONTRACT.OUTPUT_ROOT)
-        tracked_publication_happened = True
-        phase = "COMPLETE"
-        return terminal_payload
+        handoff = _write_scientific_terminal_staging(
+            attempt=attempt,
+            source_freeze=source_freeze,
+            result_core=result_core,
+            scientific_process_identity=scientific_process_identity,
+            launcher_process_identity=launcher_process_identity,
+            execution_correction_2_custody=execution_correction_2_custody,
+        )
+        phase = "SCIENTIFIC_HANDOFF_COMPLETE"
+        return handoff
     except BaseException as exc:
         if tracked_publication_happened:
             for tracked_path in _tracked_publication_paths():
@@ -6478,12 +7895,564 @@ def execute() -> dict[str, Any]:
                     "error_message": str(exc),
                     "partial_artifacts_reusable": False,
                     **copy.deepcopy(lifecycle_counters),
-                    "nothing_running": not bool(_active_experiment_processes()),
+                    "nothing_running": False,
+                    "scientific_process_identity": copy.deepcopy(
+                        scientific_process_identity
+                    ),
+                    "launcher_process_identity": copy.deepcopy(
+                        launcher_process_identity
+                    ),
+                    "terminal_cleanup_pending": True,
                     "prohibition_counters": _prohibition_counters(),
                 }
             )
             atomic_json(failed / "receipts/failure.json", failure)
         raise
+
+
+def _attempt_namespace_entries() -> tuple[set[Path], set[Path]]:
+    parent = CONTRACT.OUTPUT_ROOT.parent
+    attempts = {
+        path.resolve()
+        for path in parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.attempt-*")
+    }
+    failures = {
+        path.resolve()
+        for path in parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.failed-*")
+    }
+    return attempts, failures
+
+
+def _archive_terminal_launcher_failure(
+    *,
+    before_attempts: set[Path],
+    before_failures: set[Path],
+    phase: str,
+    execution: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    attempt_hint: Path | None = None,
+) -> Path:
+    """Close the sole final attempt truthfully after child cleanup.
+
+    This is terminal audit custody, not a retry path.  It never reads a
+    scientific row, metric, tensor, or model artifact.
+    """
+
+    after_attempts, after_failures = _attempt_namespace_entries()
+    new_failures = sorted(after_failures - before_failures)
+    candidate: Path | None = None
+    if len(new_failures) == 1:
+        candidate = new_failures[0]
+    else:
+        fresh_attempts = sorted(after_attempts - before_attempts)
+        if attempt_hint is not None and attempt_hint.resolve() in after_attempts:
+            candidate = attempt_hint.resolve()
+        elif CONTRACT.OUTPUT_ROOT.exists():
+            candidate = CONTRACT.OUTPUT_ROOT.resolve()
+        elif len(fresh_attempts) == 1:
+            candidate = fresh_attempts[0]
+    if candidate is None:
+        candidate = (
+            CONTRACT.OUTPUT_ROOT.parent
+            / f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        ).resolve()
+        candidate.mkdir(parents=False, exist_ok=False)
+    if not candidate.exists():
+        raise QualificationError("terminal failure namespace disappeared")
+    if candidate not in new_failures and not candidate.name.startswith(
+        f".{CONTRACT.OUTPUT_ROOT.name}.failed-"
+    ):
+        failed = candidate.parent / (
+            f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        )
+        os.replace(candidate, failed)
+        candidate = failed.resolve()
+    failure_path = candidate / "receipts/failure.json"
+    if not failure_path.exists():
+        science_complete = (
+            candidate
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"]
+        ).is_file()
+        atomic_json(
+            failure_path,
+            attach_digest(
+                {
+                    "schema": "plan_aware_monotone_jepa_failure_v1",
+                    "source_freeze_commit": git_output("rev-parse", "HEAD"),
+                    "phase": phase,
+                    "error_type": "TerminalChildProcessError",
+                    "error_message": (
+                        f"{phase} child exited with return code "
+                        f"{int(execution['returncode'])}"
+                    ),
+                    "partial_artifacts_reusable": False,
+                    "full_training_epochs_completed": (
+                        int(CONTRACT.TRAINING["epochs"]) if science_complete else 0
+                    ),
+                    "calibration_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[CALIBRATION])
+                        if science_complete
+                        else 0
+                    ),
+                    "heldout_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[HELDOUT])
+                        if science_complete
+                        else 0
+                    ),
+                    "final_checkpoint_published": science_complete,
+                    "nothing_running": False,
+                    "terminal_cleanup_pending": False,
+                    "no_further_retry": True,
+                    "prohibition_counters": _prohibition_counters(),
+                }
+            ),
+        )
+    receipt_path = candidate / "receipts/terminal_failure_finalization.json"
+    if receipt_path.exists():
+        raise QualificationError("terminal failure-finalization receipt already exists")
+    receipt = attach_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "terminal_failure_finalization.v1"
+            ),
+            "phase": phase,
+            "failed_archive": str(candidate),
+            "failed_child_process_identity": copy.deepcopy(
+                execution["process_identity"]
+            ),
+            "launcher_process_identity": copy.deepcopy(
+                launcher_process_identity
+            ),
+            "child_returncode": int(execution["returncode"]),
+            "child_cleanup": copy.deepcopy(execution["cleanup"]),
+            "nothing_scientific_running": True,
+            "launcher_live_at_write": True,
+            "all_process_zero_claimed": False,
+            "partial_artifacts_reusable": False,
+            "files_reused": 0,
+            "automatic_retry": False,
+            "no_further_retry": True,
+            "pass": True,
+        }
+    )
+    exclusive_json(receipt_path, receipt)
+    return candidate
+
+
+def _execute_launcher_lifecycle() -> dict[str, Any]:
+    """Launch science and finalization as exact isolated child processes."""
+
+    launcher = _process_identity(
+        os.getpid(), require_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    if launcher["argv"] != _expected_launcher_argv():
+        raise QualificationError("launcher exact argv custody drift")
+    # Fail closed before starting the sole authorised fresh scientific attempt.
+    _runtime_execution_correction_2_custody()
+    _assert_publication_destinations_absent()
+    postcheck_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if postcheck_path.exists():
+        raise QualificationError("stale post-finalizer witness exists")
+    before_attempts, before_failures = _attempt_namespace_entries()
+    scientific = _run_exact_isolated_process(
+        _expected_scientific_argv(launcher),
+        expected_role="SCIENTIFIC_EVALUATOR",
+        phase="SCIENTIFIC_EVALUATOR",
+        require_zero_returncode=False,
+    )
+    if int(scientific["returncode"]) != 0:
+        archive = _archive_terminal_launcher_failure(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            phase="SCIENTIFIC_EVALUATOR",
+            execution=scientific,
+            launcher_process_identity=launcher,
+        )
+        raise QualificationError(
+            "sole final scientific evaluator failed; no retry authorised; "
+            f"failure archived at {archive}"
+        )
+    handoff = _single_phase_json_payload(
+        str(scientific["stdout"]), phase="SCIENTIFIC_EVALUATOR"
+    )
+    attempt = _canonical_attempt_path(str(handoff.get("attempt", "")))
+    if attempt is None or not attempt.is_dir():
+        raise QualificationError("scientific handoff attempt path drift")
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    if handoff.get("terminal_staging") != _artifact_binding_with_digest(
+        staging_path, root=attempt
+    ):
+        raise QualificationError("scientific handoff staging binding drift")
+    scientific_exit = _write_scientific_exit_receipt(
+        attempt=attempt,
+        scientific_execution=scientific,
+        launcher_process_identity=launcher,
+    )
+    scientific_exit_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    finalizer = _run_exact_isolated_process(
+        _expected_finalizer_argv(
+            attempt=attempt,
+            launcher_identity=launcher,
+            scientific_exit_receipt=scientific_exit_path,
+        ),
+        expected_role="TERMINAL_FINALIZER",
+        phase="TERMINAL_FINALIZER",
+        require_zero_returncode=False,
+    )
+    if int(finalizer["returncode"]) != 0:
+        archive = _archive_terminal_launcher_failure(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            phase="TERMINAL_FINALIZER",
+            execution=finalizer,
+            launcher_process_identity=launcher,
+            attempt_hint=attempt,
+        )
+        for tracked_path in _tracked_publication_paths():
+            tracked_path.unlink(missing_ok=True)
+        raise QualificationError(
+            "sole final terminal finalizer failed; no retry authorised; "
+            f"failure archived at {archive}"
+        )
+    terminal = _single_phase_json_payload(
+        str(finalizer["stdout"]), phase="TERMINAL_FINALIZER"
+    )
+    if (
+        terminal.get("canonical_output_root")
+        != str(CONTRACT.OUTPUT_ROOT.resolve())
+        or terminal.get("official_post_finalizer_check_spawned") is not False
+        or terminal.get("nothing_scientific_running") is not True
+    ):
+        raise QualificationError("terminal finalizer handoff drift")
+    remaining = _active_experiment_processes(
+        include_finalizer=True, include_launcher=False, include_checker=False
+    )
+    if remaining:
+        raise QualificationError(
+            f"producer remains active after terminal finalizer: {remaining}"
+        )
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.launcher_terminal.v1",
+        "source_freeze_commit": terminal["source_freeze_commit"],
+        "canonical_output_root": terminal["canonical_output_root"],
+        "result": copy.deepcopy(terminal["result"]),
+        "report": copy.deepcopy(terminal["report"]),
+        "scientific_execution": {
+            "process_identity": copy.deepcopy(scientific["process_identity"]),
+            "returncode": 0,
+            "cleanup": copy.deepcopy(scientific["cleanup"]),
+        },
+        "scientific_exit": _artifact_binding_with_digest(
+            CONTRACT.OUTPUT_ROOT
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"],
+            root=CONTRACT.OUTPUT_ROOT,
+        ),
+        "terminal_execution": {
+            "process_identity": copy.deepcopy(finalizer["process_identity"]),
+            "returncode": 0,
+            "cleanup": copy.deepcopy(finalizer["cleanup"]),
+        },
+        "all_process_zero_claimed_at_launcher_payload": False,
+        "live_launcher_at_payload_construction": True,
+        "nothing_running_scope": list(
+            CONTRACT.EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+        ),
+        "producer_role_matches_excluding_live_launcher": [],
+        "official_post_finalizer_check_spawned": False,
+        "official_post_finalizer_check_required_after_result_commit": True,
+        "pass": True,
+    }
+
+
+def _close_consumed_namespace_after_exception(
+    *,
+    before_attempts: set[Path],
+    before_failures: set[Path],
+    launcher_process_identity: Mapping[str, Any],
+    error: BaseException,
+) -> Path | None:
+    """Archive any consumed final-attempt namespace after proved child exit."""
+
+    for tracked_path in _tracked_publication_paths():
+        tracked_path.unlink(missing_ok=True)
+    remaining = _active_experiment_processes(
+        include_finalizer=True, include_launcher=False, include_checker=False
+    )
+    if remaining:
+        raise QualificationError(
+            f"cannot close failed final attempt while producer remains: {remaining}"
+        ) from error
+    after_attempts, after_failures = _attempt_namespace_entries()
+    new_failures = sorted(after_failures - before_failures)
+    fresh_attempts = sorted(after_attempts - before_attempts)
+    candidates: list[Path] = []
+    candidates.extend(new_failures)
+    candidates.extend(fresh_attempts)
+    if CONTRACT.OUTPUT_ROOT.exists():
+        candidates.append(CONTRACT.OUTPUT_ROOT.resolve())
+    unique = sorted(set(candidates))
+    if not unique:
+        if not bool(getattr(error, "phase_process_started", False)):
+            # Freeze/preflight failed before a scientific child was created.
+            return None
+        candidate = (
+            CONTRACT.OUTPUT_ROOT.parent
+            / f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        ).resolve()
+        candidate.mkdir(parents=False, exist_ok=False)
+        unique = [candidate]
+    if len(unique) != 1:
+        raise QualificationError(
+            f"failed final attempt left multiple namespaces: {unique}"
+        ) from error
+    candidate = unique[0]
+    if candidate not in new_failures and not candidate.name.startswith(
+        f".{CONTRACT.OUTPUT_ROOT.name}.failed-"
+    ):
+        failed = candidate.parent / (
+            f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        )
+        os.replace(candidate, failed)
+        candidate = failed.resolve()
+    terminal_path = candidate / "receipts/terminal_failure_finalization.json"
+    if terminal_path.exists():
+        return candidate
+    failure_path = candidate / "receipts/failure.json"
+    if not failure_path.exists():
+        science_complete = (
+            candidate
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"]
+        ).is_file()
+        atomic_json(
+            failure_path,
+            attach_digest(
+                {
+                    "schema": "plan_aware_monotone_jepa_failure_v1",
+                    "source_freeze_commit": git_output("rev-parse", "HEAD"),
+                    "phase": "LAUNCHER_TERMINAL_LIFECYCLE",
+                    "error_type": type(error).__name__,
+                    "error_message": str(error),
+                    "partial_artifacts_reusable": False,
+                    "full_training_epochs_completed": (
+                        int(CONTRACT.TRAINING["epochs"]) if science_complete else 0
+                    ),
+                    "calibration_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[CALIBRATION])
+                        if science_complete
+                        else 0
+                    ),
+                    "heldout_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[HELDOUT])
+                        if science_complete
+                        else 0
+                    ),
+                    "final_checkpoint_published": science_complete,
+                    "nothing_running": False,
+                    "terminal_cleanup_pending": False,
+                    "no_further_retry": True,
+                    "prohibition_counters": _prohibition_counters(),
+                }
+            ),
+        )
+    exclusive_json(
+        terminal_path,
+        attach_digest(
+            {
+                "schema": (
+                    "plan_aware_monotone_jepa_cost_v1."
+                    "terminal_failure_finalization.v1"
+                ),
+                "phase": "LAUNCHER_TERMINAL_LIFECYCLE",
+                "failed_archive": str(candidate),
+                "launcher_process_identity": copy.deepcopy(
+                    launcher_process_identity
+                ),
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "exact_producer_matches_after_cleanup": [],
+                "nothing_scientific_running": True,
+                "launcher_live_at_write": True,
+                "all_process_zero_claimed": False,
+                "partial_artifacts_reusable": False,
+                "files_reused": 0,
+                "automatic_retry": False,
+                "no_further_retry": True,
+                "pass": True,
+            }
+        ),
+    )
+    return candidate
+
+
+def execute() -> dict[str, Any]:
+    """Fail-closed wrapper around the sole authorised launcher lifecycle."""
+
+    launcher = _process_identity(
+        os.getpid(), require_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    before_attempts, before_failures = _attempt_namespace_entries()
+    try:
+        return _execute_launcher_lifecycle()
+    except BaseException as exc:
+        archive = _close_consumed_namespace_after_exception(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            launcher_process_identity=launcher,
+            error=exc,
+        )
+        if archive is not None:
+            raise QualificationError(
+                "sole final launcher lifecycle failed; no retry authorised; "
+                f"failure archived at {archive}"
+            ) from exc
+        raise
+
+
+def _literal_producer_role_matches() -> dict[str, list[dict[str, Any]]]:
+    """Return exact live producer identities and reject malformed lookalikes."""
+
+    roles = {
+        role: [] for role in CONTRACT.EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+    }
+    invalid: list[dict[str, Any]] = []
+    own = os.getpid()
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == own:
+            continue
+        try:
+            identity = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        role = identity.get("role")
+        if role in roles:
+            roles[str(role)].append(identity)
+        elif role == "INVALID_EXPERIMENT_ARGV":
+            invalid.append(identity)
+    if invalid:
+        raise QualificationError(
+            f"malformed experiment argv remains active: {invalid}"
+        )
+    return {
+        role: sorted(values, key=lambda row: int(row["pid"]))
+        for role, values in roles.items()
+    }
+
+
+def _official_post_finalizer_check(output_root: Path) -> dict[str, Any]:
+    """Run only after result commit and literal producer-process exit."""
+
+    output_root = output_root.resolve()
+    if output_root != CONTRACT.OUTPUT_ROOT.resolve():
+        raise QualificationError("official checker output-root drift")
+    checker = _process_identity(
+        os.getpid(), require_role="POST_FINALIZER_CHECKER"
+    )
+    producer_matches = _literal_producer_role_matches()
+    if any(producer_matches.values()):
+        raise QualificationError(
+            f"official checker observed a live producer: {producer_matches}"
+        )
+    witness_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if witness_path.exists():
+        raise QualificationError("post-finalizer witness already exists")
+    result_path = output_root / "result.json"
+    report_path = output_root / "report.md"
+    result = load_json(result_path)
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
+    )
+    if not isinstance(custody, Mapping):
+        raise QualificationError("official checker lacks correction-2 custody")
+    finalization_binding = custody.get("terminal_finalization")
+    launcher_identity = None
+    live_at_publication = custody.get("live_non_scientific_processes")
+    if isinstance(live_at_publication, list) and len(live_at_publication) == 2:
+        launcher_identity = live_at_publication[1]
+    if not isinstance(finalization_binding, Mapping) or not isinstance(
+        launcher_identity, Mapping
+    ):
+        raise QualificationError("official checker terminal custody drift")
+    checks = deep_check(output_root)
+    tracked_result_path, tracked_report_path = _tracked_publication_paths()
+    tracked_result = _artifact_binding_with_digest(
+        tracked_result_path, root=ROOT
+    )
+    tracked_report = binding(tracked_report_path, relative_to=ROOT)
+    if (
+        result_path.read_bytes() != tracked_result_path.read_bytes()
+        or report_path.read_bytes() != tracked_report_path.read_bytes()
+    ):
+        raise QualificationError("canonical/tracked publication bytes differ")
+    deep_evidence = {
+        "pass": bool(checks.get("pass")),
+        "canonical_output_root": str(output_root),
+        "tracked_result_sha256": tracked_result["sha256"],
+        "tracked_report_sha256": tracked_report["sha256"],
+    }
+    try:
+        receipt = CONTRACT.build_execution_correction_2_post_finalizer_check(
+            repo_root=ROOT,
+            source_freeze_commit=str(result["source_freeze_commit"]),
+            terminal_finalization=finalization_binding,
+            checker_process_identity=checker,
+            launcher_process_identity=launcher_identity,
+            producer_role_matches=producer_matches,
+            tracked_result=tracked_result,
+            tracked_report=tracked_report,
+            deep_check=deep_evidence,
+        )
+        CONTRACT.validate_execution_correction_2_post_finalizer_check(
+            receipt, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    try:
+        CONTRACT.write_execution_correction_2_post_finalizer_check(
+            receipt, path=witness_path, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    roundtrip = load_json(witness_path)
+    try:
+        CONTRACT.validate_execution_correction_2_post_finalizer_check(
+            roundtrip, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        witness_path.unlink(missing_ok=True)
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        witness_path.unlink(missing_ok=True)
+        raise QualificationError("post-finalizer witness roundtrip drift")
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.official_check.v1",
+        "canonical_output_root": str(output_root),
+        "deep_check": checks,
+        "external_witness": {
+            **binding(witness_path),
+            "content_digest": receipt["content_digest"],
+        },
+        "literal_zero_all_producer_roles": True,
+        "launcher_spawned_or_execed_checker": False,
+        "pass": True,
+    }
 
 
 _FROZEN_SCIENTIFIC_AUTHORITY_PATHS = tuple(
@@ -6681,6 +8650,95 @@ def _refresh_correction_freeze_authorities(
 
 def freeze_contract() -> dict[str, Any]:
     head = git_output("rev-parse", "HEAD")
+    if head == CONTRACT.INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT:
+        # Prepare only the second execution-correction authority overlay.  The
+        # scientific contract and first execution amendment remain byte-exact.
+        try:
+            CONTRACT.validate_base_scientific_authorities(ROOT)
+            CONTRACT.validate_base_execution_correction_authorities(ROOT)
+            first_archive = CONTRACT.validate_execution_correction_archive()
+            second_archive = CONTRACT.validate_execution_correction_2_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        changed = {
+            path
+            for command in (
+                ("diff", "--name-only"),
+                ("diff", "--cached", "--name-only"),
+                ("ls-files", "--others", "--exclude-standard"),
+            )
+            for path in _git_path_rows(*command)
+        }
+        outside = sorted(
+            changed - set(CONTRACT.EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS)
+        )
+        if outside:
+            raise QualificationError(
+                "execution-correction-2 preparation has unrelated paths: "
+                f"{outside}"
+            )
+        attempts, failures = _attempt_namespace_entries()
+        expected_failures = {
+            CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve(),
+            CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve(),
+        }
+        witness = Path(
+            CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+        )
+        if (
+            attempts
+            or failures != expected_failures
+            or CONTRACT.OUTPUT_ROOT.exists()
+            or witness.exists()
+            or _active_experiment_processes(
+                include_finalizer=True,
+                include_launcher=True,
+                include_checker=True,
+            )
+        ):
+            raise QualificationError(
+                "execution-correction-2 preparation namespace is not pristine"
+            )
+        paths = CONTRACT.write_execution_correction_2_authorities(ROOT)
+        try:
+            closure = (
+                CONTRACT.load_and_validate_execution_correction_2_source_closure(
+                    _tracked_path(
+                        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+                    )
+                )
+            )
+            CONTRACT.load_and_validate_execution_correction_2_amendment(
+                _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH)
+            )
+            CONTRACT.load_and_validate_execution_correction_2_output_schema(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH
+                )
+            )
+            CONTRACT.load_and_validate_execution_correction_2_fixture(
+                _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH)
+            )
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        return {
+            "freeze_mode": "EXECUTION_CORRECTION_2_PREPARATION",
+            "base_head": head,
+            "failed_archives": [first_archive, second_archive],
+            "failed_archive_files_reused": 0,
+            "fresh_attempts_authorised": 1,
+            "automatic_retry": False,
+            "required_enclosing_commit_subject": (
+                CONTRACT.EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT
+            ),
+            "changed_path_allowlist": list(
+                CONTRACT.EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS
+            ),
+            "authorities": {label: binding(path) for label, path in paths.items()},
+            "source_closure_rows": closure["row_count"],
+            "scientific_contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "pass": True,
+        }
     if head == CONTRACT.INITIAL_EXECUTION_FREEZE_COMMIT:
         # Prepare only the separate execution-amendment authority suite.  The
         # original preregistration/contract/schema/fixture/role/closure bytes
@@ -6814,16 +8872,50 @@ def main() -> int:
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("freeze")
     subparsers.add_parser("execute")
+    scientific_parser = subparsers.add_parser(SCIENTIFIC_EVALUATOR_SUBCOMMAND)
+    scientific_parser.add_argument("--launcher-pid", type=int, required=True)
+    scientific_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    finalizer_parser = subparsers.add_parser(TERMINAL_FINALIZER_SUBCOMMAND)
+    finalizer_parser.add_argument("--attempt", type=Path, required=True)
+    finalizer_parser.add_argument("--launcher-pid", type=int, required=True)
+    finalizer_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    finalizer_parser.add_argument(
+        "--scientific-exit-receipt", type=Path, required=True
+    )
     check_parser = subparsers.add_parser("check")
-    check_parser.add_argument("--output-root", type=Path, default=CONTRACT.OUTPUT_ROOT)
+    check_parser.add_argument("--output-root", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "freeze":
         value = freeze_contract()
     elif args.command == "execute":
         value = execute()
+    elif args.command == SCIENTIFIC_EVALUATOR_SUBCOMMAND:
+        value = execute_scientific(
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+        )
+    elif args.command == TERMINAL_FINALIZER_SUBCOMMAND:
+        value = _finalize_correction_2(
+            attempt=args.attempt,
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+            scientific_exit_receipt=args.scientific_exit_receipt,
+        )
     else:
-        value = deep_check(args.output_root.resolve())
-    print(json.dumps(value, sort_keys=True, allow_nan=False))
+        value = _official_post_finalizer_check(args.output_root)
+    print(
+        json.dumps(
+            value,
+            sort_keys=True,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+        )
+    )
     return 0
 
 
