@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 import json
 from pathlib import Path
 
@@ -22,7 +23,9 @@ def _gate_fixture(tmp_path: Path) -> tuple[Path, dict]:
     checkpoint.write_bytes(b"final-epoch-route-ranker")
     evaluation_value = M.attach_digest(
         {
-            "experiment_contract_digest": M.CONTRACT.CONTRACT_SHA256,
+            "experiment_contract_digest": (
+                M.CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+            ),
             "final_epoch_only": True,
             "predictor_inference_authorised_before_true_gate": False,
             "checkpoint_bindings": {
@@ -40,7 +43,9 @@ def _gate_fixture(tmp_path: Path) -> tuple[Path, dict]:
             {
                 "schema": M.STAGE_A_GATE_EVIDENCE_SCHEMA,
                 "experiment_id": M.EXPERIMENT_ID,
-                "contract_sha256": M.CONTRACT.CONTRACT_SHA256,
+                "contract_sha256": (
+                    M.CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+                ),
                 "source_freeze_commit": "a" * 40,
                 "evaluation_contract_content_digest": evaluation_value[
                     "content_digest"
@@ -63,6 +68,56 @@ def _gate_fixture(tmp_path: Path) -> tuple[Path, dict]:
     path = tmp_path / "receipts/stage_b_gate.json"
     M.atomic_json(path, value)
     return path, value
+
+
+def test_child_environment_scrubs_python_path_and_preserves_venv_launcher(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYTHONPATH", "/usr/lib/python3/dist-packages")
+    monkeypatch.setenv("PYTHONHOME", "/synthetic/wrong-prefix")
+    monkeypatch.setenv("PYTHONUSERBASE", "/synthetic/wrong-user-base")
+    environment = M.build_child_environment(M.CPU_INTERPRETER)
+    for key in M.SCRUBBED_PYTHON_ENVIRONMENT_KEYS:
+        assert key not in environment
+    assert environment["VIRTUAL_ENV"] == str(M.CPU_INTERPRETER.parent.parent)
+    assert environment["PATH"].split(M.os.pathsep)[0] == str(
+        M.CPU_INTERPRETER.parent
+    )
+    assert M.child_environment_contract(M.CPU_INTERPRETER)[
+        "isolated_python_environment_flags"
+    ] == ["-E", "-s"]
+    # Resolving bin/python would collapse the venv launcher to the system
+    # interpreter on this host; the custody contract must retain lexical bytes.
+    assert M.child_environment_contract(M.CPU_INTERPRETER)["interpreter"] == str(
+        M.CPU_INTERPRETER.absolute()
+    )
+    policy = M.CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+        "only_authorised_environment_change"
+    ]["per_interpreter"]
+    for authority_id, interpreter in (
+        ("cpu_child", M.CPU_INTERPRETER),
+        ("gpu_child", M.GPU_INTERPRETER),
+    ):
+        contract = M.child_environment_contract(interpreter)
+        assert contract["authority_id"] == authority_id
+        assert contract["virtual_env"] == policy[authority_id]["VIRTUAL_ENV"]
+        assert contract["path_first_entry"] == policy[authority_id]["PATH_prepend"]
+
+
+def test_cpu_child_import_preflight_defeats_inherited_system_pythonpath(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("PYTHONPATH", "/usr/lib/python3/dist-packages")
+    value = M.probe_child_interpreter(M.CPU_INTERPRETER, require_genesis=True)
+    venv_root = M.CPU_INTERPRETER.parent.parent.resolve()
+    assert value["sentinel_available"] is True
+    assert Path(value["typing_extensions"]["path"]).resolve().is_relative_to(
+        venv_root
+    )
+    assert Path(value["pydantic_core_or_null"]["path"]).resolve().is_relative_to(
+        venv_root
+    )
+    assert Path(value["genesis_or_null"]["path"]).resolve().is_relative_to(venv_root)
 
 
 def test_sensed_proprio_feature_applies_only_frozen_gravity_offset() -> None:
@@ -123,12 +178,69 @@ def test_stage_b_entrypoint_refuses_absent_explicit_flag() -> None:
                 "context-state",
                 "--gate-receipt",
                 "/does/not/exist",
+                "--execution-correction-replay-receipt",
+                "/does/not/exist",
                 "--output-root",
                 "/does/not/exist",
                 "--state-index",
                 "0",
             ]
         )
+
+
+def test_execution_correction_replay_receipt_is_exact_and_tamper_closed(
+    tmp_path: Path,
+) -> None:
+    inventory = {
+        str(row["path"]): copy.deepcopy(row)
+        for row in M.CONTRACT.EXECUTION_CORRECTION_ARCHIVE_INVENTORY_ROWS
+    }
+    value = M.attach_digest(
+        {
+            "schema": M.CONTRACT.EXECUTION_CORRECTION_REPLAY_SCHEMA_VERSION,
+            "experiment_id": M.EXPERIMENT_ID,
+            "amendment": copy.deepcopy(
+                M.CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING
+            ),
+            "failed_archive": str(
+                M.CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE
+            ),
+            "fresh_attempt": str(tmp_path),
+            "files_reused": 0,
+            "byte_exact_replay": [
+                inventory[path]
+                for path in M.CONTRACT.EXECUTION_CORRECTION_BYTE_EXACT_REPLAY_PATHS
+            ],
+            "normalized_scientific_replay": [
+                {
+                    "path": path,
+                    "excluded_paths": list(
+                        M.CONTRACT.EXECUTION_CORRECTION_NORMALIZED_REPLAY_EXCLUSIONS[
+                            path
+                        ]
+                    ),
+                    "scientific_content_digest": digest,
+                }
+                for path, digest in (
+                    M.CONTRACT.EXECUTION_CORRECTION_NORMALIZED_REPLAY_DIGESTS.items()
+                )
+            ],
+            "stage_b_started_before_replay_gate": False,
+            "stage_c_started_before_replay_gate": False,
+            "pass": True,
+        }
+    )
+    path = tmp_path / "receipts/execution_correction_replay.json"
+    M.atomic_json(path, value)
+    assert M.validate_execution_correction_replay_receipt(
+        path, output_root=tmp_path
+    ) == value
+
+    tampered = copy.deepcopy(value)
+    tampered["files_reused"] = 1
+    M.atomic_json(path, M.attach_digest(tampered))
+    with pytest.raises(M.MaterialisationError, match="replay receipt drift"):
+        M.validate_execution_correction_replay_receipt(path, output_root=tmp_path)
 
 
 def test_stage_c_has_independent_contribution_gate(tmp_path: Path) -> None:
@@ -140,7 +252,9 @@ def test_stage_c_has_independent_contribution_gate(tmp_path: Path) -> None:
             {
                 "schema": M.STAGE_B_GATE_EVIDENCE_SCHEMA,
                 "experiment_id": M.EXPERIMENT_ID,
-                "contract_sha256": M.CONTRACT.CONTRACT_SHA256,
+                "contract_sha256": (
+                    M.CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+                ),
                 "source_freeze_commit": "a" * 40,
                 "proprioception_gate": {
                     "classification": "PROPRIOCEPTIVE_ROUTE_CONTRIBUTION",

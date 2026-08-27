@@ -3,6 +3,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
+import shutil
 from pathlib import Path
 
 import pytest
@@ -517,6 +518,233 @@ def test_training_smoke_retry_policy_and_custody_schema_are_exact() -> None:
     assert "prior_smoke_failure_custody" in C.OUTPUT_SCHEMA[
         "result_required_fields"
     ]
+
+
+def test_execution_correction_is_a_separate_overlay_and_base_bytes_are_immutable() -> None:
+    repo_root = Path(__file__).resolve().parents[2]
+    assert C.CONTRACT_SHA256 == C.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256 == (
+        "1667f325be2c835a6222dc90bb684f373a06b365d59b70e9746fd7adb052c382"
+    )
+    assert hashlib.sha256(C.contract_receipt_bytes()).hexdigest() == (
+        "f79146ae2183d18d289c691cc41a9326e9ea0c35ff8ae6fcfbf44d0f8edc9604"
+    )
+    assert len(C.contract_receipt_bytes()) == 38_779
+    assert C.validate_base_scientific_authorities(repo_root)["pass"] is True
+    assert C.EXECUTION_RETRY_POLICY["later_failure"]["retry_allowed"] is False
+    assert C.EXECUTION_CORRECTION_POLICY["maximum_fresh_attempts"] == 1
+    assert C.EXECUTION_CORRECTION_POLICY["failed_archive_files_reused"] == 0
+    assert C.EXECUTION_CORRECTION_AMENDMENT["base_scientific_authority"][
+        "amendment_is_separate_overlay"
+    ] is True
+    boundary = C.EXECUTION_CORRECTION_AMENDMENT["custody_boundary"]
+    assert boundary["outcome_values_used_to_author_correction"] is False
+    assert boundary["metric_values_used_to_author_correction"] is False
+    assert boundary["row_outcome_values_used_to_author_correction"] is False
+    assert boundary["binary_gate_status_used_to_author_correction"] is True
+
+
+def test_execution_correction_failed_archive_inventory_and_barriers_are_exact() -> None:
+    custody = C.validate_execution_correction_archive()
+    assert custody["pass"] is True
+    assert custody["files_reused"] == 0
+    assert custody["source_freeze_commit"] == C.INITIAL_EXECUTION_FREEZE_COMMIT
+    inventory = C.EXECUTION_CORRECTION_ARCHIVE_INVENTORY
+    assert inventory["files"] == len(inventory["rows"]) == 15
+    assert inventory["bytes"] == sum(row["bytes"] for row in inventory["rows"])
+    assert C.canonical_json_sha256(inventory["rows"]) == inventory[
+        "manifest_sha256"
+    ] == "e8a70f94d56fede1d86c6fc63f2fc73c25c28080b18f020d917fc6567b55f20d"
+    barrier = C.EXECUTION_CORRECTION_AMENDMENT["barrier_receipt"]
+    assert barrier["full_training_epochs_completed"] == 60
+    assert barrier["calibration_rows_opened"] == 96
+    assert barrier["heldout_rows_opened"] == 96
+    assert barrier["stage_b_authorised"] is True
+    assert barrier["stage_b_materialisation_completed"] is False
+    assert barrier["stage_c_started"] is False
+    assert barrier["nothing_running"] is True
+
+
+def test_execution_correction_environment_scope_binds_full_cpu_gpu_chain() -> None:
+    change = C.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+        "only_authorised_environment_change"
+    ]
+    assert change["remove"] == [
+        "PYTHONPATH",
+        "PYTHONHOME",
+        "PYTHONUSERBASE",
+        "PYTHONSTARTUP",
+    ]
+    assert change["interpreter_flags"] == ["-E", "-s"]
+    assert change["set_shared"] == {"PYTHONNOUSERSITE": "1"}
+    assert change["per_interpreter"] == {
+        "cpu_child": {
+            "interpreter": (
+                "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/"
+                "genesis_render_vulkan/bin/python"
+            ),
+            "VIRTUAL_ENV": (
+                "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/"
+                "genesis_render_vulkan"
+            ),
+            "PATH_prepend": (
+                "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/"
+                "genesis_render_vulkan/bin"
+            ),
+        },
+        "gpu_child": {
+            "interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+            "VIRTUAL_ENV": "/home/andrewknowles/TinyQuadJEPA",
+            "PATH_prepend": "/home/andrewknowles/TinyQuadJEPA/bin",
+        },
+    }
+    assert "complete conditional helper chain" in change["scope"]
+    assert C.EXECUTION_CORRECTION_POLICY["permitted_change"].startswith(
+        "sole execution-semantic change"
+    )
+    probe = C.EXECUTION_CORRECTION_ENVIRONMENT_PROBE["required_preflight"]
+    assert probe["flags"] == ["-E", "-s"]
+    assert probe["cpu_child"]["typing_extensions"]["Sentinel_present"] is True
+    assert probe["cpu_child"]["genesis"]["version"] == "0.3.14"
+    assert probe["gpu_child"]["typing_extensions"]["Sentinel_present"] is True
+    assert probe["gpu_child"]["torch"]["version"] == (
+        "2.10.0.dev20250926+rocm6.3"
+    )
+
+
+def test_execution_correction_scientific_projection_is_narrow_and_exact() -> None:
+    archive = C.EXECUTION_CORRECTION_FAILED_ARCHIVE
+    for relative, expected in C.EXECUTION_CORRECTION_NORMALIZED_REPLAY_DIGESTS.items():
+        value = json.loads((archive / relative).read_bytes())
+        assert C.scientific_content_digest(relative, value) == expected
+    assert all(
+        "contract_sha256" not in paths
+        and "experiment_contract_digest" not in paths
+        for paths in C.EXECUTION_CORRECTION_NORMALIZED_REPLAY_EXCLUSIONS.values()
+    )
+    evidence_path = "aggregates/stage_a_gate_evidence.json"
+    evidence = json.loads((archive / evidence_path).read_bytes())
+    baseline = C.scientific_content_digest(evidence_path, evidence)
+    provenance_only = copy.deepcopy(evidence)
+    provenance_only["source_freeze_commit"] = "f" * 40
+    provenance_only["evaluation_contract_content_digest"] = "e" * 64
+    provenance_only["content_digest"] = "d" * 64
+    assert C.scientific_content_digest(evidence_path, provenance_only) == baseline
+    scientific_change = copy.deepcopy(evidence)
+    scientific_change["contract_sha256"] = "0" * 64
+    assert C.scientific_content_digest(evidence_path, scientific_change) != baseline
+
+
+def test_execution_correction_replay_requires_exact_science_and_no_conditional_artifacts(
+    tmp_path: Path,
+) -> None:
+    archive = C.EXECUTION_CORRECTION_FAILED_ARCHIVE
+    attempt = tmp_path / "fresh-attempt"
+    attempt.mkdir()
+    for relative in C.EXECUTION_CORRECTION_BYTE_EXACT_REPLAY_PATHS:
+        destination = attempt / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(archive / relative, destination)
+    for relative, exclusions in (
+        C.EXECUTION_CORRECTION_NORMALIZED_REPLAY_EXCLUSIONS.items()
+    ):
+        value = json.loads((archive / relative).read_bytes())
+        if "source_freeze_commit" in exclusions:
+            value["source_freeze_commit"] = "f" * 40
+        if "contract_freeze_commit" in exclusions:
+            value["contract_freeze_commit"] = "f" * 40
+        if "evaluation_contract_content_digest" in exclusions:
+            value["evaluation_contract_content_digest"] = "e" * 64
+        if "evaluation_contract.sha256" in exclusions:
+            value["evaluation_contract"]["sha256"] = "e" * 64
+        if "stage_a_gate_evidence.sha256" in exclusions:
+            value["stage_a_gate_evidence"]["sha256"] = "d" * 64
+        value["content_digest"] = "c" * 64
+        destination = attempt / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        destination.write_text(json.dumps(value), encoding="utf-8")
+    receipt = C.validate_execution_correction_replay(attempt)
+    assert receipt["pass"] is True
+    assert receipt["files_reused"] == 0
+    assert len(receipt["byte_exact_replay"]) == 8
+    assert len(receipt["normalized_scientific_replay"]) == 3
+    conditional = attempt / "logs/stage_b_proprio_predictor_materialisation.log"
+    conditional.parent.mkdir(parents=True, exist_ok=True)
+    conditional.write_text("premature", encoding="utf-8")
+    with pytest.raises(C.ContractError, match="before correction replay gate"):
+        C.validate_execution_correction_replay(attempt)
+
+
+def test_execution_correction_amendment_schema_fixture_and_paths_are_exact() -> None:
+    assert C.validate_execution_correction_amendment(
+        C.EXECUTION_CORRECTION_AMENDMENT
+    ) == C.EXECUTION_CORRECTION_AMENDMENT
+    C.validate_self_digest(
+        C.EXECUTION_CORRECTION_OUTPUT_SCHEMA, "output_schema_sha256"
+    )
+    C.validate_self_digest(C.EXECUTION_CORRECTION_FIXTURE, "fixture_sha256")
+    assert all(C.EXECUTION_CORRECTION_FIXTURE["checks"].values())
+    assert C.EXECUTION_CORRECTION_OUTPUT_SCHEMA["base_result_schema_unchanged"] is True
+    replay = C.EXECUTION_CORRECTION_OUTPUT_SCHEMA["required_runtime_artifacts"][
+        "execution_correction_replay"
+    ]
+    assert replay[
+        "publish_before_any_conditional_scientific_or_materialisation_child"
+    ] is True
+    assert replay["outcome_free_pre_fit_cpu_gpu_import_probes_exempt"] is True
+    assert replay["files_reused_required"] == 0
+    custody = C.EXECUTION_CORRECTION_OUTPUT_SCHEMA["required_custody_field"]
+    assert "amendment_source_closure" in custody["required_subfields"]
+    assert len(C.EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS) == 91
+    assert len(set(C.EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS)) == 91
+    assert str(C.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH) not in (
+        C.EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS
+    )
+
+
+def test_execution_correction_separate_writers_and_loaders(tmp_path: Path) -> None:
+    prereg = tmp_path / "prereg.md"
+    amendment = tmp_path / "amendment.json"
+    schema = tmp_path / "schema.json"
+    fixture = tmp_path / "fixture.json"
+    assert C.write_execution_correction_preregistration(prereg) == prereg
+    assert C.write_execution_correction_amendment(amendment) == amendment
+    assert C.write_execution_correction_output_schema(schema) == schema
+    assert C.write_execution_correction_fixture(fixture) == fixture
+    assert prereg.read_text(encoding="utf-8") == (
+        C.build_execution_correction_preregistration_markdown()
+    )
+    assert C.load_and_validate_execution_correction_amendment(amendment) == (
+        C.EXECUTION_CORRECTION_AMENDMENT
+    )
+    assert C.load_and_validate_execution_correction_output_schema(schema) == (
+        C.EXECUTION_CORRECTION_OUTPUT_SCHEMA
+    )
+    assert C.load_and_validate_execution_correction_fixture(fixture) == (
+        C.EXECUTION_CORRECTION_FIXTURE
+    )
+    assert not any(
+        (tmp_path / Path(binding["path"]).name).exists()
+        for binding in C.BASE_SCIENTIFIC_AUTHORITY_BINDINGS.values()
+    )
+
+
+def test_execution_correction_source_closure_is_separate_and_canonical(
+    tmp_path: Path,
+) -> None:
+    for relative in C.EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS:
+        path = tmp_path / relative
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(f"fixture:{relative}\n", encoding="utf-8")
+    closure = C.build_execution_correction_source_closure(tmp_path)
+    assert closure["complete"] is True
+    assert closure["row_count"] == 91
+    assert closure["declared_paths"] == list(
+        C.EXECUTION_CORRECTION_SOURCE_CLOSURE_DEFAULT_PATHS
+    )
+    assert C.validate_execution_correction_source_closure(closure) == closure
+    path = tmp_path / "correction-source-closure.json"
+    assert C.write_execution_correction_source_closure(closure, path) == path
+    assert C.load_and_validate_execution_correction_source_closure(path) == closure
 
 
 def test_correction_refreeze_rejects_changed_scientific_authority(

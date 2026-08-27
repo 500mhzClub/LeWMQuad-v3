@@ -153,32 +153,54 @@ def test_runtime_freeze_uses_exact_single_parent_contract_custody(
 ) -> None:
     freeze = "f" * 40
     monkeypatch.setattr(
-        evaluator.CONTRACT,
-        "validate_execution_freeze_custody",
-        lambda _root, **_kwargs: {
-            "source_freeze_commit": freeze,
-            "contract_freeze_commit": freeze,
-            "sole_parent": evaluator.SOURCE_COMMIT,
-            "single_parent": True,
-            "clean": True,
-        },
-    )
-    monkeypatch.setattr(evaluator, "git_output", lambda *_args: freeze)
-    monkeypatch.setattr(
-        evaluator.subprocess,
-        "run",
-        lambda *_args, **_kwargs: evaluator.subprocess.CompletedProcess([], 0),
+        evaluator,
+        "_runtime_execution_correction_custody",
+        lambda: {"source_freeze_commit": freeze},
     )
     assert evaluator._runtime_source_freeze() == freeze
 
-    def reject(_root: Path, **_kwargs: object) -> dict[str, object]:
-        raise evaluator.CONTRACT.ContractError("arbitrary descendant rejected")
+    def reject() -> dict[str, object]:
+        raise evaluator.QualificationError("arbitrary descendant rejected")
 
     monkeypatch.setattr(
-        evaluator.CONTRACT, "validate_execution_freeze_custody", reject
+        evaluator, "_runtime_execution_correction_custody", reject
     )
     with pytest.raises(evaluator.QualificationError, match="arbitrary descendant"):
         evaluator._runtime_source_freeze()
+
+
+def test_evaluator_conditional_helper_boundary_is_exact_and_scrubbed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    helper = evaluator._conditional_helper()
+    monkeypatch.setenv("PYTHONPATH", "/usr/lib/python3/dist-packages")
+    monkeypatch.setenv("PYTHONHOME", "/synthetic/wrong-prefix")
+    observed: dict[str, object] = {}
+
+    def run(command: list[str], **kwargs: object) -> object:
+        observed["command"] = command
+        observed["environment"] = kwargs["env"]
+        return evaluator.subprocess.CompletedProcess(command, 0, stdout="pass\n")
+
+    monkeypatch.setattr(evaluator.subprocess, "run", run)
+    receipt = evaluator._run_conditional_helper_cli(
+        attempt=tmp_path,
+        arguments=("run-stage-b",),
+        log_name="synthetic.log",
+    )
+    assert observed["command"][:4] == [
+        str(helper.GPU_INTERPRETER),
+        "-E",
+        "-s",
+        str(helper.SELF),
+    ]
+    environment = observed["environment"]
+    assert isinstance(environment, dict)
+    for key in helper.SCRUBBED_PYTHON_ENVIRONMENT_KEYS:
+        assert key not in environment
+    assert receipt["child_environment_contract"] == (
+        helper.child_environment_contract(helper.GPU_INTERPRETER)
+    )
 
 
 def test_correction_refreeze_preflight_preserves_scientific_authorities(
@@ -465,10 +487,18 @@ def test_runtime_corrected_freeze_rejects_empty_or_closure_only_descendant(
 @pytest.mark.parametrize(
     ("stop_at", "expected"),
     [
-        ("contract", ["fit", "smoke", "train", "contract"]),
+        ("contract", ["preflight", "fit", "smoke", "train", "contract"]),
         (
             "heldout",
-            ["fit", "smoke", "train", "contract", "calibration", "heldout"],
+            [
+                "preflight",
+                "fit",
+                "smoke",
+                "train",
+                "contract",
+                "calibration",
+                "heldout",
+            ],
         ),
     ],
 )
@@ -483,11 +513,19 @@ def test_execute_opens_splits_only_after_durable_lifecycle_barriers(
     events: list[str] = []
     attempt = tmp_path / "attempt"
 
-    monkeypatch.setattr(evaluator, "_runtime_source_freeze", lambda: "a" * 40)
+    monkeypatch.setattr(
+        evaluator,
+        "_runtime_execution_correction_custody",
+        lambda: {
+            "source_freeze_commit": "a" * 40,
+            "conditional_child_environment_preflight": None,
+            "execution_correction_replay": None,
+        },
+    )
     monkeypatch.setattr(
         evaluator,
         "_validate_frozen_authorities",
-        lambda: {
+        lambda **_kwargs: {
             "route_role_authority": {
                 "records": [
                     {"state_id": f"synthetic-{role}", "route_role": "translational"}
@@ -497,11 +535,25 @@ def test_execute_opens_splits_only_after_durable_lifecycle_barriers(
         },
     )
 
-    def new_attempt(_output_root: Path, _source_freeze: str) -> Path:
+    def new_attempt(
+        _output_root: Path, _source_freeze: str, **_kwargs: object
+    ) -> Path:
         attempt.mkdir()
         return attempt
 
     monkeypatch.setattr(evaluator, "_new_attempt", new_attempt)
+    def preflight(_attempt: Path) -> dict[str, object]:
+        events.append("preflight")
+        value = evaluator.attach_digest({"schema": "synthetic-preflight"})
+        evaluator.atomic_json(
+            attempt / "receipts/conditional_child_environment_preflight.json",
+            value,
+        )
+        return value
+
+    monkeypatch.setattr(
+        evaluator, "_conditional_child_environment_preflight", preflight
+    )
     monkeypatch.setattr(evaluator, "_preexecution_receipt", lambda **_kwargs: {})
     monkeypatch.setattr(
         evaluator,
@@ -816,6 +868,11 @@ def _storage_result_core() -> dict[str, object]:
             "stage_a": "PASS_COMPLETE",
             "stage_b": "NOT_RUN_TRUE_GATE_FAILED",
             "stage_c": "NOT_RUN_STAGE_B_NOT_AUTHORISED",
+            "execution_correction_custody": {
+                "amendment": {"sha256": "a" * 64},
+                "files_reused": 0,
+                "execution_correction_replay": {"pass": True},
+            },
         },
         "metrics": {
             "stage_a_decisions": {
@@ -1805,6 +1862,8 @@ def test_stage_c_top_receipt_binds_pr_checkpoint_gate_and_indexes(
     gate = tmp_path / "receipts/stage_c_gate.json"
     gate.parent.mkdir(parents=True)
     gate.write_bytes(b"stage-c-gate\n")
+    replay = tmp_path / "receipts/execution_correction_replay.json"
+    replay.write_bytes(b"execution-correction-replay\n")
     for source in evaluator.STAGE_C_SOURCE_IDS:
         path = tmp_path / "stage_b" / "predictions" / source / "index.json"
         path.parent.mkdir(parents=True)
@@ -1815,6 +1874,9 @@ def test_stage_c_top_receipt_binds_pr_checkpoint_gate_and_indexes(
             "status": "PASS",
             "experiment_id": evaluator.CONTRACT.EXPERIMENT_ID,
             "stage_b_gate_digest": "a" * 64,
+            "execution_correction_replay": evaluator.binding(
+                replay, relative_to=tmp_path
+            ),
             "stage_c_gate": evaluator.binding(gate, relative_to=tmp_path),
             "prediction_indexes": {
                 source: evaluator.binding(
@@ -2148,3 +2210,404 @@ def test_tracked_result_and_report_publication_is_all_or_absent(
 
     with pytest.raises(evaluator.QualificationError, match="publication destination"):
         evaluator._publish_tracked_result_and_report(output)
+
+
+def test_execution_correction_runtime_custody_is_mandatory_and_normalized(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    freeze = "e" * 40
+    archive = {
+        "archive_path": str(tmp_path / ".failed-bound"),
+        "inventory": {"files": 2, "bytes": 7, "manifest_sha256": "1" * 64},
+        "failure_receipt": {
+            "path": "receipts/failure.json",
+            "sha256": "2" * 64,
+            "bytes": 3,
+            "content_digest": "3" * 64,
+        },
+        "files_reused": 0,
+        "pass": True,
+    }
+    amendment_closure_path = tmp_path / "amendment_source_closure.json"
+    amendment_closure_path.write_bytes(b"{}\n")
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH",
+        amendment_closure_path,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "EXECUTION_CORRECTION_FAILED_ARCHIVE",
+        Path(archive["archive_path"]),
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_execution_correction_source_closure",
+        lambda _path: {"content_digest": "4" * 64, "row_count": 6},
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_freeze_custody",
+        lambda _root: {
+            "source_freeze_commit": freeze,
+            "failed_archive_custody": archive,
+            "files_reused": 0,
+            "fresh_attempts_authorised": 1,
+            "fresh_attempts_already_consumed": 0,
+            "pass": True,
+        },
+    )
+    custody = evaluator._runtime_execution_correction_custody()
+    assert custody["source_freeze_commit"] == freeze
+    assert custody["archive_inventory"] == archive["inventory"]
+    assert custody["amendment_source_closure"]["rows"] == 6
+    assert custody["files_reused"] == 0
+    assert custody["conditional_child_environment_preflight"] is None
+    assert custody["execution_correction_replay"] is None
+
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_freeze_custody",
+        lambda _root: {"pass": False},
+    )
+    with pytest.raises(evaluator.QualificationError, match="runtime custody"):
+        evaluator._runtime_execution_correction_custody()
+
+
+def test_execution_correction_uses_active_closure_and_rejects_live_drift(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    live_source = tmp_path / "changed.py"
+    live_source.write_bytes(b"corrected = True\n")
+    live_row = {
+        "path": live_source.name,
+        "sha256": evaluator.sha256_file(live_source),
+        "bytes": live_source.stat().st_size,
+    }
+    historical_closure = {
+        "rows": [{**live_row, "sha256": "0" * 64}],
+        "row_count": 1,
+        "complete": True,
+        "content_digest": "1" * 64,
+    }
+    amendment_closure = {
+        "rows": [live_row],
+        "row_count": 1,
+        "complete": True,
+        "content_digest": "2" * 64,
+    }
+
+    stub = tmp_path / "stub.bin"
+    stub.write_bytes(b"stub")
+    predecessor = {
+        label: {"path": stub.name, "sha256": "3" * 64, "bytes": 4}
+        for label in (
+            "tensor_index",
+            "batch_manifest",
+            "goal_view_index",
+            "context_reconstruction_index",
+            "persistence_receipt",
+        )
+    }
+    monkeypatch.setattr(evaluator, "ROOT", tmp_path)
+    monkeypatch.setattr(evaluator, "PREDECESSOR_ROOT", tmp_path)
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "PANEL_BINDINGS",
+        {
+            "true_future_index": {
+                "path": stub.name,
+                "sha256": "3" * 64,
+                "bytes": 4,
+            }
+        },
+    )
+    monkeypatch.setattr(evaluator.CONTRACT, "CHECKPOINT_BINDINGS", {})
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "PREDECESSOR_TENSOR_PACKAGE", predecessor
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "ENCODER_BINDING", {"path": str(stub)}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_contract", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_output_schema", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_evaluator_fixture", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_source_closure",
+        lambda _path: historical_closure,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_execution_correction_source_closure",
+        lambda _path: amendment_closure,
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_route_role_authority",
+        lambda _path: {"records": []},
+    )
+    monkeypatch.setattr(evaluator, "verify_binding", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        evaluator, "verify_exact_file_record", lambda *_args, **_kwargs: None
+    )
+    monkeypatch.setattr(evaluator, "load_json", lambda _path: {})
+    monkeypatch.setattr(
+        evaluator,
+        "_validate_true_future_index_reconciliation",
+        lambda *_args, **_kwargs: None,
+    )
+
+    frozen = evaluator._validate_frozen_authorities(
+        execution_correction_custody={"pass": True}
+    )
+    assert frozen["source_closure"] is historical_closure
+    assert frozen["execution_correction_source_closure"] is amendment_closure
+
+    live_source.write_bytes(b"corrected = False\n")
+    with pytest.raises(evaluator.QualificationError, match="source-closure row drift"):
+        evaluator._validate_frozen_authorities(
+            execution_correction_custody={"pass": True}
+        )
+
+
+def test_execution_correction_attempt_is_fresh_and_reuses_no_archive_file(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    canonical = tmp_path / "plan_aware"
+    archive = tmp_path / ".plan_aware.failed-bound"
+    archive.mkdir()
+    archive_inventory = {
+        "files": 1,
+        "bytes": 1,
+        "manifest_sha256": "a" * 64,
+        "rows": [{"path": "receipt", "sha256": "b" * 64, "bytes": 1}],
+    }
+    monkeypatch.setattr(evaluator.CONTRACT, "OUTPUT_ROOT", canonical)
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "EXECUTION_CORRECTION_FAILED_ARCHIVE", archive
+    )
+    monkeypatch.setattr(evaluator, "_assert_publication_destinations_absent", lambda: None)
+    monkeypatch.setattr(evaluator, "_active_experiment_processes", lambda: [])
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_archive",
+        lambda: {
+            "archive_path": str(archive),
+            "inventory": archive_inventory,
+            "files_reused": 0,
+            "pass": True,
+        },
+    )
+    custody = {
+        "source_freeze_commit": "c" * 40,
+        "archive_path": str(archive),
+        "archive_inventory": archive_inventory,
+        "files_reused": 0,
+    }
+    attempt = evaluator._new_attempt(
+        canonical,
+        "c" * 40,
+        execution_correction_custody=custody,
+    )
+    assert attempt.is_dir()
+    assert list(attempt.iterdir()) == []
+    assert list(archive.iterdir()) == []
+    attempt.rmdir()
+
+    second_failure = tmp_path / ".plan_aware.failed-second"
+    second_failure.mkdir()
+    with pytest.raises(evaluator.QualificationError, match="namespace drift"):
+        evaluator._new_attempt(
+            canonical,
+            "c" * 40,
+            execution_correction_custody=custody,
+        )
+
+
+def test_replay_gate_is_durable_before_conditional_child_and_fails_closed(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    receipt = evaluator.attach_digest(
+        {
+            "schema": evaluator.CONTRACT.EXECUTION_CORRECTION_REPLAY_SCHEMA_VERSION,
+            "failed_archive": "/bound/archive",
+            "fresh_attempt": str(tmp_path),
+            "files_reused": 0,
+            "pass": True,
+        }
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "validate_execution_correction_replay",
+        lambda _attempt: copy.deepcopy(receipt),
+    )
+    observed = evaluator._publish_execution_correction_replay_gate(
+        attempt=tmp_path,
+        execution_correction_custody={"archive_path": "/bound/archive"},
+    )
+    path = tmp_path / "receipts/execution_correction_replay.json"
+    assert observed == receipt
+    assert evaluator.load_json(path) == receipt
+
+    path.unlink()
+    (tmp_path / "stage_b").mkdir()
+    with pytest.raises(evaluator.QualificationError, match="before execution-correction"):
+        evaluator._publish_execution_correction_replay_gate(
+            attempt=tmp_path,
+            execution_correction_custody={"archive_path": "/bound/archive"},
+        )
+
+
+def test_stage_b_never_starts_helper_without_correction_custody(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    gate = tmp_path / "receipts/stage_b_gate.json"
+    gate.parent.mkdir(parents=True)
+    gate.write_bytes(b"gate\n")
+    monkeypatch.setattr(
+        evaluator,
+        "_publish_stage_b_gate",
+        lambda **_kwargs: (gate, {"content_digest": "a" * 64}),
+    )
+    helper_started = False
+
+    def forbidden_helper(**_kwargs: object) -> dict[str, object]:
+        nonlocal helper_started
+        helper_started = True
+        return {}
+
+    monkeypatch.setattr(evaluator, "_run_conditional_helper_cli", forbidden_helper)
+    with pytest.raises(evaluator.QualificationError, match="without correction custody"):
+        evaluator._execute_conditional_stage_b(
+            attempt=tmp_path,
+            source_freeze="c" * 40,
+            datasets={},
+            models={},
+            tensor_rows={},
+            evaluation_contract={},
+            stage_a_metrics={},
+            stage_a_decisions={"true_future_gate": {"pass": True}},
+            execution_correction_custody={},
+        )
+    assert helper_started is False
+
+
+def test_correction_authority_validation_uses_amendment_closure_for_live_code(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    """Historical closure stays frozen while the overlay binds changed Python."""
+
+    live = tmp_path / "changed.py"
+    live.write_bytes(b"corrected implementation\n")
+    live_row = evaluator.binding(live, relative_to=tmp_path)
+    historical_row = {
+        "path": "changed.py",
+        "sha256": "0" * 64,
+        "bytes": 1,
+    }
+    historical = {"rows": [historical_row], "content_digest": "1" * 64}
+    amendment = {
+        "rows": [live_row],
+        "row_count": 1,
+        "content_digest": "2" * 64,
+    }
+    encoder = tmp_path / "encoder.pt"
+    encoder.write_bytes(b"encoder")
+    index = tmp_path / "index.json"
+    index.write_text("{}\n", encoding="utf-8")
+    predecessor = tmp_path / "predecessor"
+    predecessor.mkdir()
+    predecessor_file = predecessor / "bound.json"
+    predecessor_file.write_text("{}\n", encoding="utf-8")
+
+    monkeypatch.setattr(evaluator, "ROOT", tmp_path)
+    monkeypatch.setattr(evaluator, "PREDECESSOR_ROOT", predecessor)
+    monkeypatch.setattr(evaluator, "TARGET_LATENT_INDEX", index)
+    monkeypatch.setattr(evaluator, "LATENT_INDEX", index)
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_contract", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_output_schema", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT, "load_and_validate_evaluator_fixture", lambda _path: {}
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_source_closure",
+        lambda _path: copy.deepcopy(historical),
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_execution_correction_source_closure",
+        lambda _path: copy.deepcopy(amendment),
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "load_and_validate_route_role_authority",
+        lambda _path: {"records": []},
+    )
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "PANEL_BINDINGS",
+        {
+            "true_future_index": {
+                "path": str(index),
+                "sha256": evaluator.sha256_file(index),
+                "bytes": index.stat().st_size,
+            }
+        },
+    )
+    monkeypatch.setattr(evaluator.CONTRACT, "CHECKPOINT_BINDINGS", {})
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "ENCODER_BINDING",
+        {
+            "path": str(encoder),
+            "sha256": evaluator.sha256_file(encoder),
+            "bytes": encoder.stat().st_size,
+        },
+    )
+    predecessor_record = {
+        "path": predecessor_file.name,
+        "sha256": evaluator.sha256_file(predecessor_file),
+        "bytes": predecessor_file.stat().st_size,
+    }
+    monkeypatch.setattr(
+        evaluator.CONTRACT,
+        "PREDECESSOR_TENSOR_PACKAGE",
+        {
+            key: copy.deepcopy(predecessor_record)
+            for key in (
+                "tensor_index",
+                "batch_manifest",
+                "goal_view_index",
+                "context_reconstruction_index",
+                "persistence_receipt",
+            )
+        },
+    )
+    monkeypatch.setattr(evaluator, "load_json", lambda _path: {})
+    monkeypatch.setattr(
+        evaluator, "_validate_true_future_index_reconciliation", lambda *_a, **_k: None
+    )
+
+    frozen = evaluator._validate_frozen_authorities(
+        execution_correction_custody={"pass": True}
+    )
+    assert frozen["source_closure"] == historical
+    assert frozen["execution_correction_source_closure"] == amendment
+
+    live.write_bytes(b"unbound drift\n")
+    with pytest.raises(evaluator.QualificationError, match="source-closure row drift"):
+        evaluator._validate_frozen_authorities(
+            execution_correction_custody={"pass": True}
+        )

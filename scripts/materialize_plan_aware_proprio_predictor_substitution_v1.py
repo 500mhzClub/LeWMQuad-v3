@@ -61,6 +61,12 @@ FROZEN_WORKERS = 24
 CPU_INTERPRETER = ROOT / ".generated/venvs/genesis_render_vulkan/bin/python"
 GPU_INTERPRETER = Path("/home/andrewknowles/TinyQuadJEPA/bin/python")
 SELF = Path(__file__).resolve()
+SCRUBBED_PYTHON_ENVIRONMENT_KEYS = (
+    "PYTHONPATH",
+    "PYTHONHOME",
+    "PYTHONUSERBASE",
+    "PYTHONSTARTUP",
+)
 
 PREDECESSOR_ROOT = Path(CONTRACT.PREDECESSOR_TENSOR_PACKAGE["root"])
 PREDECESSOR_CONTEXT_INDEX = (
@@ -232,7 +238,7 @@ def build_stage_b_gate_receipt(
         {
             "schema": STAGE_B_GATE_SCHEMA,
             "experiment_id": EXPERIMENT_ID,
-            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
             "contract_freeze_commit": str(contract_freeze_commit),
             "true_future_gate": {
                 "classification": "TRUE_FUTURE_PLAN_AWARE_COST_SIGNAL",
@@ -275,7 +281,7 @@ def validate_stage_b_gate_receipt(path: Path, *, output_root: Path) -> dict[str,
         raise MaterialisationError("Stage-B gate receipt key-set drift")
     if value["schema"] != STAGE_B_GATE_SCHEMA or value["experiment_id"] != EXPERIMENT_ID:
         raise MaterialisationError("Stage-B gate receipt identity drift")
-    if value["contract_sha256"] != CONTRACT.CONTRACT_SHA256:
+    if value["contract_sha256"] != CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256:
         raise MaterialisationError("Stage-B contract digest drift")
     gate = value["true_future_gate"]
     if gate != {
@@ -296,7 +302,8 @@ def validate_stage_b_gate_receipt(path: Path, *, output_root: Path) -> dict[str,
     )
     _validate_self_digest(evaluation, "evaluation contract")
     if (
-        evaluation.get("experiment_contract_digest") != CONTRACT.CONTRACT_SHA256
+        evaluation.get("experiment_contract_digest")
+        != CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
         or evaluation.get("final_epoch_only") is not True
         or evaluation.get("predictor_inference_authorised_before_true_gate") is not False
         or evaluation.get("pass") is not True
@@ -323,7 +330,8 @@ def validate_stage_b_gate_receipt(path: Path, *, output_root: Path) -> dict[str,
     if (
         evidence.get("schema") != STAGE_A_GATE_EVIDENCE_SCHEMA
         or evidence.get("experiment_id") != EXPERIMENT_ID
-        or evidence.get("contract_sha256") != CONTRACT.CONTRACT_SHA256
+        or evidence.get("contract_sha256")
+        != CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
         or evidence.get("source_freeze_commit") != value["contract_freeze_commit"]
     ):
         raise MaterialisationError("Stage-A gate evidence identity drift")
@@ -342,6 +350,60 @@ def validate_stage_b_gate_receipt(path: Path, *, output_root: Path) -> dict[str,
     return value
 
 
+def validate_execution_correction_replay_receipt(
+    path: Path, *, output_root: Path
+) -> dict[str, Any]:
+    """Validate the durable replay barrier without reopening replay artifacts."""
+
+    expected_path = (output_root / "receipts/execution_correction_replay.json").resolve()
+    if path.resolve() != expected_path or not expected_path.is_file():
+        raise MaterialisationError("execution-correction replay receipt path drift")
+    value = load_json(expected_path)
+    _validate_self_digest(value, "execution-correction replay receipt")
+    expected_byte_rows = [
+        copy.deepcopy(row)
+        for row in CONTRACT.EXECUTION_CORRECTION_ARCHIVE_INVENTORY_ROWS
+        if row["path"] in CONTRACT.EXECUTION_CORRECTION_BYTE_EXACT_REPLAY_PATHS
+    ]
+    expected_byte_rows.sort(
+        key=lambda row: CONTRACT.EXECUTION_CORRECTION_BYTE_EXACT_REPLAY_PATHS.index(
+            row["path"]
+        )
+    )
+    expected_normalized_rows = [
+        {
+            "path": relative_path,
+            "excluded_paths": list(
+                CONTRACT.EXECUTION_CORRECTION_NORMALIZED_REPLAY_EXCLUSIONS[
+                    relative_path
+                ]
+            ),
+            "scientific_content_digest": expected_digest,
+        }
+        for relative_path, expected_digest in (
+            CONTRACT.EXECUTION_CORRECTION_NORMALIZED_REPLAY_DIGESTS.items()
+        )
+    ]
+    if (
+        value.get("schema") != CONTRACT.EXECUTION_CORRECTION_REPLAY_SCHEMA_VERSION
+        or value.get("experiment_id") != EXPERIMENT_ID
+        or value.get("amendment")
+        != CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING
+        or value.get("failed_archive")
+        != str(CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE)
+        or Path(str(value.get("fresh_attempt", ""))).resolve()
+        != output_root.resolve()
+        or value.get("files_reused") != 0
+        or value.get("byte_exact_replay") != expected_byte_rows
+        or value.get("normalized_scientific_replay") != expected_normalized_rows
+        or value.get("stage_b_started_before_replay_gate") is not False
+        or value.get("stage_c_started_before_replay_gate") is not False
+        or value.get("pass") is not True
+    ):
+        raise MaterialisationError("execution-correction replay receipt drift")
+    return value
+
+
 def build_stage_c_gate_receipt(
     *,
     contract_freeze_commit: str,
@@ -356,7 +418,7 @@ def build_stage_c_gate_receipt(
         {
             "schema": STAGE_C_GATE_SCHEMA,
             "experiment_id": EXPERIMENT_ID,
-            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
             "contract_freeze_commit": str(contract_freeze_commit),
             "proprioceptive_route_contribution": {
                 "classification": "PROPRIOCEPTIVE_ROUTE_CONTRIBUTION",
@@ -384,7 +446,7 @@ def validate_stage_c_gate_receipt(
         raise MaterialisationError("Stage-C gate receipt schema drift")
     if value.get("experiment_id") != EXPERIMENT_ID:
         raise MaterialisationError("Stage-C gate receipt identity drift")
-    if value.get("contract_sha256") != CONTRACT.CONTRACT_SHA256:
+    if value.get("contract_sha256") != CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256:
         raise MaterialisationError("Stage-C contract digest drift")
     if value.get("proprioceptive_route_contribution") != {
         "classification": "PROPRIOCEPTIVE_ROUTE_CONTRIBUTION",
@@ -419,7 +481,8 @@ def validate_stage_c_gate_receipt(
     if (
         evidence.get("schema") != STAGE_B_GATE_EVIDENCE_SCHEMA
         or evidence.get("experiment_id") != EXPERIMENT_ID
-        or evidence.get("contract_sha256") != CONTRACT.CONTRACT_SHA256
+        or evidence.get("contract_sha256")
+        != CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
         or evidence.get("source_freeze_commit") != value["contract_freeze_commit"]
     ):
         raise MaterialisationError("Stage-B gate evidence identity drift")
@@ -1214,27 +1277,254 @@ def _run_checked(command: Sequence[str], *, environment: Mapping[str, str]) -> N
         )
 
 
-def _child_environment() -> dict[str, str]:
+def build_child_environment(interpreter: Path) -> dict[str, str]:
+    """Return an interpreter-scoped environment with no inherited Python path."""
+
+    # Preserve the venv launcher path: resolving its `python -> python3`
+    # symlink would silently select the system prefix and defeat venv custody.
+    interpreter = Path(interpreter).absolute()
+    policy = CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+        "only_authorised_environment_change"
+    ]
+    matching = [
+        (label, row)
+        for label, row in policy["per_interpreter"].items()
+        if row["interpreter"] == str(interpreter)
+    ]
+    if len(matching) != 1:
+        raise MaterialisationError(
+            "conditional child interpreter is outside amendment authority"
+        )
+    _label, interpreter_policy = matching[0]
+    if (
+        list(SCRUBBED_PYTHON_ENVIRONMENT_KEYS) != policy["remove"]
+        or policy["interpreter_flags"] != ["-E", "-s"]
+    ):
+        raise MaterialisationError("conditional child environment authority drift")
     environment = dict(os.environ)
+    for key in SCRUBBED_PYTHON_ENVIRONMENT_KEYS:
+        environment.pop(key, None)
+    environment["VIRTUAL_ENV"] = str(interpreter_policy["VIRTUAL_ENV"])
+    environment.update(
+        {
+            str(key): str(value)
+            for key, value in policy["set_shared"].items()
+        }
+    )
+    path_rows = [
+        row
+        for row in environment.get("PATH", "").split(os.pathsep)
+        if row
+        and row != str(CPU_INTERPRETER.parent)
+        and row != str(GPU_INTERPRETER.parent)
+    ]
+    environment["PATH"] = os.pathsep.join(
+        [str(interpreter_policy["PATH_prepend"]), *path_rows]
+    )
     environment.update(CONTRACT.NUMERICAL_THREAD_ENV)
     return environment
 
 
+def child_environment_contract(interpreter: Path) -> dict[str, Any]:
+    environment = build_child_environment(interpreter)
+    interpreter = Path(interpreter).absolute()
+    policy = CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+        "only_authorised_environment_change"
+    ]
+    label, interpreter_policy = next(
+        (label, row)
+        for label, row in policy["per_interpreter"].items()
+        if row["interpreter"] == str(interpreter)
+    )
+    return {
+        "authority_id": label,
+        "interpreter": str(interpreter),
+        "isolated_python_environment_flags": copy.deepcopy(
+            policy["interpreter_flags"]
+        ),
+        "scrubbed_keys": copy.deepcopy(policy["remove"]),
+        "scrubbed_keys_absent": {
+            key: key not in environment for key in SCRUBBED_PYTHON_ENVIRONMENT_KEYS
+        },
+        "virtual_env": str(interpreter_policy["VIRTUAL_ENV"]),
+        "python_no_user_site": str(policy["set_shared"]["PYTHONNOUSERSITE"]),
+        "path_first_entry": str(interpreter_policy["PATH_prepend"]),
+        "numerical_thread_environment": copy.deepcopy(CONTRACT.NUMERICAL_THREAD_ENV),
+    }
+
+
+def probe_child_interpreter(interpreter: Path, *, require_genesis: bool) -> dict[str, Any]:
+    """Outcome-blind import probe for the exact conditional child interpreter."""
+
+    interpreter = Path(interpreter).absolute()
+    probe = (
+        "import json,sys,typing_extensions;"
+        "payload={'executable':sys.executable,'typing_extensions_path':"
+        "typing_extensions.__file__,'sentinel_available':"
+        "hasattr(typing_extensions,'Sentinel')};"
+        + (
+            "import pydantic_core,genesis;payload['pydantic_core_path']=pydantic_core.__file__;"
+            "payload['pydantic_core_version']=pydantic_core.__version__;"
+            "payload['genesis_path']=genesis.__file__;payload['genesis_version']=genesis.__version__;"
+            "payload['torch_path']=None;payload['torch_version']=None;"
+            if require_genesis else
+            "import torch;payload['pydantic_core_path']=None;payload['pydantic_core_version']=None;"
+            "payload['genesis_path']=None;payload['genesis_version']=None;"
+            "payload['torch_path']=torch.__file__;payload['torch_version']=torch.__version__;"
+        )
+        + "print(json.dumps(payload,sort_keys=True))"
+    )
+    environment = build_child_environment(interpreter)
+    completed = subprocess.run(
+        [str(interpreter), "-E", "-s", "-c", probe],
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    if completed.returncode:
+        raise MaterialisationError(
+            f"conditional child import preflight failed ({completed.returncode}): "
+            f"{completed.stdout[-4000:]}"
+        )
+    try:
+        payload = json.loads(completed.stdout.strip().splitlines()[-1])
+    except (IndexError, json.JSONDecodeError) as exc:
+        raise MaterialisationError("conditional child import probe output drift") from exc
+    venv_root = interpreter.parent.parent.resolve()
+    typing_path = Path(str(payload.get("typing_extensions_path", ""))).resolve()
+    if (
+        Path(str(payload.get("executable", ""))).absolute() != interpreter
+        or payload.get("sentinel_available") is not True
+        or not typing_path.is_relative_to(venv_root)
+    ):
+        raise MaterialisationError("conditional child interpreter import custody drift")
+    pydantic_path_value = payload.get("pydantic_core_path")
+    pydantic_path = (
+        None
+        if pydantic_path_value is None
+        else Path(str(pydantic_path_value)).resolve()
+    )
+    if require_genesis and (
+        pydantic_path is None or not pydantic_path.is_relative_to(venv_root)
+    ):
+        raise MaterialisationError("pydantic-core did not resolve inside the CPU venv")
+    genesis_path = payload.get("genesis_path")
+    if require_genesis and (
+        not isinstance(genesis_path, str)
+        or not Path(genesis_path).resolve().is_relative_to(venv_root)
+    ):
+        raise MaterialisationError("Genesis import did not resolve inside the CPU venv")
+    torch_path_value = payload.get("torch_path")
+    torch_path = (
+        None if torch_path_value is None else Path(str(torch_path_value)).resolve()
+    )
+    if not require_genesis and (
+        torch_path is None or not torch_path.is_relative_to(venv_root)
+    ):
+        raise MaterialisationError("torch import did not resolve inside the GPU venv")
+    expected = CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+        "required_preflight"
+    ]["cpu_child" if require_genesis else "gpu_child"]
+
+    def exact_module_binding(
+        label: str, observed_path: Path, *, version: str | None = None
+    ) -> dict[str, Any]:
+        expected_binding = expected[label]
+        expected_path = Path(str(expected_binding["path"]))
+        if observed_path != expected_path.resolve():
+            raise MaterialisationError(
+                f"conditional child {label} path differs from its amendment binding"
+            )
+        digest = hashlib.sha256(observed_path.read_bytes()).hexdigest()
+        size = observed_path.stat().st_size
+        if (
+            digest != expected_binding["sha256"]
+            or size != expected_binding["bytes"]
+            or (
+                "version" in expected_binding
+                and version != expected_binding["version"]
+            )
+        ):
+            raise MaterialisationError(
+                f"conditional child {label} module binding drift"
+            )
+        result: dict[str, Any] = {
+            "path": str(expected_path),
+            "resolved_path": str(observed_path),
+            "sha256": digest,
+            "bytes": size,
+        }
+        if "version" in expected_binding:
+            result["version"] = version
+        if "Sentinel_present" in expected_binding:
+            result["Sentinel_present"] = True
+        return result
+
+    typing_binding = exact_module_binding("typing_extensions", typing_path)
+    pydantic_binding = (
+        exact_module_binding(
+            "pydantic_core",
+            pydantic_path,
+            version=str(payload.get("pydantic_core_version")),
+        )
+        if require_genesis and pydantic_path is not None
+        else None
+    )
+    genesis_binding = (
+        exact_module_binding(
+            "genesis",
+            Path(str(genesis_path)).resolve(),
+            version=str(payload.get("genesis_version")),
+        )
+        if require_genesis and genesis_path is not None
+        else None
+    )
+    torch_binding = (
+        exact_module_binding(
+            "torch",
+            torch_path,
+            version=str(payload.get("torch_version")),
+        )
+        if not require_genesis and torch_path is not None
+        else None
+    )
+    return {
+        "environment_contract": child_environment_contract(interpreter),
+        "typing_extensions": typing_binding,
+        "pydantic_core_or_null": pydantic_binding,
+        "genesis_or_null": genesis_binding,
+        "torch_or_null": torch_binding,
+        "sentinel_available": True,
+        "pass": True,
+    }
+
+
 def _run_context_workers(
-    *, output_root: Path, gate_path: Path, workers: int
+    *,
+    output_root: Path,
+    gate_path: Path,
+    replay_receipt_path: Path,
+    workers: int,
 ) -> dict[str, Any]:
     if workers != FROZEN_WORKERS:
         raise MaterialisationError(f"worker topology must remain frozen at {FROZEN_WORKERS}")
     states = _state_manifest_rows()
-    environment = _child_environment()
+    environment = build_child_environment(CPU_INTERPRETER)
     commands = [
         [
             str(CPU_INTERPRETER),
+            "-E",
+            "-s",
             str(SELF),
             "context-state",
             "--stage-b-authorised",
             "--gate-receipt",
             str(gate_path),
+            "--execution-correction-replay-receipt",
+            str(replay_receipt_path),
             "--output-root",
             str(output_root),
             "--state-index",
@@ -1255,16 +1545,21 @@ def _run_gpu_source(
     *,
     output_root: Path,
     gate_path: Path,
+    replay_receipt_path: Path,
     stage_c_gate_path: Path | None = None,
     ablation: str | None = None,
 ) -> None:
     command = [
         str(GPU_INTERPRETER),
+        "-E",
+        "-s",
         str(SELF),
         "predict-source",
         "--stage-b-authorised",
         "--gate-receipt",
         str(gate_path),
+        "--execution-correction-replay-receipt",
+        str(replay_receipt_path),
         "--output-root",
         str(output_root),
         "--source-id",
@@ -1282,11 +1577,14 @@ def _run_gpu_source(
                 ablation,
             ]
         )
-    _run_checked(command, environment=_child_environment())
+    _run_checked(command, environment=build_child_environment(GPU_INTERPRETER))
 
 
 def _finalize_stage_b(
-    output_root: Path, gate: Mapping[str, Any], gate_path: Path
+    output_root: Path,
+    gate: Mapping[str, Any],
+    gate_path: Path,
+    replay_receipt_path: Path,
 ) -> dict[str, Any]:
     context_path = output_root / "stage_b/proprio_context/index.json"
     sources: dict[str, Any] = {}
@@ -1307,6 +1605,9 @@ def _finalize_stage_b(
                 "content_digest": gate["content_digest"],
                 "contract_freeze_commit": gate["contract_freeze_commit"],
             },
+            "execution_correction_replay": artifact_binding(
+                replay_receipt_path, root=output_root
+            ),
             "proprio_context_index": artifact_binding(context_path, root=output_root),
             "prediction_indexes": sources,
             "source_paths": {
@@ -1370,14 +1671,26 @@ def run_stage_b(args: argparse.Namespace) -> int:
     output_root = Path(args.output_root).resolve()
     gate_path = Path(args.gate_receipt).resolve()
     gate = validate_stage_b_gate_receipt(gate_path, output_root=output_root)
+    replay_receipt_path = Path(args.execution_correction_replay_receipt).resolve()
+    validate_execution_correction_replay_receipt(
+        replay_receipt_path, output_root=output_root
+    )
     validate_runtime_authority(gate)
     validate_frozen_inputs()
-    _run_context_workers(output_root=output_root, gate_path=gate_path, workers=args.workers)
+    _run_context_workers(
+        output_root=output_root,
+        gate_path=gate_path,
+        replay_receipt_path=replay_receipt_path,
+        workers=args.workers,
+    )
     for source_id in ("P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT"):
         _run_gpu_source(
-            source_id, output_root=output_root, gate_path=gate_path
+            source_id,
+            output_root=output_root,
+            gate_path=gate_path,
+            replay_receipt_path=replay_receipt_path,
         )
-    _finalize_stage_b(output_root, gate, gate_path)
+    _finalize_stage_b(output_root, gate, gate_path, replay_receipt_path)
     return 0
 
 
@@ -1387,6 +1700,10 @@ def run_context_state(args: argparse.Namespace) -> int:
     output_root = Path(args.output_root).resolve()
     gate = validate_stage_b_gate_receipt(
         Path(args.gate_receipt).resolve(), output_root=output_root
+    )
+    validate_execution_correction_replay_receipt(
+        Path(args.execution_correction_replay_receipt).resolve(),
+        output_root=output_root,
     )
     validate_runtime_authority(gate)
     validate_frozen_inputs()
@@ -1404,6 +1721,10 @@ def run_predict_source(args: argparse.Namespace) -> int:
     output_root = Path(args.output_root).resolve()
     gate_path = Path(args.gate_receipt).resolve()
     gate = validate_stage_b_gate_receipt(gate_path, output_root=output_root)
+    validate_execution_correction_replay_receipt(
+        Path(args.execution_correction_replay_receipt).resolve(),
+        output_root=output_root,
+    )
     validate_runtime_authority(gate)
     validate_frozen_inputs()
     donor_mapping = None
@@ -1443,6 +1764,10 @@ def run_stage_c(args: argparse.Namespace) -> int:
     output_root = Path(args.output_root).resolve()
     gate_path = Path(args.gate_receipt).resolve()
     stage_c_path = Path(args.stage_c_gate_receipt).resolve()
+    replay_receipt_path = Path(args.execution_correction_replay_receipt).resolve()
+    validate_execution_correction_replay_receipt(
+        replay_receipt_path, output_root=output_root
+    )
     gate = validate_stage_b_gate_receipt(gate_path, output_root=output_root)
     validate_stage_c_gate_receipt(
         stage_c_path, output_root=output_root, stage_b_gate_path=gate_path
@@ -1453,6 +1778,7 @@ def run_stage_c(args: argparse.Namespace) -> int:
             "PR_PROPRIO_ROLLOUT",
             output_root=output_root,
             gate_path=gate_path,
+            replay_receipt_path=replay_receipt_path,
             stage_c_gate_path=stage_c_path,
             ablation=ablation,
         )
@@ -1462,6 +1788,9 @@ def run_stage_c(args: argparse.Namespace) -> int:
             "status": "PASS",
             "experiment_id": EXPERIMENT_ID,
             "stage_b_gate_digest": gate["content_digest"],
+            "execution_correction_replay": artifact_binding(
+                replay_receipt_path, root=output_root
+            ),
             "stage_c_gate": artifact_binding(stage_c_path, root=output_root),
             "prediction_indexes": {
                 ablation: artifact_binding(
@@ -1487,6 +1816,7 @@ def build_parser() -> argparse.ArgumentParser:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--stage-b-authorised", action="store_true")
     common.add_argument("--gate-receipt", required=True)
+    common.add_argument("--execution-correction-replay-receipt", required=True)
     common.add_argument("--output-root", required=True)
 
     run = subparsers.add_parser("run-stage-b", parents=[common])

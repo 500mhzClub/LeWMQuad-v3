@@ -1346,10 +1346,10 @@ def write_evaluation_contract(
     ids: Mapping[str, Sequence[str]],
     manifests: Mapping[str, Mapping[str, Any]],
 ) -> dict[str, Any]:
-    frozen_contract = CONTRACT.load_and_validate_contract()
-    experiment_digest = str(
-        frozen_contract.get("contract_sha256", frozen_contract.get("content_digest"))
-    )
+    CONTRACT.load_and_validate_contract()
+    # The execution-only wrapper amendment must not perturb scientific keyed
+    # derangements, donor maps, or any Stage-A scientific content.
+    experiment_digest = CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
     route_records = [
         {
             "state_id": state_id,
@@ -1670,7 +1670,9 @@ def _tracked_path(path: Path) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
-def _validate_frozen_authorities() -> dict[str, Any]:
+def _validate_frozen_authorities(
+    *, execution_correction_custody: Mapping[str, Any] | None = None
+) -> dict[str, Any]:
     """Validate only prospectively frozen bytes; calculate no route metric."""
 
     frozen_contract = CONTRACT.load_and_validate_contract(_tracked_path(CONTRACT.TRACKED_CONTRACT_PATH))
@@ -1686,7 +1688,16 @@ def _validate_frozen_authorities() -> dict[str, Any]:
     route_role_authority = CONTRACT.load_and_validate_route_role_authority(
         _tracked_path(CONTRACT.TRACKED_ROUTE_ROLE_AUTHORITY_PATH)
     )
-    for row in closure["rows"]:
+    # The original source closure is itself immutable scientific authority.  A
+    # correction execution validates changed implementation bytes against the
+    # separate amendment closure instead of pretending they still match the
+    # original freeze's historical source rows.
+    active_closure = closure
+    if execution_correction_custody is not None:
+        active_closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+        )
+    for row in active_closure["rows"]:
         path = ROOT / str(row["path"])
         if (
             not path.is_file()
@@ -1738,35 +1749,61 @@ def _validate_frozen_authorities() -> dict[str, Any]:
         "output_schema": frozen_schema,
         "fixture": frozen_fixture,
         "source_closure": closure,
+        "execution_correction_source_closure": (
+            active_closure if execution_correction_custody is not None else None
+        ),
         "route_role_authority": route_role_authority,
     }
 
 
 def _runtime_source_freeze() -> str:
-    # Discover and validate eligible smoke-only archives before asking the
-    # contract to select the normal direct-freeze or corrected-freeze custody
-    # path.  This is read-only and never reuses an archived artifact.
-    head = git_output("rev-parse", "HEAD")
-    prior_smoke_failure_custody = _validated_prior_smoke_failure_custody(
-        CONTRACT.OUTPUT_ROOT, source_freeze=head
-    )
+    """Compatibility wrapper: amended execution has exactly one freeze mode."""
+
+    return str(_runtime_execution_correction_custody()["source_freeze_commit"])
+
+
+def _runtime_execution_correction_custody() -> dict[str, Any]:
+    """Validate and normalize the mandatory one-attempt amendment custody."""
+
     try:
-        custody = CONTRACT.validate_execution_freeze_custody(
-            ROOT,
-            prior_smoke_failure_custody=prior_smoke_failure_custody,
-        )
+        runtime = CONTRACT.validate_execution_correction_freeze_custody(ROOT)
     except CONTRACT.ContractError as exc:
         raise QualificationError(str(exc)) from exc
-    head = str(custody["source_freeze_commit"])
-    if subprocess.run(
-        ["git", "merge-base", "--is-ancestor", REQUIRED_ANCESTOR, head],
-        cwd=ROOT,
-        check=False,
-    ).returncode:
-        raise QualificationError(
-            f"protected-contact result {REQUIRED_ANCESTOR} is not an ancestor of {head}"
-        )
-    return head
+    archive = runtime.get("failed_archive_custody")
+    if (
+        runtime.get("pass") is not True
+        or runtime.get("fresh_attempts_authorised") != 1
+        or runtime.get("fresh_attempts_already_consumed") != 0
+        or runtime.get("files_reused") != 0
+        or not isinstance(archive, Mapping)
+        or archive.get("pass") is not True
+        or archive.get("files_reused") != 0
+        or archive.get("archive_path")
+        != str(CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE)
+    ):
+        raise QualificationError("execution-correction runtime custody drift")
+    amendment_closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+    )
+    amendment_closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+        amendment_closure_path
+    )
+    return {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(amendment_closure_path, relative_to=ROOT),
+            "content_digest": amendment_closure["content_digest"],
+            "rows": amendment_closure["row_count"],
+        },
+        "archive_path": str(archive["archive_path"]),
+        "archive_inventory": copy.deepcopy(archive["inventory"]),
+        "failure_receipt": copy.deepcopy(archive["failure_receipt"]),
+        "source_freeze_commit": str(runtime["source_freeze_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": None,
+        "execution_correction_replay": None,
+        "pass": True,
+    }
 
 
 def _tracked_publication_paths() -> tuple[Path, Path]:
@@ -1906,7 +1943,12 @@ def _validated_prior_smoke_failure_custody(
         raise QualificationError(str(exc)) from exc
 
 
-def _new_attempt(output_root: Path, source_freeze: str) -> Path:
+def _new_attempt(
+    output_root: Path,
+    source_freeze: str,
+    *,
+    execution_correction_custody: Mapping[str, Any] | None = None,
+) -> Path:
     if output_root.resolve() != CONTRACT.OUTPUT_ROOT.resolve():
         raise QualificationError("canonical output path differs from the frozen contract")
     _assert_publication_destinations_absent()
@@ -1915,9 +1957,34 @@ def _new_attempt(output_root: Path, source_freeze: str) -> Path:
     siblings = list(output_root.parent.glob(f".{output_root.name}.attempt-*"))
     if siblings:
         raise QualificationError(f"a live/abandoned attempt already exists: {siblings}")
-    _validated_prior_smoke_failure_custody(
-        output_root, source_freeze=source_freeze
-    )
+    if execution_correction_custody is None:
+        _validated_prior_smoke_failure_custody(
+            output_root, source_freeze=source_freeze
+        )
+    else:
+        try:
+            archive = CONTRACT.validate_execution_correction_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        failed_archives = sorted(
+            path.resolve()
+            for path in output_root.parent.glob(f".{output_root.name}.failed-*")
+        )
+        if (
+            source_freeze
+            != execution_correction_custody.get("source_freeze_commit")
+            or execution_correction_custody.get("archive_path")
+            != archive["archive_path"]
+            or execution_correction_custody.get("archive_inventory")
+            != archive["inventory"]
+            or execution_correction_custody.get("files_reused") != 0
+            or failed_archives
+            != [CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve()]
+            or _active_experiment_processes()
+        ):
+            raise QualificationError(
+                "execution-correction fresh-attempt custody or namespace drift"
+            )
     output_root.parent.mkdir(parents=True, exist_ok=True)
     attempt = output_root.parent / (
         f".{output_root.name}.attempt-{source_freeze[:12]}-{time.time_ns()}-{os.getpid()}"
@@ -1942,11 +2009,51 @@ def _prohibition_counters() -> dict[str, int]:
     }
 
 
+def _conditional_child_environment_preflight(attempt: Path) -> dict[str, Any]:
+    """Probe exact CPU/GPU child imports before opening fit outcomes or tensors."""
+
+    helper = _conditional_helper()
+    try:
+        cpu_probe = helper.probe_child_interpreter(
+            helper.CPU_INTERPRETER, require_genesis=True
+        )
+        gpu_probe = helper.probe_child_interpreter(
+            helper.GPU_INTERPRETER, require_genesis=False
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    receipt = attach_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "conditional_child_environment_preflight.v1"
+            ),
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "cpu_child": cpu_probe,
+            "gpu_child": gpu_probe,
+            "inherited_python_environment_presence": {
+                key: key in os.environ
+                for key in helper.SCRUBBED_PYTHON_ENVIRONMENT_KEYS
+            },
+            "fit_outcome_rows_opened": 0,
+            "calibration_rows_opened": 0,
+            "heldout_rows_opened": 0,
+            "tensor_rows_opened": 0,
+            "training_steps": 0,
+            "pass": True,
+        }
+    )
+    atomic_json(attempt / "receipts/conditional_child_environment_preflight.json", receipt)
+    return receipt
+
+
 def _preexecution_receipt(
     *,
     attempt: Path,
     source_freeze: str,
     frozen: Mapping[str, Any],
+    conditional_child_environment_preflight: Mapping[str, Any],
+    execution_correction_custody: dict[str, Any],
 ) -> dict[str, Any]:
     stat = os.statvfs(attempt.parent)
     # Preserve the exact closure in the attempt itself so a smoke-failure
@@ -1974,6 +2081,19 @@ def _preexecution_receipt(
             "route_role_authority_binding": copy.deepcopy(
                 CONTRACT.ROUTE_ROLE_RECEIPT_BINDING
             ),
+            "conditional_child_environment_preflight": {
+                **binding(
+                    attempt
+                    / "receipts/conditional_child_environment_preflight.json",
+                    relative_to=attempt,
+                ),
+                "content_digest": conditional_child_environment_preflight[
+                    "content_digest"
+                ],
+            },
+            "execution_correction_custody": copy.deepcopy(
+                execution_correction_custody
+            ),
             "panel_bindings": copy.deepcopy(CONTRACT.PANEL_BINDINGS),
             "encoder_binding": copy.deepcopy(CONTRACT.ENCODER_BINDING),
             "predictor_checkpoint_bindings": copy.deepcopy(CONTRACT.CHECKPOINT_BINDINGS),
@@ -1984,11 +2104,7 @@ def _preexecution_receipt(
             "numerical_thread_environment": copy.deepcopy(CONTRACT.NUMERICAL_THREAD_ENV),
             "attempt_root": str(attempt),
             "canonical_output_root": str(CONTRACT.OUTPUT_ROOT),
-            "prior_smoke_failure_custody": (
-                _validated_prior_smoke_failure_custody(
-                    CONTRACT.OUTPUT_ROOT, source_freeze=source_freeze
-                )
-            ),
+            "prior_smoke_failure_custody": [],
             "output_free_bytes": int(stat.f_bavail * stat.f_frsize),
             "outcome_barrier": {
                 "fit_rows_opened": 0,
@@ -2995,6 +3111,13 @@ def _report_markdown(result: Mapping[str, Any]) -> str:
             f"- Incremental value over both kinematics and the matched no-latent residual: `{stage_a['true_incremental_value']['pass']}`.",
             f"- Stage B: `{result['stage_execution']['stage_b']}`.",
             f"- Stage C: `{result['stage_execution']['stage_c']}`.",
+            "- Execution-only correction amendment: `"
+            + str(
+                result["stage_execution"]["execution_correction_custody"]
+                ["amendment"]["sha256"]
+            )
+            + "`; failed-archive files reused: `0`; pre-Stage-B scientific "
+            "replay equality: `PASS`.",
             "",
             "## Preserved predecessor conclusions",
             "",
@@ -3583,12 +3706,189 @@ def _validate_training_checkpoint_custody(
     return training
 
 
+def _validate_conditional_child_environment_preflight(
+    output_root: Path, preexecution: Mapping[str, Any]
+) -> dict[str, Any]:
+    helper = _conditional_helper()
+    path = output_root / "receipts/conditional_child_environment_preflight.json"
+    value = load_json(path)
+    expected_binding = {
+        **binding(path, relative_to=output_root),
+        "content_digest": value.get("content_digest"),
+    }
+    if (
+        value.get("content_digest") != content_digest(value)
+        or preexecution.get("conditional_child_environment_preflight")
+        != expected_binding
+        or value.get("schema")
+        != (
+            "plan_aware_monotone_jepa_cost_v1."
+            "conditional_child_environment_preflight.v1"
+        )
+        or value.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or value.get("pass") is not True
+        or any(
+            value.get(key) != 0
+            for key in (
+                "fit_outcome_rows_opened",
+                "calibration_rows_opened",
+                "heldout_rows_opened",
+                "tensor_rows_opened",
+                "training_steps",
+            )
+        )
+    ):
+        raise QualificationError("conditional child-environment preflight drift")
+    for label, interpreter, require_genesis in (
+        ("cpu_child", helper.CPU_INTERPRETER, True),
+        ("gpu_child", helper.GPU_INTERPRETER, False),
+    ):
+        probe = value.get(label)
+        expected_probe = CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+            "required_preflight"
+        ][label]
+        if (
+            not isinstance(probe, Mapping)
+            or probe.get("pass") is not True
+            or probe.get("sentinel_available") is not True
+            or probe.get("environment_contract")
+            != helper.child_environment_contract(interpreter)
+        ):
+            raise QualificationError(
+                f"conditional {label} import-preflight custody drift"
+            )
+        venv_root = Path(interpreter).absolute().parent.parent.resolve()
+        expected_modules = {
+            "typing_extensions": expected_probe["typing_extensions"],
+            "pydantic_core_or_null": (
+                expected_probe["pydantic_core"] if require_genesis else None
+            ),
+            "genesis_or_null": expected_probe["genesis"] if require_genesis else None,
+            "torch_or_null": expected_probe["torch"] if not require_genesis else None,
+        }
+        for field, expected_module in expected_modules.items():
+            observed = probe.get(field)
+            if expected_module is None:
+                if observed is not None:
+                    raise QualificationError(
+                        f"conditional {label} unexpected {field} binding"
+                    )
+                continue
+            exact = {
+                "path": str(expected_module["path"]),
+                "resolved_path": str(Path(str(expected_module["path"])).resolve()),
+                "sha256": str(expected_module["sha256"]),
+                "bytes": int(expected_module["bytes"]),
+            }
+            if "version" in expected_module:
+                exact["version"] = str(expected_module["version"])
+            if "Sentinel_present" in expected_module:
+                exact["Sentinel_present"] = True
+            if observed != exact or not Path(exact["resolved_path"]).is_relative_to(
+                venv_root
+            ):
+                raise QualificationError(
+                    f"conditional {label} exact {field} binding drift"
+                )
+    return value
+
+
+def _validate_execution_correction_output_custody(
+    output_root: Path,
+    *,
+    preexecution: Mapping[str, Any],
+    persistence: Mapping[str, Any],
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reconcile the progressive amendment custody without rerunning science."""
+
+    try:
+        archive = CONTRACT.validate_execution_correction_archive()
+        CONTRACT.validate_base_scientific_authorities(ROOT)
+        CONTRACT.load_and_validate_execution_correction_amendment(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_AMENDMENT_PATH)
+        )
+        CONTRACT.load_and_validate_execution_correction_output_schema(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_OUTPUT_SCHEMA_PATH)
+        )
+        CONTRACT.load_and_validate_execution_correction_fixture(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_FIXTURE_PATH)
+        )
+        frozen_correction_closure = (
+            CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+            )
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    preflight_path = output_root / "receipts/conditional_child_environment_preflight.json"
+    preflight = load_json(preflight_path)
+    preflight_binding = {
+        **binding(preflight_path, relative_to=output_root),
+        "content_digest": preflight["content_digest"],
+    }
+    replay_path = output_root / "receipts/execution_correction_replay.json"
+    helper = _conditional_helper()
+    try:
+        replay = helper.validate_execution_correction_replay_receipt(
+            replay_path, output_root=output_root
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    replay_binding = {
+        **binding(replay_path, relative_to=output_root),
+        "content_digest": replay["content_digest"],
+    }
+    common = {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+                ),
+                relative_to=ROOT,
+            ),
+            "content_digest": frozen_correction_closure["content_digest"],
+            "rows": frozen_correction_closure["row_count"],
+        },
+        "archive_path": str(archive["archive_path"]),
+        "archive_inventory": copy.deepcopy(archive["inventory"]),
+        "failure_receipt": copy.deepcopy(archive["failure_receipt"]),
+        "source_freeze_commit": str(result["source_freeze_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": preflight_binding,
+        "pass": True,
+    }
+    expected_preexecution = {**common, "execution_correction_replay": None}
+    expected_terminal = {
+        **common,
+        "execution_correction_replay": replay_binding,
+    }
+    if (
+        preexecution.get("execution_correction_custody") != expected_preexecution
+        or persistence.get("execution_correction_custody") != expected_terminal
+        or result.get("stage_execution", {}).get(
+            "execution_correction_custody"
+        )
+        != expected_terminal
+    ):
+        raise QualificationError("execution-correction progressive custody drift")
+    return expected_terminal
+
+
 def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str, Any]:
     """Reproduce all aggregates from persisted rows without model inference."""
 
     del allow_active_self  # own PID is always excluded by the process scanner.
-    frozen = _validate_frozen_authorities()
     result = load_json(output_root / "result.json")
+    result_custody = result.get("stage_execution", {}).get(
+        "execution_correction_custody"
+    )
+    if not isinstance(result_custody, Mapping):
+        raise QualificationError("result lacks mandatory execution-correction custody")
+    frozen = _validate_frozen_authorities(
+        execution_correction_custody=result_custody
+    )
     CONTRACT.validate_result_receipt(result)
     metrics = load_json(output_root / "aggregates/metrics.json")
     if metrics.get("content_digest") != content_digest(metrics):
@@ -3605,6 +3905,7 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
     if persistence.get("content_digest") != content_digest(persistence):
         raise QualificationError("persistence self-digest drift")
     preexecution = load_json(output_root / "receipts/preexecution.json")
+    _validate_conditional_child_environment_preflight(output_root, preexecution)
     source_closure_snapshot_path = output_root / "receipts/source_closure.json"
     source_closure_snapshot = load_json(source_closure_snapshot_path)
     expected_source_closure_snapshot_binding = {
@@ -3617,10 +3918,7 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
         raise QualificationError(
             f"pre-smoke source-closure snapshot drift: {exc}"
         ) from exc
-    expected_prior_smoke_custody = _validated_prior_smoke_failure_custody(
-        CONTRACT.OUTPUT_ROOT,
-        source_freeze=str(result["source_freeze_commit"]),
-    )
+    expected_prior_smoke_custody: list[dict[str, Any]] = []
     if (
         preexecution.get("content_digest") != content_digest(preexecution)
         or preexecution.get("source_closure_snapshot")
@@ -3634,6 +3932,12 @@ def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str
         != expected_prior_smoke_custody
     ):
         raise QualificationError("prior smoke-failure custody drift")
+    _validate_execution_correction_output_custody(
+        output_root,
+        preexecution=preexecution,
+        persistence=persistence,
+        result=result,
+    )
     expected_metrics_binding = binding(
         output_root / "aggregates/metrics.json", relative_to=output_root
     )
@@ -4076,7 +4380,7 @@ def _write_stage_a_gate_evidence(
         {
             "schema": helper.STAGE_A_GATE_EVIDENCE_SCHEMA,
             "experiment_id": CONTRACT.EXPERIMENT_ID,
-            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
             "source_freeze_commit": source_freeze,
             "evaluation_contract_content_digest": evaluation_contract["content_digest"],
             "heldout_stage_a_summary_sha256": hashlib.sha256(
@@ -4144,9 +4448,14 @@ def _run_conditional_helper_cli(
     *, attempt: Path, arguments: Sequence[str], log_name: str
 ) -> dict[str, Any]:
     helper = _conditional_helper()
-    command = [str(helper.GPU_INTERPRETER), str(helper.SELF), *arguments]
-    environment = dict(os.environ)
-    environment.update(CONTRACT.NUMERICAL_THREAD_ENV)
+    command = [
+        str(helper.GPU_INTERPRETER),
+        "-E",
+        "-s",
+        str(helper.SELF),
+        *arguments,
+    ]
+    environment = helper.build_child_environment(helper.GPU_INTERPRETER)
     started = time.time()
     completed = subprocess.run(
         command,
@@ -4169,6 +4478,9 @@ def _run_conditional_helper_cli(
         "returncode": completed.returncode,
         "runtime_s": time.time() - started,
         "log": binding(log_path, relative_to=attempt),
+        "child_environment_contract": helper.child_environment_contract(
+            helper.GPU_INTERPRETER
+        ),
         "numerical_thread_environment": copy.deepcopy(CONTRACT.NUMERICAL_THREAD_ENV),
     }
 
@@ -4594,12 +4906,21 @@ def _validate_stage_b_materialisation(
         "content_digest": gate["content_digest"],
         "contract_freeze_commit": gate["contract_freeze_commit"],
     }
+    replay_path = attempt / "receipts/execution_correction_replay.json"
+    try:
+        helper.validate_execution_correction_replay_receipt(
+            replay_path, output_root=attempt
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    expected_replay_binding = binding(replay_path, relative_to=attempt)
     if (
         top.get("content_digest") != content_digest(top)
         or top.get("schema") != helper.MATERIALISATION_RECEIPT_SCHEMA
         or top.get("status") != "PASS"
         or top.get("experiment_id") != CONTRACT.EXPERIMENT_ID
         or top.get("stage_b_gate") != expected_gate_record
+        or top.get("execution_correction_replay") != expected_replay_binding
         or top.get("counts") != expected_counts
         or top.get("workers") != helper.FROZEN_WORKERS
         or top.get("numerical_thread_environment")
@@ -4643,6 +4964,7 @@ def _validate_stage_b_materialisation(
     return combined, {
         "gate": binding(gate_path, relative_to=attempt),
         "gate_content_digest": gate["content_digest"],
+        "execution_correction_replay": expected_replay_binding,
         "context_index": binding(
             attempt / "stage_b/proprio_context/index.json", relative_to=attempt
         ),
@@ -4666,6 +4988,8 @@ def _validate_stage_c_top_receipt(
         )
         for source in STAGE_C_SOURCE_IDS
     }
+    replay_path = attempt / "receipts/execution_correction_replay.json"
+    expected_replay_binding = binding(replay_path, relative_to=attempt)
     if (
         value.get("content_digest") != content_digest(value)
         or value.get("schema")
@@ -4673,6 +4997,7 @@ def _validate_stage_c_top_receipt(
         or value.get("status") != "PASS"
         or value.get("experiment_id") != CONTRACT.EXPERIMENT_ID
         or value.get("stage_b_gate_digest") != stage_b_gate_digest
+        or value.get("execution_correction_replay") != expected_replay_binding
         or value.get("stage_c_gate")
         != binding(stage_c_gate_path, relative_to=attempt)
         or value.get("prediction_indexes") != expected_indexes
@@ -5140,7 +5465,7 @@ def _publish_stage_c_gate(
         {
             "schema": helper.STAGE_B_GATE_EVIDENCE_SCHEMA,
             "experiment_id": CONTRACT.EXPERIMENT_ID,
-            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
             "source_freeze_commit": source_freeze,
             "heldout_stage_b_summary_sha256": hashlib.sha256(
                 canonical_bytes(heldout_summaries)[:-1]
@@ -5436,6 +5761,56 @@ def _stage_c_decisions(
     }
 
 
+def _publish_execution_correction_replay_gate(
+    *, attempt: Path, execution_correction_custody: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Prove equivalence before any conditional scientific/materialisation child.
+
+    The bound outcome-free CPU/GPU import probes ran before fit with every
+    scientific/opening counter at zero and are the sole prospective exception.
+    """
+
+    if not execution_correction_custody:
+        raise QualificationError("execution-correction replay lacks archive custody")
+    premature: list[str] = []
+    for directory in (attempt / "stage_b", attempt / "stage_c"):
+        if directory.exists():
+            premature.append(str(directory.relative_to(attempt)))
+    for directory, prefix in (
+        (attempt / "logs", "stage_b"),
+        (attempt / "logs", "stage_c"),
+        (attempt / "receipts", "stage_b_proprio"),
+        (attempt / "receipts", "stage_c_"),
+    ):
+        if directory.is_dir():
+            premature.extend(
+                str(path.relative_to(attempt))
+                for path in directory.iterdir()
+                if path.name.startswith(prefix)
+            )
+    if premature:
+        raise QualificationError(
+            "conditional artifacts exist before execution-correction replay gate: "
+            f"{sorted(premature)}"
+        )
+    try:
+        receipt = CONTRACT.validate_execution_correction_replay(attempt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        receipt.get("pass") is not True
+        or receipt.get("files_reused") != 0
+        or receipt.get("failed_archive")
+        != execution_correction_custody.get("archive_path")
+    ):
+        raise QualificationError("execution-correction replay receipt custody drift")
+    path = attempt / "receipts/execution_correction_replay.json"
+    atomic_json(path, receipt)
+    if load_json(path) != receipt:
+        raise QualificationError("execution-correction replay receipt roundtrip drift")
+    return receipt
+
+
 def _execute_conditional_stage_b(
     *,
     attempt: Path,
@@ -5446,6 +5821,7 @@ def _execute_conditional_stage_b(
     evaluation_contract: Mapping[str, Any],
     stage_a_metrics: Mapping[str, Any],
     stage_a_decisions: Mapping[str, Any],
+    execution_correction_custody: dict[str, Any],
 ) -> tuple[dict[str, Any], dict[str, Any] | None]:
     """Late import prevents any P1/PR materialisation before the true gate."""
 
@@ -5459,6 +5835,19 @@ def _execute_conditional_stage_b(
         stage_a_metrics=stage_a_metrics,
         stage_a_decisions=stage_a_decisions,
     )
+    if not execution_correction_custody:
+        raise QualificationError(
+            "amended execution cannot enter Stage B without correction custody"
+        )
+    replay_receipt = _publish_execution_correction_replay_gate(
+        attempt=attempt,
+        execution_correction_custody=execution_correction_custody,
+    )
+    replay_receipt_path = attempt / "receipts/execution_correction_replay.json"
+    execution_correction_custody["execution_correction_replay"] = {
+        **binding(replay_receipt_path, relative_to=attempt),
+        "content_digest": replay_receipt["content_digest"],
+    }
     execution = _run_conditional_helper_cli(
         attempt=attempt,
         arguments=(
@@ -5466,6 +5855,8 @@ def _execute_conditional_stage_b(
             "--stage-b-authorised",
             "--gate-receipt",
             str(gate_path),
+            "--execution-correction-replay-receipt",
+            str(replay_receipt_path),
             "--output-root",
             str(attempt),
             "--workers",
@@ -5513,6 +5904,10 @@ def _execute_conditional_stage_b(
         **decisions,
         "gate_receipt": binding(gate_path, relative_to=attempt),
         "gate_content_digest": gate["content_digest"],
+        "execution_correction_replay": {
+            **binding(replay_receipt_path, relative_to=attempt),
+            "content_digest": replay_receipt["content_digest"],
+        },
         "helper_execution": execution,
         "materialisation_custody": materialisation,
         "ledger": binding(stage_b_path, relative_to=attempt),
@@ -5542,6 +5937,8 @@ def _execute_conditional_stage_b(
             str(gate_path),
             "--stage-c-gate-receipt",
             str(stage_c_gate_path),
+            "--execution-correction-replay-receipt",
+            str(replay_receipt_path),
             "--output-root",
             str(attempt),
         ),
@@ -5665,9 +6062,16 @@ def _execute_conditional_stage_b(
 
 def execute() -> dict[str, Any]:
     started = time.time()
-    source_freeze = _runtime_source_freeze()
-    frozen = _validate_frozen_authorities()
-    attempt = _new_attempt(CONTRACT.OUTPUT_ROOT, source_freeze)
+    execution_correction_custody = _runtime_execution_correction_custody()
+    source_freeze = str(execution_correction_custody["source_freeze_commit"])
+    frozen = _validate_frozen_authorities(
+        execution_correction_custody=execution_correction_custody
+    )
+    attempt = _new_attempt(
+        CONTRACT.OUTPUT_ROOT,
+        source_freeze,
+        execution_correction_custody=execution_correction_custody,
+    )
     publication_happened = False
     tracked_publication_happened = False
     phase = "PREEXECUTION"
@@ -5678,8 +6082,26 @@ def execute() -> dict[str, Any]:
         "final_checkpoint_published": False,
     }
     try:
+        child_environment_preflight = _conditional_child_environment_preflight(
+            attempt
+        )
+        execution_correction_custody[
+            "conditional_child_environment_preflight"
+        ] = {
+            **binding(
+                attempt / "receipts/conditional_child_environment_preflight.json",
+                relative_to=attempt,
+            ),
+            "content_digest": child_environment_preflight["content_digest"],
+        }
         preexecution = _preexecution_receipt(
-            attempt=attempt, source_freeze=source_freeze, frozen=frozen
+            attempt=attempt,
+            source_freeze=source_freeze,
+            frozen=frozen,
+            conditional_child_environment_preflight=(
+                child_environment_preflight
+            ),
+            execution_correction_custody=execution_correction_custody,
         )
         ids = split_ids()
         line_index = route_line_index()
@@ -5813,6 +6235,11 @@ def execute() -> dict[str, Any]:
                 evaluation_contract=evaluation_contract,
                 stage_a_metrics=summaries_by_role,
                 stage_a_decisions=stage_a_decisions,
+                execution_correction_custody=execution_correction_custody,
+            )
+        else:
+            raise QualificationError(
+                "execution-correction replay diverged before the bound Stage-B gate"
             )
         raw_cost_matched_comparisons = _matched_raw_cost_comparisons(
             summaries_by_role, stage_b
@@ -5910,6 +6337,9 @@ def execute() -> dict[str, Any]:
                 "prior_smoke_failure_custody": copy.deepcopy(
                     preexecution["prior_smoke_failure_custody"]
                 ),
+                "execution_correction_custody": copy.deepcopy(
+                    execution_correction_custody
+                ),
                 "prohibition_counters": _prohibition_counters(),
             }
         )
@@ -5952,6 +6382,9 @@ def execute() -> dict[str, Any]:
                     else "NOT_RUN_NO_PROPRIOCEPTIVE_CONTRIBUTION"
                     if stage_b is not None
                     else "NOT_RUN_STAGE_B_NOT_AUTHORISED"
+                ),
+                "execution_correction_custody": copy.deepcopy(
+                    execution_correction_custody
                 ),
             },
             "metrics": {
@@ -6248,6 +6681,68 @@ def _refresh_correction_freeze_authorities(
 
 def freeze_contract() -> dict[str, Any]:
     head = git_output("rev-parse", "HEAD")
+    if head == CONTRACT.INITIAL_EXECUTION_FREEZE_COMMIT:
+        # Prepare only the separate execution-amendment authority suite.  The
+        # original preregistration/contract/schema/fixture/role/closure bytes
+        # are immutable and are never regenerated in this branch.
+        try:
+            CONTRACT.validate_base_scientific_authorities(ROOT)
+            archive = CONTRACT.validate_execution_correction_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        tracked_changes = {
+            path
+            for path in git_output("diff", "--name-only").splitlines()
+            if path
+        }
+        outside = sorted(
+            tracked_changes - set(CONTRACT.EXECUTION_CORRECTION_ALLOWED_CHANGED_PATHS)
+        )
+        if outside:
+            raise QualificationError(
+                f"execution-correction preparation has unrelated tracked edits: {outside}"
+            )
+        failed = sorted(
+            path.resolve()
+            for path in CONTRACT.OUTPUT_ROOT.parent.glob(
+                f".{CONTRACT.OUTPUT_ROOT.name}.failed-*"
+            )
+        )
+        attempts = sorted(
+            CONTRACT.OUTPUT_ROOT.parent.glob(
+                f".{CONTRACT.OUTPUT_ROOT.name}.attempt-*"
+            )
+        )
+        if (
+            failed != [CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve()]
+            or attempts
+            or CONTRACT.OUTPUT_ROOT.exists()
+            or _active_experiment_processes()
+        ):
+            raise QualificationError(
+                "execution-correction amendment namespace is not fresh"
+            )
+        paths = CONTRACT.write_execution_correction_authorities(ROOT)
+        closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+        )
+        return {
+            "freeze_mode": "EXECUTION_CORRECTION_AMENDMENT_PREPARATION",
+            "base_head": head,
+            "failed_archive_custody": archive,
+            "files_reused": 0,
+            "required_enclosing_commit_subject": (
+                CONTRACT.EXECUTION_CORRECTION_FREEZE_COMMIT_SUBJECT
+            ),
+            "amendment_authorities": {
+                label: binding(path) for label, path in paths.items()
+            },
+            "amendment_source_closure_rows": closure["row_count"],
+            "scientific_authority_contract_sha256": (
+                CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+            ),
+            "pass": True,
+        }
     prior_smoke_failure_custody = _validated_prior_smoke_failure_custody(
         CONTRACT.OUTPUT_ROOT,
         source_freeze=head,
