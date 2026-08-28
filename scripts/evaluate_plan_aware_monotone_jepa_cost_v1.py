@@ -110,6 +110,25 @@ PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND = "diagnose-preexecution-child"
 PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND = (
     "diagnose-preexecution-synthetic-child"
 )
+PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND = (
+    "freeze-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND = (
+    "diagnose-preexecution-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND = (
+    "diagnose-preexecution-correction-1-child"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND = (
+    "finalize-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND = (
+    "check-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    "plan_aware_monotone_jepa_cost_v1_preexecution_diagnostic_correction_1"
+)
 CONDITIONAL_HELPER_SUBCOMMANDS = frozenset(
     {"run-stage-b", "context-state", "predict-source", "run-stage-c"}
 )
@@ -146,6 +165,15 @@ def _forensic_contract() -> Any:
 
     return importlib.import_module(
         "lewm.safety.plan_aware_monotone_jepa_cost_v1_forensic_contract"
+    )
+
+
+def _forensic_correction_1_contract() -> Any:
+    """Load only the additive correction authority on correction CLI paths."""
+
+    return importlib.import_module(
+        "lewm.safety."
+        "plan_aware_monotone_jepa_cost_v1_forensic_correction_1_contract"
     )
 
 
@@ -3283,6 +3311,11 @@ def _classify_experiment_argv(
         if subcommand in {
             PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND,
             PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
+            PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND,
         }:
             # The separate forensic scanner owns this non-scientific role.
             # Exact diagnostic argv must not masquerade as a malformed
@@ -3672,6 +3705,41 @@ def _validate_forensic_constant_alignment() -> Any:
     return forensic
 
 
+def _validate_forensic_correction_1_constant_alignment() -> Any:
+    """Bind the versioned correction CLI without changing BASE authority."""
+
+    correction = _forensic_correction_1_contract()
+    expected = {
+        "PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND": (
+            PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND
+        ),
+    }
+    for name, value in expected.items():
+        if getattr(correction, name, None) != value:
+            raise QualificationError(
+                f"forensic correction-1 CLI constant drift: {name}"
+            )
+    if Path(correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT) != (
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+    ):
+        raise QualificationError("forensic correction-1 root drift")
+    if correction.BASE is not _validate_forensic_constant_alignment():
+        raise QualificationError("forensic correction-1 BASE authority drift")
+    return correction
+
+
 def _forensic_runtime_paths(root: Path) -> dict[str, Path]:
     forensic = _validate_forensic_constant_alignment()
     paths = getattr(forensic, "PREEXECUTION_DIAGNOSTIC_RUNTIME_PATHS", None)
@@ -3705,6 +3773,39 @@ def _expected_preexecution_forensic_freeze_argv() -> list[str]:
         str(FORENSIC_INTERPRETER),
         str(EVALUATOR_SCRIPT),
         PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND,
+    ]
+
+
+def _expected_preexecution_forensic_correction_freeze_argv() -> list[str]:
+    _validate_forensic_correction_1_constant_alignment()
+    return [
+        str(FORENSIC_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_launcher_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_launcher_argv()
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_finalizer_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_finalizer_outer_argv()
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_checker_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_checker_outer_argv()
     ]
 
 
@@ -3743,6 +3844,28 @@ def _expected_preexecution_diagnostic_child_argv(
         "--read-guard-events-fd",
         str(int(read_guard_events_fd)),
     ]
+
+
+def _expected_preexecution_diagnostic_correction_child_argv(
+    launcher_identity: Mapping[str, Any],
+    *,
+    traceback_fd: int,
+    exception_fd: int,
+    heartbeat_fd: int,
+    read_guard_events_fd: int,
+) -> list[str]:
+    correction = _validate_forensic_correction_1_constant_alignment()
+    root = Path(correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT)
+    argv = _expected_preexecution_diagnostic_child_argv(
+        launcher_identity,
+        diagnostic_root=root,
+        traceback_fd=traceback_fd,
+        exception_fd=exception_fd,
+        heartbeat_fd=heartbeat_fd,
+        read_guard_events_fd=read_guard_events_fd,
+    )
+    argv[6] = PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+    return argv
 
 
 def _expected_preexecution_diagnostic_synthetic_child_argv(
@@ -3795,6 +3918,26 @@ def _expected_preexecution_diagnostic_internal_argv(
     ]
 
 
+def _expected_preexecution_diagnostic_correction_internal_argv(
+    launcher_identity: Mapping[str, Any],
+) -> list[str]:
+    correction = _validate_forensic_correction_1_constant_alignment()
+    try:
+        return [
+            str(value)
+            for value in correction.expected_correction_child_inner_argv(
+                launcher_pid=int(launcher_identity["pid"]),
+                launcher_start_time_ticks=int(
+                    launcher_identity["start_time_ticks"]
+                ),
+            )
+        ]
+    except Exception as exc:
+        raise QualificationError(
+            "forensic correction-1 child argv authority drift"
+        ) from exc
+
+
 def _expected_preexecution_diagnostic_synthetic_internal_argv(
     *, fixture_id: str, diagnostic_root: Path
 ) -> list[str]:
@@ -3821,6 +3964,11 @@ def _classify_forensic_argv(
         PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
         PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND,
         PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND,
+        PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND,
     }
     mentions_diagnostic = any(item in diagnostic_commands for item in values)
     if script not in values and wrapper not in values and not mentions_diagnostic:
@@ -3850,6 +3998,46 @@ def _classify_forensic_argv(
             if values == _expected_preexecution_diagnostic_launcher_argv()
             else "INVALID_FORENSIC_ARGV"
         )
+    if command == PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_forensic_correction_freeze_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_FORENSIC_CORRECTION_1_FREEZE"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_launcher_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_finalizer_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_FINALIZER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_checker_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHECKER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
     if command == PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND:
         forensic = _validate_forensic_constant_alignment()
         root = Path(str(forensic.PREEXECUTION_DIAGNOSTIC_ROOT)).absolute()
@@ -3872,6 +4060,37 @@ def _classify_forensic_argv(
             )
         ):
             return "PREEXECUTION_DIAGNOSTIC_CHILD"
+        return "INVALID_FORENSIC_ARGV"
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND:
+        try:
+            correction = _validate_forensic_correction_1_constant_alignment()
+            root = Path(
+                correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+            ).absolute()
+            if (
+                len(values) == 23
+                and _canonical_positive_decimal(values[8])
+                and _canonical_positive_decimal(values[10])
+                and _canonical_positive_decimal(values[14])
+                and _canonical_positive_decimal(values[16])
+                and _canonical_positive_decimal(values[18])
+                and _canonical_positive_decimal(values[22])
+                and values
+                == _expected_preexecution_diagnostic_correction_child_argv(
+                    {
+                        "pid": int(values[8]),
+                        "start_time_ticks": int(values[10]),
+                    },
+                    traceback_fd=int(values[14]),
+                    exception_fd=int(values[16]),
+                    heartbeat_fd=int(values[18]),
+                    read_guard_events_fd=int(values[22]),
+                )
+                and Path(values[12]) == root
+            ):
+                return "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
         return "INVALID_FORENSIC_ARGV"
     if command == PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND:
         forensic = _validate_forensic_constant_alignment()
@@ -3949,6 +4168,11 @@ def _active_forensic_processes(*, exclude_pid: int | None = None) -> list[dict[s
         "PREEXECUTION_DIAGNOSTIC_LAUNCHER",
         "PREEXECUTION_DIAGNOSTIC_CHILD",
         "PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD",
+        "PREEXECUTION_FORENSIC_CORRECTION_1_FREEZE",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_FINALIZER",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHECKER",
         "INVALID_FORENSIC_ARGV",
     }
     output: list[dict[str, Any]] = []
@@ -4865,6 +5089,24 @@ def _require_exact_live_preexecution_diagnostic_launcher(
     return identity
 
 
+def _require_exact_live_preexecution_diagnostic_correction_launcher(
+    *, pid: int, start_time_ticks: int
+) -> dict[str, Any]:
+    identity = _forensic_process_identity(
+        pid, require_role="PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+    )
+    if (
+        int(identity["start_time_ticks"]) != int(start_time_ticks)
+        or identity["argv"]
+        != _expected_preexecution_diagnostic_correction_launcher_argv()
+        or not _forensic_process_identity_is_live(identity)
+    ):
+        raise QualificationError(
+            "correction diagnostic launcher PID/start/argv custody drift"
+        )
+    return identity
+
+
 def _load_diagnostic_stage_rows(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     with path.open("rb") as stream:
@@ -4962,6 +5204,128 @@ def _synthetic_archive_validation_projection_evidence() -> dict[str, Any]:
     }
 
 
+def _correction_contract_for_diagnostic_root(root: Path) -> Any | None:
+    """Select correction semantics only for its one exact fresh root."""
+
+    forensic = _validate_forensic_constant_alignment()
+    absolute = root.absolute()
+    if absolute == Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute():
+        return None
+    if absolute == PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute():
+        return _validate_forensic_correction_1_constant_alignment()
+    raise QualificationError("preexecution diagnostic root drift")
+
+
+def _validate_preexecution_active_freeze(
+    *,
+    root: Path,
+    freeze_receipt: Mapping[str, Any],
+    correction: Any | None,
+) -> dict[str, Any]:
+    """Normalize BASE/correction freeze evidence for the shared stage loop."""
+
+    if correction is None:
+        forensic = _validate_forensic_constant_alignment()
+        return forensic.validate_active_diagnostic_freeze_custody(
+            ROOT, freeze_receipt, diagnostic_root=root
+        )
+    validator = getattr(
+        correction,
+        "validate_active_forensic_correction_freeze_custody",
+        None,
+    )
+    if not callable(validator):
+        raise QualificationError(
+            "correction active-freeze validator is not yet available"
+        )
+    return validator(
+        ROOT,
+        forensic_freeze_custody=freeze_receipt,
+        diagnostic_root=root,
+    )
+
+
+def _build_preexecution_child_result_for_root(
+    *,
+    root: Path,
+    correction: Any | None,
+    launcher_process_identity: Mapping[str, Any],
+    child_process_identity: Mapping[str, Any],
+    freeze_custody: Mapping[str, Any],
+    output_namespace_before: Sequence[Mapping[str, str]],
+    output_namespace_after: Sequence[Mapping[str, str]],
+    mismatch_evidence: Mapping[str, Any],
+    current_runtime_context: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Select only the corrected five-key terminal builder at its exact root."""
+
+    forensic = _validate_forensic_constant_alignment()
+    if correction is None:
+        return forensic.build_preexecution_child_result(
+            launcher_process_identity=launcher_process_identity,
+            child_process_identity=child_process_identity,
+            repo_head=freeze_custody["repo_head"],
+            repo_clean=freeze_custody["repo_clean"],
+            scientific_contract_digest=freeze_custody[
+                "scientific_contract_digest"
+            ],
+            forensic_authority_source_closure=freeze_custody[
+                "forensic_authority_source_closure"
+            ],
+            forensic_freeze_custody=freeze_custody,
+            output_namespace_before=output_namespace_before,
+            output_namespace_after=output_namespace_after,
+            mismatch_evidence=mismatch_evidence,
+            committed_source_root_cause_proof=freeze_custody[
+                "committed_source_root_cause_proof"
+            ],
+            current_runtime_context=current_runtime_context,
+            scientific_counters=(
+                forensic.PREEXECUTION_CHILD_ZERO_SCIENTIFIC_COUNTERS
+            ),
+        )
+    if root.absolute() != PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute():
+        raise QualificationError("corrected child selector root drift")
+    return correction.build_corrected_preexecution_child_result(
+        repo_root=ROOT,
+        launcher_process_identity=launcher_process_identity,
+        child_process_identity=child_process_identity,
+        repo_head=freeze_custody["repo_head"],
+        repo_clean=True,
+        scientific_contract_digest=(
+            CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+        ),
+        forensic_authority_source_closure=freeze_custody[
+            "correction_source_closure"
+        ],
+        forensic_freeze_custody=freeze_custody,
+        output_namespace_before=output_namespace_before,
+        output_namespace_after=output_namespace_after,
+        mismatch_evidence=mismatch_evidence,
+        committed_source_root_cause_proof=freeze_custody[
+            "committed_source_root_cause_proof"
+        ],
+        current_runtime_context=current_runtime_context,
+        scientific_counters=correction.CORRECTION_ZERO_SCIENTIFIC_COUNTERS,
+    )
+
+
+def _validate_preexecution_child_result_for_root(
+    value: Mapping[str, Any],
+    *,
+    correction: Any | None,
+    freeze_custody: Mapping[str, Any],
+) -> dict[str, Any]:
+    forensic = _validate_forensic_constant_alignment()
+    if correction is None:
+        return forensic.validate_preexecution_child_result(value)
+    return correction.validate_corrected_preexecution_child_result(
+        value,
+        repo_root=ROOT,
+        forensic_freeze_custody=freeze_custody,
+    )
+
+
 def _execute_preexecution_only_diagnostic_child(
     *,
     launcher_pid: int,
@@ -4972,8 +5336,7 @@ def _execute_preexecution_only_diagnostic_child(
 
     forensic = _validate_forensic_constant_alignment()
     root = diagnostic_root.absolute()
-    if root != Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute():
-        raise QualificationError("preexecution diagnostic root drift")
+    correction = _correction_contract_for_diagnostic_root(root)
     paths = _forensic_runtime_paths(root)
     stage_ids = tuple(forensic.PREEXECUTION_DIAGNOSTIC_STAGE_IDS)
     namespace_before = _preexecution_output_namespace_entries()
@@ -4987,14 +5350,27 @@ def _execute_preexecution_only_diagnostic_child(
     launcher = _diagnostic_stage(
         ledger,
         "REQUIRE_LIVE_LAUNCHER",
-        lambda: _require_exact_live_preexecution_diagnostic_launcher(
-            pid=launcher_pid, start_time_ticks=launcher_start_time_ticks
+        lambda: (
+            _require_exact_live_preexecution_diagnostic_launcher(
+                pid=launcher_pid,
+                start_time_ticks=launcher_start_time_ticks,
+            )
+            if correction is None
+            else _require_exact_live_preexecution_diagnostic_correction_launcher(
+                pid=launcher_pid,
+                start_time_ticks=launcher_start_time_ticks,
+            )
         ),
     )
 
     def bind_child() -> dict[str, Any]:
         identity = _forensic_process_identity(
-            os.getpid(), require_role="PREEXECUTION_DIAGNOSTIC_CHILD"
+            os.getpid(),
+            require_role=(
+                "PREEXECUTION_DIAGNOSTIC_CHILD"
+                if correction is None
+                else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+            ),
         )
         return identity
 
@@ -5050,8 +5426,10 @@ def _execute_preexecution_only_diagnostic_child(
                 "prelaunch forensic freeze-custody bytes are not canonical"
             )
         try:
-            return forensic.validate_active_diagnostic_freeze_custody(
-                ROOT, freeze_receipt, diagnostic_root=root
+            return _validate_preexecution_active_freeze(
+                root=root,
+                freeze_receipt=freeze_receipt,
+                correction=correction,
             )
         except Exception as exc:
             raise QualificationError(str(exc)) from exc
@@ -5108,30 +5486,22 @@ def _execute_preexecution_only_diagnostic_child(
     rows = _load_diagnostic_stage_rows(paths["startup_stage_ledger"])
     forensic.validate_startup_stage_rows(rows, require_complete=True)
     try:
-        result = forensic.build_preexecution_child_result(
+        result = _build_preexecution_child_result_for_root(
+            root=root,
+            correction=correction,
             launcher_process_identity=launcher,
             child_process_identity=child,
-            repo_head=freeze_custody["repo_head"],
-            repo_clean=freeze_custody["repo_clean"],
-            scientific_contract_digest=freeze_custody[
-                "scientific_contract_digest"
-            ],
-            forensic_authority_source_closure=freeze_custody[
-                "forensic_authority_source_closure"
-            ],
-            forensic_freeze_custody=freeze_custody,
+            freeze_custody=freeze_custody,
             output_namespace_before=namespace_before,
             output_namespace_after=namespace_after,
             mismatch_evidence=mismatch_evidence,
-            committed_source_root_cause_proof=freeze_custody[
-                "committed_source_root_cause_proof"
-            ],
             current_runtime_context=_technical_runtime_context(),
-            scientific_counters=(
-                forensic.PREEXECUTION_CHILD_ZERO_SCIENTIFIC_COUNTERS
-            ),
         )
-        return forensic.validate_preexecution_child_result(result)
+        return _validate_preexecution_child_result_for_root(
+            result,
+            correction=correction,
+            freeze_custody=freeze_custody,
+        )
     except Exception as exc:
         raise QualificationError(str(exc)) from exc
 
@@ -5144,34 +5514,31 @@ def _validate_preexecution_child_payload(
     forensic_freeze_custody: Mapping[str, Any],
     namespace_before: Sequence[Mapping[str, str]],
     namespace_after: Sequence[Mapping[str, str]],
+    correction: Any | None = None,
 ) -> dict[str, Any]:
     """Rebuild the child handoff from parent-held, outcome-free custody."""
 
     forensic = _validate_forensic_constant_alignment()
     try:
-        validated = forensic.validate_preexecution_child_result(value)
-        rebuilt = forensic.build_preexecution_child_result(
+        validated = _validate_preexecution_child_result_for_root(
+            value,
+            correction=correction,
+            freeze_custody=forensic_freeze_custody,
+        )
+        rebuilt = _build_preexecution_child_result_for_root(
+            root=(
+                Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT)
+                if correction is None
+                else PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+            ),
+            correction=correction,
             launcher_process_identity=launcher_process_identity,
             child_process_identity=child_process_identity,
-            repo_head=forensic_freeze_custody["repo_head"],
-            repo_clean=forensic_freeze_custody["repo_clean"],
-            scientific_contract_digest=forensic_freeze_custody[
-                "scientific_contract_digest"
-            ],
-            forensic_authority_source_closure=forensic_freeze_custody[
-                "forensic_authority_source_closure"
-            ],
-            forensic_freeze_custody=forensic_freeze_custody,
+            freeze_custody=forensic_freeze_custody,
             output_namespace_before=namespace_before,
             output_namespace_after=namespace_after,
             mismatch_evidence=_synthetic_archive_validation_projection_evidence(),
-            committed_source_root_cause_proof=forensic_freeze_custody[
-                "committed_source_root_cause_proof"
-            ],
             current_runtime_context=validated["current_runtime_context"],
-            scientific_counters=(
-                forensic.PREEXECUTION_CHILD_ZERO_SCIENTIFIC_COUNTERS
-            ),
         )
     except Exception as exc:
         raise QualificationError(str(exc)) from exc
@@ -5191,6 +5558,14 @@ def _require_synthetic_diagnostic_root(root: Path, *, fixture_id: str) -> None:
         / fixture_id
     ).resolve(strict=False)
     if candidate == committed_fixture_root:
+        return
+    correction_fixture_root = (
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+        / "synthetic"
+        / fixture_id
+    ).resolve(strict=False)
+    if candidate == correction_fixture_root:
+        _validate_forensic_correction_1_constant_alignment()
         return
     if not os.environ.get("PYTEST_CURRENT_TEST"):
         raise QualificationError(
@@ -5489,6 +5864,16 @@ def _load_forensic_source_closure(forensic: Any) -> dict[str, Any]:
     return value
 
 
+def _load_forensic_correction_source_closure(correction: Any) -> dict[str, Any]:
+    try:
+        value = correction.load_and_validate_forensic_correction_source_closure(
+            ROOT
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    return value
+
+
 def _publish_preexecution_diagnostic_terminal(
     *,
     forensic: Any,
@@ -5536,24 +5921,51 @@ def _publish_preexecution_diagnostic_terminal(
 
 
 def _execute_preexecution_diagnostic_under_umask(
-    *, previous_umask: int
+    *, previous_umask: int, correction: Any | None = None
 ) -> dict[str, Any]:
     """Run the diagnostic after its outer launcher established umask 0022."""
 
     forensic = _validate_forensic_constant_alignment()
+    if (
+        correction is not None
+        and correction is not _validate_forensic_correction_1_constant_alignment()
+    ):
+        raise QualificationError("correction diagnostic authority drift")
     sampled_effective_umask = os.umask(forensic.PREEXECUTION_DIAGNOSTIC_UMASK)
     os.umask(sampled_effective_umask)
     if sampled_effective_umask != forensic.PREEXECUTION_DIAGNOSTIC_UMASK:
         raise QualificationError("preexecution diagnostic effective umask drift")
-    root = Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute()
-    launcher = _forensic_process_identity(
-        os.getpid(), require_role="PREEXECUTION_DIAGNOSTIC_LAUNCHER"
+    root = (
+        Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute()
+        if correction is None
+        else PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute()
     )
-    if launcher["argv"] != _expected_preexecution_diagnostic_launcher_argv():
+    launcher = _forensic_process_identity(
+        os.getpid(),
+        require_role=(
+            "PREEXECUTION_DIAGNOSTIC_LAUNCHER"
+            if correction is None
+            else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+        ),
+    )
+    expected_launcher_argv = (
+        _expected_preexecution_diagnostic_launcher_argv()
+        if correction is None
+        else _expected_preexecution_diagnostic_correction_launcher_argv()
+    )
+    if launcher["argv"] != expected_launcher_argv:
         raise QualificationError("preexecution launcher exact argv drift")
     namespace_before = _preexecution_output_namespace_entries()
     try:
-        freeze_custody = forensic.validate_forensic_freeze_custody(ROOT)
+        freeze_custody = (
+            forensic.validate_forensic_freeze_custody(ROOT)
+            if correction is None
+            else correction.validate_forensic_correction_freeze_custody(
+                ROOT,
+                require_fresh_root_absent=True,
+                exclude_current_process=True,
+            )
+        )
     except Exception as exc:
         raise QualificationError(str(exc)) from exc
     if root.exists() or root.is_symlink():
@@ -5587,20 +5999,38 @@ def _execute_preexecution_diagnostic_under_umask(
 
     source_commit = str(freeze_custody["repo_head"])
     execution = _run_forensic_child_with_external_stream_custody(
-        lambda fds: _expected_preexecution_diagnostic_child_argv(
-            launcher,
-            diagnostic_root=root,
-            traceback_fd=int(fds["traceback_fd"]),
-            exception_fd=int(fds["exception_fd"]),
-            heartbeat_fd=int(fds["heartbeat_fd"]),
-            read_guard_events_fd=int(fds["read_guard_events_fd"]),
+        lambda fds: (
+            _expected_preexecution_diagnostic_child_argv(
+                launcher,
+                diagnostic_root=root,
+                traceback_fd=int(fds["traceback_fd"]),
+                exception_fd=int(fds["exception_fd"]),
+                heartbeat_fd=int(fds["heartbeat_fd"]),
+                read_guard_events_fd=int(fds["read_guard_events_fd"]),
+            )
+            if correction is None
+            else _expected_preexecution_diagnostic_correction_child_argv(
+                launcher,
+                traceback_fd=int(fds["traceback_fd"]),
+                exception_fd=int(fds["exception_fd"]),
+                heartbeat_fd=int(fds["heartbeat_fd"]),
+                read_guard_events_fd=int(fds["read_guard_events_fd"]),
+            )
         ),
         internal_argv_factory=lambda _fds: (
             _expected_preexecution_diagnostic_internal_argv(
                 launcher, diagnostic_root=root
             )
+            if correction is None
+            else _expected_preexecution_diagnostic_correction_internal_argv(
+                launcher
+            )
         ),
-        expected_role="PREEXECUTION_DIAGNOSTIC_CHILD",
+        expected_role=(
+            "PREEXECUTION_DIAGNOSTIC_CHILD"
+            if correction is None
+            else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+        ),
         stdout_path=paths["child_stdout"],
         stderr_path=paths["child_stderr"],
         traceback_path=paths["child_traceback"],
@@ -5654,13 +6084,10 @@ def _execute_preexecution_diagnostic_under_umask(
         forensic_freeze_custody=freeze_custody,
         namespace_before=namespace_before,
         namespace_after=namespace_after,
+        correction=correction,
     )
-    if (
-        execution["returncode"] != 0
-        or execution["structured_exception"]["bytes"] != 0
-        or execution["read_guard_events"]["bytes"] != 0
-        or child_payload.get("scientific_counters")
-        != {
+    expected_child_counters = (
+        {
             "scientific_inputs_opened": 0,
             "failed_scientific_payloads_opened": 0,
             "outcome_rows_opened": 0,
@@ -5668,6 +6095,14 @@ def _execute_preexecution_diagnostic_under_umask(
             "model_loads": 0,
             "training_steps": 0,
         }
+        if correction is None
+        else correction.CORRECTION_ZERO_SCIENTIFIC_COUNTERS
+    )
+    if (
+        execution["returncode"] != 0
+        or execution["structured_exception"]["bytes"] != 0
+        or execution["read_guard_events"]["bytes"] != 0
+        or child_payload.get("scientific_counters") != expected_child_counters
     ):
         raise QualificationError("real preexecution diagnostic did not pass cleanly")
     startup_rows = _load_diagnostic_stage_rows(paths["startup_stage_ledger"])
@@ -5675,7 +6110,11 @@ def _execute_preexecution_diagnostic_under_umask(
     last_stage_value = _load_preexecution_last_stage_marker(
         paths["last_stage_marker"]
     )
-    closure = _load_forensic_source_closure(forensic)
+    closure = (
+        _load_forensic_source_closure(forensic)
+        if correction is None
+        else _load_forensic_correction_source_closure(correction)
+    )
     try:
         invocation_raw = paths["invocation"].read_bytes()
         persisted_invocation = forensic.validate_invocation_receipt(
@@ -5750,32 +6189,73 @@ def _execute_preexecution_diagnostic_under_umask(
     ):
         raise QualificationError("persisted command/read-guard custody drift")
     try:
-        custody = forensic.build_diagnostic_custody_receipt(
-            repo_root=ROOT,
-            source_commit=source_commit,
-            forensic_source_closure=closure,
-            diagnostic_root=root,
-            launcher_process_identity=launcher,
-            child_process_identity=execution["process_identity"],
-            forensic_freeze_custody_receipt=freeze_custody,
-            umask_custody_receipt=umask_custody,
-            invocation_receipt=persisted_invocation,
-            environment_receipt=execution["environment"],
-            command_receipt=persisted_command,
-            read_guard_manifest=persisted_read_guard,
-            os_evidence_receipt=os_evidence,
-            preexecution_only_receipt=preexecution,
-            synthetic_results_receipt=synthetic_receipt,
-            preexecution_child_result=child_payload,
-            last_stage_marker_value=last_stage_value,
-            startup_stage_rows=startup_rows,
-            stream_bindings=stream_bindings,
-            exception_observed=False,
-        )
-        forensic.validate_diagnostic_custody_receipt(custody)
+        common_custody_inputs = {
+            "repo_root": ROOT,
+            "source_commit": source_commit,
+            "diagnostic_root": root,
+            "launcher_process_identity": launcher,
+            "child_process_identity": execution["process_identity"],
+            "forensic_freeze_custody_receipt": freeze_custody,
+            "umask_custody_receipt": umask_custody,
+            "invocation_receipt": persisted_invocation,
+            "environment_receipt": execution["environment"],
+            "command_receipt": persisted_command,
+            "read_guard_manifest": persisted_read_guard,
+            "os_evidence_receipt": os_evidence,
+            "preexecution_only_receipt": preexecution,
+            "synthetic_results_receipt": synthetic_receipt,
+            "last_stage_marker_value": last_stage_value,
+            "startup_stage_rows": startup_rows,
+            "stream_bindings": stream_bindings,
+            "exception_observed": False,
+        }
+        if correction is None:
+            custody = forensic.build_diagnostic_custody_receipt(
+                **common_custody_inputs,
+                forensic_source_closure=closure,
+                preexecution_child_result=child_payload,
+            )
+            forensic.validate_diagnostic_custody_receipt(custody)
+        else:
+            correction_inputs = {
+                **common_custody_inputs,
+                "correction_source_closure": closure,
+                "corrected_child_result": child_payload,
+            }
+            custody = correction.build_correction_diagnostic_custody_receipt(
+                **correction_inputs
+            )
+            correction.validate_correction_diagnostic_custody_receipt(
+                custody,
+                **correction_inputs,
+            )
     except Exception as exc:
         raise QualificationError(str(exc)) from exc
     _atomic_preexecution_json(paths["diagnostic_custody"], custody)
+    if correction is not None:
+        try:
+            staged = correction.write_correction_terminal_bundle(
+                diagnostic_custody_receipt=custody,
+                synthetic_results_receipt=synthetic_receipt,
+                diagnostic_root=root,
+            )
+            reloaded = correction.load_and_validate_correction_diagnostic_bundle(
+                repo_root=ROOT,
+                diagnostic_root=root,
+            )
+        except Exception as exc:
+            raise QualificationError(str(exc)) from exc
+        if (
+            reloaded["diagnostic_custody"] != custody
+            or reloaded["synthetic_results"] != synthetic_receipt
+            or reloaded["result"] != staged["runtime_result"]
+            or reloaded["final_namespace_inventory"]
+            != staged["final_namespace_inventory"]
+        ):
+            raise QualificationError(
+                "correction terminal staging reload/custody drift"
+            )
+        return staged
     return _publish_preexecution_diagnostic_terminal(
         forensic=forensic,
         diagnostic_root=root,
@@ -5799,6 +6279,95 @@ def execute_preexecution_diagnostic() -> dict[str, Any]:
         )
     finally:
         os.umask(previous_umask)
+
+
+def freeze_preexecution_forensic_correction_1_contract() -> dict[str, Any]:
+    """Write only the separate versioned correction authorities."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    try:
+        return correction.freeze_preexecution_forensic_correction_1_contract(
+            ROOT
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def execute_preexecution_correction_1() -> dict[str, Any]:
+    """Run the corrected child through the frozen BASE custody mechanics."""
+
+    forensic = _validate_forensic_constant_alignment()
+    correction = _validate_forensic_correction_1_constant_alignment()
+    previous_umask = os.umask(forensic.PREEXECUTION_DIAGNOSTIC_UMASK)
+    try:
+        if previous_umask != forensic.PREEXECUTION_DIAGNOSTIC_EXPECTED_PREVIOUS_UMASK:
+            raise QualificationError(
+                "correction diagnostic inherited umask is not frozen 0002"
+            )
+        return _execute_preexecution_diagnostic_under_umask(
+            previous_umask=previous_umask,
+            correction=correction,
+        )
+    finally:
+        os.umask(previous_umask)
+
+
+def _correction_terminal_coordinator_from_environment(
+    correction: Any,
+) -> dict[str, Any]:
+    raw_pid = os.environ.get("LEWM_CORRECTION_COORDINATOR_PID", "")
+    raw_start = os.environ.get(
+        "LEWM_CORRECTION_COORDINATOR_START_TIME_TICKS", ""
+    )
+    if (
+        not _canonical_positive_decimal(raw_pid)
+        or not _canonical_positive_decimal(raw_start)
+    ):
+        raise QualificationError(
+            "correction terminal coordinator environment custody drift"
+        )
+    try:
+        return correction.require_live_correction_terminal_coordinator(
+            pid=int(raw_pid), start_time_ticks=int(raw_start)
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def finalize_preexecution_forensic_correction_1() -> dict[str, Any]:
+    """Build prospective bytes only under the live root coordinator."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    identity = _forensic_process_identity(
+        os.getpid(), require_role=correction.CORRECTION_FINALIZER_ROLE
+    )
+    coordinator = _correction_terminal_coordinator_from_environment(correction)
+    try:
+        return correction.build_correction_finalizer_prospective_receipt(
+            repo_root=ROOT,
+            finalizer_process_identity=identity,
+            coordinator_process_identity=coordinator,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def check_preexecution_forensic_correction_1() -> dict[str, Any]:
+    """Independently rebuild prospective bytes under the live coordinator."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    identity = _forensic_process_identity(
+        os.getpid(), require_role=correction.CORRECTION_CHECKER_ROLE
+    )
+    coordinator = _correction_terminal_coordinator_from_environment(correction)
+    try:
+        return correction.build_correction_external_checker_receipt(
+            repo_root=ROOT,
+            checker_process_identity=identity,
+            coordinator_process_identity=coordinator,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
 
 
 def _single_phase_json_payload(stdout: str, *, phase: str) -> dict[str, Any]:
@@ -11178,6 +11747,14 @@ def main() -> int:
     subparsers.add_parser("execute")
     subparsers.add_parser(PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND)
     subparsers.add_parser(PREEXECUTION_DIAGNOSTIC_SUBCOMMAND)
+    subparsers.add_parser(PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND)
+    subparsers.add_parser(PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND)
+    subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND
+    )
+    subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND
+    )
     scientific_parser = subparsers.add_parser(SCIENTIFIC_EVALUATOR_SUBCOMMAND)
     scientific_parser.add_argument("--launcher-pid", type=int, required=True)
     scientific_parser.add_argument(
@@ -11204,6 +11781,18 @@ def main() -> int:
     diagnostic_child_parser.add_argument(
         "--diagnostic-root", type=Path, required=True
     )
+    correction_child_parser = subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+    )
+    correction_child_parser.add_argument(
+        "--launcher-pid", type=int, required=True
+    )
+    correction_child_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    correction_child_parser.add_argument(
+        "--diagnostic-root", type=Path, required=True
+    )
     diagnostic_synthetic_parser = subparsers.add_parser(
         PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND
     )
@@ -11222,6 +11811,14 @@ def main() -> int:
         value = freeze_preexecution_forensic_contract()
     elif args.command == PREEXECUTION_DIAGNOSTIC_SUBCOMMAND:
         value = execute_preexecution_diagnostic()
+    elif args.command == PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND:
+        value = freeze_preexecution_forensic_correction_1_contract()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND:
+        value = execute_preexecution_correction_1()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND:
+        value = finalize_preexecution_forensic_correction_1()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND:
+        value = check_preexecution_forensic_correction_1()
     elif args.command == SCIENTIFIC_EVALUATOR_SUBCOMMAND:
         value = execute_scientific(
             launcher_pid=args.launcher_pid,
@@ -11235,6 +11832,12 @@ def main() -> int:
             scientific_exit_receipt=args.scientific_exit_receipt,
         )
     elif args.command == PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND:
+        value = _execute_preexecution_only_diagnostic_child(
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+            diagnostic_root=args.diagnostic_root,
+        )
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND:
         value = _execute_preexecution_only_diagnostic_child(
             launcher_pid=args.launcher_pid,
             launcher_start_time_ticks=args.launcher_start_time_ticks,

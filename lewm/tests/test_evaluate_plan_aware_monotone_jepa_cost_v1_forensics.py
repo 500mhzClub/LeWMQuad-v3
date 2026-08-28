@@ -96,17 +96,19 @@ def test_exact_incompatible_archive_schema_fixture_projects_stable_identity() ->
 
 
 def test_preexisting_scientific_functions_remain_ast_identical_to_source() -> None:
-    forensic = evaluator._forensic_contract()
-    proof = forensic._validate_scientific_argv_builder_invariants(evaluator.ROOT)
+    correction = evaluator._forensic_correction_1_contract()
+    proof = correction.build_correction_overlay_ast_proof(evaluator.ROOT)
     assert proof["pass"] is True
-    assert proof["model_metric_gate_or_target_change"] is False
-    assert {row["function"] for row in proof["allowed_changed_functions"]} == {
-        "_classify_experiment_argv",
-        "main",
-    }
-    assert all(
-        row["unchanged"] is True
-        for row in proof["unchanged_preexisting_functions"]
+    assert proof["scientific_design_unchanged"] is True
+    assert proof["all_unlisted_legacy_nodes_unchanged"] is True
+    assert proof["removed_legacy_nodes"] == []
+    evaluator_proof = proof["files"][
+        "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+    ]
+    assert set(evaluator_proof["changed_legacy_function_ast_sha256"]) == set(
+        correction.CORRECTION_OVERLAY_SEMANTIC_ALLOW_LIST[
+            "scripts/evaluate_plan_aware_monotone_jepa_cost_v1.py"
+        ]["changed_legacy_functions"]
     )
 
 
@@ -195,6 +197,388 @@ def test_forensic_overlay_closure_never_hashes_scientific_payload_rows(
     assert closure["base_execution_correction_2_source_closure"] == (
         forensic.BASE_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_BINDING
     )
+
+
+def test_correction_closure_loader_uses_public_no_follow_validator(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    expected = {"schema": "synthetic-correction-closure"}
+    roots: list[Path] = []
+
+    def load(repo_root: Path) -> dict[str, str]:
+        roots.append(Path(repo_root))
+        return expected
+
+    def reject_direct_read(_path: Path) -> bytes:
+        raise AssertionError("correction closure must not use Path.read_bytes")
+
+    monkeypatch.setattr(Path, "read_bytes", reject_direct_read)
+    correction = SimpleNamespace(
+        load_and_validate_forensic_correction_source_closure=load
+    )
+    assert evaluator._load_forensic_correction_source_closure(correction) is expected
+    assert roots == [evaluator.ROOT]
+
+    correction.load_and_validate_forensic_correction_source_closure = (
+        lambda _repo_root: (_ for _ in ()).throw(
+            RuntimeError("correction source closure symlink drift")
+        )
+    )
+    with pytest.raises(evaluator.QualificationError, match="symlink drift"):
+        evaluator._load_forensic_correction_source_closure(correction)
+
+
+def test_correction_wrapper_reuses_real_child_path_without_synthetic_mode() -> None:
+    root = evaluator.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+    args = SimpleNamespace(
+        mode=wrapper.CORRECTION_REAL_MODE,
+        launcher_pid=17,
+        launcher_start_time_ticks=23,
+        fixture_id=None,
+        diagnostic_root=root,
+    )
+    assert wrapper._inner_argv(args) == [
+        str(wrapper.EVALUATOR),
+        evaluator.PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND,
+        "--launcher-pid",
+        "17",
+        "--launcher-start-time-ticks",
+        "23",
+        "--diagnostic-root",
+        str(root),
+    ]
+    assert not hasattr(wrapper, "CORRECTION_SYNTHETIC_MODE")
+
+
+def test_correction_terminal_phase_argv_roles_are_exact_and_distinct() -> None:
+    correction = evaluator._validate_forensic_correction_1_constant_alignment()
+    executable = str(evaluator.FORENSIC_INTERPRETER.resolve())
+    cases = (
+        (
+            correction.expected_correction_finalizer_outer_argv(),
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_FINALIZER",
+            correction.expected_correction_finalizer_inner_argv(),
+        ),
+        (
+            correction.expected_correction_checker_outer_argv(),
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHECKER",
+            correction.expected_correction_checker_inner_argv(),
+        ),
+    )
+    for outer, role, inner in cases:
+        assert evaluator._classify_forensic_argv(
+            outer, executable=executable
+        ) == role
+        assert evaluator._classify_forensic_argv(
+            [*outer, "--extra"], executable=executable
+        ) == "INVALID_FORENSIC_ARGV"
+        assert evaluator._classify_forensic_argv(
+            [str(evaluator.FORENSIC_INTERPRETER), *inner],
+            executable=executable,
+        ) == "INVALID_FORENSIC_ARGV"
+        parsed = wrapper._correction_phase_arguments(list(outer[5:]))
+        assert parsed.mode == outer[6]
+        assert parsed.diagnostic_root == correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+    assert cases[0][0] != cases[1][0]
+    assert cases[0][2] != cases[1][2]
+    assert not any("-fd" in value for outer, _role, _inner in cases for value in outer)
+
+
+def test_correction_forensic_scanner_fails_visible_when_authority_import_fails(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    correction = evaluator._validate_forensic_correction_1_constant_alignment()
+    correction_argv = (
+        correction.expected_correction_launcher_argv(),
+        correction.expected_correction_finalizer_outer_argv(),
+        correction.expected_correction_checker_outer_argv(),
+    )
+
+    def unavailable() -> object:
+        raise evaluator.QualificationError("synthetic correction import failure")
+
+    monkeypatch.setattr(
+        evaluator,
+        "_validate_forensic_correction_1_constant_alignment",
+        unavailable,
+    )
+    for argv in correction_argv:
+        assert evaluator._classify_forensic_argv(
+            argv,
+            executable=str(evaluator.FORENSIC_INTERPRETER.resolve()),
+        ) == "INVALID_FORENSIC_ARGV"
+
+
+def test_correction_phase_wrapper_emits_one_valid_success_envelope(
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    correction = evaluator._validate_forensic_correction_1_constant_alignment()
+    phase = "FINALIZER"
+    phase_identity = {
+        "pid": os.getpid(),
+        "process_group_id": os.getpgrp(),
+        "start_time_ticks": 17,
+        "argv": correction.expected_correction_finalizer_outer_argv(),
+        "argv_sha256": correction.BASE.canonical_json_sha256(
+            correction.expected_correction_finalizer_outer_argv()
+        ),
+        "executable": str(correction.BASE.FORENSIC_INTERPRETER_RESOLVED),
+        "role": correction.CORRECTION_FINALIZER_ROLE,
+    }
+    coordinator = {
+        "pid": os.getpid() + 100_000,
+        "process_group_id": os.getpgrp(),
+        "start_time_ticks": 23,
+        "argv": correction.expected_correction_terminal_coordinator_argv(),
+        "argv_sha256": correction.BASE.canonical_json_sha256(
+            correction.expected_correction_terminal_coordinator_argv()
+        ),
+        "executable": str(correction.BASE.FORENSIC_INTERPRETER_RESOLVED),
+        "role": "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_ROOT_COORDINATOR",
+    }
+    receipt = correction.BASE.attach_self_digest(
+        {"schema": "synthetic-finalizer-receipt.v1", "pass": True}
+    )
+    monkeypatch.setenv("PYTHONNOUSERSITE", "1")
+    monkeypatch.setenv("PYTHONUNBUFFERED", "1")
+    monkeypatch.setenv("PYTHONFAULTHANDLER", "1")
+    monkeypatch.setenv(
+        "VIRTUAL_ENV", str(correction.BASE.FORENSIC_INTERPRETER.parent.parent)
+    )
+    monkeypatch.setenv(
+        "PATH",
+        str(correction.BASE.FORENSIC_INTERPRETER.parent)
+        + os.pathsep
+        + os.environ.get("PATH", ""),
+    )
+    monkeypatch.setattr(wrapper.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(wrapper, "_correction_phase_contract", lambda: correction)
+    monkeypatch.setattr(
+        wrapper,
+        "_correction_phase_process_identity",
+        lambda _correction, *, phase: phase_identity,
+    )
+    monkeypatch.setattr(
+        wrapper,
+        "_correction_phase_coordinator",
+        lambda _correction: coordinator,
+    )
+    monkeypatch.setattr(
+        wrapper,
+        "_correction_phase_inner_receipt",
+        lambda _correction, *, phase: receipt,
+    )
+    argv = [
+        "--mode",
+        wrapper.CORRECTION_FINALIZER_MODE,
+        "--diagnostic-root",
+        str(wrapper.CORRECTION_DIAGNOSTIC_ROOT),
+    ]
+    assert wrapper._run_correction_phase_wrapper(argv) == 0
+    stdout, stderr = capfd.readouterr()
+    assert stderr == ""
+    envelope = json.loads(stdout)
+    assert stdout.encode("utf-8") == correction._authority_bytes(envelope)
+    assert correction.validate_correction_phase_wrapper_envelope(
+        envelope,
+        phase=phase,
+        expected_process_identity=phase_identity,
+        expected_coordinator_identity=coordinator,
+        expected_environment=dict(os.environ),
+    ) == envelope
+    assert envelope["phase_receipt"] == receipt
+    assert envelope["phase_success"] is True
+
+
+def test_correction_phase_wrapper_preserves_utf8_failure_envelope(
+    monkeypatch: pytest.MonkeyPatch,
+    capfd: pytest.CaptureFixture[str],
+) -> None:
+    correction = evaluator._validate_forensic_correction_1_constant_alignment()
+    phase = "CHECKER"
+    phase_identity = {
+        "pid": os.getpid(),
+        "process_group_id": os.getpgrp(),
+        "start_time_ticks": 29,
+        "argv": correction.expected_correction_checker_outer_argv(),
+        "argv_sha256": correction.BASE.canonical_json_sha256(
+            correction.expected_correction_checker_outer_argv()
+        ),
+        "executable": str(correction.BASE.FORENSIC_INTERPRETER_RESOLVED),
+        "role": correction.CORRECTION_CHECKER_ROLE,
+    }
+    coordinator = {
+        "pid": os.getpid() + 100_001,
+        "process_group_id": os.getpgrp(),
+        "start_time_ticks": 31,
+        "argv": correction.expected_correction_terminal_coordinator_argv(),
+        "argv_sha256": correction.BASE.canonical_json_sha256(
+            correction.expected_correction_terminal_coordinator_argv()
+        ),
+        "executable": str(correction.BASE.FORENSIC_INTERPRETER_RESOLVED),
+        "role": "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_ROOT_COORDINATOR",
+    }
+    monkeypatch.setenv("PYTHONNOUSERSITE", "1")
+    monkeypatch.setenv("PYTHONUNBUFFERED", "1")
+    monkeypatch.setenv("PYTHONFAULTHANDLER", "1")
+    monkeypatch.setenv(
+        "VIRTUAL_ENV", str(correction.BASE.FORENSIC_INTERPRETER.parent.parent)
+    )
+    monkeypatch.setenv(
+        "PATH",
+        str(correction.BASE.FORENSIC_INTERPRETER.parent)
+        + os.pathsep
+        + os.environ.get("PATH", ""),
+    )
+    monkeypatch.setattr(wrapper.time, "sleep", lambda _seconds: None)
+    monkeypatch.setattr(wrapper, "_correction_phase_contract", lambda: correction)
+    monkeypatch.setattr(
+        wrapper,
+        "_correction_phase_process_identity",
+        lambda _correction, *, phase: phase_identity,
+    )
+    monkeypatch.setattr(
+        wrapper,
+        "_correction_phase_coordinator",
+        lambda _correction: coordinator,
+    )
+
+    def fail_inner(_correction: object, *, phase: str) -> dict[str, object]:
+        raise RuntimeError(f"{phase} H1–H4 synthetic failure")
+
+    monkeypatch.setattr(wrapper, "_correction_phase_inner_receipt", fail_inner)
+    argv = [
+        "--mode",
+        wrapper.CORRECTION_CHECKER_MODE,
+        "--diagnostic-root",
+        str(wrapper.CORRECTION_DIAGNOSTIC_ROOT),
+    ]
+    assert wrapper._run_correction_phase_wrapper(argv) == 1
+    stdout, stderr = capfd.readouterr()
+    assert "H1–H4 synthetic failure" in stderr
+    envelope = json.loads(stdout)
+    assert stdout.encode("utf-8") == correction._authority_bytes(envelope)
+    assert correction.validate_correction_phase_wrapper_envelope(
+        envelope,
+        phase=phase,
+        expected_process_identity=phase_identity,
+        expected_coordinator_identity=coordinator,
+        expected_environment=dict(os.environ),
+    ) == envelope
+    assert envelope["phase_receipt"] is None
+    assert envelope["phase_success"] is False
+    assert envelope["structured_exception"]["exception_type"] == "RuntimeError"
+    assert envelope["last_stage_marker"]["event"] == "FAILED"
+
+
+def test_correction_terminal_evaluator_entrypoints_bind_outer_identity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    finalizer_identity = {"role": "FINALIZER", "pid": 41}
+    checker_identity = {"role": "CHECKER", "pid": 43}
+    coordinator = {"role": "COORDINATOR", "pid": 47}
+    calls: list[tuple[str, object, object, Path]] = []
+
+    def build_finalizer(
+        *, repo_root: Path, finalizer_process_identity: object,
+        coordinator_process_identity: object,
+    ) -> dict[str, object]:
+        calls.append(
+            (
+                "FINALIZER",
+                finalizer_process_identity,
+                coordinator_process_identity,
+                repo_root,
+            )
+        )
+        return {"phase": "FINALIZER", "pass": True}
+
+    def build_checker(
+        *, repo_root: Path, checker_process_identity: object,
+        coordinator_process_identity: object,
+    ) -> dict[str, object]:
+        calls.append(
+            (
+                "CHECKER",
+                checker_process_identity,
+                coordinator_process_identity,
+                repo_root,
+            )
+        )
+        return {"phase": "CHECKER", "pass": True}
+
+    correction = SimpleNamespace(
+        CORRECTION_FINALIZER_ROLE="FINALIZER",
+        CORRECTION_CHECKER_ROLE="CHECKER",
+        build_correction_finalizer_prospective_receipt=build_finalizer,
+        build_correction_external_checker_receipt=build_checker,
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_validate_forensic_correction_1_constant_alignment",
+        lambda: correction,
+    )
+    monkeypatch.setattr(
+        evaluator,
+        "_correction_terminal_coordinator_from_environment",
+        lambda _correction: coordinator,
+    )
+
+    def identity(_pid: int, *, require_role: str) -> dict[str, object]:
+        return finalizer_identity if require_role == "FINALIZER" else checker_identity
+
+    monkeypatch.setattr(evaluator, "_forensic_process_identity", identity)
+    assert evaluator.finalize_preexecution_forensic_correction_1() == {
+        "phase": "FINALIZER",
+        "pass": True,
+    }
+    assert evaluator.check_preexecution_forensic_correction_1() == {
+        "phase": "CHECKER",
+        "pass": True,
+    }
+    assert calls == [
+        ("FINALIZER", finalizer_identity, coordinator, evaluator.ROOT),
+        ("CHECKER", checker_identity, coordinator, evaluator.ROOT),
+    ]
+
+
+def test_correction_active_freeze_adapter_returns_only_contract_evidence() -> None:
+    freeze = {"content_digest": "a" * 64}
+    expected = {
+        "forensic_freeze_custody": freeze,
+        "base_authorities_read_only_validated": True,
+        "archive_custody_metadata_only_validated": True,
+        "pass": True,
+    }
+    calls: list[tuple[Path, object, Path]] = []
+
+    def validate(
+        repo_root: Path,
+        *,
+        forensic_freeze_custody: object,
+        diagnostic_root: Path,
+    ) -> dict[str, object]:
+        calls.append(
+            (repo_root, forensic_freeze_custody, diagnostic_root)
+        )
+        return expected
+
+    correction = SimpleNamespace(
+        validate_active_forensic_correction_freeze_custody=validate
+    )
+    assert evaluator._validate_preexecution_active_freeze(
+        root=evaluator.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT,
+        freeze_receipt=freeze,
+        correction=correction,
+    ) is expected
+    assert calls == [
+        (
+            evaluator.ROOT,
+            freeze,
+            evaluator.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT,
+        )
+    ]
 
 
 def test_authority_read_guard_manifest_loads_in_stdlib_wrapper(
@@ -1093,6 +1477,9 @@ def test_child_payload_is_rebuilt_against_parent_held_custody(
         }
 
     fake = SimpleNamespace(
+        PREEXECUTION_DIAGNOSTIC_ROOT=(
+            evaluator._forensic_contract().PREEXECUTION_DIAGNOSTIC_ROOT
+        ),
         PREEXECUTION_CHILD_ZERO_SCIENTIFIC_COUNTERS=zero,
         validate_preexecution_child_result=lambda value: copy.deepcopy(value),
         build_preexecution_child_result=build,

@@ -10,9 +10,12 @@ exception custody even when importing the full evaluator fails before its
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import faulthandler
 import hashlib
+import importlib
+import io
 import json
 import os
 from pathlib import Path
@@ -27,7 +30,18 @@ EVALUATOR = Path(__file__).with_name(
     "evaluate_plan_aware_monotone_jepa_cost_v1.py"
 ).absolute()
 REAL_MODE = "diagnose-preexecution-child"
+CORRECTION_REAL_MODE = "diagnose-preexecution-correction-1-child"
+CORRECTION_FINALIZER_MODE = "finalize-preexecution-forensic-correction-1"
+CORRECTION_CHECKER_MODE = "check-preexecution-forensic-correction-1"
 SYNTHETIC_MODE = "diagnose-preexecution-synthetic-child"
+CORRECTION_DIAGNOSTIC_ROOT = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    "plan_aware_monotone_jepa_cost_v1_preexecution_diagnostic_correction_1"
+)
+CORRECTION_PHASE_MODES = (
+    CORRECTION_FINALIZER_MODE,
+    CORRECTION_CHECKER_MODE,
+)
 SYNTHETIC_FIXTURES = (
     "PASS",
     "RAISE",
@@ -430,7 +444,11 @@ def _read_guard_disposition(
 
 def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--mode", choices=(REAL_MODE, SYNTHETIC_MODE), required=True)
+    parser.add_argument(
+        "--mode",
+        choices=(REAL_MODE, CORRECTION_REAL_MODE, SYNTHETIC_MODE),
+        required=True,
+    )
     parser.add_argument("--launcher-pid", type=int)
     parser.add_argument("--launcher-start-time-ticks", type=int)
     parser.add_argument("--fixture-id", choices=SYNTHETIC_FIXTURES)
@@ -441,7 +459,7 @@ def _arguments(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--read-guard-manifest", type=Path, required=True)
     parser.add_argument("--read-guard-events-fd", type=int, required=True)
     args = parser.parse_args(argv)
-    if args.mode == REAL_MODE:
+    if args.mode in {REAL_MODE, CORRECTION_REAL_MODE}:
         if (
             args.launcher_pid is None
             or args.launcher_pid <= 0
@@ -613,10 +631,10 @@ def _capture_bootstrap_setup_exception(
 
 
 def _inner_argv(args: argparse.Namespace) -> list[str]:
-    if args.mode == REAL_MODE:
+    if args.mode in {REAL_MODE, CORRECTION_REAL_MODE}:
         return [
             str(EVALUATOR),
-            REAL_MODE,
+            args.mode,
             "--launcher-pid",
             str(args.launcher_pid),
             "--launcher-start-time-ticks",
@@ -634,8 +652,257 @@ def _inner_argv(args: argparse.Namespace) -> list[str]:
     ]
 
 
+def _correction_phase_mode(argv: list[str]) -> str | None:
+    positions = [index for index, value in enumerate(argv) if value == "--mode"]
+    if len(positions) != 1 or positions[0] + 1 >= len(argv):
+        return None
+    value = argv[positions[0] + 1]
+    return value if value in CORRECTION_PHASE_MODES else None
+
+
+def _correction_phase_arguments(argv: list[str]) -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=CORRECTION_PHASE_MODES, required=True)
+    parser.add_argument("--diagnostic-root", type=Path, required=True)
+    args = parser.parse_args(argv)
+    if args.diagnostic_root != CORRECTION_DIAGNOSTIC_ROOT:
+        parser.error("correction terminal phase diagnostic root drift")
+    return args
+
+
+def _correction_phase_contract() -> Any:
+    repo_root = EVALUATOR.parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+    return importlib.import_module(
+        "lewm.safety."
+        "plan_aware_monotone_jepa_cost_v1_forensic_correction_1_contract"
+    )
+
+
+def _correction_phase_process_identity(correction: Any, *, phase: str) -> dict[str, Any]:
+    argv_payload = Path("/proc/self/cmdline").read_bytes()
+    argv = [
+        item.decode("utf-8", errors="surrogateescape")
+        for item in argv_payload.split(b"\0")
+        if item
+    ]
+    stat_payload = Path("/proc/self/stat").read_text(encoding="utf-8")
+    try:
+        _prefix, suffix = stat_payload.rsplit(")", 1)
+        fields = suffix.strip().split()
+        process_group_id = int(fields[2])
+        start_time_ticks = int(fields[19])
+    except (IndexError, ValueError) as exc:
+        raise RuntimeError("correction terminal phase /proc stat drift") from exc
+    role = (
+        correction.CORRECTION_FINALIZER_ROLE
+        if phase == "FINALIZER"
+        else correction.CORRECTION_CHECKER_ROLE
+    )
+    return correction.BASE.validate_process_identity(
+        {
+            "pid": os.getpid(),
+            "process_group_id": process_group_id,
+            "start_time_ticks": start_time_ticks,
+            "argv": argv,
+            "argv_sha256": correction.BASE.canonical_json_sha256(argv),
+            "executable": str(Path("/proc/self/exe").resolve(strict=True)),
+            "role": role,
+        }
+    )
+
+
+def _correction_phase_coordinator(correction: Any) -> dict[str, Any]:
+    raw_pid = os.environ.get("LEWM_CORRECTION_COORDINATOR_PID", "")
+    raw_start = os.environ.get(
+        "LEWM_CORRECTION_COORDINATOR_START_TIME_TICKS", ""
+    )
+    if (
+        not raw_pid.isdecimal()
+        or not raw_start.isdecimal()
+        or raw_pid.startswith("0")
+        or raw_start.startswith("0")
+    ):
+        raise RuntimeError("correction terminal coordinator environment drift")
+    return correction.require_live_correction_terminal_coordinator(
+        pid=int(raw_pid), start_time_ticks=int(raw_start)
+    )
+
+
+def _correction_phase_inner_receipt(
+    correction: Any, *, phase: str
+) -> dict[str, Any]:
+    inner_argv = (
+        correction.expected_correction_finalizer_inner_argv()
+        if phase == "FINALIZER"
+        else correction.expected_correction_checker_inner_argv()
+    )
+    saved_argv = sys.argv
+    capture = io.StringIO()
+    try:
+        sys.argv = [str(value) for value in inner_argv]
+        with contextlib.redirect_stdout(capture):
+            try:
+                runpy.run_path(str(EVALUATOR), run_name="__main__")
+            except SystemExit as exc:
+                if exc.code not in (None, 0):
+                    raise
+    finally:
+        sys.argv = saved_argv
+    payload = capture.getvalue().encode("utf-8")
+    try:
+        value = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError("correction phase inner receipt JSON drift") from exc
+    if (
+        type(value) is not dict
+        or payload != correction._authority_bytes(value)
+    ):
+        raise RuntimeError("correction phase inner receipt canonical-byte drift")
+    correction.BASE.validate_self_digest(value)
+    return value
+
+
+def _run_correction_phase_wrapper(argv: list[str]) -> int:
+    started_ns = time.monotonic_ns()
+    correction: Any | None = None
+    phase = "FINALIZER"
+    identity: dict[str, Any] | None = None
+    coordinator: dict[str, Any] | None = None
+    environment_custody: dict[str, Any] | None = None
+    heartbeat_started: dict[str, Any] | None = None
+    current_stage = "STARTED"
+    try:
+        args = _correction_phase_arguments(argv)
+        phase = "FINALIZER" if args.mode == CORRECTION_FINALIZER_MODE else "CHECKER"
+        # Give the root-owned coordinator a deterministic /proc identity window.
+        time.sleep(0.15)
+        correction = _correction_phase_contract()
+        identity = _correction_phase_process_identity(correction, phase=phase)
+        coordinator = _correction_phase_coordinator(correction)
+        environment_custody = correction.build_correction_phase_environment_custody(
+            dict(os.environ)
+        )
+        heartbeat_started = correction.build_correction_phase_heartbeat_row(
+            phase=phase,
+            pid=os.getpid(),
+            sequence=0,
+            event="WRAPPER_STARTED",
+            monotonic_ns=time.monotonic_ns(),
+        )
+        phase_receipt = _correction_phase_inner_receipt(
+            correction, phase=phase
+        )
+        current_stage = "COMPLETE"
+        marker = correction.build_correction_phase_last_stage(
+            phase=phase,
+            pid=os.getpid(),
+            stage_id=current_stage,
+            event="COMPLETED",
+            monotonic_ns=time.monotonic_ns(),
+        )
+        heartbeat_completed = correction.build_correction_phase_heartbeat_row(
+            phase=phase,
+            pid=os.getpid(),
+            sequence=1,
+            event="WRAPPER_COMPLETED",
+            monotonic_ns=time.monotonic_ns(),
+        )
+        ended_ns = time.monotonic_ns()
+        envelope = correction.build_correction_phase_wrapper_envelope(
+            phase=phase,
+            phase_process_identity=identity,
+            coordinator_process_identity=coordinator,
+            environment_custody=environment_custody,
+            observed_cwd=os.getcwd(),
+            wrapper_heartbeat=[heartbeat_started, heartbeat_completed],
+            started_monotonic_ns=started_ns,
+            ended_monotonic_ns=ended_ns,
+            last_stage_marker=marker,
+            phase_receipt=phase_receipt,
+            structured_exception=None,
+            envelope_source="STDLIB_PHASE_WRAPPER",
+        )
+    except BaseException as exc:
+        traceback_bytes = "".join(
+            traceback.format_exception(type(exc), exc, exc.__traceback__)
+        ).encode("utf-8", errors="backslashreplace")
+        try:
+            if any(
+                value is None
+                for value in (
+                    correction,
+                    identity,
+                    coordinator,
+                    environment_custody,
+                    heartbeat_started,
+                )
+            ):
+                raise RuntimeError(
+                    "correction phase failed before wrapper envelope authority"
+                )
+            assert correction is not None
+            assert identity is not None
+            assert coordinator is not None
+            assert environment_custody is not None
+            assert heartbeat_started is not None
+            structured = correction.build_correction_phase_structured_exception(
+                phase=phase,
+                exception_type=type(exc).__name__,
+                exception_message=str(exc),
+                traceback_bytes=traceback_bytes,
+                capture_source="STDLIB_PHASE_WRAPPER",
+            )
+            marker = correction.build_correction_phase_last_stage(
+                phase=phase,
+                pid=os.getpid(),
+                stage_id=current_stage,
+                event="FAILED",
+                monotonic_ns=time.monotonic_ns(),
+            )
+            heartbeat_failed = correction.build_correction_phase_heartbeat_row(
+                phase=phase,
+                pid=os.getpid(),
+                sequence=1,
+                event="WRAPPER_FAILED",
+                monotonic_ns=time.monotonic_ns(),
+            )
+            ended_ns = time.monotonic_ns()
+            envelope = correction.build_correction_phase_wrapper_envelope(
+                phase=phase,
+                phase_process_identity=identity,
+                coordinator_process_identity=coordinator,
+                environment_custody=environment_custody,
+                observed_cwd=os.getcwd(),
+                wrapper_heartbeat=[heartbeat_started, heartbeat_failed],
+                started_monotonic_ns=started_ns,
+                ended_monotonic_ns=ended_ns,
+                last_stage_marker=marker,
+                phase_receipt=None,
+                structured_exception=structured,
+                envelope_source="STDLIB_PHASE_WRAPPER",
+            )
+            sys.stdout.buffer.write(correction._authority_bytes(envelope))
+            sys.stdout.buffer.flush()
+        except BaseException as custody_exc:
+            traceback_bytes += "".join(
+                traceback.format_exception(
+                    type(custody_exc), custody_exc, custody_exc.__traceback__
+                )
+            ).encode("utf-8", errors="backslashreplace")
+        sys.stderr.buffer.write(traceback_bytes)
+        sys.stderr.buffer.flush()
+        return 1
+    sys.stdout.buffer.write(correction._authority_bytes(envelope))
+    sys.stdout.buffer.flush()
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     raw_argv = list(sys.argv[1:] if argv is None else argv)
+    if _correction_phase_mode(raw_argv) is not None:
+        return _run_correction_phase_wrapper(raw_argv)
     bootstrap_fds = _bootstrap_custody_fds(raw_argv)
     bootstrap_root = _bootstrap_diagnostic_root(raw_argv)
     # Hold before any logging/faulthandler setup so even a setup or argparse
