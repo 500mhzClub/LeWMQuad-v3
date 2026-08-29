@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import ast
 import hashlib
+import json
 import os
 import shutil
 import stat
+import subprocess
+import textwrap
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -48,6 +51,61 @@ def _synthetic_process_identity(
         "cwd": str(contract.REPO_ROOT),
         "executable": str(contract.PYTHON_EXECUTABLE),
     }
+
+
+def _synthetic_namespace_receipt(
+    *, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> dict[str, Any]:
+    output = tmp_path / "result.json"
+    monkeypatch.setattr(contract, "OUTPUT_ROOT", output)
+    attempt_id = contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+    receipt = {
+        "attempt_id": attempt_id,
+        "attempt_root": str(
+            output.parent / f".{output.name}.attempt-{attempt_id}"
+        ),
+        "content_digest": "0" * 64,
+    }
+
+    def validate(
+        value: dict[str, Any], *, expected_attempt_id: str
+    ) -> dict[str, Any]:
+        assert value == receipt
+        assert expected_attempt_id == attempt_id
+        return dict(receipt)
+
+    monkeypatch.setattr(
+        contract, "validate_namespace_and_nonreuse_receipt", validate
+    )
+    return receipt
+
+
+def _run_tinyquad_harness(
+    source: str, *arguments: str
+) -> dict[str, Any]:
+    completed = subprocess.run(
+        [
+            str(contract.PYTHON_EXECUTABLE),
+            "-E",
+            "-s",
+            "-u",
+            "-c",
+            textwrap.dedent(source),
+            *arguments,
+        ],
+        cwd=contract.REPO_ROOT,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr.decode(
+        "utf-8", errors="replace"
+    )
+    value = json.loads(completed.stdout.decode("utf-8"))
+    assert type(value) is dict
+    assert completed.stdout == contract.canonical_json_bytes(value) + b"\n"
+    return value
 
 
 def _function_node(name: str) -> ast.FunctionDef:
@@ -113,7 +171,11 @@ def _parser_argv_for_mode(mode: str) -> list[str]:
     if mode == contract.PUBLIC_EXECUTE_MODE:
         return [mode]
     if mode == contract.PHASE1_SUPERVISOR_MODE:
-        return [mode, "--attempt-id", "v2-1-1"]
+        return [
+            mode,
+            "--attempt-id",
+            contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID,
+        ]
     if mode == contract.PRE_ROOT_PHASE1_FAILURE_CUSTODY_MODE:
         return [
             mode,
@@ -521,117 +583,360 @@ def test_pre_phase2_supervisor_failure_custody_is_durable_before_return(
 
 
 def test_rooted_phase1_supervisor_failure_custody_is_durable_before_raise(
+    tmp_path: Path,
+) -> None:
+    result = _run_tinyquad_harness(
+        """
+        import hashlib
+        import json
+        import os
+        import stat
+        import sys
+        from pathlib import Path
+        from types import SimpleNamespace
+
+        from lewm.safety import plan_aware_monotone_jepa_cost_v2_contract as contract
+        from scripts import evaluate_plan_aware_monotone_jepa_cost_v2 as evaluator
+
+        contract.OUTPUT_ROOT = Path(sys.argv[1]) / "result.json"
+        supervisor = evaluator._process_identity()
+        producer = {"pid": 53, "start_time_ticks": 59}
+        process = SimpleNamespace(pid=53, poll=lambda: 0)
+        evaluator._cleanup_remaining_process_group = lambda _pid: []
+        evaluator._process_group_members = lambda _pid: []
+        evaluator._active_v2_role_rows = lambda: [{"pid": supervisor["pid"]}]
+        evaluator._identity_is_live = lambda _identity: False
+        evaluator._producer_resource_rows = (
+            lambda *_args, **_kwargs: ([], [], [], [])
+        )
+        contract.observe_phase1_post_cleanup_start_namespace = (
+            lambda **_kwargs: {"attempt_root_absent_after_cleanup": False}
+        )
+        attempt_id = contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        attempt_root = contract.OUTPUT_ROOT.parent / (
+            f".{contract.OUTPUT_ROOT.name}.attempt-{attempt_id}"
+        )
+        failure_observation = contract.attach_self_digest({
+            "schema": contract.ROOTED_PHASE1_SUPERVISOR_FAILURE_OBSERVATION_SCHEMA,
+            "attempt_id": attempt_id,
+            "attempt_root": str(attempt_root),
+            "supervisor_process_identity": supervisor,
+            "root_and_artifact_inventory": {"artifact_inventory_rows": []},
+            "producer_process_absence_observation": {
+                "exact_historical_process_absent": True
+            },
+            "cleanup_actions": [],
+            "process_group_members_after_cleanup": [],
+            "all_known_children_and_resources_absent": True,
+        })
+        observed = {}
+
+        def observe(**kwargs):
+            observed.update(kwargs)
+            return failure_observation
+
+        contract.observe_rooted_phase1_supervisor_failure = observe
+        contract.validate_rooted_phase1_supervisor_failure_observation = (
+            lambda value: dict(value)
+        )
+        result = evaluator._persist_rooted_phase1_supervisor_failure(
+            attempt_id=attempt_id,
+            prelaunch_namespace_custody={"attempt_root": str(attempt_root)},
+            prelaunch_handoff_memfd_custody={"handoff": True},
+            supervisor_process_identity=supervisor,
+            producer_process_identity=producer,
+            attempt_root_fd_custody={"root": True},
+            supervisor_root_reopen_custody={"reopen": True},
+            producer_environment_names=["A"],
+            producer_environment_sha256="1" * 64,
+            supervisor_environment_names=["B"],
+            supervisor_environment_sha256="2" * 64,
+            process=process,
+            captured_stdout=b"raw stdout",
+            captured_stderr=b"raw stderr",
+            failure_stage="PRODUCER_SOURCE_STREAM_LOAD",
+            failure_errors=[RuntimeError("injected rooted failure")],
+            supervisor_started_monotonic_ns=1,
+            popen_started_monotonic_ns=2,
+            cleanup_actions=[],
+            communication_attempted=True,
+            communicate_completed=True,
+        )
+        custody_path = Path(result["custody_path"])
+        parent_fd = os.open(
+            "/", os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
+        )
+        leaf_fd = -1
+        try:
+            for component in custody_path.parent.parts[1:]:
+                next_fd = os.open(
+                    component,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW,
+                    dir_fd=parent_fd,
+                )
+                os.close(parent_fd)
+                parent_fd = next_fd
+            leaf_fd = os.open(
+                custody_path.name,
+                os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW,
+                dir_fd=parent_fd,
+            )
+            opened = os.fstat(leaf_fd)
+            chunks = []
+            while True:
+                chunk = os.read(leaf_fd, 1024 * 1024)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            payload = b"".join(chunks)
+        finally:
+            if leaf_fd >= 0:
+                os.close(leaf_fd)
+            os.close(parent_fd)
+        expected_payload = contract.canonical_json_bytes(result) + b"\\n"
+        reloaded = json.loads(payload.decode("utf-8"))
+        validated = contract.validate_rooted_phase1_supervisor_failure_custody(
+            reloaded
+        )
+        disposition = contract.validate_terminal_scientific_attempt_disposition(
+            result["scientific_attempt_disposition"]
+        )
+        envelope = {
+            "custody_content_digest": result["content_digest"],
+            "payload_sha256": hashlib.sha256(payload).hexdigest(),
+            "expected_payload_sha256": hashlib.sha256(expected_payload).hexdigest(),
+            "payload_bytes": len(payload),
+            "expected_payload_bytes": len(expected_payload),
+            "persisted_mode": stat.S_IMODE(opened.st_mode),
+            "persisted_nlink": opened.st_nlink,
+            "reloaded_and_validated_equal": validated == result,
+            "failure_stage": observed["failure_stage"],
+            "captured_stdout_sha256": hashlib.sha256(
+                observed["captured_stdout"]
+            ).hexdigest(),
+            "captured_stderr_sha256": hashlib.sha256(
+                observed["captured_stderr"]
+            ).hexdigest(),
+            "failure_exception_type": observed["failure_exceptions"][0][
+                "exception"
+            ]["type"],
+            "exit_observation_schema": disposition["exit_observation_schema"],
+            "disposition": disposition["disposition"],
+            "later_phase_continuation_authorized": disposition[
+                "later_phase_continuation_authorized"
+            ],
+        }
+        os.write(1, contract.canonical_json_bytes(envelope) + b"\\n")
+        """,
+        str(tmp_path),
+    )
+    assert result["payload_sha256"] == result["expected_payload_sha256"]
+    assert result["payload_bytes"] == result["expected_payload_bytes"]
+    assert result["persisted_mode"] == contract.RUNTIME_FILE_MODE
+    assert result["persisted_nlink"] == 1
+    assert result["reloaded_and_validated_equal"] is True
+    assert result["failure_stage"] == "PRODUCER_SOURCE_STREAM_LOAD"
+    assert result["captured_stdout_sha256"] == hashlib.sha256(
+        b"raw stdout"
+    ).hexdigest()
+    assert result["captured_stderr_sha256"] == hashlib.sha256(
+        b"raw stderr"
+    ).hexdigest()
+    assert result["failure_exception_type"] == "RuntimeError"
+    assert result["exit_observation_schema"] == (
+        contract.ROOTED_PHASE1_SUPERVISOR_FAILURE_OBSERVATION_SCHEMA
+    )
+    assert result["disposition"] == "UNKNOWN_NO_RETRY"
+    assert result["later_phase_continuation_authorized"] is False
+
+
+def test_phase1_execute_observes_complete_foreground_runtime_custody_before_science(
+    tmp_path: Path,
+) -> None:
+    observed = _run_tinyquad_harness(
+        """
+        import os
+        import sys
+        from pathlib import Path
+
+        from lewm.safety import plan_aware_monotone_jepa_cost_v2_contract as contract
+        from scripts import evaluate_plan_aware_monotone_jepa_cost_v2 as evaluator
+
+        class StartupBoundaryReached(RuntimeError):
+            pass
+
+        genuine_identity = evaluator._process_identity()
+        original_live_gate = contract._require_exact_live_process_identity
+        assert original_live_gate(genuine_identity) == genuine_identity
+        identity = {
+            **genuine_identity,
+            "argv": list(contract.PUBLIC_EXECUTE_ARGV),
+        }
+
+        def exact_public_argv_adapter(value):
+            assert original_live_gate(genuine_identity) == genuine_identity
+            assert value == identity
+            assert value["argv"] == list(contract.PUBLIC_EXECUTE_ARGV)
+            assert {
+                key: value[key] for key in value if key != "argv"
+            } == {
+                key: genuine_identity[key]
+                for key in genuine_identity
+                if key != "argv"
+            }
+            return dict(value)
+
+        contract._require_exact_live_process_identity = (
+            exact_public_argv_adapter
+        )
+        evaluator._process_identity = lambda: identity
+        contract.OUTPUT_ROOT = Path(sys.argv[1]) / "result.json"
+        attempt_id = contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        attempt_root = contract.OUTPUT_ROOT.parent / (
+            f".result.json.attempt-{attempt_id}"
+        )
+        contract.consume_supervised_phase1_prelaunch_handoff = (
+            lambda **_kwargs: {"attempt_id": attempt_id}
+        )
+        evaluator._require_clean_source_freeze = lambda: "0" * 40
+        contract.build_scientific_invariance_receipt = lambda: {}
+        contract.validate_scientific_invariance_receipt = (
+            lambda value: value
+        )
+        evaluator._new_attempt_root = lambda *_args: (
+            attempt_id, attempt_root, {}, {}
+        )
+        evaluator._require_attempt_io = lambda _root: (-1, {}, None)
+        evaluator._write_last_stage = lambda *_args: None
+        contract.write_phase1_supervisor_prelaunch_handoff_receipt_exclusive_fsync = (
+            lambda **_kwargs: {}
+        )
+        evaluator._validate_interpreter_and_resource_paths = lambda: True
+        evaluator._environment_custody = lambda: (["A"], "1" * 64)
+        actual_observer = (
+            contract.observe_phase1_foreground_runtime_import_custody
+        )
+        observed = []
+
+        def observe(**kwargs):
+            receipt = actual_observer(**kwargs)
+            observed.append(receipt)
+            return receipt
+
+        contract.observe_phase1_foreground_runtime_import_custody = observe
+        evaluator._write_json_exclusive = lambda *_args: None
+        evaluator._begin_static_audit = lambda **_kwargs: (
+            (_ for _ in ()).throw(
+                StartupBoundaryReached("startup custody completed")
+            )
+        )
+        evaluator._v1 = lambda: (_ for _ in ()).throw(
+            AssertionError("scientific entrypoint was reached")
+        )
+        try:
+            evaluator.execute_phase_1()
+        except StartupBoundaryReached:
+            pass
+        else:
+            raise AssertionError("Phase-1 startup crossed the sentinel")
+        assert len(observed) == 1
+        receipt = contract.validate_phase1_foreground_runtime_import_custody(
+            observed[0]
+        )
+        os.write(1, contract.canonical_json_bytes(receipt) + b"\\n")
+        """,
+        str(tmp_path),
+    )
+    custody = contract.validate_phase1_foreground_runtime_import_custody(
+        observed
+    )
+    for authority in (
+        contract.FOREGROUND_RUNTIME_IMPORT_AUTHORITY["modules"]
+    ):
+        assert {"mode", "uid", "gid", "nlink"} <= set(authority)
+    assert custody["observed_executable_binding"]["bytes"] > 0
+    assert custody["observed_module_rows"]
+    assert custody["pass"] is True
+    source = _function_source("execute_phase_1")
+    assert source.index(
+        "observe_phase1_foreground_runtime_import_custody"
+    ) < source.index("_begin_static_audit") < source.index("_v1()")
+
+
+def test_corrected_phase1_prelaunch_binds_failed_startup_zero_reuse_and_fresh_id(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    events: list[str] = []
-    observed: dict[str, Any] = {}
-    process = SimpleNamespace(pid=53, poll=lambda: 0)
-    supervisor = {"pid": 41, "start_time_ticks": 43}
-    producer = {"pid": 53, "start_time_ticks": 59}
-    monkeypatch.setattr(
-        evaluator, "_cleanup_remaining_process_group", lambda _pid: []
+    attempt_id = contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+    with pytest.raises(contract.V2ContractError, match="corrected"):
+        contract.observe_phase1_supervisor_prelaunch_namespace(
+            contract.FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+        )
+    amendment = contract.build_technical_correction_amendment_authority()
+    assert contract.validate_technical_correction_amendment_authority(
+        amendment
+    ) == amendment
+    failed_nonreuse = (
+        contract.observe_failed_technical_startup_nonreuse_custody()
     )
-    monkeypatch.setattr(evaluator, "_process_group_members", lambda _pid: [])
-    monkeypatch.setattr(
-        evaluator, "_active_v2_role_rows", lambda: [{"pid": 41}]
+    assert contract.validate_failed_technical_startup_nonreuse_custody(
+        failed_nonreuse, reverify_live=True
+    ) == failed_nonreuse
+    assert failed_nonreuse["failed_attempt_id"] == (
+        contract.FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
     )
-    monkeypatch.setattr(evaluator, "_identity_is_live", lambda _identity: False)
-    monkeypatch.setattr(
-        evaluator,
-        "_producer_resource_rows",
-        lambda *_args, **_kwargs: ([], [], [], []),
+    assert failed_nonreuse["corrected_attempt_id"] == attempt_id
+    assert failed_nonreuse["scientific_inputs_opened"] == 0
+    assert failed_nonreuse["model_initializations"] == 0
+    assert failed_nonreuse["failed_root_bytes_adopted_or_reused"] is False
+    assert failed_nonreuse["preexecution_receipt_absent"] is True
+    assert failed_nonreuse["scientific_attempt_boundary_entry_absent"] is True
+    assert failed_nonreuse["first_scientific_open_receipt_absent"] is True
+    prelaunch = contract.observe_phase1_supervisor_prelaunch_namespace(
+        attempt_id
     )
-    monkeypatch.setattr(
-        contract,
-        "observe_phase1_post_cleanup_start_namespace",
-        lambda **_kwargs: {"attempt_root_absent_after_cleanup": False},
-    )
-
-    def observe(**kwargs: Any) -> dict[str, Any]:
-        events.append("observe")
-        observed.update(kwargs)
-        return {"observation": True}
-
-    def validate_observation(value: dict[str, Any]) -> dict[str, Any]:
-        events.append("validate_observation")
-        return value
-
-    def build(**kwargs: Any) -> dict[str, Any]:
-        events.append("build")
-        assert kwargs["failure_observation"] == {"observation": True}
-        return {"content_digest": "0" * 64}
-
-    def validate_custody(value: dict[str, Any]) -> dict[str, Any]:
-        events.append("validate_custody")
-        return value
-
-    def write(**kwargs: Any) -> dict[str, Any]:
-        events.append("write")
-        assert kwargs["failure_custody"] == {"content_digest": "0" * 64}
-        return {"binding": True}
-
-    monkeypatch.setattr(
-        contract, "observe_rooted_phase1_supervisor_failure", observe
-    )
-    monkeypatch.setattr(
-        contract,
-        "validate_rooted_phase1_supervisor_failure_observation",
-        validate_observation,
-    )
-    monkeypatch.setattr(
-        contract, "build_rooted_phase1_supervisor_failure_custody", build
-    )
-    monkeypatch.setattr(
-        contract,
-        "validate_rooted_phase1_supervisor_failure_custody",
-        validate_custody,
-    )
-    monkeypatch.setattr(
-        contract,
-        "write_rooted_phase1_supervisor_failure_custody_exclusive_fsync",
-        write,
-    )
-    error = RuntimeError("injected rooted failure")
-    result = evaluator._persist_rooted_phase1_supervisor_failure(
-        attempt_id="v2-1-1",
-        prelaunch_namespace_custody={
-            "attempt_root": str(_synthetic_attempt_root())
-        },
-        prelaunch_handoff_memfd_custody={"handoff": True},
-        supervisor_process_identity=supervisor,
-        producer_process_identity=producer,
-        attempt_root_fd_custody={"root": True},
-        supervisor_root_reopen_custody={"reopen": True},
-        producer_environment_names=["A"],
-        producer_environment_sha256="1" * 64,
-        supervisor_environment_names=["B"],
-        supervisor_environment_sha256="2" * 64,
-        process=process,
-        captured_stdout=b"raw stdout",
-        captured_stderr=b"raw stderr",
-        failure_stage="PRODUCER_SOURCE_STREAM_LOAD",
-        failure_errors=[error],
-        supervisor_started_monotonic_ns=1,
-        popen_started_monotonic_ns=2,
-        cleanup_actions=[],
-        communication_attempted=True,
-        communicate_completed=True,
-    )
-    assert result == {"content_digest": "0" * 64}
-    assert events == [
-        "observe",
-        "validate_observation",
-        "build",
-        "validate_custody",
-        "write",
-        "validate_custody",
+    assert contract.validate_phase1_supervisor_prelaunch_namespace(
+        prelaunch
+    ) == prelaunch
+    assert prelaunch["matching_attempt_roots_before"] == [
+        str(contract.FAILED_TECHNICAL_STARTUP_ROOT)
     ]
-    assert observed["failure_stage"] == "PRODUCER_SOURCE_STREAM_LOAD"
-    assert observed["captured_stdout"] == b"raw stdout"
-    assert observed["captured_stderr"] == b"raw stderr"
-    assert observed["failure_exceptions"][0]["exception"]["type"] == (
-        "RuntimeError"
+    assert prelaunch["failed_technical_startup_nonreuse_custody"] == (
+        failed_nonreuse
     )
+    assert prelaunch["technical_correction_amendment_authority"] == amendment
+    supervisor = _synthetic_process_identity(
+        argv=contract.expected_phase1_supervisor_argv(attempt_id),
+        pid=os.getpid(),
+    )
+    monkeypatch.setattr(
+        contract,
+        "_require_exact_live_process_identity",
+        lambda value: dict(value),
+    )
+    descriptor = -1
+    try:
+        descriptor, handoff = (
+            contract.create_phase1_supervisor_prelaunch_handoff_memfd(
+                attempt_id=attempt_id,
+                prelaunch_namespace_custody=prelaunch,
+                supervisor_process_identity=supervisor,
+            )
+        )
+        payload = handoff["payload"]
+        assert payload["attempt_id"] == attempt_id
+        assert payload["prelaunch_namespace_custody"] == prelaunch
+        assert payload["technical_correction_amendment_authority"] == (
+            amendment
+        )
+        assert payload["failed_technical_startup_nonreuse_content_digest"] == (
+            failed_nonreuse["content_digest"]
+        )
+        assert contract.supervised_phase1_prelaunch_pass_fds(handoff) == (
+            descriptor,
+        )
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
 
 
 @pytest.mark.parametrize(
@@ -648,7 +953,7 @@ def test_phase1_post_root_abrupt_failures_never_fall_back_to_pre_root_custody(
     injected_branch: str,
     expected_stage: str,
 ) -> None:
-    attempt_id = "v2-1-1"
+    attempt_id = contract.CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
     root = _synthetic_attempt_root()
     supervisor = {
         "pid": 41,
@@ -685,10 +990,31 @@ def test_phase1_post_root_abrupt_failures_never_fall_back_to_pre_root_custody(
         "expected_phase1_supervisor_argv",
         lambda _attempt_id: supervisor["argv"],
     )
+    amendment = {"authority": True}
+    failed_nonreuse = {
+        "amendment_authority": amendment,
+        "content_digest": "1" * 64,
+    }
+    prelaunch = {
+        "attempt_root": str(root),
+        "technical_correction_amendment_authority": amendment,
+        "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+        "failed_technical_startup_nonreuse_content_digest": "1" * 64,
+    }
     monkeypatch.setattr(
         contract,
         "observe_phase1_supervisor_prelaunch_namespace",
-        lambda _attempt_id: {"attempt_root": str(root)},
+        lambda _attempt_id: prelaunch,
+    )
+    monkeypatch.setattr(
+        contract,
+        "validate_technical_correction_amendment_authority",
+        lambda value: value,
+    )
+    monkeypatch.setattr(
+        contract,
+        "validate_failed_technical_startup_nonreuse_custody",
+        lambda value, *, reverify_live: value,
     )
     handoff_fd = os.open(os.devnull, os.O_RDONLY | os.O_CLOEXEC)
     monkeypatch.setattr(
@@ -1655,12 +1981,8 @@ def test_v2_registered_regular_file_nlink_one_round_trip() -> None:
 def test_v2_attempt_root_custody_survives_authorized_directory_growth_and_rejects_replacement(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    output = tmp_path / "result.json"
-    monkeypatch.setattr(contract, "OUTPUT_ROOT", output)
-    attempt_id = "v2-1-1"
-    observation = contract.observe_fresh_v2_namespace(attempt_id)
-    nonreuse = contract.build_namespace_and_nonreuse_receipt(
-        attempt_id=attempt_id, precreation_observation=observation
+    nonreuse = _synthetic_namespace_receipt(
+        tmp_path=tmp_path, monkeypatch=monkeypatch
     )
     producer = _synthetic_process_identity(
         argv=list(contract.PUBLIC_EXECUTE_ARGV)
@@ -1729,15 +2051,73 @@ def test_v2_attempt_root_custody_survives_authorized_directory_growth_and_reject
             shutil.rmtree(displaced_root)
 
 
+def test_phase1_supervisor_bootstrap_allows_root_owned_ancestors_and_rejects_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nonreuse = _synthetic_namespace_receipt(
+        tmp_path=tmp_path, monkeypatch=monkeypatch
+    )
+    producer = _synthetic_process_identity(
+        argv=list(contract.PUBLIC_EXECUTE_ARGV)
+    )
+    parent_fd = root_fd = -1
+    original_root = Path(nonreuse["attempt_root"])
+    displaced_root = original_root.with_name(original_root.name + ".original")
+    try:
+        parent_fd, root_fd, custody = (
+            contract.create_fresh_attempt_root_anchored(
+                namespace_and_nonreuse_receipt=nonreuse,
+                producer_process_identity=producer,
+            )
+        )
+        assert any(
+            ancestor != Path("/")
+            and os.stat(ancestor, follow_symlinks=False).st_uid != os.getuid()
+            for ancestor in original_root.parents
+        )
+        assert evaluator._load_attempt_root_custody_for_reopen(
+            original_root
+        ) == custody
+
+        os.close(root_fd)
+        root_fd = -1
+        os.close(parent_fd)
+        parent_fd = -1
+        original_root.rename(displaced_root)
+        original_root.mkdir(mode=contract.ATTEMPT_ROOT_DIRECTORY_MODE)
+        (original_root / "receipts").mkdir(
+            mode=contract.RUNTIME_DIRECTORY_MODE
+        )
+        stale_receipt = displaced_root / contract.RUNTIME_PATHS[
+            "attempt_root_fd_custody"
+        ]
+        replacement_receipt = original_root / contract.RUNTIME_PATHS[
+            "attempt_root_fd_custody"
+        ]
+        shutil.copyfile(stale_receipt, replacement_receipt)
+        replacement_receipt.chmod(contract.RUNTIME_FILE_MODE)
+        with pytest.raises(
+            evaluator.V2EvaluationError,
+            match="historical attempt-root custody drift",
+        ):
+            evaluator._load_attempt_root_custody_for_reopen(original_root)
+    finally:
+        if root_fd >= 0:
+            os.close(root_fd)
+        if parent_fd >= 0:
+            os.close(parent_fd)
+        if original_root.exists():
+            shutil.rmtree(original_root)
+        if displaced_root.exists():
+            shutil.rmtree(displaced_root)
+
+
 def test_v2_presentation_attempt_id_gate_rejects_canonical_or_raw_failure_and_accepts_fresh_attempt2(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    output = tmp_path / "result.json"
-    monkeypatch.setattr(contract, "OUTPUT_ROOT", output)
-    attempt_id = "v2-1-1"
-    observation = contract.observe_fresh_v2_namespace(attempt_id)
-    nonreuse = contract.build_namespace_and_nonreuse_receipt(
-        attempt_id=attempt_id, precreation_observation=observation
+    nonreuse = _synthetic_namespace_receipt(
+        tmp_path=tmp_path, monkeypatch=monkeypatch
     )
     producer = _synthetic_process_identity(
         argv=list(contract.PUBLIC_EXECUTE_ARGV)

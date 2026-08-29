@@ -238,6 +238,14 @@ PHASE1_FOREGROUND_RUNTIME_IMPORT_CUSTODY_SCHEMA = (
     "plan_aware_monotone_jepa_cost_v2."
     "phase_1_foreground_runtime_import_custody.v1"
 )
+TECHNICAL_CORRECTION_AMENDMENT_AUTHORITY_SCHEMA = (
+    "plan_aware_monotone_jepa_cost_v2."
+    "technical_correction_amendment_authority.v1"
+)
+FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA = (
+    "plan_aware_monotone_jepa_cost_v2."
+    "failed_technical_startup_nonreuse_custody.v1"
+)
 PHASE1_HELPER_MANIFEST_SCHEMA = (
     "plan_aware_monotone_jepa_cost_v2.phase_1_helper_manifest.v1"
 )
@@ -626,6 +634,10 @@ FOREGROUND_RUNTIME_IMPORT_AUTHORITY = {
         "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118"
     ),
     "resolved_executable_bytes": 8020928,
+    "resolved_executable_mode": 0o755,
+    "resolved_executable_uid": 0,
+    "resolved_executable_gid": 0,
+    "resolved_executable_nlink": 1,
     "modules": [
         {
             "module": "numpy",
@@ -639,6 +651,10 @@ FOREGROUND_RUNTIME_IMPORT_AUTHORITY = {
                 "2e8da3e4385e79c4885b3f7324a8b957e6f01732b239e99e266a12c62a008b8d"
             ),
             "bytes": 25946,
+            "mode": 0o664,
+            "uid": 1000,
+            "gid": 1000,
+            "nlink": 1,
         },
         {
             "module": "scipy",
@@ -652,6 +668,10 @@ FOREGROUND_RUNTIME_IMPORT_AUTHORITY = {
                 "39ccae300a4739cc53719bd3b39ce3f8f66e736c6eb672006e338a4c5cc3dc76"
             ),
             "bytes": 4193,
+            "mode": 0o664,
+            "uid": 1000,
+            "gid": 1000,
+            "nlink": 1,
         },
         {
             "module": "torch",
@@ -665,6 +685,10 @@ FOREGROUND_RUNTIME_IMPORT_AUTHORITY = {
                 "a75f512e441b3c35a63561a06a958c54ce917e3913913564a429adcbdbac6c3d"
             ),
             "bytes": 103060,
+            "mode": 0o664,
+            "uid": 1000,
+            "gid": 1000,
+            "nlink": 1,
         },
     ],
 }
@@ -785,6 +809,9 @@ TRACKED_ALLOW_LIST_PATH = Path(
 TRACKED_SOURCE_CLOSURE_PATH = Path(
     "docs/lewm_plan_aware_monotone_jepa_cost_v2_source_closure.json"
 )
+TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH = Path(
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_technical_correction_amendment.json"
+)
 TRACKED_RESULT_PATH = Path(
     "docs/lewm_plan_aware_monotone_jepa_cost_v2_result.json"
 )
@@ -804,6 +831,7 @@ AUTHORITY_PATHS = (
     str(TRACKED_OUTPUT_SCHEMA_PATH),
     str(TRACKED_ALLOW_LIST_PATH),
     str(TRACKED_SOURCE_CLOSURE_PATH),
+    str(TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH),
 )
 PRESENTATION_PUBLICATION_PATHS = (
     str(TRACKED_RESULT_PATH),
@@ -829,6 +857,23 @@ V2_SOURCE_CLOSURE_PATHS = (
     V2_CONTRACT_SOURCE_PATH,
     "scripts/evaluate_plan_aware_monotone_jepa_cost_v2.py",
     "lewm/tests/test_evaluate_plan_aware_monotone_jepa_cost_v2.py",
+    str(TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH),
+)
+
+TECHNICAL_CORRECTION_AMENDMENT_SHA256 = (
+    "6d7e54da65961a6563aea874395c5b0d7f5b67e336e09d8e362fd40646ddd396"
+)
+TECHNICAL_CORRECTION_AMENDMENT_BYTES = 7859
+TECHNICAL_CORRECTION_AMENDMENT_CONTENT_DIGEST = (
+    "1fedfe62ee9318fbfcb5a356f835a7ffe0df87b1ad8c16c27cf9025ef6553d1c"
+)
+TECHNICAL_CORRECTION_SOURCE_FREEZE_COMMIT = (
+    "92165c315cef5d214b8e0d48a7cf8636dc22afbf"
+)
+FAILED_TECHNICAL_STARTUP_ATTEMPT_ID = "v2-20260829-1"
+CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID = "v2-20260829-2"
+FAILED_TECHNICAL_STARTUP_ROOT = OUTPUT_ROOT.parent / (
+    f".{OUTPUT_ROOT.name}.attempt-{FAILED_TECHNICAL_STARTUP_ATTEMPT_ID}"
 )
 
 FROZEN_V1_SOURCE_BINDINGS = {
@@ -2599,7 +2644,11 @@ def build_attempt_accounting(
             presentation_retry_authority,
             expected_attempt=publication_attempt_number,
         )
-    technical = int(state != "REGISTERED")
+    # The immutable amendment records startup 1 as consumed before this
+    # corrected execution is accepted.  REGISTERED is the supervisor's
+    # prelaunch state for startup 2; every later state is after the exact
+    # unchanged public execute argv has consumed startup 2.
+    technical = 1 if state == "REGISTERED" else 2
     scientific_unknown = state == "UNKNOWN_NO_RETRY"
     scientific = (
         None
@@ -2624,8 +2673,25 @@ def build_attempt_accounting(
             "schema": ATTEMPT_ACCOUNTING_SCHEMA,
             "state": state,
             "technical_startup_attempt": {
-                "authorized": 1, "consumed": technical,
-                "remaining": 1 - technical,
+                "authorized": 2, "consumed": technical,
+                "remaining": 2 - technical,
+                "prior_failed_startup_attempts_consumed": 1,
+                "prior_failed_startup_attempt_id": (
+                    FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+                ),
+                "current_corrected_startup_attempt_number": 2,
+                "current_corrected_startup_attempt_id": (
+                    CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+                ),
+                "technical_correction_amendment_path": str(
+                    TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH
+                ),
+                "technical_correction_amendment_sha256": (
+                    TECHNICAL_CORRECTION_AMENDMENT_SHA256
+                ),
+                "technical_correction_amendment_content_digest": (
+                    TECHNICAL_CORRECTION_AMENDMENT_CONTENT_DIGEST
+                ),
                 "boundary": "exact public execute argv/cwd accepted before fallible startup validation",
             },
             "scientific_attempt": {
@@ -2775,6 +2841,9 @@ def observe_phase1_supervisor_prelaunch_namespace(
     attempt_id: str,
 ) -> dict[str, Any]:
     expected_phase1_supervisor_argv(attempt_id)
+    if attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID:
+        raise V2ContractError("corrected Phase-1 startup identity drift")
+    failed_nonreuse = observe_failed_technical_startup_nonreuse_custody()
     attempt_root = OUTPUT_ROOT.parent / f".{OUTPUT_ROOT.name}.attempt-{attempt_id}"
     paths = (
         OUTPUT_ROOT,
@@ -2798,7 +2867,11 @@ def observe_phase1_supervisor_prelaunch_namespace(
         str(path)
         for path in OUTPUT_ROOT.parent.glob(f".{OUTPUT_ROOT.name}.failed-*")
     )
-    if any(row["absent"] is not True for row in rows) or attempts or failures:
+    if (
+        any(row["absent"] is not True for row in rows)
+        or attempts != [str(FAILED_TECHNICAL_STARTUP_ROOT)]
+        or failures
+    ):
         raise V2ContractError("Phase-1 supervisor namespace is not fresh")
     return attach_self_digest(
         {
@@ -2809,7 +2882,20 @@ def observe_phase1_supervisor_prelaunch_namespace(
             "path_observations": rows,
             "matching_attempt_roots_before": attempts,
             "matching_failed_roots_before": failures,
-            "metadata_only": True,
+            "technical_correction_amendment_authority": failed_nonreuse[
+                "amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+            "failed_technical_startup_nonreuse_content_digest": (
+                failed_nonreuse["content_digest"]
+            ),
+            "attempt_accounting": build_attempt_accounting("REGISTERED"),
+            "prior_technical_startups_consumed": 1,
+            "corrected_technical_startup_attempt_number": 2,
+            "scientific_attempts_consumed": 0,
+            "namespace_metadata_only": True,
+            "failed_root_technical_bytes_opened_only_for_nonreuse_validation": True,
+            "scientific_inputs_opened": 0,
             "pass": True,
         }
     )
@@ -2821,7 +2907,13 @@ def validate_phase1_supervisor_prelaunch_namespace(
     validate_self_digest(value)
     attempt_id = value.get("attempt_id")
     expected_phase1_supervisor_argv(attempt_id)
+    if attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID:
+        raise V2ContractError("corrected Phase-1 prelaunch identity drift")
     attempt_root = OUTPUT_ROOT.parent / f".{OUTPUT_ROOT.name}.attempt-{attempt_id}"
+    failed_nonreuse = validate_failed_technical_startup_nonreuse_custody(
+        value.get("failed_technical_startup_nonreuse_custody"),
+        reverify_live=False,
+    )
     expected = attach_self_digest(
         {
             "schema": PHASE1_SUPERVISOR_PRELAUNCH_NAMESPACE_SCHEMA,
@@ -2837,9 +2929,24 @@ def validate_phase1_supervisor_prelaunch_namespace(
                     PRE_ROOT_FAILURE_CUSTODY_PATH,
                 )
             ],
-            "matching_attempt_roots_before": [],
+            "matching_attempt_roots_before": [
+                str(FAILED_TECHNICAL_STARTUP_ROOT)
+            ],
             "matching_failed_roots_before": [],
-            "metadata_only": True,
+            "technical_correction_amendment_authority": failed_nonreuse[
+                "amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+            "failed_technical_startup_nonreuse_content_digest": (
+                failed_nonreuse["content_digest"]
+            ),
+            "attempt_accounting": build_attempt_accounting("REGISTERED"),
+            "prior_technical_startups_consumed": 1,
+            "corrected_technical_startup_attempt_number": 2,
+            "scientific_attempts_consumed": 0,
+            "namespace_metadata_only": True,
+            "failed_root_technical_bytes_opened_only_for_nonreuse_validation": True,
+            "scientific_inputs_opened": 0,
             "pass": True,
         }
     )
@@ -2922,6 +3029,16 @@ def build_phase1_supervisor_prelaunch_handoff_payload(
             "attempt_id": attempt_id,
             "supervisor_process_identity": supervisor,
             "prelaunch_namespace_custody": prelaunch,
+            "technical_correction_amendment_authority": prelaunch[
+                "technical_correction_amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_content_digest": prelaunch[
+                "failed_technical_startup_nonreuse_content_digest"
+            ],
+            "attempt_accounting": build_attempt_accounting("REGISTERED"),
+            "prior_technical_startups_consumed": 1,
+            "corrected_technical_startup_attempt_number": 2,
+            "scientific_attempts_consumed": 0,
             "exact_outer_supervisor_argv": (
                 expected_phase1_supervisor_argv(attempt_id)
             ),
@@ -3129,6 +3246,9 @@ def observe_fresh_v2_namespace(attempt_id: str) -> dict[str, Any]:
 
     if not isinstance(attempt_id, str) or not _ATTEMPT_ID_RE.fullmatch(attempt_id):
         raise V2ContractError("attempt id drift")
+    if attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID:
+        raise V2ContractError("corrected V2 namespace identity drift")
+    failed_nonreuse = observe_failed_technical_startup_nonreuse_custody()
     attempt_root = OUTPUT_ROOT.parent / f".{OUTPUT_ROOT.name}.attempt-{attempt_id}"
     paths = [OUTPUT_ROOT, attempt_root]
     observations = []
@@ -3153,6 +3273,16 @@ def observe_fresh_v2_namespace(attempt_id: str) -> dict[str, Any]:
         "path_observations": observations,
         "matching_attempt_roots_before": matching_attempts,
         "matching_failed_roots_before": matching_failures,
+        "technical_correction_amendment_authority": failed_nonreuse[
+            "amendment_authority"
+        ],
+        "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+        "failed_technical_startup_nonreuse_content_digest": failed_nonreuse[
+            "content_digest"
+        ],
+        "attempt_accounting": build_attempt_accounting(
+            "TECHNICAL_STARTUP"
+        ),
     }
 
 
@@ -3164,8 +3294,20 @@ def build_namespace_and_nonreuse_receipt(
     ) != (
         "attempt_id", "attempt_root", "path_observations",
         "matching_attempt_roots_before", "matching_failed_roots_before",
+        "technical_correction_amendment_authority",
+        "failed_technical_startup_nonreuse_custody",
+        "failed_technical_startup_nonreuse_content_digest",
+        "attempt_accounting",
     ):
         raise V2ContractError("precreation namespace observation drift")
+    if attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID:
+        raise V2ContractError("corrected namespace receipt identity drift")
+    failed_nonreuse = validate_failed_technical_startup_nonreuse_custody(
+        precreation_observation[
+            "failed_technical_startup_nonreuse_custody"
+        ],
+        reverify_live=False,
+    )
     expected_root = OUTPUT_ROOT.parent / f".{OUTPUT_ROOT.name}.attempt-{attempt_id}"
     expected_rows = [
         {"path": str(OUTPUT_ROOT), "absent": True},
@@ -3175,8 +3317,18 @@ def build_namespace_and_nonreuse_receipt(
         precreation_observation["attempt_id"] != attempt_id
         or precreation_observation["attempt_root"] != str(expected_root)
         or precreation_observation["path_observations"] != expected_rows
-        or precreation_observation["matching_attempt_roots_before"] != []
+        or precreation_observation["matching_attempt_roots_before"] != [
+            str(FAILED_TECHNICAL_STARTUP_ROOT)
+        ]
         or precreation_observation["matching_failed_roots_before"] != []
+        or precreation_observation[
+            "technical_correction_amendment_authority"
+        ] != failed_nonreuse["amendment_authority"]
+        or precreation_observation[
+            "failed_technical_startup_nonreuse_content_digest"
+        ] != failed_nonreuse["content_digest"]
+        or precreation_observation["attempt_accounting"]
+        != build_attempt_accounting("TECHNICAL_STARTUP")
     ):
         raise V2ContractError("V2 namespace is not fresh")
     return attach_self_digest(
@@ -3189,7 +3341,27 @@ def build_namespace_and_nonreuse_receipt(
             "attempt_id": attempt_id,
             "attempt_root": str(expected_root),
             "precreation_observation": copy.deepcopy(precreation_observation),
+            "technical_correction_amendment_authority": failed_nonreuse[
+                "amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+            "failed_technical_startup_nonreuse_content_digest": (
+                failed_nonreuse["content_digest"]
+            ),
+            "prior_failed_technical_startup_attempt_id": (
+                FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "corrected_technical_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "attempt_accounting": build_attempt_accounting(
+                "TECHNICAL_STARTUP"
+            ),
             "failed_output_roots": list(FAILED_OUTPUT_ROOTS),
+            "failed_v2_technical_startup_root": str(
+                FAILED_TECHNICAL_STARTUP_ROOT
+            ),
+            "failed_v2_technical_startup_root_adopted_or_reused": False,
             "failed_output_files_opened_for_reuse": 0,
             "failed_checkpoint_score_selection_metric_or_report_reused": 0,
             "correction_replay_receipts_or_gates_used": False,
@@ -3588,6 +3760,543 @@ def _validate_claim_critical_read_observation(
     )
     if stat_row["size"] != value["bytes"]:
         raise V2ContractError("claim-critical read size drift")
+    return copy.deepcopy(value)
+
+
+def build_technical_correction_amendment_authority(
+    repo_root: str | Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Bind the sole amendment authorizing corrected technical startup 2."""
+
+    root = Path(repo_root)
+    payload, observation = (
+        _read_claim_critical_regular_file_anchored_no_follow(
+            repo_root=root,
+            relative_path=str(
+                TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH
+            ),
+            expected_sha256=TECHNICAL_CORRECTION_AMENDMENT_SHA256,
+            expected_bytes=TECHNICAL_CORRECTION_AMENDMENT_BYTES,
+        )
+    )
+    try:
+        amendment = json.loads(payload.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise V2ContractError(
+            "technical-correction amendment is not canonical JSON"
+        ) from exc
+    if (
+        type(amendment) is not dict
+        or (
+            json.dumps(
+                amendment, sort_keys=True, indent=2,
+                ensure_ascii=False, allow_nan=False,
+            ) + "\n"
+        ).encode("utf-8") != payload
+    ):
+        raise V2ContractError(
+            "technical-correction amendment canonical bytes drift"
+        )
+    validate_self_digest(amendment)
+    authorization = amendment.get("authorization")
+    failed = amendment.get("failed_startup")
+    defects = amendment.get("defects")
+    if (
+        amendment.get("schema")
+        != "plan_aware_monotone_jepa_cost_v2.technical_correction_amendment.v1"
+        or amendment.get("experiment_id") != EXPERIMENT_ID
+        or amendment.get("content_digest")
+        != TECHNICAL_CORRECTION_AMENDMENT_CONTENT_DIGEST
+        or amendment.get("correction_commit_must_descend_from")
+        != TECHNICAL_CORRECTION_SOURCE_FREEZE_COMMIT
+        or amendment.get("required_descendant_freeze_subject")
+        != V2_CONTRACT_FREEZE_COMMIT_SUBJECT
+        or amendment.get("correction_scope")
+        != "EXACTLY_THREE_PRE_SCIENCE_TECHNICAL_DEFECTS"
+        or type(defects) is not list
+        or len(defects) != 3
+        or type(authorization) is not dict
+        or authorization.get("authorized_corrected_technical_startups") != 1
+        or authorization.get("authorized_fresh_startup_identity")
+        != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        or authorization.get("scientific_attempts_authorized") != 1
+        or authorization.get("scientific_attempts_consumed_before_correction")
+        != 0
+        or authorization.get(
+            "no_further_technical_startup_automatically_authorized"
+        ) is not True
+        or type(failed) is not dict
+        or failed.get("attempt_id")
+        != FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+        or failed.get("attempt_root") != str(FAILED_TECHNICAL_STARTUP_ROOT)
+        or failed.get("scientific_attempt_consumed") is not False
+        or failed.get("preserve_immutable_untouched_nonreusable") is not True
+        or failed.get("reuse_any_failed_root_bytes") is not False
+    ):
+        raise V2ContractError("technical-correction amendment authority drift")
+    binding = build_artifact_binding(
+        path=str(TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH),
+        sha256=TECHNICAL_CORRECTION_AMENDMENT_SHA256,
+        bytes_count=TECHNICAL_CORRECTION_AMENDMENT_BYTES,
+        content_digest=TECHNICAL_CORRECTION_AMENDMENT_CONTENT_DIGEST,
+        rows=None,
+    )
+    return attach_self_digest(
+        {
+            "schema": TECHNICAL_CORRECTION_AMENDMENT_AUTHORITY_SCHEMA,
+            "experiment_id": EXPERIMENT_ID,
+            "amendment_binding": binding,
+            "amendment_read_observation": observation,
+            "amendment": amendment,
+            "failed_startup_attempt_id": (
+                FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "corrected_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "technical_startups_authorized_total": 2,
+            "scientific_attempts_authorized_total": 1,
+            "scientific_attempts_consumed_before_correction": 0,
+            "exact_three_pre_science_technical_defects_only": True,
+            "scientific_design_unchanged": True,
+            "pass": True,
+        }
+    )
+
+
+def validate_technical_correction_amendment_authority(
+    value: Mapping[str, Any], *, repo_root: str | Path = REPO_ROOT,
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    rebuilt = build_technical_correction_amendment_authority(repo_root)
+    if value != rebuilt:
+        raise V2ContractError("technical-correction authority mismatch")
+    return copy.deepcopy(value)
+
+
+def _failed_startup_stable_directory_row(
+    *, path: str, stat_result: os.stat_result,
+) -> dict[str, Any]:
+    extended = _validate_extended_stat_row(
+        _extended_stat_row(stat_result), expected_file_type="DIRECTORY"
+    )
+    return {
+        "path": path,
+        "stable_identity": {
+            key: extended[key]
+            for key in (
+                "device", "inode", "file_type", "mode", "uid", "gid"
+            )
+        },
+        "nlink_at_observation": extended["nlink"],
+        "directory_nlink_at_least_two_at_observation": True,
+    }
+
+
+def _validate_failed_startup_stable_directory_row(
+    value: Mapping[str, Any], *, expected_path: str,
+    expected_mode: int | None = None,
+) -> dict[str, Any]:
+    if not _has_exact_keys(value, (
+        "path", "stable_identity", "nlink_at_observation",
+        "directory_nlink_at_least_two_at_observation",
+    )) or (
+        value["path"] != expected_path
+        or type(value["nlink_at_observation"]) is not int
+        or value["nlink_at_observation"] < 2
+        or value["directory_nlink_at_least_two_at_observation"] is not True
+    ):
+        raise V2ContractError("failed-startup directory row drift")
+    identity = value["stable_identity"]
+    if not _has_exact_keys(identity, (
+        "device", "inode", "file_type", "mode", "uid", "gid",
+    )) or (
+        any(
+            type(identity[key]) is not int
+            for key in ("device", "inode", "mode", "uid", "gid")
+        )
+        or identity["device"] < 0
+        or identity["inode"] < 1
+        or identity["file_type"] != "DIRECTORY"
+        or identity["mode"] < 0
+        or identity["mode"] > 0o7777
+        or identity["uid"] < 0
+        or identity["gid"] < 0
+        or expected_mode is not None
+        and identity["mode"] != expected_mode
+    ):
+        raise V2ContractError("failed-startup directory identity drift")
+    return copy.deepcopy(value)
+
+
+def _read_failed_startup_inventory_leaf(
+    *, directory_fd: int, expected: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    path = expected["path"]
+    leaf = Path(path).name
+    descriptor = -1
+    try:
+        before = os.stat(leaf, dir_fd=directory_fd, follow_symlinks=False)
+        descriptor = _v2_os_open(
+            leaf, os.O_RDONLY | os.O_CLOEXEC | os.O_NOFOLLOW,
+            dir_fd=directory_fd,
+        )
+        opened = os.fstat(descriptor)
+        chunks: list[bytes] = []
+        while True:
+            chunk = os.read(descriptor, 1024 * 1024)
+            if not chunk:
+                break
+            chunks.append(chunk)
+        after_open = os.fstat(descriptor)
+        after_name = os.stat(
+            leaf, dir_fd=directory_fd, follow_symlinks=False
+        )
+        opened_row = _validate_extended_stat_row(
+            _extended_stat_row(opened), expected_file_type="REGULAR_FILE",
+            expected_mode=RUNTIME_FILE_MODE,
+            expected_uid=os.getuid(), expected_gid=os.getgid(),
+            expected_nlink=1,
+        )
+        if (
+            _extended_stat_row(before) != opened_row
+            or _extended_stat_row(after_open) != opened_row
+            or _extended_stat_row(after_name) != opened_row
+        ):
+            raise V2ContractError("failed-startup leaf changed during read")
+        payload = b"".join(chunks)
+        digest = hashlib.sha256(payload).hexdigest()
+        content_digest = expected["content_digest"]
+        if content_digest is not None:
+            try:
+                document = json.loads(payload.decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+                raise V2ContractError(
+                    "failed-startup content-digested leaf is not JSON"
+                ) from exc
+            if type(document) is not dict or document.get(
+                "content_digest"
+            ) != content_digest:
+                raise V2ContractError(
+                    "failed-startup leaf content digest drift"
+                )
+        if digest != expected["sha256"] or len(payload) != expected["bytes"]:
+            raise V2ContractError("failed-startup leaf binding drift")
+        return opened_row, build_artifact_binding(
+            path=path, sha256=digest, bytes_count=len(payload),
+            content_digest=content_digest, rows=None,
+        )
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+
+
+def observe_failed_technical_startup_nonreuse_custody(
+    *, repo_root: str | Path = REPO_ROOT,
+) -> dict[str, Any]:
+    """Reverify the exact failed technical root without adopting its bytes."""
+
+    amendment_authority = build_technical_correction_amendment_authority(
+        repo_root
+    )
+    amendment = amendment_authority["amendment"]
+    failed = amendment["failed_startup"]
+    expected_leaves = failed["exact_leaf_inventory"]
+    parent_fd = -1
+    root_fd = -1
+    directory_fds: dict[str, int] = {}
+    try:
+        parent_fd, component_rows = (
+            _open_absolute_directory_componentwise_no_follow(
+                FAILED_TECHNICAL_STARTUP_ROOT.parent
+            )
+        )
+        before = os.stat(
+            FAILED_TECHNICAL_STARTUP_ROOT.name,
+            dir_fd=parent_fd, follow_symlinks=False,
+        )
+        root_fd = _v2_os_open(
+            FAILED_TECHNICAL_STARTUP_ROOT.name,
+            os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW,
+            dir_fd=parent_fd,
+        )
+        opened = os.fstat(root_fd)
+        after = os.stat(
+            FAILED_TECHNICAL_STARTUP_ROOT.name,
+            dir_fd=parent_fd, follow_symlinks=False,
+        )
+        root_row = _failed_startup_stable_directory_row(
+            path=str(FAILED_TECHNICAL_STARTUP_ROOT), stat_result=opened
+        )
+        if (
+            _stable_identity_projection(_extended_stat_row(before))
+            != _stable_identity_projection(_extended_stat_row(opened))
+            or _stable_identity_projection(_extended_stat_row(opened))
+            != _stable_identity_projection(_extended_stat_row(after))
+            or root_row["stable_identity"] != failed["root_stable_identity"]
+            or root_row["nlink_at_observation"]
+            != failed["root_nlink_at_observation"]
+        ):
+            raise V2ContractError("failed-startup root identity drift")
+        observed_root_entries = sorted(os.listdir(root_fd))
+        expected_directories = failed["exact_directory_inventory"]
+        if observed_root_entries != expected_directories:
+            raise V2ContractError("failed-startup root inventory drift")
+        directory_rows = []
+        for relative in expected_directories:
+            before_directory = os.stat(
+                relative, dir_fd=root_fd, follow_symlinks=False
+            )
+            descriptor = _v2_os_open(
+                relative,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW,
+                dir_fd=root_fd,
+            )
+            opened_directory = os.fstat(descriptor)
+            after_directory = os.stat(
+                relative, dir_fd=root_fd, follow_symlinks=False
+            )
+            if (
+                _stable_identity_projection(
+                    _extended_stat_row(before_directory)
+                )
+                != _stable_identity_projection(
+                    _extended_stat_row(opened_directory)
+                )
+                or _stable_identity_projection(
+                    _extended_stat_row(opened_directory)
+                )
+                != _stable_identity_projection(
+                    _extended_stat_row(after_directory)
+                )
+            ):
+                os.close(descriptor)
+                raise V2ContractError(
+                    "failed-startup directory changed during open"
+                )
+            row = _failed_startup_stable_directory_row(
+                path=relative, stat_result=opened_directory
+            )
+            if (
+                row["stable_identity"]["mode"] != RUNTIME_DIRECTORY_MODE
+                or row["stable_identity"]["uid"] != os.getuid()
+                or row["stable_identity"]["gid"] != os.getgid()
+            ):
+                os.close(descriptor)
+                raise V2ContractError("failed-startup directory mode drift")
+            directory_rows.append(row)
+            directory_fds[relative] = descriptor
+        leaf_rows = []
+        for directory in expected_directories:
+            expected_names = sorted(
+                Path(row["path"]).name
+                for row in expected_leaves
+                if Path(row["path"]).parent == Path(directory)
+            )
+            if sorted(os.listdir(directory_fds[directory])) != expected_names:
+                raise V2ContractError(
+                    "failed-startup leaf namespace drift"
+                )
+        for expected in expected_leaves:
+            directory = str(Path(expected["path"]).parent)
+            stat_row, binding = _read_failed_startup_inventory_leaf(
+                directory_fd=directory_fds[directory], expected=expected
+            )
+            leaf_rows.append({
+                "path": expected["path"],
+                "stat_before_open_after": stat_row,
+                "artifact_binding": binding,
+            })
+        root_after = os.stat(
+            FAILED_TECHNICAL_STARTUP_ROOT.name,
+            dir_fd=parent_fd, follow_symlinks=False,
+        )
+        if (
+            _stable_identity_projection(_extended_stat_row(root_after))
+            != _stable_identity_projection(_extended_stat_row(opened))
+            or sorted(os.listdir(root_fd)) != expected_directories
+        ):
+            raise V2ContractError("failed-startup root changed during scan")
+        parent_stable_rows = [
+            {
+                "path": row["path"],
+                "stable_identity": {
+                    key: row["stat"][key]
+                    for key in (
+                        "device", "inode", "file_type", "mode", "uid", "gid"
+                    )
+                },
+                "nlink_at_observation": row["stat"]["nlink"],
+                "directory_nlink_at_least_two_at_observation": True,
+            }
+            for row in component_rows
+        ]
+        receipt = attach_self_digest({
+            "schema": FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA,
+            "experiment_id": EXPERIMENT_ID,
+            "amendment_authority": amendment_authority,
+            "failed_attempt_id": FAILED_TECHNICAL_STARTUP_ATTEMPT_ID,
+            "corrected_attempt_id": CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID,
+            "failed_attempt_root": str(FAILED_TECHNICAL_STARTUP_ROOT),
+            "parent_component_rows": parent_stable_rows,
+            "root_row": root_row,
+            "exact_directory_rows": directory_rows,
+            "exact_leaf_rows": leaf_rows,
+            "preexecution_receipt_absent": True,
+            "scientific_attempt_boundary_entry_absent": True,
+            "first_scientific_open_initiation_absent": True,
+            "first_scientific_open_receipt_absent": True,
+            "immutable_scientific_payload_absent": True,
+            "scientific_artifacts_absent": True,
+            "scientific_inputs_opened": 0,
+            "model_initializations": 0,
+            "failed_root_bytes_opened_only_for_nonreuse_validation": True,
+            "failed_root_bytes_adopted_or_reused": False,
+            "failed_root_preserved_immutable_untouched": True,
+            "exact_inventory_complete": True,
+            "all_components_opened_no_follow": True,
+            "pass": True,
+        })
+        validate_failed_technical_startup_nonreuse_custody(
+            receipt, repo_root=repo_root, reverify_live=False
+        )
+        return receipt
+    finally:
+        for descriptor in directory_fds.values():
+            os.close(descriptor)
+        if root_fd >= 0:
+            os.close(root_fd)
+        if parent_fd >= 0:
+            os.close(parent_fd)
+
+
+def validate_failed_technical_startup_nonreuse_custody(
+    value: Mapping[str, Any], *, repo_root: str | Path = REPO_ROOT,
+    reverify_live: bool = False,
+) -> dict[str, Any]:
+    validate_self_digest(value)
+    required = (
+        "schema", "experiment_id", "amendment_authority",
+        "failed_attempt_id", "corrected_attempt_id", "failed_attempt_root",
+        "parent_component_rows", "root_row", "exact_directory_rows",
+        "exact_leaf_rows", "preexecution_receipt_absent",
+        "scientific_attempt_boundary_entry_absent",
+        "first_scientific_open_initiation_absent",
+        "first_scientific_open_receipt_absent",
+        "immutable_scientific_payload_absent", "scientific_artifacts_absent",
+        "scientific_inputs_opened", "model_initializations",
+        "failed_root_bytes_opened_only_for_nonreuse_validation",
+        "failed_root_bytes_adopted_or_reused",
+        "failed_root_preserved_immutable_untouched",
+        "exact_inventory_complete", "all_components_opened_no_follow",
+        "pass", "content_digest",
+    )
+    if not _has_exact_keys(value, required) or (
+        value["schema"] != FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA
+        or value["experiment_id"] != EXPERIMENT_ID
+        or value["failed_attempt_id"]
+        != FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+        or value["corrected_attempt_id"]
+        != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        or value["failed_attempt_root"] != str(FAILED_TECHNICAL_STARTUP_ROOT)
+        or type(reverify_live) is not bool
+    ):
+        raise V2ContractError("failed-startup nonreuse custody drift")
+    authority = validate_technical_correction_amendment_authority(
+        value["amendment_authority"], repo_root=repo_root
+    )
+    failed = authority["amendment"]["failed_startup"]
+    parent_rows = value["parent_component_rows"]
+    if type(parent_rows) is not list or not parent_rows:
+        raise V2ContractError("failed-startup parent chain drift")
+    expected_parent_paths = ["/"]
+    traversed = Path("/")
+    for component in FAILED_TECHNICAL_STARTUP_ROOT.parent.parts[1:]:
+        traversed /= component
+        expected_parent_paths.append(str(traversed))
+    if [row.get("path") for row in parent_rows] != expected_parent_paths:
+        raise V2ContractError("failed-startup parent path sequence drift")
+    for row, expected_path in zip(parent_rows, expected_parent_paths):
+        _validate_failed_startup_stable_directory_row(
+            row, expected_path=expected_path
+        )
+    root_row = _validate_failed_startup_stable_directory_row(
+        value["root_row"], expected_path=str(FAILED_TECHNICAL_STARTUP_ROOT),
+        expected_mode=RUNTIME_DIRECTORY_MODE,
+    )
+    if (
+        root_row["stable_identity"] != failed["root_stable_identity"]
+        or root_row["nlink_at_observation"]
+        != failed["root_nlink_at_observation"]
+    ):
+        raise V2ContractError("failed-startup frozen root identity drift")
+    directories = value["exact_directory_rows"]
+    expected_directories = failed["exact_directory_inventory"]
+    if type(directories) is not list or [
+        row.get("path") for row in directories
+    ] != expected_directories:
+        raise V2ContractError("failed-startup directory inventory drift")
+    for row in directories:
+        normalized = _validate_failed_startup_stable_directory_row(
+            row, expected_path=row["path"],
+            expected_mode=RUNTIME_DIRECTORY_MODE,
+        )
+        if (
+            normalized["stable_identity"]["uid"] != os.getuid()
+            or normalized["stable_identity"]["gid"] != os.getgid()
+        ):
+            raise V2ContractError("failed-startup directory owner drift")
+    leaves = value["exact_leaf_rows"]
+    expected_leaves = failed["exact_leaf_inventory"]
+    if type(leaves) is not list or [row.get("path") for row in leaves] != [
+        row["path"] for row in expected_leaves
+    ]:
+        raise V2ContractError("failed-startup leaf inventory drift")
+    for row, expected in zip(leaves, expected_leaves):
+        if not _has_exact_keys(row, (
+            "path", "stat_before_open_after", "artifact_binding",
+        )):
+            raise V2ContractError("failed-startup leaf row schema drift")
+        stat_row = _validate_extended_stat_row(
+            row["stat_before_open_after"],
+            expected_file_type="REGULAR_FILE", expected_mode=RUNTIME_FILE_MODE,
+            expected_uid=os.getuid(), expected_gid=os.getgid(),
+            expected_nlink=1,
+        )
+        binding = validate_artifact_binding(
+            row["artifact_binding"], expected_path=expected["path"],
+            expected_rows=None,
+        )
+        if binding != build_artifact_binding(
+            path=expected["path"], sha256=expected["sha256"],
+            bytes_count=expected["bytes"],
+            content_digest=expected["content_digest"], rows=None,
+        ) or stat_row["size"] != binding["bytes"]:
+            raise V2ContractError("failed-startup leaf replay drift")
+    for field in (
+        "preexecution_receipt_absent",
+        "scientific_attempt_boundary_entry_absent",
+        "first_scientific_open_initiation_absent",
+        "first_scientific_open_receipt_absent",
+        "immutable_scientific_payload_absent", "scientific_artifacts_absent",
+        "failed_root_bytes_opened_only_for_nonreuse_validation",
+        "failed_root_preserved_immutable_untouched", "exact_inventory_complete",
+        "all_components_opened_no_follow", "pass",
+    ):
+        if value[field] is not True:
+            raise V2ContractError("failed-startup nonreuse assertion drift")
+    if (
+        value["scientific_inputs_opened"] != 0
+        or value["model_initializations"] != 0
+        or value["failed_root_bytes_adopted_or_reused"] is not False
+    ):
+        raise V2ContractError("failed-startup reuse prohibition drift")
+    if reverify_live:
+        live = observe_failed_technical_startup_nonreuse_custody(
+            repo_root=repo_root
+        )
+        if value != live:
+            raise V2ContractError("failed-startup live nonreuse drift")
     return copy.deepcopy(value)
 
 
@@ -7911,7 +8620,19 @@ def build_preexecution_receipt(
             REPO_ROOT, ("rev-parse", "HEAD")
         ).decode().strip()
         live_status = _git_bytes(REPO_ROOT, ("status", "--porcelain"))
-        if live_head != source_freeze_commit or live_status != b"":
+        _git_bytes(REPO_ROOT, (
+            "merge-base", "--is-ancestor",
+            TECHNICAL_CORRECTION_SOURCE_FREEZE_COMMIT,
+            source_freeze_commit,
+        ))
+        live_subject = _git_bytes(REPO_ROOT, (
+            "show", "-s", "--format=%s", source_freeze_commit,
+        )).decode().rstrip("\n")
+        if (
+            live_head != source_freeze_commit
+            or live_status != b""
+            or live_subject != V2_CONTRACT_FREEZE_COMMIT_SUBJECT
+        ):
             raise V2ContractError("PREEXEC live source/worktree drift")
         if any(
             not interpreter.resolve(strict=True).is_file()
@@ -7944,6 +8665,10 @@ def build_preexecution_receipt(
     nonreuse = validate_namespace_and_nonreuse_receipt(
         namespace_and_nonreuse_receipt, expected_attempt_id=attempt_id
     )
+    failed_nonreuse = validate_failed_technical_startup_nonreuse_custody(
+        nonreuse["failed_technical_startup_nonreuse_custody"],
+        reverify_live=reverify_live,
+    )
     root_fd_custody = validate_attempt_root_fd_custody(
         attempt_root_fd_custody
     )
@@ -7955,11 +8680,29 @@ def build_preexecution_receipt(
         static_input_metadata_snapshot
     )
     if (
-        producer["argv"] != list(PUBLIC_EXECUTE_ARGV)
+        attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        or producer["argv"] != list(PUBLIC_EXECUTE_ARGV)
         or supervisor_prelaunch["attempt_id"] != attempt_id
         or supervisor_handoff["attempt_id"] != attempt_id
         or supervisor_handoff["prelaunch_namespace_custody"]
         != supervisor_prelaunch
+        or supervisor_prelaunch[
+            "technical_correction_amendment_authority"
+        ] != failed_nonreuse["amendment_authority"]
+        or supervisor_prelaunch[
+            "failed_technical_startup_nonreuse_custody"
+        ] != failed_nonreuse
+        or supervisor_handoff[
+            "technical_correction_amendment_authority"
+        ] != failed_nonreuse["amendment_authority"]
+        or supervisor_handoff[
+            "failed_technical_startup_nonreuse_content_digest"
+        ] != failed_nonreuse["content_digest"]
+        or nonreuse["technical_correction_amendment_authority"]
+        != failed_nonreuse["amendment_authority"]
+        or nonreuse[
+            "failed_technical_startup_nonreuse_content_digest"
+        ] != failed_nonreuse["content_digest"]
         or supervisor_handoff["producer_process_identity"] != producer
         or handoff_binding["sha256"]
         != hashlib.sha256(handoff_bytes).hexdigest()
@@ -8010,6 +8753,13 @@ def build_preexecution_receipt(
             "schema": PREEXECUTION_RECEIPT_SCHEMA,
             "experiment_id": EXPERIMENT_ID,
             "source_freeze_commit": source_freeze_commit,
+            "technical_correction_source_freeze_ancestor": (
+                TECHNICAL_CORRECTION_SOURCE_FREEZE_COMMIT
+            ),
+            "source_freeze_commit_subject": (
+                V2_CONTRACT_FREEZE_COMMIT_SUBJECT
+            ),
+            "correction_commit_descends_from_original_source_freeze": True,
             "attempt_id": attempt_id,
             "attempt_root": nonreuse["attempt_root"],
             "supervisor_prelaunch_namespace_custody": supervisor_prelaunch,
@@ -8021,6 +8771,19 @@ def build_preexecution_receipt(
             "supervised_attempt_id_environment_value": attempt_id,
             "scientific_invariance_receipt": invariance,
             "namespace_and_nonreuse_receipt": nonreuse,
+            "technical_correction_amendment_authority": failed_nonreuse[
+                "amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+            "failed_technical_startup_nonreuse_content_digest": (
+                failed_nonreuse["content_digest"]
+            ),
+            "prior_failed_technical_startup_attempt_id": (
+                FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "corrected_technical_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
             "attempt_root_fd_custody": root_fd_custody,
             "foreground_runtime_import_custody": foreground_runtime,
             "static_input_metadata_snapshot": metadata_snapshot,
@@ -8497,6 +9260,8 @@ def build_foreground_runtime_import_authority() -> dict[str, Any]:
         not _has_exact_keys(authority, (
             "python_version", "invoked_executable", "resolved_executable",
             "resolved_executable_sha256", "resolved_executable_bytes",
+            "resolved_executable_mode", "resolved_executable_uid",
+            "resolved_executable_gid", "resolved_executable_nlink",
             "modules",
         ))
         or authority["invoked_executable"] != str(PYTHON_EXECUTABLE)
@@ -8505,6 +9270,10 @@ def build_foreground_runtime_import_authority() -> dict[str, Any]:
         )
         or type(authority["resolved_executable_bytes"]) is not int
         or authority["resolved_executable_bytes"] < 1
+        or authority["resolved_executable_mode"] != 0o755
+        or authority["resolved_executable_uid"] != 0
+        or authority["resolved_executable_gid"] != 0
+        or authority["resolved_executable_nlink"] != 1
         or [row["module"] for row in authority["modules"]]
         != ["numpy", "scipy", "torch"]
     ):
@@ -8513,7 +9282,7 @@ def build_foreground_runtime_import_authority() -> dict[str, Any]:
         if (
             not _has_exact_keys(row, (
                 "module", "distribution", "version", "path", "sha256",
-                "bytes",
+                "bytes", "mode", "uid", "gid", "nlink",
             ))
             or any(
                 type(row[key]) is not str or not row[key]
@@ -8525,6 +9294,10 @@ def build_foreground_runtime_import_authority() -> dict[str, Any]:
             or not _SHA256_RE.fullmatch(row["sha256"])
             or type(row["bytes"]) is not int
             or row["bytes"] < 1
+            or row["mode"] != 0o664
+            or row["uid"] != os.getuid()
+            or row["gid"] != os.getgid()
+            or row["nlink"] != 1
         ):
             raise V2ContractError("foreground module authority drift")
     return attach_self_digest(
@@ -8696,6 +9469,10 @@ def observe_phase1_foreground_runtime_import_custody(
             "sha256": frozen["resolved_executable_sha256"],
             "bytes": frozen["resolved_executable_bytes"],
             "content_digest": None,
+            "mode": frozen["resolved_executable_mode"],
+            "uid": frozen["resolved_executable_uid"],
+            "gid": frozen["resolved_executable_gid"],
+            "nlink": frozen["resolved_executable_nlink"],
         }
     )
     module_rows = []
@@ -8714,6 +9491,10 @@ def observe_phase1_foreground_runtime_import_custody(
                 "sha256": expected["sha256"],
                 "bytes": expected["bytes"],
                 "content_digest": None,
+                "mode": expected["mode"],
+                "uid": expected["uid"],
+                "gid": expected["gid"],
+                "nlink": expected["nlink"],
             }
         )
         module_rows.append(
@@ -9421,18 +10202,46 @@ TECHNICAL_CORRECTION_AUTHORITY = (
         "ordinary_four_key_validator_unchanged": True,
         "scientific_logic_changed": False,
     },
+    {
+        "id": "PRE_SCIENCE_TECHNICAL_CORRECTION_AMENDMENT_V1",
+        "amendment_path": str(
+            TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH
+        ),
+        "amendment_sha256": TECHNICAL_CORRECTION_AMENDMENT_SHA256,
+        "amendment_content_digest": (
+            TECHNICAL_CORRECTION_AMENDMENT_CONTENT_DIGEST
+        ),
+        "defect_ids": [
+            "V2-STARTUP-TECH-001-FOREGROUND-RUNTIME-METADATA",
+            "V2-STARTUP-TECH-002-BOOTSTRAP-ANCESTOR-OWNERSHIP",
+            "V2-STARTUP-TECH-003-ROOTED-DISPOSITION-SCHEMA-ASYMMETRY",
+        ],
+        "failed_startup_attempt_id": FAILED_TECHNICAL_STARTUP_ATTEMPT_ID,
+        "corrected_startup_attempt_id": (
+            CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+        ),
+        "scientific_attempts_consumed_before_correction": 0,
+        "scientific_logic_changed": False,
+    },
 )
 
 
 def build_allow_list() -> dict[str, Any]:
+    amendment_authority = build_technical_correction_amendment_authority()
+    allowed_new_paths = [
+        path for path in V2_SOURCE_CLOSURE_PATHS
+        if path not in FROZEN_V1_REUSED_SOURCE_PATHS
+        and path not in AUTHORITY_PATHS
+    ]
+    if sorted(set(allowed_new_paths) | set(AUTHORITY_PATHS)) != (
+        amendment_authority["amendment"]["changed_path_allow_list"]
+    ):
+        raise V2ContractError("technical-correction changed-path authority drift")
     return attach_self_digest(
         {
             "schema": ALLOW_LIST_SCHEMA,
             "experiment_id": EXPERIMENT_ID,
-            "allowed_new_paths": [
-                path for path in V2_SOURCE_CLOSURE_PATHS
-                if path not in FROZEN_V1_REUSED_SOURCE_PATHS
-            ],
+            "allowed_new_paths": allowed_new_paths,
             "allowed_generated_authority_paths": list(AUTHORITY_PATHS),
             "frozen_v1_source_paths": list(FROZEN_V1_REUSED_SOURCE_PATHS),
             "reused_v1_evaluator_symbols": list(REUSED_V1_EVALUATOR_SYMBOLS),
@@ -9460,6 +10269,7 @@ def build_allow_list() -> dict[str, Any]:
             "forbidden_v1_symbols": list(FORBIDDEN_V1_REPLAY_OR_DRIVER_SYMBOLS),
             "allowed_effects": [
                 "run one non-scientific root supervisor that launches the exact unchanged foreground Phase-1 argv in a new session",
+                "under the exact tracked technical-correction amendment preserve and revalidate failed startup v2-20260829-1 without adopting any byte then consume corrected technical startup v2-20260829-2",
                 "hand the sole attempt id and the exact self-digested prelaunch absence receipt to the foreground producer through a sealed read-once inherited memfd named only by the exact frozen V2 environment keys",
                 "capture and fsync the producer terminal observation before a distinct non-scientific terminal attestor replays it",
                 "transactionally publish rooted and pre-root terminal-observation bundles with exact created-subset rollback and persist UNKNOWN_NO_RETRY cleanup custody for every partial or unresolved namespace",
@@ -9499,6 +10309,7 @@ def build_allow_list() -> dict[str, Any]:
                 "change V1 models targets metrics gates seeds panels splits or classifications",
                 "run training inference or metric recomputation during presentation",
                 "create a second scientific attempt",
+                "run a third technical startup without a new explicit user authority",
                 "continue to a later phase from a failed ambiguous or incomplete-cleanup scientific-attempt disposition",
                 "claim deployment safety or non-development evidence",
             ],
@@ -9514,6 +10325,15 @@ def build_allow_list() -> dict[str, Any]:
             },
             "technical_corrections": copy.deepcopy(
                 list(TECHNICAL_CORRECTION_AUTHORITY)
+            ),
+            "technical_correction_amendment_authority": (
+                amendment_authority
+            ),
+            "failed_technical_startup_nonreuse_custody_schema": (
+                FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA
+            ),
+            "corrected_technical_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
             ),
             "diagnostic_or_outcome_inspection_authorized": False,
             "pass": True,
@@ -9540,8 +10360,19 @@ def build_contract(
     )
     closure = validate_source_closure(source_closure)
     allowed = validate_allow_list(allow_list)
+    amendment_authority = build_technical_correction_amendment_authority()
     if invariance["pass"] is not True or closure["complete"] is not True:
         raise V2ContractError("V2 authority gate failed")
+    amendment_rows = [
+        row for row in closure["rows"]
+        if row["path"] == str(TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH)
+    ]
+    if len(amendment_rows) != 1 or (
+        amendment_rows[0]["sha256"] != TECHNICAL_CORRECTION_AMENDMENT_SHA256
+        or amendment_rows[0]["bytes"]
+        != TECHNICAL_CORRECTION_AMENDMENT_BYTES
+    ):
+        raise V2ContractError("technical-correction source closure drift")
     return attach_self_digest(
         {
             "schema": CONTRACT_SCHEMA,
@@ -9551,6 +10382,18 @@ def build_contract(
             "v1_scientific_invariance_receipt": invariance,
             "source_closure": closure,
             "allow_list": allowed,
+            "technical_correction_amendment_authority": (
+                amendment_authority
+            ),
+            "failed_technical_startup_nonreuse_custody_schema": (
+                FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA
+            ),
+            "failed_technical_startup_attempt_id": (
+                FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "corrected_technical_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
             "public_execute_argv": list(PUBLIC_EXECUTE_ARGV),
             "phase_1_supervision": {
                 "outer_mode": PHASE1_SUPERVISOR_MODE,
@@ -9722,8 +10565,17 @@ def build_contract(
                 "result_commit_subject": V2_RESULT_COMMIT_SUBJECT,
             },
             "attempt_policy": {
-                "technical_startup_attempts": 1,
+                "technical_startup_attempts": 2,
+                "prior_failed_technical_startups_consumed": 1,
+                "corrected_technical_startup_attempt_number": 2,
+                "corrected_technical_startup_attempt_id": (
+                    CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+                ),
+                "third_technical_startup_automatically_authorized": False,
                 "scientific_attempts": 1,
+                "scientific_attempts_consumed_before_corrected_startup": 0,
+                "scientific_attempt_consumed_only_after_completed_first_open": True,
+                "failed_startup_root_must_remain_immutable_and_nonreusable": True,
                 "automatic_retry": False,
                 "presentation_retry_requires_explicit_authority": True,
                 "presentation_retry_reuses_only_exact_validated_payload": True,
@@ -9833,6 +10685,13 @@ def build_output_schema() -> dict[str, Any]:
             "independent_validation_schema": (
                 INDEPENDENT_PAYLOAD_VALIDATION_SCHEMA
             ),
+            "technical_correction_amendment_authority_schema": (
+                TECHNICAL_CORRECTION_AMENDMENT_AUTHORITY_SCHEMA
+            ),
+            "failed_technical_startup_nonreuse_custody_schema": (
+                FAILED_TECHNICAL_STARTUP_NONREUSE_CUSTODY_SCHEMA
+            ),
+            "tracked_authority_paths": list(AUTHORITY_PATHS),
             "artifact_binding_fields": list(ARTIFACT_BINDING_FIELDS),
             "static_input_audit_schemas": {
                 "open_event": STATIC_INPUT_OPEN_EVENT_SCHEMA,
@@ -10006,8 +10865,20 @@ def validate_output_schema(value: Mapping[str, Any]) -> dict[str, Any]:
 def build_authority_payloads(
     repo_root: str | Path = REPO_ROOT,
 ) -> dict[str, bytes]:
-    """Build, but never write, the exact five-file V2 authority set."""
+    """Build, but never write, the exact six-file V2 authority set."""
 
+    root = Path(repo_root)
+    amendment_bytes, _amendment_observation = (
+        _read_claim_critical_regular_file_anchored_no_follow(
+            repo_root=root,
+            relative_path=str(
+                TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH
+            ),
+            expected_sha256=TECHNICAL_CORRECTION_AMENDMENT_SHA256,
+            expected_bytes=TECHNICAL_CORRECTION_AMENDMENT_BYTES,
+        )
+    )
+    build_technical_correction_amendment_authority(root)
     invariance = build_scientific_invariance_receipt(repo_root)
     allow_list = build_allow_list()
     closure = build_source_closure(repo_root)
@@ -10032,6 +10903,7 @@ def build_authority_payloads(
         str(TRACKED_SOURCE_CLOSURE_PATH): (
             canonical_json_bytes(closure) + b"\n"
         ),
+        str(TRACKED_TECHNICAL_CORRECTION_AMENDMENT_PATH): amendment_bytes,
     }
 
 
@@ -11899,6 +12771,8 @@ def build_immutable_scientific_payload(
 ) -> dict[str, Any]:
     if not isinstance(attempt_id, str) or not _ATTEMPT_ID_RE.fullmatch(attempt_id):
         raise V2ContractError("attempt id drift")
+    if attempt_id != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID:
+        raise V2ContractError("corrected immutable payload identity drift")
     if not isinstance(source_freeze_commit, str) or not re.fullmatch(
         r"[0-9a-f]{40}", source_freeze_commit
     ):
@@ -11933,9 +12807,21 @@ def build_immutable_scientific_payload(
         scientific_decision=decision,
         artifact_bindings=artifacts,
     )
-    if components["values"]["preexecution_receipt"][
-        "source_freeze_commit"
-    ] != source_freeze_commit:
+    preexecution = components["values"]["preexecution_receipt"]
+    failed_nonreuse = validate_failed_technical_startup_nonreuse_custody(
+        nonreuse["failed_technical_startup_nonreuse_custody"],
+        reverify_live=False,
+    )
+    if (
+        preexecution["source_freeze_commit"] != source_freeze_commit
+        or preexecution["attempt_id"] != attempt_id
+        or preexecution["technical_correction_amendment_authority"]
+        != failed_nonreuse["amendment_authority"]
+        or preexecution["failed_technical_startup_nonreuse_custody"]
+        != failed_nonreuse
+        or nonreuse["technical_correction_amendment_authority"]
+        != failed_nonreuse["amendment_authority"]
+    ):
         raise V2ContractError("payload/PREEXEC source-freeze drift")
     _validate_scientific_counter_semantics(
         counters,
@@ -11952,6 +12838,19 @@ def build_immutable_scientific_payload(
             "source_freeze_commit": source_freeze_commit,
             "scientific_invariance_receipt": invariance,
             "namespace_and_nonreuse_receipt": nonreuse,
+            "technical_correction_amendment_authority": failed_nonreuse[
+                "amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_custody": failed_nonreuse,
+            "failed_technical_startup_nonreuse_content_digest": (
+                failed_nonreuse["content_digest"]
+            ),
+            "prior_failed_technical_startup_attempt_id": (
+                FAILED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
+            "corrected_technical_startup_attempt_id": (
+                CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
+            ),
             "attempt_accounting": accounting,
             "checkpoint_state_digests": copy.deepcopy(
                 checkpoint_state_digests
@@ -11977,6 +12876,11 @@ def validate_immutable_scientific_payload(
         "schema", "experiment_id", "source_experiment_id", "attempt_id",
         "source_freeze_commit",
         "scientific_invariance_receipt", "namespace_and_nonreuse_receipt",
+        "technical_correction_amendment_authority",
+        "failed_technical_startup_nonreuse_custody",
+        "failed_technical_startup_nonreuse_content_digest",
+        "prior_failed_technical_startup_attempt_id",
+        "corrected_technical_startup_attempt_id",
         "attempt_accounting", "checkpoint_state_digests",
         "artifact_bindings", "stage_execution", "scientific_decision",
         "scientific_component_payloads",
@@ -17465,6 +18369,8 @@ def build_phase1_supervisor_prelaunch_handoff_receipt(
     )
     if (
         producer["argv"] != list(PUBLIC_EXECUTE_ARGV)
+        or handoff["attempt_id"]
+        != CORRECTED_TECHNICAL_STARTUP_ATTEMPT_ID
         or producer["ppid"] != supervisor["pid"]
         or handoff["attempt_id"]
         != require_supervised_phase1_attempt_id(
@@ -17499,6 +18405,15 @@ def build_phase1_supervisor_prelaunch_handoff_receipt(
             "prelaunch_namespace_custody": handoff[
                 "prelaunch_namespace_custody"
             ],
+            "technical_correction_amendment_authority": handoff[
+                "technical_correction_amendment_authority"
+            ],
+            "failed_technical_startup_nonreuse_content_digest": handoff[
+                "failed_technical_startup_nonreuse_content_digest"
+            ],
+            "attempt_accounting": build_attempt_accounting(
+                "TECHNICAL_STARTUP"
+            ),
             "attempt_id_environment_name": (
                 PHASE1_SUPERVISOR_ATTEMPT_ID_ENVIRONMENT_NAME
             ),
@@ -23556,6 +24471,7 @@ def validate_terminal_scientific_attempt_disposition(
         expected_exit_schemas = {
             PHASE1_EXTERNAL_EXIT_OBSERVATION_SCHEMA,
             PRE_ROOT_PHASE1_SUPERVISOR_OBSERVATION_SCHEMA,
+            ROOTED_PHASE1_SUPERVISOR_FAILURE_OBSERVATION_SCHEMA,
         }
         if prior_digest is not None:
             raise V2ContractError("Phase-1 terminal disposition has prior")

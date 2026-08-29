@@ -654,21 +654,68 @@ def _load_attempt_root_custody_for_reopen(
     descriptor = os.open(
         "/", os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW
     )
+    parent_metadata: os.stat_result | None = None
+    root_metadata: os.stat_result | None = None
+
+    def stable_directory_identity(
+        value: os.stat_result,
+    ) -> tuple[int, int, int, int, int]:
+        return (
+            value.st_dev,
+            value.st_ino,
+            stat.S_IMODE(value.st_mode),
+            value.st_uid,
+            value.st_gid,
+        )
+
     try:
-        for part in root.parts[1:]:
-            next_fd = os.open(
-                part,
-                os.O_RDONLY | os.O_DIRECTORY | os.O_CLOEXEC | os.O_NOFOLLOW,
-                dir_fd=descriptor,
-            )
-            metadata = os.fstat(next_fd)
-            if (
-                not stat.S_ISDIR(metadata.st_mode)
-                or metadata.st_uid != os.getuid()
-                or metadata.st_gid != os.getgid()
-            ):
-                os.close(next_fd)
-                raise V2EvaluationError("attempt-root bootstrap component drift")
+        components = root.parts[1:]
+        for index, part in enumerate(components):
+            next_fd = -1
+            try:
+                before = os.stat(
+                    part, dir_fd=descriptor, follow_symlinks=False
+                )
+                next_fd = os.open(
+                    part,
+                    os.O_RDONLY
+                    | os.O_DIRECTORY
+                    | os.O_CLOEXEC
+                    | os.O_NOFOLLOW,
+                    dir_fd=descriptor,
+                )
+                opened = os.fstat(next_fd)
+                after = os.stat(
+                    part, dir_fd=descriptor, follow_symlinks=False
+                )
+                final_component = index == len(components) - 1
+                if (
+                    not all(
+                        stat.S_ISDIR(value.st_mode)
+                        for value in (before, opened, after)
+                    )
+                    or stable_directory_identity(before)
+                    != stable_directory_identity(opened)
+                    or stable_directory_identity(opened)
+                    != stable_directory_identity(after)
+                    or final_component
+                    and (
+                        stat.S_IMODE(opened.st_mode)
+                        != V2.ATTEMPT_ROOT_DIRECTORY_MODE
+                        or opened.st_uid != os.getuid()
+                        or opened.st_gid != os.getgid()
+                    )
+                ):
+                    raise V2EvaluationError(
+                        "attempt-root bootstrap component drift"
+                    )
+            except BaseException:
+                if next_fd >= 0:
+                    os.close(next_fd)
+                raise
+            if final_component:
+                parent_metadata = os.fstat(descriptor)
+                root_metadata = opened
             os.close(descriptor)
             descriptor = next_fd
         relative = V2.RUNTIME_PATHS["attempt_root_fd_custody"]
@@ -679,7 +726,23 @@ def _load_attempt_root_custody_for_reopen(
         custody = V2.validate_attempt_root_fd_custody(
             value, reverify_live=False
         )
-        if custody["attempt_root"] != str(root):
+        if parent_metadata is None or root_metadata is None:
+            raise V2EvaluationError("attempt-root bootstrap identity absent")
+        historical_parent = custody["parent_stat"]
+        historical_root = custody["root_stat"]
+        if (
+            custody["attempt_root"] != str(root)
+            or stable_directory_identity(parent_metadata)
+            != tuple(
+                historical_parent[key]
+                for key in ("device", "inode", "mode", "uid", "gid")
+            )
+            or stable_directory_identity(root_metadata)
+            != tuple(
+                historical_root[key]
+                for key in ("device", "inode", "mode", "uid", "gid")
+            )
+        ):
             raise V2EvaluationError("historical attempt-root custody drift")
         return custody
     finally:
@@ -3611,6 +3674,27 @@ def supervise_phase_1_execution(attempt_id: str) -> dict[str, Any]:
     ):
         raise V2EvaluationError("Phase-1 supervisor identity drift")
     prelaunch = V2.observe_phase1_supervisor_prelaunch_namespace(attempt_id)
+    amendment = V2.validate_technical_correction_amendment_authority(
+        prelaunch["technical_correction_amendment_authority"]
+    )
+    failed_nonreuse = (
+        V2.validate_failed_technical_startup_nonreuse_custody(
+            prelaunch["failed_technical_startup_nonreuse_custody"],
+            reverify_live=True,
+        )
+    )
+    if (
+        amendment != failed_nonreuse["amendment_authority"]
+        or amendment
+        != prelaunch["technical_correction_amendment_authority"]
+        or failed_nonreuse["content_digest"]
+        != prelaunch[
+            "failed_technical_startup_nonreuse_content_digest"
+        ]
+    ):
+        raise V2EvaluationError(
+            "Phase-1 corrected-startup nonreuse custody drift"
+        )
     handoff_fd, handoff_custody = (
         V2.create_phase1_supervisor_prelaunch_handoff_memfd(
             attempt_id=attempt_id,
