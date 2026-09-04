@@ -10,7 +10,9 @@ Genesis scene, robot, camera, and per-leg foot link handles in LeWM order.
 
 Genesis API surface used:
 
-- ``gs.init(backend=...)`` (process-global, called once via ``initialize_genesis``)
+- ``gs.init(backend=...)`` (process-global, called once per active lifecycle
+  via ``initialize_genesis``)
+- ``gs.destroy()`` (process-global, called via ``shutdown_genesis``)
 - ``gs.Scene`` with ``SimOptions(dt=...)``
 - ``gs.morphs.Plane``, ``gs.morphs.Box``, ``gs.morphs.URDF``
 - ``scene.add_camera`` and ``scene.add_entity``
@@ -57,10 +59,11 @@ def _import_genesis():
 def initialize_genesis(backend: str = "auto", seed: int | None = None, logging_level: int | None = None) -> None:
     """Idempotently initialize Genesis with the requested backend.
 
-    Subsequent calls are no-ops. ``backend="auto"`` can be overridden with
-    ``GS_BACKEND`` and otherwise follows the v2 preference order. Explicit
-    backend requests fail loudly if the installed Genesis package does not
-    expose that backend.
+    Subsequent calls during the same active lifecycle are no-ops.  A call
+    after :func:`shutdown_genesis` starts a fresh lifecycle. ``backend="auto"``
+    can be overridden with ``GS_BACKEND`` and otherwise follows the v2
+    preference order. Explicit backend requests fail loudly if the installed
+    Genesis package does not expose that backend.
     """
 
     global _GENESIS_INITIALIZED
@@ -77,6 +80,26 @@ def initialize_genesis(backend: str = "auto", seed: int | None = None, logging_l
         init_kwargs["logging_level"] = logging_level
     gs.init(**init_kwargs)
     _GENESIS_INITIALIZED = True
+
+
+def shutdown_genesis() -> None:
+    """Destroy the initialized process-global Genesis runtime, if any.
+
+    Genesis documents :func:`genesis.destroy` as the matching lifecycle
+    boundary for :func:`genesis.init`.  Keep this module's idempotence flag in
+    sync even when native shutdown raises, so a caller never mistakes a torn
+    down runtime for an initialized one.
+    """
+
+    global _GENESIS_INITIALIZED
+    if not _GENESIS_INITIALIZED:
+        return
+
+    try:
+        gs = _import_genesis()
+        gs.destroy()
+    finally:
+        _GENESIS_INITIALIZED = False
 
 
 def _resolve_backend(gs, backend_name: str):
