@@ -1,0 +1,76 @@
+{
+  "status": "POSTHOC_FROZEN_GATE_DIAGNOSTIC",
+  "failed_frame": 1809,
+  "reference_frame": 1787,
+  "captured_gate": {
+    "inlier_fraction": 0.5,
+    "inliers": 24,
+    "lifted_matches": 48,
+    "reference_grid_cells": 6,
+    "current_grid_cells": 5,
+    "reference_translation_m": 0.0031968008120999833,
+    "failed_gates": {
+      "inlier_fraction": true,
+      "grid_support": true,
+      "reference_translation": false
+    }
+  },
+  "reconstructed_error": "rigid consensus fraction, grid support or displacement rejected",
+  "recorded_error": {
+    "decision_ns": 182400000000,
+    "chain": [
+      "multi-reference RGBD pose unavailable; terminal failure",
+      "no recent reference passes unchanged registration and increment gates"
+    ]
+  },
+  "fixed_recent_keyframe_candidates": [
+    {
+      "reference_frame": 1732,
+      "status": "REJECTED",
+      "reason": "insufficient rigid-pose matches"
+    },
+    {
+      "reference_frame": 1734,
+      "status": "REJECTED",
+      "reason": "insufficient rigid consensus after pruning"
+    },
+    {
+      "reference_frame": 1747,
+      "status": "REJECTED",
+      "reason": "insufficient rigid-pose matches"
+    },
+    {
+      "reference_frame": 1759,
+      "status": "REJECTED",
+      "reason": "rigid consensus fraction, grid support or displacement rejected"
+    },
+    {
+      "reference_frame": 1766,
+      "status": "REJECTED",
+      "reason": "rigid consensus fraction, grid support or displacement rejected"
+    },
+    {
+      "reference_frame": 1773,
+      "status": "REJECTED",
+      "reason": "insufficient rigid consensus after pruning"
+    },
+    {
+      "reference_frame": 1782,
+      "status": "REJECTED",
+      "reason": "rigid consensus fraction, grid support or displacement rejected"
+    },
+    {
+      "reference_frame": 1787,
+      "status": "REJECTED",
+      "reason": "rigid consensus fraction, grid support or displacement rejected"
+    }
+  ],
+  "per_trial_result_sha256": "d461cafc28579a842b34b310fc56ae9789bccdd2ccefd4cd1629a219873c551b",
+  "decisions_sha256": "233c6f42c635cbf601ff94c635df0ce0e87b4e154953b3b6d2d121e0ea393ec5",
+  "inputs_unchanged": true,
+  "estimator_modified": false,
+  "native_pose_used_for_registration": false,
+  "native_pose_used_for_posthoc_evaluation_only": true,
+  "independently_raw_audited": false,
+  "navigation_qualified": false
+}

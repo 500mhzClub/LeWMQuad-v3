@@ -1,0 +1,300 @@
+{
+  "trial_identities": {
+    "launch.json": "874ae72a44e99dee15fbaf0a6c5c826ec1f9d427b23bd852780453d645e3491f",
+    "result.json": "c39ddd478788e3053f0484928a8ff06ca736cbb86a26f9552200711d0063171f",
+    "raw_artifact_audit.json": "2f6a6d8c257b20990e5a587a57d97ff3321b44c1c8a370fdba2c27fa01f82b46"
+  },
+  "execution_metrics": {
+    "artifact_count": 171,
+    "prediction_status_counts": {
+      "SCORED_EXECUTED_FUTURE": 112
+    },
+    "horizons": {
+      "0.1": {
+        "body_translation_error_m": {
+          "mean": 0.003831684938714458,
+          "max": 0.012138301024928558
+        },
+        "body_rotation_error_rad": {
+          "mean": 0.011220582806194894,
+          "max": 0.04094732856422851
+        },
+        "maximum_joint_error_rad": {
+          "mean": 0.04557014967181853,
+          "max": 0.18070735931396487
+        },
+        "maximum_primitive_point_error_upper_bound_m": {
+          "mean": 0.020447803712673233,
+          "max": 0.07067135968912192
+        },
+        "n": 28
+      },
+      "0.2": {
+        "body_translation_error_m": {
+          "mean": 0.006618648465546255,
+          "max": 0.01987716288784322
+        },
+        "body_rotation_error_rad": {
+          "mean": 0.017899741868999168,
+          "max": 0.05915865518239938
+        },
+        "maximum_joint_error_rad": {
+          "mean": 0.10462607341053497,
+          "max": 0.44384531974792485
+        },
+        "maximum_primitive_point_error_upper_bound_m": {
+          "mean": 0.04226477719303438,
+          "max": 0.1731057905296504
+        },
+        "n": 28
+      },
+      "0.3": {
+        "body_translation_error_m": {
+          "mean": 0.008813108625670491,
+          "max": 0.025053312830866568
+        },
+        "body_rotation_error_rad": {
+          "mean": 0.02127196263944644,
+          "max": 0.07047234595984114
+        },
+        "maximum_joint_error_rad": {
+          "mean": 0.16623910696528452,
+          "max": 0.6895809292793275
+        },
+        "maximum_primitive_point_error_upper_bound_m": {
+          "mean": 0.0653024901612359,
+          "max": 0.2657754867680785
+        },
+        "n": 28
+      },
+      "0.4": {
+        "body_translation_error_m": {
+          "mean": 0.010209185337386658,
+          "max": 0.028597020263681067
+        },
+        "body_rotation_error_rad": {
+          "mean": 0.023707639248620464,
+          "max": 0.06978720495706334
+        },
+        "maximum_joint_error_rad": {
+          "mean": 0.21876100402857576,
+          "max": 0.9345166444778443
+        },
+        "maximum_primitive_point_error_upper_bound_m": {
+          "mean": 0.08486685920728933,
+          "max": 0.3450688985014646
+        },
+        "n": 28
+      }
+    },
+    "segments": [
+      {
+        "start_s": 2.9,
+        "end_s": 3.5,
+        "displacement_m": 0.050864633836021335,
+        "path_m": 0.05158441898419355,
+        "max_speed_m_s": 0.14951975033455162
+      },
+      {
+        "start_s": 3.5,
+        "end_s": 3.9,
+        "displacement_m": 0.004758041421386312,
+        "path_m": 0.010233353695070172,
+        "max_speed_m_s": 0.08920700942868193
+      },
+      {
+        "start_s": 3.9,
+        "end_s": 4.3,
+        "displacement_m": 0.011577132848254238,
+        "path_m": 0.013702746171507438,
+        "max_speed_m_s": 0.06133213259424309
+      },
+      {
+        "start_s": 4.3,
+        "end_s": 4.7,
+        "displacement_m": 0.0030850364778372795,
+        "path_m": 0.006256553379832183,
+        "max_speed_m_s": 0.04580780831256506
+      },
+      {
+        "start_s": 4.7,
+        "end_s": 5.3,
+        "displacement_m": 0.05560868061912486,
+        "path_m": 0.05597361111776306,
+        "max_speed_m_s": 0.12951601334206944
+      },
+      {
+        "start_s": 5.3,
+        "end_s": 5.7,
+        "displacement_m": 0.00597616505636132,
+        "path_m": 0.021018771019422327,
+        "max_speed_m_s": 0.14238638378697727
+      },
+      {
+        "start_s": 5.7,
+        "end_s": 6,
+        "displacement_m": 0.010199664969033127,
+        "path_m": 0.0102060470997484,
+        "max_speed_m_s": 0.04461393467884254
+      }
+    ],
+    "active_max_base_speed_m_s": 0.14951975033455162,
+    "motion_net_displacement_m": 0.10101533935372284,
+    "component_wall_ms": {
+      "min": 180.20953587256372,
+      "median": 235.36489403340966,
+      "max": 265.091929002665,
+      "over100": 43,
+      "count": 43
+    },
+    "envelopes": {
+      "count": 29,
+      "full": 28,
+      "max_excess": -0.47927941305701544
+    },
+    "depth_rays": 129254,
+    "max_depth_error_m": 0.00006601161748021056
+  },
+  "posthoc_posture_comparison": {
+    "scope": "posthoc posture-only baseline diagnostic; same executed commands and ideal body forecasts; not independent validation or model selection proof",
+    "summary": [
+      {
+        "mode": "velocity_persistence",
+        "horizon_s": 0.1,
+        "n": 28,
+        "mean_max_centre_error_m": 0.01903005658502063,
+        "max_centre_error_m": 0.06446507097837875,
+        "max_point_error_upper_bound_m": 0.07067135968912192,
+        "centre_errors_over_50mm": 1,
+        "worst": {
+          "mode": "velocity_persistence",
+          "horizon_s": 0.1,
+          "motion_index": 24,
+          "centre_lower_bound_m": 0.06446507097837875,
+          "point_upper_bound_m": 0.07067135968912192,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "velocity_persistence",
+        "horizon_s": 0.2,
+        "n": 28,
+        "mean_max_centre_error_m": 0.039555082516813576,
+        "max_centre_error_m": 0.1587495706129594,
+        "max_point_error_upper_bound_m": 0.1731057905296504,
+        "centre_errors_over_50mm": 8,
+        "worst": {
+          "mode": "velocity_persistence",
+          "horizon_s": 0.2,
+          "motion_index": 24,
+          "centre_lower_bound_m": 0.1587495706129594,
+          "point_upper_bound_m": 0.1731057905296504,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "velocity_persistence",
+        "horizon_s": 0.3,
+        "n": 28,
+        "mean_max_centre_error_m": 0.06088116927597668,
+        "max_centre_error_m": 0.24384806733595765,
+        "max_point_error_upper_bound_m": 0.2657754867680785,
+        "centre_errors_over_50mm": 11,
+        "worst": {
+          "mode": "velocity_persistence",
+          "horizon_s": 0.30000000000000004,
+          "motion_index": 24,
+          "centre_lower_bound_m": 0.24384806733595765,
+          "point_upper_bound_m": 0.2657754867680785,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "velocity_persistence",
+        "horizon_s": 0.4,
+        "n": 28,
+        "mean_max_centre_error_m": 0.07920593776251365,
+        "max_centre_error_m": 0.31647998729240706,
+        "max_point_error_upper_bound_m": 0.3450688985014646,
+        "centre_errors_over_50mm": 15,
+        "worst": {
+          "mode": "velocity_persistence",
+          "horizon_s": 0.4,
+          "motion_index": 24,
+          "centre_lower_bound_m": 0.31647998729240706,
+          "point_upper_bound_m": 0.3450688985014646,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "position_persistence",
+        "horizon_s": 0.1,
+        "n": 28,
+        "mean_max_centre_error_m": 0.014432665226873224,
+        "max_centre_error_m": 0.0445190151318926,
+        "max_point_error_upper_bound_m": 0.04812374330296299,
+        "centre_errors_over_50mm": 0,
+        "worst": {
+          "mode": "position_persistence",
+          "horizon_s": 0.1,
+          "motion_index": 3,
+          "centre_lower_bound_m": 0.0445190151318926,
+          "point_upper_bound_m": 0.04812374330296299,
+          "worst_centre_shape": "RR_foot:0"
+        }
+      },
+      {
+        "mode": "position_persistence",
+        "horizon_s": 0.2,
+        "n": 28,
+        "mean_max_centre_error_m": 0.023771879713714857,
+        "max_centre_error_m": 0.07167477190293702,
+        "max_point_error_upper_bound_m": 0.07673576856198511,
+        "centre_errors_over_50mm": 1,
+        "worst": {
+          "mode": "position_persistence",
+          "horizon_s": 0.2,
+          "motion_index": 23,
+          "centre_lower_bound_m": 0.07167477190293702,
+          "point_upper_bound_m": 0.07673576856198511,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "position_persistence",
+        "horizon_s": 0.3,
+        "n": 28,
+        "mean_max_centre_error_m": 0.029096774699584962,
+        "max_centre_error_m": 0.07183124595005222,
+        "max_point_error_upper_bound_m": 0.07685940694769534,
+        "centre_errors_over_50mm": 2,
+        "worst": {
+          "mode": "position_persistence",
+          "horizon_s": 0.30000000000000004,
+          "motion_index": 23,
+          "centre_lower_bound_m": 0.07183124595005222,
+          "point_upper_bound_m": 0.07685940694769534,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      },
+      {
+        "mode": "position_persistence",
+        "horizon_s": 0.4,
+        "n": 28,
+        "mean_max_centre_error_m": 0.03343889172581671,
+        "max_centre_error_m": 0.07171962119063176,
+        "max_point_error_upper_bound_m": 0.07681871300439369,
+        "centre_errors_over_50mm": 4,
+        "worst": {
+          "mode": "position_persistence",
+          "horizon_s": 0.4,
+          "motion_index": 23,
+          "centre_lower_bound_m": 0.07171962119063176,
+          "point_upper_bound_m": 0.07681871300439369,
+          "worst_centre_shape": "FR_foot:0"
+        }
+      }
+    ]
+  },
+  "scope": "Derived descriptive summaries from one frozen identification trace; overlapping horizons are not independent trials. Component timing excludes packet assembly/bookkeeping. No fit or independent validation."
+}

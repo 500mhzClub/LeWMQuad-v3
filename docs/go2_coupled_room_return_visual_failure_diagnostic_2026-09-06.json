@@ -1,0 +1,223 @@
+{
+  "nominal_left": {
+    "status": "POSTHOC_FROZEN_GATE_DIAGNOSTIC",
+    "failed_frame": 1677,
+    "reference_frame": 1656,
+    "captured_gate": {
+      "inlier_fraction": 0.8395061728395061,
+      "inliers": 68,
+      "lifted_matches": 81,
+      "reference_grid_cells": 8,
+      "current_grid_cells": 5,
+      "reference_translation_m": 0.014149841510026427,
+      "failed_gates": {
+        "inlier_fraction": false,
+        "grid_support": true,
+        "reference_translation": false
+      }
+    },
+    "reconstructed_error": "rigid consensus fraction, grid support or displacement rejected",
+    "recorded_error": {
+      "decision_ns": 169200000000,
+      "chain": [
+        "rigid RGBD pose unavailable; terminal failure",
+        "rigid consensus fraction, grid support or displacement rejected"
+      ]
+    },
+    "fixed_recent_keyframe_candidates": [
+      {
+        "reference_frame": 1515,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1545,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1554,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1578,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1604,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1652,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 1654,
+        "status": "UNCHANGED_PAIR_GATES_PASS",
+        "position_initial_body_m": [
+          0.09581455637303801,
+          -0.012174632588957584,
+          0.000686681042887042
+        ],
+        "quality": {
+          "reference_scatter_rms_m": [
+            0.7031193813865129,
+            0.3140628194041451,
+            0.16430566212002035
+          ],
+          "current_scatter_rms_m": [
+            0.7029904884588065,
+            0.3134901404924939,
+            0.16419579187807115
+          ],
+          "mode": "gyro",
+          "lifted_matches": 80,
+          "inliers": 67,
+          "inlier_fraction": 0.8375,
+          "reference_grid_cells": 6,
+          "current_grid_cells": 6,
+          "residual_rms_m": 0.0035143314984224417,
+          "valid_proposals": 118,
+          "initial_consensus_points": 71,
+          "pruning_rounds": 2,
+          "gyro_disagreement_rad": 0,
+          "matched_consensus_rules": true,
+          "pose_error_bound": null,
+          "conditioning_is_not_covariance": true
+        },
+        "increment_from_last_visual_m": 0.003491111756234819,
+        "increment_bound_pass": true,
+        "evaluator_only_native_position_error_m": 0.007622386733589853
+      },
+      {
+        "reference_frame": 1656,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      }
+    ],
+    "per_trial_result_sha256": "607582540f18273aa0b5322cc4eb69f0b4166c482f325ea3b1c9937e270822e3",
+    "decisions_sha256": "fa97e53adee2f1f06883a3c76df1de8fffcc091c36bba69208773dad986b46aa",
+    "inputs_unchanged": true,
+    "estimator_modified": false,
+    "native_pose_used_for_registration": false,
+    "native_pose_used_for_posthoc_evaluation_only": true,
+    "independently_raw_audited": false,
+    "navigation_qualified": false
+  },
+  "nominal_right": {
+    "status": "NO_TERMINAL_VISUAL_FAILURE"
+  },
+  "lower_friction_left": {
+    "status": "POSTHOC_FROZEN_GATE_DIAGNOSTIC",
+    "failed_frame": 366,
+    "reference_frame": 317,
+    "captured_gate": {
+      "inlier_fraction": 0.8,
+      "inliers": 60,
+      "lifted_matches": 75,
+      "reference_grid_cells": 6,
+      "current_grid_cells": 5,
+      "reference_translation_m": 0.023862402438588826,
+      "failed_gates": {
+        "inlier_fraction": false,
+        "grid_support": true,
+        "reference_translation": false
+      }
+    },
+    "reconstructed_error": "rigid consensus fraction, grid support or displacement rejected",
+    "recorded_error": {
+      "decision_ns": 38100000000,
+      "chain": [
+        "rigid RGBD pose unavailable; terminal failure",
+        "rigid consensus fraction, grid support or displacement rejected"
+      ]
+    },
+    "fixed_recent_keyframe_candidates": [
+      {
+        "reference_frame": 146,
+        "status": "REJECTED",
+        "reason": "insufficient rigid consensus after pruning"
+      },
+      {
+        "reference_frame": 170,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 175,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 243,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 245,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 248,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      },
+      {
+        "reference_frame": 270,
+        "status": "UNCHANGED_PAIR_GATES_PASS",
+        "position_initial_body_m": [
+          0.3320842194067595,
+          0.24743716377313507,
+          0.007472624930750965
+        ],
+        "quality": {
+          "reference_scatter_rms_m": [
+            0.6374212376675938,
+            0.42821205359487,
+            0.17542052090289456
+          ],
+          "current_scatter_rms_m": [
+            0.6378088146551434,
+            0.4286935863433787,
+            0.1755599812526548
+          ],
+          "mode": "gyro",
+          "lifted_matches": 63,
+          "inliers": 54,
+          "inlier_fraction": 0.8571428571428571,
+          "reference_grid_cells": 6,
+          "current_grid_cells": 6,
+          "residual_rms_m": 0.0038867126318106564,
+          "valid_proposals": 121,
+          "initial_consensus_points": 57,
+          "pruning_rounds": 2,
+          "gyro_disagreement_rad": 0,
+          "matched_consensus_rules": true,
+          "pose_error_bound": null,
+          "conditioning_is_not_covariance": true
+        },
+        "increment_from_last_visual_m": 0.001481435981381364,
+        "increment_bound_pass": true,
+        "evaluator_only_native_position_error_m": 0.002566579525290192
+      },
+      {
+        "reference_frame": 317,
+        "status": "REJECTED",
+        "reason": "rigid consensus fraction, grid support or displacement rejected"
+      }
+    ],
+    "per_trial_result_sha256": "a94521a40859a416469c9d3929f777e03437cfe0fa817bcc2023edab8e616f9b",
+    "decisions_sha256": "a25bf24e163277022b9554283ed38dfa5284cf59eedf74ca9290ac2bfe798abb",
+    "inputs_unchanged": true,
+    "estimator_modified": false,
+    "native_pose_used_for_registration": false,
+    "native_pose_used_for_posthoc_evaluation_only": true,
+    "independently_raw_audited": false,
+    "navigation_qualified": false
+  }
+}

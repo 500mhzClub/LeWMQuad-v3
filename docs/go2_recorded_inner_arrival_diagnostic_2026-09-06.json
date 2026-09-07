@@ -1,0 +1,814 @@
+{
+  "status": "RECORDED_ARRIVAL_INNER_REGION_DIAGNOSTIC",
+  "conditions": {
+    "nominal_left": [
+      {
+        "tick": 199,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 0,
+        "start": [
+          0.39025990678212635,
+          0.025089536409255098,
+          0.03745057310495041
+        ],
+        "target": [
+          0.4,
+          0,
+          0
+        ],
+        "old_visual_position_error_m": 0.026913830145934372,
+        "remaining_local_pulses": 28,
+        "remaining_mission_pulses": 133,
+        "remaining_local_ticks": 801,
+        "remaining_mission_ticks": 3401,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.39025990678212635,
+            0.025089536409255098,
+            0.03745057310495041
+          ],
+          "predicted_position_error_m": 0.026913830145934372,
+          "predicted_yaw_error_rad": 0.03745057310495041,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 514,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 199,
+        "start": [
+          0.4366091253650506,
+          0.03882040866119665,
+          1.6319297516929394
+        ],
+        "target": [
+          0.39025990678212635,
+          0.025089536409255098,
+          1.6083583070474634
+        ],
+        "old_visual_position_error_m": 0.04834032391334203,
+        "remaining_local_pulses": 23,
+        "remaining_mission_pulses": 121,
+        "remaining_local_ticks": 685,
+        "remaining_mission_ticks": 3086,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            3,
+            4,
+            4,
+            5
+          ],
+          "predicted_endpoint": [
+            0.4242132635796843,
+            0.041293960851239556,
+            1.5594947278696252
+          ],
+          "predicted_position_error_m": 0.03762198571737353,
+          "predicted_yaw_error_rad": 0.048863579177838234,
+          "minimum_command_ticks": 94,
+          "expanded_nodes": 708,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 104,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 716,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 514,
+        "start": [
+          0.4033774473136206,
+          0.4383300610092048,
+          1.6610684348568405
+        ],
+        "target": [
+          0.4121742370469838,
+          0.43802003861746336,
+          1.6319297516929394
+        ],
+        "old_visual_position_error_m": 0.008802251047112087,
+        "remaining_local_pulses": 28,
+        "remaining_mission_pulses": 114,
+        "remaining_local_ticks": 798,
+        "remaining_mission_ticks": 2884,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.4033774473136206,
+            0.4383300610092048,
+            1.6610684348568405
+          ],
+          "predicted_position_error_m": 0.008802251047112087,
+          "predicted_yaw_error_rad": 0.029138683163901113,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1206,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 716,
+        "start": [
+          0.35175774383116126,
+          0.41200616260179995,
+          4.810360053623018
+        ],
+        "target": [
+          0.4033774473136206,
+          0.4383300610092048,
+          4.802661088446634
+        ],
+        "old_visual_position_error_m": 0.05794429579329093,
+        "remaining_local_pulses": 16,
+        "remaining_mission_pulses": 95,
+        "remaining_local_ticks": 510,
+        "remaining_mission_ticks": 2394,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            3,
+            3,
+            4,
+            4,
+            4,
+            4,
+            4,
+            5
+          ],
+          "predicted_endpoint": [
+            0.3795007264495702,
+            0.4067339793247296,
+            4.816281389245358
+          ],
+          "predicted_position_error_m": 0.039603158674931555,
+          "predicted_yaw_error_rad": 0.013620300798724116,
+          "minimum_command_ticks": 185,
+          "expanded_nodes": 6870,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 195,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1383,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1206,
+        "start": [
+          0.39073339024843523,
+          0.07398834420177451,
+          -1.4680480918845948
+        ],
+        "target": [
+          0.39025990678212635,
+          0.025089536409255098,
+          -1.4716126173255841
+        ],
+        "old_visual_position_error_m": 0.048901100091129086,
+        "remaining_local_pulses": 29,
+        "remaining_mission_pulses": 89,
+        "remaining_local_ticks": 823,
+        "remaining_mission_ticks": 2217,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            1
+          ],
+          "predicted_endpoint": [
+            0.39588678579107545,
+            0.006219743176472503,
+            -1.4903815080319536
+          ],
+          "predicted_position_error_m": 0.01969088276409465,
+          "predicted_yaw_error_rad": 0.018768890706369445,
+          "minimum_command_ticks": 25,
+          "expanded_nodes": 6,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 35,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1635,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1383,
+        "start": [
+          0.4051083115718633,
+          0.0611291271835228,
+          -2.936299675891063
+        ],
+        "target": [
+          0.39073339024843523,
+          0.07398834420177451,
+          -2.9544507796676
+        ],
+        "old_visual_position_error_m": 0.019287245147434632,
+        "remaining_local_pulses": 26,
+        "remaining_mission_pulses": 80,
+        "remaining_local_ticks": 748,
+        "remaining_mission_ticks": 1965,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.4051083115718633,
+            0.0611291271835228,
+            -2.936299675891063
+          ],
+          "predicted_position_error_m": 0.019287245147434635,
+          "predicted_yaw_error_rad": 0.018151103776536726,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1790,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1635,
+        "start": [
+          0.06185755161286534,
+          -0.012178793675508214,
+          -2.966461201399954
+        ],
+        "target": [
+          0.009748161447026338,
+          0.0014709562452289437,
+          -2.99182677089645
+        ],
+        "old_visual_position_error_m": 0.05386746899896358,
+        "remaining_local_pulses": 30,
+        "remaining_mission_pulses": 75,
+        "remaining_local_ticks": 845,
+        "remaining_mission_ticks": 1810,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            1
+          ],
+          "predicted_endpoint": [
+            -0.005360902167778861,
+            -0.02221972201330983,
+            -2.9887946175473123
+          ],
+          "predicted_position_error_m": 0.028098612771199794,
+          "predicted_yaw_error_rad": 0.003032153349137534,
+          "minimum_command_ticks": 25,
+          "expanded_nodes": 6,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 35,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 2412,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1790,
+        "start": [
+          0.03387827704720112,
+          -0.04138562981266447,
+          0.04319620127902234
+        ],
+        "target": [
+          6.938893903907228e-18,
+          1.734723475976807e-18,
+          7.780850474541363e-17
+        ],
+        "old_visual_position_error_m": 0.053483717248129045,
+        "remaining_local_pulses": 10,
+        "remaining_mission_pulses": 50,
+        "remaining_local_ticks": 378,
+        "remaining_mission_ticks": 1188,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            2,
+            3,
+            3,
+            4,
+            4,
+            4,
+            4,
+            5,
+            5
+          ],
+          "predicted_endpoint": [
+            0.03485013493353583,
+            -0.019626856943738842,
+            -0.03283841375526697
+          ],
+          "predicted_position_error_m": 0.03999681760309992,
+          "predicted_yaw_error_rad": 0.03283841375526705,
+          "minimum_command_ticks": 210,
+          "expanded_nodes": 8364,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 220,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      }
+    ],
+    "nominal_right": [
+      {
+        "tick": 199,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 0,
+        "start": [
+          0.3496270296932525,
+          0.02081602274427001,
+          0.047441622173344834
+        ],
+        "target": [
+          0.4,
+          0,
+          0
+        ],
+        "old_visual_position_error_m": 0.05450452220150576,
+        "remaining_local_pulses": 28,
+        "remaining_mission_pulses": 133,
+        "remaining_local_ticks": 801,
+        "remaining_mission_ticks": 3401,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            1
+          ],
+          "predicted_endpoint": [
+            0.41757688268263404,
+            0.02221539734276172,
+            0.02510820602598616
+          ],
+          "predicted_position_error_m": 0.028327913511867833,
+          "predicted_yaw_error_rad": 0.02510820602598616,
+          "minimum_command_ticks": 25,
+          "expanded_nodes": 6,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 35,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 451,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 199,
+        "start": [
+          0.36944238536091883,
+          0.02723141462412556,
+          -1.4899756974389387
+        ],
+        "target": [
+          0.3496270296932525,
+          0.02081602274427001,
+          -1.5232500813216983
+        ],
+        "old_visual_position_error_m": 0.020827999740931274,
+        "remaining_local_pulses": 26,
+        "remaining_mission_pulses": 124,
+        "remaining_local_ticks": 748,
+        "remaining_mission_ticks": 3149,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.36944238536091883,
+            0.02723141462412556,
+            -1.4899756974389387
+          ],
+          "predicted_position_error_m": 0.020827999740931274,
+          "predicted_yaw_error_rad": 0.033274383882759606,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 653,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 451,
+        "start": [
+          0.42382885558764954,
+          -0.39666737432048066,
+          -1.4483036550347699
+        ],
+        "target": [
+          0.401705711510029,
+          -0.37109569639857315,
+          -1.4899756974389387
+        ],
+        "old_visual_position_error_m": 0.03381337332507554,
+        "remaining_local_pulses": 28,
+        "remaining_mission_pulses": 117,
+        "remaining_local_ticks": 798,
+        "remaining_mission_ticks": 2947,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.42382885558764954,
+            -0.39666737432048066,
+            -1.4483036550347699
+          ],
+          "predicted_position_error_m": 0.03381337332507554,
+          "predicted_yaw_error_rad": 0.041672042404168774,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1127,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 653,
+        "start": [
+          0.40565731482207507,
+          -0.43206771881548794,
+          -4.544547057007572
+        ],
+        "target": [
+          0.42382885558764954,
+          -0.39666737432048066,
+          -4.589896308624563
+        ],
+        "old_visual_position_error_m": 0.03979182433817439,
+        "remaining_local_pulses": 17,
+        "remaining_mission_pulses": 99,
+        "remaining_local_ticks": 526,
+        "remaining_mission_ticks": 2473,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.40565731482207507,
+            -0.43206771881548794,
+            -4.544547057007572
+          ],
+          "predicted_position_error_m": 0.039791824338174395,
+          "predicted_yaw_error_rad": 0.045349251616991104,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1330,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1127,
+        "start": [
+          0.34519598313759614,
+          -0.03009784038279323,
+          1.709389773772343
+        ],
+        "target": [
+          0.35655922186036293,
+          -0.03521576646818997,
+          1.6938897471000642
+        ],
+        "old_visual_position_error_m": 0.01246259851259644,
+        "remaining_local_pulses": 28,
+        "remaining_mission_pulses": 92,
+        "remaining_local_ticks": 797,
+        "remaining_mission_ticks": 2270,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [],
+          "predicted_endpoint": [
+            0.34519598313759614,
+            -0.03009784038279323,
+            1.709389773772343
+          ],
+          "predicted_position_error_m": 0.01246259851259644,
+          "predicted_yaw_error_rad": 0.015500026672278677,
+          "minimum_command_ticks": 0,
+          "expanded_nodes": 0,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 10,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1360,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1330,
+        "start": [
+          0.3439602581003119,
+          -0.030579444793293425,
+          1.7140520074262358
+        ],
+        "target": [
+          0.3496270296932525,
+          0.02081602274427001,
+          1.6938897471000642
+        ],
+        "old_visual_position_error_m": 0.05170692781138032,
+        "remaining_local_pulses": 35,
+        "remaining_mission_pulses": 92,
+        "remaining_local_ticks": 970,
+        "remaining_mission_ticks": 2240,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            1
+          ],
+          "predicted_endpoint": [
+            0.3360667076997162,
+            0.03692487086591997,
+            1.691718591278877
+          ],
+          "predicted_position_error_m": 0.021056526788023937,
+          "predicted_yaw_error_rad": 0.0021711558211872095,
+          "minimum_command_ticks": 25,
+          "expanded_nodes": 6,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 35,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      },
+      {
+        "tick": 1540,
+        "old_terminal": "VISUAL_TARGET_SEQUENCE_COMPLETE",
+        "anchor_frame": 1360,
+        "start": [
+          0.33817045336073914,
+          0.021423246895134737,
+          3.0641775327002367
+        ],
+        "target": [
+          0.3439602581003119,
+          -0.030579444793293425,
+          3.0529217733020437
+        ],
+        "old_visual_position_error_m": 0.05232400769975571,
+        "remaining_local_pulses": 29,
+        "remaining_mission_pulses": 86,
+        "remaining_local_ticks": 820,
+        "remaining_mission_ticks": 2060,
+        "candidate": {
+          "status": "PREDICTED_GOAL_CANDIDATE",
+          "action_indices": [
+            3,
+            4,
+            4,
+            4,
+            4
+          ],
+          "predicted_endpoint": [
+            0.32453288586753654,
+            0.002507505604108947,
+            3.096125061434783
+          ],
+          "predicted_position_error_m": 0.03836885557937552,
+          "predicted_yaw_error_rad": 0.043203288132739104,
+          "minimum_command_ticks": 113,
+          "expanded_nodes": 2256,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 123,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      }
+    ],
+    "lower_friction_left": [
+      {
+        "tick": 461,
+        "old_terminal": "VISUAL_SERVO_FAILED",
+        "anchor_frame": 0,
+        "start": [
+          0.4696909612953303,
+          0.18342281837324204,
+          -1.3147703326901483
+        ],
+        "target": [
+          0.4,
+          0,
+          0
+        ],
+        "old_visual_position_error_m": 0.1962161063375037,
+        "remaining_local_pulses": 17,
+        "remaining_mission_pulses": 122,
+        "remaining_local_ticks": 539,
+        "remaining_mission_ticks": 3139,
+        "candidate": {
+          "status": "SEARCH_EXHAUSTED",
+          "action_indices": [
+            5,
+            1,
+            1,
+            3,
+            3,
+            3,
+            3,
+            3,
+            2,
+            2,
+            3,
+            5,
+            3,
+            5,
+            2,
+            3
+          ],
+          "predicted_endpoint": [
+            0.44610721653531527,
+            -0.000685262431267885,
+            -0.003868696456289844
+          ],
+          "predicted_position_error_m": 0.04611230856543787,
+          "predicted_yaw_error_rad": 0.003868696456289844,
+          "minimum_command_ticks": 391,
+          "expanded_nodes": 20718,
+          "yaw_mode": "winding",
+          "internal_position_tolerance_m": 0.04,
+          "fitting_audit_sha256": "af809e5cb6101bf67169e1b2a3f5e66be424b53c316d7f4e40854ee9fd5d1d46",
+          "model": "empirical_action_duration_mean",
+          "search_complete": false,
+          "motion_permission": false,
+          "body_sweep_checked": false,
+          "uncertainty_calibrated": false,
+          "learned_jepa_used": false,
+          "navigation_qualified": false
+        },
+        "predicted_endpoint_excursion_rejections": [],
+        "minimum_additional_ticks_including_final_hold": 401,
+        "status": "OFFLINE_FIXED_TABLE_CANDIDATE_ONLY"
+      }
+    ]
+  },
+  "replay_launch_sha256": "c33cea0bcd34476680c686b13553964b4659357bf16dda9dfd74e7ac3b756021",
+  "new_source_sha256": {
+    "lewm/tests/test_inner_goal_pulse_development.py": "35f91fb6970e5b4aae13fdd3dec9e2a280fe9d0acab28b086f1d73c4c56c71a3",
+    "lewm/inner_goal_room_return_development.py": "b54cef8be0a86c7efe2b9ee87ec4d30848b585ed9add9558c00e0830f0372034",
+    "lewm/inner_goal_pulse_feedback_development.py": "e02905b4a657c98f5f07f87cab3eb2b2b05ef6ad5d88c1a63d0e014e4aa236c1",
+    "lewm/inner_goal_pulse_rollout_development.py": "4fdb62e4446273a226755a3f071e398733269085fd5e32ca3dcac27aeabc9045",
+    "scripts/check_go2_recorded_inner_arrivals_v1.py": "bd3458fad24068d8c3e1b88f630d6f521be1ae548e772f46c6447d85499ccf46"
+  },
+  "native_pose_input": false,
+  "physical_execution": false,
+  "counterfactual_success_established": false,
+  "goal_achieved": false
+}

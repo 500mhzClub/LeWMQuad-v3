@@ -1,0 +1,30 @@
+{
+  "status": "TWO_TINY_PROBE_DEFINITIONS_FROZEN_BEFORE_FIRST_EXECUTION",
+  "protocol": "docs/go2_tracking_keeper_memory_probe_v1_2026-09-07.md",
+  "fit_definition_sha256": "33becb80b46902afb3a6004f0f69c4cb082e0ec2111c98ba55bb7b4625e499e7",
+  "overflow_definition_sha256": "104acc231a20d7fc8791106b8923b8aeee4aa62d7988a7ecec21d27e080846a0",
+  "source_count_per_definition": 792,
+  "original_learning_definition_sha256": "3a1b0d78ba9bb4cc1854bc4d1079a26f21ffa57652a7664aaff6af650318956b",
+  "new_source_sha256": {
+    "scripts/run_go2_tracking_keeper_memory_probe_v1.py": "fd91586de66365fcd951176ebda75388a3ac7e83c5564004fc8e0f611d9fb523",
+    "lewm/tests/test_tracking_keeper_memory_probe_development.py": "77e0e208f43ea3a5a38a1208a316dc82b95aa998f57656ad3a1b6cdff039f942",
+    "docs/go2_tracking_keeper_memory_probe_v1_2026-09-07.md": "d57bb487ca03400605330466452e76245973cbd6ed23b726da9a3fe305d34481",
+    "scripts/probe_go2_tracking_keeper_memory_development.py": "f1ca6f4467364105bd0bb7d7c6b0ea2aa4b80aefe1712947761a8e9b761d000d",
+    "scripts/tracking_kernel_scope_development.py": "130c890671778b2fb02ac6ba60522e4bbe4b24ea30351a8b718d0536613e3c8c",
+    "scripts/independent_tracking_memory_supervision_development.py": "6c6899613c0deea1a7364576fb42873843f7f2d419ef4eb784a0cd60f8d21f19"
+  },
+  "tests": "495 adjacent tests passed before the probe-only parent-to-leaf handoff change. After that change, 107 focused tests passed, including five new grant tests. Do not describe this as a single 500-test regression.",
+  "handoff_reason": "Parent must flush leaf identity before granting allocation, so scheduling cannot lose that evidence during intended group OOM.",
+  "preexecution_check": "2b267b verifies both current 792-source definitions; both exact fresh roots and units remain absent. Earlier a4f070/77c2ca candidate definitions were never executed and are superseded before any attempt.",
+  "maximum_memory_bytes_per_probe_group": 67108864,
+  "maximum_outside_bytes_per_probe": 100663296,
+  "runtime_max_seconds_per_probe": 15,
+  "stop_timeout_seconds": 30,
+  "fit_leaf_allocation_bytes": 8388608,
+  "overflow_leaf_allocation_bytes": 134217728,
+  "fit_required_before_overflow": true,
+  "real_challenge_execution_authorized": false,
+  "native_workload_fit_proved": false,
+  "retry_authorized": false,
+  "goal_achieved": false
+}

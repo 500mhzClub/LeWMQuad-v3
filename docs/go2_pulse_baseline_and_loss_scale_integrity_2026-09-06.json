@@ -1,0 +1,98 @@
+{
+  "status": "VERIFIED",
+  "baseline_independent_scalar_reconstruction": true,
+  "baseline_cells": 30,
+  "scored_targets": 917,
+  "baseline_position_error_m": 0.008586345007751859,
+  "baseline_yaw_error_rad": 0.007945311245888273,
+  "conditions": {
+    "nominal_left": 0.007193626014059007,
+    "nominal_right": 0.005106997230308389,
+    "lower_friction_left": 0.04072607051906502
+  },
+  "loss_scale_measurements": 18,
+  "jepa_gradient_summary": [
+    {
+      "seed": 2026090721,
+      "stage": "initial",
+      "position_loss_percent": 0.2557720256574532,
+      "direct_position_gradient": 0.2097144641760348,
+      "rollout_position_gradient": 0.6001759378459628,
+      "latent_gradient": 14.640850749276133,
+      "latent_cosine_to_total": 0.9427922776397234
+    },
+    {
+      "seed": 2026090721,
+      "stage": "final",
+      "position_loss_percent": 0.17004599055219066,
+      "direct_position_gradient": 0.0481869853907498,
+      "rollout_position_gradient": 0.08497919022696628,
+      "latent_gradient": 0.9528024757179073,
+      "latent_cosine_to_total": 0.6395933028704771
+    },
+    {
+      "seed": 2026090722,
+      "stage": "initial",
+      "position_loss_percent": 0.3758352294451039,
+      "direct_position_gradient": 0.04558647780469138,
+      "rollout_position_gradient": 0.7214991092747624,
+      "latent_gradient": 16.781631916946665,
+      "latent_cosine_to_total": 0.9637099961008909
+    },
+    {
+      "seed": 2026090722,
+      "stage": "final",
+      "position_loss_percent": 0.1845406840734065,
+      "direct_position_gradient": 0.014937609123614066,
+      "rollout_position_gradient": 0.09451372573053313,
+      "latent_gradient": 0.6461852973557678,
+      "latent_cosine_to_total": 0.5321086798048976
+    },
+    {
+      "seed": 2026090723,
+      "stage": "initial",
+      "position_loss_percent": 0.04200240143166912,
+      "direct_position_gradient": 0.09085355107006048,
+      "rollout_position_gradient": 0.10560163660213033,
+      "latent_gradient": 12.944674309352974,
+      "latent_cosine_to_total": 0.9457673057170785
+    },
+    {
+      "seed": 2026090723,
+      "stage": "final",
+      "position_loss_percent": 0.23563036074504404,
+      "direct_position_gradient": 0.09206896040782797,
+      "rollout_position_gradient": 0.055805741043556255,
+      "latent_gradient": 0.8217068956568104,
+      "latent_cosine_to_total": 0.5347424507832713
+    }
+  ],
+  "output_sha256": {
+    ".generated/go2_pulse_action_time_baseline_v1_attempt_001/table.json": "e77fbba8ebf44a98fef720ce44d0cc8638495089beb3a8a7964b402e9a343209",
+    ".generated/go2_pulse_action_time_baseline_v1_attempt_001/schedule.json": "021214b72522ef95a417beeb6303840a6063a62f00f2a4e01aa6d1492c262387",
+    ".generated/go2_pulse_action_time_baseline_v1_attempt_001/predictions.json": "9d3dfd43e47782e04f051d0e57ba920fc568aebea0ba0706f84a5182fc570710",
+    ".generated/go2_pulse_action_time_baseline_v1_attempt_001/launch.json": "cbed7efff0cc98643b232b86f13e113a9f855ede35941002dc649dcaaa6211f6",
+    ".generated/go2_pulse_action_time_baseline_v1_attempt_001/result.json": "a03459e6b59f8bae3ac1ca1acd2c3964e6abb1484bd3949a60438e9888389d63",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_direct_initial.json": "6b872a46b66079b674d24742fb65e77a65495bba99b72bff37b3cdc2a6a61e5f",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_direct_final.json": "5ef20391b83bf0da04e959fe2ea3044e56535330c5f34837422ecb7bebbc8bc5",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_supervised_rollout_initial.json": "a960d904ef046278eb81a7a23acacafc5bd09495f5e7b344cd7fca731d25e3da",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_supervised_rollout_final.json": "73d7656a0a31477c33cd6f32fd8da5bcc83fbf76ce2b91fcb963a2958d8ff730",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_jepa_initial.json": "b86975d1751e823fc2a323c07129cf747bf2c503c515a68fbfc8b3792175e64e",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090721_jepa_final.json": "effc13c044276f541d8f9df59877c869f80ca88789f88713e1bdad29922cbb94",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_direct_initial.json": "0199dae2374bd40e794a9d6f6cb9f5307162db3c9255692166b49bbb774fdcd2",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_direct_final.json": "750a94cf35fa239f2d80633818260633bdec068ad0bb7448c8bbfa8edd612d40",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_supervised_rollout_initial.json": "08f3007857c42ca7a09af04cb222f11cc0fad2c147dfbd381b12a73cc685eb60",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_supervised_rollout_final.json": "1d703b6c3bf89b7dc99e0df7b7878e016988f8c66713a785bfa47cec1da670c6",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_jepa_initial.json": "2e781b7cd804590a2d204b870e885ac347651a86a4ad33a784c33af3e85d474a",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090722_jepa_final.json": "cc7996996815258df8a6521c0ec8fdb3e271a1aa0d593c8b1f8fd189054d2f6e",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_direct_initial.json": "36e022203df4bd3da5401cff0a856fd8e97a70b7fa8357fb9cca6675f8d23238",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_direct_final.json": "8baa82df6954cb656269bd64040e1c6b6a4f5502d6f14dff346665cdfeb36406",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_supervised_rollout_initial.json": "b85c54833d9ccb2175feaef9b33e9152f129a74eec1ed8e99676cfbc4da4f846",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_supervised_rollout_final.json": "26826d6f3289add62e434b492a98b29ec3f5c9055da3787cd64eca21129e7243",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_jepa_initial.json": "432cd5b76f54531345c967f40df0b02d72233772c9ef3164fb008f2a5e0764ae",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/2026090723_jepa_final.json": "f8a9642ee437c8005baac0af0808592c36e988b4659bb18eee6431934a0f7ea5",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/launch.json": "751c31fd4d82db77bbaf5f006b447d0dfe525ceca2faa2c06dc995aadb3fc5e8",
+    ".generated/go2_pulse_loss_scale_diagnostic_v1_attempt_001/result.json": "2d39a27cc83ff461e08424a8092a75545b2bdf501474002627ec90afc5978a71"
+  },
+  "output_files": 25
+}

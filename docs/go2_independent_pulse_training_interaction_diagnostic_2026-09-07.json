@@ -1,0 +1,4427 @@
+{
+  "action_motion": [
+    {
+      "action_index": 0,
+      "body_frame_x_range_m": [
+        0.00925760343670845,
+        0.03788073733448982
+      ],
+      "censored_motion_rows": 12,
+      "mean_body_frame_xy_m": [
+        0.02166587587756415,
+        0.015519303118236604
+      ],
+      "observed_motion_rows": 108,
+      "planned_rows": 120,
+      "pulse_ticks": 2,
+      "requested_command": [
+        0.2,
+        0,
+        0
+      ],
+      "yaw_range_rad": [
+        -0.047132495790719986,
+        0.034759651869535446
+      ]
+    },
+    {
+      "action_index": 1,
+      "body_frame_x_range_m": [
+        0.030512414872646332,
+        0.10789874196052551
+      ],
+      "censored_motion_rows": 18,
+      "mean_body_frame_xy_m": [
+        0.06649259958124044,
+        0.023996884635576577
+      ],
+      "observed_motion_rows": 102,
+      "planned_rows": 120,
+      "pulse_ticks": 5,
+      "requested_command": [
+        0.2,
+        0,
+        0
+      ],
+      "yaw_range_rad": [
+        -0.005968124605715275,
+        0.004905507434159517
+      ]
+    },
+    {
+      "action_index": 2,
+      "body_frame_x_range_m": [
+        -0.014865669421851635,
+        0.017993535846471786
+      ],
+      "censored_motion_rows": 0,
+      "mean_body_frame_xy_m": [
+        0.0016286203094447653,
+        -0.001876674033216356
+      ],
+      "observed_motion_rows": 120,
+      "planned_rows": 120,
+      "pulse_ticks": 2,
+      "requested_command": [
+        0,
+        0,
+        0.45
+      ],
+      "yaw_range_rad": [
+        0.08096069097518921,
+        0.09655056148767471
+      ]
+    },
+    {
+      "action_index": 3,
+      "body_frame_x_range_m": [
+        -0.00637446204200387,
+        0.027882374823093414
+      ],
+      "censored_motion_rows": 0,
+      "mean_body_frame_xy_m": [
+        0.008702633110806346,
+        -0.003964779031230136
+      ],
+      "observed_motion_rows": 120,
+      "planned_rows": 120,
+      "pulse_ticks": 5,
+      "requested_command": [
+        0,
+        0,
+        0.45
+      ],
+      "yaw_range_rad": [
+        0.21914049983024597,
+        0.2487543374300003
+      ]
+    },
+    {
+      "action_index": 4,
+      "body_frame_x_range_m": [
+        -0.01615973189473152,
+        0.015737159177660942
+      ],
+      "censored_motion_rows": 0,
+      "mean_body_frame_xy_m": [
+        -0.0027412000034625333,
+        0.014131999685196206
+      ],
+      "observed_motion_rows": 120,
+      "planned_rows": 120,
+      "pulse_ticks": 2,
+      "requested_command": [
+        0,
+        0,
+        -0.45
+      ],
+      "yaw_range_rad": [
+        -0.10195454210042953,
+        -0.06978103518486023
+      ]
+    },
+    {
+      "action_index": 5,
+      "body_frame_x_range_m": [
+        -0.006252415478229523,
+        0.020304815843701363
+      ],
+      "censored_motion_rows": 0,
+      "mean_body_frame_xy_m": [
+        0.0013748739981868615,
+        0.01782762709093125
+      ],
+      "observed_motion_rows": 120,
+      "planned_rows": 120,
+      "pulse_ticks": 5,
+      "requested_command": [
+        0,
+        0,
+        -0.45
+      ],
+      "yaw_range_rad": [
+        -0.22003208100795746,
+        -0.2020479291677475
+      ]
+    }
+  ],
+  "complete_population": true,
+  "complete_population_common_minimum_contact_actions": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "complete_population_common_zero_contact_actions": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "contact_patterns": [
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "groups": 102
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "groups": 6
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "groups": 12
+    }
+  ],
+  "cross_group_sensor_history_equivalence_established": false,
+  "cross_layout_motion_dispersion": [
+    {
+      "action_index": 0,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000018798429278393226,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000029918936093684116,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007860937662070033,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0002363898087596654,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000008654840338857314,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000003939052753832786,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0008080422641250814,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0002573982355352842,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000019281624902245956,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000016270493763829807,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007857128982201937,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00025682375802880654,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000016843388385418038,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000003846445670883987,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 0,
+      "observed_xy_rms_about_cell_mean_m": null,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 0,
+      "observed_xy_rms_about_cell_mean_m": null,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00000149734385971407,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000029778175604510834,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007916743505686928,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 0,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0002387621748626844,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.724592233654532e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00002190497337231321,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006108263425918248,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007086271314700644,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.415998990456197e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000001030920259899094,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006328950904650645,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007476370304432704,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 2.8287278330589444e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000013214267261900256,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006113148476729579,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007485107922411034,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.702493954716551e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 0,
+      "observed_xy_rms_about_cell_mean_m": null,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 0,
+      "observed_xy_rms_about_cell_mean_m": null,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 0,
+      "observed_xy_rms_about_cell_mean_m": null,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.780981972433204e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000023520516649402793,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000611071960795763,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 1,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0007073667407940799,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000015674199132350217,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000001977472137176225,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006426864721675648,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00008537180548315638,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000012667117778663027,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000002035371904576253,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006443026515393258,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00009028058405846024,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.680554609427808e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 4.701360060887232e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006448904922265867,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00008986254764530122,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000001205501301294792,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000020744875589294774,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006442272536829851,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00006707713354367543,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000015264319314504473,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 6.1818209870558e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006449222297578909,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 2,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00008549744913041832,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00006940164684278285,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000004927242326226053,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0005716614097051681,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00024697628222192247,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000031445880280109137,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000003972784450547218,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0005725777227019337,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00026281277323722714,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00006864039035210996,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000011591222211237114,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000570488984168537,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00026451736462321414,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000055031643008353874,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000004038639787097361,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0005705174020530432,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00019328799653712788,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00005428664207589443,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000004900402169712834,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0005735730936041577,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 3,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00024716585972035527,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000017072747128376596,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 5.332373681277755e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006045128986141749,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00044020030547287336,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000001872329609087441,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 8.559824603791056e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006036091745672421,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00045857365457416596,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 3.169571350424373e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 9.419015193124665e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006070519560546624,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0004579603082724553,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000019479731070128857,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 9.063689293631581e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000592154409919344,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0003453248523605161,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000017200587195957728,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 5.006202718209023e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0006031082264638468,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 4,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00044248199550159684,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.000002294410686514102,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "corner_turn",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 6.077121496357911e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0012360059756419389,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "corner_turn",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00021287136064554005,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000015731560471556196,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "dead_end_approach",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 4.891069611496718e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0012358369356719294,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "dead_end_approach",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0002260440284277109,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 9.841201208594553e-7,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "junction",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 4.2151451497084797e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0012418376385985549,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "junction",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00021781244828461384,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000016352118536031107,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "near_wall",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 5.450810470579196e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0012400671269618183,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "near_wall",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00016219014787038208,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0000022402088288227337,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "open_passage",
+      "history_kind": "quiet",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 6.376191766774251e-7,
+      "planned_layouts": 6,
+      "support": "nominal"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.0012552408557842667,
+      "planned_layouts": 6,
+      "support": "lower_friction"
+    },
+    {
+      "action_index": 5,
+      "context_kind": "open_passage",
+      "history_kind": "recent_forward",
+      "interpretation": "descriptive observed-label dispersion, not prediction error or isolated geometry effect",
+      "observed_layouts": 6,
+      "observed_xy_rms_about_cell_mean_m": 0.00021235245129153213,
+      "planned_layouts": 6,
+      "support": "nominal"
+    }
+  ],
+  "goal_achieved": false,
+  "goal_progress_evaluated": false,
+  "group_status": {
+    "l00_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l00_corner_turn_quiet_nominal": "COMPLETE",
+    "l00_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l00_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l00_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l00_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l00_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l00_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l00_junction_quiet_lower_friction": "COMPLETE",
+    "l00_junction_quiet_nominal": "COMPLETE",
+    "l00_junction_recent_forward_lower_friction": "COMPLETE",
+    "l00_junction_recent_forward_nominal": "COMPLETE",
+    "l00_near_wall_quiet_lower_friction": "COMPLETE",
+    "l00_near_wall_quiet_nominal": "COMPLETE",
+    "l00_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l00_near_wall_recent_forward_nominal": "COMPLETE",
+    "l00_open_passage_quiet_lower_friction": "COMPLETE",
+    "l00_open_passage_quiet_nominal": "COMPLETE",
+    "l00_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l00_open_passage_recent_forward_nominal": "COMPLETE",
+    "l01_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l01_corner_turn_quiet_nominal": "COMPLETE",
+    "l01_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l01_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l01_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l01_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l01_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l01_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l01_junction_quiet_lower_friction": "COMPLETE",
+    "l01_junction_quiet_nominal": "COMPLETE",
+    "l01_junction_recent_forward_lower_friction": "COMPLETE",
+    "l01_junction_recent_forward_nominal": "COMPLETE",
+    "l01_near_wall_quiet_lower_friction": "COMPLETE",
+    "l01_near_wall_quiet_nominal": "COMPLETE",
+    "l01_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l01_near_wall_recent_forward_nominal": "COMPLETE",
+    "l01_open_passage_quiet_lower_friction": "COMPLETE",
+    "l01_open_passage_quiet_nominal": "COMPLETE",
+    "l01_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l01_open_passage_recent_forward_nominal": "COMPLETE",
+    "l02_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l02_corner_turn_quiet_nominal": "COMPLETE",
+    "l02_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l02_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l02_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l02_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l02_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l02_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l02_junction_quiet_lower_friction": "COMPLETE",
+    "l02_junction_quiet_nominal": "COMPLETE",
+    "l02_junction_recent_forward_lower_friction": "COMPLETE",
+    "l02_junction_recent_forward_nominal": "COMPLETE",
+    "l02_near_wall_quiet_lower_friction": "COMPLETE",
+    "l02_near_wall_quiet_nominal": "COMPLETE",
+    "l02_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l02_near_wall_recent_forward_nominal": "COMPLETE",
+    "l02_open_passage_quiet_lower_friction": "COMPLETE",
+    "l02_open_passage_quiet_nominal": "COMPLETE",
+    "l02_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l02_open_passage_recent_forward_nominal": "COMPLETE",
+    "l03_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l03_corner_turn_quiet_nominal": "COMPLETE",
+    "l03_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l03_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l03_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l03_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l03_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l03_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l03_junction_quiet_lower_friction": "COMPLETE",
+    "l03_junction_quiet_nominal": "COMPLETE",
+    "l03_junction_recent_forward_lower_friction": "COMPLETE",
+    "l03_junction_recent_forward_nominal": "COMPLETE",
+    "l03_near_wall_quiet_lower_friction": "COMPLETE",
+    "l03_near_wall_quiet_nominal": "COMPLETE",
+    "l03_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l03_near_wall_recent_forward_nominal": "COMPLETE",
+    "l03_open_passage_quiet_lower_friction": "COMPLETE",
+    "l03_open_passage_quiet_nominal": "COMPLETE",
+    "l03_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l03_open_passage_recent_forward_nominal": "COMPLETE",
+    "l04_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l04_corner_turn_quiet_nominal": "COMPLETE",
+    "l04_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l04_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l04_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l04_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l04_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l04_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l04_junction_quiet_lower_friction": "COMPLETE",
+    "l04_junction_quiet_nominal": "COMPLETE",
+    "l04_junction_recent_forward_lower_friction": "COMPLETE",
+    "l04_junction_recent_forward_nominal": "COMPLETE",
+    "l04_near_wall_quiet_lower_friction": "COMPLETE",
+    "l04_near_wall_quiet_nominal": "COMPLETE",
+    "l04_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l04_near_wall_recent_forward_nominal": "COMPLETE",
+    "l04_open_passage_quiet_lower_friction": "COMPLETE",
+    "l04_open_passage_quiet_nominal": "COMPLETE",
+    "l04_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l04_open_passage_recent_forward_nominal": "COMPLETE",
+    "l05_corner_turn_quiet_lower_friction": "COMPLETE",
+    "l05_corner_turn_quiet_nominal": "COMPLETE",
+    "l05_corner_turn_recent_forward_lower_friction": "COMPLETE",
+    "l05_corner_turn_recent_forward_nominal": "COMPLETE",
+    "l05_dead_end_approach_quiet_lower_friction": "COMPLETE",
+    "l05_dead_end_approach_quiet_nominal": "COMPLETE",
+    "l05_dead_end_approach_recent_forward_lower_friction": "COMPLETE",
+    "l05_dead_end_approach_recent_forward_nominal": "COMPLETE",
+    "l05_junction_quiet_lower_friction": "COMPLETE",
+    "l05_junction_quiet_nominal": "COMPLETE",
+    "l05_junction_recent_forward_lower_friction": "COMPLETE",
+    "l05_junction_recent_forward_nominal": "COMPLETE",
+    "l05_near_wall_quiet_lower_friction": "COMPLETE",
+    "l05_near_wall_quiet_nominal": "COMPLETE",
+    "l05_near_wall_recent_forward_lower_friction": "COMPLETE",
+    "l05_near_wall_recent_forward_nominal": "COMPLETE",
+    "l05_open_passage_quiet_lower_friction": "COMPLETE",
+    "l05_open_passage_quiet_nominal": "COMPLETE",
+    "l05_open_passage_recent_forward_lower_friction": "COMPLETE",
+    "l05_open_passage_recent_forward_nominal": "COMPLETE"
+  },
+  "groups": [
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l02_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l02_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l02_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l02_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l02_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l02_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l02_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l02_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l02_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l02_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l02_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l02_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l02_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l02_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l02_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l02_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l02_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l02_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l02_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l02_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-0d8a33f86187bc210828caa54009ceeccdaa0042c1291847eb3b25596ebe8fdf",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l00_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l00_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l00_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l00_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l00_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l00_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l00_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l00_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l00_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l00_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l00_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l00_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l00_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l00_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l00_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l00_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l00_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l00_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l00_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l00_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-21c1c5f17f6206f623575fbc475a91ccbca04f9f17e280222062864b1c319f58",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l04_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l04_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l04_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l04_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l04_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l04_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l04_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l04_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l04_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l04_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l04_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l04_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l04_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l04_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l04_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l04_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l04_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l04_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l04_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l04_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-6e6be9181ec6365e5b4abfed24495eadbb0c18770c91f69206932756a674436f",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l01_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l01_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l01_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l01_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l01_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l01_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l01_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l01_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l01_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l01_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l01_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l01_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l01_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l01_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l01_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l01_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l01_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l01_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l01_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l01_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-a396575dda585fab7136687bdfd5e18946343dba6a3efdb6a1d03f584aeaed87",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l03_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l03_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l03_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l03_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l03_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l03_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l03_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l03_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l03_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l03_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l03_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l03_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l03_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l03_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l03_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l03_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l03_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l03_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l03_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l03_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-b946d2d608cc50662e229f408a27ae938cb95056b184b6d2a6d5f28d0fc2409c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l05_corner_turn_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l05_corner_turn_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l05_corner_turn_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "corner_turn",
+      "group_id": "l05_corner_turn_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l05_dead_end_approach_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l05_dead_end_approach_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l05_dead_end_approach_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "dead_end_approach",
+      "group_id": "l05_dead_end_approach_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l05_junction_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l05_junction_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l05_junction_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "junction",
+      "group_id": "l05_junction_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l05_near_wall_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l05_near_wall_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l05_near_wall_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "near_wall",
+      "group_id": "l05_near_wall_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l05_open_passage_quiet_lower_friction",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l05_open_passage_quiet_nominal",
+      "history_kind": "quiet",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l05_open_passage_recent_forward_lower_friction",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "lower_friction"
+    },
+    {
+      "contact": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "context_kind": "open_passage",
+      "group_id": "l05_open_passage_recent_forward_nominal",
+      "history_kind": "recent_forward",
+      "layout_id": "connected-inventory-v1-f7b2202cf7da81903af80dee734e051edb1c799e7a4872db989cfc1ad33d565c",
+      "matched_prefix": true,
+      "role": "train",
+      "support": "nominal"
+    }
+  ],
+  "horizon_ns": 2000000000,
+  "input_sha256": {
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_pulse_parallel_study_v1_attempt_001": {
+      "coverage.json": "f2491bc27fc2ca7604a5d3566b7ee38e710756785a5a9b77f7a5ee09061db2d3",
+      "dataset.json": "28e5a40b2dbd34d631652119c1124055f5d04fa1d3e414a44251176d19b762ba",
+      "launch.json": "7af8abf6be59776cee4ea5970611d28fa9daf457b98d66ceb456a7dbfa40479e",
+      "result.json": "588f24def6ec8810ae5a3411277576b0d965c77bf6ffdb8e18cfd80dce7b8122"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l00_attempt_001": {
+      "launch.json": "cc0d583329b3b6713d84e4f8911d089f90160858401bdbb9dc5f384bda75f9c3",
+      "rgb_body_eligible_targets.json": "aa50aaf23aff35e00037a123f92120569e92711168bada6ddc6b61973ad58632",
+      "rgb_body_eligible_windows.json": "ad9d5a51e15cfab412c7853a05d87b38dd4ddc9d4c75278a33938d5be783e899",
+      "rgb_body_episode_roles.json": "093f4301166b1da94087ab4d7760efb592a778e75d5d4baa31b35cbf6477e88e",
+      "rgb_body_layout_audit.json": "c4781dcb66b5e630dafaa8c4dfa5a0d05b0797488f479b421099aebf0fc429a5",
+      "rgb_body_prefix_witnesses.json": "97041d55216f55e291fc12d4e4c68601f89ff396412d3190ae42e186d1b4aae1"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l01_attempt_001": {
+      "launch.json": "9a97b95f8cad80bbd4f4bcb34cfcaa24cd869a3773d63f241abe737297f957eb",
+      "rgb_body_eligible_targets.json": "9352e6c0f7cff0c8bceeecb61874b9926084bb2e1deaf509eb4978eb00a76851",
+      "rgb_body_eligible_windows.json": "42deccddec0b906e34ecd4716ceffae1e92c85754c8f682b122ed56f4e17f423",
+      "rgb_body_episode_roles.json": "351b7b21b0aa31bded14b7d096dbb222f7e6c2327add2fde8754fed20fa9b073",
+      "rgb_body_layout_audit.json": "97be7fd5e47b0a100f809e2c68f143d1a5a429b589850d5a1ce441af95d756a0",
+      "rgb_body_prefix_witnesses.json": "df87072e49b543c29007be0f41ee13bc7011f539bbd21145cb7dff6257ea319d"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l02_attempt_001": {
+      "launch.json": "530fbb478586af052da3e2452ea7d4b8a478d4b360380ba507dd6b6af4ba1dea",
+      "rgb_body_eligible_targets.json": "796dd1d15b0fa2067e036ed81897c63efe7f66bd5cfc41f062d56354df198431",
+      "rgb_body_eligible_windows.json": "5d80428fa43acedcb8e8480a97b4a7f936521cd3e48aa7a002180fdd4252e541",
+      "rgb_body_episode_roles.json": "0b5c878d73f5e965a16ef8d57de8b4e21fbffd51cd97e0da071236e98d02be01",
+      "rgb_body_layout_audit.json": "75e034cdf004522e7ccf6a5d205cec2df062d65f7ba9c3fc528ecadbdf064722",
+      "rgb_body_prefix_witnesses.json": "7d6f0231c703b43ae49553c891e2308d75ff9c17699b1740b6ee48a4072f1f63"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l03_attempt_001": {
+      "launch.json": "c3377b7525ab62ea82ecbffdf6ec99c4ffc99733d5b26164d149056475f15a28",
+      "rgb_body_eligible_targets.json": "2bf926fabbd62f56d6eeb188ba64a011e1cb28553a800b0bac0fdc1fe279d6bd",
+      "rgb_body_eligible_windows.json": "7c876b9cc60199b300552e0e2a80e2e750750eb476ad2d911768d4e6ad514ef2",
+      "rgb_body_episode_roles.json": "133a2e98a911c26041053fe53f048b2bde31b6382fe803b9a6ab6b6f8b5b151d",
+      "rgb_body_layout_audit.json": "a48c4acaa1f6b85a1a06b9ce78870984e92914ff9dbb60304ba04e6cc531d468",
+      "rgb_body_prefix_witnesses.json": "8cd1ee5aa7e99a8aa1eb815c19e06ecbccb35e44d206e461e843b6116eb76e74"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l04_attempt_001": {
+      "launch.json": "a71ae2baeff8b30d4a6087fc2e2d0de85d582644b472c8bc6cbb1328291f145b",
+      "rgb_body_eligible_targets.json": "bfbf6a0884bba38d3459357aa06a5341ad2d8e248ee4524019ab0c75581324cb",
+      "rgb_body_eligible_windows.json": "fe96a6e1333e5e583bdfb05ba9eb73a3bd26dee29ed3435e34be428542f462f0",
+      "rgb_body_episode_roles.json": "6c4aadc03b2b03908215c30356e1fccb789ebf83d07d6d707ebccc22b08055b1",
+      "rgb_body_layout_audit.json": "0783b3dde0db8dc914dc972406d4c442526b4c5651f837e405ce811dac5f0571",
+      "rgb_body_prefix_witnesses.json": "3845c8fbe4fec3fc9668250f2ea228366565e731ce21b8b270a19bb34c75db03"
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_rgb_body_collection_v1_l05_attempt_001": {
+      "launch.json": "e40c18b7d41b24d4757108712134803e0b8f548392eb4861e2c4f2c319f44729",
+      "rgb_body_eligible_targets.json": "7b39200ff8b8f45fe638114642612df4fcca15cfb56d734f2de25021152a648e",
+      "rgb_body_eligible_windows.json": "13ff00954d91ba5fa3c600b333cf09f06b66362636f1a39162988acbf9fc1c8a",
+      "rgb_body_episode_roles.json": "ac7ed8fb398a5f6cb90b105ec7c174a4bc6d12261165cf5e44aa66580e9f9504",
+      "rgb_body_layout_audit.json": "74190701c520bd3aea1137dbe867520bc7b991dd80476c29156a76acbf39d802",
+      "rgb_body_prefix_witnesses.json": "7047fa5f800308b5a3c20d2bcc64939c6f7f9426a4ebbdafcbf9df2e57ab7802"
+    }
+  },
+  "navigation_qualified": false,
+  "observed_groups": 120,
+  "observed_subset_common_minimum_contact_actions": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "observed_subset_common_zero_contact_actions": [
+    2,
+    3,
+    4,
+    5
+  ],
+  "planned_groups": 120,
+  "rgb_contribution_established": false,
+  "role": "train",
+  "scope": "post-hoc training-label diagnostic; narrow metadata authentication; no raw audit, RGB loading, fitting or progress metric",
+  "source_sha256": {
+    "lewm/pulse_training_interaction_diagnostic_development.py": "600a7b141a14191591195822f2e00b85a070ea17828277876024907d7f767b4c",
+    "scripts/read_go2_independent_pulse_training_interaction_v1.py": "1f08fbc2eaac64bbd88f73490616b34cf2930279d27977f2a21445b29cc92917"
+  },
+  "status_counts": {
+    "COMPLETE": 120
+  },
+  "stratum_comparisons": [
+    {
+      "history_kind": "quiet",
+      "observed_groups": 30,
+      "pairs": [
+        {
+          "action_pair": [
+            0,
+            1
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            2
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            1,
+            2
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            1,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            1,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            1,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            4,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        }
+      ],
+      "support": "lower_friction"
+    },
+    {
+      "history_kind": "quiet",
+      "observed_groups": 30,
+      "pairs": [
+        {
+          "action_pair": [
+            0,
+            1
+          ],
+          "higher_groups": [],
+          "lower_groups": [
+            "l00_near_wall_quiet_nominal",
+            "l01_near_wall_quiet_nominal",
+            "l02_near_wall_quiet_nominal",
+            "l03_near_wall_quiet_nominal",
+            "l04_near_wall_quiet_nominal",
+            "l05_near_wall_quiet_nominal"
+          ],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            2
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            1,
+            2
+          ],
+          "higher_groups": [
+            "l00_near_wall_quiet_nominal",
+            "l01_near_wall_quiet_nominal",
+            "l02_near_wall_quiet_nominal",
+            "l03_near_wall_quiet_nominal",
+            "l04_near_wall_quiet_nominal",
+            "l05_near_wall_quiet_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            3
+          ],
+          "higher_groups": [
+            "l00_near_wall_quiet_nominal",
+            "l01_near_wall_quiet_nominal",
+            "l02_near_wall_quiet_nominal",
+            "l03_near_wall_quiet_nominal",
+            "l04_near_wall_quiet_nominal",
+            "l05_near_wall_quiet_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            4
+          ],
+          "higher_groups": [
+            "l00_near_wall_quiet_nominal",
+            "l01_near_wall_quiet_nominal",
+            "l02_near_wall_quiet_nominal",
+            "l03_near_wall_quiet_nominal",
+            "l04_near_wall_quiet_nominal",
+            "l05_near_wall_quiet_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            5
+          ],
+          "higher_groups": [
+            "l00_near_wall_quiet_nominal",
+            "l01_near_wall_quiet_nominal",
+            "l02_near_wall_quiet_nominal",
+            "l03_near_wall_quiet_nominal",
+            "l04_near_wall_quiet_nominal",
+            "l05_near_wall_quiet_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            2,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            4,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        }
+      ],
+      "support": "nominal"
+    },
+    {
+      "history_kind": "recent_forward",
+      "observed_groups": 30,
+      "pairs": [
+        {
+          "action_pair": [
+            0,
+            1
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            2
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            3
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            4
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            5
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            2
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            3
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            4
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            5
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_lower_friction",
+            "l01_near_wall_recent_forward_lower_friction",
+            "l02_near_wall_recent_forward_lower_friction",
+            "l03_near_wall_recent_forward_lower_friction",
+            "l04_near_wall_recent_forward_lower_friction",
+            "l05_near_wall_recent_forward_lower_friction"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            2,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            4,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        }
+      ],
+      "support": "lower_friction"
+    },
+    {
+      "history_kind": "recent_forward",
+      "observed_groups": 30,
+      "pairs": [
+        {
+          "action_pair": [
+            0,
+            1
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            0,
+            2
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            3
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            4
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            0,
+            5
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            2
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            3
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            4
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            1,
+            5
+          ],
+          "higher_groups": [
+            "l00_near_wall_recent_forward_nominal",
+            "l01_near_wall_recent_forward_nominal",
+            "l02_near_wall_recent_forward_nominal",
+            "l03_near_wall_recent_forward_nominal",
+            "l04_near_wall_recent_forward_nominal",
+            "l05_near_wall_recent_forward_nominal"
+          ],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 24
+        },
+        {
+          "action_pair": [
+            2,
+            3
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            2,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            4
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            3,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        },
+        {
+          "action_pair": [
+            4,
+            5
+          ],
+          "higher_groups": [],
+          "lower_groups": [],
+          "strict_reversal_observed": false,
+          "tied_groups": 30
+        }
+      ],
+      "support": "nominal"
+    }
+  ],
+  "strict_pair_reversal_strata": 0,
+  "study_result_sha256": "588f24def6ec8810ae5a3411277576b0d965c77bf6ffdb8e18cfd80dce7b8122",
+  "training_performed": false
+}

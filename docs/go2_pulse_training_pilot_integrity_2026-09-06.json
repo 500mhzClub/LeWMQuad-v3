@@ -1,0 +1,540 @@
+{
+  "status": "PULSE_TRAINING_PILOT_OUTPUT_INTEGRITY_PASS",
+  "fits": {
+    "2026090721_direct": {
+      "seed": 2026090721,
+      "arm": "direct",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.22597500698688383,
+          "yaw_error_rad": 2.984045085558234,
+          "contact_brier": 0.22837949815675831,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.8770270270270271
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.06497149851386252,
+          "yaw_error_rad": 0.13997421810097424,
+          "contact_brier": 0.0021860446999853603,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 0.890388011932373,
+      "last_loss": 0.13840430974960327,
+      "training_seconds": 5.2881474799942225
+    },
+    "2026090721_supervised_rollout": {
+      "seed": 2026090721,
+      "arm": "supervised_rollout",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.22597500698688383,
+          "yaw_error_rad": 2.984045085558234,
+          "contact_brier": 0.22837949815675831,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.8770270270270271
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.21671861024442898,
+          "yaw_error_rad": 2.8807128409058413,
+          "contact_brier": 0.2351581439428345,
+          "contact_accuracy_at_half": 0.7993456924754635,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.07011343895553226,
+          "yaw_error_rad": 0.13163487401832505,
+          "contact_brier": 0.002912001149703045,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.06753024003169256,
+          "yaw_error_rad": 0.10662094666993434,
+          "contact_brier": 0.0000672652245359439,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 1.7636840343475342,
+      "last_loss": 0.16567794978618622,
+      "training_seconds": 5.109812646987848
+    },
+    "2026090721_jepa": {
+      "seed": 2026090721,
+      "arm": "jepa",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.22597500698688383,
+          "yaw_error_rad": 2.984045085558234,
+          "contact_brier": 0.22837949815675831,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.8770270270270271
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.21671861024442898,
+          "yaw_error_rad": 2.8807128409058413,
+          "contact_brier": 0.2351581439428345,
+          "contact_accuracy_at_half": 0.7993456924754635,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.03979497796995115,
+          "yaw_error_rad": 0.12417735757887559,
+          "contact_brier": 0.005670526957640797,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.04547055081339452,
+          "yaw_error_rad": 0.1219779919736124,
+          "contact_brier": 0.00485702817930239,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 4.683708190917969,
+      "last_loss": 0.3795877695083618,
+      "training_seconds": 5.187203079927713
+    },
+    "2026090722_direct": {
+      "seed": 2026090722,
+      "arm": "direct",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.058440650953217356,
+          "yaw_error_rad": 2.493787701532136,
+          "contact_brier": 0.27817160590581536,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.04031991313616065,
+          "yaw_error_rad": 0.1304780850886239,
+          "contact_brier": 0.0021728773597807236,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 0.9820873737335205,
+      "last_loss": 0.1426810771226883,
+      "training_seconds": 5.08271878794767
+    },
+    "2026090722_supervised_rollout": {
+      "seed": 2026090722,
+      "arm": "supervised_rollout",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.058440650953217356,
+          "yaw_error_rad": 2.493787701532136,
+          "contact_brier": 0.27817160590581536,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.36868677878610245,
+          "yaw_error_rad": 0.3764359233899981,
+          "contact_brier": 0.19693325560615355,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.05811695355396171,
+          "yaw_error_rad": 0.11864595793161559,
+          "contact_brier": 0.002307327962386024,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.06985768726750423,
+          "yaw_error_rad": 0.14847042397277363,
+          "contact_brier": 0.00008457981541006246,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 1.6421658992767334,
+      "last_loss": 0.1597173810005188,
+      "training_seconds": 5.112255491898395
+    },
+    "2026090722_jepa": {
+      "seed": 2026090722,
+      "arm": "jepa",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.058440650953217356,
+          "yaw_error_rad": 2.493787701532136,
+          "contact_brier": 0.27817160590581536,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.36868677878610245,
+          "yaw_error_rad": 0.3764359233899981,
+          "contact_brier": 0.19693325560615355,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.03397138463747473,
+          "yaw_error_rad": 0.13339567774113067,
+          "contact_brier": 0.003907634151223791,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.0493233963165073,
+          "yaw_error_rad": 0.12346954103756329,
+          "contact_brier": 0.002469306313024393,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 4.527192115783691,
+      "last_loss": 0.31154173612594604,
+      "training_seconds": 5.189215042977594
+    },
+    "2026090723_direct": {
+      "seed": 2026090723,
+      "arm": "direct",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.0860599882185569,
+          "yaw_error_rad": 2.7440801815021016,
+          "contact_brier": 0.2833237379090552,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0.03783783783783784
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.0592266342230281,
+          "yaw_error_rad": 0.1242796197199677,
+          "contact_brier": 0.0029348959496110134,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 0.9782746434211731,
+      "last_loss": 0.15356236696243286,
+      "training_seconds": 5.09365541592706
+    },
+    "2026090723_supervised_rollout": {
+      "seed": 2026090723,
+      "arm": "supervised_rollout",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.0860599882185569,
+          "yaw_error_rad": 2.7440801815021016,
+          "contact_brier": 0.2833237379090552,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0.03783783783783784
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.07343268539008047,
+          "yaw_error_rad": 2.855147964813292,
+          "contact_brier": 0.14823726828032982,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.75
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.05435195027664789,
+          "yaw_error_rad": 0.12451084953574462,
+          "contact_brier": 0.0036516557480853903,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.08212671928918956,
+          "yaw_error_rad": 0.18426598470109115,
+          "contact_brier": 0.00010018991915126474,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 1
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 1.6841353178024292,
+      "last_loss": 0.17785786092281342,
+      "training_seconds": 5.108002546010539
+    },
+    "2026090723_jepa": {
+      "seed": 2026090723,
+      "arm": "jepa",
+      "initial": {
+        "direct_outcomes": {
+          "position_error_m": 0.0860599882185569,
+          "yaw_error_rad": 2.7440801815021016,
+          "contact_brier": 0.2833237379090552,
+          "contact_accuracy_at_half": 0,
+          "contact_monotonicity_violation_fraction": 0.03783783783783784
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.07343268539008047,
+          "yaw_error_rad": 2.855147964813292,
+          "contact_brier": 0.14823726828032982,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.75
+        }
+      },
+      "final": {
+        "direct_outcomes": {
+          "position_error_m": 0.06566329054649626,
+          "yaw_error_rad": 0.13401280362310447,
+          "contact_brier": 0.005282803458060674,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0.9621621621621622
+        },
+        "rollout_outcomes": {
+          "position_error_m": 0.041030483189648824,
+          "yaw_error_rad": 0.12511241295156647,
+          "contact_brier": 0.0075574125111972645,
+          "contact_accuracy_at_half": 1,
+          "contact_monotonicity_violation_fraction": 0
+        }
+      },
+      "zero": {
+        "position_error_m": 0.02233330881923784,
+        "yaw_error_rad": 0.12859574994296388,
+        "contact_brier": 8.75651076269488e-27,
+        "contact_accuracy_at_half": 1,
+        "contact_monotonicity_violation_fraction": 0
+      },
+      "first_loss": 4.0811285972595215,
+      "last_loss": 0.3798045217990875,
+      "training_seconds": 5.197237113025039
+    }
+  },
+  "fit_count": 9,
+  "verified_update_files": 108,
+  "output_sha256": {
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct_result.json": "51cc6539e1ea77ff42a98cb75c963cbe6fc35ef7390d0661cbdfe76ec3a92abf",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/final_checkpoint.pt": "35d0268fa43b1c71f1d7993afc450487207785f0a79ff13ff495e8aaa8b13dbf",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/updates.json": "4c7a5d62565e1425c4e17e7101b37503a4a3eadc161ce10f056c1e50f8721c50",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/initial_metrics.json": "421eb64cc93b5ff28687c3a76fbee30ee0cf9160fc3e19359897baa4379ae041",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/final_metrics.json": "74a37970675ebb8172628466ec7e232720ca34e762eb3b7fd8ed4ff38daa8353",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0001.json": "6515498788aadd353628c93951411bd942e3766f8a1b5f24c7817170ae5eb300",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0002.json": "b6a5e071242124c1b13557dc2dacb6caa3cd68fe8e2b811c2c143995c2d0da40",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0003.json": "7101ff32a6bb58764c1f53b2ad5a21a8a30a1b4a1657ec9368ba130787bc2d0f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0004.json": "fa4237e3ee74a9fa1c61736f0f4cdff7ae90063b599d67b8395d58d762d39444",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0005.json": "ce270865ba8d9bb5c1ad672fc6145ced08c0e27f2e9c7afd14302d3bc9634853",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0006.json": "65f427778e5b6c2530753b0ad06e18bdc04123d68bb135d7aab26a6f5179c98a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0007.json": "14ef7d494230ec3156ba97feda59586eab25f6b76bb76a31028a55ee0fac75bb",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0008.json": "cd4435d5af1ec08b46a46b6e780e78b0c5004234abb15a8594468e0632d5022e",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0009.json": "086b48e2dc1084bb16c37a24afb7da9896673f50eeba7275ca281f2728936c16",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0010.json": "d9278094f9b25eb43b068e41aa97fb055451f6ae4c8faeacf47901fe42d26d7f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0011.json": "ab7e36fa87d40ab8c4be8363bd78c717412040645a5ff132db6b21225fdf01a5",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_direct/update_0012.json": "17855516fe627d6af81536219f168b810b176b5e81f5004075f3f21bd6f7cd72",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout_result.json": "49adaf5318f41720b81e104898ee79b357a1876f106b1e5c2535ea6423658dba",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/final_checkpoint.pt": "ba0aed762b4e0bc9fce080291ce38c8fbaeec8a94e06e3016df4a5b6a7e1464a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/updates.json": "9f43deb3e441198315b438c78b1e794bdd13941a6c32863b14bcb551b96b05ee",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/initial_metrics.json": "1047f0c9f2483329956c67c4428578e11e6b09ab63559684eca5e8836b71b830",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/final_metrics.json": "f1a60b3fd28605e5d67bfd8ce8d1ed19c18db0d1bcebf74ec412de2ce0e7bae1",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0001.json": "06a74b9fecb450a6d59096fd55af5a824a5c58cebc51e691146dde5e641ab5e6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0002.json": "4bc4d83070d02c59d6c8abffdaa2a7cf76927df60065fd2a34ec48620de0bdc8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0003.json": "c14e921f6d5cb24cf53e765cc89cc06b0b242b7255465331f7c9e7a8595cefc8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0004.json": "958650e414daf97950217648985dc1db8852a4969f531db129a047399d6f7f5d",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0005.json": "d1ebf3756416b8800ef1e8ae436b490b16b98f18d99a5991c83e8c25c61e1971",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0006.json": "6b0ff18f58da79ad0c9035067b0942dc5ae719c9efd625cdb642d8772bf819f4",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0007.json": "f766907bfb68f7d65080f44a96abf67dda950023dceaf90cc3ba9f6e3e06bb10",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0008.json": "83ee984ae7a253730214afa084a38791b12bed95c7af94b2bd9b9be4b94eee37",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0009.json": "c157f9446be512cb1752fa98e676e376172170c1596a36628e3dd79b06983330",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0010.json": "1f61ecbe13fa174082e326708c782b00ea5e2884417de65f925c0532e646d13f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0011.json": "0dd561f9e7d37cbb1af212911528c3ccace335fffb182d7cc0b506d9ccbf4ee0",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_supervised_rollout/update_0012.json": "97b9c388275cae3bc7731c7c40fdc2b380a9d8a06f5d4cb86379ebff189de911",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa_result.json": "07bffa504b04dc1829075fbed4dd274af2ff73cc4c89b41e072278654f3103b0",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/final_checkpoint.pt": "2256c7900697011ae8e9700f037874a5754b51a2a2bf9dbfc0500a5dfdb9c2e8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/updates.json": "e8076a7c1ed89f717e580d62126908a8305d687ae66d20596b16d2aa02ce49f9",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/initial_metrics.json": "1047f0c9f2483329956c67c4428578e11e6b09ab63559684eca5e8836b71b830",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/final_metrics.json": "3bedef82b1ef91d052a940349342fa951dcf550c72fce8f136f008ff61ff170f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0001.json": "601dc3a65a0106dd3fea4400990e954a36a711977862f4ffe2d782ec116a9344",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0002.json": "69eff9060df2211fa45cc8876123c8a0a4cb00d72cf812f0af3ce247815354c5",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0003.json": "0439b9057c67b90984d579695bff2e5b2b8974eb297adc8738af5f358e6fe8fd",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0004.json": "f62ae55a1be9b142bd12ee74ee8c02843e49d4443b4c94d080f8e95fbb9b29e7",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0005.json": "1836ce56cb4284d0402d38cfc34039ae3410e70ee8e70f9279ae3032570f2e0e",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0006.json": "1d123216fa4953b7967b44cfb72baa267bf1eb1977a46555f6e2d729c1d0487b",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0007.json": "6bd1e65fa451579ba812ac4d9fa635419f8d59ede52e94ef31d65802f0a3ffda",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0008.json": "f8d871a9b20adeb43ffce7a1f18836a3ff1e4824fb9a774f0d87e31fb1baf39c",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0009.json": "a66c493e25e5e0662b1f9ca249769cfdb35de28fdb786f70cd51ab57114beee9",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0010.json": "146f8080155c780d5edb272e2a0909225163cc9c42c859e80f52ae84d55a7bd5",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0011.json": "725238fcbd6b2451de5fd9882f0396dcbd8bd7c873827ae7133b8cf559109948",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090721_jepa/update_0012.json": "a9bb88dade54c43c8831fa07444d87c6d261aa9f633e3fd5ca5ac99bb1320024",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct_result.json": "556463d7d0598e97c96b8419159cfaee936d383d70186041b7cc4d8186012ae1",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/final_checkpoint.pt": "a347a89fabde310877ac869bd962b60d1e08819e5ec7cf8c0dcd3807ba9a214b",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/updates.json": "22e9cfe0810e678ebbdd3488716778b48f593a71889730426ea072747a7c3866",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/initial_metrics.json": "54e004325cc9946a5c778ff076f00dab89b968319a5baa6a3b64b1e5dd054e0a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/final_metrics.json": "c98b6128a08691ee7065911e6425727f9d8d43f425b1f690f8b9569660d589ad",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0001.json": "4eb7db619aa1edebd1a5c9141972f9105c78c6fec10a07957a19cb9353243cee",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0002.json": "2201d11ab0f18616781291773176b59fd8f8f948b9c1775399a94583c86084b3",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0003.json": "aad531a35ac016c43aa7d77531b5c348ab33a82b9e25a8165c81081310a868d8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0004.json": "b705ed7ca4f2fc3aa31b0450c48e25e3c591d2418358763b8f0ad3e93e1234d8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0005.json": "eb393b787f130ead19e68a48ec67fd0c1318ac8758bdb7ca1881cb46f2dd700f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0006.json": "cfec05cd9cb6ddc46e795f036927ff637005244665383f3fb6b99a233c52b24a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0007.json": "ccccc952b0ec00491e9c80ab91021bcd7529fc20fab8e550569cdde9e14b00db",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0008.json": "a0b29883ece71352451430626774d85fbba046537558286c50e852b0a314d6a2",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0009.json": "c1e4394111de62905305572ba500fd07e4a11df38ee4d2a4a5bc2f576ea36568",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0010.json": "70c7c19059f4f010cc0736b02a9a68e00e5e21e6fc585ad1147e3aa469781fd0",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0011.json": "60eb79bc04c25a1a5f6cae4ec9e07dc3c5d4124469fc2f8cacf7787633f08105",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_direct/update_0012.json": "5bd5d351acc1bd33f9f921b2e5afc98401df52d6df431eddb302aff3521d3d12",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout_result.json": "581ab84333142861637c58c33e3663dadf206de973d00a4c9803b8ecc435c571",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/final_checkpoint.pt": "1aed6729a860cf86573c56663e3ce3568f422298ae41667adbe8a84ea0ed226c",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/updates.json": "a6a9394c574ba449d8ea89704aa804a75405820b646fba42daba8ebc345354af",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/initial_metrics.json": "403dbbec5577dc6a4ae17f1d9b849488e5ea4835728bec56356679623aa8b3c2",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/final_metrics.json": "7c8b4542f7cd9656395f918eeab9534572c30d0dedae5bed7aadc517baa4f777",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0001.json": "b443a4a84a76595689c9bac6a99f70dab875518a49f4a23cf54844bbc3b3b414",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0002.json": "72c9d6e65694c568856a4d1134c802e62c4b49e7df38209d4a6af13712d6a197",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0003.json": "ece2d6977795661385c746296a002764db93494b07b1bd7fa9fc0c01decf1743",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0004.json": "12fb95f830134bc7cedea53c0b36fb97fe1f6198aaa495fd14bcc64a8361ec91",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0005.json": "ea38aa34dc32368bae37166e4cbfc178e7ec3f38ed813079c031c2709274c549",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0006.json": "8279ca004838aa12cd5245957ba68e579ae67da81ede7a40dc4d8029494fead2",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0007.json": "650e860b533d6fae9e3f438e8c4bfa004d6b736e0f53927658307b5f63f8bf7e",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0008.json": "1964c6fc9f12d1805e35772da3ad0207fc52c1948e1ad3f3e5829ed2857c0a34",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0009.json": "3e56cea61fafbaed065b96d72ea20ceb757d41daf3cd3a3da5ccf1a496e487ac",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0010.json": "b6124eca1301b79f595d9a57d5597e308b001df4e12045fdc461debb672567ee",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0011.json": "bf881dee85730f7d4ab9213a36983366df9aaf4b1a5819752d4b5fa26ee44f84",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_supervised_rollout/update_0012.json": "af253998211c18707f9f92f9142ea2dd25995b8c745a7fd934739f9584b9a2a9",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa_result.json": "4e73300d87f7c9488d2dbe0e52edc710f0b8872910e9712bc248e2330f9edf87",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/final_checkpoint.pt": "5f8d360667ee80f56b0fce98905be39a24b5c6a068bdb03c5aa4abbc47fa5dd8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/updates.json": "3bf56a4b90ce585b4e73c059e48653f8a86c1ac74c68f859f68f13026a2f6780",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/initial_metrics.json": "403dbbec5577dc6a4ae17f1d9b849488e5ea4835728bec56356679623aa8b3c2",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/final_metrics.json": "4c2e92f94d171729518937c38621039992d8769f7fb14c00ea201e9e004c8c12",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0001.json": "1b22fbe390d8836e8d675a54938f29a794e64fb51a443428d07555060364f181",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0002.json": "a841744c5d9a5453ce8e0de4d051d0e0010587046c2c165aada03243bef9d5d1",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0003.json": "17b1226289651b54ec56a37821e19a35dea23507f70ee1a5fa0ee88bea9f785e",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0004.json": "6281e6085a6043d90390d6d7ae315d2b682cffeb77eabedcbace43a27005c682",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0005.json": "be431979ec4b5ada5b4af057048ef19479e6191a6c88e31764ec1f2b2345cb81",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0006.json": "bc562d90ae5c5076ce59ac92428bc6fd12bbd40036d827f41a61f34a866a4ec6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0007.json": "cde07dd5d57282b89241998ff4853bc6e013c0106faf91d53882bc643312e141",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0008.json": "ccfc9558fe325caadbff883b17044734f89148c850738dddb536baff8ca1f1a1",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0009.json": "859cd66f9ced5d4212428b04ff5c535eb219fe7ee1fe9d9df2f0c3d22ce0b4b0",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0010.json": "3439e06b9b2a60843419e8608b3a6e6d0b09b47e905f94912bb19587a26e604d",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0011.json": "fabf60e0909f6885d04c6eb9c192d29c2db45549367c2de26592fe73e5061ea7",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090722_jepa/update_0012.json": "696f47c1b88a91bf45938be21797ec6cbc5b83e2049593caa9e3311b29b425e3",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct_result.json": "36b2b5a65f1e287014339f3ab8346916111270e25c65be535a4c46539cde21d8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/final_checkpoint.pt": "e3603c53747b1bbc176b1ec185d065d2dcad5d86672e218661b86a9377316c52",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/updates.json": "23e34d027d72d26d5d757b47d12ec30e0905cd2779f1766c3280955eabc0b616",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/initial_metrics.json": "addf7e2a9120ddf3aecf0f144ffd12f883a911e04fdbb086add0106a2e825e1c",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/final_metrics.json": "953ea6b375c77d6696773e2bbc6afb46070912a9340b1e34061673fa092143b6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0001.json": "b1465fc9c5501f32163bcfe38eca46d77261fa7fcae96e2f91019d435e30519a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0002.json": "0e90b300bc45b93bfcfacd8230a358e3a80d421e2a277130f03b825e0740b89b",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0003.json": "87ed8d58317f629e4ad875d3baf6a9351d14f42ce60ec9df02fa28029d257a2b",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0004.json": "1f2150331f1d948e3b53a346540e2fecd290d633548425ff3435a20ba280d709",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0005.json": "597c17ae09e35e238b19ca8b36941c1aa5441702459cbcb293c44e0ffeecf667",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0006.json": "5233fa129147f8c60cd23b61b3ea79d47a7ea3a25075969d97090f4ebe598af4",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0007.json": "fd1bd66e40ea351257b75f9281e73dfbd9512d07c0d4bd7716aed374eab8e00a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0008.json": "1495ae656e5e85171d5f84f173d2604d45e6dcd9f0b83b9599110da874e009ea",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0009.json": "f06142f47e41a3ca6314cc9f6d44a0e352707e692a74a3322fdd310703326cfb",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0010.json": "5be4790b005e3a5553d0ae7db988dd7ec792a90da1305656afdd2de0a3d10f98",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0011.json": "1e60e6565ea9209d35d250b00f3d5b7716ad2aa9ba09118751746b9d34d6f1ab",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_direct/update_0012.json": "14ad67dc6368b3f256ca29c8ea1fb97bcfd3924803db7af7ff49e72db745808c",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout_result.json": "93a9fd540503b6580177ac20021a1da7e68fda8295cdf64df79b9e3eaac6e6de",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/final_checkpoint.pt": "002ffd185add81612a7fc1a6196c73ba7dc9809a2488542c1f41a3f43ebbe594",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/updates.json": "209275b2689aa139b88c6065d11aef17448a46731d1e922872d77f390aa48f1f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/initial_metrics.json": "be208da17d0ba326cac83c4b2ba241700889919f519a84248a83bd4988deec10",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/final_metrics.json": "24612992a1e7ea4c984a4c7478ccb023977e3a9f6b38d345ec498d033926e89e",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0001.json": "0bb11b8e8d7ee556453d0b8ebf4bcd13d6940df7d4a427cb773336ed77b13e25",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0002.json": "729a7c75391da62b155853a0c1f60d170427eff216245935fb9b432234a705a8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0003.json": "b5d32c5a1c7ae1a1096cc3c1eebd01e5d74331326b296bbe853e43e8c730ea15",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0004.json": "2435f48be2397a2baf71f6494d0505a9cc2ae785631b5c9a7c168ca851fdfdf1",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0005.json": "6219ff90edb14692d68093d84db0611f65bb85873adffa845eb18bfc7912d31f",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0006.json": "a8cfe18d81c327706f8d792ec00ef8f4df83ab1a2bd81724f8ee5f600dc9b8a8",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0007.json": "e91c3fbf87d126ee9ae27dd8e8af096744240ca0fd77227097e21001aa9e553a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0008.json": "8b48031c59c59685de49cf1c86aef179dab1b432dca5a050d4007a265be7fc8a",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0009.json": "5f7a940fda37c321b0d07e7c9a1a239869f8efa279b64aa1f5d939ae56063a16",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0010.json": "973ec622a41542fd19ce57d175be7c4eb1debf2e44bb3f2362901594e260b484",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0011.json": "229fe513ab1a75f399e2845763c4b4147ad36ca482ddd3d2b3a62f14b56a67a6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_supervised_rollout/update_0012.json": "538b2544b776de7f5f60b6c73e72ec18650b3316ff465b803956eca54465ef74",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa_result.json": "e683f6237fea60a322ef7060d67a82bfb79d8fb338be59f551586a99287bfd51",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/final_checkpoint.pt": "9d82762dedc038198b6f23d2afa3d7a16b0749f6335b11eb180d0eb385575271",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/updates.json": "396764b7cd74e4378244a93f7d39666ae659491047915ae16f3c187a76945a28",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/initial_metrics.json": "be208da17d0ba326cac83c4b2ba241700889919f519a84248a83bd4988deec10",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/final_metrics.json": "6607da5eb681b726eaaa2500a3c57a54180a24b05eebd010b7cffd28b8770e46",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0001.json": "1597ce8d5e6064f97b21a3524131a8a91aca05052cb265e6859adc192b9c8f5c",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0002.json": "6f475612bb7fc04d456b2053ad9d1e941a836ab26c075adaf50eba167202d245",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0003.json": "7f5e7586edd0e32356f7b0749d05f8f694107db97b0971e545de3003ff3f2363",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0004.json": "5ebd9f591458b213efa697d968ba1644bb70cf6207d4cb1a3d50df04a2eb2784",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0005.json": "2ab5932d6c916a78b425e8d6ceb121e27d6c3df09ff9c0904535398f0480ea48",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0006.json": "93769d117cde6b1b4814d36f01b95ccd189a6b3232d07c9fc7445779f72735a6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0007.json": "caf53f89ffd3f3d92a940f2c4db5d8229bfd41875f690caa34c845c1b93fe4db",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0008.json": "c150c4b358b61ca96402f3bfa873aca207230ab7e90a4afb90e557e33a17d938",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0009.json": "bd2f94666e92db2539435c27eb88e3fb2ff9b0e551bf7cd8258dd8e3b99c2857",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0010.json": "c197c6423853fcbf40684f04daba826e44326538e5851e2c527d75eed26f08c6",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0011.json": "438d9fb50ad62bed26887d8de614da048b7ed515ca8c6f43df99d994c14963da",
+    ".generated/go2_pulse_training_pilot_v2_attempt_001/2026090723_jepa/update_0012.json": "31866ad8536588f3f490de4d0aff2f2d59217da0b83bf253aba2f0ea63121cf8"
+  },
+  "launch_sha256": "5059f97d20817d8781f1ecdabe10d811ad5e0741a2ca96861985a58a84e21984",
+  "result_sha256": "ecfbd5b84ac65821134c28b7983230c8f9196dce92325c1e4b2f0c683e15e032",
+  "checkpoint_optimizer_steps_verified": true,
+  "full_gradient_training_replay_performed": false,
+  "independent_generalization_established": false,
+  "goal_achieved": false
+}
