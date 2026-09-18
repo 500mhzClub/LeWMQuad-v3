@@ -103,7 +103,10 @@ def main():
           f"(prevents .pyc beside sources)")
 
     print('\n== resource gate for this configuration ==')
-    expected_output = 4 * 2**20  # four run json files plus result, ~2 MB observed previously
+    # Refreshed after the successor gained candidate queries and strata fields. The original
+    # four-arm run files totalled ~2.85 MB; this writes five conditions plus in_bank/group
+    # per row, roughly doubling row size, plus result.json duplicated into docs/.
+    expected_output = 32 * 2**20
     for label, path in (('successor output (writes)', SUCCESSOR), ('repo docs (writes)', REPO / 'docs')):
         available = free(path)
         passes = available >= RESERVE + expected_output
