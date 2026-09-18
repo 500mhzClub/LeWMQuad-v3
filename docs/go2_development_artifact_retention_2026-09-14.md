@@ -1,5 +1,33 @@
 # Development artifact retention
 
+September 18: retired the depth NPZ leaves of the completed, diagnosed, superseded
+layout-4 matched pair, under user approval bounded to an exact manifest. Roots:
+`go2_cached_fine_goal_lzma_hold_relative_recovery_pulse_round_trip_native_layout04_4800_v1_attempt_001`,
+`go2_jit_floor_cached_fine_goal_lzma_pulse_reactive_round_trip_native_layout04_4800_v1_attempt_001`,
+`go2_jit_floor_cached_fine_goal_lzma_hold_relative_recovery_pulse_round_trip_native_layout04_4800_v1_attempt_001`.
+Both owners exited 0, the paired summary and per-arm stall diagnoses are complete,
+all replays completed, and the trio is superseded by the stable-reference trial; no
+doc from September 15 onward references them. Completed: 28,848 leaves retired,
+reclaiming 9,059,074,048 allocated bytes (8.44 GiB). All 28,972 non-depth files were
+hash-verified unchanged before and after. No hardlinked or symlinked leaf was touched.
+`go2_dense_horizon_untimed_exposed_maze_full_v1_attempt_001` was explicitly excluded
+and remains the active full-depth comparison reference.
+Receipt: `.generated/depth_retirement_layout04_matched_pair_2026-09-18/`, including the
+exact deletion manifest, preserved hashes and script SHA-256.
+
+Retaining every failure record is NOT retaining replayability. Perception and tracker
+replays, stable-reference and compiled-floor replays, raw-sensor public replay and its
+sample verification, and any depth-dependent floor or occupancy re-derivation can no
+longer be reproduced directly from these three roots. Regeneration is not promised to
+reproduce the original closed-loop trajectories.
+
+Admission correction recorded with this entry: headroom must be checked per path, not
+per guessed mount. `/home/andrewknowles/Workspace` is its own XFS volume, so querying
+`/` reports an unrelated filesystem. After this retirement the workspace volume holds
+10.19 GiB and passes the 2 GiB gate, but steam_drive (0.54 GiB) and the shared
+RecoveryStorage-and-`/tmp` filesystem (0.55 GiB) remain below it. The navigation
+evaluator reads and writes on steam_drive, so it is NOT admitted by this retirement.
+
 September 18: end the old full-depth success-reference pin for the workspace
 `go2_hold_relative_recovery_pulse_round_trip_native_layout06_4800_v1_attempt_001`.
 Its native owner exited 0, both physical arrivals passed, and its timing,

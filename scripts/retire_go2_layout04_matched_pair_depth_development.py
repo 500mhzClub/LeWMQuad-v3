@@ -23,6 +23,23 @@ ROOTS = [
 ]
 
 
+# Headroom must be checked on the filesystem backing each path actually used, not on a
+# guessed mount point. /home/andrewknowles/Workspace is its own XFS volume, so querying
+# '/' reports an unrelated filesystem and can wrongly clear or wrongly fail the gate.
+ADMISSION = {
+    'workspace artifacts': str(BASE),
+    'steam_drive artifacts': '/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1',
+    'RecoveryStorage artifacts': ('/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/'
+                                  'navigation_development_artifacts_v1'),
+    'tmp': '/tmp',
+}
+
+
+def free_bytes(path):
+    status = os.statvfs(path)
+    return status.f_bavail * status.f_frsize
+
+
 def is_depth(name):
     return name.startswith(('primary_depth_', 'auxiliary_depth_')) and name.endswith('.npz')
 
@@ -87,22 +104,40 @@ def main():
     assert not changed, f'{len(changed)} preserved files changed: {changed[:5]}'
     print(f'VERIFIED: all {len(after)} preserved file hashes unchanged', flush=True)
 
+    LOST = ('Raw depth was retired, not merely unused. Preserving every failure record is '
+            'NOT preserving replayability. The following can no longer be reproduced directly '
+            'from these roots and would require regeneration, which is not promised to '
+            'reproduce the original closed-loop trajectory: perception and tracker replays '
+            'over primary/auxiliary depth; stable-reference and compiled-floor replays; '
+            'raw-sensor public replay and its sample verification; any depth-dependent '
+            'floor-extraction or occupancy re-derivation. All RGB, physics, commands, poses, '
+            'diagnostics, comparison summaries, results and failure records are preserved '
+            'and were hash-verified before and after.')
+
     RECEIPT.mkdir(parents=True, exist_ok=True)
     report.update(removed_leaves=removed, freed_allocated_bytes=freed,
                   preserved_files_verified=len(after), wall_s=time.monotonic() - started,
                   policy='docs/go2_development_artifact_retention_2026-09-14.md',
-                  basis='completed, diagnosed, superseded matched pair; no pending raw replay or training input')
+                  script_sha256=sha(os.path.abspath(__file__))[1],
+                  basis='completed, diagnosed, superseded matched pair; no pending raw replay or training input',
+                  excluded_active_reference='go2_dense_horizon_untimed_exposed_maze_full_v1_attempt_001',
+                  replayability_lost=LOST,
+                  free_bytes_after={label: free_bytes(path) for label, path in ADMISSION.items()})
     (RECEIPT / 'result.json').write_text(json.dumps(report, indent=1))
+    (RECEIPT / 'deletion_manifest.json').write_text(json.dumps(
+        {'leaves': [p for p, _ in all_depth]}, indent=1))
     (RECEIPT / 'preserved_hashes.json').write_text(json.dumps(after, indent=1))
     for root in ROOTS:
         (BASE / root / 'depth_retention.json').write_text(json.dumps(dict(
             depth_retired=True, date='2026-09-18', receipt=str(RECEIPT),
             policy='docs/go2_development_artifact_retention_2026-09-14.md',
-            note='Primary/auxiliary depth NPZ arrays intentionally retired. Exact historical '
-                 'sensor replay requires regeneration and is not promised to reproduce the '
-                 'closed-loop trajectory. All RGB, physics, commands, poses, diagnostics, '
-                 'results and failure records are preserved and were hash-verified.'), indent=1))
+            note=LOST), indent=1))
     print(f'receipt: {RECEIPT}')
+    print('Admission check on the filesystems actually used (by path, not by mount guess):')
+    for label, path in ADMISSION.items():
+        free = free_bytes(path)
+        gate = 'PASS' if free >= 2 * 2**30 else 'BELOW 2 GiB GATE'
+        print(f'  {label:42s} free {free/2**30:7.2f} GiB  {gate}')
 
 
 if __name__ == '__main__':
