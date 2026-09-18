@@ -36,6 +36,10 @@ RESULT = REPO / 'docs/go2_anchored_navigation_transfer_result_2026-09-18.json'
 BANK = ('forward', 'left_arc', 'right_arc')
 CONDITIONS = ('persistence', 'action_raw', 'no_future_action_raw',
               'action_calibrated', 'no_future_action_calibrated')
+# Attribution factorial for the action arm only: which component causes which effect.
+# raw = (1,1); common_only scales the shared mean and leaves the deviation at 1;
+# branch_only scales the deviation and leaves the mean at 1; calibrated scales both.
+DECOMPOSED = CONDITIONS + ('action_common_only', 'action_branch_only')
 HORIZONS = 7
 
 
@@ -46,16 +50,16 @@ def bank_indices():
     return index
 
 
-def metrics(rows):
+def metrics(rows, conditions=CONDITIONS):
     if not rows:
         return dict(windows=0, curves={})
     return dict(windows=len(rows), curves={c: [dict(horizon_ms=100 * (h + 1),
                 mse=float(np.mean([r['mse'][c][h] for r in rows]))) for h in range(HORIZONS)]
-                for c in CONDITIONS})
+                for c in conditions})
 
 
 @torch.inference_mode()
-def evaluate(limit=None, check=False):
+def evaluate(limit=None, check=False, decompose=False):
     torch.set_num_threads(1)
     cv2.setNumThreads(1)
     cv2.ocl.setUseOpenCL(False)
@@ -65,6 +69,7 @@ def evaluate(limit=None, check=False):
     alpha = {a: (frozen['coefficients'][a]['alpha_common'],
                  frozen['coefficients'][a]['alpha_branch']) for a in training.ARMS}
     index = bank_indices()
+    conditions = DECOMPOSED if decompose else CONDITIONS
 
     model = training.representation.load()
     predictors = {a: training.load(a) for a in training.ARMS}
@@ -126,6 +131,11 @@ def evaluate(limit=None, check=False):
                 predictions[f'{arm}_raw'] = anchor_np + executed_innovation
                 predictions[f'{arm}_calibrated'] = (
                     anchor_np + common * reference + branch * (executed_innovation - reference))
+                if decompose and arm == 'action':
+                    predictions['action_common_only'] = (
+                        anchor_np + common * reference + 1.0 * (executed_innovation - reference))
+                    predictions['action_branch_only'] = (
+                        anchor_np + 1.0 * reference + branch * (executed_innovation - reference))
                 if check:
                     identity = anchor_np + 1.0 * reference + 1.0 * (executed_innovation - reference)
                     checks.setdefault('identity_max_abs', []).append(
@@ -154,27 +164,28 @@ def evaluate(limit=None, check=False):
                 assert value['image']['measured_ns'] == p['measured_ns'] + offset * 100_000_000
                 future.append(observation_tensors(value)['rgb'])
             target = model.target({'rgb': torch.stack(future)}).numpy().astype(np.float64)
-            errors = {c: np.square(predictions[c] - target).mean(-1).tolist() for c in CONDITIONS}
+            errors = {c: np.square(predictions[c] - target).mean(-1).tolist() for c in conditions}
             rows.append(dict(run=number, frame=frame, action=window['action'],
                              group=window['group'], in_bank=in_bank, mse=errors))
             if ordinal % 400 == 0:
                 print('TRANSFER', number, ordinal, flush=True)
-        summary = dict(run=number, root=str(root), total=metrics(rows),
-                       in_bank=metrics([r for r in rows if r['in_bank']]),
-                       out_of_bank=metrics([r for r in rows if not r['in_bank']]),
-                       by_action={a: metrics([r for r in rows if r['action'] == a])
+        summary = dict(run=number, root=str(root), total=metrics(rows, conditions),
+                       in_bank=metrics([r for r in rows if r['in_bank']], conditions),
+                       out_of_bank=metrics([r for r in rows if not r['in_bank']], conditions),
+                       by_action={a: metrics([r for r in rows if r['action'] == a], conditions)
                                   for a in source.ACTIONS})
-        if not check:
+        if not check and not decompose:
             training.probe.save(OUTPUT / f'run_{number:02d}.json', dict(summary=summary, rows=rows))
         summaries.append(summary)
         all_rows.extend(rows)
         print('TRANSFER_RUN_COMPLETE', number, len(rows), flush=True)
 
-    result = dict(status='complete', runs=summaries, total=metrics(all_rows),
-                  in_bank=metrics([r for r in all_rows if r['in_bank']]),
-                  out_of_bank=metrics([r for r in all_rows if not r['in_bank']]),
-                  by_action={a: metrics([r for r in all_rows if r['action'] == a])
+    result = dict(status='complete', runs=summaries, total=metrics(all_rows, conditions),
+                  in_bank=metrics([r for r in all_rows if r['in_bank']], conditions),
+                  out_of_bank=metrics([r for r in all_rows if not r['in_bank']], conditions),
+                  by_action={a: metrics([r for r in all_rows if r['action'] == a], conditions)
                              for a in source.ACTIONS},
+                  conditions=list(conditions), decomposition=decompose,
                   coefficients=frozen['coefficients'], reference_bank=BANK,
                   bank_indices=index, windows=len(all_rows),
                   coefficients_frozen_not_refitted=True,
@@ -196,17 +207,24 @@ def evaluate(limit=None, check=False):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--check', action='store_true')
+    parser.add_argument('--decompose', action='store_true')
     parser.add_argument('--limit', type=int, default=None)
     args = parser.parse_args()
-    result = evaluate(limit=args.limit, check=args.check)
+    result = evaluate(limit=args.limit, check=args.check, decompose=args.decompose)
+    active = result.get('conditions', list(CONDITIONS))
     if args.check:
         print(json.dumps(result['checks'], indent=1))
-        print(json.dumps({c: result['total']['curves'][c][-1] for c in CONDITIONS}, indent=1))
+        print(json.dumps({c: result['total']['curves'][c][-1] for c in active}, indent=1))
         return
-    OUTPUT.mkdir(parents=True, exist_ok=True)
-    training.probe.save(OUTPUT / 'result.json', result)
-    training.probe.save(RESULT, result)
-    print(json.dumps({c: result['total']['curves'][c][-1] for c in CONDITIONS}, indent=1))
+    if args.decompose:
+        target = OUTPUT / 'component_decomposition'
+        target.mkdir(parents=True, exist_ok=True)
+        training.probe.save(target / 'result.json', result)
+    else:
+        OUTPUT.mkdir(parents=True, exist_ok=True)
+        training.probe.save(OUTPUT / 'result.json', result)
+        training.probe.save(RESULT, result)
+    print(json.dumps({c: result['total']['curves'][c][-1] for c in active}, indent=1))
 
 
 if __name__ == '__main__':
