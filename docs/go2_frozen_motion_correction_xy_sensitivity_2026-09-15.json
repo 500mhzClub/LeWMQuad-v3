@@ -1,0 +1,272 @@
+{
+  "analysis": "exact_derivative_of_frozen_affine_residual_plus_raw_XY",
+  "formula": "d_corrected_XY_d_raw_XY = I + coefficient[12:14] / scale[12:14,None]",
+  "condition_results": {
+    "jepa": {
+      "binding": {
+        "fit_sha256": "ef7511b29afd0117291f600d7afad6adccdcd90199d0ea1f45519d7b81b01638",
+        "correction_root": "go2_closed_loop_motion_residual_study_v1_attempt_001",
+        "correction_base_model": "seed_2026091001_full_jepa"
+      },
+      "horizons_ms": {
+        "300": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.030702471239226092,
+              0.0219074030688026
+            ],
+            [
+              -0.022104855992390683,
+              0.0374188359775367
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.04391080910385361,
+            0.03719154255496186
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.03185589430525231,
+              -0.00981317480861163
+            ],
+            [
+              0.024354867391151752,
+              0.027201565584395782
+            ]
+          ]
+        },
+        "700": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.4287221264909574,
+              0.09956888336589913
+            ],
+            [
+              0.4430439358550156,
+              0.06933512809443909
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.6279226754359487,
+            0.022913468458448324
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.0039030392010529513,
+              -0.018413869356446195
+            ],
+            [
+              -0.0331074510710021,
+              0.035581931376059014
+            ]
+          ]
+        },
+        "800": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.8551371221494694,
+              0.13772998838433262
+            ],
+            [
+              0.8880463394573737,
+              -0.0707221491844281
+            ]
+          ],
+          "raw_xy_singular_values": [
+            1.2336544501365274,
+            0.14816770378754077
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              -0.005522820678992091,
+              -0.01144438564342942
+            ],
+            [
+              -0.13852192826391246,
+              0.009098368914968636
+            ]
+          ]
+        }
+      }
+    },
+    "direct": {
+      "binding": {
+        "fit_sha256": "118fa93d4a420525c5685cf14b2aeec30cff827abf1d65029716aa7e69dd9e6a",
+        "correction_root": "go2_matched_motion_residual_direct_v1_attempt_001",
+        "correction_base_model": "seed_2026091001_full_direct"
+      },
+      "horizons_ms": {
+        "300": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.07445111947425942,
+              0.0004276070609660113
+            ],
+            [
+              0.002383667425300002,
+              -0.012746575482611933
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.07448927072357212,
+            0.01275373054316972
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.0043780566160396914,
+              0.01590808366090887
+            ],
+            [
+              0.002260433159604039,
+              -0.0008140170863752807
+            ]
+          ]
+        },
+        "700": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.45735481008373946,
+              0.02328277338217906
+            ],
+            [
+              -0.25566858616641164,
+              -0.17103193684687557
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.5348615654810533,
+            0.1351183369797811
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.007497673348209066,
+              0.01721007966242394
+            ],
+            [
+              0.000557752553025699,
+              -0.007880614158245796
+            ]
+          ]
+        },
+        "800": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.6533846988594796,
+              0.014245126628385599
+            ],
+            [
+              -0.2355934989447768,
+              -0.1074943839273903
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.696383934099312,
+            0.09603772168105866
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.02567065457560936,
+              0.0044464276694207265
+            ],
+            [
+              0.009002655336586361,
+              -0.009272675127969305
+            ]
+          ]
+        }
+      }
+    },
+    "supervised_rollout": {
+      "binding": {
+        "fit_sha256": "413a3160c21dc43b4b8a1b87b4c092d59428158270d7b91179229d84b04fda1d",
+        "correction_root": "go2_matched_motion_residual_supervised_rollout_v1_attempt_001",
+        "correction_base_model": "seed_2026091001_full_supervised_rollout"
+      },
+      "horizons_ms": {
+        "300": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.008110940611210649,
+              0.02536587807550384
+            ],
+            [
+              0.21565978021910454,
+              0.23284114869895334
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.3182871590124456,
+            0.011253482462182612
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              0.006641769730465031,
+              0.004691516723290484
+            ],
+            [
+              0.0686676209601928,
+              0.05627916806712119
+            ]
+          ]
+        },
+        "700": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.31794638108705175,
+              0.03711865510253921
+            ],
+            [
+              0.36529541952936573,
+              -0.05378309893256117
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.48455919558847393,
+            0.06327279852788306
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              -0.004624755002715806,
+              -0.003990662586352946
+            ],
+            [
+              0.02164244215131084,
+              0.09386506335632222
+            ]
+          ]
+        },
+        "800": {
+          "raw_xy_to_corrected_xy_jacobian_row_input": [
+            [
+              0.6431193689504209,
+              -0.027110165932559674
+            ],
+            [
+              0.20368225151650027,
+              -0.13451395031372804
+            ]
+          ],
+          "raw_xy_singular_values": [
+            0.6779739674057284,
+            0.11945394823131535
+          ],
+          "raw_yaw_sin_cos_to_corrected_xy_m_per_unit": [
+            [
+              -0.04797151792378091,
+              0.0013341660178061035
+            ],
+            [
+              0.09644749084913333,
+              0.07454431104478738
+            ]
+          ]
+        }
+      }
+    }
+  },
+  "past_poses_commands_and_raw_yaw_held_fixed": true,
+  "neural_yaw_and_contact_direct_scoring_not_ablated": true,
+  "observed_forecast_distribution_not_integrated": true,
+  "causal_navigation_effect_established": false,
+  "no_training_or_runtime_change": true
+}

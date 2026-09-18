@@ -1,0 +1,12 @@
+{
+  "status": "REUSED_FLOOR_MESH_INDEPENDENT_VERIFICATION_COMPLETE",
+  "result_sha256": "1a7909f8ae1ab90a5e6281cfa187495140d029c384c7ea9d37422743854f543e",
+  "launch_sha256": "15db8432621bbbc33fb098ce2a71bfa63b9b82fdf9e62421603508f8e879d6b0",
+  "verification_document": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/go2_reused_floor_mesh_prefix_verification_2026-09-10.json",
+  "verification_sha256": "f9e9e615dbbb54ac98fc9b6563f8ac2c6b1f6ea8e1700a5c0763b83818f90820",
+  "verification_source_count": 2020,
+  "checker_returncode": 0,
+  "model_inference": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

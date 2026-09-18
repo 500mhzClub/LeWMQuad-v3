@@ -1,0 +1,33 @@
+{
+  "action": "stop redundant post-audit prefix comparisons and empty queued launcher",
+  "reason": "user requested minimal development checks; physical collection and full raw sensor/controller audit have completed",
+  "time_unix": 1789252737.7382398,
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_extended_return_budget_maze02_v1_attempt_001",
+  "completed_audit_sha256": {
+    "no_rgb_direct_extended_return_budget_maze_02_audit.json": "043154f80da4f3bd02bbe9828ddabc4c7f1a108380b64d788df76dc0706948c1",
+    "no_rgb_direct_extended_return_budget_maze_02_readout.json": "95ffaa095fe5d5062dd7404c21dcc744a961df709d58c1ec8b931720104b70fd"
+  },
+  "overall_attempt_marked_complete": false,
+  "scientific_round_trip_success": false,
+  "removed_claim": "completed paired physical-prefix comparison",
+  "processes": [
+    {
+      "role": "queued_trial",
+      "pid": 3128161,
+      "created": 1789252045.06,
+      "cpu_seconds": 0.09
+    },
+    {
+      "role": "parent",
+      "pid": 3098435,
+      "created": 1789242789.52,
+      "cpu_seconds": 42.05
+    },
+    {
+      "role": "worker",
+      "pid": 3098584,
+      "created": 1789242838.44,
+      "cpu_seconds": 9810.91
+    }
+  ]
+}

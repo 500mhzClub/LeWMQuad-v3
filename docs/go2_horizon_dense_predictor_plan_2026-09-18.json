@@ -1,0 +1,87 @@
+{
+  "seed": 2026091802,
+  "updates_per_arm": 1760,
+  "batch": 16,
+  "arms": {
+    "action": "mixed_action",
+    "no_future_action": "mixed_no_future_action"
+  },
+  "samples": 29008,
+  "frame_paths": 6170,
+  "horizon_ms": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+  ],
+  "context_offsets_ms": [
+    -1000,
+    -500,
+    0
+  ],
+  "sampling": "Two samples per horizon in every batch; two of sixteen from balanced starts, rotating horizons. Uniform shuffled queues within each pool.",
+  "draws_by_horizon": {
+    "1": 3520,
+    "6": 3520,
+    "8": 3520,
+    "4": 3520,
+    "7": 3520,
+    "2": 3520,
+    "3": 3520,
+    "5": 3520
+  },
+  "unique_examples_drawn": 25024,
+  "balanced_start_draws": 3520,
+  "encoder_frozen": true,
+  "loss": "unchanged L1 of layer-normalized dense visual tokens",
+  "initialization": "Corresponding supplemented action/action-blind final weights; fresh AdamW for both arms. Prior training budgets matched, initial weights differ.",
+  "initial_checkpoint_sha256": {
+    "action": "e9399ecfaca28373ad7cdddc71e93c26226dfbe94ca098b87f792411ea8c6198",
+    "no_future_action": "0e8e0592505efc9a409a99e55c9c5dbebc09117d1f4a0d4f4b28600514160102"
+  },
+  "optimizer": {
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "gradient_clip": 1.0
+  },
+  "action_conditioning": "Eight post-limiter forward/yaw commands, hard-masked beyond target time; target-time scalar retained in both arms.",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_horizon_dense_predictor_development.py": "ad07bf793b1b45ead3267484b7f8befb4b89c8ec5d285a773d391339b25f7e62",
+    "lewm/horizon_conditioned_dense_predictor_development.py": "3e220a214e4e04d82d7b0ea265074e7fcbd8fd3a3711f4b4cb19fa549147f42d",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_balanced_start_predictor_development.py": "2684bf8264abc5e3cdf55e84c09280b79300c019ff4c40112e05ed542e799896",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_frozen_vjepa_native_adaptation_development.py": "58bc65886332d624b673a62e41f2cc89e7f86b111c60fafd69b4861321862a68",
+    "scripts/train_go2_dense_task_predictor_development.py": "3acca4ca7817d0f2208382d15d6e88ebf9cf7f3cc99721981601f1c86a824bce"
+  },
+  "input_sha256": {
+    "samples.json": "19097c2b611bc01b54d864e32318ab857ea5e29fa3bfc51da2e94775cae4dc6e",
+    "frame_paths.json": "79a4e5829f799d62d0ce245ba6e5258a1f6195c880e45b7f4f11205a960f3413",
+    "schedule.json": "1c1f17860dee4c9d8de5da21fc79e5dbe3b381332a25ff9159a5b16023488acc"
+  },
+  "collection_result_sha256": "2a50c389221312c57354feb117cba31ca73722f3f06bf8bbe4eab604e919e00d",
+  "resources": {
+    "gpu": "AMD Radeon AI PRO R9700",
+    "free_bytes": 772988928,
+    "ram_available_bytes": 78757003264,
+    "feature_cache_bytes": 9704570880,
+    "reserve_bytes": 536870912,
+    "gpu_processes": 1,
+    "cpu_cores": [
+      8,
+      9,
+      10,
+      11
+    ]
+  },
+  "checkpoint_rule": "Final step only; model weights retained, no tensor feature files. Preserve interrupted attempts without automatic restart.",
+  "evaluation": "All eight horizons on the retained matched-action branch panel against action-blind and persistence; check 500-ms regression against parent before closed-loop integration.",
+  "limitations": [
+    "single seed",
+    "exposed development diagnostics",
+    "no JEPA encoder objective ablation",
+    "physical motion decoding, collision scoring and timing remain separate integration problems"
+  ]
+}

@@ -1,0 +1,163 @@
+{
+  "status": "COLLECTION_PHYSICAL_READOUT_FULL_AUDIT_PENDING",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001",
+  "case": "independent_00_frozen_reference_seed_2026091001_full_supervised_rollout",
+  "assignment": {
+    "layout_index": 0,
+    "mode": "frozen_reference",
+    "model_name": "seed_2026091001_full_supervised_rollout",
+    "training_seed": 2026091001,
+    "condition": "supervised_rollout",
+    "variant": "full"
+  },
+  "model_state_sha256": "755c074325af96d53649aba4927937113d8fab561ea05341a2f3c328598b2bb5",
+  "collection_complete": true,
+  "collection": {
+    "status": "RESIDUAL_ANCHORED_CONTINUATION_MAZE_TERMINAL_AUDIT_REQUIRED",
+    "layout_index": 0,
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "schedule_terminal": "MISSION_TICK_BUDGET_EXHAUSTED",
+    "terminal_zero_ticks": 10,
+    "setup_admitted": true,
+    "setup_checked": true,
+    "departure_present": true,
+    "command_ticks": 8013,
+    "completed_ticks": 8013,
+    "physics_samples": 401400,
+    "rgbd_frames": 8014,
+    "auxiliary_frames": 8014,
+    "decisions": 8014,
+    "mission_receipt": {
+      "frame": 8003,
+      "measured_ns": 801800000000,
+      "phase": "OUTBOUND",
+      "phase_transition": null,
+      "evaluated_phase": "OUTBOUND",
+      "evaluated_goal_initial_body_xy_m": [
+        0.0,
+        2.6
+      ],
+      "active_goal_initial_body_xy_m": [
+        0.0,
+        2.6
+      ],
+      "observed_goal_distance_m": 2.590825531687124,
+      "quiet_intervals": 0,
+      "hold_required": true,
+      "arrival_confirmed_this_frame": false,
+      "arrivals": [],
+      "terminal": "MISSION_TICK_BUDGET_EXHAUSTED",
+      "failure": null,
+      "global_navigation_ticks": 8000,
+      "controller_state_reset_required": false,
+      "observed_map_reset_required": false,
+      "native_state_used": false,
+      "verified_round_trip": false,
+      "measured_settling_required": true,
+      "observed_settling": {
+        "previous_frame": 8002,
+        "current_frame": 8003,
+        "measured_ns": 801800000000,
+        "previous_position_initial_body_m": [
+          -0.0018649926336571406,
+          0.009126070481102694,
+          -0.004685152039484191
+        ],
+        "current_position_initial_body_m": [
+          -0.0018361484105052519,
+          0.009175118962904197,
+          -0.00469843768402415
+        ],
+        "observed_interval_speed_m_s": 0.000584315935698354,
+        "maximum_observed_interval_speed_m_s": 0.05,
+        "measured_motion_quiet": true,
+        "motion_source": "consecutive_admitted_visual_positions_in_floor_reference",
+        "continuous_speed_bound": false,
+        "pose_uncertainty_calibrated": false,
+        "native_state_used": false,
+        "command_integrated_position": false,
+        "previous_boundary_measured_quiet": true,
+        "both_boundaries_measured_quiet": true,
+        "first_quiet_observation_starts_dwell": true,
+        "previous_boundary_quiet_under_zero_request": true,
+        "preceding_interval_zero_requested": true,
+        "zero_request_boundary_required_before_dwell": true
+      }
+    },
+    "navigation_ticks": 8000,
+    "tracker_required_for_commands": true,
+    "additional_auxiliary_rgb_for_motion": true,
+    "native_state_used_for_commands": false,
+    "navigation_qualified": false,
+    "measured_floor_transport_enabled": true,
+    "residual_first_interval_feasibility_fallback_enabled": true,
+    "residual_hold_feasibility_enabled": true,
+    "residual_anchored_continuation_enabled": true,
+    "renderer_witnesses_recorded": true,
+    "storage_initial_free_bytes": 524950736896,
+    "storage_allowance_bytes": 30064771072,
+    "storage_persistence_headroom_bytes": 1073741824
+  },
+  "native_evaluation": {
+    "arrival_windows": [],
+    "outbound_traversal": {
+      "crossings": [],
+      "invalid_crossings": [],
+      "visited_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "loop_erased_cells": [
+        [
+          -1,
+          0
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "maximum_native_step_m": 4.343550784269934e-05,
+      "native_step_bound_pass": true,
+      "evaluator_only": true,
+      "collision_clearance_certified": false
+    },
+    "return_traversal": null,
+    "physically_retraced_outbound_route": false,
+    "terminal_native_quiet_pass": true,
+    "native_round_trip_candidate_pass": false,
+    "verified_round_trip": false,
+    "requires_raw_sensor_command_and_visibility_audit": true,
+    "evaluator_only": true,
+    "controller_native_state_access": false,
+    "independent_navigation_claim": false
+  },
+  "native_descriptives": {
+    "physics_samples": 401400,
+    "recorded_contact_samples": 0,
+    "nonzero_translation_request_samples_after_settling": 0,
+    "nonzero_yaw_request_samples_after_settling": 9350,
+    "minimum_goal_distance_m": 2.5904265063129683,
+    "final_goal_distance_m": 2.590957746354588,
+    "maximum_displacement_from_start_m": 0.009861755536747195,
+    "final_displacement_from_start_m": 0.009183048262409165
+  },
+  "closed_physical_artifact_bindings": {
+    "independent_00_frozen_reference_seed_2026091001_full_supervised_rollout/result.json": {
+      "sha256": "138d4c5578f122f73662d2fac8bc4960677149792de727f68ceeb724173a6ec5",
+      "bytes": 2936
+    },
+    "independent_00_frozen_reference_seed_2026091001_full_supervised_rollout/physics_trace.npz": {
+      "sha256": "d9bc3f40606ef034913b187aedab0df2c9d70ef110c252d61b453ca7b9eea7b9",
+      "bytes": 52531179
+    }
+  },
+  "full_audit_pending": true,
+  "verified_round_trip": false,
+  "independent_maze_replicates": 1,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false,
+  "collection_resource_span_s": 8912.972269812133,
+  "collection_timing_scope": "collection resource begin through completed; subsequent full audit excluded"
+}

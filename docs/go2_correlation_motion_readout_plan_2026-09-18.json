@@ -1,0 +1,3310 @@
+{
+  "schema": "correlation_motion_readout.v1",
+  "training_samples": 546,
+  "recordings": 138,
+  "unique_paths": 1054,
+  "selection": "four equally spaced admitted 500-ms windows per recording; no target or error selection",
+  "samples": [
+    {
+      "sample_id": "all_phase_train/family/family_episode_001/offset_07",
+      "source": "family",
+      "trial": "family_episode_001",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_001/offset_13",
+      "source": "family",
+      "trial": "family_episode_001",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_001/offset_19",
+      "source": "family",
+      "trial": "family_episode_001",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_001/offset_26",
+      "source": "family",
+      "trial": "family_episode_001",
+      "frame": 29
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_002/offset_07",
+      "source": "family",
+      "trial": "family_episode_002",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_002/offset_11",
+      "source": "family",
+      "trial": "family_episode_002",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_002/offset_15",
+      "source": "family",
+      "trial": "family_episode_002",
+      "frame": 18
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_002/offset_19",
+      "source": "family",
+      "trial": "family_episode_002",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_005/offset_07",
+      "source": "family",
+      "trial": "family_episode_005",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_005/offset_16",
+      "source": "family",
+      "trial": "family_episode_005",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_005/offset_25",
+      "source": "family",
+      "trial": "family_episode_005",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_005/offset_35",
+      "source": "family",
+      "trial": "family_episode_005",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_006/offset_07",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_006/offset_16",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_006/offset_25",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_006/offset_35",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_008/offset_07",
+      "source": "family",
+      "trial": "family_episode_008",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_008/offset_16",
+      "source": "family",
+      "trial": "family_episode_008",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_008/offset_25",
+      "source": "family",
+      "trial": "family_episode_008",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_008/offset_35",
+      "source": "family",
+      "trial": "family_episode_008",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_011/offset_07",
+      "source": "family",
+      "trial": "family_episode_011",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_011/offset_16",
+      "source": "family",
+      "trial": "family_episode_011",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_011/offset_25",
+      "source": "family",
+      "trial": "family_episode_011",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_011/offset_35",
+      "source": "family",
+      "trial": "family_episode_011",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_013/offset_07",
+      "source": "family",
+      "trial": "family_episode_013",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_013/offset_16",
+      "source": "family",
+      "trial": "family_episode_013",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_013/offset_25",
+      "source": "family",
+      "trial": "family_episode_013",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_013/offset_35",
+      "source": "family",
+      "trial": "family_episode_013",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_018/offset_07",
+      "source": "family",
+      "trial": "family_episode_018",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_018/offset_16",
+      "source": "family",
+      "trial": "family_episode_018",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_018/offset_25",
+      "source": "family",
+      "trial": "family_episode_018",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_018/offset_35",
+      "source": "family",
+      "trial": "family_episode_018",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_020/offset_07",
+      "source": "family",
+      "trial": "family_episode_020",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_020/offset_08",
+      "source": "family",
+      "trial": "family_episode_020",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_020/offset_10",
+      "source": "family",
+      "trial": "family_episode_020",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_020/offset_12",
+      "source": "family",
+      "trial": "family_episode_020",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_021/offset_07",
+      "source": "family",
+      "trial": "family_episode_021",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_021/offset_13",
+      "source": "family",
+      "trial": "family_episode_021",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_021/offset_19",
+      "source": "family",
+      "trial": "family_episode_021",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_021/offset_26",
+      "source": "family",
+      "trial": "family_episode_021",
+      "frame": 29
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_023/offset_07",
+      "source": "family",
+      "trial": "family_episode_023",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_023/offset_08",
+      "source": "family",
+      "trial": "family_episode_023",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_023/offset_10",
+      "source": "family",
+      "trial": "family_episode_023",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_023/offset_12",
+      "source": "family",
+      "trial": "family_episode_023",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_025/offset_07",
+      "source": "family",
+      "trial": "family_episode_025",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_025/offset_16",
+      "source": "family",
+      "trial": "family_episode_025",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_025/offset_25",
+      "source": "family",
+      "trial": "family_episode_025",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_025/offset_35",
+      "source": "family",
+      "trial": "family_episode_025",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_027/offset_07",
+      "source": "family",
+      "trial": "family_episode_027",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_027/offset_16",
+      "source": "family",
+      "trial": "family_episode_027",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_027/offset_25",
+      "source": "family",
+      "trial": "family_episode_027",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_027/offset_35",
+      "source": "family",
+      "trial": "family_episode_027",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_028/offset_07",
+      "source": "family",
+      "trial": "family_episode_028",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_028/offset_16",
+      "source": "family",
+      "trial": "family_episode_028",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_028/offset_25",
+      "source": "family",
+      "trial": "family_episode_028",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_028/offset_35",
+      "source": "family",
+      "trial": "family_episode_028",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_029/offset_07",
+      "source": "family",
+      "trial": "family_episode_029",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_029/offset_16",
+      "source": "family",
+      "trial": "family_episode_029",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_029/offset_25",
+      "source": "family",
+      "trial": "family_episode_029",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_029/offset_35",
+      "source": "family",
+      "trial": "family_episode_029",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_030/offset_07",
+      "source": "family",
+      "trial": "family_episode_030",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_030/offset_08",
+      "source": "family",
+      "trial": "family_episode_030",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_030/offset_09",
+      "source": "family",
+      "trial": "family_episode_030",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_031/offset_07",
+      "source": "family",
+      "trial": "family_episode_031",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_031/offset_16",
+      "source": "family",
+      "trial": "family_episode_031",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_031/offset_25",
+      "source": "family",
+      "trial": "family_episode_031",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_031/offset_35",
+      "source": "family",
+      "trial": "family_episode_031",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_033/offset_07",
+      "source": "family",
+      "trial": "family_episode_033",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_033/offset_16",
+      "source": "family",
+      "trial": "family_episode_033",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_033/offset_25",
+      "source": "family",
+      "trial": "family_episode_033",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_033/offset_35",
+      "source": "family",
+      "trial": "family_episode_033",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_035/offset_07",
+      "source": "family",
+      "trial": "family_episode_035",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_035/offset_16",
+      "source": "family",
+      "trial": "family_episode_035",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_035/offset_25",
+      "source": "family",
+      "trial": "family_episode_035",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_035/offset_35",
+      "source": "family",
+      "trial": "family_episode_035",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_036/offset_07",
+      "source": "family",
+      "trial": "family_episode_036",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_036/offset_16",
+      "source": "family",
+      "trial": "family_episode_036",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_036/offset_25",
+      "source": "family",
+      "trial": "family_episode_036",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_036/offset_35",
+      "source": "family",
+      "trial": "family_episode_036",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_037/offset_07",
+      "source": "family",
+      "trial": "family_episode_037",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_037/offset_12",
+      "source": "family",
+      "trial": "family_episode_037",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_037/offset_17",
+      "source": "family",
+      "trial": "family_episode_037",
+      "frame": 20
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_037/offset_23",
+      "source": "family",
+      "trial": "family_episode_037",
+      "frame": 26
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_039/offset_07",
+      "source": "family",
+      "trial": "family_episode_039",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_039/offset_08",
+      "source": "family",
+      "trial": "family_episode_039",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_039/offset_09",
+      "source": "family",
+      "trial": "family_episode_039",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_044/offset_07",
+      "source": "family",
+      "trial": "family_episode_044",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_044/offset_12",
+      "source": "family",
+      "trial": "family_episode_044",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_044/offset_17",
+      "source": "family",
+      "trial": "family_episode_044",
+      "frame": 20
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_044/offset_23",
+      "source": "family",
+      "trial": "family_episode_044",
+      "frame": 26
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_045/offset_07",
+      "source": "family",
+      "trial": "family_episode_045",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_045/offset_11",
+      "source": "family",
+      "trial": "family_episode_045",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_045/offset_15",
+      "source": "family",
+      "trial": "family_episode_045",
+      "frame": 18
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_045/offset_19",
+      "source": "family",
+      "trial": "family_episode_045",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_048/offset_07",
+      "source": "family",
+      "trial": "family_episode_048",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_048/offset_16",
+      "source": "family",
+      "trial": "family_episode_048",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_048/offset_25",
+      "source": "family",
+      "trial": "family_episode_048",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_048/offset_35",
+      "source": "family",
+      "trial": "family_episode_048",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_049/offset_07",
+      "source": "family",
+      "trial": "family_episode_049",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_049/offset_16",
+      "source": "family",
+      "trial": "family_episode_049",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_049/offset_25",
+      "source": "family",
+      "trial": "family_episode_049",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_049/offset_35",
+      "source": "family",
+      "trial": "family_episode_049",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_050/offset_07",
+      "source": "family",
+      "trial": "family_episode_050",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_050/offset_16",
+      "source": "family",
+      "trial": "family_episode_050",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_050/offset_25",
+      "source": "family",
+      "trial": "family_episode_050",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_050/offset_35",
+      "source": "family",
+      "trial": "family_episode_050",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_051/offset_07",
+      "source": "family",
+      "trial": "family_episode_051",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_051/offset_08",
+      "source": "family",
+      "trial": "family_episode_051",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_051/offset_09",
+      "source": "family",
+      "trial": "family_episode_051",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_052/offset_07",
+      "source": "family",
+      "trial": "family_episode_052",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_052/offset_16",
+      "source": "family",
+      "trial": "family_episode_052",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_052/offset_25",
+      "source": "family",
+      "trial": "family_episode_052",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_052/offset_35",
+      "source": "family",
+      "trial": "family_episode_052",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_054/offset_07",
+      "source": "family",
+      "trial": "family_episode_054",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_054/offset_16",
+      "source": "family",
+      "trial": "family_episode_054",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_054/offset_25",
+      "source": "family",
+      "trial": "family_episode_054",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_054/offset_35",
+      "source": "family",
+      "trial": "family_episode_054",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_055/offset_07",
+      "source": "family",
+      "trial": "family_episode_055",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_055/offset_16",
+      "source": "family",
+      "trial": "family_episode_055",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_055/offset_25",
+      "source": "family",
+      "trial": "family_episode_055",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_055/offset_35",
+      "source": "family",
+      "trial": "family_episode_055",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_057/offset_07",
+      "source": "family",
+      "trial": "family_episode_057",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_057/offset_16",
+      "source": "family",
+      "trial": "family_episode_057",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_057/offset_25",
+      "source": "family",
+      "trial": "family_episode_057",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_057/offset_35",
+      "source": "family",
+      "trial": "family_episode_057",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_058/offset_07",
+      "source": "family",
+      "trial": "family_episode_058",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_058/offset_08",
+      "source": "family",
+      "trial": "family_episode_058",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_058/offset_10",
+      "source": "family",
+      "trial": "family_episode_058",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_058/offset_12",
+      "source": "family",
+      "trial": "family_episode_058",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_061/offset_07",
+      "source": "family",
+      "trial": "family_episode_061",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_061/offset_16",
+      "source": "family",
+      "trial": "family_episode_061",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_061/offset_25",
+      "source": "family",
+      "trial": "family_episode_061",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_061/offset_35",
+      "source": "family",
+      "trial": "family_episode_061",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_062/offset_07",
+      "source": "family",
+      "trial": "family_episode_062",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_062/offset_16",
+      "source": "family",
+      "trial": "family_episode_062",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_062/offset_25",
+      "source": "family",
+      "trial": "family_episode_062",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_062/offset_35",
+      "source": "family",
+      "trial": "family_episode_062",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_065/offset_07",
+      "source": "family",
+      "trial": "family_episode_065",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_065/offset_16",
+      "source": "family",
+      "trial": "family_episode_065",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_065/offset_25",
+      "source": "family",
+      "trial": "family_episode_065",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_065/offset_35",
+      "source": "family",
+      "trial": "family_episode_065",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_067/offset_07",
+      "source": "family",
+      "trial": "family_episode_067",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_067/offset_16",
+      "source": "family",
+      "trial": "family_episode_067",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_067/offset_25",
+      "source": "family",
+      "trial": "family_episode_067",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_067/offset_35",
+      "source": "family",
+      "trial": "family_episode_067",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_070/offset_07",
+      "source": "family",
+      "trial": "family_episode_070",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_070/offset_16",
+      "source": "family",
+      "trial": "family_episode_070",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_070/offset_25",
+      "source": "family",
+      "trial": "family_episode_070",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_070/offset_35",
+      "source": "family",
+      "trial": "family_episode_070",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_078/offset_07",
+      "source": "family",
+      "trial": "family_episode_078",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_078/offset_16",
+      "source": "family",
+      "trial": "family_episode_078",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_078/offset_25",
+      "source": "family",
+      "trial": "family_episode_078",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_078/offset_35",
+      "source": "family",
+      "trial": "family_episode_078",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_080/offset_07",
+      "source": "family",
+      "trial": "family_episode_080",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_080/offset_16",
+      "source": "family",
+      "trial": "family_episode_080",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_080/offset_25",
+      "source": "family",
+      "trial": "family_episode_080",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_080/offset_35",
+      "source": "family",
+      "trial": "family_episode_080",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_081/offset_07",
+      "source": "family",
+      "trial": "family_episode_081",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_081/offset_08",
+      "source": "family",
+      "trial": "family_episode_081",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_081/offset_10",
+      "source": "family",
+      "trial": "family_episode_081",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_081/offset_12",
+      "source": "family",
+      "trial": "family_episode_081",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_082/offset_07",
+      "source": "family",
+      "trial": "family_episode_082",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_082/offset_16",
+      "source": "family",
+      "trial": "family_episode_082",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_082/offset_25",
+      "source": "family",
+      "trial": "family_episode_082",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_082/offset_35",
+      "source": "family",
+      "trial": "family_episode_082",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_083/offset_07",
+      "source": "family",
+      "trial": "family_episode_083",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_083/offset_16",
+      "source": "family",
+      "trial": "family_episode_083",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_083/offset_25",
+      "source": "family",
+      "trial": "family_episode_083",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_083/offset_35",
+      "source": "family",
+      "trial": "family_episode_083",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_087/offset_07",
+      "source": "family",
+      "trial": "family_episode_087",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_087/offset_08",
+      "source": "family",
+      "trial": "family_episode_087",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_087/offset_09",
+      "source": "family",
+      "trial": "family_episode_087",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_090/offset_07",
+      "source": "family",
+      "trial": "family_episode_090",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_090/offset_16",
+      "source": "family",
+      "trial": "family_episode_090",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_090/offset_25",
+      "source": "family",
+      "trial": "family_episode_090",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_090/offset_35",
+      "source": "family",
+      "trial": "family_episode_090",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_092/offset_07",
+      "source": "family",
+      "trial": "family_episode_092",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_092/offset_16",
+      "source": "family",
+      "trial": "family_episode_092",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_092/offset_25",
+      "source": "family",
+      "trial": "family_episode_092",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_092/offset_35",
+      "source": "family",
+      "trial": "family_episode_092",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_093/offset_07",
+      "source": "family",
+      "trial": "family_episode_093",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_093/offset_16",
+      "source": "family",
+      "trial": "family_episode_093",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_093/offset_25",
+      "source": "family",
+      "trial": "family_episode_093",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_093/offset_35",
+      "source": "family",
+      "trial": "family_episode_093",
+      "frame": 38
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_094/offset_07",
+      "source": "family",
+      "trial": "family_episode_094",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_094/offset_16",
+      "source": "family",
+      "trial": "family_episode_094",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_094/offset_25",
+      "source": "family",
+      "trial": "family_episode_094",
+      "frame": 28
+    },
+    {
+      "sample_id": "all_phase_train/family/family_episode_094/offset_35",
+      "source": "family",
+      "trial": "family_episode_094",
+      "frame": 38
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_003/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_003",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_003/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_003",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_003/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_003",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_003/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_003",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_005/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_005",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_005/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_005",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_005/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_005",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_005/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_005",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_006/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_006",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_006/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_006",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_006/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_006",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_006/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_006",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_009/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_009",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_009/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_009",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_009/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_009",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_009/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_009",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_010/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_010",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_010/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_010",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_010/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_010",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_010/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_010",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_011/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_011",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_011/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_011",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_011/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_011",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_011/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_011",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_013/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_013",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_013/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_013",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_013/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_013",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_013/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_013",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_015/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_015",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_015/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_015",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_015/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_015",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_015/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_015",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_017/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_017",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_017/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_017",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_017/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_017",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_017/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_017",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_018/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_018",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_018/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_018",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_018/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_018",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_018/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_018",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_020/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_020",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_020/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_020",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_020/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_020",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_020/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_020",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_023/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_023",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_023/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_023",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_023/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_023",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_023/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_023",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_025/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_025",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_025/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_025",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_025/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_025",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_025/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_025",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_026/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_026",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_026/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_026",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_026/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_026",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_026/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_026",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_028/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_028",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_028/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_028",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_028/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_028",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_028/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_028",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_030/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_030",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_030/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_030",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_030/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_030",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_030/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_030",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_033/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_033",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_033/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_033",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_033/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_033",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_033/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_033",
+      "frame": 17
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_034/frame_10",
+      "source": "short_pulse",
+      "trial": "pulse_episode_034",
+      "frame": 10
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_034/frame_12",
+      "source": "short_pulse",
+      "trial": "pulse_episode_034",
+      "frame": 12
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_034/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_034",
+      "frame": 14
+    },
+    {
+      "sample_id": "short_pulse/pulse_episode_034/frame_17",
+      "source": "short_pulse",
+      "trial": "pulse_episode_034",
+      "frame": 17
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_000/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_000/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_000/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_000/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_002/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_002",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_002/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_002",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_002/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_002",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_002/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_002",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_006/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_006",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_006/frame_12",
+      "source": "switch",
+      "trial": "switch_episode_006",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_006/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_006",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_006/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_006",
+      "frame": 16
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_007/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_007",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_007/offset_02",
+      "source": "switch",
+      "trial": "switch_episode_007",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_007/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_007",
+      "frame": 20
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_007/offset_12",
+      "source": "switch",
+      "trial": "switch_episode_007",
+      "frame": 25
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_008/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_008/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_008/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_008/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_009/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_009",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_009/frame_11",
+      "source": "switch",
+      "trial": "switch_episode_009",
+      "frame": 11
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_009/frame_12",
+      "source": "switch",
+      "trial": "switch_episode_009",
+      "frame": 12
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_013/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_013/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_013/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_013/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_015/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_015",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_015/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_015",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_015/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_015",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_015/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_015",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_016/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_016",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_016/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_016",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_016/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_016",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_016/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_016",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_017/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_017",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_017/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_017",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_017/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_017",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_017/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_017",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_021/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_021",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_021/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_021",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_021/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_021",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_021/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_021",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_022/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_022/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_022/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_022/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_023/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_023",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_023/frame_11",
+      "source": "switch",
+      "trial": "switch_episode_023",
+      "frame": 11
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_023/frame_12",
+      "source": "switch",
+      "trial": "switch_episode_023",
+      "frame": 12
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_024/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_024",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_024/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_024",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_024/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_024",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_024/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_024",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_025/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_025",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_025/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_025",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_025/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_025",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_025/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_025",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_033/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_033",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_033/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_033",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_033/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_033",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_033/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_033",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_035/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_035",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_035/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_035",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_035/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_035",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_035/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_035",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_036/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_036",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_036/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_036",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_036/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_036",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_036/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_036",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_037/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_037",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_037/frame_11",
+      "source": "switch",
+      "trial": "switch_episode_037",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_037/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_037",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_037/offset_02",
+      "source": "switch",
+      "trial": "switch_episode_037",
+      "frame": 15
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_039/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_039",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_039/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_039",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_039/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_039",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_039/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_039",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_041/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_041",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_041/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_041",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_041/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_041",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_041/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_041",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_047/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_047",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_047/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_047",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_047/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_047",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_047/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_047",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_048/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_048",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_048/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_048",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_048/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_048",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_048/offset_06",
+      "source": "switch",
+      "trial": "switch_episode_048",
+      "frame": 19
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_050/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_050",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_050/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_050",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_050/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_050",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_050/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_050",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_051/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_051",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_051/offset_04",
+      "source": "switch",
+      "trial": "switch_episode_051",
+      "frame": 17
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_051/offset_11",
+      "source": "switch",
+      "trial": "switch_episode_051",
+      "frame": 24
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_051/offset_18",
+      "source": "switch",
+      "trial": "switch_episode_051",
+      "frame": 31
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_054/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_054",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_054/frame_12",
+      "source": "switch",
+      "trial": "switch_episode_054",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_054/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_054",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_054/offset_04",
+      "source": "switch",
+      "trial": "switch_episode_054",
+      "frame": 17
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_055/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_055",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_055/offset_06",
+      "source": "switch",
+      "trial": "switch_episode_055",
+      "frame": 19
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_055/offset_16",
+      "source": "switch",
+      "trial": "switch_episode_055",
+      "frame": 29
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_055/offset_26",
+      "source": "switch",
+      "trial": "switch_episode_055",
+      "frame": 39
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_059/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_059/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_059/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_059/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_060/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_060",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_060/frame_11",
+      "source": "switch",
+      "trial": "switch_episode_060",
+      "frame": 11
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_060/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_060",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_060/offset_02",
+      "source": "switch",
+      "trial": "switch_episode_060",
+      "frame": 15
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_061/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_061",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_061/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_061",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_061/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_061",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_061/offset_06",
+      "source": "switch",
+      "trial": "switch_episode_061",
+      "frame": 19
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_062/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_062",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_062/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_062",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_062/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_062",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_062/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_062",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_063/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_063",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_063/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_063",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_063/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_063",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_063/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_063",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_066/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_066",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_066/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_066",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_066/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_066",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_066/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_066",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_067/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_067",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_067/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_067",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_067/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_067",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_067/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_067",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_069/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_069",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_069/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_069",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_069/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_069",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_069/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_069",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_074/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_074",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_074/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_074",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_074/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_074",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_074/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_074",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_075/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_075",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_075/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_075",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_075/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_075",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_075/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_075",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_077/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_077",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_077/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_077",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_077/offset_05",
+      "source": "switch",
+      "trial": "switch_episode_077",
+      "frame": 18
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_077/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_077",
+      "frame": 22
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_078/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_078",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_078/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_078",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_078/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_078",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_078/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_078",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_079/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_079",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_079/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_079",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_079/offset_10",
+      "source": "switch",
+      "trial": "switch_episode_079",
+      "frame": 23
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_079/offset_17",
+      "source": "switch",
+      "trial": "switch_episode_079",
+      "frame": 30
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_080/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_080",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_080/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_080",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_080/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_080",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_080/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_080",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_081/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_081",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_081/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_081",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_081/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_081",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_081/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_081",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_084/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_084",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_084/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_084",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_084/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_084",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_084/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_084",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_087/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_087",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_087/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_087",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_087/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_087",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_087/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_087",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_088/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_088",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_088/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_088",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_088/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_088",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_088/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_088",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_090/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_090",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_090/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_090",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_090/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_090",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_090/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_090",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_091/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_091",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_091/offset_02",
+      "source": "switch",
+      "trial": "switch_episode_091",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_091/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_091",
+      "frame": 20
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_091/offset_13",
+      "source": "switch",
+      "trial": "switch_episode_091",
+      "frame": 26
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_093/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_093",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_093/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_093",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_093/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_093",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_093/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_093",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_094/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_094",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_094/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_094",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_094/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_094",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_094/offset_06",
+      "source": "switch",
+      "trial": "switch_episode_094",
+      "frame": 19
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_095/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_095",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_095/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_095",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_095/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_095",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_095/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_095",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_097/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_097",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_097/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_097",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_097/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_097",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_097/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_097",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_099/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_099",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_099/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_099",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_099/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_099",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_099/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_099",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_103/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_103",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_103/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_103",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_103/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_103",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_103/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_103",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_104/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_104",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_104/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_104",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_104/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_104",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_104/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_104",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_106/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_106",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_106/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_106",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_106/offset_10",
+      "source": "switch",
+      "trial": "switch_episode_106",
+      "frame": 23
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_106/offset_17",
+      "source": "switch",
+      "trial": "switch_episode_106",
+      "frame": 30
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_107/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_107",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_107/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_107",
+      "frame": 13
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_107/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_107",
+      "frame": 16
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_107/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_107",
+      "frame": 20
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_108/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_108/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_108/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_108/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_109/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_109",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_109/offset_04",
+      "source": "switch",
+      "trial": "switch_episode_109",
+      "frame": 17
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_109/offset_11",
+      "source": "switch",
+      "trial": "switch_episode_109",
+      "frame": 24
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_109/offset_19",
+      "source": "switch",
+      "trial": "switch_episode_109",
+      "frame": 32
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_110/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_110",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_110/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_110",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_110/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_110",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_110/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_110",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_113/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_113",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_113/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_113",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_113/offset_05",
+      "source": "switch",
+      "trial": "switch_episode_113",
+      "frame": 18
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_113/offset_10",
+      "source": "switch",
+      "trial": "switch_episode_113",
+      "frame": 23
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_114/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_114",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_114/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_114",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_114/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_114",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_114/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_114",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_116/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_116",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_116/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_116",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_116/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_116",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_116/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_116",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_117/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_117",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_117/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_117",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_117/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_117",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_117/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_117",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_118/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_118",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_118/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_118",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_118/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_118",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_118/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_118",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_119/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_119",
+      "frame": 10
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_119/frame_12",
+      "source": "switch",
+      "trial": "switch_episode_119",
+      "frame": 12
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_119/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_119",
+      "frame": 14
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_119/offset_04",
+      "source": "switch",
+      "trial": "switch_episode_119",
+      "frame": 17
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_122/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_122",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_122/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_122",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_122/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_122",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_122/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_122",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_123/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_123",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_123/offset_05",
+      "source": "switch",
+      "trial": "switch_episode_123",
+      "frame": 18
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_123/offset_13",
+      "source": "switch",
+      "trial": "switch_episode_123",
+      "frame": 26
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_123/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_123",
+      "frame": 35
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_129/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_129",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_129/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_129",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_129/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_129",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_129/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_129",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_131/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_131",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_131/offset_02",
+      "source": "switch",
+      "trial": "switch_episode_131",
+      "frame": 15
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_131/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_131",
+      "frame": 20
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_131/offset_13",
+      "source": "switch",
+      "trial": "switch_episode_131",
+      "frame": 26
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_135/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_135",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_135/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_135",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_135/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_135",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_135/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_135",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_137/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_137",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_137/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_137",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_137/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_137",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_137/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_137",
+      "frame": 48
+    },
+    {
+      "sample_id": "pre_switch_train/switch_episode_143/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_143",
+      "frame": 10
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_143/offset_09",
+      "source": "switch",
+      "trial": "switch_episode_143",
+      "frame": 22
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_143/offset_22",
+      "source": "switch",
+      "trial": "switch_episode_143",
+      "frame": 35
+    },
+    {
+      "sample_id": "all_phase_train/switch/switch_episode_143/offset_35",
+      "source": "switch",
+      "trial": "switch_episode_143",
+      "frame": 48
+    }
+  ],
+  "architecture": "normalized 192-token current/future cosine correlation minus current/self correlation, flattened -> ridge XY/yaw without intercept",
+  "ridge": 0.1,
+  "feature_scale": "training root mean square per feature, lower bound .001; then divide by sqrt(36864)",
+  "target_scale": "selected-training standard deviation, lower bound .001; no target centering",
+  "repeated_image_motion_exactly_zero": true,
+  "parameters": 110592,
+  "device": "cpu",
+  "cpu_cores": [
+    4,
+    5,
+    6,
+    7
+  ],
+  "encoder_precision": "float32",
+  "feature_cache": "FP32 pooled tokens in RAM only",
+  "planned_feature_bytes": 828899328,
+  "no_encoder_or_predictor_training": true,
+  "no_navigation_intervention": true,
+  "planned_evaluation": "true-future decoding on the complete exposed pilot; then predicted-feature decoding if useful; no prospective-maze use",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_correlation_motion_readout_development.py": "77a15e49e82807b1ee6265bcd3b10095e3a49480176cce9a61431654d372b25f",
+    "lewm/correlation_motion_readout_development.py": "9b60204b2327201310c1b2e85d304fe78c5da39ded40d8c845331b5ba1c7941d"
+  },
+  "predecessor_readout_sha256": "1e5d12545c712ebffbef8c0b56d99bd3490bf2df4846d9e9be152121f81a8bb6",
+  "target_sha256": "c5dacab281b0e09794baab496e2098a4ab17bfaa3415e56353b0f7fc8e865ac9"
+}

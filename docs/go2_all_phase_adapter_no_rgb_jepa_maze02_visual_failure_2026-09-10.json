@@ -1,0 +1,4119 @@
+{
+  "status": "RECORDED_NO_RGB_JEPA_VISUAL_FAILURE_CONTEXT_EXTRACTED",
+  "completed_verification_sha256": "f2e2cdb317d913eecaee7b49712e3133ed78306ab10a64e99b14f1721d148a18",
+  "input_sha256": {
+    "all_phase_no_rgb_jepa_residual_maze_02/context_decisions.jsonl.gz": "636fbc1ad462108e3fe113b6bf4eb7b308ebee1bb0ce84fa69d7cba099414216"
+  },
+  "frames": [
+    {
+      "frame": 852,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 86700000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 852,
+          "measured_ns": 86700000000,
+          "mode": "joint",
+          "reference_frame": 850,
+          "position_initial_body_m": [
+            0.6929758053328479,
+            2.4961721618180235,
+            0.09318962207137219
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.41416005006952783,
+              0.9100922546190409,
+              -0.01426677990437582
+            ],
+            [
+              -0.9092305266176174,
+              0.4129414828845713,
+              -0.052717939828471734
+            ],
+            [
+              -0.04208684346766522,
+              0.03480545640452222,
+              0.9985075251651424
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.415753322089377,
+              0.9092490080966,
+              -0.02038176751379163
+            ],
+            [
+              -0.9082907038451363,
+              0.4139620963999333,
+              -0.060360417930087985
+            ],
+            [
+              -0.04644537092288977,
+              0.04360761423783809,
+              0.9979685383318997
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "469c36a49b0011ffd0d745b69390a1beb2f89c330e4033348ca1c1cc665d2980",
+          "depth_sha256": "7c7559c27d3ac4a8d963be5fbed515aed1fcd532f53fd4890c207aa732936167",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "c58a4d86de84e47cc0cbed4762d8692e62fcdd5f2f8d6e56c52a2e4570334d0c",
+          "auxiliary_depth_sha256": "8e70417eeab84c84b27b196c608eb39520884c2d16b8a11b2263e83f60bdb1b5",
+          "available_ns": 86700000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86700000000
+        },
+        "last_visual": {
+          "frame": 852,
+          "measured_ns": 86700000000,
+          "mode": "joint",
+          "reference_frame": 850,
+          "position_initial_body_m": [
+            0.6929758053328479,
+            2.4961721618180235,
+            0.09318962207137219
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.41416005006952783,
+              0.9100922546190409,
+              -0.01426677990437582
+            ],
+            [
+              -0.9092305266176174,
+              0.4129414828845713,
+              -0.052717939828471734
+            ],
+            [
+              -0.04208684346766522,
+              0.03480545640452222,
+              0.9985075251651424
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.415753322089377,
+              0.9092490080966,
+              -0.02038176751379163
+            ],
+            [
+              -0.9082907038451363,
+              0.4139620963999333,
+              -0.060360417930087985
+            ],
+            [
+              -0.04644537092288977,
+              0.04360761423783809,
+              0.9979685383318997
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "469c36a49b0011ffd0d745b69390a1beb2f89c330e4033348ca1c1cc665d2980",
+          "depth_sha256": "7c7559c27d3ac4a8d963be5fbed515aed1fcd532f53fd4890c207aa732936167",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "c58a4d86de84e47cc0cbed4762d8692e62fcdd5f2f8d6e56c52a2e4570334d0c",
+          "auxiliary_depth_sha256": "8e70417eeab84c84b27b196c608eb39520884c2d16b8a11b2263e83f60bdb1b5",
+          "available_ns": 86700000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86700000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "PRIMARY_ACCEPTED",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "ACCEPTED_PRIMARY"
+            }
+          ],
+          "retained_references": 8,
+          "selected_reference": 850
+        },
+        "continuity_evidence": {
+          "status": "ANCHOR_MEASUREMENT",
+          "incremental_available": false,
+          "anchor_available": true,
+          "measurements_independent": false,
+          "previous_frame": 851,
+          "previous_measured_ns": 86600000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": null,
+          "incremental_failure": "insufficient rigid-pose matches",
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "preceding_bridge_frames": 0,
+          "preceding_bridge_path_m": 0.0,
+          "bridge_frames": 0,
+          "bridge_path_m": 0.0,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 850,
+              "reference_measured_ns": 86500000000,
+              "current_frame": 852,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.4937379091778755,
+                  0.869340166380485,
+                  -0.02169221423028542
+                ],
+                [
+                  -0.8689709735957332,
+                  0.4922644480200615,
+                  -0.050647411223125494
+                ],
+                [
+                  -0.033351523035048784,
+                  0.04385645144172303,
+                  0.9984809900935515
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9959851134535751,
+                  0.08935206955329623,
+                  0.005464562691806328
+                ],
+                [
+                  -0.08938167607968647,
+                  0.9959826069975741,
+                  0.005437144425391837
+                ],
+                [
+                  -0.004956789289018244,
+                  -0.005903746679823378,
+                  0.9999702875661279
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.41416005006952783,
+                  0.9100922546190409,
+                  -0.01426677990437582
+                ],
+                [
+                  -0.9092305266176174,
+                  0.4129414828845713,
+                  -0.052717939828471734
+                ],
+                [
+                  -0.04208684346766522,
+                  0.03480545640452222,
+                  0.9985075251651424
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9959835151204424,
+                  0.08936050753807208,
+                  0.005615808123856044
+                ],
+                [
+                  -0.08938816614990375,
+                  0.9959848934362784,
+                  0.004883420837256151
+                ],
+                [
+                  -0.005156875091268486,
+                  -0.005365793440962368,
+                  0.9999723070665607
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6929758053328479,
+                2.4961721618180235,
+                0.09318962207137219
+              ],
+              "fitting_mode": "joint",
+              "inliers": 12,
+              "inlier_fraction": 1.0,
+              "reference_grid_cells": 9,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.00013732345720934147,
+              "gyro_disagreement_rad": 0.0005740375457168853,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false
+            }
+          ],
+          "incremental_rotation_witness": null,
+          "selected_anchor_rotation_witness": {
+            "reference_frame": 850,
+            "reference_measured_ns": 86500000000,
+            "current_frame": 852,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.4937379091778755,
+                0.869340166380485,
+                -0.02169221423028542
+              ],
+              [
+                -0.8689709735957332,
+                0.4922644480200615,
+                -0.050647411223125494
+              ],
+              [
+                -0.033351523035048784,
+                0.04385645144172303,
+                0.9984809900935515
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9959851134535751,
+                0.08935206955329623,
+                0.005464562691806328
+              ],
+              [
+                -0.08938167607968647,
+                0.9959826069975741,
+                0.005437144425391837
+              ],
+              [
+                -0.004956789289018244,
+                -0.005903746679823378,
+                0.9999702875661279
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.41416005006952783,
+                0.9100922546190409,
+                -0.01426677990437582
+              ],
+              [
+                -0.9092305266176174,
+                0.4129414828845713,
+                -0.052717939828471734
+              ],
+              [
+                -0.04208684346766522,
+                0.03480545640452222,
+                0.9985075251651424
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9959835151204424,
+                0.08936050753807208,
+                0.005615808123856044
+              ],
+              [
+                -0.08938816614990375,
+                0.9959848934362784,
+                0.004883420837256151
+              ],
+              [
+                -0.005156875091268486,
+                -0.005365793440962368,
+                0.9999723070665607
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6929758053328479,
+              2.4961721618180235,
+              0.09318962207137219
+            ],
+            "fitting_mode": "joint",
+            "inliers": 12,
+            "inlier_fraction": 1.0,
+            "reference_grid_cells": 9,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.00013732345720934147,
+            "gyro_disagreement_rad": 0.0005740375457168853,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false
+          },
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": false,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 26,
+          "liftable_features": 26,
+          "selected_features": 26,
+          "selected_per_cell": [
+            2,
+            2,
+            0,
+            5,
+            2,
+            2,
+            0,
+            6,
+            4,
+            2,
+            0,
+            1
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 250,
+          "liftable_features": 250,
+          "selected_features": 235,
+          "selected_per_cell": [
+            26,
+            1,
+            7,
+            12,
+            50,
+            23,
+            10,
+            8,
+            8,
+            14,
+            50,
+            26
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": {
+          "inliers": 12,
+          "reference_features": 22,
+          "remaining_fraction": 0.5454545454545454,
+          "threshold_fraction": 0.5,
+          "retain": false,
+          "already_anchor_qualified": true,
+          "acceptance_thresholds_changed": false,
+          "calibrated_uncertainty": false,
+          "frame": 852,
+          "reference_frame": 850,
+          "measured_ns": 86700000000
+        },
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "primary",
+          "auxiliary_attempted": false,
+          "primary_failure": null,
+          "primary_continuity": null,
+          "primary_reference_selection": null,
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 853,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 86800000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 853,
+          "measured_ns": 86800000000,
+          "mode": "joint",
+          "reference_frame": 852,
+          "position_initial_body_m": [
+            0.6918856264580721,
+            2.4958147265481014,
+            0.09291795602498963
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.3714850807015493,
+              0.9280641919647891,
+              -0.026375943753912504
+            ],
+            [
+              -0.9274540011036003,
+              0.36963300369404417,
+              -0.0565731245120842
+            ],
+            [
+              -0.04275407177220844,
+              0.045478546292366875,
+              0.998049994325959
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.373071081392743,
+              0.9272582097571112,
+              -0.031783339448157484
+            ],
+            [
+              -0.9265834614296775,
+              0.37060644517614166,
+              -0.06398399642814655
+            ],
+            [
+              -0.04755057553236606,
+              0.05332049542093699,
+              0.9974446689088052
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "40e2e915a8f2830878621e4aab061a7b0382365cd9e08adb4bcb966e590e5dc2",
+          "depth_sha256": "8e93b3b5509662ac93e7df2d3c0072fd0c698dc6a595b076a7d232b8e7120084",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "819a6490650718170c35348ec46de32f4d4a4d197e17c27aafdcf5fb21a059ca",
+          "auxiliary_depth_sha256": "e490e3db0773801571e9a8a49f21e994a0ef7757ec14797dd4cbf2505c723eeb",
+          "available_ns": 86800000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86800000000
+        },
+        "last_visual": {
+          "frame": 853,
+          "measured_ns": 86800000000,
+          "mode": "joint",
+          "reference_frame": 852,
+          "position_initial_body_m": [
+            0.6918856264580721,
+            2.4958147265481014,
+            0.09291795602498963
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.3714850807015493,
+              0.9280641919647891,
+              -0.026375943753912504
+            ],
+            [
+              -0.9274540011036003,
+              0.36963300369404417,
+              -0.0565731245120842
+            ],
+            [
+              -0.04275407177220844,
+              0.045478546292366875,
+              0.998049994325959
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.373071081392743,
+              0.9272582097571112,
+              -0.031783339448157484
+            ],
+            [
+              -0.9265834614296775,
+              0.37060644517614166,
+              -0.06398399642814655
+            ],
+            [
+              -0.04755057553236606,
+              0.05332049542093699,
+              0.9974446689088052
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "40e2e915a8f2830878621e4aab061a7b0382365cd9e08adb4bcb966e590e5dc2",
+          "depth_sha256": "8e93b3b5509662ac93e7df2d3c0072fd0c698dc6a595b076a7d232b8e7120084",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "819a6490650718170c35348ec46de32f4d4a4d197e17c27aafdcf5fb21a059ca",
+          "auxiliary_depth_sha256": "e490e3db0773801571e9a8a49f21e994a0ef7757ec14797dd4cbf2505c723eeb",
+          "available_ns": 86800000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86800000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 852,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 852,
+          "previous_measured_ns": 86700000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6918856264580721,
+            2.4958147265481014,
+            0.09291795602498963
+          ],
+          "bridge_frames": 1,
+          "bridge_path_m": 0.0011790048311812863,
+          "total_bridge_frames": 1,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 852,
+              "reference_measured_ns": 86700000000,
+              "current_frame": 853,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.41416005006952783,
+                  0.9100922546190409,
+                  -0.01426677990437582
+                ],
+                [
+                  -0.9092305266176174,
+                  0.4129414828845713,
+                  -0.052717939828471734
+                ],
+                [
+                  -0.04208684346766522,
+                  0.03480545640452222,
+                  0.9985075251651424
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9989231533867458,
+                  0.04637145314894584,
+                  -0.0014906242773247908
+                ],
+                [
+                  -0.04638661085111848,
+                  0.9988437351252453,
+                  -0.012628346479097913
+                ],
+                [
+                  0.0009033059437273957,
+                  0.012683892695238546,
+                  0.999919148183726
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.3714850807015493,
+                  0.9280641919647891,
+                  -0.026375943753912504
+                ],
+                [
+                  -0.9274540011036003,
+                  0.36963300369404417,
+                  -0.0565731245120842
+                ],
+                [
+                  -0.04275407177220844,
+                  0.045478546292366875,
+                  0.998049994325959
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9989211899359314,
+                  0.04641580201496802,
+                  -0.00142464743464834
+                ],
+                [
+                  -0.04642948863166116,
+                  0.9988508080508116,
+                  -0.011889736819312801
+                ],
+                [
+                  0.000871138571061226,
+                  0.01194305570342501,
+                  0.9999282996985505
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6918856264580721,
+                2.4958147265481014,
+                0.09291795602498963
+              ],
+              "fitting_mode": "joint",
+              "inliers": 25,
+              "inlier_fraction": 0.9259259259259259,
+              "reference_grid_cells": 9,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.00035410255090721245,
+              "gyro_disagreement_rad": 0.0007428709073517346,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 852,
+            "reference_measured_ns": 86700000000,
+            "current_frame": 853,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.41416005006952783,
+                0.9100922546190409,
+                -0.01426677990437582
+              ],
+              [
+                -0.9092305266176174,
+                0.4129414828845713,
+                -0.052717939828471734
+              ],
+              [
+                -0.04208684346766522,
+                0.03480545640452222,
+                0.9985075251651424
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9989231533867458,
+                0.04637145314894584,
+                -0.0014906242773247908
+              ],
+              [
+                -0.04638661085111848,
+                0.9988437351252453,
+                -0.012628346479097913
+              ],
+              [
+                0.0009033059437273957,
+                0.012683892695238546,
+                0.999919148183726
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.3714850807015493,
+                0.9280641919647891,
+                -0.026375943753912504
+              ],
+              [
+                -0.9274540011036003,
+                0.36963300369404417,
+                -0.0565731245120842
+              ],
+              [
+                -0.04275407177220844,
+                0.045478546292366875,
+                0.998049994325959
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9989211899359314,
+                0.04641580201496802,
+                -0.00142464743464834
+              ],
+              [
+                -0.04642948863166116,
+                0.9988508080508116,
+                -0.011889736819312801
+              ],
+              [
+                0.000871138571061226,
+                0.01194305570342501,
+                0.9999282996985505
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6918856264580721,
+              2.4958147265481014,
+              0.09291795602498963
+            ],
+            "fitting_mode": "joint",
+            "inliers": 25,
+            "inlier_fraction": 0.9259259259259259,
+            "reference_grid_cells": 9,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.00035410255090721245,
+            "gyro_disagreement_rad": 0.0007428709073517346,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 21,
+          "liftable_features": 21,
+          "selected_features": 21,
+          "selected_per_cell": [
+            2,
+            1,
+            2,
+            3,
+            2,
+            1,
+            1,
+            5,
+            2,
+            1,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 171,
+          "liftable_features": 171,
+          "selected_features": 171,
+          "selected_per_cell": [
+            17,
+            1,
+            8,
+            2,
+            30,
+            21,
+            4,
+            1,
+            15,
+            13,
+            40,
+            19
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 852,
+            "previous_measured_ns": 86700000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 854,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 86900000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 854,
+          "measured_ns": 86900000000,
+          "mode": "joint",
+          "reference_frame": 853,
+          "position_initial_body_m": [
+            0.6909509471772426,
+            2.49637746393203,
+            0.09187720298808963
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.32762604477661567,
+              0.9440687395997801,
+              -0.037354915265816094
+            ],
+            [
+              -0.9440204046904137,
+              0.3254836715059069,
+              -0.053720155539616544
+            ],
+            [
+              -0.03855710456188176,
+              0.05286392431064745,
+              0.9978570815474015
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.32930568490806494,
+              0.9432317087986534,
+              -0.04326325697392574
+            ],
+            [
+              -0.9432086206392529,
+              0.32648265147265015,
+              -0.06137243875879646
+            ],
+            [
+              -0.04376372743541596,
+              0.06101656991467209,
+              0.9971768721529775
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "22ec513225f7dda5b85ef7d224bae6025ff2c36f57aae00039a91967bab5d1b9",
+          "depth_sha256": "8a01552f52c5a1743591f5496ef13de4ed1447a3f97b5160be491c6d9f23c56f",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "fb440c4c8d76142b12171647d622959dc5672406445ce6984286019dc2a1669d",
+          "auxiliary_depth_sha256": "994e241573d5780d0b170d84efc959848b4846ee7085540b5217204e45acc1ea",
+          "available_ns": 86900000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86900000000
+        },
+        "last_visual": {
+          "frame": 854,
+          "measured_ns": 86900000000,
+          "mode": "joint",
+          "reference_frame": 853,
+          "position_initial_body_m": [
+            0.6909509471772426,
+            2.49637746393203,
+            0.09187720298808963
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.32762604477661567,
+              0.9440687395997801,
+              -0.037354915265816094
+            ],
+            [
+              -0.9440204046904137,
+              0.3254836715059069,
+              -0.053720155539616544
+            ],
+            [
+              -0.03855710456188176,
+              0.05286392431064745,
+              0.9978570815474015
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.32930568490806494,
+              0.9432317087986534,
+              -0.04326325697392574
+            ],
+            [
+              -0.9432086206392529,
+              0.32648265147265015,
+              -0.06137243875879646
+            ],
+            [
+              -0.04376372743541596,
+              0.06101656991467209,
+              0.9971768721529775
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "22ec513225f7dda5b85ef7d224bae6025ff2c36f57aae00039a91967bab5d1b9",
+          "depth_sha256": "8a01552f52c5a1743591f5496ef13de4ed1447a3f97b5160be491c6d9f23c56f",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "fb440c4c8d76142b12171647d622959dc5672406445ce6984286019dc2a1669d",
+          "auxiliary_depth_sha256": "994e241573d5780d0b170d84efc959848b4846ee7085540b5217204e45acc1ea",
+          "available_ns": 86900000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 86900000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 853,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 853,
+          "previous_measured_ns": 86800000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6909509471772426,
+            2.49637746393203,
+            0.09187720298808963
+          ],
+          "bridge_frames": 2,
+          "bridge_path_m": 0.0026868064113300784,
+          "total_bridge_frames": 2,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 853,
+              "reference_measured_ns": 86800000000,
+              "current_frame": 854,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.3714850807015493,
+                  0.9280641919647891,
+                  -0.026375943753912504
+                ],
+                [
+                  -0.9274540011036003,
+                  0.36963300369404417,
+                  -0.0565731245120842
+                ],
+                [
+                  -0.04275407177220844,
+                  0.045478546292366875,
+                  0.998049994325959
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9988921623530849,
+                  0.046576170471857095,
+                  -0.006716273799878772
+                ],
+                [
+                  -0.04663661828666719,
+                  0.9988700735569338,
+                  -0.009143412226790116
+                ],
+                [
+                  0.006282819777944119,
+                  0.009446507108017433,
+                  0.9999356427686206
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.32762604477661567,
+                  0.9440687395997801,
+                  -0.037354915265816094
+                ],
+                [
+                  -0.9440204046904137,
+                  0.3254836715059069,
+                  -0.053720155539616544
+                ],
+                [
+                  -0.03855710456188176,
+                  0.05286392431064745,
+                  0.9978570815474015
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9988969269666558,
+                  0.04647767529071777,
+                  -0.0066899175007667675
+                ],
+                [
+                  -0.04654129773223707,
+                  0.9988693542974768,
+                  -0.009691266724595138
+                ],
+                [
+                  0.006231926026304304,
+                  0.009991933991799975,
+                  0.9999306597725093
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6909509471772426,
+                2.49637746393203,
+                0.09187720298808963
+              ],
+              "fitting_mode": "joint",
+              "inliers": 22,
+              "inlier_fraction": 0.9565217391304348,
+              "reference_grid_cells": 8,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.0003214783140763325,
+              "gyro_disagreement_rad": 0.0005566665243717401,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 853,
+            "reference_measured_ns": 86800000000,
+            "current_frame": 854,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.3714850807015493,
+                0.9280641919647891,
+                -0.026375943753912504
+              ],
+              [
+                -0.9274540011036003,
+                0.36963300369404417,
+                -0.0565731245120842
+              ],
+              [
+                -0.04275407177220844,
+                0.045478546292366875,
+                0.998049994325959
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9988921623530849,
+                0.046576170471857095,
+                -0.006716273799878772
+              ],
+              [
+                -0.04663661828666719,
+                0.9988700735569338,
+                -0.009143412226790116
+              ],
+              [
+                0.006282819777944119,
+                0.009446507108017433,
+                0.9999356427686206
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.32762604477661567,
+                0.9440687395997801,
+                -0.037354915265816094
+              ],
+              [
+                -0.9440204046904137,
+                0.3254836715059069,
+                -0.053720155539616544
+              ],
+              [
+                -0.03855710456188176,
+                0.05286392431064745,
+                0.9978570815474015
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9988969269666558,
+                0.04647767529071777,
+                -0.0066899175007667675
+              ],
+              [
+                -0.04654129773223707,
+                0.9988693542974768,
+                -0.009691266724595138
+              ],
+              [
+                0.006231926026304304,
+                0.009991933991799975,
+                0.9999306597725093
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6909509471772426,
+              2.49637746393203,
+              0.09187720298808963
+            ],
+            "fitting_mode": "joint",
+            "inliers": 22,
+            "inlier_fraction": 0.9565217391304348,
+            "reference_grid_cells": 8,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.0003214783140763325,
+            "gyro_disagreement_rad": 0.0005566665243717401,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 29,
+          "liftable_features": 29,
+          "selected_features": 29,
+          "selected_per_cell": [
+            1,
+            1,
+            7,
+            3,
+            1,
+            1,
+            6,
+            6,
+            1,
+            1,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 147,
+          "liftable_features": 147,
+          "selected_features": 147,
+          "selected_per_cell": [
+            7,
+            1,
+            13,
+            0,
+            23,
+            12,
+            4,
+            1,
+            22,
+            17,
+            27,
+            20
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 853,
+            "previous_measured_ns": 86800000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 855,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 87000000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 855,
+          "measured_ns": 87000000000,
+          "mode": "joint",
+          "reference_frame": 854,
+          "position_initial_body_m": [
+            0.6938463169336517,
+            2.4963389100127977,
+            0.0917544451050633
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.28536153282185256,
+              0.9582458992869137,
+              -0.01826450342547606
+            ],
+            [
+              -0.9572779110510408,
+              0.28403970564290093,
+              -0.054225885258499175
+            ],
+            [
+              -0.046773888007475416,
+              0.03295818742151821,
+              0.9983616385271255
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.28731638796113557,
+              0.9575379912949492,
+              -0.023880712631526073
+            ],
+            [
+              -0.9563971042294853,
+              0.28542971539288503,
+              -0.06192298920602472
+            ],
+            [
+              -0.052477349689525304,
+              0.04063093399814975,
+              0.9977951969076568
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "6cc59ce66b304d0e83ad63c41c49cc490739c01cab0375925ae57766d1659761",
+          "depth_sha256": "08ccc3b7e2b980d63598f7067ca133a4acc14000cc7d5ed0887c88ab832ba0bd",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "c1a58e0e78e8a10e5ad2d3d7ff4e0375453b94b6a0b1dc8fd847527500f0d074",
+          "auxiliary_depth_sha256": "336c4fe1e87c7be35168e08d59cb436e5b8c6619d58166b447f638f8c36e050c",
+          "available_ns": 87000000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87000000000
+        },
+        "last_visual": {
+          "frame": 855,
+          "measured_ns": 87000000000,
+          "mode": "joint",
+          "reference_frame": 854,
+          "position_initial_body_m": [
+            0.6938463169336517,
+            2.4963389100127977,
+            0.0917544451050633
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.28536153282185256,
+              0.9582458992869137,
+              -0.01826450342547606
+            ],
+            [
+              -0.9572779110510408,
+              0.28403970564290093,
+              -0.054225885258499175
+            ],
+            [
+              -0.046773888007475416,
+              0.03295818742151821,
+              0.9983616385271255
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.28731638796113557,
+              0.9575379912949492,
+              -0.023880712631526073
+            ],
+            [
+              -0.9563971042294853,
+              0.28542971539288503,
+              -0.06192298920602472
+            ],
+            [
+              -0.052477349689525304,
+              0.04063093399814975,
+              0.9977951969076568
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "6cc59ce66b304d0e83ad63c41c49cc490739c01cab0375925ae57766d1659761",
+          "depth_sha256": "08ccc3b7e2b980d63598f7067ca133a4acc14000cc7d5ed0887c88ab832ba0bd",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "c1a58e0e78e8a10e5ad2d3d7ff4e0375453b94b6a0b1dc8fd847527500f0d074",
+          "auxiliary_depth_sha256": "336c4fe1e87c7be35168e08d59cb436e5b8c6619d58166b447f638f8c36e050c",
+          "available_ns": 87000000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87000000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 854,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 854,
+          "previous_measured_ns": 86900000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6938463169336517,
+            2.4963389100127977,
+            0.0917544451050633
+          ],
+          "bridge_frames": 3,
+          "bridge_path_m": 0.005585033788342101,
+          "total_bridge_frames": 3,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 854,
+              "reference_measured_ns": 86900000000,
+              "current_frame": 855,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.32762604477661567,
+                  0.9440687395997801,
+                  -0.037354915265816094
+                ],
+                [
+                  -0.9440204046904137,
+                  0.3254836715059069,
+                  -0.053720155539616544
+                ],
+                [
+                  -0.03855710456188176,
+                  0.05286392431064745,
+                  0.9978570815474015
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9989852170120658,
+                  0.044536263759047345,
+                  0.006712481042066143
+                ],
+                [
+                  -0.04465007779434743,
+                  0.9988425837378262,
+                  0.017884727140845453
+                ],
+                [
+                  -0.005908192982145106,
+                  -0.018166290824720203,
+                  0.9998175229177355
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.28536153282185256,
+                  0.9582458992869137,
+                  -0.01826450342547606
+                ],
+                [
+                  -0.9572779110510408,
+                  0.28403970564290093,
+                  -0.054225885258499175
+                ],
+                [
+                  -0.046773888007475416,
+                  0.03295818742151821,
+                  0.9983616385271255
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9989935178148671,
+                  0.04432477478275694,
+                  0.006875005771822662
+                ],
+                [
+                  -0.044443122743435794,
+                  0.9988472062843146,
+                  0.018140213306780877
+                ],
+                [
+                  -0.006063019439047254,
+                  -0.01842750223065155,
+                  0.999811815771748
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6938463169336517,
+                2.4963389100127977,
+                0.0917544451050633
+              ],
+              "fitting_mode": "joint",
+              "inliers": 17,
+              "inlier_fraction": 0.9444444444444444,
+              "reference_grid_cells": 8,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.00029443311217897854,
+              "gyro_disagreement_rad": 0.0003684907903557331,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 854,
+            "reference_measured_ns": 86900000000,
+            "current_frame": 855,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.32762604477661567,
+                0.9440687395997801,
+                -0.037354915265816094
+              ],
+              [
+                -0.9440204046904137,
+                0.3254836715059069,
+                -0.053720155539616544
+              ],
+              [
+                -0.03855710456188176,
+                0.05286392431064745,
+                0.9978570815474015
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9989852170120658,
+                0.044536263759047345,
+                0.006712481042066143
+              ],
+              [
+                -0.04465007779434743,
+                0.9988425837378262,
+                0.017884727140845453
+              ],
+              [
+                -0.005908192982145106,
+                -0.018166290824720203,
+                0.9998175229177355
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.28536153282185256,
+                0.9582458992869137,
+                -0.01826450342547606
+              ],
+              [
+                -0.9572779110510408,
+                0.28403970564290093,
+                -0.054225885258499175
+              ],
+              [
+                -0.046773888007475416,
+                0.03295818742151821,
+                0.9983616385271255
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9989935178148671,
+                0.04432477478275694,
+                0.006875005771822662
+              ],
+              [
+                -0.044443122743435794,
+                0.9988472062843146,
+                0.018140213306780877
+              ],
+              [
+                -0.006063019439047254,
+                -0.01842750223065155,
+                0.999811815771748
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6938463169336517,
+              2.4963389100127977,
+              0.0917544451050633
+            ],
+            "fitting_mode": "joint",
+            "inliers": 17,
+            "inlier_fraction": 0.9444444444444444,
+            "reference_grid_cells": 8,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.00029443311217897854,
+            "gyro_disagreement_rad": 0.0003684907903557331,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 34,
+          "liftable_features": 34,
+          "selected_features": 34,
+          "selected_per_cell": [
+            1,
+            6,
+            14,
+            0,
+            1,
+            1,
+            6,
+            2,
+            1,
+            1,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 119,
+          "liftable_features": 118,
+          "selected_features": 118,
+          "selected_per_cell": [
+            1,
+            1,
+            8,
+            0,
+            12,
+            10,
+            3,
+            1,
+            11,
+            23,
+            31,
+            17
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 854,
+            "previous_measured_ns": 86900000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 856,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 87100000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 856,
+          "measured_ns": 87100000000,
+          "mode": "joint",
+          "reference_frame": 855,
+          "position_initial_body_m": [
+            0.6936654328776812,
+            2.496001429972815,
+            0.09146435674975374
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.2405203562492573,
+              0.9699990944875339,
+              -0.03537958342173705
+            ],
+            [
+              -0.9695457186734322,
+              0.23835501231731793,
+              -0.05628487812233926
+            ],
+            [
+              -0.04616337976974254,
+              0.047839782572432404,
+              0.9977877016538494
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.24235029354600895,
+              0.9693324409090316,
+              -0.04075480609070078
+            ],
+            [
+              -0.9687815894375316,
+              0.2395234708516435,
+              -0.06395888427803581
+            ],
+            [
+              -0.0522356888063213,
+              0.0549829602014146,
+              0.9971200062692593
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "1b0318f0c1adad6203a8863c938746e9fa2c35fa7665e029371a6514545f1f7e",
+          "depth_sha256": "8a97f65e13f974778096df9067d1916295919dcf2d992f22dc8590d7f38f5dd8",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "173f90f63e8cb97f0d3a660883a0a801d3c225b76c78db957c6225eb257ce5e8",
+          "auxiliary_depth_sha256": "d13dac39eb8e7a8dfedf07c38d155dcb28afba9ac4fca646fe0bbbc95645fdd4",
+          "available_ns": 87100000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87100000000
+        },
+        "last_visual": {
+          "frame": 856,
+          "measured_ns": 87100000000,
+          "mode": "joint",
+          "reference_frame": 855,
+          "position_initial_body_m": [
+            0.6936654328776812,
+            2.496001429972815,
+            0.09146435674975374
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.2405203562492573,
+              0.9699990944875339,
+              -0.03537958342173705
+            ],
+            [
+              -0.9695457186734322,
+              0.23835501231731793,
+              -0.05628487812233926
+            ],
+            [
+              -0.04616337976974254,
+              0.047839782572432404,
+              0.9977877016538494
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.24235029354600895,
+              0.9693324409090316,
+              -0.04075480609070078
+            ],
+            [
+              -0.9687815894375316,
+              0.2395234708516435,
+              -0.06395888427803581
+            ],
+            [
+              -0.0522356888063213,
+              0.0549829602014146,
+              0.9971200062692593
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "1b0318f0c1adad6203a8863c938746e9fa2c35fa7665e029371a6514545f1f7e",
+          "depth_sha256": "8a97f65e13f974778096df9067d1916295919dcf2d992f22dc8590d7f38f5dd8",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "173f90f63e8cb97f0d3a660883a0a801d3c225b76c78db957c6225eb257ce5e8",
+          "auxiliary_depth_sha256": "d13dac39eb8e7a8dfedf07c38d155dcb28afba9ac4fca646fe0bbbc95645fdd4",
+          "available_ns": 87100000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87100000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 855,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 855,
+          "previous_measured_ns": 87000000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6936654328776812,
+            2.496001429972815,
+            0.09146435674975374
+          ],
+          "bridge_frames": 4,
+          "bridge_path_m": 0.006065411840481668,
+          "total_bridge_frames": 4,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 855,
+              "reference_measured_ns": 87000000000,
+              "current_frame": 856,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.28536153282185256,
+                  0.9582458992869137,
+                  -0.01826450342547606
+                ],
+                [
+                  -0.9572779110510408,
+                  0.28403970564290093,
+                  -0.054225885258499175
+                ],
+                [
+                  -0.046773888007475416,
+                  0.03295818742151821,
+                  0.9983616385271255
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9989191985297082,
+                  0.04639078752676269,
+                  -0.0028861118155018703
+                ],
+                [
+                  -0.0464332967909159,
+                  0.9987766546620431,
+                  -0.017004206868388046
+                ],
+                [
+                  0.002093742556175283,
+                  0.017119840383104643,
+                  0.9998512525907868
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.2405203562492573,
+                  0.9699990944875339,
+                  -0.03537958342173705
+                ],
+                [
+                  -0.9695457186734322,
+                  0.23835501231731793,
+                  -0.05628487812233926
+                ],
+                [
+                  -0.04616337976974254,
+                  0.047839782572432404,
+                  0.9977877016538494
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9989123082396161,
+                  0.04654018170857157,
+                  -0.0028656472161880174
+                ],
+                [
+                  -0.046581824903472256,
+                  0.9987737635071313,
+                  -0.016766124133070066
+                ],
+                [
+                  0.0020818347912870683,
+                  0.01688137483483613,
+                  0.9998553321093834
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6936654328776812,
+                2.496001429972815,
+                0.09146435674975374
+              ],
+              "fitting_mode": "joint",
+              "inliers": 18,
+              "inlier_fraction": 0.9473684210526315,
+              "reference_grid_cells": 9,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.0003021262309631658,
+              "gyro_disagreement_rad": 0.00028156837662362047,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 855,
+            "reference_measured_ns": 87000000000,
+            "current_frame": 856,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.28536153282185256,
+                0.9582458992869137,
+                -0.01826450342547606
+              ],
+              [
+                -0.9572779110510408,
+                0.28403970564290093,
+                -0.054225885258499175
+              ],
+              [
+                -0.046773888007475416,
+                0.03295818742151821,
+                0.9983616385271255
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9989191985297082,
+                0.04639078752676269,
+                -0.0028861118155018703
+              ],
+              [
+                -0.0464332967909159,
+                0.9987766546620431,
+                -0.017004206868388046
+              ],
+              [
+                0.002093742556175283,
+                0.017119840383104643,
+                0.9998512525907868
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.2405203562492573,
+                0.9699990944875339,
+                -0.03537958342173705
+              ],
+              [
+                -0.9695457186734322,
+                0.23835501231731793,
+                -0.05628487812233926
+              ],
+              [
+                -0.04616337976974254,
+                0.047839782572432404,
+                0.9977877016538494
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9989123082396161,
+                0.04654018170857157,
+                -0.0028656472161880174
+              ],
+              [
+                -0.046581824903472256,
+                0.9987737635071313,
+                -0.016766124133070066
+              ],
+              [
+                0.0020818347912870683,
+                0.01688137483483613,
+                0.9998553321093834
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6936654328776812,
+              2.496001429972815,
+              0.09146435674975374
+            ],
+            "fitting_mode": "joint",
+            "inliers": 18,
+            "inlier_fraction": 0.9473684210526315,
+            "reference_grid_cells": 9,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.0003021262309631658,
+            "gyro_disagreement_rad": 0.00028156837662362047,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 20,
+          "liftable_features": 20,
+          "selected_features": 20,
+          "selected_per_cell": [
+            1,
+            0,
+            14,
+            0,
+            2,
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 130,
+          "liftable_features": 129,
+          "selected_features": 129,
+          "selected_per_cell": [
+            3,
+            8,
+            1,
+            0,
+            8,
+            14,
+            4,
+            10,
+            8,
+            37,
+            26,
+            10
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 855,
+            "previous_measured_ns": 87000000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 857,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 87200000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 857,
+          "measured_ns": 87200000000,
+          "mode": "joint",
+          "reference_frame": 856,
+          "position_initial_body_m": [
+            0.6944240792828005,
+            2.495591427760421,
+            0.09159408732730281
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.19468776627960593,
+              0.9801532220387633,
+              -0.037367565990968694
+            ],
+            [
+              -0.9798863190852217,
+              0.19265063029047538,
+              -0.052043600166730875
+            ],
+            [
+              -0.043811817249339635,
+              0.04674821895768077,
+              0.9979454537666924
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.1963896477490995,
+              0.9795529296190021,
+              -0.04367109263351236
+            ],
+            [
+              -0.9792635528710001,
+              0.19368286357589248,
+              -0.05941247659817456
+            ],
+            [
+              -0.04973932323091991,
+              0.054433504681058585,
+              0.9972777914365973
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "28f77ddd21a826bf4c39409f0830228ad1e030cf1c1cad79bb18f453a70ddd51",
+          "depth_sha256": "0f3da502b57cabaf233f249c3a3501e05bdef63ab343174d7abfc202c6aaf7d5",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "fbd02570204b60ec4cb12589dbfab4af36190d62d545e1d0147aa34ec5e082a0",
+          "auxiliary_depth_sha256": "534593cdbb3e627cd6b04613478fc331150f838eeebf868346524506cfd900f0",
+          "available_ns": 87200000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87200000000
+        },
+        "last_visual": {
+          "frame": 857,
+          "measured_ns": 87200000000,
+          "mode": "joint",
+          "reference_frame": 856,
+          "position_initial_body_m": [
+            0.6944240792828005,
+            2.495591427760421,
+            0.09159408732730281
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.19468776627960593,
+              0.9801532220387633,
+              -0.037367565990968694
+            ],
+            [
+              -0.9798863190852217,
+              0.19265063029047538,
+              -0.052043600166730875
+            ],
+            [
+              -0.043811817249339635,
+              0.04674821895768077,
+              0.9979454537666924
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.1963896477490995,
+              0.9795529296190021,
+              -0.04367109263351236
+            ],
+            [
+              -0.9792635528710001,
+              0.19368286357589248,
+              -0.05941247659817456
+            ],
+            [
+              -0.04973932323091991,
+              0.054433504681058585,
+              0.9972777914365973
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "28f77ddd21a826bf4c39409f0830228ad1e030cf1c1cad79bb18f453a70ddd51",
+          "depth_sha256": "0f3da502b57cabaf233f249c3a3501e05bdef63ab343174d7abfc202c6aaf7d5",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "fbd02570204b60ec4cb12589dbfab4af36190d62d545e1d0147aa34ec5e082a0",
+          "auxiliary_depth_sha256": "534593cdbb3e627cd6b04613478fc331150f838eeebf868346524506cfd900f0",
+          "available_ns": 87200000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87200000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 856,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 856,
+          "previous_measured_ns": 87100000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6944240792828005,
+            2.495591427760421,
+            0.09159408732730281
+          ],
+          "bridge_frames": 5,
+          "bridge_path_m": 0.0069374647086722484,
+          "total_bridge_frames": 5,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 856,
+              "reference_measured_ns": 87100000000,
+              "current_frame": 857,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.2405203562492573,
+                  0.9699990944875339,
+                  -0.03537958342173705
+                ],
+                [
+                  -0.9695457186734322,
+                  0.23835501231731793,
+                  -0.05628487812233926
+                ],
+                [
+                  -0.04616337976974254,
+                  0.047839782572432404,
+                  0.9977877016538494
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9988934579167548,
+                  0.04680515256045207,
+                  -0.0045975455300276
+                ],
+                [
+                  -0.04680980646741919,
+                  0.9989034058230465,
+                  -0.0009098646058827596
+                ],
+                [
+                  0.0045499175366833546,
+                  0.0011240680188920596,
+                  0.9999890173004393
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.19468776627960593,
+                  0.9801532220387633,
+                  -0.037367565990968694
+                ],
+                [
+                  -0.9798863190852217,
+                  0.19265063029047538,
+                  -0.052043600166730875
+                ],
+                [
+                  -0.043811817249339635,
+                  0.04674821895768077,
+                  0.9979454537666924
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9988857578197305,
+                  0.04691517600399527,
+                  -0.005119480974944468
+                ],
+                [
+                  -0.04692456366992527,
+                  0.9988969392168653,
+                  -0.0017292043099806996
+                ],
+                [
+                  0.0050327079516953414,
+                  0.0019675069685454972,
+                  0.9999854002769151
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6944240792828005,
+                2.495591427760421,
+                0.09159408732730281
+              ],
+              "fitting_mode": "joint",
+              "inliers": 20,
+              "inlier_fraction": 0.8695652173913043,
+              "reference_grid_cells": 8,
+              "current_grid_cells": 8,
+              "residual_rms_m": 0.00031276220466708586,
+              "gyro_disagreement_rad": 0.000978161214620138,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 856,
+            "reference_measured_ns": 87100000000,
+            "current_frame": 857,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.2405203562492573,
+                0.9699990944875339,
+                -0.03537958342173705
+              ],
+              [
+                -0.9695457186734322,
+                0.23835501231731793,
+                -0.05628487812233926
+              ],
+              [
+                -0.04616337976974254,
+                0.047839782572432404,
+                0.9977877016538494
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9988934579167548,
+                0.04680515256045207,
+                -0.0045975455300276
+              ],
+              [
+                -0.04680980646741919,
+                0.9989034058230465,
+                -0.0009098646058827596
+              ],
+              [
+                0.0045499175366833546,
+                0.0011240680188920596,
+                0.9999890173004393
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.19468776627960593,
+                0.9801532220387633,
+                -0.037367565990968694
+              ],
+              [
+                -0.9798863190852217,
+                0.19265063029047538,
+                -0.052043600166730875
+              ],
+              [
+                -0.043811817249339635,
+                0.04674821895768077,
+                0.9979454537666924
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9988857578197305,
+                0.04691517600399527,
+                -0.005119480974944468
+              ],
+              [
+                -0.04692456366992527,
+                0.9988969392168653,
+                -0.0017292043099806996
+              ],
+              [
+                0.0050327079516953414,
+                0.0019675069685454972,
+                0.9999854002769151
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6944240792828005,
+              2.495591427760421,
+              0.09159408732730281
+            ],
+            "fitting_mode": "joint",
+            "inliers": 20,
+            "inlier_fraction": 0.8695652173913043,
+            "reference_grid_cells": 8,
+            "current_grid_cells": 8,
+            "residual_rms_m": 0.00031276220466708586,
+            "gyro_disagreement_rad": 0.000978161214620138,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 56,
+          "liftable_features": 56,
+          "selected_features": 56,
+          "selected_per_cell": [
+            6,
+            12,
+            15,
+            0,
+            1,
+            5,
+            11,
+            3,
+            1,
+            1,
+            0,
+            1
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 138,
+          "liftable_features": 134,
+          "selected_features": 122,
+          "selected_per_cell": [
+            1,
+            9,
+            0,
+            0,
+            10,
+            8,
+            5,
+            6,
+            14,
+            50,
+            14,
+            5
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 856,
+            "previous_measured_ns": 87100000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 858,
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "selected_action": "right_turn",
+      "terminal": null,
+      "failure": null,
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 87300000000,
+        "status": "CURRENT_VISUAL_POSE",
+        "current_pose": {
+          "frame": 858,
+          "measured_ns": 87300000000,
+          "mode": "joint",
+          "reference_frame": 857,
+          "position_initial_body_m": [
+            0.6974403608510925,
+            2.494730056395313,
+            0.0920089858450698
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.15228334945478061,
+              0.9881336418270895,
+              -0.02004213981506896
+            ],
+            [
+              -0.9870620726669709,
+              0.15102601834285365,
+              -0.05384799426073461
+            ],
+            [
+              -0.05018213009860583,
+              0.027982988993996295,
+              0.9983479885018758
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.1538849583191911,
+              0.9877513478432804,
+              -0.0258204267368759
+            ],
+            [
+              -0.9864677094874816,
+              0.15208377363474113,
+              -0.06125344019366495
+            ],
+            [
+              -0.05657630017633053,
+              0.03489700031221411,
+              0.9977882148169304
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "ba53c875225c1164d0d192337dc61cb08cf190945f6c8f7d2de6ddffe695081d",
+          "depth_sha256": "3ad44f151f45be07dceaa44b7ef9082191d77135627c178f52d762e0a06773de",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "f68e7c70773d8c71de8da4882054057d4c9e94bfd0520ccec15eb04c571c3ccb",
+          "auxiliary_depth_sha256": "08e162caf869aa48e58d57376b96246fac7925fdf773d9bae35219a9fa447aa4",
+          "available_ns": 87300000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87300000000
+        },
+        "last_visual": {
+          "frame": 858,
+          "measured_ns": 87300000000,
+          "mode": "joint",
+          "reference_frame": 857,
+          "position_initial_body_m": [
+            0.6974403608510925,
+            2.494730056395313,
+            0.0920089858450698
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.15228334945478061,
+              0.9881336418270895,
+              -0.02004213981506896
+            ],
+            [
+              -0.9870620726669709,
+              0.15102601834285365,
+              -0.05384799426073461
+            ],
+            [
+              -0.05018213009860583,
+              0.027982988993996295,
+              0.9983479885018758
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.1538849583191911,
+              0.9877513478432804,
+              -0.0258204267368759
+            ],
+            [
+              -0.9864677094874816,
+              0.15208377363474113,
+              -0.06125344019366495
+            ],
+            [
+              -0.05657630017633053,
+              0.03489700031221411,
+              0.9977882148169304
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "ba53c875225c1164d0d192337dc61cb08cf190945f6c8f7d2de6ddffe695081d",
+          "depth_sha256": "3ad44f151f45be07dceaa44b7ef9082191d77135627c178f52d762e0a06773de",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "f68e7c70773d8c71de8da4882054057d4c9e94bfd0520ccec15eb04c571c3ccb",
+          "auxiliary_depth_sha256": "08e162caf869aa48e58d57376b96246fac7925fdf773d9bae35219a9fa447aa4",
+          "available_ns": 87300000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87300000000
+        },
+        "visual_age_ns": 0,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "CONTACT_NOT_SUPPLIED",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": null,
+        "contact_diagnostic_current": true,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8,
+          "anchor_status": "NO_QUALIFIED_REFERENCE",
+          "selected_reference": 857,
+          "selected_reference_retained_anchor": false
+        },
+        "continuity_evidence": {
+          "status": "MEASURED_INCREMENT_BRIDGE",
+          "incremental_available": true,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 857,
+          "previous_measured_ns": 87200000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": null,
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "incremental_position_initial_body_m": [
+            0.6974403608510925,
+            2.494730056395313,
+            0.0920089858450698
+          ],
+          "bridge_frames": 6,
+          "bridge_path_m": 0.010101648001070385,
+          "total_bridge_frames": 6,
+          "anchored_error_accumulates": true,
+          "rotation_measurement_witnesses": [
+            {
+              "reference_frame": 857,
+              "reference_measured_ns": 87200000000,
+              "current_frame": 858,
+              "reference_rotation_initial_body_from_reference_body": [
+                [
+                  0.19468776627960593,
+                  0.9801532220387633,
+                  -0.037367565990968694
+                ],
+                [
+                  -0.9798863190852217,
+                  0.19265063029047538,
+                  -0.052043600166730875
+                ],
+                [
+                  -0.043811817249339635,
+                  0.04674821895768077,
+                  0.9979454537666924
+                ]
+              ],
+              "fitted_rotation_reference_body_from_current_body": [
+                [
+                  0.9990548965542413,
+                  0.0431632167130786,
+                  0.00512351383072616
+                ],
+                [
+                  -0.04324304000976671,
+                  0.9989257853623107,
+                  0.016652772411939024
+                ],
+                [
+                  -0.004399222852682628,
+                  -0.016858590132923665,
+                  0.9998482058677812
+                ]
+              ],
+              "composed_rotation_initial_body_from_current_body": [
+                [
+                  0.15228334945478061,
+                  0.9881336418270895,
+                  -0.02004213981506896
+                ],
+                [
+                  -0.9870620726669709,
+                  0.15102601834285365,
+                  -0.05384799426073461
+                ],
+                [
+                  -0.05018213009860583,
+                  0.027982988993996295,
+                  0.9983479885018758
+                ]
+              ],
+              "gyro_rotation_reference_body_from_current_body": [
+                [
+                  0.9990473536250997,
+                  0.043318289584735846,
+                  0.005283086425251319
+                ],
+                [
+                  -0.043403075353310644,
+                  0.9989103133258577,
+                  0.017156893107239175
+                ],
+                [
+                  -0.004534122252386608,
+                  -0.017369850853449588,
+                  0.9998388520240202
+                ]
+              ],
+              "position_initial_body_m": [
+                0.6974403608510925,
+                2.494730056395313,
+                0.0920089858450698
+              ],
+              "fitting_mode": "joint",
+              "inliers": 19,
+              "inlier_fraction": 0.95,
+              "reference_grid_cells": 8,
+              "current_grid_cells": 7,
+              "residual_rms_m": 0.00031204900748613726,
+              "gyro_disagreement_rad": 0.000551918996322814,
+              "candidate_envelope_passed": true,
+              "witness_alone_grants_pose": false,
+              "camera": "auxiliary"
+            }
+          ],
+          "incremental_rotation_witness": {
+            "reference_frame": 857,
+            "reference_measured_ns": 87200000000,
+            "current_frame": 858,
+            "reference_rotation_initial_body_from_reference_body": [
+              [
+                0.19468776627960593,
+                0.9801532220387633,
+                -0.037367565990968694
+              ],
+              [
+                -0.9798863190852217,
+                0.19265063029047538,
+                -0.052043600166730875
+              ],
+              [
+                -0.043811817249339635,
+                0.04674821895768077,
+                0.9979454537666924
+              ]
+            ],
+            "fitted_rotation_reference_body_from_current_body": [
+              [
+                0.9990548965542413,
+                0.0431632167130786,
+                0.00512351383072616
+              ],
+              [
+                -0.04324304000976671,
+                0.9989257853623107,
+                0.016652772411939024
+              ],
+              [
+                -0.004399222852682628,
+                -0.016858590132923665,
+                0.9998482058677812
+              ]
+            ],
+            "composed_rotation_initial_body_from_current_body": [
+              [
+                0.15228334945478061,
+                0.9881336418270895,
+                -0.02004213981506896
+              ],
+              [
+                -0.9870620726669709,
+                0.15102601834285365,
+                -0.05384799426073461
+              ],
+              [
+                -0.05018213009860583,
+                0.027982988993996295,
+                0.9983479885018758
+              ]
+            ],
+            "gyro_rotation_reference_body_from_current_body": [
+              [
+                0.9990473536250997,
+                0.043318289584735846,
+                0.005283086425251319
+              ],
+              [
+                -0.043403075353310644,
+                0.9989103133258577,
+                0.017156893107239175
+              ],
+              [
+                -0.004534122252386608,
+                -0.017369850853449588,
+                0.9998388520240202
+              ]
+            ],
+            "position_initial_body_m": [
+              0.6974403608510925,
+              2.494730056395313,
+              0.0920089858450698
+            ],
+            "fitting_mode": "joint",
+            "inliers": 19,
+            "inlier_fraction": 0.95,
+            "reference_grid_cells": 8,
+            "current_grid_cells": 7,
+            "residual_rms_m": 0.00031204900748613726,
+            "gyro_disagreement_rad": 0.000551918996322814,
+            "candidate_envelope_passed": true,
+            "witness_alone_grants_pose": false,
+            "camera": "auxiliary"
+          },
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": true,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": true,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 22,
+          "liftable_features": 22,
+          "selected_features": 22,
+          "selected_per_cell": [
+            2,
+            4,
+            1,
+            0,
+            1,
+            5,
+            6,
+            0,
+            1,
+            1,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 151,
+          "liftable_features": 149,
+          "selected_features": 141,
+          "selected_per_cell": [
+            9,
+            13,
+            0,
+            0,
+            2,
+            3,
+            10,
+            9,
+            21,
+            50,
+            18,
+            6
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": "auxiliary",
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 857,
+            "previous_measured_ns": 87200000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": true,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    },
+    {
+      "frame": 859,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "selected_action": null,
+      "terminal": "SENSOR_OR_MODEL_FAILURE",
+      "failure": "same-episode current visual evidence required",
+      "original_visual_evidence": {
+        "schema": "visual_led_motion_evidence_development.v1",
+        "identity": [
+          0,
+          0,
+          0
+        ],
+        "decision_ns": 87400000000,
+        "status": "VISUAL_TERMINAL_FAILURE",
+        "current_pose": null,
+        "last_visual": {
+          "frame": 858,
+          "measured_ns": 87300000000,
+          "mode": "joint",
+          "reference_frame": 857,
+          "position_initial_body_m": [
+            0.6974403608510925,
+            2.494730056395313,
+            0.0920089858450698
+          ],
+          "rotation_initial_body_from_current_body": [
+            [
+              0.15228334945478061,
+              0.9881336418270895,
+              -0.02004213981506896
+            ],
+            [
+              -0.9870620726669709,
+              0.15102601834285365,
+              -0.05384799426073461
+            ],
+            [
+              -0.05018213009860583,
+              0.027982988993996295,
+              0.9983479885018758
+            ]
+          ],
+          "gyro_rotation_initial_body_from_current_body": [
+            [
+              0.1538849583191911,
+              0.9877513478432804,
+              -0.0258204267368759
+            ],
+            [
+              -0.9864677094874816,
+              0.15208377363474113,
+              -0.06125344019366495
+            ],
+            [
+              -0.05657630017633053,
+              0.03489700031221411,
+              0.9977882148169304
+            ]
+          ],
+          "promoted_keyframe": false,
+          "promotion_reason": null,
+          "keyframe_count": 279,
+          "rgb_sha256": "ba53c875225c1164d0d192337dc61cb08cf190945f6c8f7d2de6ddffe695081d",
+          "depth_sha256": "3ad44f151f45be07dceaa44b7ef9082191d77135627c178f52d762e0a06773de",
+          "position_error_bound": null,
+          "orientation_error_bound": null,
+          "uncertainty_model_validated": false,
+          "gyro_role": "consistency_monitor_only",
+          "native_pose_input": false,
+          "global_history_reset": false,
+          "navigation_qualified": false,
+          "auxiliary_rgb_sha256": "f68e7c70773d8c71de8da4882054057d4c9e94bfd0520ccec15eb04c571c3ccb",
+          "auxiliary_depth_sha256": "08e162caf869aa48e58d57376b96246fac7925fdf773d9bae35219a9fa447aa4",
+          "available_ns": 87300000000,
+          "processing_latency_accounted": false,
+          "acquisition_available_ns": 87300000000
+        },
+        "visual_age_ns": 100000000,
+        "calibration_ids": {
+          "rgb": "go2-fixed-native-rgb-640x480-development-v1",
+          "depth": "go2_colocated_640x480_hfov78.323_optical_depth_0.2_to_5m_v1",
+          "fast_gyro": "ideal-body-gyro-500hz-development-v1",
+          "body": "ideal-body-origin-50hz-v1",
+          "auxiliary_rgb": "go2_auxiliary_640x480_pitch45_mount035_000_008_rgb_v1",
+          "auxiliary_depth": "go2_auxiliary_640x480_pitch45_mount035_000_008_depth02to5_v1"
+        },
+        "contact_diagnostic": {
+          "status": "VISUAL_TERMINAL_NO_COMPARISON",
+          "displacement_disagreement_m": null
+        },
+        "terminal_failure": {
+          "decision_ns": 87400000000,
+          "chain": [
+            "dual-camera RGBD pose unavailable; terminal failure",
+            "neither retained anchor nor previous frame supports current pose"
+          ]
+        },
+        "contact_diagnostic_current": false,
+        "pose_updated_from_contact": false,
+        "command_integration_used": false,
+        "contact_hardware_calibrated": false,
+        "physical_pose_error_bound": null,
+        "motion_permission": "NOT_EVALUATED",
+        "support_established": false,
+        "future_clearance_established": false,
+        "navigation_qualified": false,
+        "reference_selection": {
+          "status": "NO_QUALIFIED_REFERENCE",
+          "attempts": [
+            {
+              "reference_frame": 850,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 849,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 848,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 847,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 846,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 845,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 844,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            },
+            {
+              "reference_frame": 840,
+              "status": "REJECTED",
+              "reason": "insufficient rigid-pose matches"
+            }
+          ],
+          "retained_references": 8
+        },
+        "continuity_evidence": {
+          "status": "NO_CURRENT_MEASURED_TRANSLATION",
+          "incremental_available": false,
+          "anchor_available": false,
+          "measurements_independent": false,
+          "previous_frame": 858,
+          "previous_measured_ns": 87300000000,
+          "disagreement_m": null,
+          "disagreement_rad": null,
+          "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+          "incremental_failure": "insufficient rigid consensus after pruning",
+          "error_bound_m": null,
+          "uncertainty_calibrated": false,
+          "same_reference_measurement_reused": false,
+          "rotation_measurement_witnesses": [],
+          "incremental_rotation_witness": null,
+          "selected_anchor_rotation_witness": null,
+          "rotation_fitting_mode": "joint",
+          "gyro_role": "consistency_monitor_only",
+          "incremental_rotation_witness_saved": false,
+          "gyro_bias_estimated": false,
+          "independent_sensor_acquisition": false
+        },
+        "continuity_evidence_current": false,
+        "bridge_is_command_or_inertial_extrapolation": false,
+        "bridge_is_calibrated_uncertainty": false,
+        "anchor_promotion_from_bridge": false,
+        "gyro_bias_estimated": false,
+        "candidate_adopted": false,
+        "feature_selection": "corner_upright_sift_support_v1",
+        "last_accepted_feature_witness": {
+          "detected_features": 22,
+          "liftable_features": 22,
+          "selected_features": 22,
+          "selected_per_cell": [
+            2,
+            4,
+            1,
+            0,
+            1,
+            5,
+            6,
+            0,
+            1,
+            1,
+            1,
+            0
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "auxiliary_feature_witness": {
+          "detected_features": 151,
+          "liftable_features": 149,
+          "selected_features": 141,
+          "selected_per_cell": [
+            9,
+            13,
+            0,
+            0,
+            2,
+            3,
+            10,
+            9,
+            21,
+            50,
+            18,
+            6
+          ],
+          "feature_selection": "corner_upright_sift_support_v1",
+          "native_state_used": false
+        },
+        "overlap_retention": null,
+        "observer_variant": "front_first_dual_camera_anchor_v1",
+        "camera_selection": {
+          "selected_camera": null,
+          "auxiliary_attempted": true,
+          "primary_failure": "neither retained anchor nor previous frame supports current pose",
+          "primary_continuity": {
+            "status": "NO_CURRENT_MEASURED_TRANSLATION",
+            "incremental_available": false,
+            "anchor_available": false,
+            "measurements_independent": false,
+            "previous_frame": 858,
+            "previous_measured_ns": 87300000000,
+            "disagreement_m": null,
+            "disagreement_rad": null,
+            "anchor_failure": "no recent reference passes unchanged registration and increment gates",
+            "incremental_failure": "insufficient rigid-pose matches",
+            "error_bound_m": null,
+            "uncertainty_calibrated": false,
+            "same_reference_measurement_reused": false,
+            "rotation_measurement_witnesses": [],
+            "incremental_rotation_witness": null,
+            "selected_anchor_rotation_witness": null,
+            "rotation_fitting_mode": "joint",
+            "gyro_role": "consistency_monitor_only",
+            "incremental_rotation_witness_saved": false,
+            "gyro_bias_estimated": false,
+            "independent_sensor_acquisition": false
+          },
+          "primary_reference_selection": {
+            "status": "NO_QUALIFIED_REFERENCE",
+            "attempts": [
+              {
+                "reference_frame": 850,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 849,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 848,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 847,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 846,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 845,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 844,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              },
+              {
+                "reference_frame": 840,
+                "status": "REJECTED",
+                "reason": "insufficient rigid-pose matches"
+              }
+            ],
+            "retained_references": 8
+          },
+          "cross_camera_disagreement_m": null,
+          "cross_camera_disagreement_rad": null,
+          "measurements_independent": false,
+          "thresholds_unchanged": true
+        },
+        "camera_selection_current": false,
+        "auxiliary_rgb_is_additional_modality": true
+      }
+    }
+  ],
+  "original_records_unchanged": true,
+  "raw_visual_fitting_reexecuted": false,
+  "new_model_inference": false,
+  "new_native_execution": false,
+  "goal_achieved": false
+}

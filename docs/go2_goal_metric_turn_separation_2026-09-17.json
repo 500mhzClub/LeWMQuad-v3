@@ -1,0 +1,156 @@
+{
+  "status": "COMPLETE",
+  "rows": [
+    {
+      "layout": "cluster_00_left_open",
+      "images": [
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0003.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0023.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_054/rgb_0023.png"
+      ],
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "supervised_pair": true,
+          "physical_cost": 106.14133823685908,
+          "learned_cost": 108.1575927734375,
+          "predicted_over_physical": 1.0189959404137063,
+          "heading_separation_deg": 51.38748651769004
+        },
+        {
+          "pair": "initial_to_right",
+          "supervised_pair": true,
+          "physical_cost": 108.17356439848137,
+          "learned_cost": 107.11970520019531,
+          "predicted_over_physical": 0.9902577010922563,
+          "heading_separation_deg": 51.900213756412434
+        },
+        {
+          "pair": "left_to_right",
+          "supervised_pair": false,
+          "physical_cost": 427.81217963092826,
+          "learned_cost": 201.9493865966797,
+          "predicted_over_physical": 0.4720515128178458,
+          "heading_separation_deg": 103.28770027410248
+        }
+      ]
+    },
+    {
+      "layout": "cluster_00_right_open",
+      "images": [
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_008/rgb_0003.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_008/rgb_0023.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_055/rgb_0023.png"
+      ],
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "supervised_pair": true,
+          "physical_cost": 106.14133823685908,
+          "learned_cost": 110.37725830078125,
+          "predicted_over_physical": 1.0399082971280194,
+          "heading_separation_deg": 51.38748651769004
+        },
+        {
+          "pair": "initial_to_right",
+          "supervised_pair": true,
+          "physical_cost": 108.17356439848137,
+          "learned_cost": 112.83634948730469,
+          "predicted_over_physical": 1.0431046634614618,
+          "heading_separation_deg": 51.900213756412434
+        },
+        {
+          "pair": "left_to_right",
+          "supervised_pair": false,
+          "physical_cost": 427.81217963092826,
+          "learned_cost": 14.058097839355469,
+          "predicted_over_physical": 0.03286044322413478,
+          "heading_separation_deg": 103.28770027410248
+        }
+      ]
+    },
+    {
+      "layout": "cluster_01_left_open",
+      "images": [
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_036/rgb_0003.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_036/rgb_0023.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_093/rgb_0023.png"
+      ],
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "supervised_pair": true,
+          "physical_cost": 106.14133823685908,
+          "learned_cost": 102.65467834472656,
+          "predicted_over_physical": 0.9671507826257864,
+          "heading_separation_deg": 51.38748651769004
+        },
+        {
+          "pair": "initial_to_right",
+          "supervised_pair": true,
+          "physical_cost": 108.17356439848137,
+          "learned_cost": 106.58038330078125,
+          "predicted_over_physical": 0.9852719922232451,
+          "heading_separation_deg": 51.900213756412434
+        },
+        {
+          "pair": "left_to_right",
+          "supervised_pair": false,
+          "physical_cost": 427.81217963092826,
+          "learned_cost": 191.30950927734375,
+          "predicted_over_physical": 0.4471810724098263,
+          "heading_separation_deg": 103.28770027410248
+        }
+      ]
+    },
+    {
+      "layout": "cluster_01_right_open",
+      "images": [
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_062/rgb_0003.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_062/rgb_0023.png",
+        "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_070/rgb_0023.png"
+      ],
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "supervised_pair": true,
+          "physical_cost": 106.14133823685908,
+          "learned_cost": 104.7540283203125,
+          "predicted_over_physical": 0.9869295984053759,
+          "heading_separation_deg": 51.38748651769004
+        },
+        {
+          "pair": "initial_to_right",
+          "supervised_pair": true,
+          "physical_cost": 108.17356439848137,
+          "learned_cost": 111.43318176269531,
+          "predicted_over_physical": 1.0301332158401142,
+          "heading_separation_deg": 51.900213756412434
+        },
+        {
+          "pair": "left_to_right",
+          "supervised_pair": false,
+          "physical_cost": 427.81217963092826,
+          "learned_cost": 16.887454986572266,
+          "predicted_over_physical": 0.03947399300585832,
+          "heading_separation_deg": 103.28770027410248
+        }
+      ]
+    }
+  ],
+  "training_pairs": 24294,
+  "all_pairs_within_recording": true,
+  "training_layouts": 4,
+  "source_sha256": "9ad08cc4a11e75405676e45f311ce8e8eeb40177c5195780c01078f6b5daca37",
+  "metric_fit_sha256": "ac3b8a6b7a9b839613cbd092a758b9bbdfda543974bd5584ee401c3b0e18f2a8",
+  "mean_cross_turn_cost_ratio": 0.2478917553644163,
+  "wall_s": 6.010917192092165,
+  "no_training": true,
+  "new_navigation": false,
+  "limitations": [
+    "training images and geometry only; same-trajectory edges are in-sample",
+    "cross-trajectory edge never supervised despite both endpoint images being used in fitting",
+    "four related training layouts, one appearance and one time offset",
+    "diagnosis of supervision coverage, not evidence that adding pairs will fix navigation"
+  ]
+}

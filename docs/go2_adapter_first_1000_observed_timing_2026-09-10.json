@@ -1,0 +1,73 @@
+{
+  "status": "FIXED_ADAPTER_PREFIX_OBSERVED_TIMING_DIAGNOSIS",
+  "input_result_sha256": "1a9b9627a9496b40aaf5e20aacad00172fbc892c827bda3e4d830df5b4843884",
+  "canonical_prefix_sha256": "c6ff5bd00ccc2320c7487ecd3de6891504bcaee7f6b57461412dec8b11bcbc2a",
+  "input_attempt": "go2_adapter_hold_prefix_v1_attempt_001",
+  "calculation_tool_session": 52330,
+  "complete_snapshot_rows_verified": 1000,
+  "observation_range_inclusive": [3, 999],
+  "observations": 997,
+  "nominal_command_interval_ms": 100,
+  "nominal_requested_command_duration_s": 99.7,
+  "quantile_method": "numpy.quantile default linear",
+  "components": {
+    "acquisition_wall_ms": {
+      "min_ms": 158.088783,
+      "median_ms": 240.718423,
+      "p95_ms": 257.9879822,
+      "max_ms": 281.721816,
+      "mean_ms": 237.67243055165497,
+      "over_100_ms": 997,
+      "total_s": 236.95941326
+    },
+    "controller_wall_ms": {
+      "min_ms": 605.103566,
+      "median_ms": 1569.596922,
+      "p95_ms": 2115.0790496,
+      "max_ms": 2360.897298,
+      "mean_ms": 1396.3452936118354,
+      "over_100_ms": 997,
+      "total_s": 1392.1562577309999
+    },
+    "observation_and_control_wall_ms": {
+      "min_ms": 831.218553,
+      "median_ms": 1808.831778,
+      "p95_ms": 2357.8540116,
+      "max_ms": 2639.63911,
+      "mean_ms": 1634.0177241634906,
+      "over_100_ms": 997,
+      "total_s": 1629.1156709910001
+    },
+    "iteration_with_command_wall_ms": {
+      "min_ms": 864.789572,
+      "median_ms": 1842.895943,
+      "p95_ms": 2391.7188588,
+      "max_ms": 2673.202141,
+      "mean_ms": 1667.373347195587,
+      "over_100_ms": 997,
+      "total_s": 1662.3712271540003
+    }
+  },
+  "saved_hold_controller_timing": {
+    "observations": 595,
+    "median_ms": 1781.789022,
+    "p95_ms": 2163.128012,
+    "mean_ms": 1788.372514862185,
+    "total_s": 1064.081646343
+  },
+  "saved_moving_action_controller_means_ms": {
+    "left_arc": 801.8955480173913,
+    "right_arc": 722.7160263461539,
+    "right_turn": 857.1591200470589,
+    "left_turn": 804.7682043382353,
+    "forward": 725.7818701363636
+  },
+  "physics_paused_during_compute": true,
+  "full_episode_audit_pending_at_calculation": true,
+  "native_command_completion_independently_audited_by_this_diagnosis": false,
+  "isolated_component_benchmark": false,
+  "causal_latency_attribution_established": false,
+  "real_time_qualified": false,
+  "hardware_motion_performed": false,
+  "goal_achieved": false
+}

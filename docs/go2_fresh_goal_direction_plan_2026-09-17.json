@@ -1,0 +1,164 @@
+{
+  "source_sha256": {
+    "lewm/dense_visual_goal_control_development.py": "c516114973d882ab0e0bcf2b98cbcff028708b6279148b4940d6cbc6e726cf6b",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_goal_pilot_development.py": "e049931f46f6a222de60a37e3fe791e4a73a98e7533cc0277492a347eeac5998",
+    "lewm/dense_metric_goal_control_development.py": "cf5a6726fe735ed7092b201cc767d05d3ac7ebb271539931cffe394da195385c",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_metric_goal_pilot_development.py": "ac52c25fde2043e615a21a44a62e5ad0c2d35b60712d70d0f5853f9e57095766",
+    "lewm/dense_visual_arrival_control_development.py": "930ec1ce3964627bf2864d2c0c6bd68d8324282c60321bf6d2d333d38e75de4f",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_arrival_pilot_development.py": "165e9475fcbea3f7229cee56833f0c30880ffc8c3e2ed20542a7655227d8bc1a",
+    "lewm/direct_visual_feedback_control_development.py": "d7bb47c2319f1b5d9278b311210d2964d7da56050d0aab8e3facd93eb767fff5",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_direct_visual_feedback_pilot_development.py": "cedcf20ea7b6d1ec82d46407aa6306294751ab10d79534e421219c63475536ca",
+    "scripts/rgb_only_goal_session_development.py": "3cdd7a793b08d8e6cceaea67ea3cc0b659307c46bbb15aabb957ccffb37341cd",
+    "lewm/fresh_visual_goal_layouts_development.py": "6ffa693000a90d1f1333482c45f5ca1cf49e410b2a646efa5c2e4a4e92b3de19",
+    "scripts/fresh_visual_goal_session_development.py": "22580a9951da774c03a2de2af19006c578576c0eb897161b56da886736518480",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_fresh_visual_goal_comparison_development.py": "e72e9dcacdc79d7f9339a60ad23b9205306cd96b3f90b83b272292db4cf6a474",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/diagnose_go2_fresh_goal_direction_development.py": "332b92d8ef0d4f2a90ca619bc7d8bc3f711d3e380e48d5543c35befb0ae0d227"
+  },
+  "live_plan_sha256": "deaf6729f60d12384d99fb453b9c0b71581a74e7552d3f2777ed17d075b5240c",
+  "original_result_sha256": "2b62609dab13a4a9c62dfd0c9c3cdb3e4babf49dc73f000671f62d7185ffd6e1",
+  "original_decisions_sha256": "3e90d5c3897983f3095af25e16863b3ceb97779c016c2db581fd816d2f2b72a8",
+  "original_decision": {
+    "observed_ns": 2500000000,
+    "action": "left_turn",
+    "action_index": 4,
+    "costs": [
+      168.67066955566406,
+      150.2137908935547,
+      115.07288360595703,
+      131.53646850585938,
+      92.6164779663086,
+      138.27198791503906
+    ],
+    "cost_kind": "learned_physical_goal_metric",
+    "raw_goal_mse_costs": [
+      1.0031846761703491,
+      1.018378734588623,
+      0.9995764493942261,
+      0.8429233431816101,
+      0.9248099327087402,
+      0.8380720615386963
+    ],
+    "tied_indices": [
+      4
+    ],
+    "requested_commands": [
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ]
+    ],
+    "expected_applied_commands": [
+      [
+        0.0,
+        0.0,
+        0.3499999940395355
+      ],
+      [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ],
+      [
+        0.0,
+        0.0,
+        0.44999998807907104
+      ]
+    ],
+    "forecast_horizon_ms": 500,
+    "commit_ticks": 5,
+    "planning_wall_s": 0.3348810269962996,
+    "arrival_latched": false,
+    "controller_mode": "world_model_planning",
+    "tick": 10
+  },
+  "scene": "fresh_01",
+  "case": 2,
+  "departure_tick": 10,
+  "context_frames": [
+    0,
+    5,
+    10
+  ],
+  "suffix_ticks": 5,
+  "actions": [
+    "hold",
+    "forward",
+    "left_arc",
+    "right_arc",
+    "left_turn",
+    "right_turn"
+  ],
+  "new_actions": [
+    0,
+    1,
+    2,
+    3,
+    5
+  ],
+  "reused_action": "left_turn",
+  "new_native_branches": 5,
+  "selection": "first decision on first right-opening fresh task; post-hoc wrong-direction diagnosis",
+  "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_02",
+  "goal": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/goals/fresh_01/rgb_0023.png",
+  "resources": {
+    "output_free_bytes": 613294080,
+    "allowance_bytes": 50331648,
+    "reserve_bytes": 536870912,
+    "available_ram_gib": 72,
+    "concurrency": 2,
+    "cpu_groups": [
+      [
+        4,
+        5,
+        6,
+        7
+      ],
+      [
+        8,
+        9,
+        10,
+        11
+      ]
+    ]
+  },
+  "no_training": true,
+  "depth_recorded": false,
+  "new_navigation": false,
+  "limitations": [
+    "one exposed post-hoc state",
+    "five new branches plus one reused factual successor",
+    "500-ms local ranking does not prove navigation or long-horizon optimality"
+  ]
+}

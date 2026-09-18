@@ -1,0 +1,118 @@
+{
+  "pairs": 24294,
+  "recordings": 138,
+  "frame_paths": 5552,
+  "epochs": 24,
+  "batch": 128,
+  "seed": 2026091707,
+  "offsets_ms": [
+    100,
+    200,
+    500,
+    1000,
+    2000,
+    3000
+  ],
+  "encoder_batch": 8,
+  "architecture": "2x2 mean pooled normalized tokens; shared 1024-to-32 GELU, flatten 192 cells, linear 64-dimensional embedding; mean squared embedding distance",
+  "parameters": 426016,
+  "target": "squared world-planar XY separation / .03^2 plus squared wrapped world-yaw separation / radians(5)^2",
+  "position_scale_m": 0.03,
+  "heading_scale_rad": 0.08726646259971647,
+  "scales_from_existing_pilot_tolerances": true,
+  "loss": "MSE between log1p predicted squared metric distance and log1p physical target distance",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0
+  },
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_cross_trajectory_goal_metric_development.py": "5dbaede0fe62bf193eec0a93633449d3c2f9f19fdea1d2474b9e8a424bbdeeec",
+    "scripts/train_go2_dense_goal_metric_development.py": "697f2caf86e834d8a45e3e1f813e389047793f3acf11f186edc678e4fec8193b",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "scripts/train_go2_dense_visual_motion_readout_development.py": "872d58a49f37bd54c18f1068253fef3603a64e3c3ff2ba8d3b9a5defae07cac7",
+    "lewm/dense_visual_motion_readout_development.py": "4325ff97dfad3b75648896940089347509e9dad773dfdef0cd841c522383dba5"
+  },
+  "parent_training_samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "pairs_sha256": "d4dde6c0cff32313b070b6ac2222c59138270ac4566c076a8696540b907d14af",
+  "paths_sha256": "f5bf9c10cd6bbd26f1c42479115e8c09fe0373b8bf1e08ff5a338f91a34d16be",
+  "target_quantiles": [
+    0.0,
+    0.5831193327903748,
+    22.42271327972412,
+    109.52892875671387,
+    270.8202239990234,
+    1718.2464599609375
+  ],
+  "source_pair_counts": {
+    "switch": 15132,
+    "short_pulse": 1386,
+    "family": 7776
+  },
+  "encoder_and_predictors_frozen": true,
+  "fit_inputs": "two observed image representations only; no action/body/control/pose inputs",
+  "labels": "native planar poses in matching geometry/spawn/world frame; no post-contact frame or transfer image",
+  "checkpoint": "fixed final epoch; no transfer selection",
+  "features": "FP16 pooled features in RAM only; float32 goal metric training",
+  "maximum_feature_cache_bytes": 2183135232,
+  "resources": {
+    "output_free_bytes": 768483328,
+    "available_ram_gib": 73,
+    "encoder_batch": 8,
+    "feature_cache": "approximately 2.03 GiB pooled FP16 in RAM only",
+    "cpu_affinity": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "competing_experiments": 0
+  },
+  "concurrency": "one GPU process, four CPU threads on cores 8-11; reuse proven batch-eight extraction (about five distinct images per second)",
+  "evaluation": "fixed final epoch: turn separation, exposed action rankings, then prospective control if warranted",
+  "additional_supervision_is_not_jepa_objective": true,
+  "new_navigation": false,
+  "limitations": [
+    "changes pair coverage and second-endpoint frequencies together",
+    "four related training geometries; extra pair labels, not extra images or training steps",
+    "goal-head supervision experiment, not an isolated JEPA representation-learning claim",
+    "no new navigation result from fitting"
+  ],
+  "predecessor_fit_sha256": "ac3b8a6b7a9b839613cbd092a758b9bbdfda543974bd5584ee401c3b0e18f2a8",
+  "pair_seed": 2026091807,
+  "intervention": "replace exactly half of second endpoints with another matched training recording; keep every first endpoint",
+  "within_recording_pairs": 12147,
+  "cross_recording_pairs": 12147,
+  "matching_fields": [
+    "geometry",
+    "procedural_seed",
+    "appearance_arm",
+    "appearance_seed",
+    "friction_mu",
+    "render_near_m",
+    "visual_surface_contract",
+    "effective actuator gains"
+  ],
+  "matched_environment_groups": 8,
+  "records_per_environment": [
+    6,
+    6,
+    6,
+    6,
+    6,
+    6,
+    51,
+    51
+  ],
+  "all_frame_paths_identical": true,
+  "first_endpoint_exposures_unchanged": true,
+  "second_endpoint_exposures_changed": true,
+  "original_pairs_sha256": "c75d22f4626700a9ccb89debf37bf3635efdbb4808393503dbe087b3c33d70e9",
+  "cross_anchor_sources": {
+    "family": 3881,
+    "switch": 7552,
+    "short_pulse": 714
+  },
+  "fit_loop": "reuse original fit code, architecture, seed, epochs, batch, optimizer and frame-path order"
+}

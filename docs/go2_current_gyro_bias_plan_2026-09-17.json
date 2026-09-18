@@ -1,0 +1,151 @@
+{
+  "schema": "current_gyro_bias_plan.v1",
+  "assignments": [
+    {
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "member": {
+        "name": "nominal",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": 0.0,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "member": {
+        "name": "nominal",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": 0.0,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "member": {
+        "name": "yaw_positive",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": 0.001,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "member": {
+        "name": "yaw_positive",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": 0.001,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "member": {
+        "name": "yaw_negative",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": -0.001,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "member": {
+        "name": "yaw_negative",
+        "depth_gain": 0.0,
+        "depth_offset_m": 0.0,
+        "gyro_z_bias_rad_s": -0.001,
+        "post_anchor_force_y_bias_m_s2": 0.0,
+        "initial_velocity_y_error_m_s": 0.0,
+        "independent_depth_noise_m": 0.0,
+        "blank_rgb": false
+      }
+    }
+  ],
+  "source_sha256": {
+    "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+    "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+    "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+    "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+    "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+    "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+    "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+    "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+    "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+  },
+  "input_sha256": {
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001/native/in_memory_camera_observations.json": "d4ac9210ae0510f569a575f0499a15acd1f4640d7aa63ce836d1f5f73f36a3ab",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001/poses.json": "d0da8263ac4d1d9ba9e347f9a34c4384ea025a0a0875904049135d14454e37dc",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001/pose_worker_identity.json": "c02a554d5403dea364d1e9dee5da461afd6691a1f87b44b2dbfe76b38397df58",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001/return_routing_memory_navigation_readout_v1.json": "f2fb97c45c937fe9329f2d9fab9281f0aee45b65ac91c252d901e5b7b191042d",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001/native/in_memory_camera_observations.json": "db15de0d30d320446575862cb03b2c69e5e1ff92e4acc03b760ab18a2a046244",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001/poses.json": "355c2a17922e494579964cce52d04980d47e4d9fdc0cb85c0374a6a15a1fb60f",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001/pose_worker_identity.json": "4b1ad13ad5c5a19c22b014768fce9b656023fa2ded88d7c8b57d5ebcde56f00c",
+    "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001/return_routing_memory_navigation_readout_v1.json": "86fd7b727a2c158ae53f2b76eb02eb4b66593a6ed33fd578e8ee9338d393f2be"
+  },
+  "full_recorded_journeys": true,
+  "concurrency": 2,
+  "cpu_groups": [
+    [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ]
+  ],
+  "original_depth_noise_mm": 2,
+  "gyro_bias_magnitude_rad_s": 0.001,
+  "gyro_bias_is_hardware_calibrated": false,
+  "bias_applied_to_shared_fast_and_slow_gyro": true,
+  "native_state_evaluator_only": true,
+  "new_navigation": false,
+  "rationale": "Current-tracker sensitivity on two full recent successful journeys; same signed bias sizes as the older estimator study."
+}

@@ -1,0 +1,39 @@
+{
+  "artifact_sha256": {
+    "comparison.jsonl": "1bb486ca28a2b6c1ee7bd3b7a76cd6640e55a71f357447424e4de0a6dc2a4995",
+    "early_navigation.json": "d7ab1624ccc80df3673eed1d6bc20f2a9b6171abb3bb307a7d6212ecfa970be5",
+    "early_navigation.prof": "99bfde3effb0745ebec942b2da6537d65a014f841d1a21626f8a6b265e76267a",
+    "launch.json": "b2b9b4f1fda09de3493289b6c60332c7f69cb9a0e4f181723fb4dba428843a51",
+    "repeated_hold.json": "63073fcaed7e9f3bc0a4b109127fda20dfe3f6dab4d867e2a1b4b5eac6e4e5c3",
+    "repeated_hold.prof": "b38bddcb9c968f24a26a697190a47355e5f2bea875914442b8671749b1c18ba8"
+  },
+  "binary_profile_summaries_reconstructed": true,
+  "complete_original_command_endpoints_checked": 405,
+  "final_report_window_summaries_reconstructed": true,
+  "frames": 405,
+  "goal_achieved": false,
+  "isolated_benchmark": false,
+  "model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "native_navigation_result": false,
+  "neural_inference_independently_rerun": false,
+  "original_decision_hashes_independently_reconstructed": 405,
+  "output_bindings_reverified": true,
+  "profile_result_sha256": "8be3553ba54c67827790a281aaf3a08bd2facbc8aff39537dd7f353a2b3b3fb0",
+  "profile_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_adapter_controller_windows_profile_v1_attempt_001",
+  "profiled_controller_observations": 20,
+  "profiler_overhead_removed": false,
+  "public_packet_fingerprints_independently_reconstructed": 405,
+  "raw_forecast_comparisons": 402,
+  "real_time_qualified": false,
+  "source_binding_count": 1963,
+  "source_bindings_reverified": true,
+  "speedup_measured": false,
+  "status": "COMPLETED_ADAPTER_CONTROLLER_PROFILE_INDEPENDENT_VERIFICATION_PASS",
+  "verification_scope": "Saved decision and public packet reconstruction, frozen source/output identity, binary profile summary and completed report checks; original profiler performed neural/controller replay and complete original input admission before and after.",
+  "verification_sessions": [
+    9872,
+    46328,
+    86639,
+    92968
+  ]
+}

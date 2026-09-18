@@ -1,0 +1,22 @@
+{
+  "status": "CHAINED_ANCHOR_NATIVE_WAITER_STARTED",
+  "owner": {
+    "pid": 2845479,
+    "created": 1789129072.88,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/await_go2_chained_anchor_maze02_native_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "launch_sha256": "cf6703e83197d6c75df35b2b53834a47a53a293a06c64737ce94ade2ac0b87c1",
+  "source_count": 2378,
+  "preparation_sha256": "e683428afe9bda46d3cb628759b5d6873e657726202145e83712969502fe73b0",
+  "tool_session": 32044,
+  "original_flow_waiter_live": true,
+  "controller_result_sha256": "d68e5e48916ff84d4034c95a2af5357695d277048519a15cf5dbb6a554703231",
+  "native_child_started": false,
+  "native_output_created": false,
+  "goal_achieved": false
+}

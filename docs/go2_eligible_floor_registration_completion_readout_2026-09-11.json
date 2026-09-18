@@ -1,0 +1,33 @@
+{
+  "status": "ELIGIBLE_FLOOR_REGISTRATION_COMPLETE_READOUT_VERIFIED",
+  "result_sha256": "f4a6618ea9012d8243a5f5eabd07bdeee265d5d012273be3c52b1187e8e31b52",
+  "launch_sha256": "225bbae0406553217cb0eddd1ccccb0174ea588babfe4244e83fd7dae43aee04",
+  "execution_sha256": "32c4899d96f70d9d0676aae122ecb74b05062c63b5bf79de3f2711e4329c32de",
+  "original_owner": {
+    "pid": 2847296,
+    "created": 1789129863.97,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_eligible_floor_registration_prefix_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "original_owner_ended": true,
+  "source_count": 2273,
+  "complete_paired_rows": 854,
+  "complete_recorded_equality_receipts": true,
+  "total_registration_wall_ms": {
+    "original": 73181.83294599997,
+    "candidate": 79319.41474099994
+  },
+  "total_time_reduction_percent": -8.386756040298728,
+  "timing_summary_reconstructed": true,
+  "source_and_input_artifacts_reverified": true,
+  "numerical_replay_independently_reexecuted": false,
+  "candidate_faster_on_this_replay": false,
+  "candidate_adopted": false,
+  "whole_controller_speedup_established": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

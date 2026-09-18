@@ -1,0 +1,16 @@
+{
+  "status": "SIX_ACTION_REACTIVE_CASE_QUEUED",
+  "pid": 3203505,
+  "created": 1789289459.78,
+  "waiting_for_pid": 3196768,
+  "waiting_for_created": 1789286098.74,
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_current_planning_seed_2026091001_full_jepa_v1_attempt_001",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_six_action_reactive_no_model_v1_attempt_001",
+  "layout_index": 0,
+  "mode": "six_action_reactive",
+  "model_name": null,
+  "automatic_retry": false,
+  "serial_collection_and_audit": true,
+  "start_requires_scientific_success": false,
+  "start_requires_operational_completion": true
+}

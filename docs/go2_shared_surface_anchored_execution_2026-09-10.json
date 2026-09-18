@@ -1,0 +1,37 @@
+{
+  "checked_at_utc": "2026-09-10T14:17:32.157470+00:00",
+  "pid": 2705097,
+  "created": 1789049815.58,
+  "command": [
+    ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "scripts/replay_go2_shared_surface_anchored_prefix_v1.py"
+  ],
+  "tool_session": 23493,
+  "status": "running",
+  "cpu_s": 34.449999999999996,
+  "logical_read_bytes": 61939129896,
+  "source_count": 1991,
+  "source_preflight_session": 96228,
+  "tests": {
+    "session": 56512,
+    "passed": 30,
+    "wall_s": 2.57
+  },
+  "new_source_sha256": {
+    "lewm/shared_surface_anchored_selection_development.py": "6de1d0baaf92186072a5207d3090bb837b733de2bd64f19d1c3fb9f9252ca714",
+    "lewm/shared_surface_anchored_controller_development.py": "eb094bf4aaae150b871e5c9119f947690d4774d068a402172e343a63d0c39f58",
+    "lewm/tests/test_shared_surface_anchored_development.py": "bf0a0cd88d24271133af1a5e27b02c57b642b0ff3f77173c368d321eacff3b83",
+    "lewm/tests/test_shared_surface_anchored_replay_development.py": "ce55c1b6e0b9e18b10de7f5abad2d0d57f87e7b0407829581756e522de5f8fc2",
+    "scripts/replay_go2_shared_surface_anchored_prefix_v1.py": "a0882700ad32ac4bfc8fb434ba80944b75bb4d149ceff2518f0acb269c375604",
+    "docs/go2_shared_surface_anchored_v1_2026-09-10.md": "66c81604ad003d416f47c00370feb06890d61252c9665481a561b5ea56f052cc",
+    "docs/go2_shared_surface_anchored_prefix_v1_2026-09-10.md": "cbb7ae2991a0119916b7609b5a4872104a075e4265f71a8b92cc8eed5fe6a863"
+  },
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_shared_surface_anchored_prefix_v1_attempt_001",
+  "output_created": false,
+  "result_exists": false,
+  "failure_exists": false,
+  "native_execution": false,
+  "real_time_qualified": false,
+  "navigation_qualified": false,
+  "goal_achieved": false
+}

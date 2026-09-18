@@ -1,0 +1,62 @@
+{
+  "result_sha256": "650fe137b41c91f8860ce59987c876d1c2591329ee2fc63ad056e63059e47419",
+  "launch_sha256": "38a474e183ca8d0972d2e10b1f3afb18efb191aca0e6fd0113e3928964477c30",
+  "artifact_sha256": {
+    "launch.json": "38a474e183ca8d0972d2e10b1f3afb18efb191aca0e6fd0113e3928964477c30",
+    "comparison.jsonl": "de638cad9fd23f1dbe6f567ecfcaf307ce386bbc5c30db326ea6d0ae0da2b4f7"
+  },
+  "source_count": 1982,
+  "original_saved_decisions_reconstructed": 405,
+  "candidate_expected_decision_hashes_checked": 405,
+  "forecast_count": 402,
+  "public_input_hashes_match_completed_copy_replay": true,
+  "all_four_reported_retained_state_hashes_match_completed_copy_replay": true,
+  "timing_windows_recomputed": true,
+  "timing_windows": {
+    "post_warmup_prefix": {
+      "first_frame": 3,
+      "last_frame": 404,
+      "observations": 402,
+      "original_median_s": 0.8004403539234772,
+      "candidate_median_s": 0.7566889928421006,
+      "original_total_s": 344.83435924886726,
+      "candidate_total_s": 327.7592413465027,
+      "median_ratio": 1.0578194760267992,
+      "total_ratio": 1.0520965261947046,
+      "original_over_100ms": 402,
+      "candidate_over_100ms": 402
+    },
+    "early_navigation": {
+      "first_frame": 3,
+      "last_frame": 12,
+      "observations": 10,
+      "original_median_s": 0.6901888039428741,
+      "candidate_median_s": 0.7038939679041505,
+      "original_total_s": 7.129358706763014,
+      "candidate_total_s": 7.3385239248164,
+      "median_ratio": 0.980529505030305,
+      "total_ratio": 0.9714976444587092,
+      "original_over_100ms": 10,
+      "candidate_over_100ms": 10
+    },
+    "repeated_hold": {
+      "first_frame": 395,
+      "last_frame": 404,
+      "observations": 10,
+      "original_median_s": 1.6443458255380392,
+      "candidate_median_s": 1.3597600674256682,
+      "original_total_s": 16.181576597038656,
+      "candidate_total_s": 13.233534533064812,
+      "median_ratio": 1.2092911572636162,
+      "total_ratio": 1.2227705724882476,
+      "original_over_100ms": 10,
+      "candidate_over_100ms": 10
+    }
+  },
+  "preceding_result_sha256": "c3363fe9626fc36b8feb723346bef0344b7becccd3d9f68297d5f99ac3f7b0c0",
+  "model_inference_rerun": false,
+  "hidden_state_reconstructed_in_this_check": false,
+  "raw_sensor_packets_reloaded_in_this_check": false,
+  "native_execution": false,
+  "report_scope": "independent recorded decision/hash/timing verification; original replay owns neural and hidden-state execution"
+}

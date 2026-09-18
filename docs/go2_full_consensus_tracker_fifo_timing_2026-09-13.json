@@ -1,0 +1,62 @@
+{
+  "status": "FULL_CONSENSUS_10HZ_RECORDED_TIMING_COMPLETE",
+  "arms": {
+    "go2_sampled_plane_recorded_tracker_v1_attempt_001": {
+      "result_sha256": "adc5e27923ebe25464fd3b57d373b7a21130c726b192881bf2c5202ca83e4910",
+      "trace_sha256": "3d2f5f1f0a19e202f6543b0150810182e55a86b1e001fc998aa9a2a9a6deb8ee",
+      "observations": 4740,
+      "tracker_total_s": 461.07825953233987,
+      "tracker_mean_ms": 97.27389441610545,
+      "tracker_median_ms": 90.2121780673042,
+      "tracker_p95_ms": 167.3740649479445,
+      "tracker_over_100ms": 1615,
+      "slowest_call": {
+        "frame": 990,
+        "ms": 1033.2086880225688
+      },
+      "fifo": {
+        "median_completion_age_ms": 2229.0587665280555,
+        "p95_completion_age_ms": 12002.771910810814,
+        "maximum_completion_age_ms": 13341.719881445159,
+        "peak_frame": 4483,
+        "peak_queue_wait_ms": 13149.06719145364,
+        "final_completion_age_ms": 9229.409525077755,
+        "outputs_over_800ms": 2807
+      }
+    },
+    "go2_full_consensus_recorded_tracker_v1_attempt_001": {
+      "result_sha256": "b021c1c8284a0c991d792ca1387c4c8cf3ececf470da2a4e2b1046049e6bd88c",
+      "trace_sha256": "9d096a733dec5d6dda1a5ea32d4fc939ea5027231258c7b61f2448d17a7e4c59",
+      "observations": 4740,
+      "tracker_total_s": 429.60761279333383,
+      "tracker_mean_ms": 90.63451746694807,
+      "tracker_median_ms": 82.9331234563142,
+      "tracker_p95_ms": 148.31419384572675,
+      "tracker_over_100ms": 1101,
+      "slowest_call": {
+        "frame": 990,
+        "ms": 983.2073780708015
+      },
+      "fifo": {
+        "median_completion_age_ms": 647.3357508424442,
+        "p95_completion_age_ms": 6521.583530185702,
+        "maximum_completion_age_ms": 8618.736637895892,
+        "peak_frame": 4459,
+        "peak_queue_wait_ms": 8378.260153019766,
+        "final_completion_age_ms": 2399.7417321893977,
+        "outputs_over_800ms": 2276
+      }
+    }
+  },
+  "shared_host_noncontemporaneous_full_traces": true,
+  "paired_prefix_report": "go2_full_consensus_recorded_tracker_v1_attempt_001/paired_prefix.json",
+  "fifo_assumptions": {
+    "period_ms": 100,
+    "one_worker": true,
+    "all_observations": true,
+    "acquisition_mapping_planning_costs_ms": 0
+  },
+  "timing_simulation_only": true,
+  "delayed_navigation_outcome_inferred": false,
+  "continuous_execution_qualified": false
+}

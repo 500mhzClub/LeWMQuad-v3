@@ -1,0 +1,20 @@
+{
+  "status": "INDEPENDENT_LAYOUT00_COMMITMENT_CONTACT_JEPA_QUEUED",
+  "pid": 3167226,
+  "created": 1789269388.36,
+  "waiting_for_pid": 3152516,
+  "waiting_for_created": 1789263046.07,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_nominal_seed_2026091001_full_jepa_v1_attempt_001",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_commitment_contact_seed_2026091001_full_jepa_v1_attempt_001",
+  "layout_index": 0,
+  "mode": "commitment_contact",
+  "model_name": "seed_2026091001_full_jepa",
+  "expected_model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "scored_contact_horizon_ns": 100000000,
+  "path_constraint_horizon_ns": 800000000,
+  "start_requires_operational_completion": true,
+  "start_requires_scientific_success": false,
+  "automatic_retry": false,
+  "serial_native_and_audit_jobs": true
+}

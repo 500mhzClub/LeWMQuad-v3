@@ -1,0 +1,196 @@
+{
+  "status": "GEOMETRY_PROGRESS_HEIGHT_UNION_SCIENTIFIC_READOUT",
+  "episodes": 24,
+  "full_horizons": 16,
+  "successful_progress": 4,
+  "contact_episodes": 8,
+  "by_action": {
+    "hold": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.0006924631389657598,
+        0.0006924631389657598,
+        0.0006924631389657598,
+        0.0006924631389657598
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    },
+    "forward": {
+      "episodes": 4,
+      "full_horizons": 0,
+      "successful_progress": 0,
+      "contact_episodes": 4,
+      "complete_horizon_progress_m": [],
+      "stopped_prefix_progress_m": [
+        0.27173919411980396,
+        0.27173919416096526,
+        0.27173919411980396,
+        0.27173919416096526
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 4
+      }
+    },
+    "left_arc": {
+      "episodes": 4,
+      "full_horizons": 2,
+      "successful_progress": 2,
+      "contact_episodes": 2,
+      "complete_horizon_progress_m": [
+        0.3132453701949941,
+        0.3132453701949941
+      ],
+      "stopped_prefix_progress_m": [
+        0.300215874086565,
+        0.300215874086565
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 2
+      }
+    },
+    "right_arc": {
+      "episodes": 4,
+      "full_horizons": 2,
+      "successful_progress": 2,
+      "contact_episodes": 2,
+      "complete_horizon_progress_m": [
+        0.3510841917287102,
+        0.3510841917287102
+      ],
+      "stopped_prefix_progress_m": [
+        0.32659204707523204,
+        0.32659204707523204
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 2
+      }
+    },
+    "left_turn": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.008565582704495256,
+        0.008565582704495256,
+        0.008565582704495256,
+        0.008565582704495256
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    },
+    "right_turn": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.04921150804126717,
+        0.04921150804126717,
+        0.04921150804126717,
+        0.04921150804126717
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    }
+  },
+  "panel": {
+    "mirrored_reversals": [
+      {
+        "appearance_seed": 2026090911,
+        "mirrored_arc_success_reversal": true
+      },
+      {
+        "appearance_seed": 2026090912,
+        "mirrored_arc_success_reversal": true
+      }
+    ],
+    "nonprogress_controls_fail": true,
+    "constant_success_actions": [],
+    "informative_for_next_dataset": true,
+    "independent_maze_layouts": 0,
+    "model_trained": false,
+    "navigation_qualified": false
+  },
+  "design_and_measurement_gate_pass": true,
+  "prospective_gate": {
+    "native_action_design": {
+      "mirrored_reversals": [
+        {
+          "appearance_seed": 2026090911,
+          "mirrored_arc_success_reversal": true
+        },
+        {
+          "appearance_seed": 2026090912,
+          "mirrored_arc_success_reversal": true
+        }
+      ],
+      "nonprogress_controls_fail": true,
+      "constant_success_actions": [],
+      "informative_for_next_dataset": true,
+      "independent_maze_layouts": 0,
+      "model_trained": false,
+      "navigation_qualified": false
+    },
+    "all_candidate_acquisitions_complete": true,
+    "hard_measurement_failed_cases": {},
+    "strict_depth_failed_cases": [],
+    "prediction_design_and_measurement_gate_pass": true,
+    "depth_navigation_qualified": false,
+    "rgb_benefit_established": false,
+    "model_trained": false,
+    "independent_maze_evaluation_layouts": 0,
+    "navigation_qualified": false,
+    "goal_achieved": false
+  },
+  "target_accounting": {
+    "expected_slots": 192,
+    "recorded_slots": 192,
+    "missing_departures": 0,
+    "motion_valid": 160,
+    "future_image_valid": 160,
+    "contact_valid": 192,
+    "contact_positive": 32,
+    "positive_with_missing_image": 32,
+    "positive_with_missing_motion": 32
+  },
+  "raw_replay": {
+    "decisions": 906,
+    "frames": 906,
+    "physics_samples": 62194,
+    "depth_frames": 906,
+    "maximum_depth_error_m": 0.00036544873267763123,
+    "failed_depth_frames": []
+  },
+  "observation_and_control_wall_ms": {
+    "count": 906,
+    "median": 126.001546,
+    "maximum": 168.625949,
+    "above100ms": 836,
+    "includes_shadow_observer": true,
+    "includes_physics_tick": false,
+    "real_time_qualified": false
+  },
+  "measurement_accounting": {
+    "footprint_frames": 906,
+    "stable_interior_failures": 0,
+    "near_occlusion_failures": 0,
+    "strict_failed_cases": [],
+    "depth_navigation_qualified": false
+  },
+  "model_context_identity_counts": {
+    "materialized_episodes": 24,
+    "distinct_rgb_histories": 4,
+    "distinct_body_histories": 1,
+    "distinct_control_histories": 1,
+    "distinct_non_rgb_history_pairs": 1
+  },
+  "sources": 820,
+  "science_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_height_union_science_v1_attempt_001",
+  "science_launch_sha256": "2ac462e0464f9e7d815c08b89e1156133975a2b3dd668fd42212f22ff6ae007d",
+  "science_result_sha256": "5cfcac9d65d21daa40334b74f0aaa49796602a0eafb3cdb3f10762e12d489b7e"
+}

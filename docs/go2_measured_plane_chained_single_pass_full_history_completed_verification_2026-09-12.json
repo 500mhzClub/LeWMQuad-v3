@@ -1,0 +1,215 @@
+{
+  "artifact_sha256": {
+    "comparison.jsonl": "025ccc18bfa1c113e3470082966edc955bd19ae4f5d62bbef42c5510b577a9c6",
+    "launch.json": "b8a67fc80aebb2f39968092067cea00b94304c449bd7c86fdff30458c58d6260",
+    "report.json": "22e05836d1487694d386b956a7605bcc3013113c4b7f92924a1832646acd8fb4",
+    "resource_monitor.jsonl": "5b57cf72034a1fbadce20ea5b87072cc6f90afe3558d9193501b1fda8c037e85",
+    "state_checks.json": "cf57ff3e84f3c7b1532ee53c810c98121b28e9df995a7e02c55c769dc83a4722"
+  },
+  "controllers_reexecuted": false,
+  "independent_check_wall_s": 0.290676438016817,
+  "native_execution": false,
+  "original_owner_ended": true,
+  "recorded_wall_s": 13887.458231824916,
+  "report": {
+    "actual_model_forward_calls": [
+      3988,
+      3988
+    ],
+    "automatic_retry": false,
+    "baseline": "MeasuredPlaneChainedAnchorController",
+    "candidate": "MeasuredPlaneChainedSinglePassController",
+    "chained_tracking_in_both_controllers": true,
+    "chained_tracking_state_normalized": false,
+    "complete_actual_native_history": true,
+    "completed_native_input_admission_required": true,
+    "controller_observe_only_timed": true,
+    "frames": 4014,
+    "goal_achieved": false,
+    "input_result_sha256": "163e92d630d92f9f8633cd3823c7cbf282a92c81bde5d3db998e3a5a8c8b1849",
+    "isolated_benchmark": false,
+    "model_state_sha256": "56799c99e2bb1fd5e5a591009b931c5b2e04741d3a3744e2346ce9896a2160dd",
+    "model_states_unchanged": true,
+    "motion_and_mission_types_normalized": false,
+    "native_adoption_performed": false,
+    "native_execution": false,
+    "navigation_outcomes_inferred": false,
+    "navigation_qualified": false,
+    "normalized_state_type_paths": [
+      "retained_map_residual_history.memory.fields.patches.type",
+      "retained_map_residual_history.memory.fields.auxiliary_patches.type",
+      "retained_map_residual_history.memory.fields.index.type",
+      "retained_map_residual_history.memory.fields.auxiliary_index.type",
+      "retained_map_residual_history.memory.fields.partition.fields.floor.type",
+      "retained_map_residual_history.memory.fields.partition.fields.other.type",
+      "retained_map_residual_history.memory.fields.auxiliary_partition.fields.floor.type",
+      "retained_map_residual_history.memory.fields.auxiliary_partition.fields.other.type",
+      "retained_map_residual_history.memory.fields.confirmed_auxiliary_partition.fields.floor.type",
+      "retained_map_residual_history.memory.fields.confirmed_auxiliary_partition.fields.other.type",
+      "observer_registration_mission.registration.type"
+    ],
+    "observed_state_checks": [
+      {
+        "frame": 0,
+        "observed_state_equal": true,
+        "state_sha256": "c558c0a9a09be1028a3f4c626ef22cd40660a76566fc97debd3e792e3425f5e3"
+      },
+      {
+        "frame": 3,
+        "observed_state_equal": true,
+        "state_sha256": "65d289175c5da086b068e8d5ed8609e3681ffff409329465e78cacd24c7ab992"
+      },
+      {
+        "frame": 61,
+        "observed_state_equal": true,
+        "state_sha256": "55f0441df3c1a71672b9b0d210bb538865384d625e6c4cfc40679ac184c67765"
+      },
+      {
+        "frame": 122,
+        "observed_state_equal": true,
+        "state_sha256": "ba67764f3b7fac4267d326c19ed7a8ff1d62b3b1594888f9754f78b8a780b242"
+      },
+      {
+        "frame": 255,
+        "observed_state_equal": true,
+        "state_sha256": "358b5f3fea7e6efa1c694d7e87fbb3d196d0965bc5f117033cab2ce18a2e1efd"
+      },
+      {
+        "frame": 511,
+        "observed_state_equal": true,
+        "state_sha256": "9e1435c49e2a6213a2b407a84f6217104a543558bb75b3f17c9696c33142b7fc"
+      },
+      {
+        "frame": 1023,
+        "observed_state_equal": true,
+        "state_sha256": "dd5339c775fa3a81f9611b7017196d1fcffaeb59dbc5f4cdedfa66143c52231e"
+      },
+      {
+        "frame": 2047,
+        "observed_state_equal": true,
+        "state_sha256": "ed4da9ed5c3100498a976d91908fedf043af3e8c5a794855694c3c9fdb5912ba"
+      },
+      {
+        "frame": 3071,
+        "observed_state_equal": true,
+        "state_sha256": "debce6d9ade30f3fae30090be616f7e775c3f6c8901f3f55bc45f04ba7198890"
+      },
+      {
+        "frame": 4013,
+        "observed_state_equal": true,
+        "state_sha256": "77183a9d7fb3f6a14145aba007513ee4376b0f2d58aceb271c10413f6717b231"
+      }
+    ],
+    "raw_model_forecast_comparisons": 3988,
+    "real_time_qualified": false,
+    "registration_implementation_type_normalized": true,
+    "sensor_acquisition_timed": false,
+    "timing": {
+      "all_observations": {
+        "baseline_median_s": 1.3993996115,
+        "baseline_over_100ms": 4004,
+        "baseline_p95_s": 3.15003547445,
+        "baseline_total_s": 5762.480048449,
+        "candidate_median_s": 0.609352254,
+        "candidate_over_100ms": 4004,
+        "candidate_p95_s": 1.0112979921,
+        "candidate_total_s": 2563.720217736,
+        "observations": 4014
+      },
+      "fixed_frame_windows": [
+        {
+          "baseline_median_s": 0.7313485925000001,
+          "baseline_over_100ms": 256,
+          "baseline_p95_s": 1.39348040175,
+          "baseline_total_s": 223.702508452,
+          "candidate_median_s": 0.4579185955,
+          "candidate_over_100ms": 256,
+          "candidate_p95_s": 0.74465109,
+          "candidate_total_s": 128.946488857,
+          "observations": 256,
+          "start": 0,
+          "stop": 256
+        },
+        {
+          "baseline_median_s": 0.877085527,
+          "baseline_over_100ms": 768,
+          "baseline_p95_s": 1.7199209812499998,
+          "baseline_total_s": 773.302968829,
+          "candidate_median_s": 0.4917901385,
+          "candidate_over_100ms": 768,
+          "candidate_p95_s": 0.77810525395,
+          "candidate_total_s": 409.290467068,
+          "observations": 768,
+          "start": 256,
+          "stop": 1024
+        },
+        {
+          "baseline_median_s": 1.0472841055,
+          "baseline_over_100ms": 1024,
+          "baseline_p95_s": 2.518895337,
+          "baseline_total_s": 1247.09393596,
+          "candidate_median_s": 0.5400958905,
+          "candidate_over_100ms": 1024,
+          "candidate_p95_s": 0.8993489617,
+          "candidate_total_s": 617.002957269,
+          "observations": 1024,
+          "start": 1024,
+          "stop": 2048
+        },
+        {
+          "baseline_median_s": 1.4687159345,
+          "baseline_over_100ms": 1024,
+          "baseline_p95_s": 3.3989832796,
+          "baseline_total_s": 1756.73338949,
+          "candidate_median_s": 0.6351546299999999,
+          "candidate_over_100ms": 1024,
+          "candidate_p95_s": 1.0135482943499998,
+          "candidate_total_s": 708.129349105,
+          "observations": 1024,
+          "start": 2048,
+          "stop": 3072
+        },
+        {
+          "baseline_median_s": 1.614115307,
+          "baseline_over_100ms": 932,
+          "baseline_p95_s": 3.617010123949999,
+          "baseline_total_s": 1761.647245718,
+          "candidate_median_s": 0.673592954,
+          "candidate_over_100ms": 932,
+          "candidate_p95_s": 1.1268356341999999,
+          "candidate_total_s": 700.350955437,
+          "observations": 942,
+          "start": 3072,
+          "stop": 4014
+        }
+      ],
+      "forecasts": {
+        "baseline_median_s": 1.4019933875000001,
+        "baseline_over_100ms": 3988,
+        "baseline_p95_s": 3.155076786699998,
+        "baseline_total_s": 5754.85000837,
+        "candidate_median_s": 0.61120872,
+        "candidate_over_100ms": 3988,
+        "candidate_p95_s": 1.0118273748499997,
+        "candidate_total_s": 2558.773759392,
+        "observations": 3988
+      }
+    }
+  },
+  "result_sha256": "a6bde0f6f9a9c98e11246e55c7b531895fd6edd98ec646a79e78a8b2a3d4b566",
+  "source_count": 2639,
+  "status": "MEASURED_PLANE_CHAINED_SINGLE_PASS_FULL_HISTORY_V1_COMPLETE",
+  "independent_verification_session": 24862,
+  "independent_verification_exit_code": 0,
+  "original_session": 70177,
+  "original_owner": {
+    "pid": 3015121,
+    "created": 1789209876.83
+  },
+  "scope": "Complete recorded-history controller equivalence and non-isolated controller-only timing; no new native navigation.",
+  "prior_read_only_summary_error": {
+    "session": 91114,
+    "error": "AttributeError: chained full-history input module has no attribute job",
+    "correction": "Used the documented fixed model SHA; no source or experiment changed."
+  }
+}

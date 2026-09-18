@@ -1,0 +1,287 @@
+{
+  "frames": [
+    200,
+    900
+  ],
+  "counts": {
+    "observations": 701,
+    "executed_waypoint_selections": 701,
+    "reconstructed_final_score_decisions": 698,
+    "ranking_changed": 504,
+    "recorded_turns_in_reconstructed_population": 420,
+    "turn_to_translation_ranking_changes": 270
+  },
+  "recorded_selected_actions": {
+    "right_arc": 37,
+    "hold": 16,
+    "left_turn": 52,
+    "forward": 17,
+    "left_arc": 208,
+    "right_turn": 371
+  },
+  "shorter_contact_horizon_top_actions": {
+    "forward": 434,
+    "right_arc": 108,
+    "right_turn": 132,
+    "left_turn": 18,
+    "left_arc": 6
+  },
+  "ranking_transitions": {
+    "right_arc -> forward": 15,
+    "hold -> forward": 14,
+    "left_turn -> forward": 24,
+    "forward -> forward": 17,
+    "left_arc -> forward": 200,
+    "left_turn -> right_arc": 7,
+    "right_arc -> right_arc": 22,
+    "hold -> right_arc": 2,
+    "right_turn -> forward": 164,
+    "right_turn -> right_arc": 74,
+    "left_arc -> right_arc": 3,
+    "right_turn -> right_turn": 132,
+    "left_turn -> left_turn": 18,
+    "left_arc -> left_arc": 5,
+    "right_turn -> left_arc": 1
+  },
+  "skipped": {
+    "no_candidate_in_recorded_feasible_bank": 3
+  },
+  "proposal_statuses": {
+    "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 701
+  },
+  "frontier_target_changes": 37,
+  "observed_xy_ranges": [
+    [
+      0.4620873567346575,
+      1.4540104007819141
+    ],
+    [
+      -0.013022588771588123,
+      1.1377398258045288
+    ]
+  ],
+  "endpoints": [
+    {
+      "frame": 200,
+      "phase": "OUTBOUND",
+      "observed_goal_distance_m": 2.2407532860819663,
+      "observed_position_xy_m": [
+        1.157430629508302,
+        0.6813208639892009
+      ],
+      "terminal": null
+    },
+    {
+      "frame": 900,
+      "phase": "OUTBOUND",
+      "observed_goal_distance_m": 2.895360184836548,
+      "observed_position_xy_m": [
+        1.4540104007819141,
+        0.09621000194610019
+      ],
+      "terminal": null
+    }
+  ],
+  "examples": [
+    {
+      "frame": 202,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.0044715628142869765,
+        "forward": -0.004887414824684532,
+        "right_arc": -0.006744472342937659,
+        "left_turn": -0.0031018331314921566,
+        "right_turn": -0.008160850803251154
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.0016533389864064343,
+        "forward": 0.021605492142951637,
+        "right_arc": 0.013841308784732054,
+        "left_turn": -0.0009897324512866124,
+        "right_turn": -0.004596174310310718
+      }
+    },
+    {
+      "frame": 205,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.012781789147960606,
+        "forward": -0.023283196362252172,
+        "right_arc": -0.02109628459465687,
+        "left_turn": -0.012461929651659034,
+        "right_turn": -0.015474911285798757
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.008928519146391839,
+        "forward": 0.013990750051836517,
+        "right_arc": 0.00753544116276301,
+        "left_turn": -0.009558211051416634,
+        "right_turn": -0.010627337788088791
+      }
+    },
+    {
+      "frame": 206,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.008801507526436407,
+        "forward": -0.01683770509146538,
+        "right_arc": -0.01533843240435679,
+        "left_turn": -0.008541597284400418,
+        "right_turn": -0.011418969621974067
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.005200349634042428,
+        "forward": 0.017705295182724283,
+        "right_arc": 0.011246073054887095,
+        "left_turn": -0.00582823836126154,
+        "right_turn": -0.006887229290836977
+      }
+    },
+    {
+      "frame": 211,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.010009713820081688,
+        "forward": -0.013713613468933863,
+        "right_arc": -0.014034752733043485,
+        "left_turn": -0.009270931102954759,
+        "right_turn": -0.013088755198001359
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.00685566676886303,
+        "forward": 0.01632048067697849,
+        "right_arc": 0.00919368341476545,
+        "left_turn": -0.006902257377875925,
+        "right_turn": -0.009106805371055807
+      }
+    },
+    {
+      "frame": 214,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.008551573921905397,
+        "forward": -0.01021040388492716,
+        "right_arc": -0.01304459278891057,
+        "left_turn": -0.006072400090255694,
+        "right_turn": -0.013368062570227867
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.005660432216242645,
+        "forward": 0.016864508778615547,
+        "right_arc": 0.007990299195575064,
+        "left_turn": -0.003902892230537642,
+        "right_turn": -0.009715081382385212
+      }
+    },
+    {
+      "frame": 216,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.011576806959708093,
+        "forward": -0.010199709135658255,
+        "right_arc": -0.013526457619244595,
+        "left_turn": -0.009414633138699172,
+        "right_turn": -0.01603472504431737
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.008985024168569488,
+        "forward": 0.013786100364535137,
+        "right_arc": 0.005166569879858635,
+        "left_turn": -0.007471556518143853,
+        "right_turn": -0.012757731688043112
+      }
+    },
+    {
+      "frame": 218,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.01069415767622845,
+        "forward": -0.01085379334468272,
+        "right_arc": -0.01352878571445839,
+        "left_turn": -0.008712793200733725,
+        "right_turn": -0.014986729710649058
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.007941037933259992,
+        "forward": 0.014979354041842979,
+        "right_arc": 0.0065416493481738605,
+        "left_turn": -0.0066488090963301915,
+        "right_turn": -0.01150568598390785
+      }
+    },
+    {
+      "frame": 220,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.012072764590147113,
+        "forward": -0.01167526049395534,
+        "right_arc": -0.013818047110312653,
+        "left_turn": -0.010751038650752763,
+        "right_turn": -0.01569451379240612
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.009351177424479374,
+        "forward": 0.013800821120100892,
+        "right_arc": 0.005982731914834157,
+        "left_turn": -0.0087104301246361,
+        "right_turn": -0.012253715128169926
+      }
+    },
+    {
+      "frame": 222,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.012515728887341909,
+        "forward": -0.013672003304011438,
+        "right_arc": -0.01478097797044623,
+        "left_turn": -0.011660826333150413,
+        "right_turn": -0.015688980529382276
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.009619228620951667,
+        "forward": 0.013651977927058759,
+        "right_arc": 0.006409524742586713,
+        "left_turn": -0.00948767585042151,
+        "right_turn": -0.01202908474963585
+      }
+    },
+    {
+      "frame": 223,
+      "recorded_action": "left_turn",
+      "shorter_contact_horizon_top_action": "forward",
+      "original_utilities": {
+        "hold": -0.011678280979018409,
+        "forward": -0.010014990342026022,
+        "right_arc": -0.01417521210091672,
+        "left_turn": -0.008838233824435143,
+        "right_turn": -0.016815753931113293
+      },
+      "shorter_contact_utilities": {
+        "hold": -0.00915319571642949,
+        "forward": 0.01331441046639637,
+        "right_arc": 0.004023635627786795,
+        "left_turn": -0.006945765053390693,
+        "right_turn": -0.01362153345861708
+      }
+    }
+  ],
+  "decoded_prefix_through_end_sha256": "730ad685686c0de2afe3c6c4d57475600fef57d95a7d05bde29fb4d3f2030040",
+  "recorded_feasibility_filters_retained": true,
+  "recorded_distance_alignment_and_residuals_retained": true,
+  "model_inference_executed": false,
+  "controller_replay_executed": false,
+  "native_execution": false,
+  "live_or_queued_policy_changed": false,
+  "counterfactual_trajectory_inferred": false,
+  "navigation_improvement_established": false,
+  "terminal_independent_result": false
+}

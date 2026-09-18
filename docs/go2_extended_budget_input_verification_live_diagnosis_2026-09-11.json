@@ -1,0 +1,195 @@
+{
+  "status": "EXTENDED_BUDGET_INPUT_VERIFICATION_CONFIRMED_PROGRESSING",
+  "utc": "2026-09-11T13:04:54.498477+00:00",
+  "owner": {
+    "pid": 2843773,
+    "created": 1789128335.77,
+    "command": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/run_go2_no_rgb_direct_extended_budget_maze02_pilot_v1.py",
+      "--adapter-batch-result-sha256",
+      "9715a916b81d9a70edf2d26e4f3d7e952823d3e6b618670c46ab2aa0429ff416",
+      "--frontier-wait-result-sha256",
+      "5c6ed7f4944b375e4eb7db461ed7f5f5a05015942645d9e618e895fff4a5680b",
+      "--hold-wait-result-sha256",
+      "7b81a8e5b39d39d8d13cbaea015ba64c9e08eb55c685072479b951bf3c334e50",
+      "--contact-wait-result-sha256",
+      "8ce84ca1568df9848ca3f95ea02c400bde911162e50441cca70f5c913a4ea4f7",
+      "--tracking-wait-result-sha256",
+      "361ad8f517a8cef47384931156adb2341c749fb10d92fa06732ac9c67539fcee"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "waiter_launch_sha256": "0d767f341c8f0e28cd61107b198aa6eb76445f45cf13cc6e8602565c529fdf4f",
+  "source_sha256": {
+    "scripts/run_go2_no_rgb_direct_extended_budget_maze02_pilot_v1.py": "a2e63f1ca13d4e2839cb722111c2fd9266f0f3406c5a7ae5df9645fa1cad0e9d",
+    "scripts/extended_budget_anchored_native_inputs_development.py": "ad461ec025ca011365fb43ae5573f8d05152b391a6d343c369e2771601d6d67c"
+  },
+  "earlier_this_turn_process_counters": {
+    "cpu_s": 2352.81,
+    "read_bytes": 981273690112,
+    "read_chars": 2948921431723,
+    "read_count": 16369553
+  },
+  "current_process_counters": {
+    "cpu_s": 2472.27,
+    "read_bytes": 1029582708736,
+    "read_chars": 3061973037917,
+    "read_count": 16924012
+  },
+  "process_counter_increases": {
+    "cpu_s": 119.46000000000004,
+    "read_bytes": 48309018624,
+    "read_chars": 113051606194,
+    "read_count": 554459
+  },
+  "current_state": "running",
+  "children": [],
+  "native_output_exists": false,
+  "log_prefix_bytes": 4188,
+  "log_prefix_sha256": "8c542b9e9f6bfe7150205a44f82a6cbcd1f65066bdfdcb32f3f8fb9b97d48d22",
+  "completed_verification_stages": [
+    {
+      "stage": "COMMITMENT_CONTACT_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1027220,
+      "guarded_cache_hits": 889242,
+      "unique_files": 137978,
+      "initial_hashed_bytes": 64229075647,
+      "final_hashed_bytes": 64229075647,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 26,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RECENT_QUALIFIED_DIRECT_FLOW_MAZE03_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1871217,
+      "guarded_cache_hits": 1743991,
+      "unique_files": 127226,
+      "initial_hashed_bytes": 59147333250,
+      "final_hashed_bytes": 59147333250,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 27,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RESIDUAL_ANCHORED_CONTINUATION_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1770739,
+      "guarded_cache_hits": 1632845,
+      "unique_files": 137894,
+      "initial_hashed_bytes": 64656470245,
+      "final_hashed_bytes": 64656470245,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 25,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "COMMITMENT_CONTACT_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1027220,
+      "guarded_cache_hits": 889242,
+      "unique_files": 137978,
+      "initial_hashed_bytes": 64229075647,
+      "final_hashed_bytes": 64229075647,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 26,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RECENT_QUALIFIED_DIRECT_FLOW_MAZE03_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1871217,
+      "guarded_cache_hits": 1743991,
+      "unique_files": 127226,
+      "initial_hashed_bytes": 59147333250,
+      "final_hashed_bytes": 59147333250,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 27,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "COMMITMENT_CONTACT_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1027220,
+      "guarded_cache_hits": 889242,
+      "unique_files": 137978,
+      "initial_hashed_bytes": 64229075647,
+      "final_hashed_bytes": 64229075647,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 26,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RECENT_QUALIFIED_DIRECT_FLOW_MAZE03_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1871217,
+      "guarded_cache_hits": 1743991,
+      "unique_files": 127226,
+      "initial_hashed_bytes": 59147333250,
+      "final_hashed_bytes": 59147333250,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 27,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "COMMITMENT_CONTACT_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1027220,
+      "guarded_cache_hits": 889242,
+      "unique_files": 137978,
+      "initial_hashed_bytes": 64229075647,
+      "final_hashed_bytes": 64229075647,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 26,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RECENT_QUALIFIED_DIRECT_FLOW_MAZE03_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1871217,
+      "guarded_cache_hits": 1743991,
+      "unique_files": 127226,
+      "initial_hashed_bytes": 59147333250,
+      "final_hashed_bytes": 59147333250,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 27,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    },
+    {
+      "stage": "RESIDUAL_ANCHORED_CONTINUATION_NATIVE_INPUTS_VERIFIED",
+      "digest_requests": 1770739,
+      "guarded_cache_hits": 1632845,
+      "unique_files": 137894,
+      "initial_hashed_bytes": 64656470245,
+      "final_hashed_bytes": 64656470245,
+      "every_cached_file_freshly_rehashed": true,
+      "cache_retained_after_call": false,
+      "isolated_verification_functions": 25,
+      "imported_module_globals_mutated": false,
+      "original_verification_conditions_executed": true
+    }
+  ],
+  "completed_stage_counts": {
+    "COMMITMENT_CONTACT_NATIVE_INPUTS_VERIFIED": 4,
+    "RECENT_QUALIFIED_DIRECT_FLOW_MAZE03_NATIVE_INPUTS_VERIFIED": 4,
+    "RESIDUAL_ANCHORED_CONTINUATION_NATIVE_INPUTS_VERIFIED": 2
+  },
+  "observed_full_input_admission_has_repeated_predecessor_verification": true,
+  "bytes_counters_are_process_io_not_unique_dataset_size": true,
+  "live_process_or_source_modified": false,
+  "verification_bypassed": false,
+  "experiment_restarted": false,
+  "goal_achieved": false
+}

@@ -1,0 +1,1015 @@
+{
+  "definition_sha256": "223056ac7ddcb47b9d1a4b1b188028761fb15f56443f02fda28ecfa668326744",
+  "elapsed_seconds": 9.976235610898584,
+  "full_challenge_pass": false,
+  "goal_achieved": false,
+  "native_simulator_executed": false,
+  "navigation_qualified": false,
+  "original_arrays_modified": false,
+  "original_attempt_resumed": false,
+  "original_failure_preserved": true,
+  "original_inner_bindings": {
+    "collection_complete.json": "eb94e4db44120ab5eb90c500fd4d832d5fa8bc216e83399aff56af45dbabac7d",
+    "failure.json": "d0902842b1446882430093c4969ed78127a50256e0b66195207a40ce631a7486",
+    "launch.json": "ac4f532d0b8cf6e3cab4e984f7a5845ebc0ac3f8d225ed6c696a9bdc5f79c4f2",
+    "sensor_phase_complete.json": "5c9d451f35fe64e87219234878e7445bb0285fbb5bf72ded8be9b86ff5c30348",
+    "stress_sensor_phase_complete.json": "671aa02549a748ca34af9258142fc698b920974baf529e245cd1dc691547e163"
+  },
+  "original_outside_bindings": {
+    "request.json": "4693ef9ccf3dbea5e11346f1a5c5bceb243108e97fba22a5e8e1b65ba557bfa1",
+    "terminal.json": "0cb3f84351b721ee4eb50db1ee837655c2a1acfc376410009893871dccd0c37d",
+    "unit.log": "359c8e27ceed84d6012e3935b7d12a22173674c115c86fa23a935a577e05d8a1"
+  },
+  "prior_diagnostic_sha256": "44f7d6d5307320d2acca00178747693dbfe109179de008bb694e8f723b3897ff",
+  "raw_physics_sensor_audit_completed": false,
+  "reports": {
+    "offset_niche_lower_friction_left": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "left",
+        "final_second_angular_speed_max_rad_s": 0.0008871408324682741,
+        "final_second_linear_speed_max_m_s": 0.00014030601867680994,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.2007795693614247,
+            "planar_path_m": 0.20892821700810005,
+            "signed_yaw_rad": -0.006477805129304071
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.012272778911413089,
+            "planar_path_m": 0.01677449735706813,
+            "signed_yaw_rad": -0.00010931225413815526
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.01370782190936839,
+            "planar_path_m": 0.015031185548651032,
+            "signed_yaw_rad": 0.0017368824962100127
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001530948549894302,
+            "planar_path_m": 0.001664405639267669,
+            "signed_yaw_rad": -0.01392111076144334
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.159610839493648,
+            "planar_path_m": 0.17202222325796757,
+            "signed_yaw_rad": -0.11580616392548748
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.0109923979782994,
+            "planar_path_m": 0.01910896070016716,
+            "signed_yaw_rad": 0.012399816088263016
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.279030039786451,
+            "planar_path_m": 0.5669381800414277,
+            "signed_yaw_rad": -3.1513825018636483
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.18099934073175641,
+            "planar_path_m": 0.4726949758640497,
+            "signed_yaw_rad": 2.800880947137495
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.002736280716844294,
+            "planar_path_m": 0.01405174242290894,
+            "signed_yaw_rad": -0.01545077983275478
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": true,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1394831322952825e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "offset_niche_lower_friction_right": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "right",
+        "final_second_angular_speed_max_rad_s": 0.008476037542831284,
+        "final_second_linear_speed_max_m_s": 0.0005891179761125481,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.2007795693614247,
+            "planar_path_m": 0.20892821700810005,
+            "signed_yaw_rad": -0.006477805129304071
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.012272778911413089,
+            "planar_path_m": 0.01677449735706813,
+            "signed_yaw_rad": -0.00010931225413815526
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.0042608435811631465,
+            "planar_path_m": 0.014633844604170429,
+            "signed_yaw_rad": -0.03203866500291219
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001530948549894302,
+            "planar_path_m": 0.001664405639267669,
+            "signed_yaw_rad": -0.01392111076144334
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.13880978018450169,
+            "planar_path_m": 0.15007633960724057,
+            "signed_yaw_rad": -0.006876062605050581
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.01157807873033429,
+            "planar_path_m": 0.013021668378107611,
+            "signed_yaw_rad": 0.019324027605881255
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.17818895362001694,
+            "planar_path_m": 0.464155515363603,
+            "signed_yaw_rad": 2.8009034552644394
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.3496127358751953,
+            "planar_path_m": 0.5693637991469827,
+            "signed_yaw_rad": -3.1567365311581743
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.018591500440518174,
+            "planar_path_m": 0.021823796435636117,
+            "signed_yaw_rad": 0.0014439055130579526
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": true,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1452421921909206e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "offset_niche_nominal_left": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "left",
+        "final_second_angular_speed_max_rad_s": 0.003665482143640892,
+        "final_second_linear_speed_max_m_s": 0.0010893826693001958,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.21904556620879934,
+            "planar_path_m": 0.2240472102586013,
+            "signed_yaw_rad": -0.011859414619982467
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.012204087380324793,
+            "planar_path_m": 0.013194916689734963,
+            "signed_yaw_rad": 0.007252090285876728
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.013152392947213676,
+            "planar_path_m": 0.01950228280113646,
+            "signed_yaw_rad": 0.05006716057909927
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.0019214549733973792,
+            "planar_path_m": 0.0019623177607070727,
+            "signed_yaw_rad": 0.0036846341577813913
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.19663316959425353,
+            "planar_path_m": 0.1999578477835305,
+            "signed_yaw_rad": 0.0020917483095002076
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.02842759052962592,
+            "planar_path_m": 0.0368965147266748,
+            "signed_yaw_rad": 0.005047328367275394
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.13560507641078332,
+            "planar_path_m": 0.2973236795942183,
+            "signed_yaw_rad": -2.8394434053421254
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.09585292726950341,
+            "planar_path_m": 0.22554950515802782,
+            "signed_yaw_rad": 2.191648050388577
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.016154528704848892,
+            "planar_path_m": 0.018764808865262557,
+            "signed_yaw_rad": -0.00952952124747819
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": true,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": false
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1369873753608317e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "offset_niche_nominal_right": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "right",
+        "final_second_angular_speed_max_rad_s": 0.001576379299188772,
+        "final_second_linear_speed_max_m_s": 0.0006792023880820042,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.21904556620879934,
+            "planar_path_m": 0.2240472102586013,
+            "signed_yaw_rad": -0.011859414619982467
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.012204087380324793,
+            "planar_path_m": 0.013194916689734963,
+            "signed_yaw_rad": 0.007252090285876728
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.013090456561624844,
+            "planar_path_m": 0.016685999402798902,
+            "signed_yaw_rad": -0.00977412864543703
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.0019214549733973792,
+            "planar_path_m": 0.0019623177607070727,
+            "signed_yaw_rad": 0.0036846341577813913
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.14621777832864577,
+            "planar_path_m": 0.1489538687194611,
+            "signed_yaw_rad": 0.00893662089944236
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.031054213526235788,
+            "planar_path_m": 0.037117293409224275,
+            "signed_yaw_rad": 0.012566351372074624
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.09257233375339163,
+            "planar_path_m": 0.24596144619454946,
+            "signed_yaw_rad": 2.2484421120957347
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.14821908367562958,
+            "planar_path_m": 0.2700711874744236,
+            "signed_yaw_rad": -2.867330813199655
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.016520694892299403,
+            "planar_path_m": 0.018953895416726672,
+            "signed_yaw_rad": 0.021901078633261406
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": true,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": false,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1369873753608317e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "unequal_baffles_lower_friction_left": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "left",
+        "final_second_angular_speed_max_rad_s": 0.0016678529719519573,
+        "final_second_linear_speed_max_m_s": 0.00021399828738030135,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.19701177473362794,
+            "planar_path_m": 0.2078834101445145,
+            "signed_yaw_rad": -0.13930496757957755
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.014203064942124689,
+            "planar_path_m": 0.01661267599426265,
+            "signed_yaw_rad": -0.014276174794163377
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.01361315549428333,
+            "planar_path_m": 0.01526444511706195,
+            "signed_yaw_rad": -0.008238626060485865
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001384253607226668,
+            "planar_path_m": 0.0014409254624284042,
+            "signed_yaw_rad": -0.016880363158903483
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.10328175115190277,
+            "planar_path_m": 0.10899475986157542,
+            "signed_yaw_rad": -0.02871489716906339
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.014645093999284299,
+            "planar_path_m": 0.01492617781318652,
+            "signed_yaw_rad": -0.00913933387866761
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.3326115103158948,
+            "planar_path_m": 0.551838188860906,
+            "signed_yaw_rad": -3.154940861782349
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.08429631783572114,
+            "planar_path_m": 0.47337691692881034,
+            "signed_yaw_rad": 2.869845364368043
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.004020935898376844,
+            "planar_path_m": 0.010013040379153671,
+            "signed_yaw_rad": -0.002210158067877721
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": false,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1193240578855068e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "unequal_baffles_lower_friction_right": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "right",
+        "final_second_angular_speed_max_rad_s": 0.0030048750476635647,
+        "final_second_linear_speed_max_m_s": 0.00016195970653201693,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.19701177473362794,
+            "planar_path_m": 0.2078834101445145,
+            "signed_yaw_rad": -0.13930496757957755
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.014203064942124689,
+            "planar_path_m": 0.01661267599426265,
+            "signed_yaw_rad": -0.014276174794163377
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.0039223040177086554,
+            "planar_path_m": 0.008525154059281087,
+            "signed_yaw_rad": -0.007576299518673335
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001384253607226668,
+            "planar_path_m": 0.0014409254624284042,
+            "signed_yaw_rad": -0.016880363158903483
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.1001881379908683,
+            "planar_path_m": 0.10756910479018705,
+            "signed_yaw_rad": -0.09543406585178138
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.0013006831690618335,
+            "planar_path_m": 0.019168106830910647,
+            "signed_yaw_rad": 0.0036151228780711975
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.0380301148101965,
+            "planar_path_m": 0.4675925944787903,
+            "signed_yaw_rad": 2.861902159370745
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.2753387268969145,
+            "planar_path_m": 0.5712595457891518,
+            "signed_yaw_rad": -3.1511754229058875
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.014841852156920078,
+            "planar_path_m": 0.015675981776563652,
+            "signed_yaw_rad": -0.00009896356074312607
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": false,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1193240578855068e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "unequal_baffles_nominal_left": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "left",
+        "final_second_angular_speed_max_rad_s": 0.003243691109053691,
+        "final_second_linear_speed_max_m_s": 0.0008911851237288097,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.19599487424763007,
+            "planar_path_m": 0.20026759911502923,
+            "signed_yaw_rad": 0.004847929366404546
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.00215209188856098,
+            "planar_path_m": 0.010430289604552277,
+            "signed_yaw_rad": 0.007974303473441996
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.012193095288342098,
+            "planar_path_m": 0.014260254133958667,
+            "signed_yaw_rad": 0.023856557858266014
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001921756528850839,
+            "planar_path_m": 0.001962126736804657,
+            "signed_yaw_rad": 0.003685896654640114
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.2086039028595446,
+            "planar_path_m": 0.21192701153911964,
+            "signed_yaw_rad": -0.02964252204022233
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.0022847657584156374,
+            "planar_path_m": 0.01701379097297437,
+            "signed_yaw_rad": 0.004939333602675289
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.1360350043682019,
+            "planar_path_m": 0.27283520574929226,
+            "signed_yaw_rad": -2.8811139396813665
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.09894691483558066,
+            "planar_path_m": 0.22198306180169325,
+            "signed_yaw_rad": 2.214621217344485
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.012404780799529024,
+            "planar_path_m": 0.014526724510634019,
+            "signed_yaw_rad": -0.029306363322587403
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": false,
+          "translated_view": true
+        },
+        "turn_coverage": {
+          "turn_back": true,
+          "turn_out": false
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1255256571196526e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    },
+    "unequal_baffles_nominal_right": {
+      "acceptance_convention": "lewm.physical_execution_development.rotation_xyzw",
+      "bounded_normalization_applied_to_private_numerical_view": true,
+      "coverage": {
+        "acquisition_stop": null,
+        "completed_ticks": 442,
+        "direction": "right",
+        "final_second_angular_speed_max_rad_s": 0.002466855404698077,
+        "final_second_linear_speed_max_m_s": 0.00046548916517316993,
+        "final_second_stop_covered": true,
+        "independent_observations_verified": false,
+        "intended_motion_covered": false,
+        "navigation_qualified": false,
+        "observer_accuracy_evaluated": false,
+        "physical_stop": null,
+        "physics_samples": 22850,
+        "real_time_qualified": false,
+        "schedule_complete": true,
+        "segments": {
+          "approach": {
+            "available": true,
+            "complete": true,
+            "first_sample": 1749,
+            "last_sample": 3749,
+            "planar_displacement_m": 0.19599487424763007,
+            "planar_path_m": 0.20026759911502923,
+            "signed_yaw_rad": 0.004847929366404546
+          },
+          "approach_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 3749,
+            "last_sample": 4749,
+            "planar_displacement_m": 0.00215209188856098,
+            "planar_path_m": 0.010430289604552277,
+            "signed_yaw_rad": 0.007974303473441996
+          },
+          "final_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 20849,
+            "last_sample": 22849,
+            "planar_displacement_m": 0.015042269059511922,
+            "planar_path_m": 0.019375033401606907,
+            "signed_yaw_rad": -0.01991097961312449
+          },
+          "initial_hold": {
+            "available": true,
+            "complete": true,
+            "first_sample": 749,
+            "last_sample": 1749,
+            "planar_displacement_m": 0.001921756528850839,
+            "planar_path_m": 0.001962126736804657,
+            "signed_yaw_rad": 0.003685896654640114
+          },
+          "translated_view": {
+            "available": true,
+            "complete": true,
+            "first_sample": 12049,
+            "last_sample": 13549,
+            "planar_displacement_m": 0.13720623601930013,
+            "planar_path_m": 0.14041905511975136,
+            "signed_yaw_rad": 0.0033426658866981818
+          },
+          "translation_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 13549,
+            "last_sample": 14549,
+            "planar_displacement_m": 0.010704919874860193,
+            "planar_path_m": 0.025369047299787045,
+            "signed_yaw_rad": -0.0021001182038720145
+          },
+          "turn_back": {
+            "available": true,
+            "complete": true,
+            "first_sample": 14549,
+            "last_sample": 20849,
+            "planar_displacement_m": 0.11080218023083625,
+            "planar_path_m": 0.22919387621601855,
+            "signed_yaw_rad": 2.212763363994717
+          },
+          "turn_out": {
+            "available": true,
+            "complete": true,
+            "first_sample": 4749,
+            "last_sample": 11049,
+            "planar_displacement_m": 0.15885758409264136,
+            "planar_path_m": 0.28025369388413335,
+            "signed_yaw_rad": -2.8448477913933274
+          },
+          "turn_out_brake": {
+            "available": true,
+            "complete": true,
+            "first_sample": 11049,
+            "last_sample": 12049,
+            "planar_displacement_m": 0.008760607045110532,
+            "planar_path_m": 0.008922484885470537,
+            "signed_yaw_rad": 0.041579355907752635
+          }
+        },
+        "settling_complete": true,
+        "status": "MEASURED_TRACKING_CHALLENGE_COVERAGE_ONLY",
+        "translation_coverage": {
+          "approach": false,
+          "translated_view": false
+        },
+        "turn_coverage": {
+          "turn_back": false,
+          "turn_out": true
+        }
+      },
+      "goal_achieved": false,
+      "navigation_qualified": false,
+      "numerical_coverage_cross_check_passed": true,
+      "observer_accuracy_evaluated": false,
+      "original_arrays_modified": false,
+      "original_attempt_passed": false,
+      "original_frozen_norm_gate_passes": false,
+      "original_max_absolute_norm_deviation": 1.1591634696550557e-7,
+      "raw_physics_sensor_audit_completed": false,
+      "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_ONLY"
+    }
+  },
+  "same_admitted_sensor_streams_reauthenticated": 96,
+  "sensor_transforms_reexecuted": false,
+  "status": "POSTHOC_SENSOR_CONVENTION_COVERAGE_READOUT_COMPLETE",
+  "tracking_accuracy_verified": false
+}

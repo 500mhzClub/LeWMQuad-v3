@@ -1,0 +1,24 @@
+"""Prospective anchored continuation with unchanged observation and mission state."""
+from lewm.residual_first_interval_controller_development import ResidualFirstIntervalSelector
+from lewm.residual_hold_feasibility_controller_development import ResidualHoldFeasibilityController
+from lewm.residual_anchored_continuation_development import reconsider_anchored_continuation
+
+
+class ResidualAnchoredContinuationSelector(ResidualFirstIntervalSelector):
+    def choose(self, model, history, mapper, geometry, *, now_ns):
+        original = super().choose(model, history, mapper, geometry, now_ns=now_ns)
+        return reconsider_anchored_continuation(
+            original, self.residual.snapshot(), mapper, geometry, now_ns=now_ns)
+
+
+class ResidualAnchoredContinuationController(ResidualHoldFeasibilityController):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.selector = ResidualAnchoredContinuationSelector(
+            residual=self.residual, condition=self.selector.condition,
+            variant=self.selector.variant, goal_initial_body_xy_m=self.mission.target())
+
+    def _result(self, *args, **kwargs):
+        return super()._result(*args, **kwargs) | dict(
+            controller='residual_anchored_continuation_controller_v1',
+            residual_anchored_continuation_enabled=True)

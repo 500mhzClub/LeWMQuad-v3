@@ -1,0 +1,724 @@
+{
+  "status": "STOP_CONDITIONED_INDEPENDENT_CASE_COMPLETE",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001",
+  "case": "independent_00_frozen_reference_seed_2026091001_full_jepa",
+  "assignment": {
+    "layout_index": 0,
+    "mode": "frozen_reference",
+    "model_name": "seed_2026091001_full_jepa",
+    "training_seed": 2026091001,
+    "condition": "jepa",
+    "variant": "full"
+  },
+  "model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "verified_round_trip": true,
+  "readout": {
+    "schedule_terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "terminal_zero_ticks": 10,
+    "observed_arrivals": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 2061,
+        "measured_ns": 207600000000,
+        "target_initial_body_xy_m": [
+          0.0,
+          2.6
+        ],
+        "observed_position_initial_body_xy_m": [
+          -0.008502666502004241,
+          2.5789678052049627
+        ],
+        "observed_distance_m": 0.02268586686773733,
+        "quiet_intervals": 10,
+        "native_verified": false
+      },
+      {
+        "phase": "RETURN",
+        "frame": 3439,
+        "measured_ns": 345400000000,
+        "target_initial_body_xy_m": [
+          0.0,
+          0.0
+        ],
+        "observed_position_initial_body_xy_m": [
+          0.017591097596361592,
+          -0.023588114334756154
+        ],
+        "observed_distance_m": 0.029425258750166453,
+        "quiet_intervals": 10,
+        "native_verified": false
+      }
+    ],
+    "native_arrival_windows": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 2061,
+        "end_sample": 103799,
+        "maximum_goal_distance_m": 0.01754423350975224,
+        "maximum_speed_m_s": 0.032156064869579275,
+        "native_one_second_arrival_and_quiet_pass": true
+      },
+      {
+        "phase": "RETURN",
+        "frame": 3439,
+        "end_sample": 172699,
+        "maximum_goal_distance_m": 0.030147070813264613,
+        "maximum_speed_m_s": 0.016617016068703833,
+        "native_one_second_arrival_and_quiet_pass": true
+      }
+    ],
+    "outbound": {
+      "total_crossings": 10,
+      "distinct_open_edges": 7,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            -1,
+            2
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      ]
+    },
+    "returning": {
+      "total_crossings": 6,
+      "distinct_open_edges": 6,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            -1,
+            2
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ]
+      ]
+    },
+    "physically_retraced_outbound_route": true,
+    "native_physics_samples": 173200,
+    "native_contact_samples": 0,
+    "native_contact_free": true,
+    "observation_and_control": {
+      "samples": 3450,
+      "median_ms": 771.364699,
+      "p95_ms": 1351.7116931,
+      "maximum_ms": 1753.510278,
+      "samples_above_command_interval_100ms": 3450
+    },
+    "iteration_with_receipt": {
+      "samples": 3450,
+      "median_ms": 823.754248,
+      "p95_ms": 1406.5850476999997,
+      "maximum_ms": 1805.333454,
+      "samples_above_command_interval_100ms": 3450
+    },
+    "strict_physical_visibility_pass": true,
+    "hard_measurement_failed_frames": [],
+    "verified_round_trip": true,
+    "evaluator_only": true,
+    "real_time_qualified": false
+  },
+  "audit_passes": {
+    "raw_sensor_reconstruction_pass": true,
+    "additional_auxiliary_rgb_reconstructed": true,
+    "raw_model_command_replay_pass": true,
+    "raw_command_audit_pass": true,
+    "model_state_unchanged": true,
+    "strict_physical_visibility_pass": true
+  },
+  "hard_measurement_failed_frames": [],
+  "native_evaluation": {
+    "arrival_windows": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 2061,
+        "end_sample": 103799,
+        "maximum_goal_distance_m": 0.01754423350975224,
+        "maximum_speed_m_s": 0.032156064869579275,
+        "native_one_second_arrival_and_quiet_pass": true
+      },
+      {
+        "phase": "RETURN",
+        "frame": 3439,
+        "end_sample": 172699,
+        "maximum_goal_distance_m": 0.030147070813264613,
+        "maximum_speed_m_s": 0.016617016068703833,
+        "native_one_second_arrival_and_quiet_pass": true
+      }
+    ],
+    "outbound_traversal": {
+      "crossings": [
+        {
+          "sample_index": 5186,
+          "from_cell": [
+            -1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 10441,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            0,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 25167,
+          "from_cell": [
+            0,
+            1
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 32291,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            -1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 38013,
+          "from_cell": [
+            -1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 49739,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 54503,
+          "from_cell": [
+            1,
+            0
+          ],
+          "to_cell": [
+            1,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 77090,
+          "from_cell": [
+            1,
+            1
+          ],
+          "to_cell": [
+            1,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 82793,
+          "from_cell": [
+            1,
+            2
+          ],
+          "to_cell": [
+            0,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 96805,
+          "from_cell": [
+            0,
+            2
+          ],
+          "to_cell": [
+            -1,
+            2
+          ],
+          "declared_open_edge": true
+        }
+      ],
+      "invalid_crossings": [],
+      "visited_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "loop_erased_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "maximum_native_step_m": 0.00046772612064781337,
+      "native_step_bound_pass": true,
+      "evaluator_only": true,
+      "collision_clearance_certified": false
+    },
+    "return_traversal": {
+      "crossings": [
+        {
+          "sample_index": 112970,
+          "from_cell": [
+            -1,
+            2
+          ],
+          "to_cell": [
+            0,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 126235,
+          "from_cell": [
+            0,
+            2
+          ],
+          "to_cell": [
+            1,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 134319,
+          "from_cell": [
+            1,
+            2
+          ],
+          "to_cell": [
+            1,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 145768,
+          "from_cell": [
+            1,
+            1
+          ],
+          "to_cell": [
+            1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 153055,
+          "from_cell": [
+            1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 165339,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            -1,
+            0
+          ],
+          "declared_open_edge": true
+        }
+      ],
+      "invalid_crossings": [],
+      "visited_cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "loop_erased_cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "maximum_native_step_m": 0.0003927503960346725,
+      "native_step_bound_pass": true,
+      "evaluator_only": true,
+      "collision_clearance_certified": false
+    },
+    "physically_retraced_outbound_route": true,
+    "terminal_native_quiet_pass": true,
+    "native_round_trip_candidate_pass": true,
+    "verified_round_trip": false,
+    "requires_raw_sensor_command_and_visibility_audit": true,
+    "evaluator_only": true,
+    "controller_native_state_access": false,
+    "independent_navigation_claim": false
+  },
+  "resource_audit": {
+    "collection": {
+      "phase": "collection",
+      "samples": 13802,
+      "maximum_sampled_rss_bytes": 12642271232,
+      "minimum_sampled_available_ram_bytes": 71203659776,
+      "minimum_sampled_artifact_free_bytes": 526148657152,
+      "first_breach": null,
+      "phase_completed": true,
+      "sampled_limits_passed": true,
+      "error": null,
+      "operating_system_memory_limit_enforced": false,
+      "between_sample_peak_bounded": false,
+      "cleanup_guaranteed": false,
+      "navigation_qualified": false
+    },
+    "audit": {
+      "phase": "audit",
+      "samples": 6904,
+      "maximum_sampled_rss_bytes": 14014500864,
+      "minimum_sampled_available_ram_bytes": 70469558272,
+      "minimum_sampled_artifact_free_bytes": 525234814976,
+      "first_breach": null,
+      "phase_completed": true,
+      "sampled_limits_passed": true,
+      "error": null,
+      "operating_system_memory_limit_enforced": false,
+      "between_sample_peak_bounded": false,
+      "cleanup_guaranteed": false,
+      "navigation_qualified": false
+    },
+    "both_phases_complete": true,
+    "resource_artifact_authentication_required": true,
+    "between_sample_peak_bounded": false,
+    "navigation_qualified": false,
+    "real_time_qualified": false,
+    "hardware_qualified": false
+  },
+  "final_artifact_identities": {
+    "result.json": {
+      "sha256": "e8a5c5e957c76911ec0f3e968ab9d2c22070bfd5b2706edaf0cfaf39b3e78bea",
+      "bytes": 3523896
+    },
+    "launch.json": {
+      "sha256": "18a03eb3f807d48eae676146b6887f19aa844b068409baec78f3a98ba4a8b81d",
+      "bytes": 373331
+    },
+    "independent_00_frozen_reference_seed_2026091001_full_jepa_audit.json": {
+      "sha256": "3327c625b581467bcf368d6b59a4b25ddbbfe954309a0a2f72ab2deda0658e57",
+      "bytes": 12306649
+    },
+    "independent_00_frozen_reference_seed_2026091001_full_jepa_readout.json": {
+      "sha256": "7796c8f0063b5b70106112095064ae669875ff0d54310528933cb0cadf7877af",
+      "bytes": 3885
+    }
+  },
+  "closed_physical_artifact_bindings": {
+    "independent_00_frozen_reference_seed_2026091001_full_jepa/result.json": {
+      "preliminary_sha256": "9468747fdd6a595822cf67e8c55017362959d0cdb6934e97b8ad2684768908dd",
+      "final_runner_sha256": "9468747fdd6a595822cf67e8c55017362959d0cdb6934e97b8ad2684768908dd",
+      "agree": true
+    },
+    "independent_00_frozen_reference_seed_2026091001_full_jepa/physics_trace.npz": {
+      "preliminary_sha256": "b76279e9db4ff45bc5a30df11946e03a406b889d4ad6151535d7f2e2708fad8e",
+      "final_runner_sha256": "b76279e9db4ff45bc5a30df11946e03a406b889d4ad6151535d7f2e2708fad8e",
+      "agree": true
+    }
+  },
+  "native_trajectory_descriptives": {
+    "metric": "Sum of consecutive 2 ms native XY position distances, including lateral gait motion; not a shortest-path efficiency score.",
+    "phases": [
+      {
+        "phase": "OUTBOUND",
+        "first_sample": 749,
+        "last_sample": 103799,
+        "simulation_duration_s": 206.10000000000002,
+        "native_xy_path_length_m": 11.737782266520334
+      },
+      {
+        "phase": "RETURN",
+        "first_sample": 103799,
+        "last_sample": 172699,
+        "simulation_duration_s": 137.79999999999995,
+        "native_xy_path_length_m": 8.107923009819501
+      }
+    ],
+    "total_to_return_arrival_simulation_s": 343.9,
+    "total_native_xy_path_length_m": 19.845705276339835,
+    "isolated_memory_effect_established": false
+  },
+  "wall_s": 6089.865836203098,
+  "independent_layout_development_execution": true,
+  "reused_development_layout": false,
+  "independent_maze_replicates": 1,
+  "learned_planning_or_memory_advantage_established": false,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false,
+  "automatic_retry": false
+}

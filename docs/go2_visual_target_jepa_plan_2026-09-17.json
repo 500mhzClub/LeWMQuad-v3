@@ -1,0 +1,90 @@
+{
+  "schema": "visual_target_jepa_plan.v1",
+  "seed": 2026091001,
+  "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+  "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+  "contexts": 4694,
+  "draws": 7200,
+  "updates": 1200,
+  "batch_size": 6,
+  "learning_rate": 0.0001,
+  "latent_dim": 32,
+  "ema_momentum": 0.99,
+  "controls": {
+    "jepa": {
+      "condition": "jepa",
+      "filename": "jepa.pt",
+      "sha256": "e2fdd7e15041b3b912eb4fb7447a08f7ad78a947cd8215f865049faa042941e5",
+      "model_sha256": "2e08818bfd4169109938a6d6846ba63dca147dba59bded1c0e5555c83ab6328e",
+      "initial_sha256": "779b6bf38acf74fe8bab85d92c2dd7b446264dc1020025ef5c0aa80083a1b1d5",
+      "configuration": {
+        "condition": "jepa",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.0001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "9aaca6ffd53bb1364efeabc57b4f1e7671cd12cbb10d1f5d10456db4b11db5a8",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+        "input_variant": "full"
+      },
+      "wall_s": 165.9225368720945,
+      "peak_rss_bytes": 10094321664,
+      "prediction_evaluated": false,
+      "navigation_tested": false
+    },
+    "supervised_rollout": {
+      "condition": "supervised_rollout",
+      "filename": "supervised_rollout.pt",
+      "sha256": "3813a4151ef0bc5e982ec0a1b4904dcfd69769c148793991e924968779cf0c50",
+      "model_sha256": "79993a3763f99a19ece62af7bab29a1d607a9a5c67673c48328a4c158ee2a8e9",
+      "initial_sha256": "779b6bf38acf74fe8bab85d92c2dd7b446264dc1020025ef5c0aa80083a1b1d5",
+      "configuration": {
+        "condition": "supervised_rollout",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.0001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "9aaca6ffd53bb1364efeabc57b4f1e7671cd12cbb10d1f5d10456db4b11db5a8",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+        "input_variant": "full"
+      },
+      "wall_s": 138.86179503495805,
+      "peak_rss_bytes": 10089762816,
+      "prediction_evaluated": false,
+      "navigation_tested": false
+    }
+  },
+  "change": "only latent target: EMA RGB features plus fixed zero body/control embeddings into existing fusion",
+  "causal_inputs_unchanged": true,
+  "parameters_and_initialization_unchanged": true,
+  "future_body_control_still_available_to_common_online_variance_regularizer": true,
+  "common_motion_contact_losses_and_weights_unchanged": true,
+  "variance_penalty_not_specific_to_visual_target": true,
+  "final_checkpoint_only": true,
+  "independent_replicates": false,
+  "primary": "fixed branch assay: persistence/action/scene comparisons and representation variance",
+  "downstream": "same training-only motion readout and common recorded forecasting population",
+  "no_navigation_promotion_from_latent_loss": true,
+  "baseline_plan_sha256": "9aaca6ffd53bb1364efeabc57b4f1e7671cd12cbb10d1f5d10456db4b11db5a8",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_visual_target_jepa_development.py": "db2cf1f40bc515a70015dc2ada8e759dc5212dab5227f1e3e2d19f0fbb64f212",
+    "lewm/visual_target_jepa_development.py": "d0edced64422c89540aed593408d801b4388402bf50bfd170c8daee23ab55086"
+  },
+  "resources": {
+    "cpu_core": 8,
+    "threads": 1,
+    "ram_available_gib": 72,
+    "output_free_gib": 4.4,
+    "independent_fits": "reuse completed identical-budget mixed JEPA and supervised controls"
+  }
+}

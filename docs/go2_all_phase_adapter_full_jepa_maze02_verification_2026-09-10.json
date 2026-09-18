@@ -1,0 +1,59 @@
+{
+  "status": "FIRST_ADAPTER_JEPA_COMPLETED_WORKER_INDEPENDENTLY_VERIFIED",
+  "original_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_all_phase_adapter_maze02_matched_native_v1_attempt_001",
+  "identity_sha256": {
+    "launch.json": "97c307ce8d2178494e7484f14b3b0cdcd8d7d0ceaab2f94d94d59da44e39b17a",
+    "all_phase_full_jepa_residual_maze_02_worker_terminal.json": "617056f19ba4928aa9ff7738616947e6e63a387cc6046353e30617ce50afa57e",
+    "all_phase_full_jepa_residual_maze_02_audit.json": "4d50d207b1eb99f82a74ff1869f097834578abe4787538c1b922ab1c8e0acf46",
+    "all_phase_full_jepa_residual_maze_02_startup_comparison.json": "ef7cbc70cbb6c8841e858dc7e2de74615f751501385460e661d47848e93f81e0",
+    "all_phase_full_jepa_residual_maze_02_readout.json": "21893cad78e7741eef805b6a0cbc15042be5433f1d70d3a3e42fc7dca5b46652"
+  },
+  "case": [
+    "all_phase_full_jepa_residual_maze_02",
+    2,
+    "full",
+    "jepa",
+    "seed_2026091001_full_jepa"
+  ],
+  "model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "source_count": 1908,
+  "worker_artifact_count": 9210,
+  "verification_sessions": [
+    74246,
+    97263
+  ],
+  "source_and_artifact_bindings_verified": true,
+  "original_case_contract_verified": true,
+  "actual_adapter_startup_reconstructed": true,
+  "readout_reconstructed_from_audit_collection_and_native_contact": true,
+  "raw_model_inference_reexecuted_by_this_verification": false,
+  "raw_audit": {
+    "sensor_reconstruction": true,
+    "model_command_replay": true,
+    "command_completion": true,
+    "model_state_unchanged": true
+  },
+  "observations": 1529,
+  "completed_commands": 1528,
+  "physics_samples": 77150,
+  "schedule_terminal": "NO_PHASE_CANDIDATE_SATISFYING_SURFACE_AND_NOMINAL_CONSTRAINTS",
+  "native_contact_samples": 0,
+  "outbound_open_edge_crossings": 2,
+  "observed_or_native_arrival_count": 0,
+  "verified_round_trip": false,
+  "strict_physical_visibility_pass": false,
+  "front_camera_visibility_failure_frames": [],
+  "auxiliary_visibility_failure_frames": [
+    1173
+  ],
+  "hard_measurement_failed_frames": [
+    1173
+  ],
+  "all_406_planned_intervention_prefix_frames_strict_pass": true,
+  "completed_audited_development_episode_count": 38,
+  "full_six_case_batch_complete": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false
+}

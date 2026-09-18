@@ -1,0 +1,87 @@
+{
+  "result_sha256": "f20100955ca2e4bb39c91a9375cb270ff48731d5e721aacf8d5b314821381808",
+  "source_count": 1916,
+  "artifact_sha256": {
+    "launch.json": "278c303ad880197bda9abe751432e4d53a248b979f828f005798d84c784be6cb",
+    "comparison.jsonl": "3019b842ec0b9902d04c17c3cad5a4381cc7aee3fbde046b52b858c285234298",
+    "first_boundary.json": "d4068e3673165e170bf17f07e47cac7d772baa3ef83793927944b050b9a9a0f0"
+  },
+  "complete_four_saved_row_identities_reconstructed": true,
+  "first_changed_command_frame": 3,
+  "original_requested_command": [
+    0.0,
+    0.0,
+    0.45
+  ],
+  "candidate_requested_command": [
+    0.2,
+    0.0,
+    0.0
+  ],
+  "all_six_score_decompositions_checked": true,
+  "score_reconstruction_absolute_tolerance_m": 1e-12,
+  "complete_candidate_selection_non_score_fields_preserved": true,
+  "eligible_actions": [
+    "hold",
+    "forward",
+    "left_arc",
+    "right_arc",
+    "left_turn",
+    "right_turn"
+  ],
+  "first_boundary_score_terms": [
+    {
+      "action": "hold",
+      "pose_benefit_m": 0.010793396216239193,
+      "contact_score_100ms": 0.0001304942632865516,
+      "contact_score_800ms": 0.0032000275376953386,
+      "original_utility_m": 0.006953363171004798,
+      "candidate_utility_m": 0.010636803100295342
+    },
+    {
+      "action": "forward",
+      "pose_benefit_m": 0.02500619546966757,
+      "contact_score_100ms": 0.00040913393467733976,
+      "contact_score_800ms": 0.04612792091918427,
+      "original_utility_m": -0.030347309633353532,
+      "candidate_utility_m": 0.024515234748054785
+    },
+    {
+      "action": "left_arc",
+      "pose_benefit_m": 0.021472706716772382,
+      "contact_score_100ms": 0.0003099803929633237,
+      "contact_score_800ms": 0.02236646494207292,
+      "original_utility_m": -0.00536705121371513,
+      "candidate_utility_m": 0.021100730245216383
+    },
+    {
+      "action": "right_arc",
+      "pose_benefit_m": 0.02198176920313797,
+      "contact_score_100ms": 0.00033608450210103274,
+      "contact_score_800ms": 0.03140212673682553,
+      "original_utility_m": -0.015700782881052637,
+      "candidate_utility_m": 0.02157846780061675
+    },
+    {
+      "action": "left_turn",
+      "pose_benefit_m": 0.009979739515952657,
+      "contact_score_100ms": 0.00012426374506710954,
+      "contact_score_800ms": 0.002357247375990358,
+      "original_utility_m": 0.007151042664764228,
+      "candidate_utility_m": 0.009830623021872126
+    },
+    {
+      "action": "right_turn",
+      "pose_benefit_m": 0.010887542316302878,
+      "contact_score_100ms": 0.00013473942504864945,
+      "contact_score_800ms": 0.00397420781831304,
+      "original_utility_m": 0.006118492934327252,
+      "candidate_utility_m": 0.010725855006244522
+    }
+  ],
+  "model_inference_performed": false,
+  "full_controller_reconstructed": false,
+  "raw_original_audit_pending": true,
+  "candidate_next_observation_consumed": false,
+  "native_execution": false
+}

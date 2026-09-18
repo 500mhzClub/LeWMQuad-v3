@@ -1,0 +1,95 @@
+{
+  "status": "COMPLETE",
+  "existing_training_offsets": {
+    "100": {
+      "samples": 3998,
+      "sources": {
+        "family": 1314,
+        "switch": 2540,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "200": {
+      "samples": 3878,
+      "sources": {
+        "family": 1266,
+        "switch": 2468,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "300": {
+      "samples": 3758,
+      "sources": {
+        "family": 1218,
+        "switch": 2396,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "400": {
+      "samples": 3638,
+      "sources": {
+        "family": 1170,
+        "switch": 2324,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "500": {
+      "samples": 3518,
+      "sources": {
+        "family": 1122,
+        "switch": 2252,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "600": {
+      "samples": 3398,
+      "sources": {
+        "family": 1074,
+        "switch": 2180,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "700": {
+      "samples": 3278,
+      "sources": {
+        "family": 1026,
+        "switch": 2108,
+        "short_pulse": 144
+      },
+      "recordings": 138
+    },
+    "800": {
+      "samples": 3158,
+      "sources": {
+        "family": 978,
+        "switch": 2036,
+        "short_pulse": 144
+      },
+      "recordings": 132
+    }
+  },
+  "balanced_start_targets": {
+    "100": 48,
+    "200": 48,
+    "300": 48,
+    "400": 48,
+    "500": 48,
+    "600": 0,
+    "700": 0,
+    "800": 0
+  },
+  "unique_existing_rgb_paths": 5642,
+  "missing_rgb_paths": [],
+  "transfer_rows_used": 0,
+  "new_collection": false,
+  "new_training": false,
+  "interpretation": "The existing rows provide per-offset targets; the balanced starts stop at +500 ms and need longer native suffixes to cover +600/+700/+800 ms.",
+  "source_sha256": "3fa0dc6c643aff059a39146b57261fc32dd8ec3e101256814b131cef1be68edd",
+  "balanced_collection_sha256": "9cd2d43afe03161b4d0ecda75174bd5e741f4543cfbcc53838550870512e0069"
+}

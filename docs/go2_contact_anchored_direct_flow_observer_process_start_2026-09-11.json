@@ -1,0 +1,21 @@
+{
+  "status": "CONTACT_OBSERVER_PROCESS_STARTED",
+  "owner": {
+    "pid": 2819628,
+    "created": 1789118183.27,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_contact_anchored_direct_flow_observer_prefix_v1.py"
+    ]
+  },
+  "tool_session_id": 52711,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_contact_anchored_direct_flow_observer_prefix_v1_attempt_001",
+  "preparation_sha256": "12caa3c8f32b0c260339f31ff427cd6444da2430f8903b143717f1bf15d58d81",
+  "goal_achieved": false,
+  "launch_sha256": "9ee4ddd13e6672619c4fabb29fcacf9831fbea215377915a2151d6e25da76e62",
+  "source_count": 2045,
+  "cpu_completion_exists": false,
+  "failure_exists": false
+}

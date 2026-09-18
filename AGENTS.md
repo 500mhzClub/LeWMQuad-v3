@@ -2,6 +2,16 @@
 
 These instructions apply to the entire repository.
 
+## Development artifact retention
+
+Follow the user-authorized policy in
+`docs/go2_development_artifact_retention_2026-09-14.md` for routine development
+depth recordings. Preserve every experiment's results and failure records,
+active debugging inputs and retained comparison populations; retire completed,
+diagnosed, superseded depth within that policy without repeatedly asking for
+approval. Check `depth_retention.json` before attempting historical sensor replay.
+This policy grants no access to sealed benchmark material.
+
 ## Sealed benchmark material
 
 - Never open, print, parse, summarize, index, or recursively search a

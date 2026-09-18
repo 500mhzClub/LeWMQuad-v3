@@ -1,0 +1,223 @@
+{
+  "status": "COMPLETE",
+  "rows": [
+    {
+      "case": 0,
+      "old_case": 3,
+      "trial": "family_episode_006",
+      "frame": 0,
+      "pixels_differing": 4560,
+      "mean_absolute_channel_difference": 0.06362955729166667,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 0,
+      "old_case": 3,
+      "trial": "family_episode_006",
+      "frame": 5,
+      "pixels_differing": 4328,
+      "mean_absolute_channel_difference": 0.061754557291666665,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 0,
+      "old_case": 3,
+      "trial": "family_episode_006",
+      "frame": 10,
+      "pixels_differing": 4434,
+      "mean_absolute_channel_difference": 0.058401692708333335,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 1,
+      "old_case": 1,
+      "trial": "family_episode_002",
+      "frame": 0,
+      "pixels_differing": 4482,
+      "mean_absolute_channel_difference": 0.05607421875,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 1,
+      "old_case": 1,
+      "trial": "family_episode_002",
+      "frame": 5,
+      "pixels_differing": 4204,
+      "mean_absolute_channel_difference": 0.054427083333333334,
+      "maximum_channel_difference": 19
+    },
+    {
+      "case": 1,
+      "old_case": 1,
+      "trial": "family_episode_002",
+      "frame": 10,
+      "pixels_differing": 4289,
+      "mean_absolute_channel_difference": 0.050589192708333335,
+      "maximum_channel_difference": 17
+    },
+    {
+      "case": 2,
+      "old_case": 4,
+      "trial": "family_episode_008",
+      "frame": 0,
+      "pixels_differing": 3514,
+      "mean_absolute_channel_difference": 0.03516276041666667,
+      "maximum_channel_difference": 13
+    },
+    {
+      "case": 2,
+      "old_case": 4,
+      "trial": "family_episode_008",
+      "frame": 5,
+      "pixels_differing": 3228,
+      "mean_absolute_channel_difference": 0.03226236979166667,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 2,
+      "old_case": 4,
+      "trial": "family_episode_008",
+      "frame": 10,
+      "pixels_differing": 3218,
+      "mean_absolute_channel_difference": 0.03188151041666667,
+      "maximum_channel_difference": 14
+    },
+    {
+      "case": 3,
+      "old_case": 22,
+      "trial": "family_episode_044",
+      "frame": 0,
+      "pixels_differing": 3646,
+      "mean_absolute_channel_difference": 0.04453450520833333,
+      "maximum_channel_difference": 15
+    },
+    {
+      "case": 3,
+      "old_case": 22,
+      "trial": "family_episode_044",
+      "frame": 5,
+      "pixels_differing": 3389,
+      "mean_absolute_channel_difference": 0.040498046875,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 3,
+      "old_case": 22,
+      "trial": "family_episode_044",
+      "frame": 10,
+      "pixels_differing": 3380,
+      "mean_absolute_channel_difference": 0.040013020833333336,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 4,
+      "old_case": 8,
+      "trial": "family_episode_020",
+      "frame": 0,
+      "pixels_differing": 5520,
+      "mean_absolute_channel_difference": 0.07207356770833333,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 4,
+      "old_case": 8,
+      "trial": "family_episode_020",
+      "frame": 5,
+      "pixels_differing": 5264,
+      "mean_absolute_channel_difference": 0.06998372395833333,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 4,
+      "old_case": 8,
+      "trial": "family_episode_020",
+      "frame": 10,
+      "pixels_differing": 5369,
+      "mean_absolute_channel_difference": 0.07010850694444444,
+      "maximum_channel_difference": 25
+    },
+    {
+      "case": 5,
+      "old_case": 0,
+      "trial": "family_episode_001",
+      "frame": 0,
+      "pixels_differing": 5568,
+      "mean_absolute_channel_difference": 0.073759765625,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 5,
+      "old_case": 0,
+      "trial": "family_episode_001",
+      "frame": 5,
+      "pixels_differing": 5249,
+      "mean_absolute_channel_difference": 0.07220052083333334,
+      "maximum_channel_difference": 19
+    },
+    {
+      "case": 5,
+      "old_case": 0,
+      "trial": "family_episode_001",
+      "frame": 10,
+      "pixels_differing": 5369,
+      "mean_absolute_channel_difference": 0.07248697916666667,
+      "maximum_channel_difference": 18
+    },
+    {
+      "case": 6,
+      "old_case": 7,
+      "trial": "family_episode_018",
+      "frame": 0,
+      "pixels_differing": 4714,
+      "mean_absolute_channel_difference": 0.04845052083333334,
+      "maximum_channel_difference": 13
+    },
+    {
+      "case": 6,
+      "old_case": 7,
+      "trial": "family_episode_018",
+      "frame": 5,
+      "pixels_differing": 4393,
+      "mean_absolute_channel_difference": 0.04547200520833333,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 6,
+      "old_case": 7,
+      "trial": "family_episode_018",
+      "frame": 10,
+      "pixels_differing": 4377,
+      "mean_absolute_channel_difference": 0.04273111979166667,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 7,
+      "old_case": 5,
+      "trial": "family_episode_011",
+      "frame": 0,
+      "pixels_differing": 4847,
+      "mean_absolute_channel_difference": 0.059729817708333334,
+      "maximum_channel_difference": 15
+    },
+    {
+      "case": 7,
+      "old_case": 5,
+      "trial": "family_episode_011",
+      "frame": 5,
+      "pixels_differing": 4569,
+      "mean_absolute_channel_difference": 0.05559895833333333,
+      "maximum_channel_difference": 16
+    },
+    {
+      "case": 7,
+      "old_case": 5,
+      "trial": "family_episode_011",
+      "frame": 10,
+      "pixels_differing": 4532,
+      "mean_absolute_channel_difference": 0.05244140625,
+      "maximum_channel_difference": 16
+    }
+  ],
+  "all_24_primary_images_identical": false,
+  "scope": "Matched quiet-start frames on all eight training environments. This does not isolate renderer effects at later moving views or show robot pixels visible in the primary camera."
+}

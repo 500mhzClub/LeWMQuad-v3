@@ -1,0 +1,101 @@
+{
+  "cases": [
+    [
+      "fresh_00",
+      "fresh_00",
+      "old_action"
+    ],
+    [
+      "fresh_00",
+      "fresh_00",
+      "mixed_action"
+    ],
+    [
+      "fresh_00",
+      "fresh_00",
+      "old_no_future_action"
+    ],
+    [
+      "fresh_01",
+      "fresh_01",
+      "old_action"
+    ],
+    [
+      "fresh_01",
+      "fresh_01",
+      "mixed_action"
+    ],
+    [
+      "fresh_01",
+      "fresh_01",
+      "old_no_future_action"
+    ],
+    [
+      "fresh_02",
+      "fresh_02",
+      "old_action"
+    ],
+    [
+      "fresh_02",
+      "fresh_02",
+      "mixed_action"
+    ],
+    [
+      "fresh_02",
+      "fresh_02",
+      "old_no_future_action"
+    ],
+    [
+      "fresh_03",
+      "fresh_03",
+      "old_action"
+    ],
+    [
+      "fresh_03",
+      "fresh_03",
+      "mixed_action"
+    ],
+    [
+      "fresh_03",
+      "fresh_03",
+      "old_no_future_action"
+    ]
+  ],
+  "source_sha256": {
+    "lewm/dense_visual_goal_control_development.py": "c516114973d882ab0e0bcf2b98cbcff028708b6279148b4940d6cbc6e726cf6b",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_goal_pilot_development.py": "e049931f46f6a222de60a37e3fe791e4a73a98e7533cc0277492a347eeac5998",
+    "lewm/dense_metric_goal_control_development.py": "cf5a6726fe735ed7092b201cc767d05d3ac7ebb271539931cffe394da195385c",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_metric_goal_pilot_development.py": "ac52c25fde2043e615a21a44a62e5ad0c2d35b60712d70d0f5853f9e57095766",
+    "lewm/dense_visual_arrival_control_development.py": "930ec1ce3964627bf2864d2c0c6bd68d8324282c60321bf6d2d333d38e75de4f",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_arrival_pilot_development.py": "165e9475fcbea3f7229cee56833f0c30880ffc8c3e2ed20542a7655227d8bc1a",
+    "lewm/direct_visual_feedback_control_development.py": "d7bb47c2319f1b5d9278b311210d2964d7da56050d0aab8e3facd93eb767fff5",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_direct_visual_feedback_pilot_development.py": "cedcf20ea7b6d1ec82d46407aa6306294751ab10d79534e421219c63475536ca",
+    "scripts/rgb_only_goal_session_development.py": "3cdd7a793b08d8e6cceaea67ea3cc0b659307c46bbb15aabb957ccffb37341cd",
+    "lewm/fresh_visual_goal_layouts_development.py": "6ffa693000a90d1f1333482c45f5ca1cf49e410b2a646efa5c2e4a4e92b3de19",
+    "scripts/fresh_visual_goal_session_development.py": "22580a9951da774c03a2de2af19006c578576c0eb897161b56da886736518480",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_fresh_visual_goal_comparison_development.py": "e72e9dcacdc79d7f9339a60ad23b9205306cd96b3f90b83b272292db4cf6a474",
+    "lewm/cross_trajectory_goal_control_development.py": "ccbadeebca90b85d37ba780b24dd1281c66c7838553e557817ba6fa5aff558e5",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_cross_trajectory_goal_pilot_development.py": "ec2523c5d930928b71a3536f8919075847088208c18d6b3106b71be08635f3b0",
+    "lewm/balanced_start_goal_control_development.py": "0132bb2e08ee1548374deb617a77001b772681782cfc8e7f6de6607cf654134b",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_balanced_start_goal_pilot_development.py": "7a0a1a29caeed3b3ae2ce9fd7927111835d80d61a8e2b6c33760886554f5e32c"
+  },
+  "intervention": "Training data coverage only within each continued predictor pair; same goal metric, arrival rule, candidate bank and timing.",
+  "no_selection_using_fit_or_evaluation_outcomes": true,
+  "fixed_criterion": "Completed budget, no contact, final XY <=3cm and relative yaw <=5 degrees.",
+  "action_blind_policy": "The action-blind predictor receives one zero future-action tensor and its forecast/cost is expanded identically across six candidates. Seeded uniform ties and observed-image arrival latch determine commands independently of predictor weights.",
+  "mixed_action_blind_new_trial": false,
+  "mixed_action_blind_reason": "Same online policy as old_no_future_action by construction; evaluate both predictor weights offline, execute the shared policy once per task.",
+  "references_reused": [
+    "parent predictor with cross-trajectory goal metric: four retained trials",
+    "direct visual feedback: four retained trials"
+  ],
+  "storage": "Six cases on workspace volume, six on root volume; prospectively RGB only.",
+  "limitations": [
+    "four exposed local development tasks",
+    "one fit seed",
+    "unchanged known arrival-latch failure",
+    "not independent complete maze evaluation",
+    "coverage intervention, not JEPA encoder-objective isolation"
+  ]
+}

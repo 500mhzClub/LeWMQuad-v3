@@ -1,0 +1,30 @@
+{
+  "status": "ORIGINAL_TRACKING_NATIVE_CHILD_RUNNING",
+  "owner": {
+    "pid": 2824049,
+    "created": 1789119932.34,
+    "command": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/run_go2_no_rgb_jepa_direct_flow_maze02_pilot_v1.py",
+      "--controller-prefix-result-sha256",
+      "152da30ba5c142d8150dacd5865278f81d5db46c7603bd637eb8ec2eee292fdf",
+      "--adapter-batch-result-sha256",
+      "9715a916b81d9a70edf2d26e4f3d7e952823d3e6b618670c46ab2aa0429ff416",
+      "--frontier-wait-result-sha256",
+      "5c6ed7f4944b375e4eb7db461ed7f5f5a05015942645d9e618e895fff4a5680b",
+      "--hold-wait-result-sha256",
+      "7b81a8e5b39d39d8d13cbaea015ba64c9e08eb55c685072479b951bf3c334e50",
+      "--contact-wait-result-sha256",
+      "8ce84ca1568df9848ca3f95ea02c400bde911162e50441cca70f5c913a4ea4f7"
+    ]
+  },
+  "parent_pid": 2753911,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "native_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_no_rgb_jepa_direct_flow_maze02_pilot_v1_attempt_001",
+  "native_launch_exists": false,
+  "native_result_exists": false,
+  "native_failure_exists": false,
+  "original_contact_waiter_result_sha256": "8ce84ca1568df9848ca3f95ea02c400bde911162e50441cca70f5c913a4ea4f7",
+  "native_execution_started_confirmed": false,
+  "goal_achieved": false
+}

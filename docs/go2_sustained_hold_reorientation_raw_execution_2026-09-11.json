@@ -1,0 +1,50 @@
+{
+  "status": "SUSTAINED_RAW_PREFIX_INPUTS_ADMITTED_FIRST_RAW_FRAME_VERIFIED",
+  "utc": "2026-09-11T08:31:37.927503+00:00",
+  "owner": {
+    "pid": 2813368,
+    "created": 1789115323.91,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_sustained_hold_reorientation_maze02_prefix_v1.py"
+    ]
+  },
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "launch_sha256": "6f68017be0f68198ab08af97fb4d90f33ebbdc2b1b56f8da123e8b34b4dd89df",
+  "source_count": 1972,
+  "launch_input_admission": {
+    "native_result_sha256": "39e4e616361fde21d4cb5b6480794d3e062ace7bebfed04d70031e02a87937e9",
+    "native_launch_sha256": "2d3e8c2ad103e3b955a9163453743e372cb068dcf6b00c1999f020425e729484",
+    "waiter_result_sha256": "7b81a8e5b39d39d8d13cbaea015ba64c9e08eb55c685072479b951bf3c334e50",
+    "original_completion": {
+      "native_result_sha256": "39e4e616361fde21d4cb5b6480794d3e062ace7bebfed04d70031e02a87937e9",
+      "measured_round_trip_successes": 0,
+      "all_completion_artifacts_and_receipts_verified": true,
+      "scientific_success_required": false
+    },
+    "original_completion_verifier_reexecuted": true,
+    "full_training_ancestry_reexecuted": false,
+    "actual_assigned_model_loader_required": true
+  },
+  "confirmed_first_frame": 0,
+  "original_complete_decision_reconstructed": true,
+  "normalized_complete_candidate_decision_exact": true,
+  "tests": {
+    "session_id": 72541,
+    "passed": 47,
+    "wall_s": 2.72,
+    "exit_code": 0
+  },
+  "source_preflight": {
+    "session_id": 88809,
+    "source_count": 1972,
+    "exit_code": 0,
+    "memory_available_bytes": 79450722304,
+    "artifact_free_bytes": 610514673664
+  },
+  "process_alive": true,
+  "raw_replay_completion_claimed": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

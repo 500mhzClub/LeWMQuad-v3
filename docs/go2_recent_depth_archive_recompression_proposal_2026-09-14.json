@@ -1,0 +1,46 @@
+{
+  "status": "SUPERSEDED_BY_USER_AUTHORIZED_DEPTH_RETIREMENT",
+  "operation": "Losslessly recompress only the named existing depth NPZ arrays from ZIP_DEFLATED to ZIP_LZMA; preserve NPY member bytes and all other files. Record old/new compressed hashes and capture packet verification. Container hashes change.",
+  "targets": [
+    {
+      "volume": "RecoveryStorage",
+      "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_raw_depth_terminal_pulse_fine_goal_learned_round_trip_native_layout06_4800_v1_attempt_001",
+      "frames": 4805,
+      "exact_archive_name_patterns": [
+        "native/primary_depth_{frame:04d}.npz",
+        "native/auxiliary_depth_{frame:04d}.npz"
+      ],
+      "archive_count": 9610,
+      "current_depth_bytes": 8581102779,
+      "estimated_reclaimed_gib": 5.2141455100925915
+    },
+    {
+      "volume": "workspace",
+      "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_hold_relative_recovery_pulse_round_trip_native_layout06_4800_v1_attempt_001",
+      "frames": 4062,
+      "exact_archive_name_patterns": [
+        "native/primary_depth_{frame:04d}.npz",
+        "native/auxiliary_depth_{frame:04d}.npz"
+      ],
+      "archive_count": 8124,
+      "current_depth_bytes": 6656992231,
+      "estimated_reclaimed_gib": 4.044995969158513
+    },
+    {
+      "volume": "workspace",
+      "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_hold_relative_recovery_pulse_round_trip_native_layout04_4800_v1_attempt_001",
+      "frames": 3546,
+      "exact_archive_name_patterns": [
+        "native/primary_depth_{frame:04d}.npz",
+        "native/auxiliary_depth_{frame:04d}.npz"
+      ],
+      "archive_count": 7092,
+      "current_depth_bytes": 5785430619,
+      "estimated_reclaimed_gib": 3.5154079682898822
+    }
+  ],
+  "estimate_source": "future_npz_compression_sample_v1.json in first root",
+  "estimated_total_reclaimed_gib": 12.774549447540986,
+  "superseded_by": "docs/go2_depth_retirement_result_2026-09-14.json",
+  "recompression_executed": false
+}

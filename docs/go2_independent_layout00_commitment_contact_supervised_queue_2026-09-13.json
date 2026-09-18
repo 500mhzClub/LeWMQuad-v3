@@ -1,0 +1,20 @@
+{
+  "status": "INDEPENDENT_LAYOUT00_COMMITMENT_CONTACT_SUPERVISED_QUEUED",
+  "pid": 3167292,
+  "created": 1789269417.58,
+  "waiting_for_pid": 3167226,
+  "waiting_for_created": 1789269388.36,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_commitment_contact_seed_2026091001_full_jepa_v1_attempt_001",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_commitment_contact_seed_2026091001_full_supervised_rollout_v1_attempt_001",
+  "layout_index": 0,
+  "mode": "commitment_contact",
+  "model_name": "seed_2026091001_full_supervised_rollout",
+  "expected_model_state_sha256": "755c074325af96d53649aba4927937113d8fab561ea05341a2f3c328598b2bb5",
+  "scored_contact_horizon_ns": 100000000,
+  "path_constraint_horizon_ns": 800000000,
+  "start_requires_operational_completion": true,
+  "start_requires_scientific_success": false,
+  "automatic_retry": false,
+  "serial_native_and_audit_jobs": true
+}

@@ -1,0 +1,209 @@
+{
+  "status": "CAMERA_INDEPENDENT_GYRO_RECORDED_CHECK_COMPLETE",
+  "observations": 31,
+  "rows": [
+    {
+      "frame": 0,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.20452099852263927
+    },
+    {
+      "frame": 1,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6586739327758551
+    },
+    {
+      "frame": 2,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5635530687868595
+    },
+    {
+      "frame": 3,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5719030741602182
+    },
+    {
+      "frame": 4,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5942441057413816
+    },
+    {
+      "frame": 5,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.601933104917407
+    },
+    {
+      "frame": 6,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5968629848212004
+    },
+    {
+      "frame": 7,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5903327837586403
+    },
+    {
+      "frame": 8,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5974839441478252
+    },
+    {
+      "frame": 9,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6098339799791574
+    },
+    {
+      "frame": 10,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6222231313586235
+    },
+    {
+      "frame": 11,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6072730757296085
+    },
+    {
+      "frame": 12,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6209230050444603
+    },
+    {
+      "frame": 13,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5884140264242887
+    },
+    {
+      "frame": 14,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5809138529002666
+    },
+    {
+      "frame": 15,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5708830431103706
+    },
+    {
+      "frame": 16,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5991130601614714
+    },
+    {
+      "frame": 17,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6237530615180731
+    },
+    {
+      "frame": 18,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6288529839366674
+    },
+    {
+      "frame": 19,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6027340423315763
+    },
+    {
+      "frame": 20,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5910028703510761
+    },
+    {
+      "frame": 21,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5973540246486664
+    },
+    {
+      "frame": 22,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6000129505991936
+    },
+    {
+      "frame": 23,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5981831345707178
+    },
+    {
+      "frame": 24,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6027529016137123
+    },
+    {
+      "frame": 25,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.6175029557198286
+    },
+    {
+      "frame": 26,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.607223017141223
+    },
+    {
+      "frame": 27,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5902729462832212
+    },
+    {
+      "frame": 28,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5953728687018156
+    },
+    {
+      "frame": 29,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5926329176872969
+    },
+    {
+      "frame": 30,
+      "gyro_rotation_exactly_matches_recording": true,
+      "processing_ms": 0.5987240001559258
+    }
+  ],
+  "camera_queries": [
+    {
+      "frame": 0,
+      "measured_ns": 1500000000,
+      "samples_integrated": 0
+    },
+    {
+      "frame": 3,
+      "measured_ns": 1800000000,
+      "samples_integrated": 150
+    },
+    {
+      "frame": 7,
+      "measured_ns": 2200000000,
+      "samples_integrated": 350
+    },
+    {
+      "frame": 12,
+      "measured_ns": 2700000000,
+      "samples_integrated": 600
+    },
+    {
+      "frame": 20,
+      "measured_ns": 3500000000,
+      "samples_integrated": 1000
+    },
+    {
+      "frame": 30,
+      "measured_ns": 4500000000,
+      "samples_integrated": 1500
+    }
+  ],
+  "integrated_intervals": 1500,
+  "retained_snapshots": 16,
+  "median_processing_ms": 0.5981831345707178,
+  "maximum_processing_ms": 0.6586739327758551,
+  "original_native_result_sha256": "643b3d41e6e11398706ec8dd295a180356591d7e1ff7a82e95e272553a4a5918",
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001/no_rgb_direct_stop_conditioned_settling_maze_02",
+  "implementation_sha256": "c9e2d4962530f0426f02f7ab6b0053baf9d6e21355294f4366d7bcb13a3c722e",
+  "every_fast_packet_processed": true,
+  "missing_gyro_packets_permitted": false,
+  "gyro_used_as_visual_pose": false,
+  "visual_tracker_executed": false,
+  "camera_gap_tracking_supported": false,
+  "native_execution": false,
+  "high_level_model_loaded": false,
+  "continuous_execution_qualified": false,
+  "shared_host": true
+}

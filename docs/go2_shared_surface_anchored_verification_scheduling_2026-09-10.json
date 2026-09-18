@@ -1,0 +1,30 @@
+{
+  "status": "WAITING_FOR_ORIGINAL_REPLAY_COMPLETION",
+  "checked_at_utc": "2026-09-10T14:41:47.858157+00:00",
+  "waiter_pid": 2707248,
+  "waiter_created": 1789051304.83,
+  "waiter_command": [
+    ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "-"
+  ],
+  "original_replay_owner": {
+    "pid": 2705097,
+    "created": 1789049815.58,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/replay_go2_shared_surface_anchored_prefix_v1.py"
+    ]
+  },
+  "original_replay_launch_sha256": "3b2c3d3650ebefc2e314dab4de107877cc2dc805bed43bf5b190422bc6f4d97d",
+  "checker_source_count": 1994,
+  "checker_source_sha256": {
+    "scripts/verify_go2_shared_surface_anchored_prefix_v1.py": "6bbc8709e3cbf29c6af16777e71f82159a638c8e420a5790b591f29b368cdb6d",
+    "lewm/tests/test_shared_surface_anchored_verification_development.py": "2a91fc285309040d2e9a2c9079525a9def18493d897b3871945addc77ff35aef",
+    "docs/go2_shared_surface_anchored_verification_v1_2026-09-10.md": "5f476332f0dd4dd924d6080bda576dd18e24d422b2a0b43c4fbfdc2ae336eb6d"
+  },
+  "checker_output": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/go2_shared_surface_anchored_prefix_verification_2026-09-10.json",
+  "maximum_wait_s": 7200,
+  "automatic_retry": false,
+  "model_inference": false,
+  "native_execution": false
+}

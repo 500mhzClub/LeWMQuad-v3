@@ -1,0 +1,17 @@
+{
+  "status": "INDEPENDENT_LAYOUT_00_REACTIVE_QUEUED",
+  "pid": 3140904,
+  "created": 1789257654.51,
+  "waiting_for_pid": 3131637,
+  "waiting_for_created": 1789253560.06,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "layout_index": 0,
+  "mode": "reactive",
+  "model": null,
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_reactive_no_model_v1_attempt_001",
+  "start_requires_operational_completion": true,
+  "start_requires_scientific_success": false,
+  "automatic_retry": false,
+  "serial_native_and_audit_jobs": true
+}

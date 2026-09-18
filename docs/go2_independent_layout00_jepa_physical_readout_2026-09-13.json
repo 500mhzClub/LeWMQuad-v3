@@ -1,0 +1,544 @@
+{
+  "status": "INDEPENDENT_LAYOUT00_JEPA_PHYSICAL_READOUT_FULL_AUDIT_PENDING",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001",
+  "case": "independent_00_frozen_reference_seed_2026091001_full_jepa",
+  "model_name": "seed_2026091001_full_jepa",
+  "model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "layout_index": 0,
+  "collection": {
+    "status": "RESIDUAL_ANCHORED_CONTINUATION_MAZE_TERMINAL_AUDIT_REQUIRED",
+    "layout_index": 0,
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "schedule_terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+    "terminal_zero_ticks": 10,
+    "setup_admitted": true,
+    "setup_checked": true,
+    "departure_present": true,
+    "command_ticks": 3449,
+    "completed_ticks": 3449,
+    "physics_samples": 173200,
+    "rgbd_frames": 3450,
+    "auxiliary_frames": 3450,
+    "decisions": 3450,
+    "mission_receipt": {
+      "frame": 3439,
+      "measured_ns": 345400000000,
+      "phase": "RETURN",
+      "phase_transition": null,
+      "evaluated_phase": "RETURN",
+      "evaluated_goal_initial_body_xy_m": [
+        0.0,
+        0.0
+      ],
+      "active_goal_initial_body_xy_m": [
+        0.0,
+        0.0
+      ],
+      "observed_goal_distance_m": 0.029425258750166453,
+      "quiet_intervals": 10,
+      "hold_required": true,
+      "arrival_confirmed_this_frame": true,
+      "arrivals": [
+        {
+          "phase": "OUTBOUND",
+          "frame": 2061,
+          "measured_ns": 207600000000,
+          "target_initial_body_xy_m": [
+            0.0,
+            2.6
+          ],
+          "observed_position_initial_body_xy_m": [
+            -0.008502666502004241,
+            2.5789678052049627
+          ],
+          "observed_distance_m": 0.02268586686773733,
+          "quiet_intervals": 10,
+          "native_verified": false
+        },
+        {
+          "phase": "RETURN",
+          "frame": 3439,
+          "measured_ns": 345400000000,
+          "target_initial_body_xy_m": [
+            0.0,
+            0.0
+          ],
+          "observed_position_initial_body_xy_m": [
+            0.017591097596361592,
+            -0.023588114334756154
+          ],
+          "observed_distance_m": 0.029425258750166453,
+          "quiet_intervals": 10,
+          "native_verified": false
+        }
+      ],
+      "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+      "failure": null,
+      "global_navigation_ticks": 8000,
+      "controller_state_reset_required": false,
+      "observed_map_reset_required": false,
+      "native_state_used": false,
+      "verified_round_trip": false,
+      "measured_settling_required": true,
+      "observed_settling": {
+        "previous_frame": 3438,
+        "current_frame": 3439,
+        "measured_ns": 345400000000,
+        "previous_position_initial_body_m": [
+          0.017557630701787803,
+          -0.023377459006217707,
+          -0.008147794852414413
+        ],
+        "current_position_initial_body_m": [
+          0.017591097596361592,
+          -0.023588114334756154,
+          -0.008111526466209322
+        ],
+        "observed_interval_speed_m_s": 0.002163587213679537,
+        "maximum_observed_interval_speed_m_s": 0.05,
+        "measured_motion_quiet": true,
+        "motion_source": "consecutive_admitted_visual_positions_in_floor_reference",
+        "continuous_speed_bound": false,
+        "pose_uncertainty_calibrated": false,
+        "native_state_used": false,
+        "command_integrated_position": false,
+        "previous_boundary_measured_quiet": true,
+        "both_boundaries_measured_quiet": true,
+        "first_quiet_observation_starts_dwell": true,
+        "previous_boundary_quiet_under_zero_request": true,
+        "preceding_interval_zero_requested": true,
+        "zero_request_boundary_required_before_dwell": true
+      }
+    },
+    "navigation_ticks": 8000,
+    "tracker_required_for_commands": true,
+    "additional_auxiliary_rgb_for_motion": true,
+    "native_state_used_for_commands": false,
+    "navigation_qualified": false,
+    "measured_floor_transport_enabled": true,
+    "residual_first_interval_feasibility_fallback_enabled": true,
+    "residual_hold_feasibility_enabled": true,
+    "residual_anchored_continuation_enabled": true,
+    "renderer_witnesses_recorded": true,
+    "storage_initial_free_bytes": 537146073088,
+    "storage_allowance_bytes": 30064771072,
+    "storage_persistence_headroom_bytes": 1073741824
+  },
+  "physical_evaluation": {
+    "arrival_windows": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 2061,
+        "end_sample": 103799,
+        "maximum_goal_distance_m": 0.01754423350975224,
+        "maximum_speed_m_s": 0.032156064869579275,
+        "native_one_second_arrival_and_quiet_pass": true
+      },
+      {
+        "phase": "RETURN",
+        "frame": 3439,
+        "end_sample": 172699,
+        "maximum_goal_distance_m": 0.030147070813264613,
+        "maximum_speed_m_s": 0.016617016068703833,
+        "native_one_second_arrival_and_quiet_pass": true
+      }
+    ],
+    "outbound_traversal": {
+      "crossings": [
+        {
+          "sample_index": 5186,
+          "from_cell": [
+            -1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 10441,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            0,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 25167,
+          "from_cell": [
+            0,
+            1
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 32291,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            -1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 38013,
+          "from_cell": [
+            -1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 49739,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 54503,
+          "from_cell": [
+            1,
+            0
+          ],
+          "to_cell": [
+            1,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 77090,
+          "from_cell": [
+            1,
+            1
+          ],
+          "to_cell": [
+            1,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 82793,
+          "from_cell": [
+            1,
+            2
+          ],
+          "to_cell": [
+            0,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 96805,
+          "from_cell": [
+            0,
+            2
+          ],
+          "to_cell": [
+            -1,
+            2
+          ],
+          "declared_open_edge": true
+        }
+      ],
+      "invalid_crossings": [],
+      "visited_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "loop_erased_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          -1,
+          2
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "maximum_native_step_m": 0.00046772612064781337,
+      "native_step_bound_pass": true,
+      "evaluator_only": true,
+      "collision_clearance_certified": false
+    },
+    "return_traversal": {
+      "crossings": [
+        {
+          "sample_index": 112970,
+          "from_cell": [
+            -1,
+            2
+          ],
+          "to_cell": [
+            0,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 126235,
+          "from_cell": [
+            0,
+            2
+          ],
+          "to_cell": [
+            1,
+            2
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 134319,
+          "from_cell": [
+            1,
+            2
+          ],
+          "to_cell": [
+            1,
+            1
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 145768,
+          "from_cell": [
+            1,
+            1
+          ],
+          "to_cell": [
+            1,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 153055,
+          "from_cell": [
+            1,
+            0
+          ],
+          "to_cell": [
+            0,
+            0
+          ],
+          "declared_open_edge": true
+        },
+        {
+          "sample_index": 165339,
+          "from_cell": [
+            0,
+            0
+          ],
+          "to_cell": [
+            -1,
+            0
+          ],
+          "declared_open_edge": true
+        }
+      ],
+      "invalid_crossings": [],
+      "visited_cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "loop_erased_cells": [
+        [
+          -1,
+          2
+        ],
+        [
+          0,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "maximum_native_step_m": 0.0003927503960346725,
+      "native_step_bound_pass": true,
+      "evaluator_only": true,
+      "collision_clearance_certified": false
+    },
+    "physically_retraced_outbound_route": true,
+    "terminal_native_quiet_pass": true,
+    "native_round_trip_candidate_pass": true,
+    "verified_round_trip": false,
+    "requires_raw_sensor_command_and_visibility_audit": true,
+    "evaluator_only": true,
+    "controller_native_state_access": false,
+    "independent_navigation_claim": false
+  },
+  "recorded_physics_contact_flags": 0,
+  "closed_artifacts": {
+    "independent_00_frozen_reference_seed_2026091001_full_jepa/result.json": {
+      "sha256": "9468747fdd6a595822cf67e8c55017362959d0cdb6934e97b8ad2684768908dd",
+      "bytes": 3783
+    },
+    "independent_00_frozen_reference_seed_2026091001_full_jepa/physics_trace.npz": {
+      "sha256": "b76279e9db4ff45bc5a30df11946e03a406b889d4ad6151535d7f2e2708fad8e",
+      "bytes": 26402129
+    }
+  },
+  "evaluator": "scripts.stop_conditioned_independent_maze_pipeline_development.evaluate",
+  "evaluator_seconds": 0.32501742895692587,
+  "full_raw_sensor_command_visibility_audit_complete": false,
+  "verified_round_trip": false,
+  "independent_maze_replicates": 1,
+  "physics_paused_during_compute": true,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false,
+  "native_trajectory_descriptives": {
+    "metric": "Sum of consecutive 2 ms native XY position distances, including lateral gait motion; not a shortest-path efficiency score.",
+    "phases": [
+      {"phase": "OUTBOUND", "first_sample": 749, "last_sample": 103799, "simulation_duration_s": 206.10000000000002, "native_xy_path_length_m": 11.737782266520334},
+      {"phase": "RETURN", "first_sample": 103799, "last_sample": 172699, "simulation_duration_s": 137.79999999999995, "native_xy_path_length_m": 8.107923009819501}
+    ],
+    "total_to_return_arrival_simulation_s": 343.9,
+    "total_native_xy_path_length_m": 19.845705276339835,
+    "isolated_memory_effect_established": false
+  },
+  "collection_timing_descriptives": {
+    "source": "independent_00_frozen_reference_seed_2026091001_full_jepa_collection_resources.jsonl",
+    "metric": "Recorded acquisition plus controller wall time; excludes intervening persistence and other iteration overhead.",
+    "samples": 3450,
+    "median_ms": 770.9837534930557,
+    "p95_ms": 1351.3200140674599,
+    "max_ms": 1753.133205929771,
+    "samples_over_100ms": 3450,
+    "collection_wall_s": 3063.772294750903
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "status": "SUPERVISED_NEGATIVE_WITH_COMPLETED_RAW_AUDIT_AND_TERMINAL_SOURCE_CHECK_FAILURE",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001",
+  "failure": {
+    "reason": "ValueError('source/evidence identity changed: lewm/commitment_contact_controller_development.py')",
+    "automatic_retry": false,
+    "original_evidence_preserved": true
+  },
+  "audit": {
+    "raw_sensor_reconstruction_pass": true,
+    "additional_auxiliary_rgb_reconstructed": true,
+    "raw_model_command_replay_pass": true,
+    "raw_command_audit_pass": true,
+    "model_state_unchanged": true,
+    "strict_physical_visibility_pass": true,
+    "verified_round_trip": false,
+    "hard_measurement_failed_frames": []
+  },
+  "readout": {
+    "schedule_terminal": "MISSION_TICK_BUDGET_EXHAUSTED",
+    "native_physics_samples": 401400,
+    "native_contact_samples": 0,
+    "observed_arrivals": [],
+    "native_arrival_windows": []
+  },
+  "closed_artifact_sha256": {
+    "failure.json": "313b0275956e48b38fe76a8c487e2163691a98328e1a1ae0729ed1a7fde23236",
+    "independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_audit.json": "56c13fc76e5ae3f147a5fd65519a3a3d43ff02778ae228e4f3d0b034a6132ad6",
+    "independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_readout.json": "0063b60a1a4571d09d3c17a65bfe8da9ad30975575f1ba27403c2fe034bf62a1"
+  },
+  "original_failure_retained": true,
+  "native_simulation_repeated": false
+}

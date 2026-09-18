@@ -1,0 +1,4781 @@
+{
+  "status": "COMPLETE",
+  "source_sha256": "0c0a27f178e0cf8a5bc1c6159ce53ec1bd5043a7c9cb084e441ce91b17634b0b",
+  "summaries": {
+    "train": {
+      "action": {
+        "point_regret_mm": 0.7676065403266131,
+        "scan_regret_deg": 0.0
+      },
+      "no_future_action": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "persistence": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "command_history": {
+        "point_regret_mm": 0.15278803466428625,
+        "scan_regret_deg": 0.0
+      },
+      "zero_motion": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "observed_future": {
+        "point_regret_mm": 0.4126841862068443,
+        "scan_regret_deg": 0.0
+      }
+    },
+    "geometry_transfer": {
+      "action": {
+        "point_regret_mm": 1.048132855229598,
+        "scan_regret_deg": 0.0
+      },
+      "no_future_action": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "persistence": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "command_history": {
+        "point_regret_mm": 0.15278803466428625,
+        "scan_regret_deg": 0.0
+      },
+      "zero_motion": {
+        "point_regret_mm": 0.8734043650772128,
+        "scan_regret_deg": 2.015064933560768
+      },
+      "observed_future": {
+        "point_regret_mm": 1.2730088543231752,
+        "scan_regret_deg": 0.0
+      }
+    }
+  },
+  "decisions": [
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.30117907695137447
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 1.0674539805450856
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 2.6236899945737413
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 3.002698775340318
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.5716262406643422
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.30117907695137447
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 1.0674539805450856
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.8094126364225629
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.6521781472578758
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.30117907695137447
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 1.0674539805450856
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.8094126364225629
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.8094126364225629
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.6850767356563767
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.6850767356563767
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.5015127025167496
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.5015127025167496
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.086353920148609
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.086353920148609
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.136621567509267
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.136621567509267
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.8911825986487876
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.8911825986487876
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.2821221587774869
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.1941883290745572
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.30117907695137447
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.47185278536357456
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.1143792791393214
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 1.0674539805450856
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.0206261584997933
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.9944244949543222
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.2691282512360806
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 2.230571461867156
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "hold",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.6454919450578356
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.8338312200349141
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.006459254482116261
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.502657318999622
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9216834473062219
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.9173391062876215
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "left_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.086353920148609
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.570014638240802
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": -0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 2.6236899945737413
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 2.136621567509267
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.7131067809498524
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.0,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 3.002698775340318
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.5716262406643422
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        0
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 0.820936279771034
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "point",
+      "angle_rad": 0.7853981633974483,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 1.5716262406643422
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8846857691460375
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": -0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        2
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "action",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "no_future_action",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "persistence",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "command_history",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "zero_motion",
+      "chosen_local_indices": [
+        0,
+        1,
+        2
+      ],
+      "expected_regret": 1.8669815655214903
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix": "right_turn",
+      "kind": "scan",
+      "angle_rad": 0.5235987755982988,
+      "arm": "observed_future",
+      "chosen_local_indices": [
+        1
+      ],
+      "expected_regret": 0.0
+    }
+  ],
+  "subtract_persistence_readout_diagnostic": {
+    "train": {
+      "action": {
+        "xy_rmse_mm": 5.582069140587117,
+        "yaw_rmse_deg": 2.178065759241212
+      },
+      "no_future_action": {
+        "xy_rmse_mm": 7.296671960685953,
+        "yaw_rmse_deg": 2.977203801754416
+      },
+      "observed_future": {
+        "xy_rmse_mm": 5.269618027007078,
+        "yaw_rmse_deg": 1.7408059566123524
+      }
+    },
+    "geometry_transfer": {
+      "action": {
+        "xy_rmse_mm": 9.17370854477732,
+        "yaw_rmse_deg": 1.122268733471486
+      },
+      "no_future_action": {
+        "xy_rmse_mm": 12.14403055989232,
+        "yaw_rmse_deg": 1.8112801883742744
+      },
+      "observed_future": {
+        "xy_rmse_mm": 10.052093219159525,
+        "yaw_rmse_deg": 1.4845544908734045
+      }
+    }
+  },
+  "maximum_corresponding_motion_label_spread_across_four_geometries": 0.0,
+  "task_definition": "point goals 0.25 m away at -45/0/+45 degrees; scan goals -30/+30 degrees; uniform exact ties",
+  "post_hoc_exploratory": true,
+  "calibration_adopted": false,
+  "new_model_execution": false,
+  "new_navigation": false,
+  "limitations": [
+    "tiny pulse branches; three candidates; dependent goals and histories",
+    "static 500-ms endpoint cost, not the current delayed eight-horizon controller",
+    "corresponding physical outcomes repeat across geometries; no geometry-dependent motion advantage test"
+  ]
+}

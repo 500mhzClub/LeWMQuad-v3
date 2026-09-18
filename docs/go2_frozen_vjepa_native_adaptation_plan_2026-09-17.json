@@ -1,0 +1,76 @@
+{
+  "schema": "frozen_vjepa_native_adaptation.v1",
+  "arms": [
+    "action",
+    "no_future_action"
+  ],
+  "epochs": 24,
+  "effective_batch": 16,
+  "microbatch": 16,
+  "seed": 2026091704,
+  "samples": 3518,
+  "recordings": 138,
+  "frame_paths": 5552,
+  "max_feature_cache_bytes": 8732540928,
+  "feature_storage": "RAM only, normalized FP16",
+  "encoder_precision": "float32",
+  "predictor_precision": "bf16 autocast with float32 loss",
+  "objective": "one-step dense L1 of layer-normalized visual tokens",
+  "native_horizon_ms": 500,
+  "context_offsets_ms": [
+    -1000,
+    -500,
+    0
+  ],
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "gradient_clip": 1.0
+  },
+  "initialization": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/factorial_v1/seed_2026080901/seed_2026080901_rgb_rollout_epoch21.pt",
+  "initialization_sha256": "75e7a8f5eb5416100dd91fdd07c6aeae1c8fa2255ef189bfde2a5ce300f881b4",
+  "source_sha256": "58bc65886332d624b673a62e41f2cc89e7f86b111c60fafd69b4861321862a68",
+  "samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "control_normalization": "unchanged historical training-only statistics",
+  "input_difference": "no_future_action sets the future command block to zero; past control and RGB unchanged",
+  "checkpoint_rule": "fixed final epoch; no selection using native transfer outcomes",
+  "resources": {
+    "gpu": "AMD Radeon AI PRO R9700",
+    "torch": "2.12.0+rocm7.2",
+    "gpu_total_bytes": 34208743424
+  },
+  "parallelism": "one GPU process, paired arms interleaved on identical batches; four CPU threads",
+  "benchmark": [
+    {
+      "microbatch": 4,
+      "step_seconds": 0.06668129889294505,
+      "samples_per_second": 59.986833886092825,
+      "peak_gpu_bytes": 1860710400,
+      "status": "PASS"
+    },
+    {
+      "microbatch": 8,
+      "step_seconds": 0.12604315299540758,
+      "samples_per_second": 63.47032591521637,
+      "peak_gpu_bytes": 3385732608,
+      "status": "PASS"
+    },
+    {
+      "microbatch": 16,
+      "step_seconds": 0.24919941695407033,
+      "samples_per_second": 64.20560768386125,
+      "peak_gpu_bytes": 6447159808,
+      "status": "PASS"
+    }
+  ],
+  "no_simulation": true,
+  "encoder_frozen": true,
+  "new_collection": false,
+  "limitations": [
+    "native training-role data only; exposed transfer panel remains development",
+    "one preselected initialization/seed",
+    "predictor adaptation does not establish JEPA representation-learning benefit",
+    "single-step native adaptation of a historically rollout-trained initialization"
+  ]
+}

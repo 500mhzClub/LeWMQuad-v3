@@ -1,0 +1,27 @@
+{
+  "status": "CONFIRMED_TRACE_STOP_PROFILER_TERMINATION",
+  "utc": "2026-09-11T18:04:42.306384+00:00",
+  "profiler_owner": {
+    "pid": 2885638,
+    "created": 1789148732.81,
+    "command": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/tools/go2_py_spy_0_4_2_v1/py-spy",
+      "record",
+      "--format",
+      "speedscope",
+      "--output",
+      "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_body_projected_external_sampling_v1_attempt_001/profile.json",
+      "--rate",
+      "100",
+      "--idle",
+      "--threads",
+      "--full-filenames",
+      "--pid",
+      "2885366"
+    ]
+  },
+  "signal": "SIGTERM",
+  "graceful_interrupt_did_not_release_tracee": true,
+  "native_job_touched": false,
+  "automatic_retry": false
+}

@@ -1,0 +1,44 @@
+{
+  "schema": "all_phase_training_inputs_scope_correction.v1",
+  "checker_result_sha256": "ef48950b7987eaf9310ba8124a00c2e6e13c9b84b7cda6a362ac7ddb6ecd63fb",
+  "checker_launch_sha256": "b8eb7241b54842dd10d9a55d97752a6ad8f4e4514e8bcf5e32b4551e3da1e090",
+  "checker_artifact_sha256": {
+    "launch.json": "b8eb7241b54842dd10d9a55d97752a6ad8f4e4514e8bcf5e32b4551e3da1e090",
+    "tensor_index.json": "4b98308745d8b19b79b4ec94329c4c5cfefb387693625bb544196fe770b43baf",
+    "model_contract_checks.json": "c1df43a8d08d956a26b5c61fc360a929013b4ee159717a10596903c39f24b8dc"
+  },
+  "checker_protocol_sha256": "522f53ab8082b0c205b84ddedabe4d750e5b0f91c155d3b86b9e7405682cc922",
+  "stream_source_sha256": "302a230c16196cf685a5ffafe40cc06402388c8b05cb017e736f4b1b25a7a5ef",
+  "checker_source_sha256": "74259e5db970b165b046e2b690f426ce71f2363a1f3afb3c1375efedea5d72b6",
+  "discrepancy": "Two unqualified future-image flags were inherited from the parent target derivation and incorrectly describe this checker.",
+  "preserved_inherited_launch_fields": {
+    "future_rgb_materialization": false,
+    "future_rgb_materialized": false
+  },
+  "actual_current_checker_scope": {
+    "future_rgb_materialization": true,
+    "future_rgb_materialized": true,
+    "private_training_future_materialization": true,
+    "geometry_transfer_future_materialization": false,
+    "inference_future_packet_reads": 0,
+    "training_only_future_packet_reads": 28444,
+    "past_packet_reads_including_separate_inference_and_training_paths": 32080
+  },
+  "scope_evidence": {
+    "context_slots": 4800,
+    "materialized_training_contexts": 4010,
+    "original_training_inputs_exact": 408,
+    "unique_policy_leaves": 4694,
+    "all_access_receipts_checked": true,
+    "all_scoped_paths_match_bound_training_policy_leaves": true,
+    "all_source_and_output_bindings_verified": true,
+    "optimizer_updates": 0,
+    "parameter_updates": 0
+  },
+  "original_artifacts_modified": false,
+  "scientific_definition_changed": false,
+  "prospective_protocol_already_required_private_training_futures": true,
+  "verification_scope": "Bound source/output/policy identities, every saved reader scope and original input witness; no second full tensor materialization or model-gradient computation.",
+  "navigation_qualified": false,
+  "matched_retraining_completed": false
+}

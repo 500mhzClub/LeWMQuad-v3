@@ -1,0 +1,251 @@
+{
+  "status": "COMPLETE",
+  "epochs": 8,
+  "updates_per_arm": 1760,
+  "coefficient": 0.773472095001766,
+  "histories": [
+    {
+      "epoch": 0,
+      "updates_per_arm": 220,
+      "epoch_s": 231.47096713399515,
+      "elapsed_s": 1074.5837366459891,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.2239779622006511,
+          "log_embedding_mse": 0.32160676274535466,
+          "objective": 0.2239779622006511
+        },
+        "metric_action": {
+          "dense_l1": 0.4261884108702522,
+          "log_embedding_mse": 1.175961417796735,
+          "objective": 1.3357617252587324
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.27042000255779897,
+          "log_embedding_mse": 0.5236596351085975,
+          "objective": 0.27042000255779897
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.44350357302011856,
+          "log_embedding_mse": 1.4380196141139427,
+          "objective": 1.5557715818921296
+        }
+      }
+    },
+    {
+      "epoch": 1,
+      "updates_per_arm": 440,
+      "epoch_s": 231.66903020301834,
+      "elapsed_s": 1306.25288499007,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.22266773553379834,
+          "log_embedding_mse": 0.31569735669425564,
+          "objective": 0.22266773553379834
+        },
+        "metric_action": {
+          "dense_l1": 0.4186685207115106,
+          "log_embedding_mse": 0.5621669279912306,
+          "objective": 0.8534889368593456
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.26878397316672437,
+          "log_embedding_mse": 0.5137470474698586,
+          "objective": 0.26878397316672437
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.43506256426986883,
+          "log_embedding_mse": 0.7660418524194537,
+          "objective": 1.0275745429119785
+        }
+      }
+    },
+    {
+      "epoch": 2,
+      "updates_per_arm": 660,
+      "epoch_s": 231.6476186888758,
+      "elapsed_s": 1537.9006182099693,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.22018376607797308,
+          "log_embedding_mse": 0.31221238064996354,
+          "objective": 0.22018376607797308
+        },
+        "metric_action": {
+          "dense_l1": 0.4083437259526602,
+          "log_embedding_mse": 0.39485774106637805,
+          "objective": 0.7137551635012429
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.26634652667793784,
+          "log_embedding_mse": 0.49857669550292255,
+          "objective": 0.26634652667793784
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.426626277247771,
+          "log_embedding_mse": 0.6392682729423419,
+          "objective": 0.9210824295836053
+        }
+      }
+    },
+    {
+      "epoch": 3,
+      "updates_per_arm": 880,
+      "epoch_s": 231.76219846587628,
+      "elapsed_s": 1769.6629272960126,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.217286129289896,
+          "log_embedding_mse": 0.30092318345024344,
+          "objective": 0.217286129289896
+        },
+        "metric_action": {
+          "dense_l1": 0.4001959151270174,
+          "log_embedding_mse": 0.31867588025524646,
+          "objective": 0.6466828088586882
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.263590430030774,
+          "log_embedding_mse": 0.4897197302665949,
+          "objective": 0.263590430030774
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.42134449063816687,
+          "log_embedding_mse": 0.508739826301745,
+          "objective": 0.8148405387904442
+        }
+      }
+    },
+    {
+      "epoch": 4,
+      "updates_per_arm": 1100,
+      "epoch_s": 231.74053960479796,
+      "elapsed_s": 2001.4035808010958,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.2166525211403355,
+          "log_embedding_mse": 0.298399866118629,
+          "objective": 0.2166525211403355
+        },
+        "metric_action": {
+          "dense_l1": 0.39405558570465493,
+          "log_embedding_mse": 0.2758231965942502,
+          "objective": 0.6073971256876344
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.2610678188396896,
+          "log_embedding_mse": 0.48953546882692284,
+          "objective": 0.2610678188396896
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.41609486109021715,
+          "log_embedding_mse": 0.4825946722198712,
+          "objective": 0.789368360506126
+        }
+      }
+    },
+    {
+      "epoch": 5,
+      "updates_per_arm": 1320,
+      "epoch_s": 231.7965436100494,
+      "elapsed_s": 2233.2002346820664,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.21343238827110084,
+          "log_embedding_mse": 0.29213703211530356,
+          "objective": 0.21343238827110084
+        },
+        "metric_action": {
+          "dense_l1": 0.38803138635997547,
+          "log_embedding_mse": 0.23448279985417828,
+          "objective": 0.569397285046938
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.2582414246642366,
+          "log_embedding_mse": 0.46532732632907026,
+          "objective": 0.2582414246642366
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.4130624196216286,
+          "log_embedding_mse": 0.42202059983055046,
+          "objective": 0.7394835669388481
+        }
+      }
+    },
+    {
+      "epoch": 6,
+      "updates_per_arm": 1540,
+      "epoch_s": 231.79222409799695,
+      "elapsed_s": 2464.992570570903,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.2129409265846878,
+          "log_embedding_mse": 0.2900411502382442,
+          "objective": 0.2129409265846878
+        },
+        "metric_action": {
+          "dense_l1": 0.38238727102705267,
+          "log_embedding_mse": 0.22061024910350494,
+          "objective": 0.5530231363770635
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.2577361146823597,
+          "log_embedding_mse": 0.48002244305922404,
+          "objective": 0.2577361146823597
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.4091463164045704,
+          "log_embedding_mse": 0.39612623405361663,
+          "objective": 0.715538895421573
+        }
+      }
+    },
+    {
+      "epoch": 7,
+      "updates_per_arm": 1760,
+      "epoch_s": 231.8308033850044,
+      "elapsed_s": 2696.823488577036,
+      "losses": {
+        "dense_action": {
+          "dense_l1": 0.2096095973283747,
+          "log_embedding_mse": 0.28261272798145676,
+          "objective": 0.2096095973283747
+        },
+        "metric_action": {
+          "dense_l1": 0.3785785812251333,
+          "log_embedding_mse": 0.21162594535460588,
+          "objective": 0.542265338525642
+        },
+        "dense_no_future_action": {
+          "dense_l1": 0.2553420593584038,
+          "log_embedding_mse": 0.4674051912282257,
+          "objective": 0.2553420593584038
+        },
+        "metric_no_future_action": {
+          "dense_l1": 0.40621517606253243,
+          "log_embedding_mse": 0.37930538491338,
+          "objective": 0.6995972975741197
+        }
+      }
+    }
+  ],
+  "encoding": {
+    "paths": 5552,
+    "unique": 3979,
+    "seconds": 838.0572134610265,
+    "first_image_batch_vs_single_mse": 0.0,
+    "cache_bytes": 8732540928
+  },
+  "wall_s": 2696.823613828048,
+  "peak_gpu_allocated_bytes": 7366099456,
+  "checkpoint_sha256": {
+    "dense_action": "0cff7bb569164387241456651613e6778ef9a28dae55a143ee72ed4529c4db6d",
+    "metric_action": "cb5fc8fcdc153ac9868ae238bd5d445aba75ca1c85cbb3d78b5c34940ceaac68",
+    "dense_no_future_action": "d6058f7caeac3cc934bf1526db0d1f2a71e088f1ce93d27007a3fe295d7f6395",
+    "metric_no_future_action": "a8558004bd0af0446f73c3a9c96f6085e0c692e291f008f5397286b1bb6a23c8"
+  },
+  "encoder_frozen": true,
+  "metric_frozen": true,
+  "no_transfer_data_used": true,
+  "navigation_tested": false
+}

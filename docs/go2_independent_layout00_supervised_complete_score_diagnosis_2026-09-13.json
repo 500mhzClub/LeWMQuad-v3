@@ -1,0 +1,111 @@
+{
+  "status": "COMPLETE_RECORDED_SUPERVISED_SCORE_DIAGNOSIS",
+  "counts": {
+    "decisions": 8014,
+    "nonzero_translation_requests": 0,
+    "nonzero_yaw_requests": 187,
+    "analyzed_score_banks": 8000,
+    "reconstructed_final_selections": 8000,
+    "translation_feasible": 8000,
+    "hold_with_translation_feasible": 7813,
+    "forward_progress_advantage_outweighed_by_contact": 7813
+  },
+  "selected_actions": {
+    "None": 14,
+    "left_turn": 187,
+    "hold": 7813
+  },
+  "score_contracts": {
+    "causal_executed_waypoint_potential_minus_full_plan_contact": 8000
+  },
+  "modes": {
+    "WAYPOINT": 8000
+  },
+  "skipped": {
+    "no_selection": 14
+  },
+  "feasible_bank_sizes": {
+    "6": 8000
+  },
+  "thousand_frame_bins": {
+    "0": {
+      "None": 3,
+      "left_turn": 22,
+      "hold": 975,
+      "hold_with_translation_feasible": 975
+    },
+    "1": {
+      "hold": 976,
+      "hold_with_translation_feasible": 976,
+      "left_turn": 24
+    },
+    "2": {
+      "hold": 977,
+      "hold_with_translation_feasible": 977,
+      "left_turn": 23
+    },
+    "3": {
+      "hold": 976,
+      "hold_with_translation_feasible": 976,
+      "left_turn": 24
+    },
+    "4": {
+      "hold": 977,
+      "hold_with_translation_feasible": 977,
+      "left_turn": 23
+    },
+    "5": {
+      "hold": 976,
+      "hold_with_translation_feasible": 976,
+      "left_turn": 24
+    },
+    "6": {
+      "hold": 977,
+      "hold_with_translation_feasible": 977,
+      "left_turn": 23
+    },
+    "7": {
+      "hold": 976,
+      "hold_with_translation_feasible": 976,
+      "left_turn": 24
+    },
+    "8": {
+      "hold": 3,
+      "hold_with_translation_feasible": 3,
+      "None": 11
+    }
+  },
+  "first_translation_feasible_hold_frame": 4,
+  "last_translation_feasible_hold_frame": 8002,
+  "hold_over_forward_utility_gap_m": {
+    "count": 7813,
+    "minimum": 0.03659127310190872,
+    "maximum": 0.04167546137094289,
+    "mean": 0.039101010659317384,
+    "median": 0.039135295503639984
+  },
+  "forward_over_hold_progress_gain_m": {
+    "count": 7813,
+    "minimum": 0.014192639556061181,
+    "maximum": 0.014381370883435728,
+    "mean": 0.014298186524388993,
+    "median": 0.014296682189712185
+  },
+  "forward_over_hold_contact_penalty_m": {
+    "count": 7813,
+    "minimum": 0.050896048868632485,
+    "maximum": 0.05605653787689341,
+    "mean": 0.05339919718370638,
+    "median": 0.053413115093200396
+  },
+  "collection_sha256": "138d4c5578f122f73662d2fac8bc4960677149792de727f68ceeb724173a6ec5",
+  "decoded_decision_stream_sha256": "4ac3c0277d202d063655346f27b27589759a51e61b50a71f690ac01224f0f77c",
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001/independent_00_frozen_reference_seed_2026091001_full_supervised_rollout",
+  "wall_s": 88.7903731118422,
+  "native_execution": false,
+  "model_inference_executed": false,
+  "controller_replay_executed": false,
+  "alternative_trajectory_inferred": false,
+  "navigation_improvement_established": false,
+  "full_raw_audit_pending_at_preparation": true
+}

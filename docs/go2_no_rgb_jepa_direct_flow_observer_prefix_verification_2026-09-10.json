@@ -1,0 +1,23 @@
+{
+  "status": "NO_RGB_JEPA_DIRECT_FLOW_OBSERVER_PREFIX_BINDINGS_RECEIPTS_AND_BOUNDARY_FIT_VERIFIED",
+  "result_sha256": "55b60a844d230f7122ac0838402f78b22ef634aba64555ca4dbae044694d9131",
+  "source_count": 1918,
+  "artifact_sha256": {
+    "launch.json": "7b66fee5a29cf7611e095175e20fceac44e2e439dcd8336b3f69accac77c1ea6",
+    "context_decisions.jsonl.gz": "e9a20779d65ee36cb88efce8c03b7c90b50b3b8b04c7179494c7f193def33054",
+    "report.json": "cb7ecf8754b9528defa63f3d0034adfbd7871b7e89cf50c19a36c57b36240471"
+  },
+  "original_input_count": 5260,
+  "original_complete_visual_receipts_compared": 860,
+  "candidate_exact_original_frames": 859,
+  "first_changed_frame": 859,
+  "selected_camera": "auxiliary",
+  "inliers": 31,
+  "bridge_frames": 7,
+  "boundary_rigid_fit_rerun_from_saved_associations_and_replayed_gyro_witness": true,
+  "boundary_body_frame_rotation_and_composed_position_exact": true,
+  "gyro_sensor_integration_independently_rerun": false,
+  "full_controller_replayed": false,
+  "native_execution": false,
+  "navigation_qualified": false
+}

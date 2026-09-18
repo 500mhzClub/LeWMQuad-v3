@@ -1,0 +1,112 @@
+{
+  "pattern": [
+    [
+      0.16,
+      0.0,
+      0.45
+    ],
+    [
+      0.0,
+      0.0,
+      0.45
+    ],
+    [
+      0.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.2,
+      0.0,
+      0.0
+    ]
+  ],
+  "first_three_segment_durations_s": [
+    0.4,
+    0.4,
+    0.4
+  ],
+  "subsequent_forward_window_limit_s": 0.8,
+  "post_hoc_pattern_chosen_from_two_failures": true,
+  "matches": [
+    {
+      "condition": "jepa",
+      "layout_index": 0,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "restart_s": 138.602,
+      "forward_observation_duration_s": 0.8,
+      "full_800ms_forward_observed": true,
+      "peak_full_speed_m_s": 0.267268949653813,
+      "peak_horizontal_speed_m_s": 0.26316074414821994,
+      "forward_segment_ends_at_terminal_sample": false
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 1,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "restart_s": 109.80199999999999,
+      "forward_observation_duration_s": 0.4,
+      "full_800ms_forward_observed": false,
+      "peak_full_speed_m_s": 0.2944516509238919,
+      "peak_horizontal_speed_m_s": 0.2786779436918992,
+      "forward_segment_ends_at_terminal_sample": false
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 2,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout02_4800_v1_attempt_001",
+      "restart_s": 97.402,
+      "forward_observation_duration_s": 0.8,
+      "full_800ms_forward_observed": true,
+      "peak_full_speed_m_s": 0.28026342823730266,
+      "peak_horizontal_speed_m_s": 0.2675708151707422,
+      "forward_segment_ends_at_terminal_sample": false
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 2,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout02_4800_v1_attempt_001",
+      "restart_s": 246.602,
+      "forward_observation_duration_s": 0.8,
+      "full_800ms_forward_observed": true,
+      "peak_full_speed_m_s": 0.26751272883912786,
+      "peak_horizontal_speed_m_s": 0.2638161042130465,
+      "forward_segment_ends_at_terminal_sample": false
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 2,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout02_4800_v1_attempt_001",
+      "restart_s": 253.002,
+      "forward_observation_duration_s": 0.492,
+      "full_800ms_forward_observed": false,
+      "peak_full_speed_m_s": 0.3010297124632575,
+      "peak_horizontal_speed_m_s": 0.29126585794621784,
+      "forward_segment_ends_at_terminal_sample": true
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 3,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout03_4800_v1_attempt_001",
+      "restart_s": 146.602,
+      "forward_observation_duration_s": 0.8,
+      "full_800ms_forward_observed": true,
+      "peak_full_speed_m_s": 0.2646693915823827,
+      "peak_horizontal_speed_m_s": 0.2558495663090425,
+      "forward_segment_ends_at_terminal_sample": false
+    },
+    {
+      "condition": "jepa",
+      "layout_index": 3,
+      "root_name": "go2_post_training_transfer_jepa_noise_2mm_native_layout03_4800_v1_attempt_001",
+      "restart_s": 150.602,
+      "forward_observation_duration_s": 0.41200000000000003,
+      "full_800ms_forward_observed": false,
+      "peak_full_speed_m_s": 0.30039097632176137,
+      "peak_horizontal_speed_m_s": 0.28645116044957886,
+      "forward_segment_ends_at_terminal_sample": true
+    }
+  ],
+  "no_counterfactual_execution": true,
+  "no_causal_effect_established": true
+}

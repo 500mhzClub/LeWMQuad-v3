@@ -1,0 +1,90 @@
+{
+  "status": "PASS",
+  "metric_checks": {
+    "perfect": {
+      "target_interaction_mse": 0.6666666666666666,
+      "predicted_interaction_mse": 0.6666666666666666,
+      "interaction_error_mse": 0.0,
+      "error_over_zero_interaction": 0.0
+    },
+    "additive": {
+      "target_interaction_mse": 0.6666666666666666,
+      "predicted_interaction_mse": 0.0,
+      "interaction_error_mse": 0.6666666666666666,
+      "error_over_zero_interaction": 1.0
+    },
+    "half_interaction": {
+      "target_interaction_mse": 0.6666666666666666,
+      "predicted_interaction_mse": 0.16666666666666666,
+      "interaction_error_mse": 0.16666666666666666,
+      "error_over_zero_interaction": 0.25
+    }
+  },
+  "physical_scene_pairs": [
+    {
+      "role": "train",
+      "prefix_action": "hold",
+      "clusters": [
+        "cluster_00",
+        "cluster_01"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    },
+    {
+      "role": "train",
+      "prefix_action": "left_turn",
+      "clusters": [
+        "cluster_00",
+        "cluster_01"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    },
+    {
+      "role": "train",
+      "prefix_action": "right_turn",
+      "clusters": [
+        "cluster_00",
+        "cluster_01"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "prefix_action": "hold",
+      "clusters": [
+        "cluster_02",
+        "cluster_03"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "prefix_action": "left_turn",
+      "clusters": [
+        "cluster_02",
+        "cluster_03"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    },
+    {
+      "role": "geometry_transfer",
+      "prefix_action": "right_turn",
+      "clusters": [
+        "cluster_02",
+        "cluster_03"
+      ],
+      "all_eight_horizons_physical_motion_equal": true,
+      "max_abs_motion_difference": 0.0
+    }
+  ],
+  "contacts": 0.0,
+  "source_sha256": "1c86c45b074658e83472340a7b47c8c45f54bfa1dbee34d0e09d1089d426b098",
+  "new_training": false,
+  "new_simulation": false,
+  "interpretation": "Visual scene-action interaction is measurable separately from static scene identity; identical physical motions across scenes cannot establish obstacle-dependent physical dynamics."
+}

@@ -1,0 +1,41 @@
+{
+  "status": "PASS",
+  "training_sample_id": "balanced_start/case_47/frame_10",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_horizon_predictor_development.py": "367cb28a8ab4a68d92b51afc232b50fdeaaa496450a9bbaf0586b2b214bde317",
+    "lewm/horizon_conditioned_dense_predictor_development.py": "3e220a214e4e04d82d7b0ea265074e7fcbd8fd3a3711f4b4cb19fa549147f42d"
+  },
+  "parent_checkpoint_sha256": "e9399ecfaca28373ad7cdddc71e93c26226dfbe94ca098b87f792411ea8c6198",
+  "native_500ms_initial_output_max_abs_error": 0.0,
+  "post_target_command_invariance_horizons": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+  ],
+  "action_blind_retains_target_time": true,
+  "new_input_gradient_l1": [
+    0.2724757790565491,
+    0.2724757790565491,
+    0.2724757790565491,
+    0.2724757790565491,
+    0.2724757790565491,
+    0.2724757790565491,
+    1.6373271942138672
+  ],
+  "added_parameters": 2688,
+  "encoding": {
+    "paths": 4,
+    "unique": 4,
+    "seconds": 1.2525096009485424,
+    "first_image_batch_vs_single_mse": 0.0,
+    "cache_bytes": 6291456
+  },
+  "optimizer_steps": 0,
+  "transfer_used": false,
+  "new_navigation": false
+}

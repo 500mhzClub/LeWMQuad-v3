@@ -1,0 +1,227 @@
+{
+  "status": "COMPLETE",
+  "summaries": {
+    "raw_mse": {
+      "action": {
+        "trials": 2,
+        "transient_goal_visits": 1,
+        "final_within_goal": 0,
+        "contacts": 0,
+        "completed_budgets": 2,
+        "mean_final_xy_cm": 118.71027817629536
+      },
+      "no_future_action": {
+        "trials": 2,
+        "transient_goal_visits": 0,
+        "final_within_goal": 0,
+        "contacts": 2,
+        "completed_budgets": 0,
+        "mean_final_xy_cm": 13.597114111190924
+      }
+    },
+    "learned_metric": {
+      "action": {
+        "trials": 2,
+        "transient_goal_visits": 2,
+        "final_within_goal": 0,
+        "contacts": 0,
+        "completed_budgets": 2,
+        "mean_final_xy_cm": 3.160035190727023
+      },
+      "no_future_action": {
+        "trials": 2,
+        "transient_goal_visits": 0,
+        "final_within_goal": 0,
+        "contacts": 2,
+        "completed_budgets": 0,
+        "mean_final_xy_cm": 13.597114111190924
+      }
+    }
+  },
+  "cases": [
+    {
+      "case": 0,
+      "arm": "action",
+      "scene": "family_episode_026",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.018542211829503392,
+      "final_xy_error_m": 1.29278558443055,
+      "final_yaw_error_deg": 19.255060108880436,
+      "wall_s": 41.26021114503965,
+      "cost": "raw_mse",
+      "maximum_consecutive_goal_frames": 2,
+      "result_sha256": "20e4f1278b7859da8960219045ccce955104590a9e02c2220f84f842a079aad1"
+    },
+    {
+      "case": 1,
+      "arm": "no_future_action",
+      "scene": "family_episode_026",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 8,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.12410943420417288,
+      "final_yaw_error_deg": 48.22526784526229,
+      "wall_s": 22.12470618612133,
+      "cost": "raw_mse",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "2cac5f06b5b96ae2e2953a3808f4816acafd26a69e787442ea97ebb33dadb99c"
+    },
+    {
+      "case": 2,
+      "arm": "no_future_action",
+      "scene": "family_episode_003",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 9,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.14783284801964564,
+      "final_yaw_error_deg": 47.40582572706246,
+      "wall_s": 22.02838088106364,
+      "cost": "raw_mse",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "6cdc10fc52d5258131e6acc252dc3b5af125b85c5214e3990571d780081b8b5f"
+    },
+    {
+      "case": 3,
+      "arm": "action",
+      "scene": "family_episode_003",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 1.0814199790953571,
+      "final_yaw_error_deg": 3.2787671001090284,
+      "wall_s": 41.44461869611405,
+      "cost": "raw_mse",
+      "maximum_consecutive_goal_frames": 7,
+      "result_sha256": "a75f9d6141d2ab6164af2c6102ed0241f3d4771ff6288c301453439da231a704"
+    },
+    {
+      "case": 0,
+      "arm": "action",
+      "scene": "family_episode_026",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.029885941403726538,
+      "final_yaw_error_deg": 6.725333075281608,
+      "wall_s": 41.084886285010725,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 55,
+      "result_sha256": "699e5acaed1a9b1017488b326a2ee5c226ac3a3069ae31f2f56c49f6ec093ace"
+    },
+    {
+      "case": 1,
+      "arm": "no_future_action",
+      "scene": "family_episode_026",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 8,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.12410943420417288,
+      "final_yaw_error_deg": 48.22526784526229,
+      "wall_s": 22.275518456008285,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "43a239b777c11be334eeeb2c97ad5121965ff06eac79b938da5a3633837032bf"
+    },
+    {
+      "case": 2,
+      "arm": "no_future_action",
+      "scene": "family_episode_003",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 9,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.14783284801964564,
+      "final_yaw_error_deg": 47.40582572706246,
+      "wall_s": 21.32131253904663,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "a235d5c9d09d4428d306400c74772dca963d47ee308db62d265b3b8d60fd10e8"
+    },
+    {
+      "case": 3,
+      "arm": "action",
+      "scene": "family_episode_003",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.03331476241081392,
+      "final_yaw_error_deg": 8.055026376329632,
+      "wall_s": 39.967979583889246,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 30,
+      "result_sha256": "cc5cf65dc5851f05842005595f3fec7cb2d448e4aa1ca1d585415b4a676aea35"
+    }
+  ],
+  "matched_controls": [
+    {
+      "case": 0,
+      "initial_rgb_exact": true,
+      "first_raw_forecast_costs_match": true,
+      "blind_native_trajectory_exact": null
+    },
+    {
+      "case": 1,
+      "initial_rgb_exact": true,
+      "first_raw_forecast_costs_match": true,
+      "blind_native_trajectory_exact": true
+    },
+    {
+      "case": 2,
+      "initial_rgb_exact": true,
+      "first_raw_forecast_costs_match": true,
+      "blind_native_trajectory_exact": true
+    },
+    {
+      "case": 3,
+      "initial_rgb_exact": true,
+      "first_raw_forecast_costs_match": true,
+      "blind_native_trajectory_exact": null
+    }
+  ],
+  "plan_sha256": "f618a05096e0be10190c6c98b8c466aecba9770a433028efd872adcf1d4b7f23",
+  "figure": "docs/go2_dense_metric_goal_pilot_2026-09-17.png",
+  "new_native_trials": 4,
+  "encoder_and_predictors_unchanged": true,
+  "goal_cost_only_intervention": true,
+  "goal_pose_not_used_for_control": true,
+  "full_maze_navigation": false,
+  "hardware_validated": false,
+  "limitations": [
+    "two previously exposed related local tasks; single model and execution seed",
+    "goal-metric uses extra physical supervision; does not isolate JEPA objective",
+    "blind tie-randomization is not a strong reactive baseline",
+    "simulation paused during inference; not real-time qualification"
+  ]
+}

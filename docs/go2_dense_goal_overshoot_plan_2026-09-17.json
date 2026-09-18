@@ -1,0 +1,556 @@
+{
+  "source_sha256": "45908a38b0fb3ce420f3b76c2ac7f9a9f36fbd97f80eaf6de1db8eb9037eec46",
+  "sources": [
+    {
+      "case": 0,
+      "source": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_visual_goal_pilot_v1_attempt_002/case_00",
+      "scene": "family_episode_026",
+      "goal_trial": "family_episode_010",
+      "prefix_commands": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ]
+      ],
+      "original_decision": {
+        "observed_ns": 5000000000,
+        "action": "forward",
+        "action_index": 1,
+        "costs": [
+          0.4398495554924011,
+          0.34297460317611694,
+          0.5246042609214783,
+          0.47213149070739746,
+          0.5078858137130737,
+          0.5387740135192871
+        ],
+        "tied_indices": [
+          1
+        ],
+        "requested_commands": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ]
+        ],
+        "expected_applied_commands": [
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ]
+        ],
+        "forecast_horizon_ms": 500,
+        "commit_ticks": 5,
+        "planning_wall_s": 0.3699416699819267,
+        "tick": 35
+      },
+      "original_result_sha256": "20e4f1278b7859da8960219045ccce955104590a9e02c2220f84f842a079aad1",
+      "original_decisions_sha256": "66f6b60332a074193fc717768c198ef0e084369b7f5460bfc5c15b62aa7155ff"
+    },
+    {
+      "case": 3,
+      "source": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_visual_goal_pilot_v1_attempt_002/case_03",
+      "scene": "family_episode_003",
+      "goal_trial": "family_episode_089",
+      "prefix_commands": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.16,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ],
+      "original_decision": {
+        "observed_ns": 5000000000,
+        "action": "forward",
+        "action_index": 1,
+        "costs": [
+          0.37229403853416443,
+          0.33439773321151733,
+          0.5236433148384094,
+          0.47378286719322205,
+          0.5349229574203491,
+          0.5426144003868103
+        ],
+        "tied_indices": [
+          1
+        ],
+        "requested_commands": [
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ],
+          [
+            0.2,
+            0.0,
+            0.0
+          ]
+        ],
+        "expected_applied_commands": [
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ],
+          [
+            0.20000000298023224,
+            0.0,
+            0.0
+          ]
+        ],
+        "forecast_horizon_ms": 500,
+        "commit_ticks": 5,
+        "planning_wall_s": 0.35268425079993904,
+        "tick": 35
+      },
+      "original_result_sha256": "a75f9d6141d2ab6164af2c6102ed0241f3d4771ff6288c301453439da231a704",
+      "original_decisions_sha256": "e642065b08f0804490fd1806593a228198b562ef08602f36be6f93aa433ff8b6"
+    }
+  ],
+  "departure_frame": 35,
+  "actions": [
+    "hold",
+    "forward",
+    "left_arc",
+    "right_arc",
+    "left_turn",
+    "right_turn"
+  ],
+  "suffix_ticks": 5,
+  "branch_count": 12,
+  "post_hoc_failure_diagnostic": true,
+  "no_training": true,
+  "no_new_navigation_claim": true,
+  "metrics": [
+    "original predicted goal cost",
+    "actual normalized future-feature goal cost",
+    "actual XY and heading goal errors",
+    "native contact/stop"
+  ],
+  "matching": "exact prefix native poses/joints/commands and context RGB; forward successor reproduces original run",
+  "resources": {
+    "available_ram_gib": 72,
+    "output_free_gib": 3.4,
+    "root_free_gib": 1.2,
+    "competing_compute_jobs": 0
+  },
+  "execution": "four CPU-native workers, four distinct physical cores each; encoder scoring afterward on one GPU",
+  "bounds": "41 camera frames per branch; stop below 512 MiB output free space",
+  "limitations": [
+    "two post-hoc selected development states, not independent maze evaluations",
+    "single image goal; no policy or goal-cost changes during this diagnostic"
+  ]
+}

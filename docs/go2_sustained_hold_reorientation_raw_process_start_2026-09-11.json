@@ -1,0 +1,32 @@
+{
+  "status": "SUSTAINED_RAW_PREFIX_PROCESS_STARTED_INPUT_ADMISSION_PENDING",
+  "utc": "2026-09-11T08:28:45.969777+00:00",
+  "owner": {
+    "pid": 2813368,
+    "created": 1789115323.91,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_sustained_hold_reorientation_maze02_prefix_v1.py"
+    ]
+  },
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "source_sha256": {
+    "scripts/replay_go2_sustained_hold_reorientation_maze02_prefix_v1.py": "7ec00b474b3a83fd9a18d537e8e610f4460369a17a4c5905467944b4edb812bf"
+  },
+  "tests": {
+    "session_id": 72541,
+    "passed": 47,
+    "wall_s": 2.72,
+    "exit_code": 0
+  },
+  "source_preflight": {
+    "session_id": 88809,
+    "source_count": 1972,
+    "exit_code": 0,
+    "memory_available_bytes": 79450722304,
+    "artifact_free_bytes": 610514673664
+  },
+  "native_execution": false,
+  "raw_replay_completion_claimed": false
+}

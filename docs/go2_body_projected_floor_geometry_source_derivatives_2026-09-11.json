@@ -1,0 +1,117 @@
+{
+  "status": "BODY_PROJECTED_FLOOR_GEOMETRY_SOURCE_DERIVATIVES",
+  "target_file": "lewm/body_projected_floor_geometry_development.py",
+  "derivatives": [
+    {
+      "source": "lewm/frame_cached_floor_geometry_development.py",
+      "source_sha256": "e6cea641ac8fc2f4abfc741419c6c5ff10dd358e3d869310f3ab0231fbbf313e",
+      "node": "FloorFrameGeometry.floor_coverage",
+      "target": "BodyProjectedFloorGeometry.floor_coverage",
+      "replacements": [
+        [
+          "    yy, xx = np.indices((480, 640))\n",
+          ""
+        ],
+        [
+          "    optical = np.stack((depth*(xx+.5-320)/FOCAL, depth*(yy+.5-240)/FOCAL, depth), axis=-1)\n",
+          ""
+        ],
+        [
+          "body = optical@T[:3, :3].T+T[:3, 3]",
+          "body = self.body_projection(depth)"
+        ]
+      ]
+    },
+    {
+      "source": "lewm/frame_cached_floor_geometry_development.py",
+      "source_sha256": "e6cea641ac8fc2f4abfc741419c6c5ff10dd358e3d869310f3ab0231fbbf313e",
+      "node": "FloorFrameGeometry.sampled_floor_patch",
+      "target": "BodyProjectedFloorGeometry.sampled_floor_patch",
+      "replacements": [
+        [
+          "    yy,xx=np.indices((480,640))\n",
+          ""
+        ],
+        [
+          "    optical=np.stack((depth*(xx+.5-320)/FOCAL,depth*(yy+.5-240)/FOCAL,depth),axis=-1)\n",
+          ""
+        ],
+        [
+          "(optical@T[:3,:3].T+T[:3,3])",
+          "self.body_projection(depth)"
+        ]
+      ]
+    },
+    {
+      "source": "lewm/frame_cached_floor_geometry_development.py",
+      "source_sha256": "e6cea641ac8fc2f4abfc741419c6c5ff10dd358e3d869310f3ab0231fbbf313e",
+      "node": "FloorFrameGeometry.primary_floor_plane",
+      "target": "BodyProjectedFloorGeometry.primary_floor_plane",
+      "replacements": [
+        [
+          "points = measured_points(",
+          "points = self.measured_points("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/frame_cached_floor_geometry_development.py",
+      "source_sha256": "e6cea641ac8fc2f4abfc741419c6c5ff10dd358e3d869310f3ab0231fbbf313e",
+      "node": "FloorFrameGeometry.confirm_auxiliary_floor",
+      "target": "BodyProjectedFloorGeometry.confirm_auxiliary_floor",
+      "replacements": [
+        [
+          "points = measured_points(",
+          "points = self.measured_points("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/frame_cached_floor_geometry_development.py",
+      "source_sha256": "e6cea641ac8fc2f4abfc741419c6c5ff10dd358e3d869310f3ab0231fbbf313e",
+      "node": "FloorFrameGeometry.append_patch",
+      "target": "BodyProjectedFloorGeometry.append_patch",
+      "replacements": [
+        [
+          ";yy,xx=np.indices((480,640))",
+          ""
+        ],
+        [
+          "    optical=np.stack((depth*(xx+.5-320)/FOCAL,depth*(yy+.5-240)/FOCAL,depth),axis=-1)\n",
+          ""
+        ],
+        [
+          "(optical@T[:3,:3].T+T[:3,3])",
+          "self.body_projection(depth)"
+        ]
+      ]
+    },
+    {
+      "source": "lewm/current_primary_floor_plane_development.py",
+      "source_sha256": "4902b54ad0f2ae67974274b49e8792124f0a4dc90d272da85379ce730e5438f3",
+      "node": "measured_points",
+      "target": "BodyProjectedFloorGeometry.measured_points",
+      "replacements": [
+        [
+          "def measured_points(depth,",
+          "def measured_points(self, depth,"
+        ],
+        [
+          "yy, xx = np.indices((480, 640)); T = np.asarray(BODY_FROM_OPTICAL)",
+          "T = np.asarray(BODY_FROM_OPTICAL)"
+        ],
+        [
+          "    optical = np.stack((depth*(xx+.5-320)/FOCAL, depth*(yy+.5-240)/FOCAL, depth), axis=-1)\n",
+          ""
+        ],
+        [
+          "(optical@T[:3,:3].T+T[:3,3])",
+          "self.body_projection(depth)"
+        ]
+      ]
+    }
+  ],
+  "controller_integration_performed": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

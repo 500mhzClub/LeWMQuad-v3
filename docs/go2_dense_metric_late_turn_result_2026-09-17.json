@@ -1,0 +1,70 @@
+{
+  "status": "COMPLETE",
+  "groups": [
+    {
+      "case": 0,
+      "departure": 80,
+      "rows": [
+        {
+          "action": "hold",
+          "predicted_cost": 9.035361289978027,
+          "actual_image_cost": 2.9672493934631348,
+          "actual_raw_mse": 0.506528377532959,
+          "xy_error_cm": 2.550619549141251,
+          "yaw_error_deg": 3.6836458059638533,
+          "within_goal": true,
+          "physical_cost": 1.2631542286850572
+        },
+        {
+          "action": "right_turn",
+          "predicted_cost": 8.762807846069336,
+          "actual_image_cost": 5.897738456726074,
+          "actual_raw_mse": 0.6636817455291748,
+          "xy_error_cm": 2.5995486800343497,
+          "yaw_error_deg": 7.603544784417683,
+          "within_goal": false,
+          "physical_cost": 3.102548776581877
+        }
+      ],
+      "predicted_choice": "right_turn",
+      "actual_image_choice": "hold",
+      "physical_choice": "hold"
+    },
+    {
+      "case": 3,
+      "departure": 55,
+      "rows": [
+        {
+          "action": "hold",
+          "predicted_cost": 8.468280792236328,
+          "actual_image_cost": 2.6463446617126465,
+          "actual_raw_mse": 0.47484010457992554,
+          "xy_error_cm": 2.582618520923624,
+          "yaw_error_deg": 3.3720944801239106,
+          "within_goal": true,
+          "physical_cost": 1.196735497150919
+        },
+        {
+          "action": "right_turn",
+          "predicted_cost": 8.144886016845703,
+          "actual_image_cost": 5.808200836181641,
+          "actual_raw_mse": 0.6278068423271179,
+          "xy_error_cm": 2.8744249695495134,
+          "yaw_error_deg": 8.08627699854323,
+          "within_goal": false,
+          "physical_cost": 3.563185979811883
+        }
+      ],
+      "predicted_choice": "right_turn",
+      "actual_image_choice": "hold",
+      "physical_choice": "hold"
+    }
+  ],
+  "plan_sha256": "7cfd3df8e9a58f66f7140b77cdfcf15e67a0542f42322f6a0767be78e6010c31",
+  "prefix_native_and_context_rgb_exact": true,
+  "new_native_branches": 2,
+  "model_changed": false,
+  "navigation_tested": false,
+  "post_hoc_diagnostic": true,
+  "scope": "hold versus executed turn only; not exhaustive optimal action"
+}

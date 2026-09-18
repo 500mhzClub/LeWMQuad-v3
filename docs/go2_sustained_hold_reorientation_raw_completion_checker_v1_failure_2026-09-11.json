@@ -1,0 +1,15 @@
+{
+  "status": "READ_ONLY_COMPLETION_CHECKER_V1_FAILED",
+  "session_id": 44980,
+  "exit_code": 1,
+  "failure": "KeyError: 'source_sha256'",
+  "source_path": "scripts/verify_go2_sustained_hold_reorientation_raw_completion_v1.py",
+  "source_sha256": "ef48a9ede1cdadc0625a82c8f902c267731cb4a921df49ba09ccc6e9369a94ca",
+  "preparation_sha256": "abe79c09e1c537567cdce5c7512b7f0fcf6335d96de0c9ad6b2fc8fb47752c10",
+  "raw_result_sha256": "977d00f6774d68c1b86d32d4e903650e13b89ced6cad34b43e0bd935b1a33e2d",
+  "cause": "Execution receipt records source_count but not source_sha256; exact frozen launch contains the bound source table.",
+  "raw_experiment_failure": false,
+  "raw_replay_restarted": false,
+  "native_execution": false,
+  "verification_claimed": false
+}

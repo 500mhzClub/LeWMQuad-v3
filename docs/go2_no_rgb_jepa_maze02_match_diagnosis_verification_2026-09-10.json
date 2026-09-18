@@ -1,0 +1,30 @@
+{
+  "status": "NO_RGB_JEPA_MATCH_DIAGNOSIS_BINDINGS_AND_ACCOUNTING_VERIFIED",
+  "result_sha256": "95b0315758c4065086bb11076a3e8f4767f1e660d15c51cb3ea2d72aa6a689a7",
+  "source_count": 1914,
+  "input_artifact_count": 5260,
+  "output_artifact_sha256": {
+    "launch.json": "0b05e65b399585afdf44a2bf81176f8385ce62ef2a44790a6aa98868ef9263b6",
+    "diagnosis.json": "3b5dd1c4a1ecac83ea03cd10dc57e290874482aaaf4253bc3a89b13a13d7f5db"
+  },
+  "reference_camera_pairs": 18,
+  "primary_increment_valid_pairs": 4,
+  "auxiliary_increment_valid_pairs": 12,
+  "auxiliary_best_consensus": 11,
+  "auxiliary_pruning_rounds": 0,
+  "source_tests": {
+    "session_id": 39621,
+    "exit_code": 0,
+    "passed": 4,
+    "wall_s": 1.87
+  },
+  "diagnostic_session": {
+    "session_id": 15699,
+    "exit_code": 0
+  },
+  "feature_matching_rerun_in_this_verification": false,
+  "original_failure_preserved": true,
+  "new_native_execution": false,
+  "pose_admitted": false,
+  "goal_achieved": false
+}

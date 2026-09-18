@@ -1,0 +1,1308 @@
+{
+  "status": "COMPLETE",
+  "cases": [
+    {
+      "status": "COMPLETE",
+      "case": 0,
+      "trial": "family_episode_001",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.580461533041671,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_00/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_00/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "5bf87754901ab020fd40251e062c28b3a9535a55d111a9fd465d8617a59ade24"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 1,
+      "trial": "family_episode_002",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.839177275076509,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_01/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_01/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "67690076deb8c11142700f0bd70bac4b569269f5ade1aa54d1705d7f13aecf4e"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 2,
+      "trial": "family_episode_005",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.586969766998664,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_02/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_02/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "ae2b9ad3d99ec4fc97312fdf3fe5a79db03c4ec414302a889d611f00df646d7b"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 3,
+      "trial": "family_episode_006",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.907142564887181,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_03/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_03/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "8489fc5eaeefba21ad593ccda59937b7d4ef7ad4613bec9080cb8a4e36052126"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 4,
+      "trial": "family_episode_008",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.569789461093023,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_04/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_04/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "328d7825465fe849050a66387385f21bce49788e5371c8bfd37ac639ea40cb96"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 5,
+      "trial": "family_episode_011",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.838131977943704,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_05/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_05/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "ddf42d76d1e6ee8cb39526418a1048c817526de5a0a8aca0ee45be965ca0f1e8"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 6,
+      "trial": "family_episode_013",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.598982068011537,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_06/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_06/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "24f93fd3be851d5a8cc0699639581258f03150ef79394e62effdd337693ac510"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 7,
+      "trial": "family_episode_018",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.899747944902629,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_07/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_07/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "47f2f484e42403652572c518e2758a6550e8e3bc8b6b2a7a354d0e5ef80c2b6f"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 8,
+      "trial": "family_episode_020",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.602306371089071,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_08/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_08/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "fd11b662f61fcb41cac55419e321160c8d3475df25fe724cf10934ad97f614fb"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 9,
+      "trial": "family_episode_021",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.909982164157555,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_09/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_09/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "ddcbd3bd636cc6a48a9fc28916c324b888c373627a36977cb69b1eda1117f25e"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 10,
+      "trial": "family_episode_023",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.623800236964598,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_10/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_10/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "d411340ab4786088d68d734db2a7b9e4a43cbde93eb7d3619a6c44146dcec2be"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 11,
+      "trial": "family_episode_025",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.927074700128287,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_11/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_11/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "970b59d977c8d0ba3da4b1c1436f7ee2e6bf38e6378a14f08bd76b21be771a17"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 12,
+      "trial": "family_episode_027",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.624386389972642,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_12/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_12/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "f1c5cfaadfc339a6ddd08691cbbceca70f475925bed56f91e5216d01d0945b56"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 13,
+      "trial": "family_episode_028",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.873870089882985,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_13/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_13/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "5711d9748ecc2439f122c5b35021fb6893ccdb31cb7520453bd6f258aab9e0cf"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 14,
+      "trial": "family_episode_029",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.613908600062132,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_14/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_14/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "b1c909c6eae8de237fcd4c8816926f1da11f424c0ce1e48dcae1c2baf77d6d51"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 15,
+      "trial": "family_episode_030",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.912278209114447,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_15/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_15/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "878b255da843a5ed5a06ea3bc8989d9489bf9aea37e23e5e55030304b5cab2aa"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 16,
+      "trial": "family_episode_031",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.583630454028025,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_16/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_16/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "080637b2b6b400686107372665d5a5bb83db1cfe47b1c4b862b61e3f7eea9bfe"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 17,
+      "trial": "family_episode_033",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.910294166998938,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_17/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_17/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "62ee6cb93cd77e1f06640d15fbcd7b1fc2c770f66ae515869804fa7a39cadaa5"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 18,
+      "trial": "family_episode_035",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.623817757004872,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_18/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_18/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "0810815d5e2e8a92717c94517978e91ddbcba4b9f5fea5f5274b4d7252423060"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 19,
+      "trial": "family_episode_036",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.902871686033905,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_19/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_19/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "076483cc8392def796e8a4e8de623c965feb88971e6796041b4f343e039ec026"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 20,
+      "trial": "family_episode_037",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.575466769048944,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_20/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_20/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "425564243a1300ddae94992ecedff345bbc82a65d9bec8651af8d8a7c807e5fa"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 21,
+      "trial": "family_episode_039",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.919636340113357,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_21/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_21/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "6c19073d9ed4eb2294489391d619da811fa451892f344377dc22293d853cc8c5"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 22,
+      "trial": "family_episode_044",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.594697209075093,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_22/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_22/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "6bde63c10728c69e5fd13d2480732ec2e3eb3c3c6df08ad3b9ecdc8d84009bc8"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 23,
+      "trial": "family_episode_045",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.9167424000334,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_23/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_23/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "bb164d10541d75449bdb7affbb6db393383eb0e50e3eddd613906f26fbec8241"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 24,
+      "trial": "family_episode_048",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.628889600047842,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_24/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_24/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "872208bd542568c7b2f13c30d28dab326029a43cac0a56474f7d3c16189b1cbe"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 25,
+      "trial": "family_episode_049",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.924904946004972,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_25/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_25/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "1bf4e96a732efc12183df8d80a6966fa587aa9128b09715e06cb45b4ae2b1df2"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 26,
+      "trial": "family_episode_050",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.586555643938482,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_26/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_26/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "15b0d3b749a18f42ebd8241a41e3fac36fe3260e993c5a69d2f280f64516f5b3"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 27,
+      "trial": "family_episode_051",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.94289036700502,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_27/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_27/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "d8471160e857085837d5ee30d6d65186e7d89024f7f4b7ff172b6ad5768183d4"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 28,
+      "trial": "family_episode_052",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.655260649044067,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_28/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_28/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "f0a9eae3f65c0e32a5a6c213572062f4645c02588fe35d1dffd89d2f4951fd02"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 29,
+      "trial": "family_episode_054",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.883112121839076,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_29/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_29/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "289bdc13af184c0a526b88bde189b856b6746fd30a2569b1f7bb70d2c90f3e2b"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 30,
+      "trial": "family_episode_055",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.618415429955348,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_30/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_30/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "771e0eb2324758bec1dd67944f3c83d0db84c777a9a8c8bedff08aa8e57002dd"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 31,
+      "trial": "family_episode_057",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.852339944103733,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_31/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_31/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "66b98d2196c0f8b04642600a14eff516b33c02764af28db2b83108a5af30a75e"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 32,
+      "trial": "family_episode_058",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.606909931870177,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_32/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_32/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "17e23f47cc5d422a07a639f5bd904b9685dd7a00450b115a719373e5d79794fd"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 33,
+      "trial": "family_episode_061",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.869357499992475,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_33/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_33/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "07e9531a778f27ad0caea951055b9ffdb8bfc6f4f7fd2f28c86008d792e7eb70"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 34,
+      "trial": "family_episode_062",
+      "action": "left_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.608192501123995,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_34/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_34/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "c298a186fbc64983c40e99f6959c5abed37d5d00fccc9a8854a9924ec9e43361"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 35,
+      "trial": "family_episode_065",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.901579027995467,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_35/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "992f9f735ee3c97b3ceaa1070b06e1f616d7df07759e5cde32286028695c0730",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_35/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "ef83915d91192de329e8a56aa0c330cd0588f0e3a311b1c2e46c9c9bbc3a12f4"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 36,
+      "trial": "family_episode_067",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.60406118282117,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_36/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_36/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "cb61e11fbf61284e4f0d00d9aa514e8c96f8e1a991f3f4acaa2a2c36c4c24947"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 37,
+      "trial": "family_episode_070",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.86098481202498,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_37/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_37/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "cccebb5cb8e3e4a7f22fd62604af68ec9a6286d576a8c8da51a37c836bdd96a4"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 38,
+      "trial": "family_episode_078",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.60368071985431,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_38/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_38/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "bdbaa9a1b38f38e653bfabc741eebc8da9d9d4478832fe0bd14172d6f5c48cc4"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 39,
+      "trial": "family_episode_080",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.885146426036954,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_39/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_39/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "1b23892bad492c2d4975542beea60c1a44784ddc1617f7e29bb5c80d8c004909"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 40,
+      "trial": "family_episode_081",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.601039351895452,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_40/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "283ab4ed1e72260bdbd93a8c285ffc51363a0ecab63ace40b492c6f8319c398d",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_40/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "839d938cbe20df4a7dcf9a405e5fba64e46b9b49493ec16cc8e1e528591dbf24"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 41,
+      "trial": "family_episode_082",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.864249894861132,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_41/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "3f2fef3e89a26f8639994d287c3022af97c943d2ccd3fdb57c31a0120c7a2f96",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_41/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "61820389082a9622eaae45df0d4c8cfe09b6ed9bbf009f8715931e3aa0569607"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 42,
+      "trial": "family_episode_083",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.74967679916881,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_42/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_42/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "c4a50a53c988a67bd850618df94d31622e60fe29b19b8237baf12ba46f1aee00"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 43,
+      "trial": "family_episode_087",
+      "action": "forward",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.88852106896229,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_43/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "e0e5dd451dee8542a5fdb05275965c04712f0eb914a990d3710c05c90ea25311",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_43/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "a563f873cf6b79ebb185885fa682e25eab8d430e1947a36b8ecb803d7dbcab0d"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 44,
+      "trial": "family_episode_090",
+      "action": "hold",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.631532188039273,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_44/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "309a0e3baaa45b2143eff44b01d8687d032ef104b6ed8f7150ffb5b1bbbf743a",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_44/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "a9cccf09b7b2454aa277ff0668dfb62544902578ed4e4af121c80e99b0a22a13"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 45,
+      "trial": "family_episode_092",
+      "action": "right_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.819238560041413,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_45/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "9fc0c8920cffb74521853a9d3364cdb45b33e9ba875fcac2e1a169e9c265fd75",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_45/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "87a14d9442ba78c639e74ac8cf35b102e5929012c6752a5cc764595ead6908a2"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 46,
+      "trial": "family_episode_093",
+      "action": "right_turn",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.637859212001786,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "496f955fc0433b712bcc69c2e12d49e249c05dfec07f1112f452e7951195c695",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_46/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "a3f6543b0b92e6c979c78bc6b3b253134836238d13870bb4bd8109c1691d09d7",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_46/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "59f29df5e980418f1d9996f3e358388b5da0ab1f80c968c483933c0bece3f89c"
+    },
+    {
+      "status": "COMPLETE",
+      "case": 47,
+      "trial": "family_episode_094",
+      "action": "left_arc",
+      "data_role": "train",
+      "frames": 19,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "complete_800ms": true,
+      "wall_s": 8.759150843136013,
+      "closed_loop_navigation": false,
+      "original_rgb_prefix_matches": true,
+      "mesh_links": [
+        {
+          "name": "ground_visual.ply",
+          "sha256": "398052af4b2e7da374e1d3da537301eb53cd801d795dd61b04a26a3d63f50767",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_47/visual_meshes/ground_visual.ply"
+        },
+        {
+          "name": "wall_union_visual.ply",
+          "sha256": "8f33ad427d14f60926b34e583c71d3f8c4cd3be55fcade5114ceca4a4289e18b",
+          "source": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_balanced_start_actions_v1_attempt_001/case_47/visual_meshes/wall_union_visual.ply"
+        }
+      ],
+      "result_sha256": "cc75dcce55e744b7124819152a40f4223d9b3e29372edcafc74d42d079ee95cf"
+    }
+  ],
+  "training_only": true,
+  "eligible": 48,
+  "contacts": 0,
+  "matched_context_groups": 8,
+  "plan_sha256": "b13fccd58e1350aa00a93db2b7cf80cfd20ea0d9ea4ab77a2722adfa750dbbfc",
+  "original_rgb_prefix_matches": true,
+  "new_navigation": false
+}

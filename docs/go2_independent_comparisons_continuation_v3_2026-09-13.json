@@ -1,0 +1,40 @@
+{
+  "pid": 3225482,
+  "created": 1789298878.67,
+  "cases": [
+    [
+      0,
+      "nominal",
+      "seed_2026091001_full_jepa"
+    ],
+    [
+      0,
+      "commitment_contact",
+      "seed_2026091001_full_jepa"
+    ],
+    [
+      0,
+      "commitment_contact",
+      "seed_2026091001_full_supervised_rollout"
+    ],
+    [
+      1,
+      "frozen_reference",
+      "seed_2026091001_full_jepa"
+    ],
+    [
+      1,
+      "frozen_reference",
+      "seed_2026091001_full_supervised_rollout"
+    ],
+    [
+      0,
+      "current_planning",
+      "seed_2026091001_full_jepa"
+    ]
+  ],
+  "final_six_action_reactive": true,
+  "serial_collection_and_audit": true,
+  "interrupted_direct_audit_preserved": true,
+  "automatic_retry": false
+}

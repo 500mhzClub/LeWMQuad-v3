@@ -1,0 +1,97 @@
+{
+  "root": ".generated/navigation_development_artifacts_v1/go2_dense_horizon_untimed_exposed_maze_full_v1_attempt_001",
+  "terminal": {
+    "status": "FULL_MISSION_RUN_COMPLETE",
+    "camera_frames": 4804,
+    "policy_steps": 24016,
+    "model_calls": 1198,
+    "nonzero_requested_steps": 1905,
+    "reasons": {
+      "MISSION_SETTLING_OR_TERMINAL": 16,
+      "NO_ON_TIME_PLAN": 60,
+      "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 23905,
+      "COMMAND_WINDOW_VETO_LATCHED": 35
+    },
+    "disallowed_contact": false,
+    "mission_terminal": "MISSION_TICK_BUDGET_EXHAUSTED",
+    "observed_arrivals": [],
+    "wall_s": 3896.877435725881,
+    "simulation_s": 480.32,
+    "physical_execution": true,
+    "real_time_qualified": false,
+    "navigation_success_claimed": false
+  },
+  "decisions": {
+    "selected_plans": 1198,
+    "selected_actions": {
+      "left_turn": 57,
+      "hold": 1102,
+      "right_turn": 17,
+      "left_arc": 13,
+      "right_arc": 6,
+      "forward": 3
+    },
+    "route_statuses": {
+      "INITIAL_PANORAMA_REQUIRES_VIEW": 28,
+      "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 2,
+      "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 51,
+      "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW": 1117
+    },
+    "selected_hold_plans": 1102,
+    "hold_with_highest_recorded_utility_also_hold": 1102,
+    "hold_with_higher_recorded_nonhold_utility": 0,
+    "stopping_projection_changes": 1,
+    "memory_forecast_statuses": {
+      "CLEAR_CANDIDATE_SELECTED": 1196,
+      "HOLD_RELATIVE_CLEARANCE_RECOVERY": 2
+    },
+    "requested_command_categories": {
+      "hold": 22111,
+      "turn": 1465,
+      "translation": 440
+    },
+    "zero_request_reasons": {
+      "MISSION_SETTLING_OR_TERMINAL": 16,
+      "NO_ON_TIME_PLAN": 60,
+      "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 22000,
+      "COMMAND_WINDOW_VETO_LATCHED": 35
+    },
+    "nonzero_request_reasons": {
+      "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 1905
+    },
+    "longest_consecutive_zero_request": {
+      "duration_s": 437.22,
+      "started_ns": 44600000000,
+      "ended_ns": 481820000000
+    },
+    "scope": "post hoc recorded choices and gates; highest recorded utility is not a counterfactual navigation result or an isolated causal attribution"
+  },
+  "scan_hold_plans": 1101,
+  "scan_hold_with_at_least_one_full_reserve_clear_turn": 1101,
+  "last_nonhold_frame": 424,
+  "last_plan": {
+    "frame": 4800,
+    "route_status": "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW",
+    "scan_heading_error_rad": 0.878195755231174,
+    "scan_utilities": [
+      {
+        "action": "hold",
+        "utility_m": -0.0010736707400060496
+      },
+      {
+        "action": "left_turn",
+        "utility_m": -0.01576834581066203
+      },
+      {
+        "action": "right_turn",
+        "utility_m": -0.03396086486782057
+      }
+    ]
+  },
+  "source_sha256": {
+    "result.json": "87a1571fa173b751a59da7ca81a6749d519f3e58ccaa4e2df41c5e88cd499858",
+    "planning.json": "665cef55dd330deef7155c946ed181d168114d4e7d4e2565f99edaaf2b1a5a2d",
+    "requests.json": "5e3db4af7952e4201b73c2cc5f03a9f2734e2b0fe9af367964b6c7a565bd5ef7"
+  },
+  "interpretation": "Recorded hold choices already maximize scan utility before memory filtering. This is evidence of an unproductive forecast-driven ranking, not proof that every alternative command would succeed or that the encoder lacks geometry. Physical arrival reader remains separately authoritative; owner recording persistence may still be running."
+}

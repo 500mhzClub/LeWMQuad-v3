@@ -1,0 +1,191 @@
+{
+  "schema": "earlier_visual_recovery_plan.v1",
+  "assignments": [
+    [
+      1,
+      "jepa"
+    ],
+    [
+      1,
+      "jepa"
+    ]
+  ],
+  "root_names": [
+    "go2_earlier_visual_recovery_01_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_earlier_visual_recovery_02_jepa_noise_2mm_native_layout01_4800_v1_attempt_001"
+  ],
+  "models": {
+    "jepa": {
+      "condition": "jepa",
+      "filename": "jepa.pt",
+      "sha256": "3790b3bdef97fbb3c340bc43d6d1fbccc6295fb0da80f015f11d064296303978",
+      "bytes": 6991475,
+      "configuration": {
+        "condition": "jepa",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "cb56c008f3c7a98ffc09ef04f88053a39937100f4e3578f3584d930695b54025",
+      "wall_s": 86.84039388992824,
+      "reload_model_sha256": "cb56c008f3c7a98ffc09ef04f88053a39937100f4e3578f3584d930695b54025"
+    },
+    "direct": {
+      "condition": "direct",
+      "filename": "direct.pt",
+      "sha256": "01397558c70669c1095efa130c008482e3524ec23f5109066d842a55943da326",
+      "bytes": 6698019,
+      "configuration": {
+        "condition": "direct",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "93feb5af6b899e3cf465141cf6c0285382313053c3b3036c0171a8ae6ee8cd81",
+      "wall_s": 71.58493333193474,
+      "reload_model_sha256": "93feb5af6b899e3cf465141cf6c0285382313053c3b3036c0171a8ae6ee8cd81"
+    },
+    "supervised_rollout": {
+      "condition": "supervised_rollout",
+      "filename": "supervised_rollout.pt",
+      "sha256": "5dee105cc5520a798397bc5cb54cda3d76b0ba037d37cdee438882e20cfae54c",
+      "bytes": 6991475,
+      "configuration": {
+        "condition": "supervised_rollout",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "73a5dd98adf34c777fb50f2dc957951d877ca8dd9cf1b830424c18b7f05210ea",
+      "wall_s": 75.68849017517641,
+      "reload_model_sha256": "73a5dd98adf34c777fb50f2dc957951d877ca8dd9cf1b830424c18b7f05210ea"
+    }
+  },
+  "training_seed": 2026091001,
+  "command_history_fit_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+  "source_sha256": {
+    "lewm/short_pulse_navigation_runtime_development.py": "b13a78260a482c38ebfa1f242db66d982ee0e4f1add13c8bcb0ae24dabc95cdc",
+    "lewm/pipeline_age_dispatch_development.py": "9c0e91305d7ad22ba9e01e999ff2b528dc013577db5f1dcdf9e7918e0bda64d0",
+    "lewm/visual_support_recovery_development.py": "ff664ced1f7d7c614aa228b1c03d0eddc649810b417c0a6dc23c5727791bf206",
+    "lewm/prefix_aware_terminal_approach_development.py": "e381280cd759609b1348492d81ccbf04f249ef29546a4b6b15c0bde7ce82c63b",
+    "lewm/framewise_visual_support_recovery_development.py": "27316417408522fa44c66e6c5d1fe88de76fb52955f393238881aa9b3ce6000a",
+    "lewm/persistent_local_visual_recovery_development.py": "46aa53afd6d9c00bfe80279300804b0aa8bdb9bb1acdccd12fb03d545d42c252",
+    "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_persistent_visual_baselines_development.py": "5bca329013297a2f775cb1d67fcdcf4963b7c772ec3005d2c323f8c1dc03eaa4",
+    "lewm/persistent_visual_transfer_layouts_development.py": "4fe6c8b01ff9c5043748a2a1c75eef7f21fe3ce4417ee9407042f55b43584ce5",
+    "scripts/run_go2_paced_native_prefix_development.py": "7487d6bafc80f0ba2891d9c9271b60d9464e051e8016655a65f62b592134550c",
+    "lewm/persistent_visual_baselines_development.py": "6c5856f5d00b4b5ee0367ab23e354fdbc5945bddd5426467ae7a84a3bb55b1a5",
+    "lewm/instantaneous_waypoint_score_development.py": "79437e29eb6b1162d236e0499c955e2d52230fb57eede6ff0f81c3064ff9bb4b",
+    "lewm/current_reserve_terminal_feedback_development.py": "dc7ccfb80ee749208cca1424701ee820d6e647f8bcd1b8789fc79b8e83268328",
+    "lewm/rollout_selection_off_development.py": "0e28e48777bad4fa3b272c8f96606aca03da4970c3269daa0859a0e9f85a9921",
+    "lewm/continuous_reactive_selection_development.py": "ee0925d41bedf996a26220f37a0ede96cad83772018ef3b87dd5135108851d90",
+    "lewm/heading_first_terminal_reactive_development.py": "8a52ffa34b89de49a47752310c897ed97ada4a86709fe28ce4fd631edeb970b9",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_publication_repaired_navigation_replication_development.py": "0e5e784b50461c50004f0c5c65232a92aef01ebdf63376520f25853db3b63e82",
+    "lewm/recovery_repaired_navigation_replication_layouts_development.py": "6ea2e5603016bb621bcabd8d6939297c90ce3b711bb66ccf47a698eb59ec1670",
+    "scripts/nogil_drawing_session_development.py": "d9318f54f6505513e11d071fae0467b2840e70afc18c10e339710368748f11a7",
+    "lewm_genesis/lewm_genesis/nogil_readback_development.py": "ad24c92af1f1d286cd31316a07f812cba0e7ffa3d0a9c7a783fefcb7be9a7380",
+    "lewm/live_planning_profile_development.py": "7c7ac97289350aec50569e7e3186652a958b22c9004fc80a4c100484251337a3",
+    "lewm/live_planning_stage_profile_development.py": "a86c22254bd8c5331fa862412f46ee441d257bbe6500164f5d1a4be5f8d3b364",
+    "lewm/planning_latency_stress_development.py": "7cd363db50b4765892e3be636fe629f7306dd062b35c5dd012a359d2878aa580",
+    "scripts/run_go2_short_pulse_navigation_development.py": "62dca1eee3ba2b3999fd4385be1e327deeb5f02cbbc256f8da8e9a6745323acd",
+    "scripts/evaluate_go2_short_pulse_navigation_development.py": "f468e38231bd967011cd582cb602644f2cee24a851fe0d35393f3233f950ea18",
+    "scripts/run_go2_nogil_recovery_hold_development.py": "874bd0263732ad5a4612fe380e77d97dae75ef30425df2686a6919fcf2835bec",
+    "scripts/run_go2_nogil_navigation_replication_development.py": "74f85289da21d24c9fff1ef77720a558da0277c1275ae63cfbd6bcfc4c723a95",
+    "lewm/nogil_navigation_replication_layouts_development.py": "7076f1e6657f00066e4bc39ba1e014ed09994d3f5be444ea9328d1d6aeea5719",
+    "lewm/recovery_limited_survey_transfer_layouts_development.py": "2839dca54d3115e4bb6d593679ca349f37578f4fd6327966f825d1c7a897da48",
+    "lewm/visual_recovery_dispatch_hold_development.py": "15cf34e3be63016b618ab9f9ab8de239d2d5648a86d67dce388cf5e5fa379a9b",
+    "lewm/recovery_limited_initial_survey_development.py": "1fa5b5ac771dd41a51d8216a2a33c9281c81e7dc31771b1633f0149c70e58806",
+    "lewm/measured_recovery_publication_development.py": "b701f273a86b58a9d7c2eee244d4a6ae4d5d84c567c310a6e18e3bc223e9e039",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_measured_view_arc_recovery_development.py": "f1729ad14d9ef07ad83d04513a05982527e5731ce9806a15d492fe2b9060771e",
+    "lewm/measured_view_arc_recovery_development.py": "7e1b8f4ec4d0d3b861049b581682280cf1f322f4eba677e0784094ae532410de",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_view_arc_no_early_release_development.py": "f4c6db4e9a6147097026c5610af017ad1d19c9b35611523c4b3d937b9e74ea5f",
+    "lewm/no_early_heading_release_development.py": "c3e776795e6288bfe6b31b93d8c9ead84c0ef91c68bcb1fd7358a54d11d71f64",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_coverage_translation_view_development.py": "807187ff52c49fa73bd5196c40ece7090cb64c81acbbed0ad18485c3229e278b",
+    "lewm/coverage_translation_view_development.py": "8e48e798d95c3d3080b0fa7bf213e2ccada1890e4f98a6916bbfcd0c92622275",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_current_position_coverage_view_development.py": "e64a8c04fb6e3fbb2180f9b8e25f441249ab081c0f873cc68751dadf50e45446",
+    "lewm/current_position_coverage_view_development.py": "df266825f0e922a1d53ae731da57fb9e2e335fb95bcf7e7eae470537adbb62ec",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_cached_fine_connectivity_development.py": "1a2583300af17cf6d39400d83841f123fbc8e79b0d9bff7811d00f1c8fc4cae3",
+    "lewm/cached_fine_connectivity_development.py": "74f66142fb91f057fce037fd25a46daa51437cb410351ab4736728955c9f13c2",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_interrupted_view_replan_development.py": "6d43307d9a795e338ff1dc31410e5e8009db62bbe466b06906b0c6233eeb1a8a",
+    "lewm/interrupted_view_replan_development.py": "d0bd0d77a469a433c301d559dc7e5662565add76fa025de0b27a60c3b84b87a8",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_view_replan_repeatability_development.py": "eb8105eed77365e63bfd1a04bdfe922cd31144b715957caec58cd44f81859ad0",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_earlier_visual_recovery_development.py": "aa280d846be9ddd15d0b5e71a870c8c8d6ea20239a7a79bdc0e72d57532a0f74",
+    "lewm/earlier_visual_recovery_development.py": "96e4d3cc5d759d47b688c5cbf299ea4c59595f7ac6648f7262654786fc30da5c"
+  },
+  "reference_root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_view_replan_repeatability_04_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+  "output_base": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1",
+  "inventory_sha256": "aff18a56954c82f64ec00e71aa19c8260af08eb2b29a25a91826eddc2eda4964",
+  "planned_native_assignments": 2,
+  "fixed_before_first_execution": true,
+  "controller_changes_during_batch": false,
+  "model_selection_from_outcomes": false,
+  "native_jobs_run_sequentially": true,
+  "parallel_analysis_during_mission": false,
+  "primary_outcome": "physically verified goal-and-home round trip with no disallowed contact",
+  "secondary_outcomes": [
+    "goal arrival",
+    "physical backtracking",
+    "tracking loss",
+    "planning deadlines",
+    "view interruption events",
+    "executed-window forecast error"
+  ],
+  "navigation_ticks": 4800,
+  "candidate_count": 6,
+  "planning_extra_ns": 20000000,
+  "exposed_development_layout": true,
+  "new_independent_development_layout": false,
+  "preserve_every_failure": true,
+  "retain_full_batch_depth_until_analysis": true,
+  "stop_on_scientific_failure": false,
+  "no_extra_repetitions_to_obtain_success": true,
+  "sensor_noise_sigma_mm": 2,
+  "gyro_noise_model": "ideal",
+  "measured_simulation_not_real_time": true,
+  "final_evaluation": false,
+  "hardware_validated": false,
+  "limitations": [
+    "one exposed maze, one frozen JEPA training seed, two runs",
+    "feature counts are an uncalibrated development heuristic",
+    "more frequent or longer recovery may stall exploration",
+    "earlier warning on saved sensors is not proof of prevented failure"
+  ],
+  "intervention": "weak-feature onset and aligned-view release floor 48 to 72; strong-reference threshold remains 96",
+  "saved_same_reference_warning_gain_ms": 500,
+  "focused_tests_passed": 4,
+  "constraints": [
+    "same frozen JEPA model and six actions",
+    "same pose acceptance, sensors and CPU group",
+    "same .20-m measured-reference locality and no age expiry",
+    "same predictive clearance, coverage and dispatch guards",
+    "same 4800-tick budget and deadlines",
+    "no tuning between the two runs"
+  ]
+}

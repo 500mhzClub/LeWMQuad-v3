@@ -1,0 +1,40 @@
+{
+  "status": "IN_PROGRESS_CONTROLLER_REPLAY_BOUNDARY_RECEIPTS_RECONSTRUCTED",
+  "recorded_utc": "2026-09-10T21:32:45.742921+00:00",
+  "source_count": 1947,
+  "artifact_sha256": {
+    "launch.json": "324dacf5bf45ca09faf83985a3f940e7999e40b6cf3688c15e249e88a60e0486",
+    "report.json": "77c335b55d3b0f225b26c925bf07b6ff9035d8cce9694582f599fe5614e639ff",
+    "context_decisions.jsonl.gz": "2748089cb1e2ea48661e44595c042bdbeb1d081d506e8379990eb5483d70bc50"
+  },
+  "original_episode_artifact_count": 5260,
+  "reconstruction": {
+    "frames": 860,
+    "first_intervention_frame": 859,
+    "original_forecasts_compared": 856,
+    "complete_saved_comparisons_reconstructed": true
+  },
+  "boundary_requested_command": [
+    0.0,
+    0.0,
+    -0.45
+  ],
+  "boundary_selected_action": "right_turn",
+  "full_controller_recovery_reported": true,
+  "original_failure_preserved": true,
+  "original_replay_owner_confirmed_live": {
+    "pid": 2749113,
+    "created": 1789073975.55,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_no_rgb_jepa_direct_flow_controller_prefix_v1.py"
+    ]
+  },
+  "terminal_result_present_at_check": false,
+  "final_full_input_admission_still_pending": true,
+  "controller_inference_independently_rerun": false,
+  "new_command_executed": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

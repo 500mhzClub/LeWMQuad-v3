@@ -1,0 +1,780 @@
+{
+  "status": "CACHED_CHAIN_EARLY_CONTROLLER_COMPLETE",
+  "rows": [
+    {
+      "frame": 0,
+      "timed": false,
+      "baseline_s": 0.5927745010703802,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 99805585,
+          "exclusive_ns": 99805585
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 60221422,
+          "exclusive_ns": 60221422
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 428816621,
+          "exclusive_ns": 428816621
+        }
+      },
+      "candidate_s": 0.3169061669614166,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 56806582,
+          "exclusive_ns": 56806582
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 31835710,
+          "exclusive_ns": 31835710
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 224226642,
+          "exclusive_ns": 224226642
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 1,
+      "timed": false,
+      "candidate_s": 0.29457044997252524,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 68920291,
+          "exclusive_ns": 68920291
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 29386027,
+          "exclusive_ns": 29386027
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 191947978,
+          "exclusive_ns": 191947978
+        }
+      },
+      "baseline_s": 0.3760169530287385,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 119005215,
+          "exclusive_ns": 119005215
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 57260415,
+          "exclusive_ns": 57260415
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 195297347,
+          "exclusive_ns": 195297347
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 2,
+      "timed": false,
+      "baseline_s": 0.4123388777952641,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 140910799,
+          "exclusive_ns": 140910799
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 67398172,
+          "exclusive_ns": 67398172
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 199305880,
+          "exclusive_ns": 199305880
+        }
+      },
+      "candidate_s": 0.3136255480349064,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 82085016,
+          "exclusive_ns": 82085016
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 32667565,
+          "exclusive_ns": 32667565
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 194254481,
+          "exclusive_ns": 194254481
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 3,
+      "timed": true,
+      "candidate_s": 0.40324283693917096,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 77747191,
+          "exclusive_ns": 77747191
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 30809455,
+          "exclusive_ns": 30809455
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 196010211,
+          "exclusive_ns": 196010211
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 8844140,
+          "exclusive_ns": 8844140
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 89286126,
+          "exclusive_ns": 80441986
+        }
+      },
+      "baseline_s": 0.5100907520391047,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 146248469,
+          "exclusive_ns": 146248469
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 59063275,
+          "exclusive_ns": 59063275
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 206790863,
+          "exclusive_ns": 206790863
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7008590,
+          "exclusive_ns": 7008590
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 88486561,
+          "exclusive_ns": 81477971
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 4,
+      "timed": true,
+      "baseline_s": 0.49648580490611494,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 142465498,
+          "exclusive_ns": 142465498
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 59352777,
+          "exclusive_ns": 59352777
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 198782457,
+          "exclusive_ns": 198782457
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 6981389,
+          "exclusive_ns": 6981389
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 86563971,
+          "exclusive_ns": 79582582
+        }
+      },
+      "candidate_s": 0.41687435400672257,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 76192192,
+          "exclusive_ns": 76192192
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 35463781,
+          "exclusive_ns": 35463781
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 205020152,
+          "exclusive_ns": 205020152
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7246361,
+          "exclusive_ns": 7246361
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 90958326,
+          "exclusive_ns": 83711965
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 5,
+      "timed": true,
+      "candidate_s": 0.43445497401989996,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 91176937,
+          "exclusive_ns": 91176937
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 34371005,
+          "exclusive_ns": 34371005
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 211561259,
+          "exclusive_ns": 211561259
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7594423,
+          "exclusive_ns": 7594423
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 87830928,
+          "exclusive_ns": 80236505
+        }
+      },
+      "baseline_s": 0.4977487118449062,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 138128553,
+          "exclusive_ns": 138128553
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 58346081,
+          "exclusive_ns": 58346081
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 199331630,
+          "exclusive_ns": 199331630
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 8041586,
+          "exclusive_ns": 8041586
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 92529575,
+          "exclusive_ns": 84487989
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 6,
+      "timed": true,
+      "baseline_s": 0.4911733348853886,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 129343683,
+          "exclusive_ns": 129343683
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 57611546,
+          "exclusive_ns": 57611546
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 203862507,
+          "exclusive_ns": 203862507
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7059500,
+          "exclusive_ns": 7059500
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 90154741,
+          "exclusive_ns": 83095241
+        }
+      },
+      "candidate_s": 0.4140684078447521,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 78895878,
+          "exclusive_ns": 78895878
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 31021325,
+          "exclusive_ns": 31021325
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 201719264,
+          "exclusive_ns": 201719264
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7351921,
+          "exclusive_ns": 7351921
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 93228258,
+          "exclusive_ns": 85876337
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 7,
+      "timed": true,
+      "candidate_s": 0.44957100017927587,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 100369589,
+          "exclusive_ns": 100369589
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 38314607,
+          "exclusive_ns": 38314607
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 204340009,
+          "exclusive_ns": 204340009
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 8785670,
+          "exclusive_ns": 8785670
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 96123765,
+          "exclusive_ns": 87338095
+        }
+      },
+      "baseline_s": 0.5460387258790433,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 150689225,
+          "exclusive_ns": 150689225
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 66191735,
+          "exclusive_ns": 66191735
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 224935076,
+          "exclusive_ns": 224935076
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7442832,
+          "exclusive_ns": 7442832
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 93947183,
+          "exclusive_ns": 86504351
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 8,
+      "timed": true,
+      "baseline_s": 0.49335329700261354,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 139822712,
+          "exclusive_ns": 139822712
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 56086718,
+          "exclusive_ns": 56086718
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 197546130,
+          "exclusive_ns": 197546130
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7953155,
+          "exclusive_ns": 7953155
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 90006290,
+          "exclusive_ns": 82053135
+        }
+      },
+      "candidate_s": 0.40142012597061694,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 76331333,
+          "exclusive_ns": 76331333
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 29718719,
+          "exclusive_ns": 29718719
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 195301847,
+          "exclusive_ns": 195301847
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7454922,
+          "exclusive_ns": 7454922
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 90427853,
+          "exclusive_ns": 82972931
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 9,
+      "timed": true,
+      "candidate_s": 0.4121613670140505,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 70192068,
+          "exclusive_ns": 70192068
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 30499793,
+          "exclusive_ns": 30499793
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 205182944,
+          "exclusive_ns": 205182944
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 8103736,
+          "exclusive_ns": 8103736
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 96573048,
+          "exclusive_ns": 88469312
+        }
+      },
+      "baseline_s": 0.7085974279325455,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 131018743,
+          "exclusive_ns": 131018743
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 63285939,
+          "exclusive_ns": 63285939
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 412418109,
+          "exclusive_ns": 412418109
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7738024,
+          "exclusive_ns": 7738024
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 91695290,
+          "exclusive_ns": 83957266
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 10,
+      "timed": true,
+      "baseline_s": 0.5097886808216572,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 138870148,
+          "exclusive_ns": 138870148
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 57655676,
+          "exclusive_ns": 57655676
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 202744349,
+          "exclusive_ns": 202744349
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 9698465,
+          "exclusive_ns": 9698465
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 100289479,
+          "exclusive_ns": 90591014
+        }
+      },
+      "candidate_s": 0.44638552190735936,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 104137460,
+          "exclusive_ns": 104137460
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 31346108,
+          "exclusive_ns": 31346108
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 207478136,
+          "exclusive_ns": 207478136
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 8577038,
+          "exclusive_ns": 8577038
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 94013923,
+          "exclusive_ns": 85436885
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 11,
+      "timed": true,
+      "candidate_s": 0.42921034386381507,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 96229496,
+          "exclusive_ns": 96229496
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 31203117,
+          "exclusive_ns": 31203117
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 198322134,
+          "exclusive_ns": 198322134
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 6975739,
+          "exclusive_ns": 6975739
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 94112683,
+          "exclusive_ns": 87136944
+        }
+      },
+      "baseline_s": 0.5149926410522312,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 139003538,
+          "exclusive_ns": 139003538
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 62092342,
+          "exclusive_ns": 62092342
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 205323154,
+          "exclusive_ns": 205323154
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 9827946,
+          "exclusive_ns": 9827946
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 98778340,
+          "exclusive_ns": 88950394
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    },
+    {
+      "frame": 12,
+      "timed": true,
+      "baseline_s": 0.47858669399283826,
+      "baseline_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 119666548,
+          "exclusive_ns": 119666548
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 59993210,
+          "exclusive_ns": 59993210
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 197828502,
+          "exclusive_ns": 197828502
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7313951,
+          "exclusive_ns": 7313951
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 91293418,
+          "exclusive_ns": 83979467
+        }
+      },
+      "candidate_s": 0.4268837608397007,
+      "candidate_phases": {
+        "tracking": {
+          "calls": 1,
+          "inclusive_ns": 71751967,
+          "exclusive_ns": 71751967
+        },
+        "floor_registration": {
+          "calls": 1,
+          "inclusive_ns": 40539260,
+          "exclusive_ns": 40539260
+        },
+        "mapping": {
+          "calls": 1,
+          "inclusive_ns": 205768416,
+          "exclusive_ns": 205768416
+        },
+        "model.forward": {
+          "calls": 1,
+          "inclusive_ns": 7439863,
+          "exclusive_ns": 7439863
+        },
+        "selection": {
+          "calls": 1,
+          "inclusive_ns": 99208062,
+          "exclusive_ns": 91768199
+        }
+      },
+      "complete_decisions_equal_except_work_counts": true
+    }
+  ],
+  "total_s": {
+    "baseline": 5.2468560703564435,
+    "candidate": 4.234272692585364
+  },
+  "reduction_percent": 19.29885943492805,
+  "median_ms": {
+    "baseline": 503.7686963332817,
+    "candidate": 421.87905742321163
+  },
+  "mean_exclusive_phase_ms": {
+    "baseline": {
+      "tracking": 137.5257117,
+      "floor_registration": 59.9679299,
+      "mapping": 224.9562777,
+      "selection": 84.467941,
+      "model.forward": 7.9065438
+    },
+    "candidate": {
+      "tracking": 84.3024111,
+      "floor_registration": 33.328717,
+      "mapping": 203.0704372,
+      "selection": 85.3389159,
+      "model.forward": 7.8373813
+    }
+  },
+  "model_state_sha256": "56799c99e2bb1fd5e5a591009b931c5b2e04741d3a3744e2346ce9896a2160dd",
+  "model_unchanged": true,
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001/no_rgb_direct_stop_conditioned_settling_maze_02",
+  "shared_host": true,
+  "full_journey_tracker_running_concurrently": true,
+  "ignored_comparison_key": "valid_proposals",
+  "early_history_only": true,
+  "full_history_controller_equivalence_proven": false,
+  "native_execution": false,
+  "acquisition_included_in_timing": false,
+  "continuous_execution_qualified": false,
+  "adopted": false,
+  "sources": {
+    "lewm/cached_chain_association_development.py": "d03edac99c1d154f12df95e1d1098c20ab280edd15b98e99938332be43a1ce93",
+    "lewm/cached_chain_tracker_development.py": "90111a94e7662f7ec089023756b2c97d080294d6941503ea9478a09421016ac8",
+    "scripts/compare_cached_chain_early_controller_development.py": "62a4269db64853e0d5ff5f7c2bdd417254062a752c6607bd921fde8c6c63aee6"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "status": "COMPLETE",
+  "groups": [
+    {
+      "case": 0,
+      "departure_frame": 35,
+      "rows": [
+        {
+          "action": "hold",
+          "predicted_goal_mse": 0.4398495554924011,
+          "actual_goal_mse": 0.45386645197868347,
+          "xy_error_cm": 4.827779911763256,
+          "yaw_error_deg": 2.0061596472748353,
+          "full_orientation_error_deg": 2.4626408698744613,
+          "height_error_cm": 0.07416903972625732,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "forward",
+          "predicted_goal_mse": 0.34297460317611694,
+          "actual_goal_mse": 0.45201659202575684,
+          "xy_error_cm": 11.932229273492883,
+          "yaw_error_deg": 2.3405805943763753,
+          "full_orientation_error_deg": 2.344171857830284,
+          "height_error_cm": -0.06763339042663574,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "left_arc",
+          "predicted_goal_mse": 0.5246042609214783,
+          "actual_goal_mse": 0.670230507850647,
+          "xy_error_cm": 11.298685731586012,
+          "yaw_error_deg": 14.065521683814964,
+          "full_orientation_error_deg": 14.240058467224028,
+          "height_error_cm": -0.06090402603149414,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "right_arc",
+          "predicted_goal_mse": 0.47213149070739746,
+          "actual_goal_mse": 0.6038578748703003,
+          "xy_error_cm": 10.703277001382142,
+          "yaw_error_deg": 9.159279109846313,
+          "full_orientation_error_deg": 9.605982447486154,
+          "height_error_cm": -0.06859898567199707,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "left_turn",
+          "predicted_goal_mse": 0.5078858137130737,
+          "actual_goal_mse": 0.6540173292160034,
+          "xy_error_cm": 5.178289697681771,
+          "yaw_error_deg": 13.948183990970088,
+          "full_orientation_error_deg": 14.112321400579715,
+          "height_error_cm": 0.276753306388855,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "right_turn",
+          "predicted_goal_mse": 0.5387740135192871,
+          "actual_goal_mse": 0.6337934136390686,
+          "xy_error_cm": 5.692543427421034,
+          "yaw_error_deg": 9.148619365451614,
+          "full_orientation_error_deg": 10.135890842615082,
+          "height_error_cm": -0.1239478588104248,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        }
+      ],
+      "predicted_choice": "forward",
+      "actual_visual_best": "forward",
+      "actual_position_best": "hold",
+      "incomplete_actions": []
+    },
+    {
+      "case": 3,
+      "departure_frame": 35,
+      "rows": [
+        {
+          "action": "hold",
+          "predicted_goal_mse": 0.37229403853416443,
+          "actual_goal_mse": 0.4637905955314636,
+          "xy_error_cm": 2.938256605859516,
+          "yaw_error_deg": 2.373809293927525,
+          "full_orientation_error_deg": 2.764954788294207,
+          "height_error_cm": -0.09020566940307617,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "forward",
+          "predicted_goal_mse": 0.33439773321151733,
+          "actual_goal_mse": 0.3824703097343445,
+          "xy_error_cm": 8.719952547368347,
+          "yaw_error_deg": 1.7008488843981546,
+          "full_orientation_error_deg": 1.7105335215650093,
+          "height_error_cm": -0.15484392642974854,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "left_arc",
+          "predicted_goal_mse": 0.5236433148384094,
+          "actual_goal_mse": 0.6453971266746521,
+          "xy_error_cm": 6.767593318129664,
+          "yaw_error_deg": 13.006079648320544,
+          "full_orientation_error_deg": 13.24631076468721,
+          "height_error_cm": -0.31030774116516113,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "right_arc",
+          "predicted_goal_mse": 0.47378286719322205,
+          "actual_goal_mse": 0.6048713326454163,
+          "xy_error_cm": 7.9457646816989165,
+          "yaw_error_deg": 9.84697559751258,
+          "full_orientation_error_deg": 10.271649224353261,
+          "height_error_cm": -0.07658600807189941,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "left_turn",
+          "predicted_goal_mse": 0.5349229574203491,
+          "actual_goal_mse": 0.635776937007904,
+          "xy_error_cm": 1.809987107439619,
+          "yaw_error_deg": 12.851766374694652,
+          "full_orientation_error_deg": 13.021290537829334,
+          "height_error_cm": 0.012108683586120605,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        },
+        {
+          "action": "right_turn",
+          "predicted_goal_mse": 0.5426144003868103,
+          "actual_goal_mse": 0.653356671333313,
+          "xy_error_cm": 3.4985457917065754,
+          "yaw_error_deg": 9.514483001241624,
+          "full_orientation_error_deg": 10.712399867996572,
+          "height_error_cm": -0.13582110404968262,
+          "complete_500ms": true,
+          "disallowed_contact": false
+        }
+      ],
+      "predicted_choice": "forward",
+      "actual_visual_best": "forward",
+      "actual_position_best": "left_turn",
+      "incomplete_actions": []
+    }
+  ],
+  "plan_sha256": "917b0e841ad3b28b330517a44760f086795fae0d42a21454030f7c85ad3b9d7e",
+  "all_prefix_native_and_context_rgb_exact": true,
+  "original_forward_successors_exact": true,
+  "unique_encoded_images": 14,
+  "navigation_tested": false,
+  "model_changed": false,
+  "post_hoc_failure_diagnostic": true,
+  "dense_cache_retained": false
+}

@@ -1,0 +1,201 @@
+{
+  "examples": [
+    {
+      "model": "seed_2026091001_full_jepa",
+      "frame": 500,
+      "old_action": "right_turn",
+      "new_action": "right_arc",
+      "old_score_contract": "causal_executed_waypoint_potential_minus_full_plan_contact",
+      "new_score_contract": "causal_executed_waypoint_potential_minus_commitment_contact",
+      "old_contact_horizon_ns": 800000000,
+      "new_contact_horizon_ns": 100000000,
+      "original_forecasts_geometry_and_residual_retained": true,
+      "feasible_candidates": 6,
+      "original_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": -0.0018240082020574942
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.006469041265916235
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.0008368637026290402
+        },
+        {
+          "action": "right_arc",
+          "utility_m": 0.0007007706426796143
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.007847602984759394
+        },
+        {
+          "action": "right_turn",
+          "utility_m": 0.0019865244955617166
+        }
+      ],
+      "new_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": 0.0013911537663620905
+        },
+        {
+          "action": "forward",
+          "utility_m": 0.02375798661444655
+        },
+        {
+          "action": "left_arc",
+          "utility_m": 0.012562647731327266
+        },
+        {
+          "action": "right_arc",
+          "utility_m": 0.024003497512880875
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.005420202748538959
+        },
+        {
+          "action": "right_turn",
+          "utility_m": 0.006024315728348471
+        }
+      ]
+    },
+    {
+      "model": "seed_2026091001_full_jepa",
+      "frame": 3400,
+      "old_action": "right_turn",
+      "new_action": "forward",
+      "old_score_contract": "causal_residual_exact_goal_potential_minus_full_plan_contact",
+      "new_score_contract": "causal_residual_exact_goal_potential_minus_commitment_contact",
+      "old_contact_horizon_ns": 800000000,
+      "new_contact_horizon_ns": 100000000,
+      "original_forecasts_geometry_and_residual_retained": true,
+      "feasible_candidates": 6,
+      "original_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": -0.011048248062214683
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.026157007840828327
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.010983560937196275
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.018276011858977183
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.013781861279015224
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.009640399929092422
+        }
+      ],
+      "new_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": -0.006741243185953313
+        },
+        {
+          "action": "forward",
+          "utility_m": 0.015487492833285245
+        },
+        {
+          "action": "left_arc",
+          "utility_m": 0.007582952755672983
+        },
+        {
+          "action": "right_arc",
+          "utility_m": 0.013585070807057197
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.010521366554845712
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004244666127253955
+        }
+      ]
+    },
+    {
+      "model": "seed_2026091001_full_supervised_rollout",
+      "frame": 200,
+      "old_action": "hold",
+      "new_action": "forward",
+      "old_score_contract": "causal_executed_waypoint_potential_minus_full_plan_contact",
+      "new_score_contract": "causal_executed_waypoint_potential_minus_commitment_contact",
+      "old_contact_horizon_ns": 800000000,
+      "new_contact_horizon_ns": 100000000,
+      "original_forecasts_geometry_and_residual_retained": true,
+      "feasible_candidates": 6,
+      "original_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": -0.0039078981861624335
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.04410227165339473
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.018090965689831474
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.027993964130228165
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004107397091350601
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004324268935919699
+        }
+      ],
+      "new_candidate_utilities": [
+        {
+          "action": "hold",
+          "utility_m": 1.3937240046224542e-05
+        },
+        {
+          "action": "forward",
+          "utility_m": 0.013922659540152087
+        },
+        {
+          "action": "left_arc",
+          "utility_m": 0.009994813868755052
+        },
+        {
+          "action": "right_arc",
+          "utility_m": 0.01150815196526244
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.0012538217183180925
+        },
+        {
+          "action": "right_turn",
+          "utility_m": 0.0005794182033190846
+        }
+      ]
+    }
+  ],
+  "checkpoint_loaded": false,
+  "controller_replay": false,
+  "native_execution": false,
+  "alternative_navigation_trajectory_inferred": false,
+  "navigation_improvement_established": false
+}

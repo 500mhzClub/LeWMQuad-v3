@@ -1,0 +1,16 @@
+{
+  "status": "COMPLETE",
+  "authorization": "User explicitly requested bounded retention and deletion of unneeded development depth.",
+  "retired_runs": 28,
+  "deleted_depth_files": 103096,
+  "removed_allocated_bytes": 154584248320,
+  "removed_allocated_GiB": 143.96780014038086,
+  "recovery_free_GiB": 141.21374893188477,
+  "workspace_free_GiB": 9.022880554199219,
+  "result_and_failure_records_verified_unchanged": true,
+  "only_primary_and_auxiliary_depth_npz_deleted": true,
+  "full_depth_for_active_replays_and_selected_comparison_populations_retained": true,
+  "retired_historical_sensor_replay_available": false,
+  "inventory_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/depth_retirement_2026-09-14",
+  "policy": "docs/go2_development_artifact_retention_2026-09-14.md"
+}

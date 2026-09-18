@@ -1,0 +1,77 @@
+{
+  "models": {
+    "seed_2026091401_full_jepa": {
+      "seed": 2026091401,
+      "condition": "jepa",
+      "root_name": "go2_matched_motion_residual_seed_2026091401_jepa_v1_attempt_001",
+      "fit_sha256": "3b2ed99b200d49826e70f3766e31818861093d58d93e2813cfbab679834b314d",
+      "model_state_sha256": "22c805f0d70554da07c4b467c5eef667e1aa9ae107be03cdbb0a29a1ed2f5d01",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091401_full_direct": {
+      "seed": 2026091401,
+      "condition": "direct",
+      "root_name": "go2_matched_motion_residual_seed_2026091401_direct_v1_attempt_001",
+      "fit_sha256": "8ded5153875024b0b016a94a1f51fe14add8e875d3b731979dcce009d540c572",
+      "model_state_sha256": "00fe5bc00d5174c7ec27af99cce477321249119865a26f38ab24791b05c9db9d",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091401_full_supervised_rollout": {
+      "seed": 2026091401,
+      "condition": "supervised_rollout",
+      "root_name": "go2_matched_motion_residual_seed_2026091401_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "13d96633f238208cff18357f3964a9c6c8a4c953ba6f1f335acf96cdec02bcff",
+      "model_state_sha256": "83aff562fb753104a19848d434731c998ede5157027d0d78b35df286d572b879",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091402_full_jepa": {
+      "seed": 2026091402,
+      "condition": "jepa",
+      "root_name": "go2_matched_motion_residual_seed_2026091402_jepa_v1_attempt_001",
+      "fit_sha256": "0ccb64c612a3fa08687404bb8b4378edb004b53f0ff5d88ac8b7d9c3dd161eb7",
+      "model_state_sha256": "1f2952ed4df62dda3d3f060557906354785a3fb50219b81ed28efd46372b5277",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091402_full_direct": {
+      "seed": 2026091402,
+      "condition": "direct",
+      "root_name": "go2_matched_motion_residual_seed_2026091402_direct_v1_attempt_001",
+      "fit_sha256": "5c17edb5cb0b4231661208887dcb588296add775964bfe98b1dcdc1d38502cc6",
+      "model_state_sha256": "461878222c1b6ba8045469911b9ea3834506760f3b520d930f12d7f26b993357",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091402_full_supervised_rollout": {
+      "seed": 2026091402,
+      "condition": "supervised_rollout",
+      "root_name": "go2_matched_motion_residual_seed_2026091402_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "98cbef561bef85dd95a1d50bb00b89878daa63169e935a5433b9a36b0257e24f",
+      "model_state_sha256": "1f80070c30384c29e50d65fd27738f4287e15eedf431634abfb27be67798f553",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091001_full_jepa": {
+      "seed": 2026091001,
+      "condition": "jepa",
+      "root_name": "go2_closed_loop_motion_residual_study_v1_attempt_001",
+      "fit_sha256": "ef7511b29afd0117291f600d7afad6adccdcd90199d0ea1f45519d7b81b01638",
+      "model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091001_full_direct": {
+      "seed": 2026091001,
+      "condition": "direct",
+      "root_name": "go2_matched_motion_residual_direct_v1_attempt_001",
+      "fit_sha256": "118fa93d4a420525c5685cf14b2aeec30cff827abf1d65029716aa7e69dd9e6a",
+      "model_state_sha256": "8cf81bec6c67261df9d25b56d2f6546abd887735ab8977021bb54a3c1963f1df",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091001_full_supervised_rollout": {
+      "seed": 2026091001,
+      "condition": "supervised_rollout",
+      "root_name": "go2_matched_motion_residual_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "413a3160c21dc43b4b8a1b87b4c092d59428158270d7b91179229d84b04fda1d",
+      "model_state_sha256": "755c074325af96d53649aba4927937113d8fab561ea05341a2f3c328598b2bb5",
+      "prediction_head": "rollout_outcomes"
+    }
+  },
+  "all_nine_frozen_models": true
+}

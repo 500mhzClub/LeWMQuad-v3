@@ -1,0 +1,3283 @@
+{
+  "status": "COMPLETE",
+  "prediction_result_sha256": "364a72a6a974f7aa9b933b0c1a29d82ed2d61cbe05b2777552d981d48011164d",
+  "goal_radius_m": 0.25,
+  "bearings_deg": [
+    -45,
+    0,
+    45
+  ],
+  "commit_interval_ms": [
+    300,
+    700
+  ],
+  "regret_mm": {
+    "train": {
+      "action": 3.0040166806957447,
+      "no_future_action": 2.0087079696614456,
+      "persistence": 2.0087079696614456,
+      "observed_future": 0.7717842057892474,
+      "zero_motion": 2.0087079696614456,
+      "command_history": 1.653573213805363
+    },
+    "geometry_transfer": {
+      "action": 2.1817280146938387,
+      "no_future_action": 2.0087079696614456,
+      "persistence": 2.0087079696614456,
+      "observed_future": 2.926428891406189,
+      "zero_motion": 2.0087079696614456,
+      "command_history": 1.653573213805363
+    }
+  },
+  "groups": [
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "hold",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_031",
+        "pulse_episode_001",
+        "pulse_episode_022"
+      ],
+      "true_progress_m": [
+        0.005927540187205815,
+        0.010906253105798902,
+        0.006749521269007047
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0013187617165868748,
+            0.0037882790395815102,
+            0.0017985042372206106
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.000219583246679117,
+            -0.000219583246679117,
+            -0.000219583246679117
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0033739917165210853,
+            0.010810863583707336,
+            0.010814566209315646
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.011231834769212135,
+            0.008306928530588537,
+            0.009719723527707197
+          ],
+          "regret_mm": 4.978712918593087
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "hold",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_031",
+        "pulse_episode_001",
+        "pulse_episode_022"
+      ],
+      "true_progress_m": [
+        0.008397278618654774,
+        0.014474315193465898,
+        0.008813447272774111
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.002063129501690214,
+            0.0045975454155851025,
+            0.0027977345944392162
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.000316118008474503,
+            -0.000316118008474503,
+            -0.000316118008474503
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.005584955660520863,
+            0.015642588227416487,
+            0.016362422646675312
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.017641400532962703,
+            0.013057947087346866,
+            0.015128541041590449
+          ],
+          "regret_mm": 6.077036574811123
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "hold",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_031",
+        "pulse_episode_001",
+        "pulse_episode_022"
+      ],
+      "true_progress_m": [
+        0.005801415576008162,
+        0.009123935330259458,
+        0.005553309060129408
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0015338447391540777,
+            0.0025437000088865125,
+            0.0020654021015612534
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.00021473832195473275,
+            -0.00021473832195473275,
+            -0.00021473832195473275
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.004347621730327295,
+            0.010465978461387998,
+            0.01141484905618742
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013053121789467076,
+            0.009799154053513809,
+            0.011189281430595055
+          ],
+          "regret_mm": 3.3225197542512963
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "left_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_027",
+        "pulse_episode_007",
+        "pulse_episode_021"
+      ],
+      "true_progress_m": [
+        0.009393972245561155,
+        0.009512845984320506,
+        0.009897861922153917
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.0051659876720189235,
+            -0.005930203539068785,
+            0.005832128725341584
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.0004077938381205626,
+            -0.0004077938381205626,
+            -0.0004077938381205626
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.001654850933560964,
+            -0.003233086347519426,
+            0.002983133017984696
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013383433795973593,
+            0.010434242340516015,
+            0.011857482484739307
+          ],
+          "regret_mm": 0.5038896765927614
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "left_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_027",
+        "pulse_episode_007",
+        "pulse_episode_021"
+      ],
+      "true_progress_m": [
+        0.011178546142377205,
+        0.011150203139188547,
+        0.010582226979823639
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.00818243359512269,
+            -0.008767370331967589,
+            0.008312470222659435
+          ],
+          "regret_mm": 0.5963191625535658
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.0008132239071860781,
+            -0.0008132239071860781,
+            -0.0008132239071860781
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0022919347693405867,
+            -0.005143609235862101,
+            0.003400386870049732
+          ],
+          "regret_mm": 0.5963191625535658
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.019121425834779687,
+            0.014535026945105667,
+            0.016605207451483556
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "left_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_027",
+        "pulse_episode_007",
+        "pulse_episode_021"
+      ],
+      "true_progress_m": [
+        0.006065387986715409,
+        0.005909395012231672,
+        0.004761237265464208
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.006203577511823044,
+            -0.006265847994661344,
+            0.005425043619082026
+          ],
+          "regret_mm": 1.3041507212512016
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.0007247196937991973,
+            -0.0007247196937991973,
+            -0.0007247196937991973
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0014944360577697213,
+            -0.003912216910150423,
+            0.0016856958593182148
+          ],
+          "regret_mm": 1.3041507212512016
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.012917944001585302,
+            0.009705927358825667,
+            0.011076206486878182
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "right_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_024",
+        "pulse_episode_032",
+        "pulse_episode_008"
+      ],
+      "true_progress_m": [
+        0.003962096876295701,
+        0.0006340231315858924,
+        -0.0012495415110512775
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0016614781245608834,
+            0.006064951046283296,
+            0.001445829569764162
+          ],
+          "regret_mm": 3.3280737447098083
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0007623149758173575,
+            0.0007623149758173575,
+            0.0007623149758173575
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.002142161588730651,
+            0.007271204787306723,
+            0.000855949599490452
+          ],
+          "regret_mm": 3.3280737447098083
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.009082738824994052,
+            0.006181600864839959,
+            0.007584163877894179
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "right_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_024",
+        "pulse_episode_032",
+        "pulse_episode_008"
+      ],
+      "true_progress_m": [
+        0.01002270226225968,
+        0.005397066644437759,
+        0.004794221762185885
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0024578648335288333,
+            0.00827557147835925,
+            0.001802639042144838
+          ],
+          "regret_mm": 4.625635617821922
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0015659607855256497,
+            0.0015659607855256497,
+            0.0015659607855256497
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0025115162242417555,
+            0.008123220728259828,
+            0.0003536486404302208
+          ],
+          "regret_mm": 4.625635617821922
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.01612583736750639,
+            0.011546324183116602,
+            0.013616872215833492
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "right_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_024",
+        "pulse_episode_032",
+        "pulse_episode_008"
+      ],
+      "true_progress_m": [
+        0.010097944912714846,
+        0.00701068504061364,
+        0.008084124605082066
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0015982117182307964,
+            0.004789822352191941,
+            0.0009458241366530618
+          ],
+          "regret_mm": 3.087259872101206
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0013099530123759917,
+            0.0013099530123759917,
+            0.0013099530123759917
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0011896933272414756,
+            0.0033946198883036682,
+            -0.0003926345971210221
+          ],
+          "regret_mm": 3.087259872101206
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013153178995946063,
+            0.009857131049099216,
+            0.011267190833105845
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "hold",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_000",
+        "pulse_episode_035",
+        "pulse_episode_012"
+      ],
+      "true_progress_m": [
+        0.005927540187205815,
+        0.010906253105798902,
+        0.006749521269007047
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002465981688827751,
+            0.003465895830656096,
+            0.00538569058750446
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0005697115892749627,
+            0.0005697115892749627,
+            0.0005697115892749627
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002205210434532534,
+            0.00527374226604807,
+            0.011381946488834366
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.011231834769212135,
+            0.008306928530588537,
+            0.009719723527707197
+          ],
+          "regret_mm": 4.978712918593087
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "hold",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_000",
+        "pulse_episode_035",
+        "pulse_episode_012"
+      ],
+      "true_progress_m": [
+        0.008397278618654774,
+        0.014474315193465898,
+        0.008813447272774111
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0034220195368589723,
+            0.004828696845914332,
+            0.0074186211163323745
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0008398754074410708,
+            0.0008398754074410708,
+            0.0008398754074410708
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.003110918661850204,
+            0.006702277685774138,
+            0.015948982863517147
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.017641400532962703,
+            0.013057947087346866,
+            0.015128541041590449
+          ],
+          "regret_mm": 6.077036574811123
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "hold",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_000",
+        "pulse_episode_035",
+        "pulse_episode_012"
+      ],
+      "true_progress_m": [
+        0.005801415576008162,
+        0.009123935330259458,
+        0.005553309060129408
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002269234823685573,
+            0.003201228657918359,
+            0.004815731027480341
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0005934884186618583,
+            0.0005934884186618583,
+            0.0005934884186618583
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0021980479272971087,
+            0.004164027891785438,
+            0.010766826713871941
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013053121789467076,
+            0.009799154053513809,
+            0.011189281430595055
+          ],
+          "regret_mm": 3.3225197542512963
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "left_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_004",
+        "pulse_episode_016",
+        "pulse_episode_002"
+      ],
+      "true_progress_m": [
+        0.009393972245561155,
+        0.009512845984320506,
+        0.009897861922153917
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0009828602093014116,
+            -0.0029613041217037006,
+            0.003887691665029863
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.000868604916366672,
+            0.000868604916366672,
+            0.000868604916366672
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.0017280788476091713,
+            -0.0038194183088959277,
+            -4.170630000652209e-05
+          ],
+          "regret_mm": 0.5038896765927614
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013383433795973593,
+            0.010434242340516015,
+            0.011857482484739307
+          ],
+          "regret_mm": 0.5038896765927614
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "left_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_004",
+        "pulse_episode_016",
+        "pulse_episode_002"
+      ],
+      "true_progress_m": [
+        0.011178546142377205,
+        0.011150203139188547,
+        0.010582226979823639
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0013415990479698214,
+            -0.004241073123041422,
+            0.005866880478530456
+          ],
+          "regret_mm": 0.5963191625535658
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.001460362810092486,
+            0.001460362810092486,
+            0.001460362810092486
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.0021158428981728206,
+            -0.005680428038751739,
+            -0.0006080107838629389
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.019121425834779687,
+            0.014535026945105667,
+            0.016605207451483556
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "left_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_004",
+        "pulse_episode_016",
+        "pulse_episode_002"
+      ],
+      "true_progress_m": [
+        0.006065387986715409,
+        0.005909395012231672,
+        0.004761237265464208
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0008599787598619346,
+            -0.002913942846730855,
+            0.004110148665814134
+          ],
+          "regret_mm": 1.3041507212512016
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0011450741085855531,
+            0.0011450741085855531,
+            0.0011450741085855531
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.001164869695420706,
+            -0.004037242944856273,
+            -0.0007901347892674271
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.012917944001585302,
+            0.009705927358825667,
+            0.011076206486878182
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "right_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_029",
+        "pulse_episode_019",
+        "pulse_episode_014"
+      ],
+      "true_progress_m": [
+        0.003962096876295701,
+        0.0006340231315858924,
+        -0.0012495415110512775
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0050566117378029185,
+            0.00856575696564496,
+            0.004888548777866097
+          ],
+          "regret_mm": 3.3280737447098083
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0011970220742364146,
+            0.0011970220742364146,
+            0.0011970220742364146
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -0.0001482387688992448,
+            0.0044764711418496805,
+            0.005324687496078395
+          ],
+          "regret_mm": 5.211638387346978
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.009082738824994052,
+            0.006181600864839959,
+            0.007584163877894179
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "right_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_029",
+        "pulse_episode_019",
+        "pulse_episode_014"
+      ],
+      "true_progress_m": [
+        0.01002270226225968,
+        0.005397066644437759,
+        0.004794221762185885
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.006687961498784256,
+            0.011691590698664378,
+            0.006807459525624476
+          ],
+          "regret_mm": 4.625635617821922
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002070724076639413,
+            0.002070724076639413,
+            0.002070724076639413
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -3.823169388564307e-05,
+            0.0053156219813579875,
+            0.007626894115950467
+          ],
+          "regret_mm": 5.228480500073795
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.01612583736750639,
+            0.011546324183116602,
+            0.013616872215833492
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "right_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_029",
+        "pulse_episode_019",
+        "pulse_episode_014"
+      ],
+      "true_progress_m": [
+        0.010097944912714846,
+        0.00701068504061364,
+        0.008084124605082066
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.004086691551220184,
+            0.007289220846650124,
+            0.004419478529026688
+          ],
+          "regret_mm": 3.087259872101206
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0016598603358425335,
+            0.0016598603358425335,
+            0.0016598603358425335
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            9.726274354529552e-05,
+            0.0027752244660765313,
+            0.0050540914116775915
+          ],
+          "regret_mm": 2.0138203076327796
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013153178995946063,
+            0.009857131049099216,
+            0.011267190833105845
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "hold",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_023",
+        "pulse_episode_018",
+        "pulse_episode_025"
+      ],
+      "true_progress_m": [
+        0.005927540187205815,
+        0.010906253105798902,
+        0.006749521269007047
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0004828469925943213,
+            0.005324980846075078,
+            0.0057956382385591365
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.000771677382374214,
+            0.000771677382374214,
+            0.000771677382374214
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.004692213294419295,
+            0.010287598629263206,
+            0.007679977558864376
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.011231834769212135,
+            0.008306928530588537,
+            0.009719723527707197
+          ],
+          "regret_mm": 4.978712918593087
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "hold",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_023",
+        "pulse_episode_018",
+        "pulse_episode_025"
+      ],
+      "true_progress_m": [
+        0.008397278618654774,
+        0.014474315193465898,
+        0.008813447272774111
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.000657205806721739,
+            0.006750795977507745,
+            0.00810946379926239
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0009898040821367804,
+            0.0009898040821367804,
+            0.0009898040821367804
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0062772757726681505,
+            0.01313286376475084,
+            0.01000160010807924
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.017641400532962703,
+            0.013057947087346866,
+            0.015128541041590449
+          ],
+          "regret_mm": 6.077036574811123
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "hold",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_023",
+        "pulse_episode_018",
+        "pulse_episode_025"
+      ],
+      "true_progress_m": [
+        0.005801415576008162,
+        0.009123935330259458,
+        0.005553309060129408
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0004487699320789851,
+            0.004161550232651967,
+            0.005577277352105919
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0006284894220026926,
+            0.0006284894220026926,
+            0.0006284894220026926
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "observed_future": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.0041252985899315475,
+            0.007972309656423315,
+            0.006291884616386967
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013053121789467076,
+            0.009799154053513809,
+            0.011189281430595055
+          ],
+          "regret_mm": 3.3225197542512963
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "left_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_015",
+        "pulse_episode_011",
+        "pulse_episode_030"
+      ],
+      "true_progress_m": [
+        0.009393972245561155,
+        0.009512845984320506,
+        0.009897861922153917
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.001977247968445589,
+            -0.0028172860181478188,
+            0.0042075644800687595
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.00045686502681971386,
+            0.00045686502681971386,
+            0.00045686502681971386
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.0037815011697277245,
+            -0.001028502440278023,
+            0.0030258952452369148
+          ],
+          "regret_mm": 0.5038896765927614
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013383433795973593,
+            0.010434242340516015,
+            0.011857482484739307
+          ],
+          "regret_mm": 0.5038896765927614
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "left_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_015",
+        "pulse_episode_011",
+        "pulse_episode_030"
+      ],
+      "true_progress_m": [
+        0.011178546142377205,
+        0.011150203139188547,
+        0.010582226979823639
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0028089553520855293,
+            -0.004176188512857837,
+            0.006370882811827072
+          ],
+          "regret_mm": 0.5963191625535658
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0008530205113835287,
+            0.0008530205113835287,
+            0.0008530205113835287
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.005610861563549424,
+            -0.0016453571478495799,
+            0.0037263954269804167
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.019121425834779687,
+            0.014535026945105667,
+            0.016605207451483556
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "left_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_015",
+        "pulse_episode_011",
+        "pulse_episode_030"
+      ],
+      "true_progress_m": [
+        0.006065387986715409,
+        0.005909395012231672,
+        0.004761237265464208
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0018970841674135486,
+            -0.0030033383494797727,
+            0.004528216939476415
+          ],
+          "regret_mm": 1.3041507212512016
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0007218198678269339,
+            0.0007218198678269339,
+            0.0007218198678269339
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.003967070562794661,
+            -0.001268264505504102,
+            0.0021394384598070193
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.012917944001585302,
+            0.009705927358825667,
+            0.011076206486878182
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "right_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_009",
+        "pulse_episode_020",
+        "pulse_episode_010"
+      ],
+      "true_progress_m": [
+        0.003962096876295701,
+        0.0006340231315858924,
+        -0.0012495415110512775
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0003223786943297724,
+            -0.0015679644091665668,
+            0.0012140429180987344
+          ],
+          "regret_mm": 5.211638387346978
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.000800869757843159,
+            0.000800869757843159,
+            0.000800869757843159
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.003711177829687551,
+            0.0018442127427543142,
+            -0.001065972931321213
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.009082738824994052,
+            0.006181600864839959,
+            0.007584163877894179
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "right_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_009",
+        "pulse_episode_020",
+        "pulse_episode_010"
+      ],
+      "true_progress_m": [
+        0.01002270226225968,
+        0.005397066644437759,
+        0.004794221762185885
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.00018406040350532615,
+            -0.002476186679781417,
+            0.001647128629367639
+          ],
+          "regret_mm": 5.228480500073795
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0009800049713961367,
+            0.0009800049713961367,
+            0.0009800049713961367
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.003982654228286087,
+            0.0014321665045660403,
+            -0.001977791700673942
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.01612583736750639,
+            0.011546324183116602,
+            0.013616872215833492
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "right_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_009",
+        "pulse_episode_020",
+        "pulse_episode_010"
+      ],
+      "true_progress_m": [
+        0.010097944912714846,
+        0.00701068504061364,
+        0.008084124605082066
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -6.73075589209815e-05,
+            -0.0019228571943417927,
+            0.0010911976056885153
+          ],
+          "regret_mm": 2.0138203076327796
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0005837341653857631,
+            0.0005837341653857631,
+            0.0005837341653857631
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.001838047533011089,
+            0.00014953640062462248,
+            -0.0017287184884483275
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013153178995946063,
+            0.009857131049099216,
+            0.011267190833105845
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "hold",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_026",
+        "pulse_episode_013",
+        "pulse_episode_006"
+      ],
+      "true_progress_m": [
+        0.005927540187205815,
+        0.010906253105798902,
+        0.006749521269007047
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0006809933499792309,
+            0.0021224052846369468,
+            0.005712435582176878
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.00017853859105593228,
+            0.00017853859105593228,
+            0.00017853859105593228
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.005078248380756489,
+            0.007146944857067933,
+            0.007471173406751269
+          ],
+          "regret_mm": 4.156731836791855
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.04514825179498
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.011231834769212135,
+            0.008306928530588537,
+            0.009719723527707197
+          ],
+          "regret_mm": 4.978712918593087
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "hold",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_026",
+        "pulse_episode_013",
+        "pulse_episode_006"
+      ],
+      "true_progress_m": [
+        0.008397278618654774,
+        0.014474315193465898,
+        0.008813447272774111
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0008099888803433375,
+            0.0024651167837099197,
+            0.007797588507703956
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            9.816696758913057e-05,
+            9.816696758913057e-05,
+            9.816696758913057e-05
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.006832214259147318,
+            0.009180587765055231,
+            0.009490831959700935
+          ],
+          "regret_mm": 5.6608679206917865
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.912634831834303
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.017641400532962703,
+            0.013057947087346866,
+            0.015128541041590449
+          ],
+          "regret_mm": 6.077036574811123
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "hold",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_026",
+        "pulse_episode_013",
+        "pulse_episode_006"
+      ],
+      "true_progress_m": [
+        0.005801415576008162,
+        0.009123935330259458,
+        0.005553309060129408
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0004700519031067829,
+            0.0013727177304827254,
+            0.005259429980114305
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            -3.860678392419992e-05,
+            -3.860678392419992e-05,
+            -3.860678392419992e-05
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.004551691162485827,
+            0.0057490594080086,
+            0.005854707016996141
+          ],
+          "regret_mm": 3.5706262701300506
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.297715341460449
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013053121789467076,
+            0.009799154053513809,
+            0.011189281430595055
+          ],
+          "regret_mm": 3.3225197542512963
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "left_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_033",
+        "pulse_episode_005",
+        "pulse_episode_028"
+      ],
+      "true_progress_m": [
+        0.009393972245561155,
+        0.009512845984320506,
+        0.009897861922153917
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002568163103945087,
+            -0.0034020859910302292,
+            0.0036681024234603843
+          ],
+          "regret_mm": 0.0
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0007576419830698233,
+            0.0007576419830698233,
+            0.0007576419830698233
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "observed_future": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.003987573833103691,
+            -0.0032466646477163075,
+            0.004234774551872267
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.29630187147539067
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013383433795973593,
+            0.010434242340516015,
+            0.011857482484739307
+          ],
+          "regret_mm": 0.5038896765927614
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "left_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_033",
+        "pulse_episode_005",
+        "pulse_episode_028"
+      ],
+      "true_progress_m": [
+        0.011178546142377205,
+        0.011150203139188547,
+        0.010582226979823639
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.00349016123240109,
+            -0.004852033028956704,
+            0.00532653934959007
+          ],
+          "regret_mm": 0.5963191625535658
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0010253067633247404,
+            0.0010253067633247404,
+            0.0010253067633247404
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.005751716133685997,
+            -0.00486581007121728,
+            0.005700075065989574
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.20822072191407393
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.019121425834779687,
+            0.014535026945105667,
+            0.016605207451483556
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "left_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_033",
+        "pulse_episode_005",
+        "pulse_episode_028"
+      ],
+      "true_progress_m": [
+        0.006065387986715409,
+        0.005909395012231672,
+        0.004761237265464208
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0022341887544801153,
+            -0.003358499102914775,
+            0.0036378132435263832
+          ],
+          "regret_mm": 1.3041507212512016
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0006586125602167647,
+            0.0006586125602167647,
+            0.0006586125602167647
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.003969471174461503,
+            -0.0035911877310670914,
+            0.0036537029505461505
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 0.48671456524497936
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.012917944001585302,
+            0.009705927358825667,
+            0.011076206486878182
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "right_turn",
+      "bearing_deg": -45,
+      "trials": [
+        "pulse_episode_017",
+        "pulse_episode_034",
+        "pulse_episode_003"
+      ],
+      "true_progress_m": [
+        0.003962096876295701,
+        0.0006340231315858924,
+        -0.0012495415110512775
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.004873789112546656,
+            0.005585750215855889,
+            0.0028263371863209708
+          ],
+          "regret_mm": 3.3280737447098083
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0028988130714055482,
+            0.0028988130714055482,
+            0.0028988130714055482
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.008342309697233707,
+            0.003570848651084424,
+            0.002394688997081562
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 2.846570710685596
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.009082738824994052,
+            0.006181600864839959,
+            0.007584163877894179
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "right_turn",
+      "bearing_deg": 0,
+      "trials": [
+        "pulse_episode_017",
+        "pulse_episode_034",
+        "pulse_episode_003"
+      ],
+      "true_progress_m": [
+        0.01002270226225968,
+        0.005397066644437759,
+        0.004794221762185885
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.005751439976403677,
+            0.007080011250438389,
+            0.0038875434093091354
+          ],
+          "regret_mm": 4.625635617821922
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0038069836630561793,
+            0.0038069836630561793,
+            0.0038069836630561793
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.011033270860903943,
+            0.004486232148696839,
+            0.004326231648156487
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 3.284705372631906
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.01612583736750639,
+            0.011546324183116602,
+            0.013616872215833492
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "right_turn",
+      "bearing_deg": 45,
+      "trials": [
+        "pulse_episode_017",
+        "pulse_episode_034",
+        "pulse_episode_003"
+      ],
+      "true_progress_m": [
+        0.010097944912714846,
+        0.00701068504061364,
+        0.008084124605082066
+      ],
+      "models": {
+        "action": {
+          "chosen_branches": [
+            1
+          ],
+          "predicted_commit_progress_m": [
+            0.003282415021588214,
+            0.004442990121099916,
+            0.0027097980096692786
+          ],
+          "regret_mm": 3.087259872101206
+        },
+        "no_future_action": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.002489419141265492,
+            0.002489419141265492,
+            0.002489419141265492
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "persistence": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "observed_future": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.007149334806257318,
+            0.0027851333310810467,
+            0.003757434210948679
+          ],
+          "regret_mm": 0.0
+        },
+        "zero_motion": {
+          "chosen_branches": [
+            0,
+            1,
+            2
+          ],
+          "predicted_commit_progress_m": [
+            0.0,
+            0.0,
+            0.0
+          ],
+          "regret_mm": 1.700360059911329
+        },
+        "command_history": {
+          "chosen_branches": [
+            0
+          ],
+          "predicted_commit_progress_m": [
+            0.013153178995946063,
+            0.009857131049099216,
+            0.011267190833105845
+          ],
+          "regret_mm": 0.0
+        }
+      }
+    }
+  ],
+  "new_navigation": false,
+  "new_fitting": false,
+  "limitations": [
+    "three retained pulse branches per history, not the complete six-action runtime bank",
+    "two exposed transfer geometries",
+    "physical outcomes identical across paired scenes",
+    "observed-future decoder is an oracle diagnostic",
+    "no collision or path feasibility scoring"
+  ]
+}

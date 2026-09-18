@@ -1,0 +1,128 @@
+{
+  "status": "SCOPED_FOOTPRINT_PAIRED_REPLAY_EXECUTING_INITIAL_INPUT_ADMISSION",
+  "utc": "2026-09-10T21:57:20.059068+00:00",
+  "preparation_sha256": "139369a85a4d025953eafa05bf7cdba003b496530f679175465ef5973505063b",
+  "source_count": 2145,
+  "profile_result_sha256": "07c096a8e6d83ac7676337993643e30dc35ebdec65758674f9ffb71c58b23c84",
+  "predecessor_controller_result_sha256": "152da30ba5c142d8150dacd5865278f81d5db46c7603bd637eb8ec2eee292fdf",
+  "predecessor_controller_owner_ended": true,
+  "owner": {
+    "pid": 2754886,
+    "create_time": 1789077365.71,
+    "argv": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_scoped_footprint_late_history_v1.py",
+      "--profile-result-sha256",
+      "07c096a8e6d83ac7676337993643e30dc35ebdec65758674f9ffb71c58b23c84"
+    ],
+    "boot": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "tool_session_id": 5161,
+  "observed_stdout": "SCOPED_FOOTPRINT_PAIRED_FULL_INPUT_ADMISSION_STARTED",
+  "output_created": false,
+  "hardware": {
+    "affinity": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "physical_cpus": 16,
+    "logical_cpus": 32,
+    "cpu_busy_percent": 6.7,
+    "memory_available_bytes": 75124891648,
+    "gpus": {
+      "card0": {
+        "gpu_busy_percent": 0,
+        "mem_info_vram_total": 2147483648,
+        "mem_info_vram_used": 439447552
+      },
+      "card1": {
+        "gpu_busy_percent": 6,
+        "mem_info_vram_total": 34208743424,
+        "mem_info_vram_used": 1801449472
+      }
+    },
+    "artifact_free_bytes": 629027782656,
+    "workspace_free_bytes": 21337735168,
+    "competing_python": [
+      {
+        "pid": 6681,
+        "name": "python3",
+        "rss": 2674688
+      },
+      {
+        "pid": 2659758,
+        "name": "python",
+        "rss": 489828352
+      },
+      {
+        "pid": 2662100,
+        "name": "python",
+        "rss": 7380992
+      },
+      {
+        "pid": 2663938,
+        "name": "python",
+        "rss": 457773056
+      },
+      {
+        "pid": 2671835,
+        "name": "python",
+        "rss": 426295296
+      },
+      {
+        "pid": 2703476,
+        "name": "python",
+        "rss": 427757568
+      },
+      {
+        "pid": 2743870,
+        "name": "python",
+        "rss": 4321153024
+      },
+      {
+        "pid": 2753911,
+        "name": "python",
+        "rss": 1044742144
+      },
+      {
+        "pid": 2754886,
+        "name": "python",
+        "rss": 1168605184
+      }
+    ]
+  },
+  "scope": "Paired controller replay only; original simulator queue and tracking-recovery waiter continue.",
+  "native_execution": false,
+  "goal_achieved": false
+}

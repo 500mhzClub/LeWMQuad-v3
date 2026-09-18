@@ -1,0 +1,39 @@
+{
+  "status": "SCOPED_FOOTPRINT_PAIRED_REPLAY_LAUNCH_AUTHENTICATED",
+  "utc": "2026-09-10T22:15:13.802845+00:00",
+  "launch_sha256": "13145419c4676be6329f49698fca9bae63eb27728184cd0b71fad1d2ee2d21dc",
+  "source_count": 2145,
+  "prepared_source_map_exact": true,
+  "owner": {
+    "pid": 2754886,
+    "create_time": 1789077365.71,
+    "argv": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_scoped_footprint_late_history_v1.py",
+      "--profile-result-sha256",
+      "07c096a8e6d83ac7676337993643e30dc35ebdec65758674f9ffb71c58b23c84"
+    ]
+  },
+  "full_initial_input_admission_finished": true,
+  "latest_complete_frame": 105,
+  "latest_complete_comparison": {
+    "frame": 105,
+    "execution_order": [
+      1,
+      0
+    ],
+    "baseline_controller_s": 0.5837790691293776,
+    "candidate_controller_s": 0.5907668541185558,
+    "public_input_sha256": "dbccb540b4714a251ed7e3c387b8b161b9701c2559a54e637798ee138c1443f1",
+    "original_decision_sha256": "a3f60445dbea1fe8a25683ffff2f4b00097f827ed3a917a4b9678a23c7c0a0f3",
+    "baseline_decision_sha256": "07465afe1cfa4bf0e052daac01107188800cf7eee9ba4fa3c6a0adaf50339dee",
+    "candidate_decision_sha256": "562028963b72dc4fed9ba70596eae10ac9f30851f6f445d777452c6bce036f31",
+    "complete_original_decision_reconstructed": true,
+    "candidate_normalized_decision_exact": true,
+    "public_input_arrays_unchanged": true
+  },
+  "terminal_result_present": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

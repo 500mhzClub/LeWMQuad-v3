@@ -1,0 +1,31 @@
+{
+  "status": "DENSITY_ROUTED_FLOOR_REGISTRATION_PREFIX_STARTED",
+  "owner": {
+    "pid": 2849625,
+    "created": 1789130976.86,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_density_routed_floor_registration_prefix_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "launch_sha256": "db41edbc9e7d8726dd208080fe85f40dbf5237bf88cd63f3c8752403f92b4139",
+  "source_count": 2284,
+  "tool_session": 13607,
+  "floor_index_tests": {
+    "passed": 21,
+    "wall_s": 1.7,
+    "session": 96585,
+    "exit_code": 0
+  },
+  "binding_tests": {
+    "passed": 2,
+    "wall_s": 0.18,
+    "exit_code": 0
+  },
+  "recorded_workload_probe_sha256": "77126309d0d20345484b631f99ca090fe836f4d03574a7135b34fa51d6b36c6e",
+  "native_execution": false,
+  "full_controller_reexecuted": false,
+  "goal_achieved": false
+}

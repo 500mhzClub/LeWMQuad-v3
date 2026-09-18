@@ -1,0 +1,76 @@
+{
+  "status": "LATE_HISTORY_PROFILE_BINDINGS_ORIGINAL_RECEIPTS_AND_RAW_PROFILES_VERIFIED",
+  "result_sha256": "07c096a8e6d83ac7676337993643e30dc35ebdec65758674f9ffb71c58b23c84",
+  "source_count": 2130,
+  "artifact_sha256": {
+    "launch.json": "0a87515a70adc3ee27039d01ec70a79809329cea77afcd2baae49c327a8599b3",
+    "comparison.jsonl": "05b261b82ef28ffe553e39d58780fee092d3071c5d25cb6a4df03b4bfc2fd8d0",
+    "early_navigation.prof": "a1f4a44dcc37589ef8f446c5b7fca53673ed049077f224734ec5d35f6e7ff3f3",
+    "early_navigation.json": "0c12a4d11619a470401582e605b7d3d190c81cf5d60d5ee2b52ef307945139b0",
+    "repeated_hold.prof": "20030f366ae4a58fd9c3590c278394cabecac3a11b7111fa435e070b81874063",
+    "repeated_hold.json": "7c14dfecb2f00a0f04211d01c3e7b18c5a59e250890a78b8f788fcc545e7032d",
+    "late_navigation.prof": "7d8c222b2fd26206f553afc21cf14b7a05c29dd7a2fc5e4fb94a8a7c676c4424",
+    "late_navigation.json": "40e27fff9417018eb3e38fc2a9f22ff499fb1511ae1b7e6854ae1f2f5fe7b364"
+  },
+  "original_decision_hashes_recomputed": 1428,
+  "all_three_profile_summaries_regenerated": true,
+  "windows": {
+    "early_navigation": {
+      "total_profiled_s": 9.619030717000001,
+      "footprint_calls": 60,
+      "footprint_cumulative_s": 2.4585223490000003,
+      "retained_patch_coverage": {
+        "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/retained_floor_patch_development.py",
+        "line": 36,
+        "function": "coverage",
+        "primitive_calls": 120,
+        "calls": 120,
+        "self_time_s": 0.023678547,
+        "cumulative_time_s": 0.040908185
+      }
+    },
+    "repeated_hold": {
+      "total_profiled_s": 20.987476966000003,
+      "footprint_calls": 180,
+      "footprint_cumulative_s": 14.085731644,
+      "retained_patch_coverage": {
+        "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/retained_floor_patch_development.py",
+        "line": 36,
+        "function": "coverage",
+        "primitive_calls": 360,
+        "calls": 360,
+        "self_time_s": 2.9103811210000003,
+        "cumulative_time_s": 4.944618017000001
+      }
+    },
+    "late_navigation": {
+      "total_profiled_s": 36.85234965,
+      "footprint_calls": 168,
+      "footprint_cumulative_s": 29.306842672000002,
+      "retained_patch_coverage": {
+        "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/retained_floor_patch_development.py",
+        "line": 36,
+        "function": "coverage",
+        "primitive_calls": 448,
+        "calls": 448,
+        "self_time_s": 12.02839316,
+        "cumulative_time_s": 20.546381456000002
+      }
+    }
+  },
+  "sensing_scope": {
+    "original_strict_physical_visibility_pass": false,
+    "original_hard_measurement_failed_frames": [
+      1173
+    ],
+    "failure_frame_inside_profiled_history": true,
+    "original_verified_round_trip": false,
+    "known_invalid_sensing_retained": true,
+    "qualified_sensing_prefix_claimed": false,
+    "navigation_verified": false
+  },
+  "model_inference_independently_rerun": false,
+  "full_original_input_admission_independently_rerun": false,
+  "isolated_timing": false,
+  "navigation_qualified": false
+}

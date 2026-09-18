@@ -1,0 +1,74 @@
+{
+  "pairs": 24294,
+  "recordings": 138,
+  "frame_paths": 5552,
+  "epochs": 24,
+  "batch": 128,
+  "seed": 2026091707,
+  "offsets_ms": [
+    100,
+    200,
+    500,
+    1000,
+    2000,
+    3000
+  ],
+  "encoder_batch": 8,
+  "architecture": "2x2 mean pooled normalized tokens; shared 1024-to-32 GELU, flatten 192 cells, linear 64-dimensional embedding; mean squared embedding distance",
+  "parameters": 426016,
+  "target": "squared world-planar XY separation / .03^2 plus squared wrapped world-yaw separation / radians(5)^2",
+  "position_scale_m": 0.03,
+  "heading_scale_rad": 0.08726646259971647,
+  "scales_from_existing_pilot_tolerances": true,
+  "loss": "MSE between log1p predicted squared metric distance and log1p physical target distance",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0
+  },
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_dense_goal_metric_development.py": "697f2caf86e834d8a45e3e1f813e389047793f3acf11f186edc678e4fec8193b",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "scripts/train_go2_dense_visual_motion_readout_development.py": "872d58a49f37bd54c18f1068253fef3603a64e3c3ff2ba8d3b9a5defae07cac7",
+    "lewm/dense_visual_motion_readout_development.py": "4325ff97dfad3b75648896940089347509e9dad773dfdef0cd841c522383dba5"
+  },
+  "parent_training_samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "pairs_sha256": "c75d22f4626700a9ccb89debf37bf3635efdbb4808393503dbe087b3c33d70e9",
+  "paths_sha256": "f5bf9c10cd6bbd26f1c42479115e8c09fe0373b8bf1e08ff5a338f91a34d16be",
+  "target_quantiles": [
+    3.3568362596270163e-06,
+    0.022380967624485493,
+    1.1316711902618408,
+    18.907432556152344,
+    103.1482925415039,
+    484.41119384765625
+  ],
+  "source_pair_counts": {
+    "switch": 15132,
+    "short_pulse": 1386,
+    "family": 7776
+  },
+  "encoder_and_predictors_frozen": true,
+  "fit_inputs": "two observed image representations only; no action/body/control/pose inputs",
+  "labels": "simulator poses used only as training targets; pair endpoints must precede any contact",
+  "checkpoint": "fixed final epoch; no transfer selection",
+  "features": "FP16 pooled features in RAM only; float32 goal metric training",
+  "maximum_feature_cache_bytes": 2183135232,
+  "resources": {
+    "available_ram_gib": 72,
+    "output_free_gib": 2.6,
+    "root_free_gib": 1.2,
+    "gpu_vram_gib": 31.86,
+    "competing_compute_jobs": 0
+  },
+  "concurrency": "one GPU process, four CPU threads on cores 8-11; reuse proven batch-eight extraction (about five distinct images per second)",
+  "evaluation": "same frozen cost on actual and action/no-action predicted future features; retain raw dense-MSE control",
+  "additional_supervision_is_not_jepa_objective": true,
+  "new_navigation": false,
+  "limitations": [
+    "one architecture and seed; small training geometry family",
+    "a learned symmetric distance is not a stopping detector or collision predictor",
+    "pair distance supervision does not establish JEPA-training superiority"
+  ]
+}

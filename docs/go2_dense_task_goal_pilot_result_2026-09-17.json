@@ -1,0 +1,185 @@
+{
+  "status": "COMPLETE",
+  "cases": [
+    {
+      "case": 0,
+      "scene": "family_episode_026",
+      "arm": "dense_action",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.07649512125392272,
+      "final_yaw_error_deg": 6.71469423711038,
+      "wall_s": 40.45126298209652,
+      "maximum_consecutive_goal_frames": 18,
+      "initial_rgb_exact": true,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_v1_attempt_001/case_00/result.json",
+      "result_sha256": "42ca7fc6c778bd4da23d143b5c2ec6776a9e2bc7dcdae8d493606b750351ed85"
+    },
+    {
+      "case": 1,
+      "scene": "family_episode_026",
+      "arm": "metric_action",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.03394879123860096,
+      "final_yaw_error_deg": 15.541030198498989,
+      "wall_s": 41.12350874184631,
+      "maximum_consecutive_goal_frames": 8,
+      "initial_rgb_exact": true,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_v1_attempt_001/case_01/result.json",
+      "result_sha256": "f2e5257cd16f49682db7274a7a65139591e5a6db2adc0eb158fb200eff29425b"
+    },
+    {
+      "case": 2,
+      "scene": "family_episode_003",
+      "arm": "metric_action",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.04381772228297616,
+      "final_yaw_error_deg": 9.034802482484386,
+      "wall_s": 40.41332043102011,
+      "maximum_consecutive_goal_frames": 8,
+      "initial_rgb_exact": true,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_storage_replacement_v1_attempt_001/case_02/result.json",
+      "result_sha256": "0cd686c18ccb95c4b46d2919e52e2c390aa767033b241f226c4786a2089a730b",
+      "interrupted_execution_prefix_reproduced": true
+    },
+    {
+      "case": 3,
+      "scene": "family_episode_003",
+      "arm": "dense_action",
+      "goal_reached": true,
+      "final_within_goal": false,
+      "completed_budget": true,
+      "physical_stop": null,
+      "disallowed_contact": false,
+      "decisions": 20,
+      "minimum_xy_error_m": 0.0038988902807779733,
+      "final_xy_error_m": 0.08575468370872762,
+      "final_yaw_error_deg": 3.163050260871371,
+      "wall_s": 41.100280058104545,
+      "maximum_consecutive_goal_frames": 4,
+      "initial_rgb_exact": true,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_storage_replacement_v1_attempt_001/case_03/result.json",
+      "result_sha256": "a3b47c4d41e6355d4a6a682329166434f3624912e25797536065d21577bf35dc",
+      "interrupted_execution_prefix_reproduced": true
+    }
+  ],
+  "summaries": {
+    "dense_action": {
+      "trials": 2,
+      "transient_goal_visits": 2,
+      "final_within_goal": 0,
+      "contacts": 0,
+      "mean_final_xy_cm": 8.112490248132517
+    },
+    "metric_action": {
+      "trials": 2,
+      "transient_goal_visits": 2,
+      "final_within_goal": 0,
+      "contacts": 0,
+      "mean_final_xy_cm": 3.888325676078856
+    }
+  },
+  "planned_task_cells": 4,
+  "terminal_task_records": 4,
+  "predecessor_summaries": {
+    "action": {
+      "trials": 2,
+      "transient_goal_visits": 2,
+      "final_within_goal": 0,
+      "contacts": 0,
+      "completed_budgets": 2,
+      "mean_final_xy_cm": 3.160035190727023
+    },
+    "no_future_action": {
+      "trials": 2,
+      "transient_goal_visits": 0,
+      "final_within_goal": 0,
+      "contacts": 2,
+      "completed_budgets": 0,
+      "mean_final_xy_cm": 13.597114111190924
+    }
+  },
+  "reused_blind_reference": [
+    {
+      "case": 1,
+      "arm": "no_future_action",
+      "scene": "family_episode_026",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 8,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.12410943420417288,
+      "final_yaw_error_deg": 48.22526784526229,
+      "wall_s": 22.275518456008285,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "43a239b777c11be334eeeb2c97ad5121965ff06eac79b938da5a3633837032bf"
+    },
+    {
+      "case": 2,
+      "arm": "no_future_action",
+      "scene": "family_episode_003",
+      "goal_reached": false,
+      "final_within_goal": false,
+      "completed_budget": false,
+      "physical_stop": "DISALLOWED_CONTACT",
+      "disallowed_contact": true,
+      "decisions": 9,
+      "minimum_xy_error_m": 0.1222709718958512,
+      "final_xy_error_m": 0.14783284801964564,
+      "final_yaw_error_deg": 47.40582572706246,
+      "wall_s": 21.32131253904663,
+      "cost": "learned_metric",
+      "maximum_consecutive_goal_frames": 0,
+      "result_sha256": "a235d5c9d09d4428d306400c74772dca963d47ee308db62d265b3b8d60fd10e8"
+    }
+  ],
+  "plan_sha256": "7c4849cada0510dfbe7c264a25f9a1efecf1ce46265eb4be20a630f0c3fbc3a0",
+  "encoder_and_goal_metric_unchanged": true,
+  "storage_interrupted_attempts": [
+    {
+      "case": 2,
+      "path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_v1_attempt_001/case_02",
+      "reason": "RuntimeError('output storage reserve reached')",
+      "failure_sha256": "6707faa84145a3b9e2aa158f52df062c0011fa056fe3b9206caa494870805d3b"
+    },
+    {
+      "case": 3,
+      "path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_task_goal_pilot_v1_attempt_001/case_03",
+      "reason": "RuntimeError('output storage reserve reached')",
+      "failure_sha256": "6707faa84145a3b9e2aa158f52df062c0011fa056fe3b9206caa494870805d3b"
+    }
+  ],
+  "total_native_attempts": 6,
+  "recovery_plan_sha256": "cd30fd5defe2566370e6181fc4b02f4fc155422ae1112c8fabd7531a72b7f4c1",
+  "matched_extra_training_budget": true,
+  "full_maze_navigation": false,
+  "hardware_validated": false,
+  "limitations": [
+    "two exposed related local tasks, one seed",
+    "blind uniform-tie control is not a strong reactive baseline",
+    "blind reference trajectories are reused, not additional replicates",
+    "extra physical supervision; no isolated JEPA training claim",
+    "simulation paused during inference"
+  ]
+}

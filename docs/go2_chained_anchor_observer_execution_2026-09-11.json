@@ -1,0 +1,24 @@
+{
+  "status": "CHAINED_ANCHOR_OBSERVER_PREFIX_REGISTERED_AND_CPU_WAITING",
+  "owner": {
+    "pid": 2838943,
+    "created": 1789126094.17,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_chained_anchor_observer_prefix_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "launch_sha256": "c1ee58ed93cd71dae49198747f8c3be281cd24850051e1379e29c1b1a11edf18",
+  "source_count": 2258,
+  "preparation_sha256": "99b7102afa9927ec7e51c6aef4f4e08368d2145796a0f3357214f0324569cec1",
+  "worker_terminal_sha256": "d79f413371e4ee030156b60270cfc7077c50640b416bdca29a6d18aacc0fef4c",
+  "verified_worker_artifact_count": 5283,
+  "worker_ended": true,
+  "cpu_dependency_live": true,
+  "tool_session": 46363,
+  "observer_result_available": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

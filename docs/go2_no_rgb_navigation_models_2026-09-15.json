@@ -1,0 +1,86 @@
+{
+  "models": {
+    "seed_2026091001_no_rgb_jepa": {
+      "seed": 2026091001,
+      "condition": "jepa",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091001_jepa_v1_attempt_001",
+      "fit_sha256": "faa20a0b483e608547bb76fb2ead49dfbb97bd90117518d2c8b011b3d25f9111",
+      "model_state_sha256": "fb6f1aba8830a53d67cd6c284fb24199966d5f0c63db3b2a107ab833c81c266f",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091001_no_rgb_direct": {
+      "seed": 2026091001,
+      "condition": "direct",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091001_direct_v1_attempt_001",
+      "fit_sha256": "e9821fa218fed9769d9c544b5433cf247fd34b309e93cd93d429ec328f6351df",
+      "model_state_sha256": "56799c99e2bb1fd5e5a591009b931c5b2e04741d3a3744e2346ce9896a2160dd",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091001_no_rgb_supervised_rollout": {
+      "seed": 2026091001,
+      "condition": "supervised_rollout",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091001_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "0aed21beed29e5002bbf41e1b07844eb8046efd1aabdb8624ebc4d0288a0372a",
+      "model_state_sha256": "7d9a53c6477884548f687cb9a26184e11621304b927cb924838795badb226035",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091401_no_rgb_jepa": {
+      "seed": 2026091401,
+      "condition": "jepa",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091401_jepa_v1_attempt_001",
+      "fit_sha256": "26e33183b88b79bcb7a42335bcb5a0ac10841a61daab83decffb96251f508359",
+      "model_state_sha256": "ed9fc4aa9c78e608aea0dfe74bb053f9baae3f03e605b90409913908056f57dc",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091401_no_rgb_direct": {
+      "seed": 2026091401,
+      "condition": "direct",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091401_direct_v1_attempt_001",
+      "fit_sha256": "14ede2f53f2334b65d07aabc0cbfa8627ff527322b94e94085e51489663d1255",
+      "model_state_sha256": "a8efa58b34488d3605499a4012ca8b1759a7ac4e4f41e437b3ee4c05d0caee00",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091401_no_rgb_supervised_rollout": {
+      "seed": 2026091401,
+      "condition": "supervised_rollout",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091401_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "a770f0c4f5d34dd2edbdc47f9711c0b1409d1381a3f18edfa2c622e11fdb0a38",
+      "model_state_sha256": "88c60d4aaf1b3d31bd0952842836493becbfea26609a6aba3b3ae94421ace4f9",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091402_no_rgb_jepa": {
+      "seed": 2026091402,
+      "condition": "jepa",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091402_jepa_v1_attempt_001",
+      "fit_sha256": "481ea0a185db30c158e6e1b615548fdb45819fd07816121e154df69cf7ac3640",
+      "model_state_sha256": "bab3a693e96fa60df1eb17c077d47801706228909a09bf97e6c1dbf2c6edc3bc",
+      "prediction_head": "rollout_outcomes"
+    },
+    "seed_2026091402_no_rgb_direct": {
+      "seed": 2026091402,
+      "condition": "direct",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091402_direct_v1_attempt_001",
+      "fit_sha256": "86fcacd4349b487524eec59bdc7e737cda04d556dd73c8dd43dd26436f34a933",
+      "model_state_sha256": "8e8e73e10fd43eea2baa4a552aa6b76ca368c5f5d454aedf1369872a99502dc8",
+      "prediction_head": "direct_outcomes"
+    },
+    "seed_2026091402_no_rgb_supervised_rollout": {
+      "seed": 2026091402,
+      "condition": "supervised_rollout",
+      "input_variant": "no_rgb",
+      "root_name": "go2_no_rgb_matched_motion_residual_seed_2026091402_supervised_rollout_v1_attempt_001",
+      "fit_sha256": "c68529172c6762faf8c47c4fd0c4dd3c1df60d340a858934c525748ccce23b86",
+      "model_state_sha256": "28e0eeae453d15117fbc8a07ded60e48f0a6403794f6cfe315308955fb5f7801",
+      "prediction_head": "rollout_outcomes"
+    }
+  },
+  "all_nine_frozen_no_rgb_models": true
+}

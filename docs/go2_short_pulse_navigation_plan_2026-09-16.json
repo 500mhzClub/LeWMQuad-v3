@@ -1,0 +1,145 @@
+{
+  "assignments": [
+    [
+      0,
+      "jepa"
+    ],
+    [
+      0,
+      "direct"
+    ],
+    [
+      0,
+      "supervised_rollout"
+    ],
+    [
+      0,
+      "pose_command"
+    ],
+    [
+      0,
+      "command_history"
+    ],
+    [
+      0,
+      "instantaneous"
+    ],
+    [
+      0,
+      "reactive"
+    ],
+    [
+      1,
+      "reactive"
+    ],
+    [
+      1,
+      "instantaneous"
+    ],
+    [
+      1,
+      "command_history"
+    ],
+    [
+      1,
+      "pose_command"
+    ],
+    [
+      1,
+      "supervised_rollout"
+    ],
+    [
+      1,
+      "direct"
+    ],
+    [
+      1,
+      "jepa"
+    ]
+  ],
+  "models": {
+    "jepa": {
+      "condition": "jepa",
+      "filename": "jepa.pt",
+      "sha256": "3790b3bdef97fbb3c340bc43d6d1fbccc6295fb0da80f015f11d064296303978",
+      "bytes": 6991475,
+      "configuration": {
+        "condition": "jepa",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "cb56c008f3c7a98ffc09ef04f88053a39937100f4e3578f3584d930695b54025",
+      "wall_s": 86.84039388992824,
+      "reload_model_sha256": "cb56c008f3c7a98ffc09ef04f88053a39937100f4e3578f3584d930695b54025"
+    },
+    "direct": {
+      "condition": "direct",
+      "filename": "direct.pt",
+      "sha256": "01397558c70669c1095efa130c008482e3524ec23f5109066d842a55943da326",
+      "bytes": 6698019,
+      "configuration": {
+        "condition": "direct",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "93feb5af6b899e3cf465141cf6c0285382313053c3b3036c0171a8ae6ee8cd81",
+      "wall_s": 71.58493333193474,
+      "reload_model_sha256": "93feb5af6b899e3cf465141cf6c0285382313053c3b3036c0171a8ae6ee8cd81"
+    },
+    "supervised_rollout": {
+      "condition": "supervised_rollout",
+      "filename": "supervised_rollout.pt",
+      "sha256": "5dee105cc5520a798397bc5cb54cda3d76b0ba037d37cdee438882e20cfae54c",
+      "bytes": 6991475,
+      "configuration": {
+        "condition": "supervised_rollout",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "ca3febcd50908144a40fafcbe929087641e716079ef90f47366679d4f2ab30ad",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "input_variant": "full"
+      },
+      "initial_sha256": "00de2b1b8f8a97c3e601dfc4199198283d2beb5ba20a1fd5e3f81a427bc06a04",
+      "model_sha256": "73a5dd98adf34c777fb50f2dc957951d877ca8dd9cf1b830424c18b7f05210ea",
+      "wall_s": 75.68849017517641,
+      "reload_model_sha256": "73a5dd98adf34c777fb50f2dc957951d877ca8dd9cf1b830424c18b7f05210ea"
+    }
+  },
+  "command_history_fit_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+  "inventory_sha256": "0a7f65cf540c7715adb887ee0c3c9e3ccc41733cd9dfb0a20a3f4dc11fe3766b",
+  "navigation_ticks": 4800,
+  "training_seed": 2026091001,
+  "observed_arrival_radius_m": 0.02,
+  "physical_arrival_radius_m": 0.04,
+  "main_comparison": "raw nominal-composed neural forecasts, fitted pose-command motion, matched-data command-history motion, instantaneous ranking, reactive",
+  "final_evaluation": false,
+  "model_selection_from_new_maze_outcomes": false,
+  "fixed_before_first_navigation": true,
+  "external_neural_motion_correction": false
+}

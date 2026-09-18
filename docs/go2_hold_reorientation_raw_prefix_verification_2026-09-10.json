@@ -1,0 +1,38 @@
+{
+  "candidate_command": [
+    0.0,
+    0.0,
+    0.45
+  ],
+  "complete_original_input_verification_passed_before_and_after": true,
+  "first_changed_command_frame": 405,
+  "following_outcomes_inferred": false,
+  "goal_achieved": false,
+  "independent_hidden_contact_state_reconstruction": false,
+  "independent_neural_inference_rerun": false,
+  "independent_sessions": [
+    84671,
+    78707
+  ],
+  "native_execution": false,
+  "navigation_verified": false,
+  "original_command": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "original_worker_terminal_sha256": "617056f19ba4928aa9ff7738616947e6e63a387cc6046353e30617ce50afa57e",
+  "public_packet_fingerprints_independently_reconstructed": 406,
+  "raw_artifact_sha256": {
+    "context_decisions.jsonl.gz": "98147f2c0604ec6a8379e032a3381d679e79e9d937b764073b52cd4802aac1ea",
+    "launch.json": "f3cdd9b0d97cb56328adc6f60edac2f5a62161a81bc91bf882117f7d1d5207f2"
+  },
+  "raw_model_forecast_comparisons": 403,
+  "raw_result_sha256": "f7e054e78879fd7827761cf36bb3c698c22fe394cd084ed17f165a0f643611e6",
+  "raw_source_bindings": 1943,
+  "raw_wait_result_sha256": "62980125c12a4455f355f6c311ccf56d74d4f94bbc6ee0507b7908d53d6a135d",
+  "saved_full_comparisons_independently_reconstructed": 406,
+  "status": "COMPLETED_HOLD_REORIENTATION_RAW_PREFIX_INDEPENDENT_VERIFICATION_PASS",
+  "waiter_artifact_bindings": 5,
+  "waiter_source_bindings": 1946
+}

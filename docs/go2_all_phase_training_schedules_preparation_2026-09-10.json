@@ -1,0 +1,64 @@
+{
+  "optimizer_updates": 0,
+  "records": [
+    {
+      "batches": 1200,
+      "draws": 7200,
+      "maximum_context_draws": 10,
+      "minimum_context_draws": 1,
+      "phase_draw_counts": {
+        "0": 1459,
+        "1": 1422,
+        "2": 1392,
+        "3": 1466,
+        "4": 1461
+      },
+      "schedule_sha256": "5e2ba3b966c3b2b2437d5e3f9c30c2bd1fcfc7291b476237974db55915174d2a",
+      "seed": 2026091001,
+      "trial_count": 120,
+      "unique_contexts": 4010
+    },
+    {
+      "batches": 1200,
+      "draws": 7200,
+      "maximum_context_draws": 10,
+      "minimum_context_draws": 1,
+      "phase_draw_counts": {
+        "0": 1457,
+        "1": 1410,
+        "2": 1397,
+        "3": 1465,
+        "4": 1471
+      },
+      "schedule_sha256": "ab2f636f9810cb2008a02644771d286ea2093a734a8f23f87d12ff50d8bb80a2",
+      "seed": 2026091401,
+      "trial_count": 120,
+      "unique_contexts": 4010
+    },
+    {
+      "batches": 1200,
+      "draws": 7200,
+      "maximum_context_draws": 10,
+      "minimum_context_draws": 1,
+      "phase_draw_counts": {
+        "0": 1453,
+        "1": 1390,
+        "2": 1381,
+        "3": 1464,
+        "4": 1512
+      },
+      "schedule_sha256": "b5a36aa719a2baf685e3fb18aa50fa09f8ec38c86de1bca86b5bfae876e2f66b",
+      "seed": 2026091402,
+      "trial_count": 120,
+      "unique_contexts": 4010
+    }
+  ],
+  "source_sha256": {
+    "lewm/all_phase_training_fit_development.py": "8342ed4320a6e76973cfabdc2c70b10931c2cfa66eee1cdb37f517d61078580a",
+    "lewm/all_phase_training_schedule_development.py": "b2258d4924770d14fb26a769f3076e5010d51a641724a3a846c960844e9c2e35",
+    "lewm/tests/test_all_phase_training_fit_development.py": "dc4dad082348bd5f4d5890dc3453df1992fe2b1c4f34b836b344dd66589e87aa",
+    "lewm/tests/test_all_phase_training_schedule_development.py": "84b19f4ad7555d658c1fae0bd946c9fe92799b03d481b15ca21a55fe420ca000"
+  },
+  "status": "ACTUAL_ALL_PHASE_SCHEDULES_CHECKED",
+  "transfer_draws": 0
+}

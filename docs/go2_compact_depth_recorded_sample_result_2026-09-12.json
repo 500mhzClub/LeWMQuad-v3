@@ -1,0 +1,43 @@
+{
+  "status": "COMPACT_DEPTH_RECORDED_SAMPLE_V1_COMPLETE",
+  "result_sha256": "ce9fd7809904792182feb1a2348d07ad33577afd13a8a227c2dbca98db00b033",
+  "launch_sha256": "a3def9d1587baed598abf0b5108f25c9839477affade24c35bf46a6dbef669b9",
+  "owner": {
+    "pid": 3051435,
+    "created": 1789227889.07,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/check_go2_compact_depth_recorded_sample_v1.py"
+    ]
+  },
+  "original_owner_ended": true,
+  "source_count": 2655,
+  "source_sha256": "14d648f01ed3891b6b1c21e66f52690be4922f5aa1ba86d842f921c64306ef7f",
+  "artifact_count": 10,
+  "input_artifact_count": 26,
+  "frames": [
+    0,
+    3062,
+    4003,
+    4013
+  ],
+  "complete_actual_sample_packets_reconstructed": true,
+  "raw_depth_and_segmentation_bits_equal": true,
+  "legacy_depth_archive_bytes": 12497036,
+  "compact_depth_archive_bytes": 6255262,
+  "depth_archive_byte_reduction_fraction": 0.49946035203867545,
+  "total_output_bytes_including_result": 6983240,
+  "recorded_wall_s": 0.7086804718710482,
+  "controller_execution": false,
+  "native_execution": false,
+  "format_adopted": false,
+  "actual_conversion_session": 21542,
+  "actual_conversion_exit_code": 0,
+  "independent_verification_session": 71059,
+  "independent_verification_exit_code": 0,
+  "preflight_failure_session": 29519,
+  "preflight_failure_witness": "docs/go2_compact_depth_recorded_sample_preflight_correction_2026-09-12.md",
+  "whole_population_storage_saving_measured": false,
+  "sensor_latency_measured": false
+}

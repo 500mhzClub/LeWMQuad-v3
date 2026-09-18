@@ -1,0 +1,173 @@
+{
+  "source_frames": [
+    687,
+    690
+  ],
+  "processed_fit_frame": 345,
+  "results": [
+    {
+      "camera": "primary",
+      "mode": "original",
+      "association": {
+        "counts": {
+          "reference_corners": 49,
+          "distinct_reference_corners": 49,
+          "forward_finite": 9,
+          "reverse_finite": 9,
+          "forward_backward": 9,
+          "photometric": 9,
+          "distinct_current": 9,
+          "valid_depth_pair": 9
+        },
+        "association": "direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "same_pixel_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false
+      },
+      "accepted": false,
+      "failure": "insufficient rigid-pose matches"
+    },
+    {
+      "camera": "primary",
+      "mode": "gyro_seeded",
+      "association": {
+        "counts": {
+          "reference_corners": 49,
+          "distinct_reference_corners": 49,
+          "forward_finite": 11,
+          "reverse_finite": 11,
+          "forward_backward": 11,
+          "photometric": 11,
+          "distinct_current": 11,
+          "valid_depth_pair": 11
+        },
+        "association": "gyro_seeded_direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "gyro_rotation_and_zero_body_translation_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false,
+        "seed_counts": [
+          {
+            "direction": "forward",
+            "points": 49,
+            "gyro_projected_points": 29
+          },
+          {
+            "direction": "reverse",
+            "points": 11,
+            "gyro_projected_points": 11
+          }
+        ],
+        "gyro_role": "association_initializer_and_consistency_monitor",
+        "both_directions_use_own_measured_depth": true,
+        "original_pixel_photometric_depth_gates_unchanged": true,
+        "gyro_supplies_accepted_pose": false
+      },
+      "accepted": false,
+      "failure": "insufficient rigid-pose matches"
+    },
+    {
+      "camera": "auxiliary",
+      "mode": "original",
+      "association": {
+        "counts": {
+          "reference_corners": 58,
+          "distinct_reference_corners": 58,
+          "forward_finite": 53,
+          "reverse_finite": 46,
+          "forward_backward": 34,
+          "photometric": 34,
+          "distinct_current": 34,
+          "valid_depth_pair": 34
+        },
+        "association": "direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "same_pixel_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false
+      },
+      "accepted": false,
+      "failure": "rigid consensus fraction, grid support or displacement rejected"
+    },
+    {
+      "camera": "auxiliary",
+      "mode": "gyro_seeded",
+      "association": {
+        "counts": {
+          "reference_corners": 58,
+          "distinct_reference_corners": 58,
+          "forward_finite": 53,
+          "reverse_finite": 46,
+          "forward_backward": 34,
+          "photometric": 34,
+          "distinct_current": 34,
+          "valid_depth_pair": 34
+        },
+        "association": "gyro_seeded_direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "gyro_rotation_and_zero_body_translation_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false,
+        "seed_counts": [
+          {
+            "direction": "forward",
+            "points": 58,
+            "gyro_projected_points": 54
+          },
+          {
+            "direction": "reverse",
+            "points": 53,
+            "gyro_projected_points": 53
+          }
+        ],
+        "gyro_role": "association_initializer_and_consistency_monitor",
+        "both_directions_use_own_measured_depth": true,
+        "original_pixel_photometric_depth_gates_unchanged": true,
+        "gyro_supplies_accepted_pose": false
+      },
+      "accepted": false,
+      "failure": "rigid consensus fraction, grid support or displacement rejected"
+    }
+  ],
+  "source_sha256": "7b33b389faf82c91aafdd8f02bd56e26e7d0823d385749986b15c086664538d7",
+  "association_source_sha256": "f7bb65d74c921dd88cd0eb55d6c314691a7c1d349dd1e7d63dd482d9e9cfd096",
+  "original_fit_limits_unchanged": true,
+  "gyro_initialization_selected_after_failure": true,
+  "camera_translation_hypothesis": "zero_body_translation_with_fixed_camera_lever_arm",
+  "raw_native_pose_loaded": false,
+  "tracker_pose_admitted": false,
+  "new_navigation": false
+}

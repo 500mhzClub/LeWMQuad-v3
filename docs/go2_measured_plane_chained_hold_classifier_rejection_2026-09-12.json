@@ -1,0 +1,10 @@
+{
+  "status": "READ_ONLY_LOGGED_HOLD_CLASSIFICATION_REJECTED",
+  "input_sha256": {
+    "context_decisions.jsonl.gz": "c7d131924208f8afdbf8e5d4ab2ba9f211ed2ca4a62faf70e498bb19a379fb7a",
+    "command_tape.json": "f325bfc1c5eacc87642bd584b42d6a90612dc4f8264541422ab2ce0f4fc1d14a"
+  },
+  "reason": "ValueError('complete original intermediate-waypoint hold required')",
+  "wall_s": 34.44102943781763,
+  "native_final_result_pending": true
+}

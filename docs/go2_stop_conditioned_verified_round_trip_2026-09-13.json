@@ -1,0 +1,293 @@
+{
+  "status": "STOP_CONDITIONED_SETTLING_MAZE02_V1_COMPLETE",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001",
+  "case": "no_rgb_direct_stop_conditioned_settling_maze_02",
+  "readout": {
+    "schedule_terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "terminal_zero_ticks": 10,
+    "observed_arrivals": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 3062,
+        "measured_ns": 307700000000,
+        "target_initial_body_xy_m": [
+          3.9000000000000004,
+          2.6
+        ],
+        "observed_position_initial_body_xy_m": [
+          3.8754730590084128,
+          2.612522824406251
+        ],
+        "observed_distance_m": 0.02753891729016619,
+        "quiet_intervals": 10,
+        "native_verified": false
+      },
+      {
+        "phase": "RETURN",
+        "frame": 4739,
+        "measured_ns": 475400000000,
+        "target_initial_body_xy_m": [
+          0.0,
+          0.0
+        ],
+        "observed_position_initial_body_xy_m": [
+          0.00043120445811731424,
+          -0.024399789059386567
+        ],
+        "observed_distance_m": 0.024403598985134563,
+        "quiet_intervals": 10,
+        "native_verified": false
+      }
+    ],
+    "native_arrival_windows": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 3062,
+        "end_sample": 153849,
+        "maximum_goal_distance_m": 0.04377755639348901,
+        "maximum_speed_m_s": 0.0441619731798587,
+        "native_one_second_arrival_and_quiet_pass": true
+      },
+      {
+        "phase": "RETURN",
+        "frame": 4739,
+        "end_sample": 237699,
+        "maximum_goal_distance_m": 0.02199547729183145,
+        "maximum_speed_m_s": 0.032253912481932386,
+        "native_one_second_arrival_and_quiet_pass": true
+      }
+    ],
+    "outbound": {
+      "total_crossings": 15,
+      "distinct_open_edges": 10,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ]
+        ],
+        [
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            0,
+            -1
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            -1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ]
+      ]
+    },
+    "returning": {
+      "total_crossings": 11,
+      "distinct_open_edges": 7,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            -1
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ]
+        ],
+        [
+          [
+            1,
+            -1
+          ],
+          [
+            1,
+            0
+          ]
+        ],
+        [
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            1
+          ]
+        ],
+        [
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            2
+          ]
+        ],
+        [
+          [
+            1,
+            2
+          ],
+          [
+            2,
+            2
+          ]
+        ]
+      ]
+    },
+    "physically_retraced_outbound_route": true,
+    "native_physics_samples": 238200,
+    "native_contact_samples": 0,
+    "native_contact_free": true,
+    "observation_and_control": {
+      "samples": 4750,
+      "median_ms": 787.7998605,
+      "p95_ms": 1192.1858649500002,
+      "maximum_ms": 2208.972788,
+      "samples_above_command_interval_100ms": 4750
+    },
+    "iteration_with_receipt": {
+      "samples": 4750,
+      "median_ms": 840.3635695,
+      "p95_ms": 1245.3899053,
+      "maximum_ms": 2262.859106,
+      "samples_above_command_interval_100ms": 4750
+    },
+    "strict_physical_visibility_pass": true,
+    "hard_measurement_failed_frames": [],
+    "verified_round_trip": true,
+    "evaluator_only": true,
+    "real_time_qualified": false
+  },
+  "raw_audit": {
+    "raw_sensor_reconstruction_pass": true,
+    "additional_auxiliary_rgb_reconstructed": true,
+    "raw_model_command_replay_pass": true,
+    "raw_command_audit_pass": true,
+    "model_state_unchanged": true,
+    "strict_physical_visibility_pass": true,
+    "hard_measurement_failed_frames": [],
+    "verified_round_trip": true
+  },
+  "model_state_sha256": "56799c99e2bb1fd5e5a591009b931c5b2e04741d3a3744e2346ce9896a2160dd",
+  "wall_s": 8507.301534831058,
+  "resource_phases_complete": true,
+  "reused_layout_executions": 1,
+  "new_independent_layout_executions": 0,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false,
+  "artifact_sha256": {
+    "result.json": "643b3d41e6e11398706ec8dd295a180356591d7e1ff7a82e95e272553a4a5918",
+    "no_rgb_direct_stop_conditioned_settling_maze_02_audit.json": "aeac508e24c12929ad7f16dc373e648ea0281f6d9ed1cba5de8c6f2b0bb82ad6",
+    "no_rgb_direct_stop_conditioned_settling_maze_02_readout.json": "70c7768f380274d4f62e9453cdd28cf3e6d28b9e19e4ac62ba59c87b14554404"
+  }
+}

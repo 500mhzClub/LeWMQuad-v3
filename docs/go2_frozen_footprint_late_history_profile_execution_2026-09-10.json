@@ -1,0 +1,30 @@
+{
+  "argv": [
+    ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "-B",
+    "scripts/profile_go2_frozen_footprint_late_history_v1.py"
+  ],
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "create_time": 1789069525.94,
+  "goal_achieved": false,
+  "io_counters": {
+    "read_bytes": 102216654848,
+    "read_chars": 680192301015,
+    "read_count": 3771144,
+    "write_bytes": 4096,
+    "write_chars": 468,
+    "write_count": 3
+  },
+  "native_scene_started": false,
+  "original_native_queue_unchanged": true,
+  "pid": 2738041,
+  "preparation_path": "docs/go2_frozen_footprint_late_history_profile_execution_preparation_2026-09-10.json",
+  "preparation_sha256": "f0bb15223c069921a8bf3ab19ce0230241746bda07280f1c62f436b6efe92424",
+  "process_status": "running",
+  "profile_complete": false,
+  "session_id": 85319,
+  "source_bindings_reverified": true,
+  "source_count": 2130,
+  "status": "LATE_HISTORY_PROFILE_STARTED_INPUT_ADMISSION_IN_PROGRESS",
+  "utc": "2026-09-10T19:56:05.234863+00:00"
+}

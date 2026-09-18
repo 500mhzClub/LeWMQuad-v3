@@ -1,0 +1,124 @@
+{
+  "arms": {
+    "old_action": [
+      "old",
+      "action"
+    ],
+    "old_no_future_action": [
+      "old",
+      "no_future_action"
+    ],
+    "mixed_action": [
+      "mixed",
+      "action"
+    ],
+    "mixed_no_future_action": [
+      "mixed",
+      "no_future_action"
+    ]
+  },
+  "seed": 2026091710,
+  "epochs": 8,
+  "batch": 16,
+  "updates_per_arm": 1760,
+  "original_samples": 3518,
+  "new_samples": 48,
+  "new_draw_counts": [
+    73,
+    74,
+    74,
+    73,
+    74,
+    74,
+    73,
+    73,
+    73,
+    74,
+    73,
+    73,
+    73,
+    73,
+    74,
+    74,
+    73,
+    74,
+    73,
+    73,
+    73,
+    73,
+    74,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    73,
+    74,
+    74,
+    73,
+    73,
+    73,
+    74,
+    74,
+    74,
+    73,
+    74,
+    73,
+    73,
+    74,
+    73
+  ],
+  "replacement": "Two positions per batch: old controls retain original samples; mixed arms substitute balanced start examples. Other positions identical.",
+  "all_original_samples_retained_across_mixed_schedule": true,
+  "initial_checkpoint_sha256": {
+    "action": "beb9e4abd69d652126e7618ef9a18261b627578ea01aa894e287004734e609e7",
+    "no_future_action": "c5c52b37bef6527176b64c0b8481a82bc6d1cd6db3e543d8e1075cd546f89873"
+  },
+  "collection_sha256": "9cd2d43afe03161b4d0ecda75174bd5e741f4543cfbcc53838550870512e0069",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_balanced_start_predictor_development.py": "2684bf8264abc5e3cdf55e84c09280b79300c019ff4c40112e05ed542e799896",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_frozen_vjepa_native_adaptation_development.py": "58bc65886332d624b673a62e41f2cc89e7f86b111c60fafd69b4861321862a68",
+    "scripts/train_go2_dense_task_predictor_development.py": "3acca4ca7817d0f2208382d15d6e88ebf9cf7f3cc99721981601f1c86a824bce"
+  },
+  "loss": "unchanged dense normalized-token L1",
+  "encoder_frozen": true,
+  "goal_metric_unchanged": true,
+  "continuation": "Restore model and AdamW state from corresponding action or action-blind parent; pair within each parent starts identically.",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "gradient_clip": 1.0
+  },
+  "checkpoint_rule": "Fixed final epoch; final model weights only. Optimizer lives in RAM; interrupted runs are failures, not silently restarted.",
+  "resources": {
+    "output_free_bytes": 922497024,
+    "final_weights_allowance_bytes": 367001600,
+    "reserve_bytes": 536870912,
+    "feature_cache": "FP16 host RAM only",
+    "estimated_wall_minutes": 45,
+    "cpu_cores": [
+      8,
+      9,
+      10,
+      11
+    ],
+    "gpu_processes": 1
+  },
+  "evaluation": "Compare all four final arms on retained matched-action branches and frozen-goal-metric online control; follow with independent layouts before a navigation claim.",
+  "limitations": [
+    "one seed",
+    "coverage intervention, not JEPA encoder objective isolation",
+    "exposed local diagnostics do not establish complete maze navigation"
+  ],
+  "input_sha256": {
+    "samples.json": "fff6c3004e63e67d5dfd286040765cd396d15da5aef791c4a92bee6250fba46e",
+    "frame_paths.json": "9673bdbef47cc812f32ee892192959ece6fb911f904c7778f8d8cb2750e05010",
+    "schedule.json": "57b05f7ed2fb5b3b903fa6e3b3af5f7b97b03abca549e229ab33f082d6d471da"
+  }
+}

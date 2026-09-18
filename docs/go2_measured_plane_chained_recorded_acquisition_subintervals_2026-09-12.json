@@ -1,0 +1,47 @@
+{
+  "status": "COMPLETED_CHAINED_NATIVE_RECORDED_ACQUISITION_SUBINTERVALS",
+  "native_result_sha256": "163e92d630d92f9f8633cd3823c7cbf282a92c81bde5d3db998e3a5a8c8b1849",
+  "input_sha256": {
+    "no_rgb_direct_measured_plane_chained_maze_02/auxiliary_camera_audit.json": "a09aacb4173bdf5c5ae3d0b337f5ba553742f4920755657bfe9ba77a49aa9ddd",
+    "no_rgb_direct_measured_plane_chained_maze_02/renderer_capture_witnesses.json": "8d1ae60c0639cbb43d741ccca7382eacdcb0c95a4df35acf72f0dde5311d00d3"
+  },
+  "timing": {
+    "auxiliary_capture_wall_ms": {
+      "count": 4014,
+      "total_ms": 297344.87204719335,
+      "min_ms": 40.127832908183336,
+      "median_ms": 73.49790341686457,
+      "p95_ms": 89.50960320653394,
+      "max_ms": 100.53798905573785,
+      "over_100_ms": 2
+    },
+    "primary_witness_query_wall_ms": {
+      "count": 4014,
+      "total_ms": 780.037347,
+      "min_ms": 0.177551,
+      "median_ms": 0.190796,
+      "p95_ms": 0.2124685,
+      "max_ms": 0.536483,
+      "over_100_ms": 0
+    },
+    "paired_witness_query_wall_ms": {
+      "count": 4014,
+      "total_ms": 1194.794821,
+      "min_ms": 0.230061,
+      "median_ms": 0.29761150000000003,
+      "p95_ms": 0.3176755,
+      "max_ms": 0.454112,
+      "over_100_ms": 0
+    }
+  },
+  "all_original_frames_included": true,
+  "additional_component_measurement": false,
+  "controller_reexecuted": false,
+  "native_reexecuted": false,
+  "quantiles": "linear interpolation at (n-1)*q",
+  "auxiliary_capture_includes_renders_encoding_persistence_and_checks": true,
+  "auxiliary_capture_excludes_finally_camera_restore": true,
+  "witness_timing_does_not_cover_entire_wrapper": true,
+  "hardware_camera_latency_measured": false,
+  "real_time_qualified": false
+}

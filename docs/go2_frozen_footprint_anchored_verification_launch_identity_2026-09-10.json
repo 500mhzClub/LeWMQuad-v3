@@ -1,0 +1,15 @@
+{
+  "raw_launch_sha256": "6a95ec47e25a08467346a56e449bf99c9a2994ecd082d8d2a8d47c15cce1cacb",
+  "original_owner": {
+    "pid": 2715071,
+    "created": 1789056341.94,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/replay_go2_frozen_footprint_anchored_prefix_v1.py"
+    ]
+  },
+  "observed_while_original_owner_live": true,
+  "source_bindings_match_pre_execution_record": true,
+  "execution_record_sha256": "a0fb7db9722f2f88cac208e25134d44cd7ed35a0e46d1adfd03bb0d33227c36f",
+  "native_execution": false
+}
