@@ -154,15 +154,20 @@ roughly comparable in size.
 
 Two further readings matter. The branch component is the model's **best-aligned**
 signal (cosine 0.552 against the common component's 0.338) while being ~6.8×
-too small — under-scaled but comparatively well-directed. And the no-action arm's
-common component is misdirected to the same degree (0.324), so the action arm's
-advantage lies entirely in possessing a branch component at all, not in a better
-common prediction.
+too small. "Comparatively well-directed" is what that supports; **"correct branch
+geometry, merely under-scaled" is not supported** — a cosine of 0.552 is far from
+alignment, and the branch component still fails to improve centred retrieval in the
+four informative groups. And the no-action arm's common component is misdirected to
+a similar degree (0.324), which is consistent with the action arm's useful extra
+information lying in its branch-dependent component rather than a better common
+prediction. It does not establish that the two common components are identical.
 
-The frozen α_branch = 1.5104 is well below the transfer-optimal 3.79. The
-held-out result below is therefore achieved with a conservative scalar and is a
-lower bound on what calibration alone could recover. The 3.79 is reported as a
-diagnostic only and was not used; selecting it would be selection on transfer.
+The frozen α_branch = 1.5104 is well below the transfer-fitted 3.79. That shows
+further scalar-fitting headroom **on these same observed transfer targets**. It
+does **not** establish that a larger coefficient would help on the next unseen
+population, so the held-out result below must not be called a general lower bound
+on calibration benefit. The 3.79 is reported as a diagnostic only and was not used
+for evaluation or selection; using it would be selection on transfer.
 
 Held-out geometry transfer at 800 ms:
 
@@ -260,10 +265,15 @@ move and a total MSE dominated by a bias that calibration already removes.
 
 The cheaper and better-aimed next steps, in order:
 
-1. Fix the common over-prediction at training time rather than post hoc: the
-   innovation normalisation, the cumulative-increment parameterisation and the
-   loss weighting are all candidates, and the post-hoc α_common ≈ 0.08 gives a
-   direct target to check against.
+1. Fix the common innovation at training time rather than post hoc. The target is
+   **a better-directed common innovation at an appropriate magnitude**, not a
+   learned component that merely reproduces a coefficient near 0.08. Shrinkage
+   lowers the cost of a wrong direction; it does not repair the direction, and the
+   cosine 0.338 is half the story. Innovation normalisation, the cumulative-increment
+   parameterisation and loss weighting are the candidates. Any intervention must be
+   scored against the frozen split-calibrated checkpoint, which is now the baseline —
+   simply rewriting MSE as common plus centred terms changes nothing, since ordinary
+   MSE already admits that decomposition.
 2. Re-specify the discrimination metric on candidate-centred predictions and
    restrict it to the four non-degenerate groups, or it will keep returning the
    floor regardless of model quality.
@@ -271,13 +281,37 @@ The cheaper and better-aimed next steps, in order:
    claims rest on 18 cases in 6 groups.
 4. Only then revisit Δz, with the action signal no longer masked.
 
-## Not done
+## Not done, and what the transfer test requires
 
 The navigation population was **not** evaluated. Its retained forecast rows hold
 per-window `mse` only, not the latent vectors, so α cannot be applied post hoc.
 Doing it needs an instrumented re-run of the navigation evaluator (~62 s plus
-model load, about 2 MB of new output) which was not launched because both
-candidate volumes are at 100% capacity.
+model load, about 2 MB of new output).
+
+It is not admitted. The September 18 layout-4 retirement restored the workspace
+volume to 10.19 GiB, but the navigation evaluator reads its four input roots from
+**steam_drive and writes there too**, and that filesystem holds 0.54 GiB. The
+pulse windows, `/` and `/tmp` share a separate filesystem at 0.55 GiB. Headroom
+must be checked per path; clearing one volume does not admit a job that runs on
+another.
+
+When it is admitted, one design requirement is not optional. **Split calibration
+needs a candidate set.** A navigation window carries only its executed action,
+which is insufficient to construct the predicted branch mean and deviation the
+calibration is defined over. The evaluator must therefore declare a fixed,
+physically meaningful candidate action set per recorded history, with the correct
+committed prefix. It does not need outcomes for the unexecuted alternatives in
+order to *apply* the calibration.
+
+That bounds the claim available from it: scoring the calibrated executed-action
+forecast tests **predictive transfer on observed trajectories**. It is not a new
+counterfactual branch-discrimination test, and must not be reported as one.
+
+The two questions stay separate. The transfer test applies the already-fitted
+coefficients unchanged, stratified by motion and horizon rather than pooled, with
+the no-action comparison retained. Recovering the declared broad training targets
+is a separately identified successor that preserves this branch-trained result and
+its protocol deviation rather than replacing its provenance.
 
 One seed, two geometries, six groups of which four are informative, one assay.
 Nothing here is a navigation outcome or a JEPA representation-training result.
