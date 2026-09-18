@@ -162,3 +162,55 @@ is only 6.76 mm on these turn-dominated windows, underscoring remaining spurious
 translation estimates. Actual-future errors also remain substantial. These
 results support broader-data readout transfer without establishing an adequate
 physical world model, a JEPA-objective benefit or navigation success.
+
+## Completed mixed-head mission
+
+This section supersedes the pending language above, which was written at 05:10
+while the mission was still in RETURN. Session 54924 completed at 05:30 and the
+physical reader ran to completion. The mission terminal is
+`OBSERVED_ROUND_TRIP_CANDIDATE`. No text above was altered.
+
+| Mission result | Value |
+|---|---:|
+| Camera pairs / registered poses | 4,097 / 4,097 |
+| Arrivals passing all checks | 2 |
+| Outbound arrival | frame 2680, 12.7 mm observed |
+| Return arrival | frame 4096, 9.6 mm observed |
+| Disallowed contact samples | 0 |
+| Median / maximum pose registration error | 7.18 mm / 12.19 mm |
+| Neural calls / selected plans | 1,015 / 1,015 |
+| Median model inference | 2,458 ms |
+
+Both arrivals satisfied the physical distance, dwell and measured-motion-quiet
+rules with all requested intervals zero. Native final distances were 18.8 mm
+outbound and 1.3 mm on return. No dispatch veto of any kind fired: the recorded
+reasons are 20,145 `CURRENT_NOMINAL_OBSTACLE_TEST_PASSED`, 200 `NO_ON_TIME_PLAN`
+and 136 `MISSION_SETTLING_OR_TERMINAL`. Selected actions were 202 left turns,
+192 right turns, 162 left arcs, 113 right arcs, 121 forward and 225 hold.
+
+The broader-coverage readout head converted the earlier hold stall on this same
+exposed layout into a completed round trip with the encoder, both predictors and
+every controller setting unchanged. Only the motion readout differs. This is a
+readout repair result.
+
+It is not a demonstrated world-model benefit, for three reasons recorded here
+rather than left to inference. First, the `reactive_feedback` control completed
+the same round trip on the same layout at 03:44 with no forecast selecting any
+command, so a completed mission on this layout does not separate forecast
+quality from controller competence. Second, the forecast remains worse than
+trivial references on the 1,014 matched 700-ms executed windows: 49.6 mm XY
+RMSE against 10.6 mm for command history, 16.5 mm for the nominal model and
+9.3 mm for the pose command. Third, 225 hold selections remain against the
+reactive arm's 1.
+
+Per action group, dense XY RMSE was 71.0 mm on 387 translation windows, 32.3 mm
+on 393 turn windows, 24.3 mm on 225 hold windows and 6.0 mm on 9 translation
+pulses. Command history beats the dense forecast in all groups except the
+nine-window pulse group, which is too small to carry a claim. The windows
+overlap and are not independent.
+
+The physical record marks `raw_sensor_audit_complete`, `host_real_time_qualified`
+and `real_sensor_uncertainty_calibrated` all false, and the run is
+`native_state_evaluator_only`. This is one run on the exposed layout, which has
+now been used for both diagnosis and selection and therefore cannot carry a
+generalisation claim. The four prospective mazes remain untouched.
