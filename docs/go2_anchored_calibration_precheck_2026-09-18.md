@@ -47,6 +47,16 @@ architecture can show action-dependence at or below 300 ms on this assay. The
 300 ms end of the 300–700 ms planning interval used elsewhere carries no action
 information at all.
 
+This is an observability constraint, not a learning failure, and must not be
+counted against action conditioning. The correct split for this assay is: predict
+the shared committed motion before divergence, distinguish candidate consequences
+after it. The 300 ms horizon can still carry useful information about shared
+motion and unavoidable near-term consequences; it simply cannot separate
+alternatives whose execution has not yet differed. It follows that the action
+sequence supplied to the predictor must represent what will actually execute,
+including the committed prefix, rather than treating a requested alternative as
+immediately effective — that is part of the model contract, not a detail.
+
 **Where branches do diverge, the action signal dominates true visual change.**
 From 400 ms onward `S_branch` is 1.5–7× `S_common` and is 60–88% of persistence's
 total error. The action-dependent component is the majority of what there is to
@@ -88,10 +98,21 @@ far below the true `S_branch` it should be matching (0.000039 predicted against
 
 Removing the common bias lifts the count to 10/18 (train) and 8/18 (transfer),
 but **every one of those gains is in a degenerate `left_turn` group** with
-`S_branch` ≤ 0.000107. The four groups carrying real signal stay at the floor
-whether centred or not. The retrieval metric as constructed cannot register
-improvement in this regime and should not be used as a gate until the common
-bias is removed.
+`S_branch` ≤ 0.000107. The four groups carrying real signal stay at one win
+whether centred or not.
+
+This is a structural *plateau*, not an absolute floor: a sufficiently different
+prediction would change the rankings. The point is that the score is insensitive
+to the improvements actually being made in this regime.
+
+The distinction matters for what the centred result means. When predictions and
+targets are each centred within a group, the common component cancels
+mathematically — it cannot contribute to the centred comparison at all. So the
+four informative groups' failure to improve under centring **cannot be explained
+by residual common error**. It is a substantive limitation of the branch
+geometry itself: the predicted branch deviations reduce squared error without
+being good enough to reorder the candidates. Raw retrieval is masked by the
+common bias; centred retrieval is not, and it still fails.
 
 ## Pre-check 1: scalar innovation shrinkage
 
@@ -112,9 +133,36 @@ are fitted on the train role only and frozen.
 
 α_common = **0.0806**, α_branch = **1.5104**.
 
-The common innovation is over-predicted about 12×. The branch deviation is
-*under*-predicted by about a third. These are opposite-signed errors, which is
-why one scalar cannot fix both.
+The two coefficients have opposite sign of correction, which is why one scalar
+cannot fix both. But a fitted coefficient is not an amplitude ratio: it satisfies
+α = (‖d‖/‖p‖)·cos(p,d), so it conflates magnitude miscalibration with directional
+error. Separating them (`precheck_anchored_alignment_development.py`):
+
+| Arm | Role | Component | ‖p‖/‖d‖ | cosine | α |
+|---|---|---|---:|---:|---:|
+| action | transfer | common | 5.384 | 0.338 | 0.0627 |
+| action | transfer | branch | 0.146 | 0.552 | 3.7909 |
+| action | train | common | 3.588 | 0.289 | 0.0806 |
+| action | train | branch | 0.318 | 0.481 | 1.5104 |
+| no-action | transfer | common | 6.050 | 0.324 | 0.0536 |
+
+So α_common ≈ 0.08 is **not** a twelvefold magnitude error. On transfer the common
+innovation is over-predicted about 5.4× *and* badly misdirected (cosine 0.338).
+Were the direction perfect, the optimal coefficient would be 1/5.384 = 0.186; the
+further shrinkage to 0.063 is the price of misdirection. Both effects are real and
+roughly comparable in size.
+
+Two further readings matter. The branch component is the model's **best-aligned**
+signal (cosine 0.552 against the common component's 0.338) while being ~6.8×
+too small — under-scaled but comparatively well-directed. And the no-action arm's
+common component is misdirected to the same degree (0.324), so the action arm's
+advantage lies entirely in possessing a branch component at all, not in a better
+common prediction.
+
+The frozen α_branch = 1.5104 is well below the transfer-optimal 3.79. The
+held-out result below is therefore achieved with a conservative scalar and is a
+lower bound on what calibration alone could recover. The 3.79 is reported as a
+diagnostic only and was not used; selecting it would be selection on transfer.
 
 Held-out geometry transfer at 800 ms:
 
@@ -131,9 +179,11 @@ on total error; the matched no-action control does **not** (1.1% worse). The
 no-action arm's centred error is pinned at `S_branch` by construction, since it
 emits one forecast per shared history.
 
-The action arm's held-out centred error captures **23.3%** of the branch variance,
-up from 16.2% uncalibrated. That gain is concentrated in the real-signal groups,
-not the degenerate ones:
+The action arm's held-out centred error is **23.3%** below the action-blind
+branch-mean baseline, up from 16.2% uncalibrated. That figure is a reduction in
+centred squared error, **not** 23.3% correct action decisions — no decision rate
+improves anywhere in this document. The gain is concentrated in the real-signal
+groups, not the degenerate ones:
 
 | Group (transfer) | S_branch | Split centred | Captured |
 |---|---:|---:|---:|
@@ -152,13 +202,28 @@ Leave-one-group-out on the train role gives α_common 0.0717–0.1102 and α_bra
 1 in all six folds; no single group drives the fit.
 
 **Branch retrieval stays at one win per group in every variant, including the
-split calibration.** Even correctly scaled, the branch deviation remains roughly
-10× smaller than the residual common error, so no argmin flips.
+split calibration.** For raw retrieval this is explained by the residual common
+error, which remains roughly 10× the branch deviation. For centred retrieval it
+is not: centring cancels the common term exactly, so the unchanged result there
+is a genuine shortfall in branch geometry, not masking.
+
+The error composition also inverts under calibration. Before, common error is
+~94% of the total (0.034443 of 0.036537). After split calibration it is ~31%
+(0.000847 of 0.002762) and centred error is ~69%. Common over-prediction is the
+right first intervention on the raw model, but it should not become an assumption
+that branch geometry needs no further work — after the bias is removed, branch
+error is what remains.
 
 The split calibration is deployable in principle: it centres *predictions* across
 a candidate set, which is available at planning time. It does not use future
 targets. The centred *metric* used for scoring here does, and remains diagnostic
 only, consistent with the original evaluator's `centered_action_metric_not_deployable`.
+
+That deployability is conditional on the candidate set. The common term is a mean
+over whatever candidates are evaluated together, so a mean over three assay
+branches is not interchangeable with a mean over a different runtime action bank.
+The candidate set, its weighting and the horizon are part of the calibration's
+declared scope, and none of them has been varied here.
 
 ## Against the declared promotion gate
 
@@ -176,11 +241,17 @@ Partial. This is not a promotion and no model is promoted here.
 
 ## What this changes
 
-The binding constraint is not a missing motion input. It is a ~12× over-prediction
-of common visual change that compounds with horizon (the action arm's common error
-grows 0.0013 → 0.0344 from 100 to 800 ms while the true common change stays near
-0.0008). That bias swamps a real, held-out, under-scaled action signal and
-saturates the discrimination metric.
+The binding constraint is not a missing motion input. It is an excessive and
+misdirected common visual innovation that compounds with horizon (the action arm's
+common error grows 0.0013 → 0.0344 from 100 to 800 ms while the true common change
+stays near 0.0008). That bias swamps a real, held-out, under-scaled action signal
+and saturates the discrimination metric.
+
+The narrow claim this supports: **split calibration improves this checkpoint's
+latent forecasting on the branch assay, held out on unseen geometry.** It does not
+establish better navigation, broad-population forecasting, or any advantage of the
+JEPA training objective over matched supervised training. The calibrated model has
+never been run in a navigator.
 
 Accordingly the seven-arm recent-visual-change sweep is **not** the next step. It
 tests a hypothesis — missing visual velocity — that this evidence does not support
