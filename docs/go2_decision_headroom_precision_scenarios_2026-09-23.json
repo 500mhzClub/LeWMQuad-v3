@@ -1,0 +1,147 @@
+{
+  "schema": "decision_headroom_blinded_precision_scenarios.v1",
+  "recorded_at": "2026-09-23T18:37:34.530326+01:00",
+  "purpose": "Pre-pilot design arithmetic only; no method-regret observations, variance estimates or Phase 2 authority.",
+  "proposed_delta_s": 0.25,
+  "physical_scale": {
+    "translation_at_point_two_m_s_m": 0.05,
+    "heading_at_point_four_five_rad_s_rad": 0.1125
+  },
+  "target_half_width_s": 0.125,
+  "proposed_primary_family": [
+    "G_nominal",
+    "H_scorer",
+    "H_motion",
+    "D_learned_old_data",
+    "D_learned_maze_data"
+  ],
+  "proposed_familywise_alpha": 0.05,
+  "bonferroni_pointwise_alpha": 0.01,
+  "precision_formula": "t_(n-1,0.995) * assumed_layout_sd / sqrt(n); planning approximation, not measured or guaranteed coverage",
+  "assumptions": "Independent exchangeable layout summaries and approximately normal means; within-layout states do not increase the layout count. Actual variance is unknown. Small-layout inference may be unreliable.",
+  "proposed_harm_screen": {
+    "absolute_limit": 0.05,
+    "paired_excess_limit": 0.01,
+    "limits_are_not_deployment_certification": true
+  },
+  "event_bound_interpretation": "For n independent layouts and zero observed any-harm events, the one-sided 95% exact binomial upper bound on the probability of such an observed event is 1-0.05^(1/n). It is not an exact interval for state-weighted harm prevalence or for paired excess harm; it demonstrates the limited independent exposure. Do not substitute it without fixing the target estimand and observation-design assumptions.",
+  "scenarios": [
+    {
+      "layouts": 6,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.41152886998557053,
+        0.8230577399711411,
+        1.6461154799422821
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.39303776899708276
+    },
+    {
+      "layouts": 8,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.309313546275699,
+        0.618627092551398,
+        1.237254185102796
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.31234397806636793
+    },
+    {
+      "layouts": 12,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.22414227847468715,
+        0.4482845569493743,
+        0.8965691138987486
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.22092219194555585
+    },
+    {
+      "layouts": 16,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.18416955521720238,
+        0.36833911043440476,
+        0.7366782208688095
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.17074972298248092
+    },
+    {
+      "layouts": 32,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.1212706655620704,
+        0.2425413311241408,
+        0.4850826622482816
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.0893681989862648
+    },
+    {
+      "layouts": 64,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.08300453203437066,
+        0.16600906406874133,
+        0.33201812813748266
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.045729702330762456
+    },
+    {
+      "layouts": 128,
+      "assumed_layout_standard_deviation_s": [
+        0.25,
+        0.5,
+        1.0
+      ],
+      "approximate_interval_half_width_s": [
+        0.057786003781707236,
+        0.11557200756341447,
+        0.23114401512682894
+      ],
+      "zero_observed_harm_layouts_binomial_event_upper_95": 0.023132405251746757
+    }
+  ],
+  "approximate_layout_counts_for_half_width_target": [
+    {
+      "assumed_layout_standard_deviation_s": 0.25,
+      "layouts": 31
+    },
+    {
+      "assumed_layout_standard_deviation_s": 0.5,
+      "layouts": 110
+    },
+    {
+      "assumed_layout_standard_deviation_s": 1.0,
+      "layouts": 429
+    }
+  ],
+  "final_layout_count_not_selected": true,
+  "final_interval_and_harm_procedure_pending_protocol_freeze": true,
+  "final_count_must_use_measured_pilot_cost_and_storage_not_method_outcomes": true,
+  "no_pilot_branch_scoring": true,
+  "phase2_authorized": false
+}

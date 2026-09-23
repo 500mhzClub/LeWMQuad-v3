@@ -1,0 +1,868 @@
+{
+  "schema": "decision_headroom_reference_sanity_expected.v1",
+  "expectations_written_before_cost_execution": true,
+  "source_controller_or_model_comparisons": false,
+  "pre_execution_revision": "Before any cost evaluation, make the four reversal examples face away from the target (2.8 + 0.03 * variant radians relative heading). The earlier 1.05-radian draft described an oblique approach, not an obvious reversal. Categories, case count and prewritten optimal sets are unchanged; no pilot branch outcomes informed this revision.",
+  "cases": [
+    {
+      "case_id": "wall_ahead_0",
+      "category": "wall_ahead",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 0.0,
+      "target_xy": [
+        0.0,
+        2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            0.6,
+            0.0
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 0.0
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [
+        "forward"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_ahead_1",
+      "category": "wall_ahead",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 1.5707963267948966,
+      "target_xy": [
+        -2.0,
+        1.2246467991473532e-16
+      ],
+      "walls": [
+        {
+          "center": [
+            3.735172737399427e-17,
+            0.61
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 1.5707963267948966
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [
+        "forward"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_ahead_2",
+      "category": "wall_ahead",
+      "start_xy": [
+        -0.0,
+        0.0
+      ],
+      "start_yaw": 3.141592653589793,
+      "target_xy": [
+        -2.4492935982947064e-16,
+        -2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            -0.62,
+            7.59281015471359e-17
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 3.141592653589793
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [
+        "forward"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_ahead_3",
+      "category": "wall_ahead",
+      "start_xy": [
+        0.0,
+        -0.0
+      ],
+      "start_yaw": 4.71238898038469,
+      "target_xy": [
+        2.0,
+        -3.6739403974420594e-16
+      ],
+      "walls": [
+        {
+          "center": [
+            -1.1572912251942488e-16,
+            -0.63
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 4.71238898038469
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [
+        "forward"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "open_corridor_0",
+      "category": "open_corridor",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 0.0,
+      "target_xy": [
+        2.0,
+        0.0
+      ],
+      "walls": [
+        {
+          "center": [
+            0.0,
+            -0.8
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 0.0
+        },
+        {
+          "center": [
+            0.0,
+            0.8
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 0.0
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "open_corridor_1",
+      "category": "open_corridor",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 1.5707963267948966,
+      "target_xy": [
+        1.2246467991473532e-16,
+        2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            0.8,
+            -4.898587196589413e-17
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 1.5707963267948966
+        },
+        {
+          "center": [
+            -0.8,
+            4.898587196589413e-17
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 1.5707963267948966
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "open_corridor_2",
+      "category": "open_corridor",
+      "start_xy": [
+        -0.0,
+        0.0
+      ],
+      "start_yaw": 3.141592653589793,
+      "target_xy": [
+        -2.0,
+        2.4492935982947064e-16
+      ],
+      "walls": [
+        {
+          "center": [
+            9.797174393178826e-17,
+            0.8
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 3.141592653589793
+        },
+        {
+          "center": [
+            -9.797174393178826e-17,
+            -0.8
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 3.141592653589793
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "open_corridor_3",
+      "category": "open_corridor",
+      "start_xy": [
+        0.0,
+        -0.0
+      ],
+      "start_yaw": 4.71238898038469,
+      "target_xy": [
+        -3.6739403974420594e-16,
+        -2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            -0.8,
+            1.4695761589768238e-16
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 4.71238898038469
+        },
+        {
+          "center": [
+            0.8,
+            -1.4695761589768238e-16
+          ],
+          "size": [
+            6.0,
+            0.1
+          ],
+          "yaw": 4.71238898038469
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "preparatory_turn_0",
+      "category": "preparatory_turn",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 0.0,
+      "target_xy": [
+        1.5,
+        1.5
+      ],
+      "walls": [
+        {
+          "center": [
+            0.6,
+            0.0
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 0.0
+        },
+        {
+          "center": [
+            0.0,
+            -0.8
+          ],
+          "size": [
+            3.0,
+            0.1
+          ],
+          "yaw": 0.0
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome.",
+      "geodesic_requirement": "Wall blocks the direct target segment; use a route around its upper end in the unrotated case."
+    },
+    {
+      "case_id": "preparatory_turn_1",
+      "category": "preparatory_turn",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 1.5707963267948966,
+      "target_xy": [
+        -1.4999999999999998,
+        1.5
+      ],
+      "walls": [
+        {
+          "center": [
+            3.735172737399427e-17,
+            0.61
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 1.5707963267948966
+        },
+        {
+          "center": [
+            0.8,
+            -4.898587196589413e-17
+          ],
+          "size": [
+            3.0,
+            0.1
+          ],
+          "yaw": 1.5707963267948966
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome.",
+      "geodesic_requirement": "Wall blocks the direct target segment; use a route around its upper end in the unrotated case."
+    },
+    {
+      "case_id": "preparatory_turn_2",
+      "category": "preparatory_turn",
+      "start_xy": [
+        -0.0,
+        0.0
+      ],
+      "start_yaw": 3.141592653589793,
+      "target_xy": [
+        -1.5000000000000004,
+        -1.4999999999999998
+      ],
+      "walls": [
+        {
+          "center": [
+            -0.62,
+            7.59281015471359e-17
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 3.141592653589793
+        },
+        {
+          "center": [
+            9.797174393178826e-17,
+            0.8
+          ],
+          "size": [
+            3.0,
+            0.1
+          ],
+          "yaw": 3.141592653589793
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome.",
+      "geodesic_requirement": "Wall blocks the direct target segment; use a route around its upper end in the unrotated case."
+    },
+    {
+      "case_id": "preparatory_turn_3",
+      "category": "preparatory_turn",
+      "start_xy": [
+        0.0,
+        -0.0
+      ],
+      "start_yaw": 4.71238898038469,
+      "target_xy": [
+        1.4999999999999996,
+        -1.5000000000000004
+      ],
+      "walls": [
+        {
+          "center": [
+            -1.1572912251942488e-16,
+            -0.63
+          ],
+          "size": [
+            0.1,
+            1.2
+          ],
+          "yaw": 4.71238898038469
+        },
+        {
+          "center": [
+            -0.8,
+            1.4695761589768238e-16
+          ],
+          "size": [
+            3.0,
+            0.1
+          ],
+          "yaw": 4.71238898038469
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "left_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome.",
+      "geodesic_requirement": "Wall blocks the direct target segment; use a route around its upper end in the unrotated case."
+    },
+    {
+      "case_id": "goal_settling_0",
+      "category": "goal_settling",
+      "start_xy": [
+        -0.005,
+        0.0
+      ],
+      "start_yaw": 0.0,
+      "target_xy": [
+        0.0,
+        0.0
+      ],
+      "walls": [],
+      "arrival_settling": true,
+      "expected_optimal_actions": [
+        "hold"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "goal_settling_1",
+      "category": "goal_settling",
+      "start_xy": [
+        -3.6739403974420597e-19,
+        -0.006
+      ],
+      "start_yaw": 1.5707963267948966,
+      "target_xy": [
+        0.0,
+        0.0
+      ],
+      "walls": [],
+      "arrival_settling": true,
+      "expected_optimal_actions": [
+        "hold"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "goal_settling_2",
+      "category": "goal_settling",
+      "start_xy": [
+        0.007,
+        -8.572527594031473e-19
+      ],
+      "start_yaw": 3.141592653589793,
+      "target_xy": [
+        -0.0,
+        0.0
+      ],
+      "walls": [],
+      "arrival_settling": true,
+      "expected_optimal_actions": [
+        "hold"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "goal_settling_3",
+      "category": "goal_settling",
+      "start_xy": [
+        1.4695761589768239e-18,
+        0.008
+      ],
+      "start_yaw": 4.71238898038469,
+      "target_xy": [
+        0.0,
+        -0.0
+      ],
+      "walls": [],
+      "arrival_settling": true,
+      "expected_optimal_actions": [
+        "hold"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_grazing_0",
+      "category": "wall_grazing",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 0.0,
+      "target_xy": [
+        2.0,
+        0.0
+      ],
+      "walls": [
+        {
+          "center": [
+            0.0,
+            0.535
+          ],
+          "size": [
+            5.0,
+            0.1
+          ],
+          "yaw": 0.0
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [
+        "left_arc"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_grazing_1",
+      "category": "wall_grazing",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 1.5707963267948966,
+      "target_xy": [
+        1.2246467991473532e-16,
+        2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            -0.537,
+            3.2881766557106435e-17
+          ],
+          "size": [
+            5.0,
+            0.1
+          ],
+          "yaw": 1.5707963267948966
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [
+        "left_arc"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_grazing_2",
+      "category": "wall_grazing",
+      "start_xy": [
+        -0.0,
+        0.0
+      ],
+      "start_yaw": 3.141592653589793,
+      "target_xy": [
+        -2.0,
+        2.4492935982947064e-16
+      ],
+      "walls": [
+        {
+          "center": [
+            -6.600846247404234e-17,
+            -0.539
+          ],
+          "size": [
+            5.0,
+            0.1
+          ],
+          "yaw": 3.141592653589793
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [
+        "left_arc"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "wall_grazing_3",
+      "category": "wall_grazing",
+      "start_xy": [
+        0.0,
+        -0.0
+      ],
+      "start_yaw": 4.71238898038469,
+      "target_xy": [
+        -3.6739403974420594e-16,
+        -2.0
+      ],
+      "walls": [
+        {
+          "center": [
+            0.541,
+            -9.938008775080771e-17
+          ],
+          "size": [
+            5.0,
+            0.1
+          ],
+          "yaw": 4.71238898038469
+        }
+      ],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "forward"
+      ],
+      "expected_unacceptable_actions": [
+        "left_arc"
+      ],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "reversal_0",
+      "category": "reversal",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 2.8,
+      "target_xy": [
+        2.0,
+        0.0
+      ],
+      "walls": [],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "right_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "reversal_1",
+      "category": "reversal",
+      "start_xy": [
+        0.0,
+        0.0
+      ],
+      "start_yaw": 4.400796326794897,
+      "target_xy": [
+        1.2246467991473532e-16,
+        2.0
+      ],
+      "walls": [],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "right_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "reversal_2",
+      "category": "reversal",
+      "start_xy": [
+        -0.0,
+        0.0
+      ],
+      "start_yaw": 6.001592653589793,
+      "target_xy": [
+        -2.0,
+        2.4492935982947064e-16
+      ],
+      "walls": [],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "right_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    },
+    {
+      "case_id": "reversal_3",
+      "category": "reversal",
+      "start_xy": [
+        0.0,
+        -0.0
+      ],
+      "start_yaw": 7.60238898038469,
+      "target_xy": [
+        -3.6739403974420594e-16,
+        -2.0
+      ],
+      "walls": [],
+      "arrival_settling": false,
+      "expected_optimal_actions": [
+        "right_turn"
+      ],
+      "expected_unacceptable_actions": [],
+      "analytical_branch_definition": "Fixed six named synthetic physical endpoint/traces in the accompanying draft; this is a cost-unit sanity case, not a simulator or model outcome."
+    }
+  ],
+  "case_count": 24,
+  "purpose": "Independent physical-reference cost qualification only; no restoration or navigation claim.",
+  "caveat": "Four orientations and small physical variations per category are sanity checks, not independent scientific layouts.",
+  "draft_cost_parameters": {
+    "footprint_radius_m": 0.46,
+    "minimum_clearance_m": 0.005,
+    "geodesic_grid_resolution_m": 0.02,
+    "nominal_travel_speed_m_s": 0.2,
+    "nominal_turn_speed_rad_s": 0.45,
+    "linear_braking_acceleration_m_s2": 0.4,
+    "angular_braking_acceleration_rad_s2": 1.0,
+    "arrival_radius_m": 0.02,
+    "quiet_linear_speed_m_s": 0.05,
+    "quiet_angular_speed_rad_s": 0.05
+  },
+  "footprint_basis": "Existing geometry_v1_calibration recommendation static_configuration_space_radius_m=0.46; includes an explicit engineering margin, not hardware validation.",
+  "branch_template": {
+    "horizons_ms": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800
+    ],
+    "start_delay_ms": 300,
+    "terminal_zero_interval_ms": 100,
+    "local_translation_m": {
+      "hold": [
+        0,
+        0
+      ],
+      "forward": [
+        0.1,
+        0
+      ],
+      "left_arc": [
+        0.08,
+        0.03
+      ],
+      "right_arc": [
+        0.08,
+        -0.03
+      ],
+      "left_turn": [
+        0,
+        0
+      ],
+      "right_turn": [
+        0,
+        0
+      ]
+    },
+    "yaw_delta_rad": {
+      "hold": 0.0,
+      "forward": 0.0,
+      "left_arc": 0.1,
+      "right_arc": -0.1,
+      "left_turn": 0.18,
+      "right_turn": -0.18
+    },
+    "terminal_speed_m_s": {
+      "hold": 0.0,
+      "forward": 0.08,
+      "left_arc": 0.06,
+      "right_arc": 0.06,
+      "left_turn": 0.0,
+      "right_turn": 0.0
+    },
+    "terminal_yaw_rate_rad_s": {
+      "hold": 0.0,
+      "forward": 0.0,
+      "left_arc": 0.1,
+      "right_arc": -0.1,
+      "left_turn": 0.2,
+      "right_turn": -0.2
+    }
+  }
+}
