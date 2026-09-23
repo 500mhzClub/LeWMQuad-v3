@@ -13,3 +13,7 @@ The implementation check invokes the complete V4.2 owner with `--implementation-
 The separate historical re-render owner follows this check, under its unchanged historical caps. Missing historical restoration inputs remain unresolved and do not gate Phase 2. Any different implementation defect stops for disposition. No controller changes, model fitting, additional states or artifact retirement are authorized.
 
 Execution status and measured validation evidence are recorded separately so this protocol identity stays frozen.
+
+The [complete-owner output check passed](go2_decision_headroom_v42_output_check_result_2026-09-23.json): six states, 3,189 validated files, 164.66 s wall, 248.79 s CPU, 7.53 GiB peak aggregate RAM, 3.77 GiB sampled total VRAM, and zero new physics. Both available and unresolved reference paths were exercised. The historical check inspected 16 examples/32 source-image identities but rendered zero frames because qualified restoration inputs were unavailable; training-render provenance remains unverified.
+
+[Phase 2 execution status](go2_decision_headroom_v42_execution_status_2026-09-23.json) records the existing owner and output root. Phase 2 has launched. Monitor that owner; do not start a duplicate or restart a failed assignment.
