@@ -1,0 +1,1 @@
+{"status":"IMPLEMENTATION_CHECK_FAILURE","physics_steps":0,"reason":"Audit FixedMotionModel lacked the deployed observational input hook; unchanged selector rejected one checked neural call per selected plan required.","correction":"Attach the unchanged _check_model_inputs forward hook in the audit-only adapter. No deployed controller changed."}

@@ -8,7 +8,13 @@ Stages B–D of the progress-report roadmap. No further fitting, controller
 repair, candidate expansion or artifact retirement is authorised. The previous
 navigation objective does not extend this scope.
 
-## Current checkpoint: approved remaining Phase 1 complete, stopped with finite blockers
+## Current checkpoint: V4 protocol frozen, awaiting explicit Phase 2 approval
+
+The user resolved B1–B3 through quantity-specific validity, native 2-ms physical ground truth plus an FK robustness bound, positional-only regret and a new primary filter audit. The [V4 protocol](go2_decision_headroom_protocol_v4_2026-09-23.md) freezes eight layout identities, row adapters, 24 mission-length sources, up to 576 representative states and 6,096 branches, with a proposed 48-hour wall ceiling. Implementation checks used only the same six qualified states; no new physics or retained comparative pilot results were produced. The historical training-data bitwise re-render check is proposed only.
+
+V4 is an approval submission, not Phase 2 authority. No new source missions, audit branches, comparative result analysis or historical re-rendering have started. The original pilot failures and prior closeouts remain preserved below.
+
+## Previous checkpoint: approved remaining Phase 1 complete, stopped with finite blockers
 
 The [remaining Phase 1 closeout](go2_remaining_phase1_qualification_result_2026-09-23.md) records all four fixed cells and 84 branches complete within 137.6 simulated seconds and 766.85 execution wall seconds. All six own-source packet replays passed, as did all 192 new source RGB comparisons and 72 candidate-repeat pairs. All 27 collision primitives were evaluated at each 2-ms step; 35,200 between-step intervals remain unresolved because no verified swept-motion bound is available. Five of six packets also lack a positional reference target. The physical reference and primary comparisons therefore remain unqualified.
 
