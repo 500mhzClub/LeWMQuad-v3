@@ -1,0 +1,86 @@
+{
+  "schema": "go2_remaining_phase1_closeout_package.v1",
+  "approved_predecessor_commit": "761ab695",
+  "status": "COMPLETE_STOPPED_WITH_FINITE_BLOCKERS",
+  "owner_exited": true,
+  "scope": "Four approved new source/layout cells, 84 attempted branches, 137.6 simulated seconds; six own-source input checks; bounded read-only closure",
+  "blockers": [
+    "B1: continuous articulated hard/operating clearance unqualified",
+    "B2: positional reference target missing in five of six packets",
+    "B3: conditional Phase 2 executable bindings and scalar-repeat qualification incomplete"
+  ],
+  "phase2_ready": false,
+  "phase2_authorized": false,
+  "comparative_scoring_executed": false,
+  "follow_on_qualification_authorized": false,
+  "bindings": {
+    "docs/go2_decision_headroom_protocol_v2_checkpoint_a_2026-09-23.md": {
+      "sha256": "4c90624432cf690b161dd7936d2e5e67736a54b532b2c97cb58be5f629d47572",
+      "bytes": 21262
+    },
+    "docs/go2_decision_headroom_protocol_v2_checkpoint_a_2026-09-23.json": {
+      "sha256": "5617f2ddd0d37a5bc90a305a50ecca397494d8f799038895ea789c09f1060825",
+      "bytes": 15088
+    },
+    "docs/go2_decision_headroom_remaining_phase1_approved_v3_2026-09-23.json": {
+      "sha256": "3e468ee66d42938f558c882c7a90c8e44f1fbc28978f8036eda68d289f0a2578",
+      "bytes": 26528
+    },
+    "docs/go2_decision_headroom_remaining_phase1_approved_v3_2026-09-23.sha256": {
+      "sha256": "7a57fc2a3b9b38ba597ab7e10d486c9bb2569eb1dad53ba8d17c9660b4ac9d70",
+      "bytes": 133
+    },
+    "scripts/qualify_go2_source_decision_packet_development.py": {
+      "sha256": "8507c6e01e040618908ba69beae90ae74501e73e949332f0df2c52681c398a37",
+      "bytes": 6851
+    },
+    "scripts/qualify_go2_articulated_clearance_development.py": {
+      "sha256": "b2e724af577c4fe796651ec4a5621e37392bbd2c4b3e1ff01397adaf67670b8c",
+      "bytes": 6200
+    },
+    "scripts/run_go2_remaining_phase1_qualification_development.py": {
+      "sha256": "eb4628dfd5a534279381aeefad80df1e9947e67efe64d2dcabe0b5b2597f6944",
+      "bytes": 11396
+    },
+    "docs/go2_remaining_phase1_qualification_result_2026-09-23.md": {
+      "sha256": "ca99a73202f7d656fed6b4dbb208a7121a27717003a52c0b48242fdc65818d73",
+      "bytes": 17959
+    },
+    "docs/go2_remaining_phase1_qualification_result_2026-09-23.json": {
+      "sha256": "fdca4c97a98c553179162b4530541c93f3ed1529115f6d10c5f250e9bbc048fc",
+      "bytes": 77564
+    },
+    "docs/go2_remaining_phase1_reference_sampling_closure_2026-09-23.md": {
+      "sha256": "80c19f87aca95c205fa179c089f2bb3a52342ab3438040175922200e7ee4f688",
+      "bytes": 11721
+    },
+    "docs/go2_remaining_phase1_provenance_addendum_2026-09-23.md": {
+      "sha256": "fa4cb00ee137b6f390fd7963a6414439e0a07680167a1d446ba015dbbae43c2a",
+      "bytes": 7046
+    },
+    "docs/go2_stage_a_holds_exploratory_2026-09-23.md": {
+      "sha256": "947424ea078cdde3a37fc5d47057b9258dd09103f95a10c0a903553e3f453893",
+      "bytes": 4343
+    },
+    "docs/go2_stage_a_holds_exploratory_2026-09-23.json": {
+      "sha256": "29df89640974a30ca7679974e435c6c1e4212dfe0a31631b93477022a55e5fd0",
+      "bytes": 3378771
+    },
+    "docs/go2_renderer_provenance_readonly_2026-09-23.md": {
+      "sha256": "f12ef9c554746c274ae0388f9113c6444203635716d2b72916c75d7a4491b319",
+      "bytes": 9375
+    },
+    "docs/go2_renderer_provenance_readonly_2026-09-23.json": {
+      "sha256": "13c6c81a905f4bfb649cf52719e2729c77b34ab3b98532c6ec6bffd6e9059837",
+      "bytes": 6548
+    },
+    "docs/go2_decision_headroom_clearance_boundary_result_v2_2026-09-23.json": {
+      "sha256": "8206245a0f47eda5e396295bb673428f876d8fd907276f1f6c8e6570c761f961",
+      "bytes": 15216
+    },
+    "docs/go2_decision_headroom_phase1_status_2026-09-23.md": {
+      "sha256": "bc787d66a9c125fc0f1b9f171c9fab15c7cb0f99262fd0762c0572adf45fe79b",
+      "bytes": 23681
+    }
+  }
+}

@@ -1,0 +1,432 @@
+{
+  "schema": "remaining_phase1_approved.v3",
+  "submitted_commit": "761ab695",
+  "submitted_configuration_sha256": "5617f2ddd0d37a5bc90a305a50ecca397494d8f799038895ea789c09f1060825",
+  "authority": "User approval in current thread, including conditions 1\u20137. At most four new cells, 84 branches, 137.6 simulated seconds. No retries/substitution/extensions/Phase 2.",
+  "remaining_phase1": {
+    "authorised": true,
+    "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_remaining_v2_attempt_001",
+    "source_assignments": [
+      {
+        "layout": 0,
+        "controller": "action",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "command_history",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "reactive_feedback",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "action",
+        "snapshot_frame": 132
+      }
+    ],
+    "source_sim_s_each": 17.6,
+    "branches_per_state": 21,
+    "branch_order_per_state": [
+      "source_trace_0",
+      "hold_0",
+      "hold_1",
+      "hold_2",
+      "forward_0",
+      "forward_1",
+      "forward_2",
+      "left_arc_0",
+      "left_arc_1",
+      "left_arc_2",
+      "right_arc_0",
+      "right_arc_1",
+      "right_arc_2",
+      "left_turn_0",
+      "left_turn_1",
+      "left_turn_2",
+      "right_turn_0",
+      "right_turn_1",
+      "right_turn_2",
+      "source_trace_1",
+      "source_trace_2"
+    ],
+    "branch_attempt_cap": 84,
+    "total_sim_s_cap": 137.6,
+    "wall_s_cap": 3600,
+    "cpu_s_cap": 57600,
+    "ram_bytes_cap": 17179869184,
+    "vram_bytes_cap": 8589934592,
+    "retained_bytes_cap": 2147483648,
+    "peak_write_bytes_cap": 3221225472,
+    "successor_coverage_required": 6,
+    "previous_corrected_states_count": 2,
+    "repeat_reduction": false
+  },
+  "execution_caps": {
+    "schema": "go2_decision_headroom_phase1_caps.v1",
+    "recorded_at": "2026-09-23T17:25:01.218960+01:00",
+    "authority": "docs/go2_decision_headroom_agent_handoff_final_2026-09-23.md",
+    "authority_sha256": "054343396f42d5df3191a97415fece28da1b58101a55d8914571ab8447de3448",
+    "phase": "Approved remaining Phase 1 under user conditions; no comparative audit",
+    "start_condition": "All four original Stage A assignments terminal and physically read; coordinator and native owners exited. No pilot physics or GPU work competes with Stage A.",
+    "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_remaining_v2_attempt_001",
+    "collection_caps": {
+      "layouts": 2,
+      "layout_indices": [
+        0,
+        2
+      ],
+      "layout_family": "existing dense-maze development cohort; exposed pilot-only",
+      "source_rollouts": 4,
+      "source_controller_quotas": {
+        "action": 2,
+        "command_history": 1,
+        "reactive_feedback": 1
+      },
+      "source_camera_frames_per_rollout": 161,
+      "source_policy_steps_per_rollout": 805,
+      "source_settling_seconds_per_rollout": 1.5,
+      "source_physics_seconds_total": 70.4,
+      "snapshots_per_rollout": 1,
+      "sampled_states_total": 4,
+      "snapshot_frames": [
+        132
+      ],
+      "sanity_cases": 0,
+      "sanity_cases_per_category": 0,
+      "sanity_categories": [],
+      "sanity_panel": "Prewritten analytical physical cases for independent evaluator qualification; not comparative method rows or extra source rollouts."
+    },
+    "branch_caps": {
+      "candidates_per_state": 6,
+      "repeat_attempts_per_candidate": 3,
+      "source_trace_restore_attempts_per_state": 3,
+      "candidate_attempts_total": 72,
+      "source_trace_attempts_total": 12,
+      "all_branch_attempts_total": 84,
+      "seconds_per_branch": 0.8,
+      "branch_physics_seconds_total": 67.2,
+      "all_physics_seconds_total": 137.6,
+      "include_failed_attempts": true,
+      "extra_off_bank_reactive_branches": 0,
+      "horizons_ms": [
+        100,
+        200,
+        300,
+        400,
+        500,
+        600,
+        700,
+        800
+      ],
+      "committed_prefix_included": true
+    },
+    "compute_caps": {
+      "execution_wall_seconds": 3600,
+      "aggregate_cpu_seconds": 57600,
+      "gpu_owner_wall_seconds": 3600,
+      "concurrent_native_owners": 1,
+      "concurrent_gpu_owners": 1,
+      "cpu_affinity": [
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31
+      ],
+      "torch_threads": 4,
+      "aggregate_rss_bytes": 17179869184,
+      "gpu_allocated_bytes": 8589934592,
+      "minimum_available_ram_bytes": 17179869184,
+      "minimum_available_vram_bytes": 4294967296,
+      "encoder_timing_passes": 0,
+      "predictor_timing_passes": 0,
+      "readout_timing_passes_per_existing_head": 0,
+      "comparative_selections_or_rankings": 0
+    },
+    "storage_caps": {
+      "retained_bytes": 2147483648,
+      "peak_additional_bytes": 3221225472,
+      "recovery_filesystem_reserve_bytes": 12884901888,
+      "workspace_filesystem_reserve_bytes": 4294967296,
+      "new_raw_depth_bytes": 0,
+      "new_dense_feature_file_bytes": 0,
+      "artifact_retirement_authorized": false
+    },
+    "stops": [
+      "Stop on any cap; do not enlarge it to achieve a pass.",
+      "Stop if faithful physical/decision restoration requires a controller change or prohibited retained input.",
+      "Stop if reference-cost qualification or usable restoration cannot be achieved within caps.",
+      "At checkpoint (a), submit frozen committed protocol/config and measured evidence; wait for explicit Andrew approval."
+    ],
+    "blinding": "No R0-R5 comparative audit selections, rankings, harms, regrets or paired-regret variance on pilot states. Ordinary source-controller choices and prewritten reference-cost sanity rankings only.",
+    "phase2_approved": false
+  },
+  "execution_input_bindings": {
+    "vjepa_checkpoint": {
+      "path": "/home/andrewknowles/.cache/vjepa2_1_vitl_dist_vitG_384.pt",
+      "bytes": 5151198524,
+      "sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6"
+    },
+    "gait_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt",
+      "bytes": 4547691,
+      "sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff"
+    },
+    "gait_config": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+      "bytes": 2409,
+      "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+    },
+    "predictor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_horizon_dense_predictor_v1_attempt_001/action_final.pt",
+      "bytes": 68847259,
+      "sha256": "5d39753fbdc7714c60bf8c24c1757fd0ffbbdfe9485d776d65b5c3caa9fbb7ca"
+    },
+    "readout_old": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/old_data_final.pt",
+      "bytes": 3413935,
+      "sha256": "97b3972cf6e1283d8825e7e900c0d504ef88ce3f495690d8b8ac284cee2fb19f"
+    },
+    "readout_maze": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/maze_data_final.pt",
+      "bytes": 3413949,
+      "sha256": "aa853c6f16d7f78e01ade2bb91c1dfceebda2b1a12b0657a223b184fe2005fb8"
+    },
+    "normalization": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/proprio_v1/proprio_norm_stats.json",
+      "bytes": 2329,
+      "sha256": "9380b4c6d9b59099e43bba9898e1417c273f88075d1ed122401cbb3272e18f94"
+    },
+    "command_history_fit": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_short_pulse_command_control_v1_attempt_001/command_only.npz",
+      "bytes": 31698,
+      "sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2"
+    },
+    "urdf": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/assets/urdf/go2/urdf/go2.urdf",
+      "bytes": 24170,
+      "sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4"
+    },
+    "platform": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_platform_manifest.yaml",
+      "bytes": 4613,
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "primitive_registry": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_primitive_registry.yaml",
+      "bytes": 2454,
+      "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+    }
+  },
+  "frozen_source_sha256": {
+    "scripts/run_go2_decision_headroom_pilot_development.py": "803497e83d86f2c8d4a4c1db466906e508e97e631f4f7dd52404f6c037d11958",
+    "scripts/run_go2_decision_headroom_source_development.py": "4f2f9336d55b8838c88b60d725f57843bd204d72a0138d8ebbe90de530d43bb6",
+    "scripts/run_go2_decision_headroom_branches_development.py": "2ccf66a39842034ae0148a8a1e575b981333c5602f7153ff665a6ccb264c0d8a",
+    "scripts/qualify_go2_decision_headroom_reference_development.py": "bc61ec6f238edfdf54dbddbcbccab424019933f3178f8f2789956a83ed93c6a7",
+    "lewm/decision_headroom_packet_development.py": "529e3a9c734c439d55b2fba83bd0e28a66a64d9216f66aeb249a987427c546c7",
+    "lewm/decision_headroom_snapshot_development.py": "676e57c7dd8b41a6b5b229d62c8042255761a362bd665f7300c06de42394d54a",
+    "lewm/decision_headroom_reference_development.py": "b9f08da08704893aff9299a9b57ded142dd1831d4edd1289c46cefd5c6a6e81d",
+    "scripts/check_go2_decision_headroom_pilot_development.py": "a9d7543d7d9e3b6dad08ed2c0ce3b871e20e374008e6085213d045d2d173ebcb",
+    "scripts/time_go2_decision_headroom_components_development.py": "94e605e5a2b6674d01f9e970cf26bcd96e1fdaa6728287362566afc0f7718f05",
+    "scripts/read_go2_decision_headroom_pilot_development.py": "fbe01c9822ea58e70feb1b41c72f22f418e052e90eea7d70acd08126d2080799",
+    "scripts/run_go2_dense_horizon_navigation_development.py": "519fdc0b0f1e170bb93b0b98663d5984b404fce840df2f20738b97c3d443e37e",
+    "lewm/dense_horizon_navigation_development.py": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+    "lewm/dense_native_observation_development.py": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+    "scripts/paced_native_session_development.py": "223c65fea3efcc2870f9f470afc954ccb0ff28f3e2501d27f239b3c873321898",
+    "scripts/whole_task_physics_session_development.py": "0a118879d6e890f0b262902eafc90dd7a969128bac5ead43de226ba0b02f48bd",
+    "scripts/rgb_navigation_retention_development.py": "e4f9957bf240047048179f4a46c5ba25e8a0470f6b74fdf821d94fda43aaff99",
+    "lewm/dense_world_model_maze_layouts_development.py": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8",
+    "scripts/continue_go2_decision_headroom_prephysics_development.py": "f23b3c48f19cf0b3849e3ba316bb8cd1980c2e1d839162f206b9d5247be03f68",
+    "scripts/run_go2_decision_headroom_rgb_recheck_development.py": "fe397738ae12410a1560c3a81e40c3af9eef69fc253658723559fc8c6b7494eb",
+    "scripts/in_memory_paired_camera_session_development.py": "dd825899993b68cc98d43421730fd89ae92c07aeecbec48375150315b8aa021e",
+    "scripts/dev_frozen_dense_representation_encoders_v1.py": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2",
+    "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484",
+    "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+    "scripts/run_go2_route_turn_memory_transfer_development.py": "023ff1e54ce2c182822423973259410f2827d17891f327bfb1c9cc0f1ab2669e",
+    "lewm/axis_aligned_fine_connectivity_development.py": "fa5240471920784649e0b6cdf8ac6f55a8bb55c9330970ebcf76c79b40da2d99",
+    "scripts/run_go2_interrupted_route_turn_memory_development.py": "12933ffee8406c8c3fc0551eb5e69949b288a95e3d4a017021cb41eb310b8a10",
+    "lewm/interrupted_route_turn_memory_development.py": "936ef19bc1e2c75aa034521c80c8b440f448a96e906094e8940e88bfeb719a5f",
+    "scripts/run_go2_interrupted_view_replan_development.py": "6d43307d9a795e338ff1dc31410e5e8009db62bbe466b06906b0c6233eeb1a8a",
+    "lewm/interrupted_view_replan_development.py": "d0bd0d77a469a433c301d559dc7e5662565add76fa025de0b27a60c3b84b87a8",
+    "scripts/run_go2_cached_fine_connectivity_development.py": "1a2583300af17cf6d39400d83841f123fbc8e79b0d9bff7811d00f1c8fc4cae3",
+    "scripts/run_go2_current_position_coverage_view_development.py": "e64a8c04fb6e3fbb2180f9b8e25f441249ab081c0f873cc68751dadf50e45446",
+    "lewm/current_position_coverage_view_development.py": "df266825f0e922a1d53ae731da57fb9e2e335fb95bcf7e7eae470537adbb62ec",
+    "scripts/run_go2_coverage_translation_view_development.py": "807187ff52c49fa73bd5196c40ece7090cb64c81acbbed0ad18485c3229e278b",
+    "lewm/coverage_translation_view_development.py": "8e48e798d95c3d3080b0fa7bf213e2ccada1890e4f98a6916bbfcd0c92622275",
+    "scripts/run_go2_view_arc_no_early_release_development.py": "f4c6db4e9a6147097026c5610af017ad1d19c9b35611523c4b3d937b9e74ea5f",
+    "scripts/run_go2_measured_view_arc_recovery_development.py": "f1729ad14d9ef07ad83d04513a05982527e5731ce9806a15d492fe2b9060771e",
+    "lewm/measured_view_arc_recovery_development.py": "7e1b8f4ec4d0d3b861049b581682280cf1f322f4eba677e0784094ae532410de",
+    "scripts/run_go2_publication_repaired_navigation_replication_development.py": "0e5e784b50461c50004f0c5c65232a92aef01ebdf63376520f25853db3b63e82",
+    "lewm/measured_recovery_publication_development.py": "b701f273a86b58a9d7c2eee244d4a6ae4d5d84c567c310a6e18e3bc223e9e039",
+    "scripts/run_go2_nogil_recovery_hold_development.py": "874bd0263732ad5a4612fe380e77d97dae75ef30425df2686a6919fcf2835bec",
+    "lewm/visual_recovery_dispatch_hold_development.py": "15cf34e3be63016b618ab9f9ab8de239d2d5648a86d67dce388cf5e5fa379a9b",
+    "lewm/live_planning_stage_profile_development.py": "d690739b3b2cd2fb8b6d041b151d359b1d3151f441c94bda4e65aa99d3d5995e",
+    "lewm/live_planning_profile_development.py": "7c7ac97289350aec50569e7e3186652a958b22c9004fc80a4c100484251337a3",
+    "lewm/persistent_local_visual_recovery_development.py": "46aa53afd6d9c00bfe80279300804b0aa8bdb9bb1acdccd12fb03d545d42c252",
+    "lewm/framewise_visual_support_recovery_development.py": "27316417408522fa44c66e6c5d1fe88de76fb52955f393238881aa9b3ce6000a",
+    "lewm/prefix_aware_terminal_approach_development.py": "e381280cd759609b1348492d81ccbf04f249ef29546a4b6b15c0bde7ce82c63b",
+    "lewm/visual_support_recovery_development.py": "ff664ced1f7d7c614aa228b1c03d0eddc649810b417c0a6dc23c5727791bf206",
+    "lewm/pipeline_age_dispatch_development.py": "9c0e91305d7ad22ba9e01e999ff2b528dc013577db5f1dcdf9e7918e0bda64d0",
+    "lewm/short_pulse_navigation_runtime_development.py": "b13a78260a482c38ebfa1f242db66d982ee0e4f1add13c8bcb0ae24dabc95cdc",
+    "lewm/neural_input_treatment_development.py": "f32abe2d34c41b873ad175dbec97abcae2091d87159d736fec62ee0d624737e5",
+    "lewm/signed_veto_view_recovery_development.py": "122245801f8ec58c54666cf125c19c61dbc600a2e72fb641c75236ea173aeb7b",
+    "scripts/run_go2_auxiliary_turn_recovery_development.py": "8e9fdc32495cbe29230c5960b8f4720ef94670734c3ec080661b4c398578c273",
+    "lewm/floor_reacquisition_development.py": "e64929ce351c99a5e41b9dc01bc59978b8368ba138f5226366932d3c6335206e",
+    "scripts/run_go2_planned_stopping_projection_development.py": "92b795dd674c7240742d0c2ceb495852d48f5e7fc1a801a33fde303099124e2d",
+    "lewm/planned_stopping_projection_development.py": "ef4f136f799d279cdbf93b3db29affa4d2968566891060fa1f6e6c6b3f10fe95",
+    "scripts/run_go2_committed_camera_view_development.py": "178f04faec59482f7535b47857c877e09c9b7d000552e7ffb072f8d3d1a4af98",
+    "lewm/combined_motion_source_development.py": "48d25137c9b53897b52569172a59ba132070cc53f9f43484ab8b312806ad37af",
+    "lewm/committed_camera_frontier_view_development.py": "1ddb7097fe56b0fed86b233202bdc0a9753ec6936bc034afea275613bd2ff011",
+    "lewm/camera_frontier_visits_development.py": "7c1798ebaf8681951f5fd52f5ce93f44801b07cd9d95642b582ea9b87608fb35",
+    "scripts/run_go2_contact_score_ablation_development.py": "e2ed0f04b2e8175647d09a51e8c5c8669687fdd7aa6a16188ea9654865ea6f24",
+    "lewm/contact_score_ablation_development.py": "0a5d5c8df9f3174fc6fc65e975d6a313a7e36923d06ebd226fb8c9a1f0936780",
+    "scripts/run_go2_pose_command_xy_ablation_development.py": "d42419a630a69d94d526372231abad55f2b26941d3028441680b6d957f57956f",
+    "lewm/pose_command_xy_control_development.py": "9eb73ab0972bb3f0d160864eceb2fbaa963b3061a43e3d529c1c9294c9643996",
+    "scripts/run_go2_routing_memory_scope_development.py": "8bde0b310c851997939f4221254670064265093a937436094540df29409efb17",
+    "lewm/current_pair_routing_memory_development.py": "32954a8a46314338f0ae90360b3524e4e3afb734e0b0941e59254b5378bdba1b",
+    "scripts/run_go2_hold_relative_heading_recovery_development.py": "21e69d547a01be7fd09134d3c564e8125882a26b23cb5de13c05e1c793e1cb4f",
+    "lewm/hold_relative_heading_recovery_development.py": "8bfa928e99a78b1b242a83056ad389311f2795f5967e1b62cd3b51a6af446c89",
+    "scripts/run_go2_nearby_panorama_comparison_development.py": "421d378cf70c38634de7aab396b573bd4e73fe159bc05ed974498d812b1ef309",
+    "lewm/nearby_panorama_directed_view_development.py": "9895c56a8c4541955ed79c9061aaef9f6c35e91935b09abb3e76caa054b1c836",
+    "scripts/run_go2_survey_reposition_native_development.py": "71d24987b28888218b663cb5cbaa2435d3084b2d751306447b225d35af044d66",
+    "lewm/survey_clearance_reposition_development.py": "57165d317eb04243fe8b8049ed50764ff9852f6d40e92ffd9c26ba1d8ce33944",
+    "lewm/no_early_heading_release_development.py": "c3e776795e6288bfe6b31b93d8c9ead84c0ef91c68bcb1fd7358a54d11d71f64",
+    "lewm/full_reserve_heading_release_development.py": "909bf94eeb45c5f91842a92e05731565bdd965e2d3ef7f349c64aeb18b3ecdff",
+    "lewm/matched_motion_residual_runtime_development.py": "f0bd5e6bc4556a8d919e447207746cbcfde1124faa6572208c8bcc1e82a9d71c",
+    "lewm/arrival_entry_terminal_priority_development.py": "9f62525dc63c41963d0e2ecbad5ce037ae94b59a8357e409e6dd73f4d1dd01d3",
+    "lewm/cached_fine_connectivity_development.py": "74f66142fb91f057fce037fd25a46daa51437cb410351ab4736728955c9f13c2",
+    "lewm/cached_fine_goal_route_development.py": "e98704d701dba3579d0a1173f6950f7536c64bb30859010fb949a920c2d66bbb",
+    "lewm/hold_relative_clearance_recovery_development.py": "154984396da44bbd05751369b54775a3dda19c49d3a6eaabe3befa43039e6400",
+    "lewm/terminal_translation_pulse_development.py": "a7caae5459107c3776acd477b0d38c35db82102da9bb6c695c76b6cee5df69a0",
+    "lewm/predictive_arrival_hold_development.py": "b6d632f5a2c0e315b6e6da586199aced6fedef80466b4eebc87e605bf537ba9a",
+    "lewm/fine_goal_route_development.py": "82b08774bc0f0c33dc770422ece71e1e9a4ed0e655ac559f6027ff1275a813be",
+    "lewm/terminal_position_priority_development.py": "9a010ca496af4c3ef203aa285770ab443c9799abfca76c882bd396c77ad43237",
+    "lewm/clearance_preferred_route_development.py": "a772c6510364f3ee910a483ebb91def2bdc0c746436a6480675494ac5328e096",
+    "lewm/clearance_turn_recovery_development.py": "7906735616b98d755cf93b27854e902c3fb26830f13313290590f5dcf386e9d0",
+    "lewm/initial_panorama_development.py": "2156c544ed2f36216e42130fcc6b0a85237f87b1bde55dcffdd7cd4df39efe79",
+    "lewm/recovery_limited_initial_survey_development.py": "1fa5b5ac771dd41a51d8216a2a33c9281c81e7dc31771b1633f0149c70e58806",
+    "lewm/closed_loop_motion_residual_development.py": "97ed2f008a5b984e969f124da880894a74aecb3a2e92d29a7205505663361997",
+    "lewm/clearance_lookahead_development.py": "45c0911f4c7efb1b02ec982a245558b2912f70a2ebef3f64592684f5ed8aa207",
+    "lewm/memory_forecast_clearance_development.py": "3bf94dd8bb69f3bc312a03252ecb2f0e45b4596fbf728189193a4ca949633cca",
+    "lewm/frontier_visit_runtime_development.py": "898932c536f340554ae2c1dbc1ea7a4f0a20157887fa790097f37ecd21b04b5a",
+    "lewm/fine_stored_obstacle_routing_development.py": "9042e9ee6b805b190f3ddf3a9c74927a9b05a6cb07e1a9e55c05596acc947301",
+    "lewm/continuous_start_connector_development.py": "a399ba3610bf7c8a849f19bc557f471edd71f958dadc32c463ee562ec25624a2",
+    "lewm/waypoint_alignment_planning_development.py": "3ff9f9d2182c4a98906951ab573c0b217d045fd6459a7d429af74e0ae46fc76d",
+    "lewm/partial_height_round_trip_development.py": "d97ac509a425dd00418d8802e9d56e70d7b38359710d27101dd5a5c68a37c84d",
+    "lewm/fine_obstacle_round_trip_development.py": "5b814a1c5c09dd7200d6365e6e93f39eb8ff1b14007ab4e813e760372b225ea1",
+    "lewm/veto_view_round_trip_development.py": "1590ce5ad303fbfda9760c33196a392e3caa84b219c08616153ee49e9a3d71a1",
+    "lewm/stopping_margin_dispatch_development.py": "38bef757a98bbfceb2045c086dc8b0dd098b5e40a98a1a92d912b792b84f618c",
+    "lewm/process_registered_round_trip_development.py": "75c8d43de6545862f2f506167dfec010e96b69bb84e4848b3f0217a1817c100e",
+    "lewm/continuous_round_trip_runtime_development.py": "3f6b4312bc71e5ed1ae98aead16213b7017e995d8da09a63236b5a5e9c2e6177",
+    "lewm/continuous_commitment_runtime_development.py": "705269f64407782066324278707560d3dc23867c8cb35e3e278f30847c90d5ee",
+    "lewm/independent_depth_process_development.py": "e1b5c0dec31e3ee03d1010d5d292f95d480632d74f29c41bacf12393a2fdbbdb",
+    "lewm/independent_depth_runtime_development.py": "e893888e0dc24cec1055584d3a08819fcb44efd4d691482a9e1fd79fff197c34",
+    "lewm/measured_latency_simulation_development.py": "e8f605e83e5e08788940871cfbfcf35d82da113dd0a96c4be320b5a9b8618a77",
+    "lewm/process_mapped_runtime_development.py": "12157a39bc97e0c1a87650cc4d595268b3d0b2d19a86c1f0866a83dad704bdb8",
+    "lewm/auxiliary_only_turn_recovery_development.py": "d1aa80ecca853b2cc56a6972b8110e55544a3b02294b2b586a55d7ca856ea0b4",
+    "lewm/paced_multirate_controller_development.py": "710c103dce529a30cf1f993ea271950f7e04d96bd0b5a55f3aa6d5213ac8f757",
+    "lewm/sparse_corner_comparison_development.py": "b933808886125849a230f95ec02f0b6bc5dfb07c942fc2cc8c48ccfeab4ff175",
+    "lewm/persistent_visual_baselines_development.py": "6c5856f5d00b4b5ee0367ab23e354fdbc5945bddd5426467ae7a84a3bb55b1a5",
+    "scripts/qualify_go2_source_decision_packet_development.py": "8507c6e01e040618908ba69beae90ae74501e73e949332f0df2c52681c398a37",
+    "scripts/qualify_go2_articulated_clearance_development.py": "b2e724af577c4fe796651ec4a5621e37392bbd2c4b3e1ff01397adaf67670b8c",
+    "scripts/run_go2_remaining_phase1_qualification_development.py": "eb4628dfd5a534279381aeefad80df1e9947e67efe64d2dcabe0b5b2597f6944",
+    "lewm/articulated_collision_geometry_development.py": "abd59e2960ae59a496904e39bbb16f5827b0ec9e57ac7b1da11d9a4947c6c61f",
+    "lewm/native_collision_grouping_development.py": "0128eeb5838c316c077450165c90f95a82ce144ea8fd37dd9f4d1a4d58d0a8d6"
+  },
+  "source_decision_tolerances": {
+    "absolute": 1e-06,
+    "relative": 1e-06,
+    "discrete": "identical",
+    "ignored_fields": [
+      "model_receipt.wall_ns"
+    ],
+    "fixed_before_first_comparison": true
+  },
+  "native_geometry_identity_tolerance": 1e-05,
+  "restoration_tolerances": {
+    "position_m": 0.001,
+    "yaw_rad": 0.0017453292519943296
+  },
+  "previous_corrected_states": [
+    {
+      "frame": 12,
+      "measured_ns": 2700000000,
+      "source_physical_sample_index": 1349,
+      "physical": {
+        "path": "physical.pkl",
+        "bytes": 28427086,
+        "sha256": "2a0266597b4f06a31cc5f632d11bfd7d3a3af25e02e68482e3eb5b69a1279c48"
+      },
+      "decision": {
+        "path": "decision.pkl",
+        "bytes": 12340223,
+        "sha256": "e7bfb3c1cfdc80a1b12f2eb0e9d1c7b522c245d7dd950ff47f2e64a161ae1fea"
+      },
+      "capture_and_write_wall_s": 1.593201023992151,
+      "source_controller": "command_history",
+      "layout": 0,
+      "pilot_only": true,
+      "restoration_qualified": false,
+      "comparative_rows_computed": false,
+      "source_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00"
+    },
+    {
+      "frame": 132,
+      "measured_ns": 14700000000,
+      "source_physical_sample_index": 7349,
+      "physical": {
+        "path": "physical.pkl",
+        "bytes": 28502935,
+        "sha256": "d67ee2ad72e0bae68e55e99f715a811e3eac2e735d02e3a32ab8df60dfe7d13a"
+      },
+      "decision": {
+        "path": "decision.pkl",
+        "bytes": 15293885,
+        "sha256": "fcea3b47d41e8d74aad0efdb9b12026fc6ea73886386f0dccc9007e2bd23ebde"
+      },
+      "capture_and_write_wall_s": 0.14126292000582907,
+      "source_controller": "reactive_feedback",
+      "layout": 0,
+      "pilot_only": true,
+      "restoration_qualified": false,
+      "comparative_rows_computed": false,
+      "source_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01"
+    }
+  ],
+  "source_decision_replay_cap": 6,
+  "conditions": {
+    "source_own_selection_only": true,
+    "reactive_packet_supports_any_applicable_later_row": true,
+    "no_other_row_selection": true,
+    "observation_inputs_frozen": true,
+    "motion_dependent_eligibility_recomputed_by_unchanged_rule_in_future_audit": true,
+    "statistical_common_masks_separate": true,
+    "all_native_internal_steps_required": true,
+    "feet_wall_contacts_never_support": true,
+    "articulated_hard_clearance_m": 0.005,
+    "articulated_operating_clearance_m": 0.02,
+    "centre_048m_is_proxy_not_swept_certificate": true,
+    "unqualified_intervals_remain_unresolved": true,
+    "no_retries": true,
+    "no_artifact_retirement": true,
+    "no_new_qualification_cycle": true
+  },
+  "known_prephysics_limit": "No verified continuous interstep point-speed/acceleration bound for base rotation and all articulated joints. Existing positive stepwise separation bounds alone do not qualify true swept hard/operating clearance.",
+  "admission_minima": "Retain original PilotBudget minimum available RAM 16 GiB and VRAM 4 GiB; these admission checks are inherited, not enlarged maxima.",
+  "phase2_authorized": false
+}

@@ -8,7 +8,13 @@ Stages B–D of the progress-report roadmap. No further fitting, controller
 repair, candidate expansion or artifact retirement is authorised. The previous
 navigation objective does not extend this scope.
 
-## Current checkpoint: amended recheck and read-only analyses complete
+## Current checkpoint: approved remaining Phase 1 complete, stopped with finite blockers
+
+The [remaining Phase 1 closeout](go2_remaining_phase1_qualification_result_2026-09-23.md) records all four fixed cells and 84 branches complete within 137.6 simulated seconds and 766.85 execution wall seconds. All six own-source packet replays passed, as did all 192 new source RGB comparisons and 72 candidate-repeat pairs. All 27 collision primitives were evaluated at each 2-ms step; 35,200 between-step intervals remain unresolved because no verified swept-motion bound is available. Five of six packets also lack a positional reference target. The physical reference and primary comparisons therefore remain unqualified.
+
+The original approved package at `761ab695` is preserved; the pre-execution successor config and final evidence package identify the unchanged batch. Stage A and historical results remain preserved. No retries, substitutions, artifact retirement, comparative scoring or Phase 2 execution occurred. **This qualification round is complete and stopped with a finite blocker list; no further repair or qualification cycle is authorized.**
+
+## Previous checkpoint: amended recheck and read-only analyses complete
 
 The user-authorized successor recheck completed: **96/96 source-replay RGB matches**, all physical and candidate-repeat criteria passed, 42 branches, 36.6 simulated seconds, 104.90 wall seconds. The approved visual-cache correction is applied. Reactive frame 132 was selected by timestamp before execution; four source replays followed candidate branches. No original Stage A trial was changed or repeated.
 
