@@ -1,0 +1,13 @@
+{
+  "schema": "go2_headroom_v42_explicit_approval.v1",
+  "protocol_path": "docs/go2_decision_headroom_protocol_v42_2026-09-23.json",
+  "protocol_sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+  "baseline_protocol_sha256": "e7735ae9d98e6210d9e17f8301b5d6817826ce0b2a87d1971e5488cfa68fe190",
+  "phase2_explicitly_approved": true,
+  "historical_rerender_explicitly_approved": true,
+  "six_state_output_check_explicitly_approved": true,
+  "user_approval_text": "Approved: V4.2 = V4.1 (SHA-256 e7735ae9…) plus the changes below. Produce the V4.2 JSON and verify that its diff from V4.1 is limited to:\n\nversion metadata;\nthe converter and its implementation bindings;\nthe GPU-owner allowance.\n\nRecord the V4.2 SHA-256 with this text. This is explicit approval. Proceed through steps 3–5 without further confirmation unless a stop condition is met.\n\nOutput converter.\nRoute every JSON write in the V4 audit path through one converter. This covers collection, branching, articulated clearance, filter, both references, panel and memo inputs.\nThe converter maps NumPy booleans, integers and floats to native Python values via .item(), and arrays via .tolist(). It leaves all other types unchanged.\nEvery written file is read back and compared with the in-memory values. Any mismatch is a stop.\nDuring the pre-launch check only, further failures of this same kind (NumPy scalar or array serialisation) are pre-authorised for the converter, each logged. Any other defect stops for disposition, as does any writer failure during the Phase 2 run itself.\nGPU-owner allowance: 72 hours, matching the wall cap. All other caps are unchanged.\nEnd-to-end output check.\nRun the complete V4.2 audit owner on the six qualified states, writing to a separate root.\nUse retained traces if the owner can run from them. Otherwise, execute those six states' V4.2 assignments once, within caps.\nEvery output file must be written, read back and schema-validated.\nThe full downstream analysis must run on the written outputs: filter audit, both references, localisation panels, paired contrasts and panel assembly. Include the missing-value and unresolved paths.\nThese outputs are implementation checks only. They are not part of the Phase 2 panel, and no comparative results from them are retained as science.\nHistorical re-render check, as previously approved.\nPhase 2 launch under V4.2.",
+  "user_approval_text_sha256": "eb4ab49c45d473afdc62ca7713fc00cabf7da45957f69025511e709ef39f5d24",
+  "diff_check_path": "docs/go2_decision_headroom_v42_diff_check_2026-09-23.json",
+  "diff_check_sha256": "c9f218597794ef51f2a7f0e8956ee87ef909d59a620451baa572e3222e858c1d"
+}

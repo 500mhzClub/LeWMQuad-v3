@@ -1,0 +1,55 @@
+{
+  "status": "PASS",
+  "protocol_sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+  "implementation_only": true,
+  "scientific_comparisons": false,
+  "complete_owner": true,
+  "qualified_states": 6,
+  "source_input_passes": 6,
+  "physical_replay_passes": 6,
+  "rgb_replay_passes": 6,
+  "validated_files": 3189,
+  "analysis_cells": 1152,
+  "layout_panel_entries": 11520,
+  "primary_quantities": 13,
+  "reference_coverage_records": 864,
+  "both_references_available_path_exercised": true,
+  "unresolved_reference_and_clearance_paths_exercised": true,
+  "conversion_counts": {
+    "bool": 145,
+    "ndarray": 1,
+    "float64": 6
+  },
+  "additional_serialization_failures": [],
+  "other_defects": [],
+  "new_physics_steps": 0,
+  "resources": {
+    "wall_s": 164.66469895899354,
+    "cpu_s": 248.79000000000002,
+    "peak_sampled_aggregate_rss_bytes": 8082255872,
+    "peak_sampled_total_gpu_used_bytes": 4049625088,
+    "retained_bytes": 294776916,
+    "gpu_owner_wall_s": 154.55379424600687
+  },
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_headroom_v42_output_check_attempt_001",
+  "evidence_sha256": {
+    "resource_result.json": "3c011d28ee7a9e21940b51d3fc637710f33e421ad8dd54170f21aff943fc3746",
+    "output_validation.json": "ae5552c82cbffb46282f3fcf11b8fbb04fe298b762138d03366c24a3fe439b1d",
+    "analysis_v42.json": "02f9df09c0314891f4ff8dafa910e1d9d9d06637b78ceff62e8dce7d4f2b4e88",
+    "branch_panel_v42.json": "4ab51f88814a23e607ca90063c8a2acbae80cbcfae882fd051ebffb70e49bcec",
+    "memo_inputs_v42.json": "1f44f4a4a312024522f1ef3e85b7cb87aeb3e9db4611430fe56feb68962cfd03",
+    "json_output_receipt.json": "37ea0afcdf687cbaaae487acb776bacd94996dfee3990896afe8b133de10885d"
+  },
+  "historical": {
+    "status": "COMPLETE_WITH_UNRESOLVED_INPUTS",
+    "examples": 16,
+    "source_images": 32,
+    "rendered_frames": 0,
+    "new_physics_steps": 0,
+    "training_render_provenance": "render_unverified",
+    "launch_gate": false,
+    "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_headroom_historical_rerender_v42_attempt_001",
+    "result_sha256": "fec13d8a86840788018ee8d8804095de58ca31f176bea3be682dc8c98c447113",
+    "reason": "No retained bound restoration packets for the qualified path; no new rendering adapters or trajectory regeneration."
+  }
+}
