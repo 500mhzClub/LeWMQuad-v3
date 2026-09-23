@@ -1,0 +1,58 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "decision_sha256": "e7bfb3c1cfdc80a1b12f2eb0e9d1c7b522c245d7dd950ff47f2e64a161ae1fea",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": false
+    },
+    {
+      "decision_sha256": "fcea3b47d41e8d74aad0efdb9b12026fc6ea73886386f0dccc9007e2bd23ebde",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": false
+    },
+    {
+      "decision_sha256": "ed59ee4987f88c38d3c38ee13e8a278a4ad4e04fbeb5d05d08dcf61a7ab1bec0",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": false
+    },
+    {
+      "decision_sha256": "4180d7a438ea1b6181e079817996c648b0cc2bea88b245b995c889a565616aa0",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": false
+    },
+    {
+      "decision_sha256": "ffe7b7d5386e59899394157c7540cccaceaf49b37fb3d1ddb5198bf9923e74b0",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": true
+    },
+    {
+      "decision_sha256": "82ee8ff663d82ee2b987bf0455123428a66baf718869b626f7b83aa0a0e2643a",
+      "localisation_schema": true,
+      "paired_identity_zero": true,
+      "binding_classification_schema": true,
+      "secondary_reference_checked": false
+    }
+  ],
+  "physics_steps": 0,
+  "new_states": 0,
+  "comparative_results_retained": false,
+  "wall_s": 3.777045598006225,
+  "source_sha256": {
+    "lewm/decision_headroom_v41_development.py": "19fbdf48a261870748b23a7ab1bbc40349b5d8cf29a43c2dd18632780bbf61b6",
+    "scripts/run_go2_headroom_v41_development.py": "6db63f7b64c80f432a2acaea270f7d9597bff306e66621552cb3a36d4735fc0e",
+    "scripts/run_go2_headroom_v41_source_development.py": "96a4353d71224ece3900f6928cfe3bccca2ddfcd83b06010cab696f012302e4a",
+    "scripts/run_go2_headroom_v41_branches_development.py": "aba8f569de0246bf1c9f170d498f2ca89ea8ee4f17cb9ae1b7882ce98f9613b5",
+    "scripts/read_go2_headroom_v41_development.py": "e3dc19a6e7ee29675b873ad3dc792133fb6c9df15a4429037e3db18cf4bbcff9"
+  }
+}
