@@ -87,6 +87,8 @@ def restore(session, snapshot):
         elif hasattr(session, name):
             delattr(session, name)
     ctx.policy._last_actions = np.array(snapshot['policy_last_actions'], copy=True)
+    # Physics time was rewound; invalidate visual caches before RNG restore.
+    ctx.build.scene._visualizer.reset()
     rng = snapshot['rng']
     random.setstate(rng['python'])
     np.random.set_state(rng['numpy'])

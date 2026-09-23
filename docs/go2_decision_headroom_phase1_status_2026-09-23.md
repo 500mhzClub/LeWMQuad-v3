@@ -8,7 +8,15 @@ Stages B–D of the progress-report roadmap. No further fitting, controller
 repair, candidate expansion or artifact retirement is authorised. The previous
 navigation objective does not extend this scope.
 
-**Current state, 19:36 BST:** the native pilot is stopped and closed out after
+## Current checkpoint: amended recheck and read-only analyses complete
+
+The user-authorized successor recheck completed: **96/96 source-replay RGB matches**, all physical and candidate-repeat criteria passed, 42 branches, 36.6 simulated seconds, 104.90 wall seconds. The approved visual-cache correction is applied. Reactive frame 132 was selected by timestamp before execution; four source replays followed candidate branches. No original Stage A trial was changed or repeated.
+
+The [checkpoint-(a) package](go2_decision_headroom_checkpoint_a_v2_2026-09-23.md) contains the recheck, historical renderer provenance and exploratory Stage A hold reports, plus the revised hashed protocol/budget proposal. **Stopped for explicit approval. No Phase 2 collection or comparative scoring is authorized or running.** Broader source/layout and articulated-clearance qualification remains incomplete; the proposed next work is a bounded remaining Phase 1, not an automatic audit launch. No artifact retirement occurred.
+
+## Historical 19:36 stop (superseded by the authorized amendment)
+
+**State at 19:36 BST:** the native pilot is stopped and closed out after
 an RGB-restoration defect. Both completed sources passed physical restoration
 at all eight states; none of their 384 source-replay images matched bitwise.
 The third source was interrupted before physics. There is no live pilot owner.

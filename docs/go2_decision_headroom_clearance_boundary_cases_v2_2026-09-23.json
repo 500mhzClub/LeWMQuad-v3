@@ -1,0 +1,167 @@
+{
+  "schema": "decision_headroom_analytical_boundaries.v2",
+  "prelabelled": true,
+  "unit": "micrometres",
+  "boundary_offset_um": 100,
+  "numerical_clearance_tolerance_m": 1e-09,
+  "cases": [
+    {
+      "id": "controller_nominal_below",
+      "centre_distance_um": 449900,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      }
+    },
+    {
+      "id": "controller_nominal_at",
+      "centre_distance_um": 450000,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      }
+    },
+    {
+      "id": "controller_nominal_above",
+      "centre_distance_um": 450100,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      }
+    },
+    {
+      "id": "reference_disk_surface_below",
+      "centre_distance_um": 459900,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      }
+    },
+    {
+      "id": "reference_disk_surface_at",
+      "centre_distance_um": 460000,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      }
+    },
+    {
+      "id": "reference_disk_surface_above",
+      "centre_distance_um": 460100,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      }
+    },
+    {
+      "id": "legacy_reference_gap_below",
+      "centre_distance_um": 464900,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      }
+    },
+    {
+      "id": "legacy_reference_gap_at",
+      "centre_distance_um": 465000,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      }
+    },
+    {
+      "id": "legacy_reference_gap_above",
+      "centre_distance_um": 465100,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      }
+    },
+    {
+      "id": "common_operating_margin_below",
+      "centre_distance_um": 479900,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      }
+    },
+    {
+      "id": "common_operating_margin_at",
+      "centre_distance_um": 480000,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": true,
+        "boundary_label": "at"
+      }
+    },
+    {
+      "id": "common_operating_margin_above",
+      "centre_distance_um": 480100,
+      "disallowed_contact": false,
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true,
+        "boundary_label": "above"
+      }
+    },
+    {
+      "id": "disallowed_contact_despite_large_clearance",
+      "centre_distance_um": 600000,
+      "disallowed_contact": true,
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true,
+        "physical_harm": true
+      }
+    }
+  ],
+  "scope": "Stationary analytic traces and straight planar wall; no models, native physics or audit decisions. Common margin is a proposed evaluator classification, not a controller change.",
+  "original_fixture_preserved": "docs/go2_decision_headroom_reference_sanity_v1_2026-09-23.json"
+}

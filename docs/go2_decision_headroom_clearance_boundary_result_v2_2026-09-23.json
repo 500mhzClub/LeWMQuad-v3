@@ -1,0 +1,449 @@
+{
+  "status": "PASS",
+  "cases": 13,
+  "failures": 0,
+  "rows": [
+    {
+      "id": "controller_nominal_below",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.44989999999999997,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": -0.010100000000000053,
+        "interpolated_sweep_clearance_lower_bound_m": -0.010100000000000053,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "controller_nominal_at",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": false,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.44999999999999996,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": -0.010000000000000064,
+        "interpolated_sweep_clearance_lower_bound_m": -0.010000000000000064,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "controller_nominal_above",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.45009999999999994,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": -0.009900000000000075,
+        "interpolated_sweep_clearance_lower_bound_m": -0.009900000000000075,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "reference_disk_surface_below",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.4599,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": -0.0001000000000000445,
+        "interpolated_sweep_clearance_lower_bound_m": -0.0001000000000000445,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "reference_disk_surface_at",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.45999999999999996,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": -5.551115123125783e-17,
+        "interpolated_sweep_clearance_lower_bound_m": -5.551115123125783e-17,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "reference_disk_surface_above",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.46009999999999995,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 9.999999999993348e-05,
+        "interpolated_sweep_clearance_lower_bound_m": 9.999999999993348e-05,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "legacy_reference_gap_below",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.4649,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.00489999999999996,
+        "interpolated_sweep_clearance_lower_bound_m": 0.00489999999999996,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "ENDPOINT_OUTSIDE_REFERENCE_FREE_SPACE"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "legacy_reference_gap_at",
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "at"
+      },
+      "actual": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.4650000000000001,
+      "reference": {
+        "acceptable": true,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.00500000000000006,
+        "interpolated_sweep_clearance_lower_bound_m": 0.00500000000000006,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "NO_REFERENCE_GEODESIC"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "legacy_reference_gap_above",
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "above"
+      },
+      "actual": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.46510000000000007,
+      "reference": {
+        "acceptable": true,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.005100000000000049,
+        "interpolated_sweep_clearance_lower_bound_m": 0.005100000000000049,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": false,
+          "reason": "NO_REFERENCE_GEODESIC"
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "common_operating_margin_below",
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false,
+        "boundary_label": "below"
+      },
+      "actual": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": false
+      },
+      "measured_centre_distance_m": 0.4799,
+      "reference": {
+        "acceptable": true,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.019899999999999973,
+        "interpolated_sweep_clearance_lower_bound_m": 0.019899999999999973,
+        "cost_s": 2.6005,
+        "components": {
+          "remaining_travel_s": 2.6005,
+          "heading_alignment_s": 0.0,
+          "reverse_motion_braking_s": 0.0,
+          "opposing_turn_braking_s": 0.0,
+          "arrival_linear_settling_s": 0.0,
+          "arrival_angular_settling_s": 0.0
+        },
+        "reference_endpoint": {
+          "valid": true,
+          "distance_m": 0.5201,
+          "heading_rad": 3.141592653589793,
+          "direct_segment": true
+        },
+        "arrival_settling_applied": false
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "common_operating_margin_at",
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": true,
+        "boundary_label": "at"
+      },
+      "actual": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": false,
+        "common_operating_margin": true
+      },
+      "measured_centre_distance_m": 0.48,
+      "reference": {
+        "acceptable": true,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.019999999999999962,
+        "interpolated_sweep_clearance_lower_bound_m": 0.019999999999999962,
+        "cost_s": 2.6,
+        "components": {
+          "remaining_travel_s": 2.6,
+          "heading_alignment_s": 0.0,
+          "reverse_motion_braking_s": 0.0,
+          "opposing_turn_braking_s": 0.0,
+          "arrival_linear_settling_s": 0.0,
+          "arrival_angular_settling_s": 0.0
+        },
+        "reference_endpoint": {
+          "valid": true,
+          "distance_m": 0.52,
+          "heading_rad": 3.141592653589793,
+          "direct_segment": true
+        },
+        "arrival_settling_applied": false
+      },
+      "failures": {},
+      "numerical_boundary": true
+    },
+    {
+      "id": "common_operating_margin_above",
+      "expected": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true,
+        "boundary_label": "above"
+      },
+      "actual": {
+        "legacy_reference_acceptable": true,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true
+      },
+      "measured_centre_distance_m": 0.48009999999999997,
+      "reference": {
+        "acceptable": true,
+        "disallowed_contact": false,
+        "sampled_footprint_clearance_m": 0.02009999999999995,
+        "interpolated_sweep_clearance_lower_bound_m": 0.02009999999999995,
+        "cost_s": 2.5995,
+        "components": {
+          "remaining_travel_s": 2.5995,
+          "heading_alignment_s": 0.0,
+          "reverse_motion_braking_s": 0.0,
+          "opposing_turn_braking_s": 0.0,
+          "arrival_linear_settling_s": 0.0,
+          "arrival_angular_settling_s": 0.0
+        },
+        "reference_endpoint": {
+          "valid": true,
+          "distance_m": 0.5199,
+          "heading_rad": 3.141592653589793,
+          "direct_segment": true
+        },
+        "arrival_settling_applied": false
+      },
+      "failures": {},
+      "numerical_boundary": false
+    },
+    {
+      "id": "disallowed_contact_despite_large_clearance",
+      "expected": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true,
+        "physical_harm": true
+      },
+      "actual": {
+        "legacy_reference_acceptable": false,
+        "controller_nominal_full_clear": true,
+        "controller_translation_full_reserve_clear": true,
+        "common_operating_margin": true
+      },
+      "measured_centre_distance_m": 0.6000000000000001,
+      "reference": {
+        "acceptable": false,
+        "disallowed_contact": true,
+        "sampled_footprint_clearance_m": 0.14000000000000007,
+        "interpolated_sweep_clearance_lower_bound_m": 0.14000000000000007,
+        "cost_s": null,
+        "components": null,
+        "reference_endpoint": {
+          "valid": true,
+          "distance_m": 0.4,
+          "heading_rad": 3.141592653589793,
+          "direct_segment": true
+        }
+      },
+      "failures": {},
+      "numerical_boundary": false
+    }
+  ],
+  "expectations_sha256": "343129c77efaca6f68da4111072f14b91d182813defb857758e4c8a39b435e65",
+  "runner_sha256": "b0495e7459037f092abe08b21469bb0cf0ec280bc6b51e63b6fab670ed0d1c3f",
+  "numerical_band_is_not_physical_uncertainty": true,
+  "native_physics_steps": 0,
+  "model_calls": 0,
+  "audit_regrets": 0,
+  "original_failure_and_erratum_preserved": true
+}
