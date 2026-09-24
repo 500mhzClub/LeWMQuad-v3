@@ -1,0 +1,105 @@
+{
+  "assignments": [
+    [
+      0,
+      "action"
+    ],
+    [
+      0,
+      "no_future_action"
+    ],
+    [
+      0,
+      "command_history"
+    ],
+    [
+      0,
+      "reactive_feedback"
+    ],
+    [
+      1,
+      "no_future_action"
+    ],
+    [
+      1,
+      "command_history"
+    ],
+    [
+      1,
+      "reactive_feedback"
+    ],
+    [
+      1,
+      "action"
+    ],
+    [
+      2,
+      "command_history"
+    ],
+    [
+      2,
+      "reactive_feedback"
+    ],
+    [
+      2,
+      "action"
+    ],
+    [
+      2,
+      "no_future_action"
+    ],
+    [
+      3,
+      "reactive_feedback"
+    ],
+    [
+      3,
+      "action"
+    ],
+    [
+      3,
+      "no_future_action"
+    ],
+    [
+      3,
+      "command_history"
+    ]
+  ],
+  "identities": {
+    "sources": {
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_world_model_maze_cohort_development.py": "8ac814b636b55f637e383d108f5367a3d82a6233518f206735643b3746bfa0a8",
+      "scripts/run_go2_dense_horizon_navigation_development.py": "1593704293f439916131125afa5a20837e4951c47ef45c2f971e3206e57b7445",
+      "scripts/read_go2_dense_horizon_navigation_development.py": "c1247ae49393df7f0b085d4946e0b57ce6741e04a6b8bbee66e34079feec0399",
+      "lewm/dense_horizon_navigation_development.py": "74b42ba9b99d0f8f7cc0b184dfc76f1e535fc7b5408ce32a8471a9f919b4c425",
+      "lewm/dense_world_model_maze_layouts_development.py": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8"
+    },
+    "inventory": "3ee0e87d43410518e90a854b72cb8dfe63d4e1f7691a670f7853c332359364fd",
+    "checkpoints": {
+      "action": "5d39753fbdc7714c60bf8c24c1757fd0ffbbdfe9485d776d65b5c3caa9fbb7ca",
+      "no_future_action": "df5a02cf098f49e09b0e17933b2360fe04efe020bf7ac254afb398b572000487"
+    },
+    "readout": "bbbb05fd2e2984ac4d818abc986ec0401e24e9d91f53ee4e5b49443b832bdf85"
+  },
+  "readout_arm": "mixed_data",
+  "depth_retention": "rgb_only",
+  "navigation_ticks": 4800,
+  "timing": "untimed synchronous simulation",
+  "depth_noise_sigma_mm": 2,
+  "gyro": "ideal simulator gyro",
+  "checkpoint_selection": "fixed from exposed development results before prospective execution",
+  "primary_outcome": "native-verified outbound and return arrivals without disallowed contact",
+  "source_or_model_changes_during_cohort": false,
+  "extra_repetitions_to_obtain_success": false,
+  "stop_on_navigation_failure": false,
+  "preserve_all_outcomes": true,
+  "execution": "sequential GPU/native jobs; cyclic arm order by layout",
+  "parallelism": "one GPU serves encoder and predictor; heavy concurrent native/GPU jobs deferred",
+  "retention": "RGB, commands, physics, perception, depth hashes and outcomes for every run; no raw depth arrays",
+  "limitations": [
+    "four same-family development layouts; one run per arm and layout",
+    "action/blind comparison tests future-action conditioning, not JEPA objective causality",
+    "reactive comparison replaces a controller package",
+    "persistent-memory and JEPA-training contributions need additional experiments",
+    "not real-time, hardware validated, cross-family or sealed final evaluation"
+  ]
+}

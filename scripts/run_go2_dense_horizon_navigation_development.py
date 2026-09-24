@@ -1,8 +1,8 @@
-"""Bounded exposed-maze pilot with physics paused for high-level computation.
+"""Dense-model maze navigation with physics paused for high-level computation.
 
 This is a synchronous simulation treatment, not real-time qualification.
 The existing command cadence, observed map, arrival and backtracking logic stay
-in use. No prospective maze is consumed by this integration pilot.
+in use. Prospective layouts require an explicit full-mission assignment.
 """
 from collections import Counter, deque
 from concurrent.futures import ProcessPoolExecutor
@@ -22,6 +22,8 @@ import psutil
 import torch
 
 from lewm.actuator_gain_development import configure_gains
+from lewm.eligible_floor_registration_development import bind
+from lewm import dense_world_model_maze_layouts_development as prospective
 from lewm.dense_horizon_navigation_development import DenseNativeContextRuntimeMixin, load_dense_navigation_model
 from lewm.paced_multirate_controller_development import AcquiredFrame
 from lewm.process_mapped_runtime_development import mapping_ready, pose_ready
@@ -54,6 +56,22 @@ class RGBOnlyCameraSession(RGBNavigationRetentionMixin, replication.FreshCameraS
     pass
 
 
+class ProspectivePhysicalInit(replication.FreshPhysicalInit):
+    __init__ = bind(previous.native.study.cohort.IndependentRoundTripPhysicalInit.__init__,
+        specification=prospective.specification, pack=prospective.pack)
+
+
+class ProspectiveCameraSession(previous.native.NogilDrawingMixin,
+        previous.native.study.cohort.LiveDepthNoiseMixin,
+        previous.native.study.cohort.CompactDepthRetentionMixin,
+        previous.native.study.cohort.LzmaRawDepthPairedCameraSession, ProspectivePhysicalInit):
+    pass
+
+
+class ProspectiveRGBOnlySession(RGBNavigationRetentionMixin, ProspectiveCameraSession):
+    pass
+
+
 def write(name, value):
     with (OUTPUT/name).open('x') as stream:
         json.dump(value, stream, indent=2)
@@ -72,14 +90,21 @@ def drain(controller, *, timeout=120.):
         raise RuntimeError(str(controller.faults))
 
 
-def main(*, full_mission=False, arm='action', depth_retention='full', readout_arm='original'):
+def main(*, full_mission=False, arm='action', depth_retention='full', readout_arm='original',
+        prospective_layout=None):
     global OUTPUT, COUNT
     if arm not in ('action', 'no_future_action', 'command_history', 'reactive_feedback'):
         raise ValueError('explicit dense-model or matched comparison arm required')
     if depth_retention not in ('full','rgb_only'):
         raise ValueError('explicit recording treatment required')
-    if readout_arm not in ('original', 'old_data', 'mixed_data'):
+    if readout_arm not in ('original', 'old_data', 'mixed_data', 'maze_view_old_data', 'maze_view_maze_data'):
         raise ValueError('explicit readout treatment required')
+    independent = prospective_layout is not None
+    if independent and (not full_mission or type(prospective_layout) is not int
+            or not 0 <= prospective_layout < prospective.LAYOUT_COUNT):
+        raise ValueError('prospective assignment requires a full mission on layout 0–3')
+    index = prospective_layout if independent else INDEX
+    layouts = prospective if independent else replication.layouts
     if full_mission:
         OUTPUT = fit.OUTPUT.parent/'go2_dense_horizon_untimed_exposed_maze_full_v1_attempt_001'
         COUNT = 4814
@@ -89,6 +114,15 @@ def main(*, full_mission=False, arm='action', depth_retention='full', readout_ar
     if readout_arm != 'original':
         kind = 'full' if full_mission else 'pilot'
         OUTPUT = fit.OUTPUT.parent/f'go2_dense_horizon_untimed_{arm}_{readout_arm}_readout_exposed_maze_{kind}_v1_attempt_001'
+    if independent:
+        OUTPUT = fit.OUTPUT.parent/f'go2_dense_world_model_maze_layout{index:02d}_{arm}_{readout_arm}_v1_attempt_001'
+    readout_followup = readout_arm.startswith('maze_view_')
+    if readout_followup:
+        if not independent or arm != 'action':
+            raise ValueError('maze-view readout follow-up requires an explicit cohort layout and action predictor')
+        from scripts.navigation_artifact_root_development import BASE, validate_root
+        OUTPUT = BASE/OUTPUT.name
+        validate_root(OUTPUT, must_exist=False)
     if OUTPUT.exists():
         raise ValueError('preserve every existing native attempt')
     reserve_gib = (5 if depth_retention=='full' else 2) if full_mission else 1
@@ -104,20 +138,28 @@ def main(*, full_mission=False, arm='action', depth_retention='full', readout_ar
     runtime_type = DenseReactiveNavigationRuntime if arm=='reactive_feedback' else DenseNavigationRuntime
     previous.warmup()
     previous.study.cohort.stable.floor.configure()
-    spec = replication.layouts.specification(INDEX)
-    mission = replication.layouts.public_mission(INDEX)
+    spec = layouts.specification(index)
+    mission = layouts.public_mission(index)
+    inventory_path = Path('docs/go2_dense_world_model_maze_inventory_2026-09-18.json')
+    if independent:
+        inventory = json.loads(inventory_path.read_text())
+        assert {k: v for k, v in inventory.items() if k != 'source_sha256'} == json.loads(
+            json.dumps(prospective.build_inventory()))
     sources = {p:hashlib.sha256(Path(p).read_bytes()).hexdigest() for p in (
         __file__, 'lewm/dense_horizon_navigation_development.py',
         'lewm/untimed_simulation_clock_development.py', 'lewm/dense_native_observation_development.py',
         'lewm/live_planning_stage_profile_development.py','scripts/rgb_navigation_retention_development.py')}
+    sources[layouts.__file__] = fit.digest(layouts.__file__)
     OUTPUT.mkdir()
     directory = OUTPUT/'native'
     directory.mkdir()
     owner = psutil.Process()
     write('launch.json', dict(owner=dict(pid=owner.pid, created=owner.create_time()),
-        experiment='dense_horizon_untimed_exposed_maze_v1', source_sha256=sources,
-        public_mission=mission, layout_index=INDEX, layout_source=replication.layouts.__file__,
-        exposed_development_layout=True, new_independent_development_layout=False,
+        experiment='maze_view_readout_exposed_navigation_v1' if readout_followup else 'dense_world_model_prospective_maze_v1' if independent else 'dense_horizon_untimed_exposed_maze_v1', source_sha256=sources,
+        public_mission=mission, layout_index=index, layout_source=layouts.__file__,
+        exposed_development_layout=not independent or readout_followup,
+        new_independent_development_layout=independent and not readout_followup,
+        layout_inventory_sha256=fit.digest(inventory_path) if independent else None,
         model_assignment=arm, model_arm=model_arm, actual_runtime_class=runtime_type.__name__,
         predictor_sha256=fit.digest(fit.OUTPUT/f'{model_arm}_final.pt'),
         motion_readout=model.readout_identity,
@@ -137,7 +179,7 @@ def main(*, full_mission=False, arm='action', depth_retention='full', readout_ar
         rgb_physics_commands_and_perception_receipts_retained=True,
         real_time_qualified=False, hardware_validated=False, final_evaluation=False,
         full_mission=full_mission,
-        purpose='exposed-maze round-trip evaluation' if full_mission else 'bounded integration and physical command execution',
+        purpose='matched readout intervention on exposed development layouts' if readout_followup else 'prospective-maze round-trip evaluation' if independent else 'exposed-maze round-trip evaluation' if full_mission else 'bounded integration and physical command execution',
         independent_navigation_result=False, navigation_budget_ticks=4800,
         gpu_name=torch.cuda.get_device_name(0), gpu_total_bytes=torch.cuda.get_device_properties(0).total_memory,
         cpu_affinity=owner.cpu_affinity(), available_ram_bytes=psutil.virtual_memory().available))
@@ -165,7 +207,9 @@ def main(*, full_mission=False, arm='action', depth_retention='full', readout_ar
             stack.enter_context(contextlib.redirect_stderr(log))
             initialize_genesis(backend='cpu', seed=spec['procedural_seed'], logging_level='warning')
             session_type = replication.FreshCameraSession if depth_retention=='full' else RGBOnlyCameraSession
-            session = session_type(spec, directory, noise_layout_index=INDEX, noise_sigma_mm=2)
+            if independent:
+                session_type = ProspectiveCameraSession if depth_retention=='full' else ProspectiveRGBOnlySession
+            session = session_type(spec, directory, noise_layout_index=index, noise_sigma_mm=2)
             session.install_contact_identity()
             write('actuator_identity.json', configure_gains(session.ctx.build.robot,
                 session.ctx.runner._leg_dof_idx.tolist(), session.ctx.policy.env_cfg, 'checkpoint'))
@@ -254,6 +298,8 @@ if __name__=='__main__':
     parser.add_argument('--full-mission', action='store_true')
     parser.add_argument('--arm', choices=('action','no_future_action','command_history','reactive_feedback'), default='action')
     parser.add_argument('--depth-retention', choices=('full','rgb_only'), default='full')
-    parser.add_argument('--readout-arm', choices=('original','old_data','mixed_data'), default='original')
+    parser.add_argument('--readout-arm', choices=('original','old_data','mixed_data','maze_view_old_data','maze_view_maze_data'), default='original')
+    parser.add_argument('--prospective-layout', type=int, choices=range(4))
     args = parser.parse_args()
-    main(full_mission=args.full_mission, arm=args.arm, depth_retention=args.depth_retention, readout_arm=args.readout_arm)
+    main(full_mission=args.full_mission, arm=args.arm, depth_retention=args.depth_retention,
+        readout_arm=args.readout_arm, prospective_layout=args.prospective_layout)

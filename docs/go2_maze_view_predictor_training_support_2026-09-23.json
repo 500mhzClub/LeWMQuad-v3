@@ -1,0 +1,108 @@
+{
+  "status": "TRAINING_INPUT_SUPPORT_CONFIRMED",
+  "collection_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_training_v1_attempt_001",
+  "source_samples_sha256": "58f3da4bd989777ee5765e41fd1dc62a6cc1c96c747ce07752a914c831f16999",
+  "contexts": 2448,
+  "windows": 19584,
+  "windows_by_horizon_ms": {
+    "100": 2448,
+    "200": 2448,
+    "300": 2448,
+    "400": 2448,
+    "500": 2448,
+    "600": 2448,
+    "700": 2448,
+    "800": 2448
+  },
+  "cases": {
+    "0": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "1": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "2": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "3": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "4": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "5": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "6": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "7": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "8": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "9": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "10": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "11": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "12": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "13": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "14": {
+      "departures": 153,
+      "windows": 1224
+    },
+    "15": {
+      "departures": 153,
+      "windows": 1224
+    }
+  },
+  "unique_rgb_images": 2736,
+  "dense_fp16_ram_bytes": 4303355904,
+  "context_offsets_ms": [
+    -1000,
+    -500,
+    0
+  ],
+  "past_applied_command_history_shape": [
+    15,
+    3
+  ],
+  "causal_fixed_tape_limiter_projection": true,
+  "maximum_future_command_alignment_difference": 0.0,
+  "future_measured_commands_used_as_inputs": false,
+  "future_measured_commands_alignment_check_only": true,
+  "navigation_evaluation_recordings_used": false,
+  "new_collection_needed_for_this_support": false,
+  "training_run_started": false,
+  "encoder_executed": false,
+  "depth_replay": false,
+  "limitations": [
+    "Four training-maze geometries with four recorded views each; overlapping windows, not independent examples.",
+    "Fixed motion tape; no counterfactual branches from identical physical states.",
+    "Input support does not establish improved prediction or closed-loop navigation."
+  ]
+}

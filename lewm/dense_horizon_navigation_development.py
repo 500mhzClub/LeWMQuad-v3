@@ -27,6 +27,19 @@ def load_dense_navigation_model(arm='action', *, readout_arm='original'):
         from scripts import train_go2_full_heading_readout_development as heading_fit
         readout = heading_fit.load(readout_arm)
         readout_path = heading_fit.OUTPUT/f'{readout_arm}_final.pt'
+    elif readout_arm in ('maze_view_old_data', 'maze_view_maze_data'):
+        from scripts import run_go2_maze_view_readout_recovery_development as maze_fit
+        treatment = readout_arm.removeprefix('maze_view_')
+        result = json.loads((maze_fit.OUTPUT/'result.json').read_text())
+        readout_path = maze_fit.OUTPUT/f'{treatment}_final.pt'
+        if result['status'] != 'COMPLETE' or fit.digest(readout_path) != result['checkpoint_sha256'][treatment]:
+            raise ValueError('completed fixed-final maze-view readout required')
+        state = torch.load(readout_path, map_location='cpu', weights_only=False)
+        if state['updates'] != maze_fit.original.STEPS or state['plan_sha256'] != fit.digest(maze_fit.OUTPUT/'plan.json'):
+            raise ValueError('maze-view readout training identity mismatch')
+        readout = maze_fit.original.prior.previous.load('mixed_data')
+        readout.load_state_dict(state['model_state_dict'])
+        readout.eval().requires_grad_(False)
     else:
         raise ValueError('explicit original or completed continuation readout required')
     reference = fit.parent.reference
@@ -36,7 +49,8 @@ def load_dense_navigation_model(arm='action', *, readout_arm='original'):
     limits = SafetyLimits.from_manifest(yaml.safe_load(Path('config/go2_platform_manifest.yaml').read_text()))
     model = DenseHorizonNavigationModel(encoder, fit.load(arm).cuda(), readout.cuda(),
         limits, stats['control_mean'], stats['control_std'], action_blind=arm=='no_future_action').cuda().eval()
-    model.readout_identity = dict(arm=readout_arm, path=str(readout_path), sha256=fit.digest(readout_path))
+    model.readout_identity = dict(arm=readout_arm, path=str(readout_path), sha256=fit.digest(readout_path),
+        training_horizons_ms=list(range(100, 801, 100)) if readout_arm.startswith('maze_view_') else [500])
     return model
 
 
@@ -113,7 +127,7 @@ class DenseHorizonNavigationModel(nn.Module):
             last_applied_command=list(last), forecasts_per_horizon=counts,
             motion_xy_yaw=motion.tolist(), wall_ns=time.perf_counter_ns()-started,
             action_blind=self.action_blind, contact_prediction_available=False,
-            physical_readout_training_horizon_ms=500, real_time_qualified=False))
+            physical_readout_training_horizons_ms=self.readout_identity['training_horizons_ms'], real_time_qualified=False))
         return dict(rollout_outcomes=output,
             target_offsets_ns=torch.arange(1, 9, dtype=torch.int64).mul(100_000_000).expand(6, 8),
             prediction_valid=torch.ones(6, 8, dtype=torch.bool), contact_prediction_available=False)
@@ -152,7 +166,8 @@ class DenseNativeContextRuntimeMixin:
             observed_ns=packet.measured_ns)
         selected, correction = super()._select_action(packet, *args, **kwargs)
         selected['dense_model'] = dict(native_context_times_ns=stamps,
-            contact_prediction_available=False, physical_readout_training_horizon_ms=500)
+            contact_prediction_available=False,
+            physical_readout_training_horizons_ms=self.model.readout_identity['training_horizons_ms'])
         if correction is not None:
             correction['learned_corrected_field_means'] = 'dense predicted features decoded by frozen motion head; no nominal motion composition'
         return selected, correction

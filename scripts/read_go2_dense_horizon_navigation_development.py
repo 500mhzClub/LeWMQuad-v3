@@ -11,12 +11,14 @@ from lewm.navigation_decision_diagnostic_development import summarize_decisions
 from scripts.evaluate_continuous_native_arrivals_development import evaluate as arrivals
 from scripts.evaluate_saved_executed_motion_forecasts_development import evaluate as xy
 from scripts.evaluate_go2_short_pulse_navigation_development import same_window_xy, yaw_metrics
-from scripts.navigation_artifact_root_development import validate_root
+from scripts.navigation_artifact_root_development import BASE as RECOVERY_BASE, validate_root
 from scripts import train_go2_horizon_dense_predictor_development as fit
 
 
 def main(root):
-    validate = bind(validate_root, BASE=fit.OUTPUT.parent)
+    if root.parent not in (fit.OUTPUT.parent, RECOVERY_BASE):
+        raise ValueError('explicit existing development artifact base required')
+    validate = bind(validate_root, BASE=root.parent)
     validate(root)
     read = lambda name:json.loads((root/name).read_text())
     if not (root/'result.json').exists() and not (root/'failure.json').exists():
@@ -26,7 +28,8 @@ def main(root):
         raise ValueError('preserve completed evaluation')
     plans = [p for p in read('planning.json') if 'selection' in p]
     calls = read('dense_model_calls.json')
-    arm = read('launch.json')['model_assignment']
+    launch = read('launch.json')
+    arm = launch['model_assignment']
     neural_used = arm in ('action','no_future_action')
     assert len(plans)==len(calls)>0
     for plan, call in zip(plans, calls, strict=True):
@@ -55,14 +58,17 @@ def main(root):
         dispatch_reasons=dict(Counter(r['reason'] for r in read('requests.json'))),
         arm=arm, neural_calls=len(calls), model_forecasts_used_without_external_motion_correction=neural_used,
         motion_readout=read('launch.json').get('motion_readout', {'arm': 'original'}),
+        new_independent_development_layout=launch.get('new_independent_development_layout', False),
+        layout_index=launch['layout_index'],
         model_wall_ms=dict(zip(('median', 'p95', 'max'), np.percentile(model_ms, [50, 95, 100]).tolist())),
         executed_windows=windows, same_window_xy=comparisons, same_window_yaw=yaw,
         decisions=summarize_decisions(root),
         pipeline_faults=read('pipeline_faults.json'),
-        limitations=['exposed development maze', 'untimed synchronous simulation',
+        limitations=['prospective same-family development maze; no sealed evaluation' if launch.get('new_independent_development_layout') else 'exposed development maze', 'untimed synchronous simulation',
             'matched executed windows are overlapping and selection-biased',
             'command-history forecasts on these windows do not establish alternative navigation outcomes',
-            'motion readout trained only at 500 ms', 'no learned collision prediction',
+            'readout training horizons: '+str(launch.get('motion_readout', {}).get('training_horizons_ms', [500])),
+            'no learned collision prediction',
             'ideal body gyro and synthetic depth noise; no hardware validation'])
     fit.save(output, result)
     print(json.dumps({k:v for k,v in result.items() if k not in ('executed_windows', 'same_window_xy', 'same_window_yaw','decisions')}, indent=2))
@@ -77,4 +83,5 @@ if __name__=='__main__':
     args = parser.parse_args()
     if Path(args.root_name).name!=args.root_name or args.root_name.startswith('sealed'):
         raise ValueError('ordinary development artifact basename required')
-    main(fit.OUTPUT.parent/args.root_name)
+    base = RECOVERY_BASE if '_maze_view_' in args.root_name else fit.OUTPUT.parent
+    main(base/args.root_name)

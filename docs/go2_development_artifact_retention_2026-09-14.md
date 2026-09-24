@@ -1,5 +1,27 @@
 # Development artifact retention
 
+September 22: lossless RGB deduplication completed over 120 completed
+historical training scenes in `datagen_full/rollout/train/large_enclosed_maze`
+chunks 0000, 0040 and 0080 and their exactly bound `render_textured_v03` outputs.
+Both the replay plan and rendered summary must identify the scene as `train`.
+Only byte-identical PNGs within each scene are replaced with hard links; all
+image paths, bytes, results, source bags, decoded trajectories and replay plans
+are retained. No depth retirement or access to other splits is involved. The
+current readout-fit image population was checked to lie outside these scenes.
+The bounded job stopped at its 120-scene limit, below its 6-GiB allocation target.
+The receipt root is `.generated/training_rgb_deduplication_2026-09-22/`, with
+per-scene pre-change manifests and completed-path hashes. The runner is
+`scripts/deduplicate_go2_training_rgb_2026_09_22.py`; its identity is in the plan.
+Completed with exit 0 in 742.10 seconds: examined 5,760,000 image paths and
+replaced 128,523 byte-identical copies, eliminating 5,837,418,496 duplicate
+allocated bytes (5.44 GiB). Every replaced image hash was verified unchanged,
+and every pre-change manifest entry matched its completed receipt. Workspace
+free space rose from 5.73 to 11.04 GiB; that difference also includes receipt
+files and concurrent writes. `result.json` in the receipt root is terminal.
+Shared RGB inodes must remain immutable: rematerialize an independent file
+before any in-place image edit. Original per-path mtimes are retained in the
+manifest; hard-linked paths now share the canonical inode and its timestamps.
+
 September 18: retired the depth NPZ leaves of the completed, diagnosed, superseded
 layout-4 matched pair, under user approval bounded to an exact manifest. Roots:
 `go2_cached_fine_goal_lzma_hold_relative_recovery_pulse_round_trip_native_layout04_4800_v1_attempt_001`,

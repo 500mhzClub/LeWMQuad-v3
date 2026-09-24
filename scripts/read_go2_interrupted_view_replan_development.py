@@ -8,14 +8,15 @@ from scripts import run_go2_interrupted_view_replan_development as run
 from scripts import read_go2_current_position_coverage_view_development as views
 
 
-def physical_return_edges(root):
+def physical_return_edges(root, *, outcome=None, layout=None):
     read=lambda name:json.loads((root/name).read_text())
-    outcome=read('continuous_native_arrival_evaluation.json')
+    if outcome is None:outcome=read('continuous_native_arrival_evaluation.json')
     arrival=next((r for r in outcome['arrivals'] if r['phase']=='OUTBOUND'
         and r['arrival_checks_passed']),None)
     if arrival is None:return dict(status='NO_VERIFIED_OUTBOUND_ARRIVAL',physical_backtracking_observed=False)
-    launch=read('launch.json');index=launch['layout_index']
-    layout=launch['fresh_layout_inventory']['layouts'][index]['evaluation_layout']
+    if layout is None:
+        launch=read('launch.json');index=launch['layout_index']
+        layout=launch['fresh_layout_inventory']['layouts'][index]['evaluation_layout']
     pitch=layout['pitch_m'];cells={tuple(c) for c in layout['cells']}
     edges={tuple(sorted((tuple(a),tuple(b)))) for a,b in layout['edges']}
     frames=sorted(read('native/in_memory_camera_observations.json')['frames'],key=lambda r:r['frame'])

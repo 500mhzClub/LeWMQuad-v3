@@ -1,0 +1,453 @@
+{
+  "completed_assignments": 16,
+  "independent_layouts": 4,
+  "summary": {
+    "action": {
+      "completed": 4,
+      "successful_round_trips": 1
+    },
+    "no_future_action": {
+      "completed": 4,
+      "successful_round_trips": 0
+    },
+    "command_history": {
+      "completed": 4,
+      "successful_round_trips": 3
+    },
+    "reactive_feedback": {
+      "completed": 4,
+      "successful_round_trips": 0
+    }
+  },
+  "rows": [
+    {
+      "layout": 0,
+      "arm": "action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4235.20010509,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 277,
+        "hold": 504,
+        "forward": 36,
+        "right_arc": 35,
+        "left_arc": 45,
+        "right_turn": 301
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "arm": "no_future_action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 2559.7943055669994,
+      "frames": 4804,
+      "selected_actions": {
+        "hold": 1198
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "arm": "command_history",
+      "round_trip": true,
+      "arrivals": [
+        {
+          "phase": "OUTBOUND",
+          "frame": 1196,
+          "observed_distance_m": 0.018536854060094685,
+          "native_minimum_distance_m": 0.013433729272046736,
+          "native_maximum_distance_m": 0.02130998985877723,
+          "native_final_distance_m": 0.02130998985877723,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.018831197614164852,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        },
+        {
+          "phase": "RETURN",
+          "frame": 1752,
+          "observed_distance_m": 0.014064280399872849,
+          "native_minimum_distance_m": 0.01515088404606705,
+          "native_maximum_distance_m": 0.015974837256620973,
+          "native_final_distance_m": 0.015974837256620973,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.008723428472319737,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        }
+      ],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 175.22,
+      "wall_s": 1486.8867767939992,
+      "frames": 1753,
+      "selected_actions": {
+        "left_turn": 71,
+        "right_arc": 55,
+        "forward": 152,
+        "right_turn": 53,
+        "hold": 30,
+        "left_arc": 56
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "arm": "reactive_feedback",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4217.843088056001,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 139,
+        "forward": 21,
+        "right_arc": 69,
+        "left_arc": 44,
+        "right_turn": 250,
+        "hold": 675
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "arm": "action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4258.978943802002,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 89,
+        "hold": 1033,
+        "right_arc": 8,
+        "left_arc": 16,
+        "right_turn": 48,
+        "forward": 4
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "arm": "no_future_action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 2552.76615392,
+      "frames": 4804,
+      "selected_actions": {
+        "hold": 1198
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "arm": "command_history",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4187.655473952,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 336,
+        "right_arc": 15,
+        "forward": 14,
+        "left_arc": 28,
+        "right_turn": 261,
+        "hold": 544
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "arm": "reactive_feedback",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4237.209266094,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 148,
+        "forward": 31,
+        "right_arc": 83,
+        "left_arc": 108,
+        "right_turn": 111,
+        "hold": 717
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "arm": "action",
+      "round_trip": true,
+      "arrivals": [
+        {
+          "phase": "OUTBOUND",
+          "frame": 2400,
+          "observed_distance_m": 0.009632453665787273,
+          "native_minimum_distance_m": 0.005079643468762039,
+          "native_maximum_distance_m": 0.008663868800534753,
+          "native_final_distance_m": 0.00539200067214411,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.028953214317593658,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        },
+        {
+          "phase": "RETURN",
+          "frame": 3596,
+          "observed_distance_m": 0.007977354336802803,
+          "native_minimum_distance_m": 0.016815088215729766,
+          "native_maximum_distance_m": 0.018932651678015694,
+          "native_final_distance_m": 0.016815088215729766,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.014105025470733216,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        }
+      ],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 359.62,
+      "wall_s": 3158.1470710290014,
+      "frames": 3597,
+      "selected_actions": {
+        "left_turn": 185,
+        "hold": 117,
+        "right_turn": 230,
+        "left_arc": 137,
+        "forward": 133,
+        "right_arc": 86
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "arm": "no_future_action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 2571.898812293999,
+      "frames": 4804,
+      "selected_actions": {
+        "hold": 1198
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "arm": "command_history",
+      "round_trip": true,
+      "arrivals": [
+        {
+          "phase": "OUTBOUND",
+          "frame": 2680,
+          "observed_distance_m": 0.018873993904434713,
+          "native_minimum_distance_m": 0.009937496315753268,
+          "native_maximum_distance_m": 0.01601925351215324,
+          "native_final_distance_m": 0.01601925351215324,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.016127994889055218,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        },
+        {
+          "phase": "RETURN",
+          "frame": 3309,
+          "observed_distance_m": 0.016441358428260333,
+          "native_minimum_distance_m": 0.021929799725576515,
+          "native_maximum_distance_m": 0.024917196674361798,
+          "native_final_distance_m": 0.021929799725576515,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.014739889283132135,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        }
+      ],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 330.92,
+      "wall_s": 2892.5955660809996,
+      "frames": 3310,
+      "selected_actions": {
+        "left_turn": 55,
+        "right_turn": 66,
+        "right_arc": 76,
+        "left_arc": 73,
+        "forward": 179,
+        "hold": 359
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "arm": "reactive_feedback",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4240.199580599998,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 10,
+        "right_turn": 4,
+        "right_arc": 30,
+        "hold": 1122,
+        "forward": 8,
+        "left_arc": 24
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "arm": "action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4197.748089825,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 47,
+        "hold": 971,
+        "right_turn": 101,
+        "left_arc": 32,
+        "right_arc": 16,
+        "forward": 31
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "arm": "no_future_action",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 2606.1351282599935,
+      "frames": 4804,
+      "selected_actions": {
+        "hold": 1198
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "arm": "command_history",
+      "round_trip": true,
+      "arrivals": [
+        {
+          "phase": "OUTBOUND",
+          "frame": 1500,
+          "observed_distance_m": 0.01819389878636315,
+          "native_minimum_distance_m": 0.013500541190101698,
+          "native_maximum_distance_m": 0.014821047045628196,
+          "native_final_distance_m": 0.013500541190101698,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.002559728270725955,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        },
+        {
+          "phase": "RETURN",
+          "frame": 2340,
+          "observed_distance_m": 0.003491384397850686,
+          "native_minimum_distance_m": 0.005070884469479909,
+          "native_maximum_distance_m": 0.00745564239355334,
+          "native_final_distance_m": 0.005994129098382705,
+          "physical_radius_m": 0.04,
+          "dwell_seconds": 1.0,
+          "native_maximum_100ms_speed_m_s": 0.03044754816408579,
+          "all_requested_intervals_zero": true,
+          "physical_distance_passed": true,
+          "measured_motion_quiet": true,
+          "arrival_checks_passed": true
+        }
+      ],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 234.02,
+      "wall_s": 2048.9957357950043,
+      "frames": 2341,
+      "selected_actions": {
+        "left_turn": 75,
+        "right_turn": 104,
+        "right_arc": 68,
+        "left_arc": 72,
+        "forward": 177,
+        "hold": 79
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "arm": "reactive_feedback",
+      "round_trip": false,
+      "arrivals": [],
+      "contacts": 0,
+      "pipeline_faults": [],
+      "simulation_s": 480.32,
+      "wall_s": 4232.0223293590025,
+      "frames": 4804,
+      "selected_actions": {
+        "left_turn": 18,
+        "right_turn": 11,
+        "right_arc": 5,
+        "hold": 1164
+      },
+      "readout_path": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    }
+  ],
+  "limitations": [
+    "Four same-family development layouts, one execution per arm and layout.",
+    "Untimed simulation; not hardware or real-time validation.",
+    "Future-action conditioning comparison does not isolate JEPA training-objective benefit.",
+    "Reactive package differs; no-future-action arm remained stationary on every layout.",
+    "No aggregate pooling with earlier controller generations."
+  ]
+}

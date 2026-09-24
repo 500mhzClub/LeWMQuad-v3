@@ -7,21 +7,88 @@ integration, not goal-reaching or independent maze generalisation.
 
 ## Completed full-maze comparison
 
-Both full assignments and their physical readers completed with exit code 0.
-The world-model planner failed; the matched reactive controller completed the
-goal-and-return mission on the same exposed sparse-corner layout 0.
+The original motion-head world-model planner failed. The broader-data head
+subsequently completed a physically verified round trip on the same exposed
+sparse-corner layout 0, as did reactive feedback. All physical readers completed.
 
-| Quantity | Dense action-conditioned planner | Reactive feedback |
-|---|---:|---:|
-| Physically verified goal arrivals | 0 | 1 |
-| Physically verified return arrivals | 0 | 1 |
-| Disallowed contact samples | 0 | 0 |
-| Pipeline faults | 0 | 0 |
-| Simulated execution | 480.32 s (budget exhausted) | 249.22 s (round trip) |
-| Execution wall time before persistence | 3896.88 s | 1991.17 s |
-| Selected hold plans / all plans | 1102 / 1198 | 1 / 613 |
-| Longest consecutive zero request | 437.22 s | 1.90 s |
-| Median tracking position error | 1.36 mm | 4.17 mm |
+| Quantity | Original dense planner | Dense planner, mixed-data head | Reactive feedback |
+|---|---:|---:|---:|
+| Physically verified goal arrivals | 0 | 1 | 1 |
+| Physically verified return arrivals | 0 | 1 | 1 |
+| Disallowed contact samples | 0 | 0 | 0 |
+| Pipeline faults | 0 | 0 | 0 |
+| Simulated execution | 480.32 s (budget exhausted) | 409.62 s (round trip) | 249.22 s (round trip) |
+| Execution wall time before persistence | 3896.88 s | 3312.99 s | 1991.17 s |
+| Selected hold plans / all plans | 1102 / 1198 | 225 / 1015 | 1 / 613 |
+| Longest consecutive zero request | 437.22 s | 19.60 s | 1.90 s |
+| Median tracking position error | 1.36 mm | 7.18 mm | 4.17 mm |
+
+The mixed head changes only the learned motion readout; encoder, predictor and
+controller settings remain fixed. Its native outbound/return final distances
+were 18.84/1.29 mm, and both one-second quiet dwells passed the 4-cm physical
+radius check. The improvement is development evidence for the readout repair,
+not independent generalisation or a demonstrated advantage over reactive
+control. Its full result is in
+`go2_dense_horizon_untimed_action_mixed_data_readout_exposed_maze_full_v1_attempt_001/dense_navigation_readout.json`
+under the workspace development artifact root. Readout fitting and transfer
+comparisons are recorded in `go2_full_heading_readout_experiment_2026-09-18.md`.
+The prospective four-layout comparison started September 22. Its first run
+(layout 00, fixed mixed-data head) exhausted 480.32 simulated seconds with no
+goal arrival, zero disallowed contacts and zero pipeline faults. The matched
+no-future-action control also exhausted the budget with no arrival, all commands
+zero, zero disallowed contacts and zero pipeline faults. The command-history
+baseline subsequently completed a physically verified goal/home round trip in
+175.22 simulated seconds, with zero disallowed contacts and zero pipeline faults.
+The reactive baseline also exhausted the 480.32-s budget with no arrival, zero
+disallowed contacts and zero pipeline faults. All four layout-00 runs and their
+physical readers have completed. Only command history completed the round trip;
+the fixed cohort has moved to layout 01. There, the no-future-action control
+also completed its budget with all commands zero, no arrivals, no disallowed
+contacts and no pipeline faults. Layout-01 command history subsequently also
+exhausted 480.32 simulated seconds with no arrivals, no disallowed contacts and
+no pipeline faults. It ended in a 212.82-s zero-command interval: the clearance
+filter repeatedly retained hold despite a higher-utility right turn. Both owners
+and physical readers completed. Layout-01 reactive feedback subsequently also
+exhausted its budget with no arrivals, zero disallowed contacts and zero pipeline
+faults, ending in a 200.42-s zero-command interval while requesting a better
+supported visual view. Layout-01 action-conditioned navigation also exhausted
+its budget with no arrivals, zero disallowed contacts and zero pipeline faults,
+including a terminal 404.42-s zero-command interval. All four arms therefore
+failed this second layout. Layout-02 command history subsequently completed
+a physically verified round trip in 330.92 simulated seconds, with zero
+contacts/faults. All eight unique return corridor edges reversed observed
+outbound edges; all 154 return plans used observed-floor goal routing, with
+no local route-turn-memory activation. Layout-02 reactive feedback then
+exhausted 480.32 simulated seconds without an arrival, with zero contacts/faults
+and a 448.02-s terminal zero request. All 1122 hold plans failed the current
+stored-map nominal-clearance predicate; learned forecasts were not used for
+reactive selection. Layout-02 action-conditioned navigation subsequently
+completed a physically verified round trip in 359.62 simulated seconds, with
+zero contacts/faults and all eight return corridor edges reversing observed
+outbound edges. Eleven return plans used local route-turn memory. Command
+history was 28.70 seconds faster on this layout. Layout-02 no-future-action
+navigation then exhausted its budget with all commands zero, no arrivals and
+zero contacts/faults. Twelve of sixteen assignments are complete; layout-03
+reactive feedback is now running. The action arm is 1/3, command history 2/3,
+reactive feedback 0/3 and no future action 0/3 on the three completed common
+layouts.
+This first prospective matched
+comparison favours command history over the learned forecasts; it does not
+establish a JEPA advantage. See
+`go2_dense_world_model_maze_cohort_2026-09-18.md` for its fixed protocol and status.
+
+Supplemental physical backtracking analysis (September 22) found that both the
+mixed-head planner and reactive feedback traversed 11 unique directed corridor
+edges outbound and 9 on return; all 9 return edges reversed previously traversed
+outbound edges. Both had zero invalid graph transitions and no samples outside
+the known grid under the existing nearest-cell evaluator. Thus actual corridor
+backtracking is observed in both completed runs. Local route-turn memory was
+active on zero plans in both runs. On return, 343/351 dense plans and 191/193
+reactive plans used an observed-floor route to the goal cell. These are recorded
+uses of the observed map, not a causal memory ablation or a JEPA advantage.
+Each run retains `dense_backtracking_readout.json` and
+`physical_return_corridor_readout_v1.json`; geometry and native poses were used
+only by the offline evaluator.
 
 The reactive goal arrival at frame 1708 and return arrival at frame 2492 both
 passed the native 4-cm distance and one-second quiet-dwell checks. Maximum native
@@ -36,7 +103,8 @@ history. On 379 ordinary translation windows the respective XY errors were
 84.63 mm and 8.72 mm. These errors are measured along the reactive trajectory;
 they do not describe alternative-policy navigation. The comparison shows that
 the shared observed mapping/exploration system can navigate this maze, while
-this forecast-driven controller package does not. It does not isolate JEPA
+the original-readout forecast-driven controller failed. The mixed-data readout
+later enabled the round trip reported above. This comparison does not isolate JEPA
 training or prove a benefit from predictive planning.
 
 Authoritative results are the `dense_navigation_readout.json` files in the
