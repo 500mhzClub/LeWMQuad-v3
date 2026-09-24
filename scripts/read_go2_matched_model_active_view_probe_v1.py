@@ -1,0 +1,138 @@
+"""Receipt-bound actual view/waypoint phase and native goal outcome readout."""
+import argparse
+from collections import Counter
+import hashlib
+import math
+import numpy as np
+from scripts.run_go2_matched_model_active_view_probe_v1 import OUTPUT as INPUT, CASES
+from scripts.navigation_artifact_root_development import BASE,create_output,validate_root,verify_artifacts
+from scripts.run_go2_successive_choice_maze_development_v1 import digest,write_json
+from scripts.startup_raw_sensor_audit_development import read_json
+from scripts.startup_source_inventory_development import discover_sources
+from scripts.probe_go2_ordered_union_rgb_repeatability_v1 import verify_ordered_launch as verify
+from scripts.read_go2_learned_goal_bootstrap_probe_v1 import timing
+from scripts.run_go2_active_view_goal_probe_v1 import OUTPUT as ORIGINAL
+
+OUTPUT=BASE/'go2_matched_model_active_view_readout_v1_attempt_001'
+PROTOCOL='docs/go2_matched_model_active_view_readout_v1_2026-09-08.md'
+ORIGINAL_SHA='bdd1b21cec0d02413f5833f5ff2a27bfde9a95af72c5aa8c03056f593c5db3bb'
+
+
+def summarize(record):
+    name=record['case'];rows=read_json(INPUT/name,'context_decisions.json')
+    tape=read_json(INPUT/name,'command_tape.json');audit=read_json(INPUT,name+'_audit.json')
+    selections=[dict(tick=r['tick'],**r['decision']['new_selection']) for r in rows if r['decision']['new_selection'] is not None]
+    forecasts=[s for s in selections if 'prediction' in s]
+    transitions=[];last=None;headings=[]
+    for row in rows:
+        decision=row['decision'];mode=decision['planner_mode']
+        if mode!=last:transitions.append(dict(tick=row['tick'],mode=mode));last=mode
+        receipt=decision['memory_receipt'];evidence=decision['evidence']
+        if receipt is not None and evidence is not None and evidence['current_pose'] is not None:
+            R=np.asarray(receipt['map_from_initial'])@np.asarray(evidence['current_pose']['rotation_initial_body_from_current_body'])
+            headings.append(math.atan2(R[1,0],R[0,0]))
+    commands=Counter();nonzero=Counter()
+    for item in tape:
+        d=rows[item['tick']]['decision']
+        if item['completed'] and d['terminal'] is None:
+            commands[d['planner_mode']]+=1
+            nonzero[d['planner_mode']]+=int(any(item['requested_command']))
+    receipts=[r['decision']['memory_receipt'] for r in rows if r['decision']['memory_receipt'] is not None]
+    first_failure=None
+    for row in rows:
+        d=row['decision']
+        if d['failure']:
+            continuity=(d['evidence'] or {}).get('continuity_evidence') or {}
+            first_failure=dict(tick=row['tick'],failure=d['failure'],
+                continuity={k:continuity.get(k) for k in ('status','anchor_available','incremental_available',
+                    'anchor_failure','incremental_failure','bridge_frames')})
+            break
+    return dict(case=name,model_name=record['model_name'],condition=record['condition'],variant=record['variant'],
+        trial=record['trial'],collection=record['collection'],goal=record['goal'],first_failure=first_failure,
+        selections=len(selections),model_forecasts=len(forecasts),
+        phase_transitions=transitions,completed_active_command_intervals=dict(commands),
+        nonzero_active_command_intervals=dict(nonzero),
+        selected_actions=dict(Counter(str(s['action']) for s in selections)),
+        forecast_phase_counts=dict(Counter(s['mode'] for s in forecasts)),
+        floor_proposal_status_counts=dict(Counter(s['proposal']['status'] for s in selections)),
+        selection_trace=[{k:s[k] for k in ('tick','mode','action','scan_target_map_yaw_rad',
+            'scan_heading_delta_rad','scan_index','scan_sign','waypoint_map_xy_m','phase_admissible_candidates') if k in s}
+            for s in selections],
+        first_map_receipt=receipts[0] if receipts else None,last_map_receipt=receipts[-1] if receipts else None,
+        measured_map_heading_range_rad=[min(headings),max(headings)] if headings else None,
+        raw_sensor_reconstruction_pass=audit['raw_sensor_reconstruction_pass'],
+        raw_model_command_replay_pass=audit['raw_model_command_replay_pass'],
+        model_state_unchanged=audit['model_state_unchanged'],
+        strict_physical_visibility_pass=audit['strict_physical_visibility_pass'],
+        hard_measurement_failed_frames=audit['hard_measurement_failed_frames'],
+        maximum_observed_pose_xy_error_m=max(audit['observed_pose_xy_errors_m'],default=None),
+        timing={k:timing([r[k] for r in rows if k in r]) for k in ('acquisition_wall_ms',
+            'controller_wall_ms','observation_and_control_wall_ms','iteration_with_command_wall_ms')},
+        navigation_qualified=False,physical_backtracking_demonstrated=False)
+
+
+def compare_original(trial):
+    old=ORIGINAL/('active_view_'+trial);new=INPUT/('full_jepa_'+trial)
+    def decisions(root):
+        return [{k:v for k,v in r['decision'].items() if k not in ('controller','model_condition','input_variant')}
+            for r in read_json(root,'context_decisions.json')]
+    old_rows,new_rows=decisions(old),decisions(new)
+    first=next((i for i,(a,b) in enumerate(zip(old_rows,new_rows)) if a!=b),None)
+    if first is None and len(old_rows)!=len(new_rows):first=min(len(old_rows),len(new_rows))
+    witnesses={}
+    for filename in ('physics_trace.npz','native_contacts.npz','policy_histories.npz','fast_gyro_histories.npz'):
+        pair=[]
+        for root in (old,new):
+            with np.load(root/filename,allow_pickle=False) as z:
+                arrays={k:z[k] for k in z.files}
+                pair.append({k:dict(dtype=v.dtype.str,shape=list(v.shape),
+                    sha256=hashlib.sha256(v.tobytes()).hexdigest()) for k,v in arrays.items()})
+        witnesses[filename]=dict(original=pair[0],repeated=pair[1],exact_array_identity=pair[0]==pair[1])
+    rgb=[[r['rgb_sha256'] for r in read_json(root,'camera_audit.json')] for root in (old,new)]
+    return dict(trial=trial,original_decisions=len(old_rows),repeated_decisions=len(new_rows),
+        first_decision_difference=first,normalized_decisions_identical=old_rows==new_rows,
+        normalization='remove only controller label and new model_condition/input_variant metadata',
+        command_tapes_identical=read_json(old,'command_tape.json')==read_json(new,'command_tape.json'),
+        rgb_sequences_identical=rgb[0]==rgb[1],rgb_sha256=dict(original=rgb[0],repeated=rgb[1]),
+        arrays=witnesses,original_failure_changed=False)
+
+
+def main():
+    parser=argparse.ArgumentParser();parser.add_argument('--probe-result-sha256',required=True);args=parser.parse_args()
+    if not __debug__:raise ValueError('audit assertions required')
+    validate_root(OUTPUT,must_exist=False)
+    if OUTPUT.exists() or OUTPUT.is_symlink():raise ValueError('exclusive active-view readout')
+    verify_artifacts(INPUT,{'result.json':args.probe_result_sha256})
+    result=read_json(INPUT,'result.json')
+    assert result['status']=='MATCHED_MODEL_ACTIVE_VIEW_PROBE_COMPLETE' and result['cases']==[list(c) for c in CASES]
+    bindings={'result.json':args.probe_result_sha256}|result['artifact_sha256'];verify_artifacts(INPUT,bindings)
+    verify_artifacts(ORIGINAL,{'result.json':ORIGINAL_SHA});old=read_json(ORIGINAL,'result.json')
+    assert old['status']=='ACTIVE_VIEW_GOAL_PROBE_COMPLETE'
+    old_ids={'result.json':ORIGINAL_SHA}|old['artifact_sha256'];verify_artifacts(ORIGINAL,old_ids)
+    original=read_json(INPUT,'launch.json')
+    sources=discover_sources((PROTOCOL,'scripts/read_go2_matched_model_active_view_probe_v1.py'),original['source_sha256'])
+    launch=original|dict(source_sha256=sources,protocol=PROTOCOL,output_root=str(OUTPUT),
+        input_artifact_sha256=bindings,original_probe_artifact_sha256=old_ids,native_execution=False)
+    verify(launch);create_output(OUTPUT);write_json(OUTPUT/'launch.json',launch)
+    try:
+        reports=[summarize(r) for r in result['conditions']]
+        grouped=[]
+        for model in sorted(set(r['model_name'] for r in reports)):
+            cases=[r for r in reports if r['model_name']==model]
+            assert len(cases)==2
+            grouped.append(dict(model=model,cases=[r['case'] for r in cases],
+                native_verified_goals=sum(r['goal']['verified_goal_reached'] for r in cases),
+                measurement_clean_verified_goals=sum(r['goal']['verified_goal_reached'] and not r['hard_measurement_failed_frames'] for r in cases),
+                physical_stops=sum(r['collection']['physical_stop'] is not None for r in cases)))
+        repeat=[compare_original(t) for t in ('family_episode_052','family_episode_039')]
+        verify(launch);verify_artifacts(INPUT,bindings);verify_artifacts(ORIGINAL,old_ids)
+        write_json(OUTPUT/'result.json',dict(status='MATCHED_MODEL_ACTIVE_VIEW_READOUT_COMPLETE',conditions=reports,models=grouped,
+            original_full_jepa_repeat_comparisons=repeat,
+            source_sha256=sources,launch_sha256=digest(OUTPUT/'launch.json'),probe_result_sha256=args.probe_result_sha256,
+            original_outcomes_changed=False,native_execution=False,navigation_qualified=False,goal_achieved=False))
+        print('MATCHED_MODEL_ACTIVE_VIEW_READOUT_COMPLETE',digest(OUTPUT/'result.json'),flush=True)
+    except Exception as error:
+        write_json(OUTPUT/'failure.json',dict(status='TERMINAL_MATCHED_MODEL_ACTIVE_VIEW_READOUT_FAILURE',reason=repr(error)));raise
+
+
+if __name__=='__main__':main()

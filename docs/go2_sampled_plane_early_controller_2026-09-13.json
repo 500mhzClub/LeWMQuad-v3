@@ -1,0 +1,123 @@
+{
+  "status": "EARLY_CONTROLLER_COMPARISON_COMPLETE",
+  "rows": [
+    {
+      "frame": 0,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.574535297928378,
+      "candidate_s": 0.3080244930461049,
+      "timed": false
+    },
+    {
+      "frame": 1,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.38441430288366973,
+      "candidate_s": 0.2961520680692047,
+      "timed": false
+    },
+    {
+      "frame": 2,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.3991960841231048,
+      "candidate_s": 0.3186572219710797,
+      "timed": false
+    },
+    {
+      "frame": 3,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.4833236469421536,
+      "candidate_s": 0.44228871003724635,
+      "timed": true
+    },
+    {
+      "frame": 4,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.49047055607661605,
+      "candidate_s": 0.4066215150523931,
+      "timed": true
+    },
+    {
+      "frame": 5,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.4708463179413229,
+      "candidate_s": 0.41896168305538595,
+      "timed": true
+    },
+    {
+      "frame": 6,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.47544103395193815,
+      "candidate_s": 0.3851368869654834,
+      "timed": true
+    },
+    {
+      "frame": 7,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.477352854097262,
+      "candidate_s": 0.42474706401117146,
+      "timed": true
+    },
+    {
+      "frame": 8,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.48798924195580184,
+      "candidate_s": 0.4118144540116191,
+      "timed": true
+    },
+    {
+      "frame": 9,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.4562743080314249,
+      "candidate_s": 0.4037123390007764,
+      "timed": true
+    },
+    {
+      "frame": 10,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.494919260032475,
+      "candidate_s": 0.40536096901632845,
+      "timed": true
+    },
+    {
+      "frame": 11,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.46431538206525147,
+      "candidate_s": 0.42154928715899587,
+      "timed": true
+    },
+    {
+      "frame": 12,
+      "both_complete_decisions_equal": true,
+      "baseline_s": 0.4704588861204684,
+      "candidate_s": 0.5833069561049342,
+      "timed": true
+    }
+  ],
+  "baseline_total_s": 4.771391487214714,
+  "candidate_total_s": 4.303499864414334,
+  "total_reduction_percent": 9.806188070170496,
+  "baseline_median_ms": 476.3969440246001,
+  "candidate_median_ms": 415.3880685335025,
+  "hardware": {
+    "available_ram_bytes": 62769610752,
+    "available_disk_bytes": 507770564608,
+    "cpu_percent": 3.3,
+    "shared_host": true,
+    "one_short_cpu_comparison": true
+  },
+  "model_state_sha256": "56799c99e2bb1fd5e5a591009b931c5b2e04741d3a3744e2346ce9896a2160dd",
+  "model_unchanged": true,
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001/no_rgb_direct_stop_conditioned_settling_maze_02",
+  "input_launch_sha256": "bbc6de995fd879806f3083bbd44da88e9b37b9bc4c7753ec40a5307872070802",
+  "sources": {
+    "lewm/sampled_plane_candidates_development.py": "ac0aeb2ddb74d1c054515a9e93161789e1a745050a87dbca01f87f5af8ed49b6",
+    "lewm/sampled_plane_stop_conditioned_controller_development.py": "5d510f57d89d2e6eb3f3486fd69b140036393938ca28cdc6318f8886f7c425f3",
+    "scripts/compare_sampled_plane_early_controller_development.py": "4cf3e6d2da0774ec2f34ee4d106f4d6022b1455264dad637ba85eea5ee84b696"
+  },
+  "profiler_used": false,
+  "early_history_only": true,
+  "native_execution": false,
+  "full_history_equivalence_proven": false,
+  "real_time_qualified": false,
+  "adopted": false
+}

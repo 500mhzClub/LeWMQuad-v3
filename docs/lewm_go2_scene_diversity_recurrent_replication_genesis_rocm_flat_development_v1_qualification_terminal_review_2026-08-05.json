@@ -1,0 +1,142 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_POST_GENESIS_FIRST_STEP_DIVERGENCE_TERMINAL_REVIEW",
+  "date": "2026-08-05",
+  "reviewer": "codex_independent_flat_rocm_v1_terminal_reviewer_2026-08-05",
+  "scope": {
+    "protected_material_opened": false,
+    "scene_payload_opened": false,
+    "rgb_opened": false,
+    "partial_output_reused": false,
+    "qualification_only": true,
+    "scientific_decision_made": false
+  },
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_preregistration_2026-08-05.md",
+      "sha256": "5712c934dee265d301eb86cf7b06faeda52ff10a14945d0a81420523438b95b5",
+      "byte_count": 9076
+    },
+    "qualification_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification_exact_plan_2026-08-05.json",
+      "sha256": "87a400d8d2688ed58c1a0dd61e4121dfa35374381d10d00b44738d544e3853b2",
+      "byte_count": 367782
+    },
+    "qualification_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification_source_review_2026-08-05.json",
+      "sha256": "91ce59e88f464e38470fde85731c8b04043752d57fd6de24bdb48b155c8ea84f",
+      "byte_count": 8837
+    },
+    "plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_plan.py",
+      "sha256": "7d591b27350d15fac1c4eaa7a946ef2ba4afb5f25ea1ce3cb4abf2c848ec14cf",
+      "byte_count": 14579
+    },
+    "qualification_harness": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1.py",
+      "sha256": "cd49a3a8d87fcca13b67ecf1e4a293306856f1b60ebf90013971b4e5814cdb9f",
+      "byte_count": 51386
+    },
+    "focused_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1.py",
+      "sha256": "a0e7e467794f802d5f4cf05018a0fe82d4afdddd5f6e35eeed1330ae1d188075",
+      "byte_count": 7971
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "9ec5ba0882a5fde32058587ca528881d9d1fc3e4a33726db3fb5784fa118aeec",
+      "byte_count": 2667
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification/attempt_v1/terminal.json",
+      "sha256": "d358dafef59d9d65927ed02c629aad002277f422a4ed13457b40a5eb52923dfa",
+      "byte_count": 739
+    }
+  },
+  "attempt_classification": {
+    "attempt_root_created": true,
+    "reservation_persisted": true,
+    "attempt_consumed": true,
+    "probe_order": [12, 0],
+    "first_probe_scene_index": 12,
+    "second_probe_started": false,
+    "qualification_result_present": false,
+    "qualification_decision_present": false,
+    "science_plan_released": false,
+    "scientific_attempt_started": false,
+    "retry_resume_refill_overwrite_authorized": false
+  },
+  "observed_execution": {
+    "static_source_plan_input_and_historical_parity_gates_passed": true,
+    "fresh_reservation_gate_passed": true,
+    "rocm_hip_egl_lld_preflight_passed": true,
+    "genesis_initialized": true,
+    "genesis_version": "0.4.6",
+    "backend": "gs.amdgpu",
+    "device": "AMD Radeon AI PRO R9700",
+    "effective_genesis_seed": 315871188,
+    "scene_12_built": true,
+    "go2_policy_loaded": true,
+    "initial_36_lane_clone_exact_equality_passed": true,
+    "first_failure_phase": "common_history_policy_step",
+    "history_block_index": 0,
+    "command_tick_index": 0,
+    "policy_step_index": 0,
+    "physics_substeps_completed_before_audit": 10,
+    "simulated_time_at_failure_seconds": 0.02,
+    "failed_state_group_count": 4,
+    "lanes_per_state_group": 9,
+    "failed_state_ids": [
+      "scene-diversity-train-medium_enclosed_maze_00d3d19d1f00-state-0",
+      "scene-diversity-train-medium_enclosed_maze_00d3d19d1f00-state-1",
+      "scene-diversity-train-medium_enclosed_maze_00d3d19d1f00-state-2",
+      "scene-diversity-train-medium_enclosed_maze_00d3d19d1f00-state-3"
+    ],
+    "scene_result_present": false,
+    "derived_mesh_present": false,
+    "rgb_present": false,
+    "new_kernel_reset_wedge_or_hsa_event_observed_in_attempt_window": false
+  },
+  "independent_causal_audit": {
+    "plan_states_histories_actions_and_counts_match_predecessor": true,
+    "policy_device": "cpu",
+    "policy_exact_observation_row_deduplication_enabled": true,
+    "first_policy_step_uses_identical_zero_latency_history_within_each_state_group": true,
+    "renderer_causal": false,
+    "basis_renderer": "The failure occurred in the physical common-history trial before the separate textured-v03 render scene, derived meshes, render receipts, or RGB existed.",
+    "zero_contact_wrapper_causal": false,
+    "basis_zero_contact": "execute_requested_block does not query contact telemetry; the wrapper changes only the unused contact-source selection.",
+    "worker_or_history_logic_change_supported": false,
+    "strongest_supported_localization": "Genesis 0.4.6 gs.amdgpu batched rigid-body stepping failed to preserve exact lane symmetry after the first 20 ms step even though initialization, requested commands, policy inputs, and policy outputs were identical within every state group.",
+    "component_level_root_cause_verified": false,
+    "component_level_attribution_withheld": true,
+    "observability_defect": "The failure terminal retained PilotDiagnosticError type/message but dropped its structured component audits, so exact divergent components and magnitudes cannot be recovered without a fresh separately scoped diagnostic.",
+    "architecture_data_model_or_threshold_failure_supported": false
+  },
+  "scientific_disposition": {
+    "qualification_passed": false,
+    "rocm_science_eligible": false,
+    "result_says_anything_about_scene_diversity_intervention": false,
+    "result_says_anything_about_recurrent_dino_visual_information": false,
+    "result_says_anything_about_fixed_scientific_thresholds": false,
+    "flat_rocm_v1_retired": true,
+    "no_tolerance_relaxation": true,
+    "no_state_local_or_snapshot_branching_assumed": true
+  },
+  "next_experiment": {
+    "recommendation": "Run one fresh flat Genesis CPU qualification before redesigning counterfactual branching.",
+    "reason": "The earlier CPU qualification never entered Genesis; it failed in the retired layered validation interface. Genesis CPU uses serialized execution under the already-bound GS_PARA_LEVEL=0 route, so a flat CPU run preserves the exact 36-lane parallel_lockstep_envs_no_restore science while directly testing whether the ROCm failure is backend-specific.",
+    "fixed_probe_order": [12, 0],
+    "required_gates": [
+      "persist complete first-step and checkpoint synchronization diagnostics",
+      "exact equality for every nine-lane state group",
+      "complete scene 12 and scene 0 physics/render/integrity checks",
+      "selected-device VRAM and release barriers",
+      "no new kernel GPU reset/wedge events",
+      "64 * max(worker elapsed seconds) + 900 <= 7200"
+    ],
+    "stop_rule": "If exact equality or the fixed two-hour projection fails, do not relax tolerance or tune the model; next consider only a separately preregistered state-local ROCm diagnostic.",
+    "authorizes_cpu_execution_by_itself": false
+  },
+  "summary": "The flat ROCm V1 qualification was correctly consumed and failed closed after reaching real Genesis/ROCm physics. Scene 12 built and initial 36-lane equality passed, but every four-state nine-lane group diverged after the first 20 ms physics step under identical within-group commands and policy outputs. No render or scientific stage ran. This is backend/infrastructure evidence, not a model or threshold result. ROCm science remains blocked; the narrow next experiment is a fresh flat CPU qualification with unchanged no-restore counterfactual science and fixed exactness/timing gates."
+}

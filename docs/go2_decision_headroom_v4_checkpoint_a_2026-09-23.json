@@ -1,0 +1,20 @@
+{
+  "schema": "headroom_v4_checkpoint_a.v1",
+  "status": "FROZEN_READY_FOR_EXPLICIT_APPROVAL",
+  "phase2_authorized": false,
+  "protocol_sha256": "7ce2c75c99e0f0e3400ea1a46c27d2741b6cc2b2eae4c78a2d02f4b11f6c687e",
+  "protocol_path": "docs/go2_decision_headroom_protocol_v4_2026-09-23.json",
+  "layout_manifest_sha256": "45da609b86eed739e87eb1c05d7a3869b8b368e7c14403662b8b124db07acf62",
+  "implementation_checks": "Six previously qualified states only; new physics zero; no comparative pilot result retained",
+  "proposed_execution": {
+    "layouts": 8,
+    "source_missions": 24,
+    "representative_states_max": 576,
+    "branch_attempts_max": 6096,
+    "wall_hours": 48,
+    "retained_GiB": 20,
+    "peak_GiB": 22
+  },
+  "historical_rerender": "Proposal only; not executed or authorized",
+  "stop": "Await explicit approval of this exact protocol; no new qualification categories"
+}

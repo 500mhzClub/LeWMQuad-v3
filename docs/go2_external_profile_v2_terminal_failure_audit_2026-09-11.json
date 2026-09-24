@@ -1,0 +1,116 @@
+{
+  "status": "EXTERNAL_PROFILE_V2_FAILURE_PRESERVED",
+  "utc": "2026-09-11T18:36:55.119226+00:00",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_body_projected_external_sampling_v2_attempt_001",
+  "launch_sha256": "6d0a33721486c96a8ff3c20a7c0ae2248087e2face8f42cc502c86884dbd69f1",
+  "source_bindings_rehashed": 2406,
+  "watch_source_bindings_rehashed": 2408,
+  "owners": {
+    "parent": {
+      "pid": 2890218,
+      "recorded_creation": 1789150474.76,
+      "state": "ended"
+    },
+    "child": {
+      "pid": 2890268,
+      "recorded_creation": 1789150477.94,
+      "state": "ended"
+    },
+    "profiler": {
+      "pid": 2890648,
+      "recorded_creation": 1789150608.42,
+      "state": "ended"
+    },
+    "watcher": {
+      "pid": 2890339,
+      "recorded_creation": 1789150504.12,
+      "state": "ended"
+    }
+  },
+  "all_four_original_owners_ended": true,
+  "owned_returncodes": [
+    0,
+    0
+  ],
+  "parent_failure": {
+    "status": "TERMINAL_EXTERNAL_FULL_PROFILE_FAILURE",
+    "reason": "RuntimeError('original profiler ended before original child')",
+    "automatic_retry": false,
+    "evidence_preserved": true
+  },
+  "profiler_reported_samples": 58659,
+  "profiler_reported_errors": 3129,
+  "zero_error_acceptance_requirement_failed": true,
+  "child_receipt_reports_complete_replay": true,
+  "child_reported_observations": 1428,
+  "child_reported_forecasts": 1425,
+  "child_reported_original_inputs_reauthenticated_before_and_after": true,
+  "actual_raw_model_admission_reexecuted_by_this_audit": false,
+  "profile_parsed_by_this_audit": false,
+  "profile_accepted": false,
+  "completion_checker_invoked": false,
+  "artifacts": {
+    "launch.json": {
+      "sha256": "6d0a33721486c96a8ff3c20a7c0ae2248087e2face8f42cc502c86884dbd69f1",
+      "bytes": 320732
+    },
+    "execution.json": {
+      "sha256": "7fcefaead2e92c1b48575543cee6ffdeddd7fdf464c3f5eb0395ce76b1cf43bc",
+      "bytes": 1358
+    },
+    "child_execution.json": {
+      "sha256": "78981e6c2e26386dc693147f3e21eb89f01e1a934d4e2c935da2b7d765f33cd7",
+      "bytes": 741
+    },
+    "profiler_execution.json": {
+      "sha256": "3ac3a4e79dac89bd66ee7807c2d6f03de6af7d5eb7f9b6fb8dddcf204caea826",
+      "bytes": 1225
+    },
+    "child_ready.json": {
+      "sha256": "4b3d317f59e3559a5736bf3c76ab9cf005fff20bf4531a97781dc7d6e545ba2e",
+      "bytes": 285
+    },
+    "child_result.json": {
+      "sha256": "1c2847c880fd1867680ab1ca79010fa38e3390f540ba4b82cae41e9f084cd57c",
+      "bytes": 50733
+    },
+    "comparison.jsonl": {
+      "sha256": "baf54565a69b36985a2b6d348ebf8886552ba67303b22d8df8af6530b2993459",
+      "bytes": 713357
+    },
+    "profile.json": {
+      "sha256": "5b9e2a023068f6e84ac464102a6942b812153dc9ce79af22ebc059d55f0df43a",
+      "bytes": 4317845
+    },
+    "child_stdout.txt": {
+      "sha256": "411dca34eecd4f896770ccbbcacfd62ab4523215ab29ae78b39de5c32b1f0c43",
+      "bytes": 1415
+    },
+    "child_stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "profiler_stdout.txt": {
+      "sha256": "8aa31074b9d02f4b3e3e42782fbebe403b7d274fcb208f523f2beb718f2b3023",
+      "bytes": 394
+    },
+    "profiler_stderr.txt": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    "failure.json": {
+      "sha256": "7fcb85edd00e0d32500f9bd401e5788f88a88e75904bad7123c73f8c386fe825",
+      "bytes": 192
+    }
+  },
+  "document_sha256": {
+    "docs/go2_body_projection_external_profile_v2_completion_watch_execution_2026-09-11.json": "5c48f38827389851aa7129290c2e827d3822d113c34f99d156b429b29a78f537",
+    "docs/go2_body_projection_external_profile_v2_completion_watch_failure_2026-09-11.json": "bbddb022eb6fa4590dfa143fef13b84be00a1c33a41bbd7b9288c3ccdf0e413b",
+    "docs/go2_body_projection_external_profile_v2_2026-09-11.md": "959d0d899b962d4cdd66319d6a97cd2b84566ceff1f650fe15ba923836c3f731"
+  },
+  "next_action": "use earlier verified cProfile evidence for a targeted controller optimization; do not retry external profiling in this attempt series",
+  "native_job_interrupted": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false,
+  "goal_achieved": false
+}

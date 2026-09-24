@@ -1,0 +1,73 @@
+{
+  "schema": "dense_visual_motion_readout.v1",
+  "samples": 3518,
+  "epochs": 24,
+  "batch": 64,
+  "seed": 2026091705,
+  "encoder_batch": 8,
+  "encoder_benchmark": [
+    {
+      "batch": 1,
+      "seconds": 1.9271541680209339,
+      "frames_per_second": 4.151198763830865,
+      "peak_gpu_bytes": 1371815936,
+      "mse_vs_batch_one": 0.0
+    },
+    {
+      "batch": 4,
+      "seconds": 1.5894697911571711,
+      "frames_per_second": 5.033124910273264,
+      "peak_gpu_bytes": 1522810880,
+      "mse_vs_batch_one": 0.0
+    },
+    {
+      "batch": 8,
+      "seconds": 1.5831057850737125,
+      "frames_per_second": 5.053357820701479,
+      "peak_gpu_bytes": 1698971648,
+      "mse_vs_batch_one": 0.0
+    }
+  ],
+  "architecture": "2x2 spatial average -> concat current/future-minus-current -> shared 2048x32 GELU -> flatten 192 cells -> 128 GELU -> XY/yaw",
+  "parameters": 852515,
+  "target_mean": [
+    0.0262192040681839,
+    0.0009781697299331427,
+    0.0005724610527977347
+  ],
+  "target_scale": [
+    0.036301709711551666,
+    0.004495966713875532,
+    0.15231212973594666
+  ],
+  "target": "body-frame XY metres and yaw radians at 500 ms",
+  "loss": "MSE in training-standardized XY/yaw",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0
+  },
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_dense_visual_motion_readout_development.py": "872d58a49f37bd54c18f1068253fef3603a64e3c3ff2ba8d3b9a5defae07cac7",
+    "lewm/dense_visual_motion_readout_development.py": "4325ff97dfad3b75648896940089347509e9dad773dfdef0cd841c522383dba5"
+  },
+  "parent_fit_sha256": "44c2a6e8f4a094c9b89ccf4293d83115da3e666bf781c4d0e2c602d2a9709bfd",
+  "samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "target_sha256": "8253cf4c58ab701b6ede3557867464fb7e902fc63ea01086fc169c3546c8a5b5",
+  "feature_cache": "pooled normalized FP16 features in RAM only",
+  "maximum_feature_cache_bytes": 2183135232,
+  "neural_inputs": "observed current and observed future visual features only; no direct action/body/control inputs",
+  "planned_evaluation": "same head on observed future, adapted action/no-action forecast, persistence; existing command-history and zero-motion controls",
+  "encoder_and_predictors_frozen": true,
+  "fit_uses_predicted_features": false,
+  "checkpoint": "fixed final epoch",
+  "no_transfer_selection": true,
+  "no_navigation": true,
+  "no_new_collection": true,
+  "limitations": [
+    "one seed and readout architecture; decoding failures need not imply information absent",
+    "500-ms motion endpoint only, not the eight-horizon runtime contract",
+    "training roles only; exposed branch transfer remains development"
+  ]
+}

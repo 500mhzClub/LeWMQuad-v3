@@ -1,0 +1,147 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_qualification_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_PRE_RESERVATION_SOURCE_IMPORT_ORDER_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "review_scope": {
+    "description": "Independent closure of the consumed V3 qualification command using only reviewed source, authority/review documents, the coordinator command receipt, and read-only fresh-process source-binding reproduction.",
+    "runtime_terminal_exists": false,
+    "runtime_terminal_invented": false,
+    "v3_runtime_payload_opened": false,
+    "v3_reservation_payload_opened": false,
+    "scene_or_rgb_payload_opened": false,
+    "gpu_or_genesis_probe_executed_by_review": false,
+    "v3_runtime_root_written_by_review": false
+  },
+  "bindings": {
+    "qualification_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_qualification_authority_2026-08-04.json",
+      "sha256": "c227cee2410fd9182a3ceaa24c72e5f0d8fddffa19f0ee00a8f00eeb2caf3f8a",
+      "byte_count": 72281
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_source_review_2026-08-04.json",
+      "sha256": "5090a3b78c9c025dbc6bd6926dd7f9ba5b84b7cd5da23ec84976222bb9a45dd3",
+      "byte_count": 99648
+    },
+    "qualification_command_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_qualification_command_receipt_2026-08-04.json",
+      "sha256": "10396b1c4786eccff037dbed1787f4ace52f2e5524cac1b0db8cc6e8bfe19219",
+      "byte_count": 2718
+    },
+    "v3_qualifier_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3.py",
+      "sha256": "7a36bd10316fcde14a49dafbd9b32085d32de29f4d372e5bf6f993ab8a9b40fa",
+      "byte_count": 20809
+    },
+    "v3_runner_source": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3.py",
+      "sha256": "b75040928229278a454e9407bedba249a9a7416de6d5cfc910542c5ace7ac942",
+      "byte_count": 18552
+    },
+    "inherited_source_binding_validator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "5126fd1522ca3652afd9a8343a1d26c9af8ba8b20953ef2c922a983841261ff0",
+      "byte_count": 37259
+    }
+  },
+  "coordinator_command_evidence": {
+    "evidence_kind": "coordinator_captured_post_command_receipt",
+    "receipt_binding_is_exact": true,
+    "environment_mode": "env_-i_exact_plan_environment",
+    "lexical_python_and_v3_qualifier_entrypoint_used": true,
+    "return_code": 1,
+    "captured_output_normalized": "error: ROCm qualification source binding changed",
+    "status": "FAIL_PRE_RESERVATION_SOURCE_BINDING_VALIDATION",
+    "receipt_reports_qualification_attempt_root_exists": false,
+    "receipt_reports_scientific_attempt_root_exists": false,
+    "receipt_reports_reservation_created": false,
+    "receipt_reports_gpu_query_reached": false,
+    "receipt_reports_genesis_initialization_reached": false,
+    "receipt_reports_scene_execution_reached": false
+  },
+  "independent_fresh_process_reproduction": {
+    "coordinator_receipt_was_not_used_as_the_only_causal_evidence": true,
+    "runner_module_absent_before_v3_qualifier_import": true,
+    "runner_module_absent_after_v3_qualifier_import_and_before_overlay": true,
+    "runner_module_imported_lazily_inside_nested_v3_predecessor_overlay": true,
+    "compared_source_binding_key_count": 220,
+    "mismatch_count": 1,
+    "sole_mismatch_key": "v2_rocm_preregistration_source",
+    "authority_expected": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_preregistration_2026-08-04.md",
+      "sha256": "f4d2b46ddb7a0ac97f95160f55c8aadd58f22ae1e63b7ab85e500c083a86b334",
+      "byte_count": 4007
+    },
+    "nested_fresh_process_actual": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_preregistration_2026-08-04.md",
+      "sha256": "c5537b94bd81ee3d40e7eedbdbef50239d69ce528c476aa81aa448b757844c32",
+      "byte_count": 4548
+    },
+    "no_other_source_binding_mismatch": true,
+    "normal_source_bindings_outside_overlay_exactly_equal_authority": true,
+    "normal_outside_overlay_binding_count": 220
+  },
+  "root_cause_audit": {
+    "classification": "source_control_lazy_import_order_infrastructure_failure",
+    "immediate_cause": "The fresh qualification process lazily imported the V3 runner while the nested predecessor configuration had temporarily rebound the V2 runner PREREGISTRATION constant to the V3 preregistration.",
+    "vulnerable_capture": "_V2_SOURCE_ONLY_PATHS['v2_rocm_preregistration_source'] = predecessor.PREREGISTRATION",
+    "authority_closure_was_built_outside_overlay": true,
+    "authority_closure_expected_immutable_v2_preregistration_source_witness": true,
+    "runtime_lazy_import_captured_mutable_overlay_value": true,
+    "failure_is_plan_science_or_backend_evidence": false,
+    "failure_is_home_environment_evidence": false
+  },
+  "failure_ordering_audit": {
+    "exact_outer_environment_and_lexical_interpreter_guards_precede_authority_validation": true,
+    "source_binding_validation_precedes_execute_qualification": true,
+    "execute_qualification_reached": false,
+    "qualification_reservation_reached": false,
+    "gpu_query_reached": false,
+    "genesis_import_or_initialization_reached": false,
+    "egl_or_worker_construction_reached": false,
+    "scene_execution_reached": false,
+    "qualification_result_or_runtime_terminal_created": false
+  },
+  "filesystem_absence_audit": {
+    "qualification_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3_qualification/attempt_v1",
+    "qualification_attempt_root_absent": true,
+    "scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3/attempt_v1",
+    "scientific_attempt_root_absent": true,
+    "independently_rechecked_after_reproduction": true
+  },
+  "decision": {
+    "qualification_invocation_consumed": true,
+    "qualification_authority_consumed": true,
+    "qualification_pass": false,
+    "backend_scene_decision": null,
+    "scientific_decision": null,
+    "navigation_or_world_model_claim": null,
+    "retry_or_resume_authorized": false,
+    "v3_same_authority_or_same_invocation_reuse_authorized": false
+  },
+  "successor_eligibility": {
+    "one_fresh_science_identical_v3_integrity_replacement_v1_source_hypothesis_eligible": true,
+    "eligible_change_scope": "Capture and bind the complete immutable predecessor/source closure before entering any mutable predecessor overlay, then use that pre-overlay closure during qualification validation.",
+    "science_data_model_panel_seed_evaluation_cap_and_gate_changes_authorized": false,
+    "home_environment_or_rocm_contract_changes_authorized": false,
+    "fresh_preregistration_source_review_authority_attempt_identity_and_roots_required": true,
+    "v3_authority_command_or_runtime_metadata_reuse_authorized": false,
+    "v3_payload_reservation_terminal_cache_worker_scene_rgb_result_or_process_reuse_authorized": false,
+    "replacement_qualification_execution_authorized_by_this_review": false,
+    "replacement_scientific_execution_authorized_by_this_review": false
+  },
+  "permission_audit": {
+    "authorizes_source_development_and_independent_review_of_the_single_fresh_integrity_replacement": true,
+    "creates_qualification_execution_authority": false,
+    "creates_scientific_execution_authority": false,
+    "authorizes_v3_retry_resume_or_refill": false,
+    "authorizes_backend_or_scientific_claim": false
+  },
+  "findings": [
+    {
+      "id": "V3-SOURCE-CLOSURE-LAZY-IMPORT-ORDER",
+      "severity": "terminal_for_consumed_v3_invocation",
+      "summary": "The source closure is correct outside the overlay but is reconstructed lazily under mutable predecessor state in a fresh qualification process, replacing the V2 preregistration witness with the V3 preregistration at exactly one key."
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "authority": {
+    "additional_copy_paste_user_authorization_required": false,
+    "basis": "The user's standing authority permits autonomous iteration while metrics improve and permits scientific-scope changes within the learned JEPA maze-navigation goal. This V2 uses less than that authority: it is a science-identical replacement for a zero-training integrity failure.",
+    "execution_authorized_only_after_committed_source_freeze_independent_pass_and_exact_machine_authorization": true,
+    "generated_input_checkpoint_gpu_or_training_access_authorized_before_those_gates": false,
+    "heldout_g2_navigation_perception_qualification_production_promotion_or_deployment_authorized": false,
+    "source_implementation_review_and_one_fresh_bounded_v2_attempt_authorized": true,
+    "user_scope_verbatim": "you have permission to iterate as long as metrics are improvng, and you can change scientific scope as long as we dont violate the constraint of a perception only learned jepa for maze nav, validated on held out mazes - beyond that scope is flexible"
+  },
+  "date": "2026-07-25",
+  "downstream_boundary": {
+    "heldout_material_may_be_opened_by_this_probe": false,
+    "jepa_training_occurs_in_this_probe": false,
+    "repository_goal": "learned_JEPA_based_perception_and_navigation_validated_on_heldout_mazes",
+    "v2_pass_licenses": "separately_preregistered_perception_qualification_only",
+    "v4_is_permanently_ineligible": true
+  },
+  "fresh_v2_attempt": {
+    "attempt_index": 1,
+    "maximum_attempts": 1,
+    "new_output_root_must_be_absent_at_reservation": true,
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_overlapping_tokenization_probe_v2_integrity_replacement",
+    "reservation_consumes_attempt": true,
+    "retry_resume_repair_recovery_second_seed_extension_or_observer_rerun_authorized": false,
+    "v1_root_must_remain_sealed_and_immutable": true,
+    "v1_runtime_output_open_authorized": false
+  },
+  "integrity_replacement_delta": {
+    "allowed_code_delta": "replace_the_missing_raw_manifest_and_audit_runtime_byte_count_fallback_with_exact_bound_counts_and_reject_missing_authorized_byte_counts",
+    "corrected_runtime_bindings": {
+      "raw_audit": {
+        "byte_count": 26975,
+        "content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+        "file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1.audit_v13.json"
+      },
+      "raw_manifest": {
+        "byte_count": 311598,
+        "content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+        "file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+        "path": ".generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json"
+      }
+    },
+    "forbidden_deltas": [
+      "model_or_architecture",
+      "data_roles_payload_or_order",
+      "seed_or_schedule",
+      "loss_optimizer_or_threshold",
+      "initialization_or_checkpoint",
+      "operation_cap",
+      "source_cleanup_or_unrelated_refactor"
+    ],
+    "json_patch_relative_to_v1_runtime_inputs": [
+      {
+        "op": "replace",
+        "path": "/raw/manifest/byte_count",
+        "value": 311598
+      },
+      {
+        "op": "replace",
+        "path": "/raw/audit/byte_count",
+        "value": 26975
+      }
+    ],
+    "sole_operational_delta": true,
+    "v1_runtime_inputs_canonical_sha256": "b5ff5c96b944d5f2561bbb43f9c1756c0ca5f155ab78d321a6c4dd0cafa0fb63",
+    "v2_corrected_runtime_inputs_canonical_sha256": "1a93c1349ea859ee459a1dd03d5ed316be519f943e15b00e815f984ffdc707bb"
+  },
+  "required_gates": [
+    "implement_only_the_exact_runtime_binding_delta_and_fresh_v2_operational_identity",
+    "test_exact_corrected_counts_and_fail_closed_rejection_of_missing_or_mismatched_counts",
+    "freeze_and_commit_a_recursive_source_closure_without_opening_generated_or_prior_runtime_material",
+    "obtain_an_independent_source_and_science_identity_pass",
+    "materialize_an_exact_machine_execution_authorization_binding_the_frozen_commit_review_corrected_runtime_inputs_and_absent_v2_root",
+    "execute_exactly_one_fail_closed_v2_attempt"
+  ],
+  "schema": "lewm_go2_rgb_overlapping_tokenization_v2_integrity_replacement_preregistration_v1",
+  "science_identity": {
+    "canonicalization": {
+      "allow_nan": false,
+      "ensure_ascii": true,
+      "json_pointer": "/experiment",
+      "separators": [
+        ",",
+        ":"
+      ],
+      "sort_keys": true
+    },
+    "deep_equal_to_v1_experiment_required": true,
+    "preserved_contract_summary": {
+      "data_seed_schedule_losses_optimizer_thresholds_initialization": "exactly_v1",
+      "maximum_optimizer_updates": 1000,
+      "maximum_pair_index_presentations": 16000,
+      "model_and_architecture": "exactly_v1",
+      "one_science_delta": "overlapping_rgb_patch_tokenization_relative_to_static_multires_v3_only",
+      "runtime_versioning_is_operational_only": true
+    },
+    "v1_execution_authorization": {
+      "byte_count": 13853,
+      "commit": "9b752b264807c5f49c7e2f7e0db43c7fa22e9985",
+      "content_sha256": "1ef6a3e25c47a58e98b66f50dd58d42540de68e719ab87e02fc0e1d116fa96a1",
+      "file_sha256": "c73e89a5389187a64e1b7a6ac5e91be18662908c9a296c25af5a90a20e1166db",
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_execution_authorization_2026-07-25.json"
+    },
+    "v1_experiment_canonical_byte_count": 6100,
+    "v1_experiment_canonical_sha256": "48fc6115db5e43e53b6b3da425be6ffaa5e88dd9b3db8363c1ab8ae26a6b192a"
+  },
+  "status": "PREREGISTERED_ONE_FRESH_SCIENCE_IDENTICAL_V2_INTEGRITY_REPLACEMENT_PENDING_IMPLEMENTATION_FREEZE_AND_INDEPENDENT_PASS",
+  "v1_terminal_predicate": {
+    "attempt_consumed": true,
+    "failure": {
+      "content_sha256": "8da5adf7bcbc2268c2b4612fdfd8440d006c7f834bf5ac59ef2aef9324903b87",
+      "file_sha256": "cdd16d78e7b759efe53aacb03046ae8d54fd288de1ba1f909cb93501898cf646",
+      "stage": "raw_authority_and_index_validation",
+      "status": "TERMINAL_OVERLAPPING_TOKENIZATION_V1_OPERATIONAL_OR_INTEGRITY_FAILURE_NO_RETRY"
+    },
+    "failure_receipt_byte_count": 5854,
+    "operation_counts": {
+      "backward_calls": 0,
+      "camera_objectives": 0,
+      "checkpoint_selection_evaluations": 0,
+      "complete_optimizer_updates": 0,
+      "optimizer_constructions": 0,
+      "pair_index_presentations_attempted_or_materialized": 0,
+      "training_entered": false
+    },
+    "partial_access_ledger": {
+      "byte_count": 5672,
+      "file_sha256": "b80abfc20fece1ca1ab8e2810c6c315a7487f2c36761b6abfd579c3e71aa06d1",
+      "record_count": 6
+    },
+    "reservation": {
+      "byte_count": 21669,
+      "file_sha256": "f12a52a610379fb6423525935920e8a8c6f91edb7332a54afe2ff22232ccea08"
+    },
+    "root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_overlapping_tokenization_probe_v1",
+    "root_cannot_be_retried_resumed_mutated_or_reopened": true,
+    "root_custody": {
+      "directory_mode": "0555",
+      "files": [
+        "failed.json",
+        "partial_access.jsonl",
+        "reservation.json"
+      ],
+      "terminal_file_mode": "0444"
+    },
+    "root_cause": "The V1 authorization helper substituted byte_count=1 for raw manifest and audit paths absent from RUNTIME_BYTE_COUNTS; the manifest's observed 311598 bytes correctly failed the authorization binding before training.",
+    "scientific_result": null,
+    "scientific_status": "NOT_OBSERVED_TERMINAL_OPERATIONAL_OR_INTEGRITY_FAILURE"
+  }
+}

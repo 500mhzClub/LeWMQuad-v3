@@ -1,0 +1,92 @@
+{
+  "authority_granted_by_this_document": false,
+  "conclusion": {
+    "exact_gate_disposition": "retain",
+    "genesis_parallelization_as_first_divergence_cause": "ruled_out_for_tested_levels",
+    "localized_component": "policy_last_actions",
+    "leading_causal_interpretation": "deterministic row-dependent numerical behavior in batched CPU policy inference",
+    "root_cause_localization": "The first exact difference is localized to policy inference output; the probe alone does not identify a lower-level kernel or prove that rounding is the mechanism.",
+    "successor_requirement": "Evaluate every byte-distinct policy observation as a batch of one and broadcast its action to byte-identical lanes. Bind and sanitize GS_PARA_LEVEL=0 independently so the physics execution mode is explicit. Re-run a common-prefix-only exact lockstep probe before authorizing a successor smoke."
+  },
+  "development_probe_contract": {
+    "branch_execution_authorized": false,
+    "citable_as_scientific_evidence": false,
+    "lane_count": 10,
+    "policy_steps_per_lane_requested": 25,
+    "rendering_authorized": false,
+    "rgb_persistence_authorized": false,
+    "tested_parallelization_levels": [
+      2,
+      0
+    ]
+  },
+  "interpretive_basis": [
+    "Both parallelization settings diverged after the first 20 ms policy step with exactly the same component, maximum absolute difference, RMS difference, and affected lanes.",
+    "Every captured physical component and the executed command remained bitwise equal; only the newly cached policy action differed.",
+    "At the first step, simulated action latency executes the common zero action history, so the physical equality is expected even though the newly inferred action is cached for the next step.",
+    "The installed RSL inference policy defaults to deterministic output and its Gaussian deterministic path returns the actor mean; the successor source also requests stochastic_output=false explicitly.",
+    "The probe does not demonstrate branch generation, RGB rendering, artifact completeness, training-set fitness, generalization, or any world-model result."
+  ],
+  "measurements": {
+    "common": {
+      "affected_lane_indices": [
+        8,
+        9
+      ],
+      "divergent_component": "policy_last_actions",
+      "first_divergence_policy_step_index": 0,
+      "first_divergence_sim_time_ns": 20000000,
+      "max_abs_difference": 2.384185791015625e-7,
+      "observed_policy_steps_per_lane": 1,
+      "physical_components_exact_equal": [
+        "qpos",
+        "dofs_velocity",
+        "base_pos_world",
+        "base_quat_wxyz",
+        "base_lin_vel_world",
+        "base_ang_vel_world",
+        "leg_joint_pos",
+        "leg_joint_vel",
+        "runner_last_executed"
+      ],
+      "rms_difference": 4.083117569511615e-8
+    },
+    "para_level_0": {
+      "observed_para_level": 0,
+      "status": "DIVERGED"
+    },
+    "para_level_2": {
+      "observed_para_level": 2,
+      "status": "DIVERGED"
+    }
+  },
+  "probe_receipt_bindings": {
+    "para_level_0": {
+      "byte_count": 22089,
+      "file_sha256": "b409a96ea0e0472ba3dbb1483e8742366cff8ac87789be9f71c02d64e722f409",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_counterfactual_lockstep_determinism_ab_v1/para_level_0/probe_result.json"
+    },
+    "para_level_2": {
+      "byte_count": 22089,
+      "file_sha256": "e1f2ef92ed62d979fb01cc6bcc85c2cb6784c69e8e78b16e47ee06e171b37f07",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_counterfactual_lockstep_determinism_ab_v1/para_level_2/probe_result.json"
+    }
+  },
+  "reviewed_at": "2026-08-01T00:47:30+01:00",
+  "schema": "lewm_go2_world_model_counterfactual_lockstep_determinism_ab_result_v1",
+  "source_witnesses": {
+    "diagnostic_source_commit": "4651db251bcbc799fb43aeaf9db0ca28d93fa2c6",
+    "probe": {
+      "byte_count": 9934,
+      "file_sha256": "4272a9a445139a03ae014ec80cfc0c3cc59275426ced0c1a74a6ecdd28954c26",
+      "path": "scripts/dev_probe_go2_counterfactual_lockstep_determinism.py"
+    },
+    "v2_terminal_failure_review": {
+      "byte_count": 3837,
+      "file_sha256": "54e94535c5503408a3792b2ce22b411a312d7c3379881635cc081733e714e01c",
+      "path": "docs/lewm_go2_world_model_counterfactual_smoke_v2_terminal_failure_review_2026-08-01.json"
+    }
+  },
+  "status": "FIRST_DIVERGENCE_LOCALIZED_SUCCESSOR_FIX_REQUIRED",
+  "successor_attempt_authorized_by_this_document": false
+}

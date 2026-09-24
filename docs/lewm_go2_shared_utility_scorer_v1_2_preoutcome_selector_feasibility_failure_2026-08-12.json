@@ -1,0 +1,564 @@
+{
+  "schema": "lewm_go2_shared_utility_scorer_v1_2_preoutcome_selector_feasibility_failure_v1",
+  "status": "TERMINAL_PRE_OUTCOME_SELECTOR_FEASIBILITY_FAILURE",
+  "disposition": "STOP_PRE_OUTCOME",
+  "complete": true,
+  "decision_ready": true,
+  "recorded_at": "2026-08-12T12:34:35+01:00",
+  "companion_markdown_path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_selector_feasibility_failure_2026-08-12.md",
+  "evidence_policy": {
+    "scientific_verdict_source": "the final public binding selector-feasibility receipt only",
+    "task_census_use": "cryptographic and count binding only; not an independent verdict source",
+    "prior_artifact_use": "lineage and supersession binding only; not an independent verdict source",
+    "scene_shards_opened_for_report": false,
+    "candidate_outcomes_opened_for_report": false,
+    "sealed_material_accessed": false
+  },
+  "final_public_receipt": {
+    "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_feasibility_receipt.json",
+    "schema": "go2_scorer_fit_state_selector_feasibility_receipt_v1",
+    "status": "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY",
+    "complete": true,
+    "binding_receipt": true,
+    "raw_sha256": "28e852792b5de24b2d008c5bb3f95521da668927e555deb9eb3c508bb6b0e59f",
+    "semantic_digest": "2310c3d1b138b605fda483b39cbd4775479cbcc502a4e3707e7a8670457f54d7",
+    "byte_count": 1194515,
+    "reducer_version": "go2_scorer_fit_state_selector_feasibility_scene_isolated_reducer_v1",
+    "scene_subprocess_isolation": true,
+    "resume_reuses_only_valid_complete_scene_shards": true
+  },
+  "task_census": {
+    "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_feasibility_task_census.json",
+    "schema": "go2_scorer_fit_state_selector_feasibility_task_census_v1",
+    "status": "FROZEN_OUTCOME_FREE_EXHAUSTIVE_SCENE_TASK_CENSUS",
+    "complete": true,
+    "raw_sha256": "7ff35ec9feb864b1e9d6ef138a67874e6cce23e447e3de00d12773ca2ee56811",
+    "semantic_digest": "0ee5fb6d073e6e8db33b0f63ce9b70b8346ba12f29f729f06c06de5982fbe109",
+    "scene_task_set_digest": "ffe558fcf8d94bc0166f680c6362eaf54d3f77481c308081c8917c7eca975659",
+    "byte_count": 1300740,
+    "scene_task_count": 1284,
+    "family_count": 8,
+    "family_task_set_digests": {
+      "large_enclosed_maze": "23bcb56abdea036ce17f4bae90194711cac9f1b917c5b8b0a3813e91fae1a608",
+      "local_composite_motifs": "9453892481fc76c7ecca64bd8d5ebef91770ee0175f03c0af1828de77d543e97",
+      "loop_alias_stress": "04090423b00c2ba054c6b3d1cbbd07232f10d40d118cfb1e912d7f7e3985327a",
+      "medium_enclosed_maze": "6971ba135a76c92aba1655c926eb1145d1fe6bd7c51bc862004bac6cce7acc67",
+      "open_obstacle_field": "16e8036adf47c212e9ad62bf4f25d6204c27f1f132196f9f653d10b41ea904e1",
+      "rough_local_dynamics": "f1dfd0228732d6e6eee9189b4b73b33a5e7d2a8601fe4e6a52393a07515660f6",
+      "small_enclosed_maze": "e8dcdaaed1e11ae84b39b1881ee8424e75ab4b2d023a96dd1290f45bc83484ff",
+      "visual_sensor_stress": "e8fe004a0cb5f8b2850befee62226428be19badd3ec4871a70a129ab1ee0ecc3"
+    }
+  },
+  "active_bindings": {
+    "clean_source_commit": "4dd906e7e82dd7c1530622a00319d1455c86b8e5",
+    "clean_source_binding_digest": "ba1ca3e11b2694bdac79a981c1960b82e26ce089a0851dde0f54ba553f1027d5",
+    "bound_implementations_digest": "bc0115cd46d33fe3b465489f8bd2014683747acf985743459e8c5f784c5e6504",
+    "exclusion_binding_digest": "ff8ad38473edf26479480cd81c4bf21b704427eb6eef6e17be57d4e9aa51bca8",
+    "abandoned_invalid_45_scene_list_canonical_digest": "5d5c4fef96e5132ad443c4fbd2778ad7d13fb9190328a498ca56490d53e041fe",
+    "invalid_45_identity_exclusion_amendment_digest": "6d644c34b822fb5fb8e30906875047d1677aa730c2db584470cabdbe8bf6abc3",
+    "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+    "allocator_contract_digest": "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e",
+    "static_pre_identity_allocation_validation": {
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/pre_identity_allocation_validation.json",
+      "semantic_digest": "46efa42e3bdcad6df6cdcd4e404c2e8a796a9a331109a433cfbfffcfa18bf60d",
+      "raw_sha256": "a7f23011cdfec1f7a1938bfff57b4e6aa5f32b4e69082236c57d37a9ffd50256",
+      "status": "CURRENT_STATIC_PRE_IDENTITY_PREFLIGHT"
+    },
+    "allocation_amendment": {
+      "path": "docs/lewm_go2_shared_utility_scorer_v1_2_allocation_amendment_v1_2026-08-11.json",
+      "semantic_digest": "4dde3562cdd9e503d6e264a5d4982a189a9f43d338c3d6b87ee20de352bc3cbc",
+      "raw_sha256": "1790429d6c02deebc794aa255be3b8c93ac5278de9c8c94920ee13b877fb5f38",
+      "status": "ACTIVE_UNCHANGED"
+    },
+    "selector_amendment": {
+      "path": "docs/lewm_go2_shared_utility_scorer_v1_2_state_selector_amendment_v1_2026-08-11.json",
+      "semantic_digest": "69e11a3efe665c4591fa29748b2f13ad08938b92acde763bda10608f93768628",
+      "raw_sha256": "907f23421cc0c4e22746b6fecc580bf4509b2cc904ef7f212800d2597795d663",
+      "status": "ACTIVE_FOR_TERMINAL_FEASIBILITY_CENSUS"
+    },
+    "successor_selection_digest": "8cf65cc016c28ad34f1e50246561e72ee9d0f9c1c253fe8e32a4203a35b73ebe",
+    "scene_shard_lineage_digest": "33245a4fddea0ae304659100b98d6214bc93e25d78c4062e39be353605e5f1a9",
+    "family_reduction_digests": {
+      "large_enclosed_maze": "2673ed23d64baf3b37a14e48d9c92e056d7513ae60f12b69c0538a5e32f4efc2",
+      "local_composite_motifs": "c1a1b4f0451736c4cd82f240308e92b2cbf82029ed72911f3dd17f8c5032d2b3",
+      "loop_alias_stress": "f73f8bf44addfd4a5c73bad9a28776f0807206f27a712f87abf4c39095d28c3c",
+      "medium_enclosed_maze": "35e81a18849183e28cd3ffe7a094f340d82535ad1da9142f2bd61a8e8396e140",
+      "open_obstacle_field": "5c1605771b302b0f0aa98cbe56858c25a7f30255c9793b308e83477b0c5793e0",
+      "rough_local_dynamics": "96a8194c90ec1b5b203195271db9fe670a7c0fb9ac770954ca250388908b7976",
+      "small_enclosed_maze": "65ccea977210deb30e26c9bb9b7d662b11603c55918aaa711cf50367a8841435",
+      "visual_sensor_stress": "764c78d540f71c895f1b23cc288a437bc6ba08651d43fbb0bc2e0f5fc652711b"
+    }
+  },
+  "superseded_and_unissued_lineage": {
+    "allocation_failure": {
+      "path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_allocation_failure_2026-08-11.json",
+      "authorizing_failure_commit": "6a4d6a66c93d9461bdfb8bf4c2ccb5b882dcdb78",
+      "semantic_digest": "550c52f9a3ff04f8a564f6f28e75e9d36fc8bc0f73da4795b95dedc3ad2e3cab",
+      "raw_sha256": "3e224158d43a4e75fc7a60436feaeb00cd538a5fabfae5a92983f7ede612df99",
+      "status": "SUPERSEDED_PRE_OUTCOME_MATHEMATICALLY_INFEASIBLE"
+    },
+    "initial_selector_failure": {
+      "json_path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_state_selection_failure_2026-08-11.json",
+      "markdown_path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_state_selection_failure_2026-08-11.md",
+      "clean_implementation_commit": "38e7fc84b83d815311ead732afa138c2179ccb11",
+      "failure_report_commit": "19e83aaf2d99463954d2c5889528a5016ec72095",
+      "semantic_digest": "47c2bcc7cfaf79b328cd5a1cf2823554f2553fc419e020559fde1351df2ca75f",
+      "json_raw_sha256": "26e372229af4bcde8242062b0b9f9d9c5ba85bdb073537812e9395a608c2455d",
+      "markdown_raw_sha256": "0408da2bc98338a950a260d72080274741284ba51f5e11559378ee73e6b796f1",
+      "predecessor_selection_digest": "341de51facbb34b7361175bb713bbcef0fedb9cfc837a5adb6e2c888829a1df1",
+      "status": "SUPERSEDED_PRE_OUTCOME_GRAPH_DISCRETIZATION_INFEASIBLE"
+    },
+    "predecessor_scorer_contract": {
+      "canonical_path": ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json",
+      "source_repository_commit": "38e7fc84b83d815311ead732afa138c2179ccb11",
+      "scorer_contract_v1_2_digest": "06263907d8f8df0fe735f95da26c10fab9dff4af6827562622aa66463b456c0b",
+      "contract_artifact_digest": "116a7e77a7888788048a9fddcb3b7a1eaf62ea655890503ea09e08ebc91b898d",
+      "raw_sha256": "3ea9d04c4bf19e21713bac9d724581beac5b0ba41c1c4eb2ee5c017c785d0de2",
+      "current_validators_accept": false,
+      "status": "SEMANTICALLY_SUPERSEDED_PREDECESSOR_AT_CANONICAL_PATH"
+    },
+    "stale_predecessor_clean_source_launch_receipt": {
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/clean_source_launch_receipt.json",
+      "source_repository_commit": "38e7fc84b83d815311ead732afa138c2179ccb11",
+      "semantic_digest": "7ab90a7fc6cdde04a0982701b008bc9d00b47ea8c0baecf47f775dcef6d64520",
+      "raw_sha256": "34dd039a3e6a3f9739ee0270c34c0f12eb6b831b6084acf5bf239f86832a939d",
+      "current_validators_accept": false,
+      "status": "STALE_PREDECESSOR_NOT_CLAIM_BEARING"
+    },
+    "prospective_successor_scorer_contract": {
+      "semantic_digest": "8b1528cdd8b2c9ef0ee02cbdbc73040c4381968667903645be55fce8857e5aa4",
+      "issued": false,
+      "status": "PROSPECTIVE_NOT_ISSUED_DUE_TO_FEASIBILITY_FAILURE"
+    },
+    "prior_monolithic_sigsegv_attempt": {
+      "record_path": ".generated/go2_branch_corpus_v1_2/scorer_fit/invalid_attempts/selector_feasibility_pre_receipt_sigsegv_2026-08-12T002725+0100_pid646097.json",
+      "attempt_source_commit": "1779082a7bfef543e2dcb450d20c27ef220111f1",
+      "record_semantic_digest": "97fd6460e6d26c7dc1d6aa3e8c98a0c369b2c6faf12b32761aa4c95b4edc6dfa",
+      "record_raw_sha256": "377474e0e029c3f4ef289b3299896897f8304b2b9b4744dec0550bef084c4018",
+      "exit_code": 139,
+      "terminating_signal_number": 11,
+      "terminating_signal_name": "SIGSEGV",
+      "binding_receipt": false,
+      "scientific_gate_input": false,
+      "selector_feasibility_verdict": null,
+      "scientific_result": false,
+      "progress_eligible_for_scientific_reuse": false,
+      "status": "INVALID_INFRASTRUCTURE_INTERRUPTION_PRESERVED_FOR_PROVENANCE_ONLY"
+    }
+  },
+  "exhaustive_census": {
+    "required_distinct_scenes_per_family_stratum": 5,
+    "family_count": 8,
+    "strata_per_family": 3,
+    "criterion_count": 24,
+    "passed_criteria": 23,
+    "failed_criteria": 1,
+    "allowed_scene_count": 1284,
+    "scanned_scene_count": 1284,
+    "scene_shard_count": 1284,
+    "all_allowed_scenes_scanned": true,
+    "families": [
+      {
+        "family": "large_enclosed_maze",
+        "allowed_scene_count": 208,
+        "scanned_scene_count": 208,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 174, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 174, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 8, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 2780,
+          "completion_bearing_gt_75deg": 29558,
+          "completion_geodesic_gt_0_75m": 71086,
+          "completion_snapshot_goal_claimed": 2351,
+          "completion_unreachable": 18010,
+          "no_completion_enriched_goal": 12299,
+          "no_reachable_landmark": 7542,
+          "no_stratum": 437
+        }
+      },
+      {
+        "family": "local_composite_motifs",
+        "allowed_scene_count": 180,
+        "scanned_scene_count": 180,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 145, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 143, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 37, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 919,
+          "boundary_refused": 3076,
+          "completion_bearing_gt_75deg": 10338,
+          "completion_geodesic_gt_0_75m": 18628,
+          "completion_snapshot_goal_claimed": 3918,
+          "completion_unreachable": 928,
+          "insufficient_proprioceptive_history": 2487,
+          "no_completion_enriched_goal": 9768,
+          "no_reachable_landmark": 1182,
+          "no_stratum": 2033
+        }
+      },
+      {
+        "family": "loop_alias_stress",
+        "allowed_scene_count": 144,
+        "scanned_scene_count": 144,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 139, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 139, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 45, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 1045,
+          "boundary_refused": 7,
+          "completion_bearing_gt_75deg": 17175,
+          "completion_geodesic_gt_0_75m": 29849,
+          "completion_snapshot_goal_claimed": 5659,
+          "completion_unreachable": 4799,
+          "insufficient_proprioceptive_history": 14,
+          "no_completion_enriched_goal": 8506,
+          "no_reachable_landmark": 747,
+          "no_stratum": 2055
+        }
+      },
+      {
+        "family": "medium_enclosed_maze",
+        "allowed_scene_count": 324,
+        "scanned_scene_count": 324,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 275, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 275, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 8, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 4347,
+          "boundary_refused": 2,
+          "completion_bearing_gt_75deg": 38438,
+          "completion_geodesic_gt_0_75m": 75301,
+          "completion_snapshot_goal_claimed": 5629,
+          "completion_unreachable": 17683,
+          "insufficient_proprioceptive_history": 4,
+          "no_completion_enriched_goal": 19522,
+          "no_reachable_landmark": 10603,
+          "no_stratum": 743
+        }
+      },
+      {
+        "family": "open_obstacle_field",
+        "allowed_scene_count": 116,
+        "scanned_scene_count": 116,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 108, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 49, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 30, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 450,
+          "boundary_refused": 248,
+          "completion_bearing_gt_75deg": 6973,
+          "completion_geodesic_gt_0_75m": 12399,
+          "completion_snapshot_goal_claimed": 2202,
+          "completion_unreachable": 274,
+          "insufficient_proprioceptive_history": 10,
+          "locate_distance_gt_2m": 894,
+          "no_completion_enriched_goal": 6599,
+          "no_reachable_landmark": 265,
+          "no_stratum": 7041
+        }
+      },
+      {
+        "family": "rough_local_dynamics",
+        "allowed_scene_count": 66,
+        "scanned_scene_count": 66,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 63, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 37, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 16, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 77,
+          "boundary_refused": 6,
+          "completion_bearing_gt_75deg": 3801,
+          "completion_geodesic_gt_0_75m": 6865,
+          "completion_snapshot_goal_claimed": 1040,
+          "completion_unreachable": 764,
+          "insufficient_proprioceptive_history": 12,
+          "locate_distance_gt_2m": 935,
+          "no_completion_enriched_goal": 3898,
+          "no_reachable_landmark": 546,
+          "no_stratum": 3227
+        }
+      },
+      {
+        "family": "small_enclosed_maze",
+        "allowed_scene_count": 182,
+        "scanned_scene_count": 182,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 143, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 143, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 0, "required_distinct_scenes": 5, "verdict": "FAIL"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 2695,
+          "boundary_refused": 3,
+          "completion_bearing_gt_75deg": 9121,
+          "completion_geodesic_gt_0_75m": 19900,
+          "completion_snapshot_goal_claimed": 2195,
+          "completion_unreachable": 6532,
+          "insufficient_proprioceptive_history": 6,
+          "no_completion_enriched_goal": 10211,
+          "no_reachable_landmark": 8773,
+          "no_stratum": 148
+        }
+      },
+      {
+        "family": "visual_sensor_stress",
+        "allowed_scene_count": 64,
+        "scanned_scene_count": 64,
+        "all_allowed_scenes_scanned": true,
+        "strata": {
+          "general": {"eligible_distinct_scenes": 55, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "safety_enriched": {"eligible_distinct_scenes": 55, "required_distinct_scenes": 5, "verdict": "PASS"},
+          "completion_enriched": {"eligible_distinct_scenes": 13, "required_distinct_scenes": 5, "verdict": "PASS"}
+        },
+        "rejection_counts": {
+          "already_in_disallowed_contact": 1070,
+          "boundary_refused": 1,
+          "completion_bearing_gt_75deg": 7423,
+          "completion_geodesic_gt_0_75m": 13577,
+          "completion_snapshot_goal_claimed": 2168,
+          "completion_unreachable": 1890,
+          "insufficient_proprioceptive_history": 2,
+          "no_completion_enriched_goal": 3701,
+          "no_reachable_landmark": 684,
+          "no_stratum": 966
+        }
+      }
+    ]
+  },
+  "completion_diagnostics": {
+    "global": {
+      "eligible_distinct_scenes": 157,
+      "graph_hops_zero_count": 53,
+      "graph_hops_positive_count": 104,
+      "all_continuous_geodesic_m": {"count": 157, "min": 0.11416539667902033, "mean": 0.6582144947892661, "max": 0.7496507633607222},
+      "graph_hops_zero_continuous_geodesic_m": {"count": 53, "min": 0.11416539667902033, "mean": 0.5864912603025937, "max": 0.7494468325520873},
+      "graph_hops_positive_continuous_geodesic_m": {"count": 104, "min": 0.4434570640162134, "mean": 0.6947657585180511, "max": 0.7496507633607222}
+    },
+    "families": [
+      {
+        "family": "large_enclosed_maze",
+        "eligible_distinct_scenes": 8,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 0,
+        "graph_hops_positive_count": 8,
+        "continuous_geodesic_m": {"count": 8, "min": 0.6010222921130759, "q1": 0.6596189047504856, "median": 0.6791796672454251, "mean": 0.6849652511511549, "q3": 0.730389545586834, "max": 0.7436873301638551}
+      },
+      {
+        "family": "local_composite_motifs",
+        "eligible_distinct_scenes": 37,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 2,
+        "graph_hops_positive_count": 35,
+        "continuous_geodesic_m": {"count": 37, "min": 0.43461421214396556, "q1": 0.679930180862789, "median": 0.7195507484043987, "mean": 0.6920530801647257, "q3": 0.7322048987730208, "max": 0.7492531876927871}
+      },
+      {
+        "family": "loop_alias_stress",
+        "eligible_distinct_scenes": 45,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 4,
+        "graph_hops_positive_count": 41,
+        "continuous_geodesic_m": {"count": 45, "min": 0.44233977245027656, "q1": 0.6622444810674862, "median": 0.704762430814839, "mean": 0.6705465196838867, "q3": 0.7274960537760279, "max": 0.7496507633607222}
+      },
+      {
+        "family": "medium_enclosed_maze",
+        "eligible_distinct_scenes": 8,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 0,
+        "graph_hops_positive_count": 8,
+        "continuous_geodesic_m": {"count": 8, "min": 0.5420284226751843, "q1": 0.6631884154915515, "median": 0.7155954372550439, "mean": 0.6875082716621796, "q3": 0.7333968216223281, "max": 0.7383769525386916}
+      },
+      {
+        "family": "open_obstacle_field",
+        "eligible_distinct_scenes": 30,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 30,
+        "graph_hops_positive_count": 0,
+        "continuous_geodesic_m": {"count": 30, "min": 0.11416539667902033, "q1": 0.5233911918160341, "median": 0.6833057916407459, "mean": 0.6043464516589089, "q3": 0.7168982714167149, "max": 0.7438048863490404}
+      },
+      {
+        "family": "rough_local_dynamics",
+        "eligible_distinct_scenes": 16,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 16,
+        "graph_hops_positive_count": 0,
+        "continuous_geodesic_m": {"count": 16, "min": 0.20574478386795636, "q1": 0.4732030070520878, "median": 0.6738651173363173, "mean": 0.6035099331083927, "q3": 0.7318173003412909, "max": 0.7494468325520873}
+      },
+      {
+        "family": "small_enclosed_maze",
+        "eligible_distinct_scenes": 0,
+        "required_distinct_scenes": 5,
+        "verdict": "FAIL",
+        "graph_hops_zero_count": 0,
+        "graph_hops_positive_count": 0,
+        "continuous_geodesic_m": {"count": 0, "min": null, "q1": null, "median": null, "mean": null, "q3": null, "max": null}
+      },
+      {
+        "family": "visual_sensor_stress",
+        "eligible_distinct_scenes": 13,
+        "required_distinct_scenes": 5,
+        "verdict": "PASS",
+        "graph_hops_zero_count": 1,
+        "graph_hops_positive_count": 12,
+        "continuous_geodesic_m": {"count": 13, "min": 0.45344310327659776, "q1": 0.6784328001874388, "median": 0.7117680259898574, "mean": 0.6763675129259084, "q3": 0.7248977885319783, "max": 0.7401588766344659}
+      }
+    ]
+  },
+  "sole_failed_criterion": {
+    "family": "small_enclosed_maze",
+    "stratum": "completion_enriched",
+    "eligible_distinct_scenes": 0,
+    "required_distinct_scenes": 5,
+    "exact_failure": "0 < 5",
+    "verdict": "FAIL",
+    "allowed_scenes_scanned": 182,
+    "all_allowed_scenes_scanned": true,
+    "interpretation": "The amended frozen selector is genuinely infeasible for the required small-enclosed-maze completion stratum over the exhaustive allowed scene corpus. This is a selector-feasibility result, not scorer performance."
+  },
+  "amendment_assessment": {
+    "superseded_problem_repaired": true,
+    "open_obstacle_field": {
+      "completion_eligible_distinct_scenes": 30,
+      "required_distinct_scenes": 5,
+      "graph_hops_zero_count": 30,
+      "verdict": "PASS"
+    },
+    "rough_local_dynamics": {
+      "completion_eligible_distinct_scenes": 16,
+      "required_distinct_scenes": 5,
+      "graph_hops_zero_count": 16,
+      "verdict": "PASS"
+    },
+    "newly_exposed_failure": "small_enclosed_maze completion_enriched has zero eligible distinct scenes after exhaustive scanning",
+    "not_a_scorer_failure": true,
+    "not_a_performance_response": true
+  },
+  "operation_zero_assertions": {
+    "phase_1_preserved_state_precontract_revalidation_receipt_issued": false,
+    "phase_2_preserved_state_revalidation_receipt_issued": false,
+    "successor_scorer_contract_issued": false,
+    "new_selected_state_identities_created": false,
+    "active_state_identity_manifest_issued": false,
+    "candidate_outcomes_loaded": false,
+    "branch_identities_created": false,
+    "branches_attempted": 0,
+    "frames_rendered": 0,
+    "target_latents_encoded": 0,
+    "scorer_training_started": false,
+    "scorer_checkpoints_created": 0,
+    "scorer_qualification_runs": 0,
+    "predictor_checkpoints_opened": 0,
+    "scientific_outcomes_created": 0,
+    "scientific_result_exists": false
+  },
+  "preexisting_outcome_free_artifacts": {
+    "retained_valid_state_shard_count": 3,
+    "retained_states_per_shard": 15,
+    "retained_total_states": 45,
+    "created_by_this_feasibility_run": false,
+    "active_120_state_manifest_issued": false,
+    "candidate_outcomes_present": false,
+    "use_as_successor_identity_manifest": false,
+    "shards": [
+      {
+        "family": "large_enclosed_maze",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_large_enclosed_maze.json",
+        "state_shard_digest": "3b1cabb8cf104f0edc19e27d9f11922655a5424b32a4ad41ec3d5466b4193914",
+        "raw_sha256": "289f63e5a607fb49c62a996043019ca8b6ef2def31ae39afc0a87ddbca71e866",
+        "byte_count": 41994
+      },
+      {
+        "family": "local_composite_motifs",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_local_composite_motifs.json",
+        "state_shard_digest": "e066820d0a85e53a8b7e30a4b4fe1386df3e315674ebd094b0beb64c74242321",
+        "raw_sha256": "eca93582615e946b0a3c4692dc9353cb826f6e3d4b5e6ccd2c706ee9f53ee0dd",
+        "byte_count": 36323
+      },
+      {
+        "family": "loop_alias_stress",
+        "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_shard_loop_alias_stress.json",
+        "state_shard_digest": "9aee1729903e555273a792c03a5290f7547645995164042f9f021fec48de3985",
+        "raw_sha256": "9b7d7ee1f0029b3cd64eb3127687ba03e67eab4c75e4c4600a375afbf721acf6",
+        "byte_count": 37216
+      }
+    ]
+  },
+  "receipt_retention_limits": {
+    "exhaustive_eligible_state_total_available": false,
+    "exhaustive_eligible_goal_total_available": false,
+    "retained_per_eligible_scene_stratum": "one projected evidence row from the first eligible state and its chosen goal per eligible scene/stratum",
+    "available_claim": "eligible distinct-scene counts only",
+    "reason": "The binding reducer does not retain every eligible state or every eligible goal, so exhaustive state/goal totals cannot be reconstructed from the final public receipt."
+  },
+  "independent_validation": {
+    "exact_receipt_rebuild_passed": true,
+    "material_implementation_defect_detected": false,
+    "scope": "receipt reconstruction and boundary audit only; no science or downstream stage",
+    "scorer_tree_absence_audit": {
+      "phase_1_receipt": true,
+      "phase_2_receipt": true,
+      "active_state_manifest": true,
+      "branch_rows": true,
+      "corpus_receipt": true,
+      "frames": true,
+      "latents": true,
+      "training_outputs": true,
+      "qualification_outputs": true,
+      "packages": true,
+      "transfer_outputs": true
+    },
+    "absence_audit_value_semantics": "true means confirmed absent"
+  },
+  "runtime_and_storage": {
+    "selector_feasibility_runtime_s": 37337.498021,
+    "selector_feasibility_runtime_hms": "10:22:17.498021",
+    "final_public_receipt_bytes": 1194515,
+    "task_census_bytes": 1300740,
+    "bound_public_receipt_and_census_bytes": 2495255,
+    "total_run_storage_claimed": false,
+    "total_run_storage_note": "Scene-shard storage is intentionally not rolled into this report; only the two cryptographically bound public JSON file sizes are reported."
+  },
+  "scientific_interpretation": {
+    "scorer_trained_or_invoked": false,
+    "scorer_performance_exists": false,
+    "scorer_qualification_outcome_exists": false,
+    "predictor_qualification_modified_or_rerun": false,
+    "candidate_oracle_outcomes_observed": false,
+    "result_scope": "pre-outcome selector feasibility only",
+    "reason_for_stop": "The required small_enclosed_maze completion_enriched cell has 0 eligible distinct scenes after all 182 allowed scenes were scanned, below the frozen minimum of 5."
+  },
+  "next_action": {
+    "disposition": "STOP_PRE_OUTCOME",
+    "automatic_retry_authorized": false,
+    "downstream_phase_authorized": false,
+    "selector_or_contract_change_authorized_by_this_report": false,
+    "performance_motivated_change_authorized": false,
+    "required_decision": "Any successor would require separately reviewed prospective authority; this report itself grants none."
+  },
+  "failure_report_digest_algorithm": "sha256(json.dumps(report_without_failure_report_digest, sort_keys=True).encode('utf-8'))",
+  "failure_report_digest": "81637cdf3889dc0856ea97aee9a644f182855ef49c4e466eee3f8aed4134a0b8"
+}

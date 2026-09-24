@@ -1,0 +1,48 @@
+{
+  "checked_at_utc": "2026-09-10T14:04:42.119284+00:00",
+  "waiter_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_commitment_contact_anchored_maze02_native_wait_v1_attempt_001",
+  "launch_sha256": "0c57eabf201e1eaba5f19e4f4fba55ed5948d490c8e5dc20d3bf4098f92e4cb2",
+  "waiter_pid": 2703476,
+  "waiter_created": 1789048977.88,
+  "command": [
+    ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "scripts/await_go2_commitment_contact_anchored_maze02_native_v1.py"
+  ],
+  "tool_session": 66117,
+  "waiter_source_count": 1988,
+  "child_source_count": 1985,
+  "child_source_bindings_preflight_checked": true,
+  "tests": {
+    "native_prefix_and_source": 27,
+    "native_launcher_and_input_chain": 22,
+    "native_waiter": 5,
+    "total": 54
+  },
+  "preflight": {
+    "session": 7405,
+    "memory_available_bytes": 74714157056,
+    "artifact_free_bytes": 644731236352,
+    "physical_cpus": 16,
+    "required_memory_bytes": 34359738368,
+    "required_artifact_free_bytes": 54760833024
+  },
+  "original_processes_live": {
+    "raw_prefix_wait_result_sha256": true,
+    "prior_native_wait_result_sha256": true
+  },
+  "latest_event": {
+    "status": "WAITING_FOR_RAW_REPLAY_AND_SCHEDULED_HOLD_NATIVE",
+    "elapsed_s": 90.00214296905324,
+    "original_processes_live": {
+      "raw_prefix_wait_result_sha256": true,
+      "prior_native_wait_result_sha256": true
+    }
+  },
+  "native_child_started": false,
+  "native_workers_while_waiting": 0,
+  "automatic_retry": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false
+}

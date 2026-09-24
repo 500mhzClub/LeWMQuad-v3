@@ -1,0 +1,165 @@
+{
+  "schema": "lewm_go2_rgb_full_whitened_predictive_state_h4_jepa_v1_source_review_v1",
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS",
+  "frozen_source_commit": {
+    "commit": "756d4d1b4769421859bbee6e21dfe65d56673156",
+    "parent": "70c075b3bbe01193566988a7a6fd2f26292da81f",
+    "author": "500mhzClub",
+    "committed_at": "2026-07-28T03:43:49+01:00",
+    "subject": "add full-whitened predictive-state H4 JEPA probe"
+  },
+  "review_scope": {
+    "reviewers": [
+      "/root/wdps_source_review",
+      "/root/trajectory_test_plan",
+      "/root/trajectory_result_audit"
+    ],
+    "frozen_source_and_synthetic_evidence_only": true,
+    "generated_index_rgb_checkpoint_runtime_receipt_or_tensor_access_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "stopped_or_predecessor_checkpoint_trace_or_tensor_access_count": 0
+  },
+  "resolved_findings": [
+    {
+      "finding": "raw MSE against an exact-zero predictor would initially reward the learned target for shrinking",
+      "resolution": "raw training MSE was removed and replaced by predicted-target cross-covariance identity; at update zero it opens all eight predictor-head rows while giving the target zero cross-term shrink gradient"
+    },
+    {
+      "finding": "the defining whitening mechanism was initially diagnostic rather than a direct eligibility condition",
+      "resolution": "float64 validation within-branch and paired cross-covariance identity errors are recorded and every horizon must be at most 0.50 for selection"
+    },
+    {
+      "finding": "inherited training receipt names described new CCA quantities using predecessor MSE/covariance labels",
+      "resolution": "published metrics relabel X(p,q), W(p), and W(q) explicitly and list raw-MSE, hinge-variance, and old covariance terms as disabled"
+    },
+    {
+      "finding": "the layered main path did not initially recheck the already imported shared-core module path",
+      "resolution": "the full runner validates both shared-core and inherited WDPS wrapper import paths before source verification"
+    }
+  ],
+  "remaining_findings": [],
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_full_whitened_predictive_state_h4_jepa_v1_preregistration_2026-07-28.md",
+      "file_sha256": "7b8984c495e2e5e7812d70366f018357f2871877bbddb69f624af9f4115483e8",
+      "byte_count": 10033
+    },
+    {
+      "path": "lewm/models/go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "c139176b5a67e259700c620546f08099bf4821ff9d2df256c0f784d81613d417",
+      "byte_count": 7599
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "7029c71e761d69804721e3deb7ae5052df37c1ece1b3a59f18a57ca87e8ff67f",
+      "byte_count": 7675
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "68b1c374e4443b2401f910209f4ccd4bf090d205a4d923f2e3a9ab4c9bdf918b",
+      "byte_count": 9918
+    },
+    {
+      "path": "scripts/run_go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "f582bf19203d5b28b07c15f9843fc988069b576d17f95f2e96180b330fd563ad",
+      "byte_count": 15327
+    }
+  ],
+  "runtime_source_closure": [
+    {
+      "path": "scripts/run_go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "f582bf19203d5b28b07c15f9843fc988069b576d17f95f2e96180b330fd563ad",
+      "byte_count": 15327
+    },
+    {
+      "path": "scripts/run_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "00ccb04b0541a597b4a9b73e55c4c9cf6daa40d1ea07728a058afe2473397746",
+      "byte_count": 38611
+    },
+    {
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "byte_count": 70301
+    },
+    {
+      "path": "lewm/models/go2_rgb_full_whitened_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "c139176b5a67e259700c620546f08099bf4821ff9d2df256c0f784d81613d417",
+      "byte_count": 7599
+    },
+    {
+      "path": "lewm/models/go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "2d69d0bb0a31e2e95ffb29723a0bc559c425b10b381708a8cf985e36d19e1b5d",
+      "byte_count": 18567
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "byte_count": 23712
+    },
+    {
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "byte_count": 21166
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    }
+  ],
+  "scientific_checks": {
+    "genuine_joint_perception_only_jepa": true,
+    "online_encoder_history_action_predictor_and_target_pool_share_one_backward": true,
+    "fixed_target_and_history_teacher_frozen_outside_optimizer_zero_ema": true,
+    "target_pool_exactly_zero_preserving": true,
+    "cross_covariance_identity_opens_exact_zero_predictor_without_target_shrink": true,
+    "all_eight_opening_head_rows_nonzero_and_gradient_rank_eight": true,
+    "within_and_cross_covariance_use_unbiased_batch_covariance_per_horizon": true,
+    "rank_one_duplicate_axes_have_identity_loss_seven": true,
+    "raw_mse_hinge_variance_controls_reconstruction_and_navigation_losses_absent": true,
+    "validation_within_and_cross_identity_are_direct_selection_gates": true,
+    "schedule": {
+      "seed": 20260727,
+      "batch_size": 16,
+      "updates": 1000,
+      "presentations": 16000,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "retry_or_resume": false
+    }
+  },
+  "verification": {
+    "full_whitened_focused_source_suite": "13_passed",
+    "full_whitened_plus_wdps_suite": "28_passed_in_3.77_seconds",
+    "focused_plus_predecessor_regression_suite": "64_passed_in_3.89_seconds",
+    "python_compile": "PASS",
+    "git_diff_check": "PASS",
+    "source_bound_help_path": "PASS",
+    "b16_production_shape_synthetic_gpu_smoke": {
+      "runtime": "torch_2.9.1+rocm6.4_hip_6.4.43484-123eb5128",
+      "device": "AMD Radeon AI PRO R9700",
+      "target_shape": [16, 4, 8],
+      "cross_covariance_identity_loss": 1.0,
+      "predicted_within_covariance_identity_loss": 1.0,
+      "target_within_covariance_identity_loss": 0.5810383558273315,
+      "target_std_min": 0.3589545488357544,
+      "target_std_max": 0.7368647456169128,
+      "target_rms": 0.5408183336257935,
+      "exact_persistence_max_abs": 0.0,
+      "final_head_gradient_norm": 11.918577194213867,
+      "target_pool_gradient_norm": 9.224407196044922,
+      "teacher_gradient_tensor_count": 0,
+      "trainable_gradient_tensor_count": 154,
+      "total_loss": 44.9781608581543,
+      "forward_backward_seconds": 0.4776234340388328,
+      "peak_allocated_gib": 2.2484021186828613,
+      "peak_reserved_gib": 2.48046875,
+      "presentations_optimizer_steps_or_artifact_writes": 0
+    }
+  },
+  "authority": {
+    "source_review_complete": true,
+    "execution_training_gpu_or_rgb_authorized_by_this_receipt": false,
+    "checkpoint_or_tensor_access_authorized": false,
+    "navigation_heldout_sealed_promotion_or_deployment_authorized": false
+  }
+}

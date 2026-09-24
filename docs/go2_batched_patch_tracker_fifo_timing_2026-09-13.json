@@ -1,0 +1,52 @@
+{
+  "status": "BATCHED_PATCH_10HZ_RECORDED_TIMING_COMPLETE",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_batched_patch_recorded_tracker_v1_attempt_001",
+  "result_sha256": "61d9c4de720b78325f8a56487aa1e950ac6cc31981d1b73f1aeb1b498ff7311a",
+  "trace_sha256": "54958b982ad5eb7d654a3ac18295dfc8ac73743dcb95c4be186e9d018c07a86f",
+  "observations": 4740,
+  "tracker_result": {
+    "status": "BATCHED_PATCH_RECORDED_TRACKER_COMPLETE",
+    "observations": 4740,
+    "evidence_equal_except_valid_proposals": true,
+    "tracker_total_s": 426.6209409767762,
+    "tracker_median_ms": 82.23723014816642,
+    "tracker_p95_ms": 148.47406945191332,
+    "tracker_p99_ms": 251.30330216838044,
+    "tracker_max_ms": 711.6314640734345,
+    "tracker_calls_over_100ms": 1067,
+    "wall_s": 605.964455866022,
+    "all_camera_observations_processed": true,
+    "camera_hz": 10,
+    "gyro_role_unchanged": true,
+    "model_loaded": false,
+    "map_or_planner_executed": false,
+    "native_execution": false,
+    "shared_host": true,
+    "acquisition_included_in_timing": false,
+    "full_controller_equivalence_proven": false,
+    "real_time_qualified": false,
+    "adopted": false,
+    "photometry_batched": true,
+    "auxiliary_features_deferred": false,
+    "image_association_and_fit_rules_unchanged": true
+  },
+  "fifo": {
+    "median_completion_age_ms": 476.9601262407406,
+    "p95_completion_age_ms": 5865.389792618776,
+    "maximum_completion_age_ms": 7785.067582875456,
+    "peak_frame": 4459,
+    "peak_queue_wait_ms": 7556.199980806525,
+    "final_completion_age_ms": 1283.6486721876668,
+    "outputs_over_800ms": 2233
+  },
+  "fifo_assumptions": {
+    "period_ms": 100,
+    "one_worker": true,
+    "all_observations": true,
+    "acquisition_mapping_planning_costs_ms": 0
+  },
+  "shared_host_noncontemporaneous_full_traces": true,
+  "timing_simulation_only": true,
+  "delayed_navigation_outcome_inferred": false,
+  "continuous_execution_qualified": false
+}

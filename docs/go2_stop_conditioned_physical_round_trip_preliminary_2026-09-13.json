@@ -1,0 +1,131 @@
+{
+  "status": "PRELIMINARY_STOP_CONDITIONED_PHYSICAL_ROUND_TRIP_PASS",
+  "root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001",
+  "case": "no_rgb_direct_stop_conditioned_settling_maze_02",
+  "launch_sha256": "bbc6de995fd879806f3083bbd44da88e9b37b9bc4c7753ec40a5307872070802",
+  "collection_result_sha256": "b569d3b523755dfe5671326b20c6f96ef379f6657ab50a263b4823e79811ec7f",
+  "physics_trace_sha256": "ec30d8bdb5bbb9a7e3b40df37aec70145a7bf717aac3e7e694d7e1e74b45ac9b",
+  "collection_resources_sha256": "aee6ac553cfa56f894d5cd87c05d160365225f71d5547d4aef1167c14c3820f7",
+  "collection_wall_s": 4207.514219846111,
+  "evaluation": {
+    "arrival_windows": [
+      {
+        "phase": "OUTBOUND",
+        "frame": 3062,
+        "end_sample": 153849,
+        "maximum_goal_distance_m": 0.04377755639348901,
+        "maximum_speed_m_s": 0.0441619731798587,
+        "native_one_second_arrival_and_quiet_pass": true
+      },
+      {
+        "phase": "RETURN",
+        "frame": 4739,
+        "end_sample": 237699,
+        "maximum_goal_distance_m": 0.02199547729183145,
+        "maximum_speed_m_s": 0.032253912481932386,
+        "native_one_second_arrival_and_quiet_pass": true
+      }
+    ],
+    "physically_retraced_outbound_route": true,
+    "terminal_native_quiet_pass": true,
+    "native_round_trip_candidate_pass": true,
+    "verified_round_trip": false,
+    "requires_raw_sensor_command_and_visibility_audit": true,
+    "evaluator_only": true,
+    "controller_native_state_access": false,
+    "independent_navigation_claim": false,
+    "outbound_traversal": {
+      "crossings": 15,
+      "invalid_crossings": 0,
+      "loop_erased_cells": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          2,
+          2
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "native_step_bound_pass": true
+    },
+    "return_traversal": {
+      "crossings": 11,
+      "invalid_crossings": 0,
+      "loop_erased_cells": [
+        [
+          2,
+          2
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          -1
+        ],
+        [
+          0,
+          -1
+        ],
+        [
+          0,
+          0
+        ],
+        [
+          -1,
+          0
+        ]
+      ],
+      "all_positions_in_maze": true,
+      "native_step_bound_pass": true
+    },
+    "physics_samples": 238200,
+    "recorded_contact_samples": 0,
+    "schedule_terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+    "decisions": 4750,
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "complete_sensor_and_controller_audit_pending": true,
+    "preliminary_physics_only": true
+  },
+  "reused_development_layout": true,
+  "independent_layout_executions": 0,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_complete": false
+}

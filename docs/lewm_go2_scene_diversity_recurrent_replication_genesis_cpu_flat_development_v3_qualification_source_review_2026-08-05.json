@@ -1,0 +1,260 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_source_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_QUALIFICATION_SOURCE_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent source-only review of the fresh flat Genesis/CPU V3 qualification as the single fixed-PATH successor to consumed V2, retaining fixed HOME and every scientific mechanic.",
+    "qualification_cli_invoked_by_review": false,
+    "genesis_initialization_executed_by_review": false,
+    "gpu_or_graphics_preflight_executed_by_review": false,
+    "qualification_runtime_payload_opened": false,
+    "scientific_plan_or_harness_reviewed": false,
+    "sealed_held_out_or_production_material_opened": false
+  },
+  "source_bindings": {
+    "v3_plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_plan.py",
+      "sha256": "d8c47e9c52301f0d2e1e7f0de5b547f49ce89b94dda0e83dfec5d651d312738b",
+      "byte_count": 16568
+    },
+    "v3_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_preregistration_2026-08-05.md",
+      "sha256": "c2c894d8bef28fdc641fa9be0706b4becea1e1311cdeb9687d01b2eda3aafe7b",
+      "byte_count": 9020
+    },
+    "v3_qualification_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_exact_plan_2026-08-05.json",
+      "sha256": "6a055839ab9bb6fe45b9cb5864e8f3c87e75f468dd7e9c26e8c950e4a6fedb78",
+      "byte_count": 355206
+    },
+    "v3_qualification_harness": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3.py",
+      "sha256": "c08653e27cb33048814539f2a8ba06be69ee917bbc0bac9a4bc5ea6206c468dd",
+      "byte_count": 71879
+    },
+    "v3_plan_builder_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_plan.py",
+      "sha256": "4825f336d30485feecb199e18b99426df669bc93856dd0cabc6aaae1b9910a04",
+      "byte_count": 4373
+    },
+    "v3_qualification_harness_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3.py",
+      "sha256": "6996406b3938d0e1d2174eb86923a9c6891c77c5c66f99f48af1a75c8f6ee6e9",
+      "byte_count": 12419
+    },
+    "v2_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_terminal_review_2026-08-05.json",
+      "sha256": "60f18cad6ced0f18fd6e4884439fd688d79bef3deef0a62d41ac66f258dead1d",
+      "byte_count": 12883
+    },
+    "v2_qualification_exact_plan_comparison": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_exact_plan_2026-08-05.json",
+      "sha256": "df4516631a646b46ee89ca9be7aa55b47bf5927a9440a26c4c4fee19e0147ce0",
+      "byte_count": 353031
+    },
+    "v2_qualification_harness_comparison": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2.py",
+      "sha256": "8dc0606af0ef4f0df0dcd04160afbf5aed845031e4e36cfddd8589c2a0141703",
+      "byte_count": 71736
+    },
+    "v2_independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_source_review_2026-08-05.json",
+      "sha256": "4d69718a82f9a4a87087e76c6353eda8fabaedb91303c0b498d85ac76e136aef",
+      "byte_count": 14170
+    }
+  },
+  "independent_verification": {
+    "predecessor_scope": {
+      "v2_terminal_review_schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_terminal_review_v1",
+      "v2_terminal_review_status": "PASS_FAIL_CLOSED_PRE_PHYSICS_PATH_ENVIRONMENT_STOP_ITERATION_TERMINAL_REVIEW",
+      "v2_consumed_and_retired": true,
+      "v2_retry_resume_refill_overwrite_repair_or_reuse_authorized": false,
+      "v2_produced_cpu_physics_lane_render_or_model_evidence": false,
+      "v2_recommended_sole_material_delta": {
+        "PATH": "/usr/bin:/bin"
+      },
+      "v2_required_retained_environment_entry": {
+        "HOME": "/home/andrewknowles"
+      },
+      "v2_terminal_review_authorized_v3_execution_by_itself": false
+    },
+    "recursive_plan_delta": {
+      "total_changed_leaf_or_added_paths": 16,
+      "changed_paths_outside_successor_contract": [
+        "attempt_id",
+        "execution_contract.environment.PATH",
+        "output_root"
+      ],
+      "successor_contract_changed_paths": [
+        "successor_contract.child_environment_key_count",
+        "successor_contract.deferred_scientific_attempt_id",
+        "successor_contract.deferred_scientific_attempt_root",
+        "successor_contract.fixed_child_path",
+        "successor_contract.schema",
+        "successor_contract.v2_authority_reservation_runtime_or_payload_reuse_authorized",
+        "successor_contract.v2_plan_builder_binding",
+        "successor_contract.v2_preregistration_binding",
+        "successor_contract.v2_qualification_harness_binding",
+        "successor_contract.v2_qualification_plan_binding",
+        "successor_contract.v2_source_review_binding",
+        "successor_contract.v2_terminal_review_binding",
+        "successor_contract.v3_material_delta"
+      ],
+      "normalizing_attempt_id_output_root_path_and_successor_contract_restores_exact_v2_plan": true,
+      "scenes_states_histories_actions_horizons_render_model_seeds_gates_thresholds_and_access_order_unchanged": true,
+      "scene_count": 64,
+      "state_count": 256,
+      "candidate_branch_count": 2304,
+      "branch_mechanism": "parallel_lockstep_envs_no_restore"
+    },
+    "exact_environment": {
+      "key_count": 11,
+      "mapping": {
+        "EGL_DEVICE_ID": "1",
+        "GS_BACKEND": "cpu",
+        "GS_PARA_LEVEL": "0",
+        "HOME": "/home/andrewknowles",
+        "MESA_VK_DEVICE_SELECT": "1002:7551!",
+        "PATH": "/usr/bin:/bin",
+        "PYOPENGL_PLATFORM": "egl",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONHASHSEED": "0",
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONSAFEPATH": "1"
+      },
+      "home_is_fixed_plan_input_not_inherited_ambient_state": true,
+      "path_is_fixed_plan_input_not_inherited_ambient_state": true,
+      "only_cpython_lc_ctype_c_utf_8_coercion_accepted_after_exec": true,
+      "other_ambient_environment_keys_accepted_by_worker": false,
+      "physics_backend": "cpu",
+      "policy_device": "cpu",
+      "render_backend": "vulkan_egl_r9700",
+      "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python"
+    },
+    "payload_free_path_diagnostic": {
+      "v2_exact_environment_cpu_identity_candidates_all_null": true,
+      "v3_fixed_path_brand_raw": "AMD Ryzen 9 9950X3D 16-Core Processor",
+      "v3_fixed_path_vendor_id_raw": "AuthenticAMD",
+      "genesis_initialized_by_diagnostic": false,
+      "qualification_payload_opened_by_diagnostic": false
+    },
+    "harness_delta": {
+      "top_level_function_count_v2": 31,
+      "top_level_function_count_v3": 31,
+      "function_name_sets_equal": true,
+      "runtime_changed_functions_after_removing_docstrings": [
+        "_read_and_validate_plan",
+        "_validate_child_environment"
+      ],
+      "changed_functions_only_add_eleven_key_fixed_home_and_path_checks": true,
+      "all_other_29_function_asts_identical": true,
+      "deep_scene_state_render_png_and_mesh_receipt_validation_identical": true,
+      "diagnostic_persistence_and_worker_failure_propagation_identical": true,
+      "watchdog_vram_release_and_process_group_semantics_identical": true,
+      "kernel_and_timing_gate_semantics_identical": true,
+      "result_terminal_and_decision_last_semantics_identical": true,
+      "probe_scene_indices_in_order": [
+        12,
+        0
+      ],
+      "states_per_worker": 4,
+      "lanes_per_state": 9,
+      "branches_per_worker": 36
+    },
+    "source_ast": {
+      "configured_adapter_context_calls": 0,
+      "imported_project_module_attribute_writes": 0,
+      "shared_pilot_backend_or_environment_mutations": 0,
+      "setattr_calls": 0,
+      "delattr_calls": 0,
+      "mock_patch_calls_in_runtime_harness": 0
+    },
+    "custody_and_freshness": {
+      "reviewed_plan_path_strings_reference_protected_material": false,
+      "qualification_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1",
+      "qualification_attempt_root_absent_and_not_symlink": true,
+      "deferred_scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1",
+      "deferred_scientific_attempt_root_absent_and_not_symlink": true,
+      "plan_builder_has_scientific_plan_emission_path": false,
+      "v2_runtime_cache_payload_or_partial_output_reuse_authorized": false,
+      "v3_qualification_payload_scientific_reuse_authorized": false
+    },
+    "retained_runtime_gates": {
+      "all_static_plan_input_parity_and_interpreter_validation_precedes_reservation": true,
+      "historical_static_validation_after_reservation": false,
+      "runtime_and_graphics_contact_only_after_reservation": true,
+      "exact_two_fresh_worker_process_groups": true,
+      "worker_watchdog_seconds": 300.0,
+      "selected_device_vram_ceiling_bytes": 16977405952,
+      "matching_prelaunch_vram_release_barrier_after_every_worker": true,
+      "release_barrier_precedes_failure_or_result_open": true,
+      "leaked_process_group_rejected": true,
+      "kernel_journal_gate_brackets_preflight_and_workers": true,
+      "timing_gate_formula": "64 * max(worker_elapsed_seconds) + 900 <= 7200",
+      "exact_nine_lane_prebranch_equality_and_zero_component_deltas_required": true,
+      "all_48_pngs_rehashed_decoded_and_pixel_checked_per_scene": true,
+      "candidate_lane_offsets_and_action_ids_exactly_zero_through_eight": true,
+      "failure_terminal_preserves_available_json_safe_diagnostics": true,
+      "rich_result_and_terminal_non_authorizing": true,
+      "minimal_exact_pass_decision_written_last": true
+    },
+    "focused_tests": {
+      "interpreter": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "pytest_plugin_autoload_disabled": true,
+      "plan_builder_tests_passed": 5,
+      "qualification_harness_tests_passed": 7,
+      "total_passed": 12,
+      "failed": 0,
+      "wall_seconds_reported_by_pytest": 23.04,
+      "genesis_executed": false
+    }
+  },
+  "resolved_findings": [],
+  "unresolved_runtime_evidence": {
+    "v3_qualification_has_not_run": true,
+    "fixed_path_cpu_genesis_initialization_result_unknown": true,
+    "cpu_exact_lane_equality_result_unknown": true,
+    "vulkan_egl_render_and_png_closure_result_unknown": true,
+    "timing_vram_release_and_kernel_gate_results_unknown": true
+  },
+  "permission_audit": {
+    "authority_source": "The user's instruction recorded by the V3 preregistration; this review clears only the independent source gate.",
+    "qualification_execution_authority_created_by_this_review": false,
+    "authorizes_exactly_one_fresh_v3_qualification_invocation": true,
+    "authorizes_cpu_physics_graphics_preflight_and_two_preregistered_scene_probes": true,
+    "authorizes_qualification_output_as_scientific_or_training_data": false,
+    "authorizes_scientific_plan_creation_or_execution": false,
+    "authorizes_retry_resume_refill_overwrite_repair_partial_reuse_or_environment_expansion": false,
+    "authorizes_navigation_planning_representation_world_model_or_generalization_claim": false
+  },
+  "execution_eligibility": {
+    "exact_one_shot_working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "exact_one_shot_command_argv": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "-B",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3.py",
+      "--plan",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_exact_plan_2026-08-05.json",
+      "--expected-plan-sha256",
+      "6a055839ab9bb6fe45b9cb5864e8f3c87e75f468dd7e9c26e8c950e4a6fedb78",
+      "--expected-plan-byte-count",
+      "355206"
+    ],
+    "exact_one_shot_shell_command": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python -B /home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3.py --plan /home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_exact_plan_2026-08-05.json --expected-plan-sha256 6a055839ab9bb6fe45b9cb5864e8f3c87e75f468dd7e9c26e8c950e4a6fedb78 --expected-plan-byte-count 355206",
+    "exactly_one_fresh_invocation_eligible": true,
+    "retry_resume_refill_overwrite_repair_or_second_invocation_eligible": false
+  },
+  "decision": {
+    "source_review_passed": true,
+    "all_discovered_findings_closed": true,
+    "exact_fixed_path_only_successor_delta_verified": true,
+    "fixed_home_retained": true,
+    "exact_eleven_key_child_environment_verified": true,
+    "exactly_one_fresh_qualification_source_gate_passed": true,
+    "qualification_execution_eligible_under_preregistered_user_authorization": true,
+    "scientific_plan_release_authorized": false,
+    "scientific_execution_authorized": false,
+    "retry_resume_refill_overwrite_repair_partial_reuse_or_second_invocation_authorized": false
+  }
+}

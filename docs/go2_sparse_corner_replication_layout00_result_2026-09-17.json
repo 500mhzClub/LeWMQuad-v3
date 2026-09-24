@@ -1,0 +1,440 @@
+{
+  "schema": "sparse_corner_replication_layout_result.v1",
+  "layout_index": 0,
+  "completed_assignments": 5,
+  "planned_batch_assignments": 15,
+  "remaining_assignments": [
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15
+  ],
+  "all_five_verified_round_trips": true,
+  "assignments": [
+    {
+      "assignment": 1,
+      "arm": "jepa",
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_sparse_corner_replication_01_jepa_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "navigation": {
+        "assignment": 1,
+        "arm": "jepa",
+        "layout_index": 0,
+        "round_trip": true,
+        "contacts": 0,
+        "arrivals": [
+          {
+            "phase": "OUTBOUND",
+            "frame": 1593,
+            "observed_distance_m": 0.011703990862383995,
+            "native_minimum_distance_m": 0.017047915655775854,
+            "native_maximum_distance_m": 0.021820913036475126,
+            "native_final_distance_m": 0.017391252370321308,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.011859748400330428,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          },
+          {
+            "phase": "RETURN",
+            "frame": 2337,
+            "observed_distance_m": 0.00612752406859828,
+            "native_minimum_distance_m": 0.0004372437629463958,
+            "native_maximum_distance_m": 0.006015045824801229,
+            "native_final_distance_m": 0.005719791234413454,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.023738736659732425,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          }
+        ],
+        "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+        "failure": null,
+        "plans": 576,
+        "plans_on_time": 548,
+        "simulation_s": 234.08
+      },
+      "physical_backtracking": {
+        "schema": "physical_return_corridor_readout.v1",
+        "round_trip_verified": true,
+        "verified_outbound_frame": 1593,
+        "camera_rate_physics_samples": 2339,
+        "cell_assignment": "nearest world-grid cell centre",
+        "pitch_m": 1.3,
+        "invalid_graph_transitions": 0,
+        "outbound_unique_directed_edges": 11,
+        "return_unique_directed_edges": 9,
+        "return_edges_reversing_observed_outbound_edges": 9,
+        "physical_backtracking_observed": true,
+        "native_state_and_maze_graph_evaluator_only": true,
+        "boundary_jitter_can_repeat_transitions": true,
+        "unique_edge_counts_used": true,
+        "memory_causal_advantage_established": false
+      },
+      "route_turn_memory_plans": 0,
+      "pipeline_faults": [],
+      "matched_windows": 545,
+      "matched_horizon_ms": 700,
+      "xy_rmse_mm": {
+        "applied": 9.550249709188492,
+        "neural": 9.550249709188492,
+        "pose_command": 6.958533637831078,
+        "command_history": 7.746388720212625,
+        "nominal": 13.159306995806048
+      },
+      "yaw_rmse_deg": {
+        "applied": 0.8609309193732854,
+        "neural": 0.8609309193732854,
+        "nominal": 1.7524635343283879,
+        "command_history": 0.7587371685769794
+      }
+    },
+    {
+      "assignment": 2,
+      "arm": "supervised_rollout",
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_sparse_corner_replication_02_supervised_rollout_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "navigation": {
+        "assignment": 1,
+        "arm": "supervised_rollout",
+        "layout_index": 0,
+        "round_trip": true,
+        "contacts": 0,
+        "arrivals": [
+          {
+            "phase": "OUTBOUND",
+            "frame": 1425,
+            "observed_distance_m": 0.013814365513824742,
+            "native_minimum_distance_m": 0.0085612381542757,
+            "native_maximum_distance_m": 0.015077704232163315,
+            "native_final_distance_m": 0.01504207822840852,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.022444635511155053,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          },
+          {
+            "phase": "RETURN",
+            "frame": 2532,
+            "observed_distance_m": 0.006726294361631097,
+            "native_minimum_distance_m": 0.006375946072650461,
+            "native_maximum_distance_m": 0.009005545076502646,
+            "native_final_distance_m": 0.009005545076502646,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.03233615055486197,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          }
+        ],
+        "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+        "failure": null,
+        "plans": 620,
+        "plans_on_time": 580,
+        "simulation_s": 253.68
+      },
+      "physical_backtracking": {
+        "schema": "physical_return_corridor_readout.v1",
+        "round_trip_verified": true,
+        "verified_outbound_frame": 1425,
+        "camera_rate_physics_samples": 2534,
+        "cell_assignment": "nearest world-grid cell centre",
+        "pitch_m": 1.3,
+        "invalid_graph_transitions": 0,
+        "outbound_unique_directed_edges": 11,
+        "return_unique_directed_edges": 9,
+        "return_edges_reversing_observed_outbound_edges": 9,
+        "physical_backtracking_observed": true,
+        "native_state_and_maze_graph_evaluator_only": true,
+        "boundary_jitter_can_repeat_transitions": true,
+        "unique_edge_counts_used": true,
+        "memory_causal_advantage_established": false
+      },
+      "route_turn_memory_plans": 0,
+      "pipeline_faults": [],
+      "matched_windows": 573,
+      "matched_horizon_ms": 700,
+      "xy_rmse_mm": {
+        "applied": 9.800754558572622,
+        "neural": 9.800754558572622,
+        "pose_command": 7.124767972362761,
+        "command_history": 8.841714295294286,
+        "nominal": 13.489101203105797
+      },
+      "yaw_rmse_deg": {
+        "applied": 0.8486894496097589,
+        "neural": 0.8486894496097589,
+        "nominal": 1.6251088001915828,
+        "command_history": 0.7122641133330492
+      }
+    },
+    {
+      "assignment": 3,
+      "arm": "command_history",
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_sparse_corner_replication_03_command_history_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "navigation": {
+        "assignment": 1,
+        "arm": "command_history",
+        "layout_index": 0,
+        "round_trip": true,
+        "contacts": 0,
+        "arrivals": [
+          {
+            "phase": "OUTBOUND",
+            "frame": 1696,
+            "observed_distance_m": 0.0030554100406018593,
+            "native_minimum_distance_m": 0.004888859069199975,
+            "native_maximum_distance_m": 0.006649328806723385,
+            "native_final_distance_m": 0.006559762595091212,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.027926692011438485,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          },
+          {
+            "phase": "RETURN",
+            "frame": 2405,
+            "observed_distance_m": 0.006009724772265862,
+            "native_minimum_distance_m": 0.0028342653140363133,
+            "native_maximum_distance_m": 0.004551017035597424,
+            "native_final_distance_m": 0.0037829005604699205,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.012729915912064365,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          }
+        ],
+        "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+        "failure": null,
+        "plans": 595,
+        "plans_on_time": 524,
+        "simulation_s": 240.9
+      },
+      "physical_backtracking": {
+        "schema": "physical_return_corridor_readout.v1",
+        "round_trip_verified": true,
+        "verified_outbound_frame": 1696,
+        "camera_rate_physics_samples": 2407,
+        "cell_assignment": "nearest world-grid cell centre",
+        "pitch_m": 1.3,
+        "invalid_graph_transitions": 0,
+        "outbound_unique_directed_edges": 11,
+        "return_unique_directed_edges": 9,
+        "return_edges_reversing_observed_outbound_edges": 9,
+        "physical_backtracking_observed": true,
+        "native_state_and_maze_graph_evaluator_only": true,
+        "boundary_jitter_can_repeat_transitions": true,
+        "unique_edge_counts_used": true,
+        "memory_causal_advantage_established": false
+      },
+      "route_turn_memory_plans": 0,
+      "pipeline_faults": [],
+      "matched_windows": 520,
+      "matched_horizon_ms": 700,
+      "xy_rmse_mm": {
+        "applied": 7.588218498150331,
+        "neural": 9.548824977983376,
+        "pose_command": 6.70785578426751,
+        "command_history": 7.588218372719894,
+        "nominal": 12.712115362076824
+      },
+      "yaw_rmse_deg": {
+        "applied": 0.7207077697144193,
+        "neural": 0.859772503532246,
+        "nominal": 1.682679792863286,
+        "command_history": 0.7207077630220025
+      }
+    },
+    {
+      "assignment": 4,
+      "arm": "reactive_feedback",
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_sparse_corner_replication_04_reactive_feedback_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "navigation": {
+        "assignment": 1,
+        "arm": "reactive_feedback",
+        "layout_index": 0,
+        "round_trip": true,
+        "contacts": 0,
+        "arrivals": [
+          {
+            "phase": "OUTBOUND",
+            "frame": 1177,
+            "observed_distance_m": 0.013466649527784699,
+            "native_minimum_distance_m": 5.70007021036019e-05,
+            "native_maximum_distance_m": 0.010373643823573656,
+            "native_final_distance_m": 0.009964459487117045,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.034444240583992744,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          },
+          {
+            "phase": "RETURN",
+            "frame": 2545,
+            "observed_distance_m": 0.0014948562814169571,
+            "native_minimum_distance_m": 0.006092457251819888,
+            "native_maximum_distance_m": 0.01045048517338535,
+            "native_final_distance_m": 0.006301919700553566,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.021476862016089154,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          }
+        ],
+        "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+        "failure": null,
+        "plans": 618,
+        "plans_on_time": 595,
+        "simulation_s": 254.9
+      },
+      "physical_backtracking": {
+        "schema": "physical_return_corridor_readout.v1",
+        "round_trip_verified": true,
+        "verified_outbound_frame": 1177,
+        "camera_rate_physics_samples": 2547,
+        "cell_assignment": "nearest world-grid cell centre",
+        "pitch_m": 1.3,
+        "invalid_graph_transitions": 0,
+        "outbound_unique_directed_edges": 11,
+        "return_unique_directed_edges": 9,
+        "return_edges_reversing_observed_outbound_edges": 9,
+        "physical_backtracking_observed": true,
+        "native_state_and_maze_graph_evaluator_only": true,
+        "boundary_jitter_can_repeat_transitions": true,
+        "unique_edge_counts_used": true,
+        "memory_causal_advantage_established": false
+      },
+      "route_turn_memory_plans": 0,
+      "pipeline_faults": [],
+      "matched_windows": 571,
+      "matched_horizon_ms": 700,
+      "xy_rmse_mm": {
+        "applied": 11.33750520679903,
+        "neural": 11.33750520679903,
+        "pose_command": 7.914807300757545,
+        "command_history": 9.371064398638136,
+        "nominal": 12.824702661020002
+      },
+      "yaw_rmse_deg": {
+        "applied": 0.7929594366985588,
+        "neural": 0.7929594366985588,
+        "nominal": 1.7573637271526825,
+        "command_history": 0.687711350425297
+      }
+    },
+    {
+      "assignment": 5,
+      "arm": "jepa_no_route_turn_memory",
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_sparse_corner_replication_05_jepa_no_route_turn_memory_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "navigation": {
+        "assignment": 1,
+        "arm": "jepa_no_route_turn_memory",
+        "layout_index": 0,
+        "round_trip": true,
+        "contacts": 0,
+        "arrivals": [
+          {
+            "phase": "OUTBOUND",
+            "frame": 1805,
+            "observed_distance_m": 0.007918532110212812,
+            "native_minimum_distance_m": 0.0012431016191745907,
+            "native_maximum_distance_m": 0.003984027372717943,
+            "native_final_distance_m": 0.0038449662605773197,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.013790303134255366,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          },
+          {
+            "phase": "RETURN",
+            "frame": 2617,
+            "observed_distance_m": 0.007028557585326044,
+            "native_minimum_distance_m": 0.008171638997313204,
+            "native_maximum_distance_m": 0.011681038408363167,
+            "native_final_distance_m": 0.008171638997313204,
+            "physical_radius_m": 0.04,
+            "dwell_seconds": 1.0,
+            "native_maximum_100ms_speed_m_s": 0.021362371260857407,
+            "all_requested_intervals_zero": true,
+            "physical_distance_passed": true,
+            "measured_motion_quiet": true,
+            "arrival_checks_passed": true
+          }
+        ],
+        "terminal": "OBSERVED_ROUND_TRIP_CANDIDATE",
+        "failure": null,
+        "plans": 648,
+        "plans_on_time": 605,
+        "simulation_s": 262.08
+      },
+      "physical_backtracking": {
+        "schema": "physical_return_corridor_readout.v1",
+        "round_trip_verified": true,
+        "verified_outbound_frame": 1805,
+        "camera_rate_physics_samples": 2619,
+        "cell_assignment": "nearest world-grid cell centre",
+        "pitch_m": 1.3,
+        "invalid_graph_transitions": 0,
+        "outbound_unique_directed_edges": 11,
+        "return_unique_directed_edges": 9,
+        "return_edges_reversing_observed_outbound_edges": 9,
+        "physical_backtracking_observed": true,
+        "native_state_and_maze_graph_evaluator_only": true,
+        "boundary_jitter_can_repeat_transitions": true,
+        "unique_edge_counts_used": true,
+        "memory_causal_advantage_established": false
+      },
+      "route_turn_memory_plans": 0,
+      "pipeline_faults": [],
+      "matched_windows": 599,
+      "matched_horizon_ms": 700,
+      "xy_rmse_mm": {
+        "applied": 9.432214049025076,
+        "neural": 9.432214049025076,
+        "pose_command": 6.7441742266143825,
+        "command_history": 7.773155112720638,
+        "nominal": 13.208742252600722
+      },
+      "yaw_rmse_deg": {
+        "applied": 0.8663404112814309,
+        "neural": 0.8663404112814309,
+        "nominal": 1.6275946474164285,
+        "command_history": 0.7374588289656718
+      }
+    }
+  ],
+  "jepa_superiority_established": false,
+  "memory_causal_advantage_established": false,
+  "prior_comparison_is_separate_layout": "docs/go2_sparse_corner_comparison_complete_result_2026-09-17.json",
+  "hardware_validated": false
+}

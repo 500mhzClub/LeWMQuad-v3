@@ -1,0 +1,97 @@
+{
+  "status": "SOURCE_RECORDING_BOUNDS_AND_SCOPED_FAILURE_EVIDENCE_VERIFIED",
+  "maximum_physics_samples": 22850,
+  "maximum_rgbd_frames": 443,
+  "maximum_deferred_serialized_bytes": 1790998215,
+  "memory_scope": {
+    "schema": "independent_tracking_memory_scope.v1",
+    "unit": "lewm-independent-tracking-challenge-20260907-v1.service",
+    "memory_max_bytes": 8589934592,
+    "swap_max_bytes": 0,
+    "oom_group": 1,
+    "maximum_tasks": 512,
+    "runtime_max_seconds": 172800,
+    "parent_replay_scoring_and_native_children_in_same_scope": true,
+    "supervisor_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_tracking_supervision_v1_attempt_001",
+    "supervisor_files": [
+      "request.json",
+      "unit.log",
+      "terminal.json"
+    ],
+    "supervisor_maximum_bytes": 100663296,
+    "workload_fit_proved": false,
+    "strict_instantaneous_rss_bound_proved": false
+  },
+  "native_contact_source_sha256": {
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/__init__.py": "35a956c8be7dc836063d2848005896bb7017c29bde758292f6415f047bad395c",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/options/solvers.py": "2e43097685009dd8ddd7dae926ba37be6659ebb93663095944e08edb4489aa47",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/simulator.py": "9f474f0082feb1601bce629808032800d6689f65042ba4b45452846eefdc5ccc",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/rigid_solver.py": "4f16b91c2cb417916e2cebb9e2ba32cffbb6f1f096b6eac32ce08d4df3dea76e",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/collider/collider.py": "3d5863403a98cd738134116cc4768a68eb122c39f11d4d90c25329e60f37a0b9",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/solvers/rigid/collider/contact.py": "f9a9781f5959e384066f82bfff1e93a61a53eed825706dbc59071c82317bd52f",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/engine/entities/rigid_entity/rigid_entity.py": "05c16043c05acb129f2e54723bc2d619686a1e00cfe2f6419b0e68521c940649"
+  },
+  "workload_fit_proved": false,
+  "source_sha256": {
+    "scripts/independent_tracking_collection_development.py": "888f9120946032132a4e718cd4c0723357d8899dfa56d617e4da62a6b6c39d75",
+    "scripts/independent_tracking_session_development.py": "39eef5980432724ed6a3521713e6f710a0d9d6835fb1e0e1a5f6bfdd8f4cbdd1",
+    "scripts/independent_tracking_snapshot_development.py": "e71751cbb86e1dcf097f1a8d58aab7bf5207cfa9bfe249cc903c5e644abc1f97",
+    "scripts/independent_tracking_artifacts_development.py": "45b0665270092de0c094010d9cefaf6793b322e443f42093d3dca997bb72b5a8",
+    "scripts/independent_tracking_native_contact_guard_development.py": "85a5d5caf2d0c71297d7711c7b87d8d2be64b27501ad35f4de00f0e39f654b8d",
+    "lewm/independent_tracking_recording_budget_development.py": "869fceed1c354086e99685671bdb3b0990d680ee6b4bbeb0323d90882fb85741",
+    "scripts/independent_tracking_memory_supervision_development.py": "6c6899613c0deea1a7364576fb42873843f7f2d419ef4eb784a0cd60f8d21f19",
+    "scripts/supervise_go2_independent_tracking_challenge_v1.py": "3c99d4e18544775522500fbdf1d828332c3e6d1ce302f33279ff6d79ee658921",
+    "scripts/tracking_kernel_scope_development.py": "130c890671778b2fb02ac6ba60522e4bbe4b24ea30351a8b718d0536613e3c8c",
+    "scripts/run_go2_independent_tracking_challenge_v1.py": "b0a3af7b871a26885082147633a65b076cecb5e76a29b1b8fd6e0badc9bdbf06"
+  },
+  "evidence": "Enforced ceilings for six numeric archives and 23 JSON files fit the 2 GiB deferred and 5 GiB episode envelopes. Per-sample and terminal native contact-capacity/error checks, seven exact native-source bindings, and synthetic tests of the actual recorder cover the prospective recording path. Real same-source tiny parent/leaf fit and group-OOM probes verify effective kernel controls and outside durable failure evidence; independent artifact, source, event and process checks passed. The production parent, replay, scoring and workers share a bounded 8 GiB process tree. Admission reauthenticates the four evidence documents, both complete tiny receipts, their preregistered same-source definitions and the current tested shared implementation, and requires the exact declared arithmetic. These are conditional writer ceilings and bounded-attempt/failure controls, not native workload fit, external-writer quota, peak RSS, full-recording or navigation qualification.",
+  "evidence_document_sha256": {
+    "docs/go2_independent_tracking_recording_bounds_and_memory_scope_result_2026-09-07.md": "1acffe9fd75dd927953af13714536a7a8fd3aa337220b57069defc6465032b0a",
+    "docs/go2_independent_tracking_native_contact_guard_result_2026-09-07.md": "267794824199c9e3ea9c62d2ab4f35d6b2ad22353f545fe20693078bb014376c",
+    "docs/go2_tracking_keeper_memory_probe_v1_frozen_definitions_2026-09-07.json": "0d5b0faabf602f6cf648c1742a29cc93738daea36a4ea160ee77b3a0ab05e9a8",
+    "docs/go2_tracking_keeper_memory_probe_v1_result_2026-09-07.md": "acfd8de1792248a1623ba0cfbc4636c911b15845ccbed42df061aa89f593789c"
+  },
+  "tiny_probe_terminal_sha256": {
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_tracking_keeper_memory_fit_v1_attempt_001/terminal.json": "581a16cb696f3214827c07c2b2e6883a945dc72059450a0896a8ba89ba75c8e9",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_tracking_keeper_memory_overflow_v1_attempt_001/terminal.json": "8e2953e524d481dbae27b9b06af21fd9156d137a282ceb3ce9e5696431b6bad5"
+  },
+  "maximum_combined_challenge_and_supervision_bytes": 55809409024,
+  "external_writer_reservations_and_postwrite_checks": true,
+  "external_writer_os_quota_enforced": false,
+  "external_native_cache_sizes_proved": false,
+  "global_oom_or_keeper_survival_guaranteed": false,
+  "native_workload_peak_memory_measured": false,
+  "systemd_peak_discrepancy_resolved": false,
+  "original_twelve_layout_collection_and_36_fit_study_still_required": true,
+  "final_challenge_definition_frozen": false,
+  "native_challenge_executed": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false,
+  "hardware_qualified": false,
+  "goal_achieved": false,
+  "proof_receipts_reauthenticated_at_admission": true,
+  "admission_test_evidence": {
+    "test_file": "lewm/tests/test_independent_tracking_launcher_development.py",
+    "test_file_sha256": "bf1e3422e5b1ff347170293871bf57ec2874f5c032640809b2cdbf3450931599",
+    "focused_test_count": 83,
+    "junit": ".generated/navigation-development-staging.m6MDz1/independent_tracking_parallel_gate_initial_v1.xml",
+    "junit_sha256": "04f74748ff87b8309d384ff6823466be3906720f292c414644696e0b45406fcd",
+    "scope": "Launcher and outside-supervision tests, including actual reader integration with complete generated synthetic parallel-study artifacts; not a native experiment."
+  },
+  "parallel_learning_gate_amendment": {
+    "prior_resource_review_sha256": "40067033f599e98fd18bbac5dcd2a186c913776214ece4f07fc11a116d83b3f5",
+    "prior_launcher_sha256": "cbbe5379515460b3f518cbc74fcae1a3b5bf8a33e06b4b82cb2689b9049937ab",
+    "parallel_study_definition_sha256": "8d8c3456054a284aa83031ea417d8c433beddbcc04a8b47d3164f120bc0ae5d8",
+    "parallel_study_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_independent_pulse_parallel_study_v1_attempt_001",
+    "scope": "Only the completed-learning prerequisite, owned-process exclusion roster and source/config provenance changed. The gate now uses the distinct authenticated parallel result and all416 preterminal artifact/job/ledger checks without checkpoint deserialization or scientific score aggregation. All eight native specifications, sensors, commands, raw scoring, predecessor comparisons, recording budgets and process containment code remain unchanged.",
+    "other_nine_reviewed_implementation_hashes_unchanged": true,
+    "four_evidence_document_hashes_unchanged": true,
+    "seven_native_source_bindings_unchanged": true,
+    "frozen_790_training_sources_unchanged": true,
+    "both_frozen_792_tiny_probe_source_closures_unchanged": true,
+    "new_tiny_probe_or_native_execution": false,
+    "workload_fit_proved": false,
+    "full_challenge_pass": false,
+    "goal_achieved": false
+  }
+}

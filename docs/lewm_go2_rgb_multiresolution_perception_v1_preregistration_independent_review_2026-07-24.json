@@ -1,0 +1,198 @@
+{
+  "schema": "lewm_go2_rgb_multiresolution_perception_v1_preregistration_independent_review_v1",
+  "date": "2026-07-24",
+  "reviewer": "/root/mechanism_selection",
+  "status": "PASS",
+  "reviewed_files": {
+    "docs/lewm_go2_rgb_multiresolution_perception_v1_architecture_decision_2026-07-24.md": {
+      "byte_count": 7336,
+      "file_sha256": "bd1c86ee3023a55020e454aa4e2f69c38e5a77acf44319c255cdc135b54b6929"
+    },
+    "docs/lewm_go2_rgb_multiresolution_perception_v1_preregistration_2026-07-24.json": {
+      "byte_count": 10676,
+      "file_sha256": "13ee847c4651be12e46888fbac3db9d3ec86f57c4ccc0f2006784885c879ebd9",
+      "content_sha256": "6fdf626175dbd262696546ac7f38267d54999cc3c0ea988edaeec06d9f4ad6c8"
+    }
+  },
+  "review_basis": {
+    "governing_predecessor_commits": [
+      "f3568880ecdda0d3f01ff8f661b19eb0753b58c9",
+      "031568aac537f7c707a8e27b13a243ec1a02c646",
+      "8cce85e016fb0160b65407dab17db7abad0397e3"
+    ],
+    "used_only_previously_reviewed_non_protected_committed_source_facts": true,
+    "runtime_artifact_or_payload_open_count": 0,
+    "generated_input_open_count": 0,
+    "checkpoint_open_or_deserialization_count": 0,
+    "gpu_training_navigation_or_heldout_operation_count": 0
+  },
+  "checks": {
+    "single_architecture_delta": {
+      "status": "PASS",
+      "mechanism": "progressive_multiresolution_decoder_over_final_16x16_vit_tokens",
+      "unchanged_dense_output_shape": [
+        "B",
+        36,
+        112,
+        112
+      ],
+      "second_spatial_temporal_depth_or_direct_bev_mechanism_present": false
+    },
+    "topology_and_parameter_arithmetic": {
+      "status": "PASS",
+      "decoder_stage_parameter_counts_in_order": [
+        193872,
+        80880,
+        40488,
+        18252,
+        11772
+      ],
+      "decoder_parameter_count": 345264,
+      "decoder_parameter_tensor_count": 20,
+      "unchanged_pixel_and_ground_head_parameter_count": 7425,
+      "successor_evidence_head_parameter_count": 352689,
+      "successor_evidence_head_parameter_tensor_count": 26,
+      "predecessor_evidence_head_ceiling": 357993,
+      "capacity_reduction": 5304,
+      "encoder_parameter_count": 2747520,
+      "total_trainable_parameter_count": 3100209,
+      "total_trainable_parameter_tensor_count": 104,
+      "group_norm_channel_divisibility_valid": true
+    },
+    "optimizer_and_freeze": {
+      "status": "PASS",
+      "adamw_betas_epsilon_weight_decay_amsgrad_match_predecessor": true,
+      "group_order": [
+        "evidence_head",
+        "encoder"
+      ],
+      "encoder_learning_rate_scale": 1.0,
+      "learning_rate_horizon_updates": 8000,
+      "uncompressed_first_1000_update_prefix_required": true,
+      "independent_clip_norm_each_group": 1.0,
+      "post_clip_tolerance": 0.00001,
+      "float32_without_autocast": true,
+      "jepa_objective_backward_and_ema_counts_zero_for_probe": true,
+      "frozen_jepa_and_ema_component_contract_preserved": true
+    },
+    "presentation_and_operation_accounting": {
+      "status": "PASS",
+      "effective_batch_size": 16,
+      "checkpoint_update_to_presentation_mapping": {
+        "100": 1600,
+        "400": 6400,
+        "1000": 16000
+      },
+      "maximum_optimizer_updates": 1000,
+      "maximum_pair_index_presentations": 16000,
+      "backward_calls": 4000,
+      "head_clip_invocations": 1000,
+      "encoder_clip_invocations": 1000,
+      "inline_checkpoint_selection_evaluations": 3,
+      "observer_evaluation_reruns": 0,
+      "one_r9700_only": true
+    },
+    "schedule_bindings": {
+      "status": "PASS",
+      "seed": 20260713,
+      "schedule_file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+      "schedule_content_sha256": "274c0cbd9a87cbbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+      "checkpoint_prefix_sha256": {
+        "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+        "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
+        "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528"
+      }
+    },
+    "initialization_and_custody": {
+      "status": "PASS",
+      "source_phase_tensor_open_count": 0,
+      "base_initialization_seed": 20260712,
+      "isolated_decoder_rng_seed": 20260724,
+      "caller_rng_restoration_required": true,
+      "permitted_runtime_tensor_input_role": "n320_fit_initialization_only",
+      "permitted_copy_set": [
+        "encoder",
+        "pixel_head",
+        "ground_head"
+      ],
+      "copied_predecessor_dense_decoder_entries": 0,
+      "rejected_adaptation_checkpoint_open_count": 0,
+      "strict_v5_state_loading_must_fail": true,
+      "generated_bindings_deferred_until_after_reservation": true
+    },
+    "checkpoint_controls": {
+      "status": "PASS",
+      "integrity_failure_has_precedence": true,
+      "update_100_is_informational_only": true,
+      "update_400_is_informational_only": true,
+      "numeric_early_stop_present": false,
+      "terminal_update": 1000,
+      "terminal_pass_is_strict_conjunction": true,
+      "terminal_thresholds": {
+        "complete_physical_scope_count_minimum": 1,
+        "passed_margin_count_minimum": 98,
+        "total_shortfall_strictly_less_than": 41.01776266878769,
+        "rough_pixel_balanced_accuracy_strictly_greater_than": 0.8198594673963917,
+        "rough_ground_balanced_accuracy_strictly_greater_than": 0.647134926562893,
+        "rough_depth_p95_m_strictly_less_than": 0.9777327477931971
+      },
+      "threshold_equality_passes": false
+    },
+    "frozen_source_bindings": {
+      "status": "PASS",
+      "binding_count": 6,
+      "match_previously_reviewed_committed_bytes": true,
+      "shared_v5_and_evaluator_sources_remain_frozen": true
+    },
+    "source_export_and_lifecycle_order": {
+      "status": "PASS",
+      "new_recursive_source_manifest_required": true,
+      "independent_source_review_required": true,
+      "existing_72_path_manifest_must_not_change": true,
+      "clean_export_allowlist_amendment_occurs_only_after_new_manifest": true,
+      "allowlist_only_clean_export_required": true,
+      "whole_tree_export_authorized": false,
+      "source_and_authority_rehash_precedes_preflight_and_reservation": true,
+      "reservation_consumes_attempt": true,
+      "runtime_inputs_load_only_after_reservation": true,
+      "metric_sidecars_are_atomic_and_mode_0444_before_control": true,
+      "all_terminal_files_sealed_read_only": true
+    },
+    "repository_goal_and_downstream_authority": {
+      "status": "PASS",
+      "probe_itself_establishes_jepa_navigation": false,
+      "probe_pass_qualifies_checkpoint": false,
+      "probe_pass_only_enables_new_bounded_qualification_preregistration": true,
+      "deployed_action_conditioned_predictor_must_causally_score_actions": true,
+      "matched_no_jepa_arm_mandatory": true,
+      "perception_requalification_after_encoder_change": true,
+      "current_shared_v5_controller_promotable": false,
+      "fresh_external_g8_required": true,
+      "gpu_data_checkpoint_training_calibration_g2_navigation_runtime_production_or_heldout_authority_granted": false
+    },
+    "preregistration_canonical_self_hash": {
+      "status": "PASS",
+      "declared_content_sha256": "6fdf626175dbd262696546ac7f38267d54999cc3c0ea988edaeec06d9f4ad6c8",
+      "recomputed_content_sha256": "6fdf626175dbd262696546ac7f38267d54999cc3c0ea988edaeec06d9f4ad6c8"
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "This is a source-free preregistration review. No successor implementation, recursive source graph, clean export, hardware preflight, runtime input availability, output-root absence, or execution lifecycle has been reviewed or established.",
+    "Runtime hashes are accepted only as deferred bindings already recorded in reviewed non-protected evidence. Their current files were not opened, parsed, rehashed, or deserialized.",
+    "The later source review must require the conventional exact semantics implied by the named layers and initialization, including affine GroupNorm, default exact GELU, non-antialiased bilinear upsampling, zero-padding convolutions, and Xavier-uniform gain 1.0; any alternative is outside this PASS.",
+    "The operation-count ceiling is verified, but this review establishes no elapsed-time performance or hardware availability.",
+    "A probe PASS is architecture-falsification evidence only and cannot authorize checkpoint reuse, calibration, G2, navigation, deployment, or held-out evaluation."
+  ],
+  "authority": {
+    "review_scope": "source_free_architecture_decision_and_preregistration_only",
+    "source_only_implementation_may_proceed_after_exact_review_bytes_are_committed": true,
+    "source_mutation_outside_the_named_successor_and_its_tests_contract_or_manifest": false,
+    "gpu_or_hardware_authorized": false,
+    "data_or_runtime_artifact_access_authorized": false,
+    "checkpoint_access_or_deserialization_authorized": false,
+    "training_or_calibration_authorized": false,
+    "g2_navigation_runtime_production_or_heldout_authorized": false
+  },
+  "content_sha256": "7ede2cfb5fb4cd746aa7efb525eda0a3472e9b6fb181ba046420955304c53d32"
+}

@@ -1,0 +1,17 @@
+import ast
+from pathlib import Path
+from scripts import read_go2_observation_replan_goal_probe_v1 as current
+from scripts import read_go2_augmented_family_switch_goal_probe_v1 as previous
+from lewm.tests.test_augmented_family_switch_goal_readout_development import rows,tape
+
+
+def test_same_model_predecessor_and_unaffected_prefix_boundary():
+    assert current.PRIOR==previous.INPUT
+    assert current.CASES==previous.CASES
+    a,b=rows(8),rows(8);ta,tb=tape(7),tape(7);tb[4]['requested_command']=[.2,0,0]
+    assert current.common_prefix_length(a,b,ta,tb)==(5,4,None)
+    def body(module,name):
+        return ast.dump(next(n for n in ast.parse(Path(module.__file__).read_text()).body
+            if isinstance(n,ast.FunctionDef) and n.name==name))
+    for name in ('summarize','common_prefix_length','compare'):
+        assert body(current,name)==body(previous,name)

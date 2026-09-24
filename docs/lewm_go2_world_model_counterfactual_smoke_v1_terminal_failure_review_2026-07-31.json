@@ -1,0 +1,47 @@
+{
+  "attempt_id": "world-model-counterfactual-smoke-v1-attempt-v1",
+  "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v1/attempt_v1",
+  "authority_granted_by_this_document": false,
+  "branch_execution_started": false,
+  "failure_classification": {
+    "primary_failure": {
+      "message": "type object 'SafetyLimits' has no attribute 'from_platform_manifest'",
+      "source_location": "scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "type": "AttributeError"
+    },
+    "root_cause": "The collector called SafetyLimits.from_platform_manifest, but the bound lewm_contract.SafetyLimits API exposes the equivalent factory as from_manifest.",
+    "supervisor_reporting_defect": "After the collector returned nonzero, the supervisor did not reload the emitted failed physics receipt, so its post-run reservation linkage check saw physics_result=None and replaced the primary failure text with owned reservation contract changed. Independent receipt comparison confirms the reservation binding and all reservation fields actually match.",
+    "type": "source_integration_api_mismatch_before_branch_execution"
+  },
+  "graphics_preflight_passed": true,
+  "observed_counts": {
+    "actions": 9,
+    "candidate_branches": 0,
+    "context_frames": 0,
+    "roles": {},
+    "scenes": 0,
+    "sentinel_branches": 0,
+    "states": 0,
+    "target_frames": 0,
+    "total_branches": 0
+  },
+  "receipt_bindings": {
+    "authorized_plan": {"byte_count": 6476, "file_sha256": "967953d587a003f94eaf5cc6777b0377b7fa8a27e450914c28259ff17d2431d5", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v1/attempt_v1/authorized_plan.json"},
+    "physics_result": {"byte_count": 20984, "file_sha256": "2152e6aa4c382cd81ef364c914d15229bbf91d4de949799b8997190607e691a8", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v1/attempt_v1/physics_result.json"},
+    "reservation": {"byte_count": 1262, "file_sha256": "9462be3f9e06549d98cf0b2a37014e26b9ca9bcf3b7162c04b6a4e439e0af3c0", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v1/attempt_v1/reservation.json"},
+    "terminal_supervision": {"byte_count": 2513, "file_sha256": "f2a4b328387388ec5713eaff524934383a2049af76f3470738533eee8edfc2e2", "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v1/attempt_v1/terminal_supervision.json"}
+  },
+  "reviewed_at": "2026-07-31T18:47:35+01:00",
+  "reviewer": "/root/terminal_evidence_reviewer",
+  "schema": "lewm_go2_world_model_counterfactual_smoke_terminal_failure_review_v1",
+  "scientific_disposition": {
+    "citable_as_scientific_evidence": false,
+    "outputs_eligible_for_promotion": false,
+    "outputs_eligible_for_training": false,
+    "pilot_contract_frozen": false,
+    "world_model_result_emitted": false
+  },
+  "status": "CONSUMED_TERMINAL_FAILURE_CONFIRMED",
+  "successor_attempt_authorized_by_this_document": false,
+  "v1_retry_or_resume_authorized": false
+}

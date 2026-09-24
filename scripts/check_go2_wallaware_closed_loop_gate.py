@@ -5,8 +5,20 @@ from __future__ import annotations
 import argparse
 import json
 from pathlib import Path
+import sys
 from typing import Any
 
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+from lewm.benchmarks.go2_physical_claim_result import (  # noqa: E402
+    CanonicalPhysicalClaimStatus,
+    canonical_physical_claim_status,
+)
+from lewm_worlds.manifest import (  # noqa: E402
+    SceneManifest,
+    parse_scene_manifest_dict,
+)
 
 _FORWARD_PRIMITIVES = {
     "forward_slow",
@@ -22,6 +34,40 @@ def _load_json(path: Path) -> dict[str, Any]:
     if not isinstance(data, dict):
         raise ValueError(f"{path} did not contain a JSON object")
     return data
+
+
+def _load_scene_manifest_map(paths: list[Path]) -> dict[str, SceneManifest]:
+    manifests: dict[str, SceneManifest] = {}
+    for path in paths:
+        manifest = parse_scene_manifest_dict(_load_json(path))
+        if manifest.scene_id in manifests:
+            raise ValueError(f"duplicate scene manifest: {manifest.scene_id}")
+        manifests[manifest.scene_id] = manifest
+    return manifests
+
+
+def _physical_claim_status(
+    result: dict[str, Any],
+    scene_manifests: dict[str, SceneManifest],
+) -> CanonicalPhysicalClaimStatus:
+    scene_id = result.get("scene")
+    manifest = scene_manifests.get(scene_id) if type(scene_id) is str else None
+    if manifest is None:
+        return CanonicalPhysicalClaimStatus(
+            valid=False,
+            all_targets_claimed=False,
+            task_object_ids=(),
+            credited_object_ids=(),
+            attempted_count=-1,
+            accepted_count=-1,
+            credited_count=-1,
+            errors=("scene_manifest_missing_or_mismatch",),
+        )
+    return canonical_physical_claim_status(
+        result,
+        scene_manifest=manifest,
+        required_task_count=len(manifest.landmarks),
+    )
 
 
 def _result(report: dict[str, Any]) -> dict[str, Any]:
@@ -86,6 +132,7 @@ def evaluate_gate(
     wallaware_recall: dict[str, Any],
     wallaware_escape: dict[str, Any] | None,
     *,
+    scene_manifests: dict[str, SceneManifest],
     allowed_guard_states: set[str],
     max_explore_final_dist_m: float,
     max_recall_final_dist_m: float,
@@ -130,6 +177,30 @@ def evaluate_gate(
     base_metrics = _metrics(baseline_explore)
     wall_metrics = _metrics(wallaware_explore)
     recall_metrics = _metrics(wallaware_recall)
+    base_claims = _physical_claim_status(base_result, scene_manifests)
+    wall_claims = _physical_claim_status(wall_result, scene_manifests)
+    recall_claims = _physical_claim_status(recall_result, scene_manifests)
+    arm_results = [base_result, wall_result, recall_result]
+    if wallaware_escape is not None:
+        arm_results.append(_result(wallaware_escape))
+    arm_scene_ids = {
+        result["scene"]
+        for result in arm_results
+        if type(result.get("scene")) is str and result["scene"]
+    }
+    exact_manifest_mapping = bool(
+        len(arm_scene_ids) == len({str(result.get("scene", "")) for result in arm_results})
+        and set(scene_manifests) == arm_scene_ids
+    )
+    check(
+        "physical_claim_binding",
+        "exact_scene_manifest_mapping",
+        exact_manifest_mapping,
+        {
+            "arm_scene_ids": sorted(arm_scene_ids),
+            "manifest_scene_ids": sorted(scene_manifests),
+        },
+    )
 
     base_guard_entries = _guard_entries(baseline_explore)
     wall_guard_entries = _guard_entries(wallaware_explore)
@@ -143,10 +214,11 @@ def evaluate_gate(
     check(
         "baseline_closed_loop",
         "physical_explore_succeeded_with_diagnostics",
-        bool(base_result.get("success")) and base_metrics.get("source") == "diagnostic_only"
+        base_claims.all_targets_claimed and base_metrics.get("source") == "diagnostic_only"
         and not bool(base_metrics.get("enabled")) and len(base_guard_entries) > 0,
         {
-            "success": bool(base_result.get("success")),
+            "success": base_claims.all_targets_claimed,
+            "physical_claim_errors": list(base_claims.errors),
             "source": base_metrics.get("source"),
             "enabled": bool(base_metrics.get("enabled")),
             "guard_log_entries": len(base_guard_entries),
@@ -167,12 +239,11 @@ def evaluate_gate(
     check(
         "wallaware_closed_loop",
         "physical_explore_succeeded",
-        bool(wall_result.get("success"))
-        and bool(wall_result.get("claimed"))
+        wall_claims.all_targets_claimed
         and _num(wall_result.get("final_dist_to_target_m"), 999.0) <= max_explore_final_dist_m,
         {
-            "success": bool(wall_result.get("success")),
-            "claimed": bool(wall_result.get("claimed")),
+            "success": wall_claims.all_targets_claimed,
+            "physical_claim_errors": list(wall_claims.errors),
             "final_dist_to_target_m": wall_result.get("final_dist_to_target_m"),
         },
         {
@@ -311,12 +382,11 @@ def evaluate_gate(
     check(
         "recall_preservation",
         "physical_recall_still_succeeds",
-        bool(recall_result.get("success"))
-        and bool(recall_result.get("claimed"))
+        recall_claims.all_targets_claimed
         and _num(recall_result.get("final_dist_to_target_m"), 999.0) <= max_recall_final_dist_m,
         {
-            "success": bool(recall_result.get("success")),
-            "claimed": bool(recall_result.get("claimed")),
+            "success": recall_claims.all_targets_claimed,
+            "physical_claim_errors": list(recall_claims.errors),
             "final_dist_to_target_m": recall_result.get("final_dist_to_target_m"),
             "wall_vetoes": recall_metrics.get("wall_vetoes"),
         },
@@ -328,6 +398,7 @@ def evaluate_gate(
     if wallaware_escape is not None:
         escape_result = _result(wallaware_escape)
         escape_metrics = _metrics(wallaware_escape)
+        escape_claims = _physical_claim_status(escape_result, scene_manifests)
         force_escape_log = [
             entry for entry in _guard_entries(wallaware_escape)
             if bool(entry["wall_guard"].get("force_escape"))
@@ -335,12 +406,13 @@ def evaluate_gate(
         check(
             "escape_hook",
             "stuck_recovery_exercised_in_closed_loop",
-            bool(escape_result.get("success"))
+            escape_claims.all_targets_claimed
             and _int_metric(escape_metrics, "stuck_recoveries") >= min_stuck_recoveries
             and _int_metric(escape_metrics, "escape_blocks_executed") >= min_stuck_recoveries
             and len(force_escape_log) >= min_stuck_recoveries,
             {
-                "success": bool(escape_result.get("success")),
+                "success": escape_claims.all_targets_claimed,
+                "physical_claim_errors": list(escape_claims.errors),
                 "stuck_recoveries": escape_metrics.get("stuck_recoveries"),
                 "escape_blocks_executed": escape_metrics.get("escape_blocks_executed"),
                 "force_escape_log_entries": len(force_escape_log),
@@ -397,6 +469,13 @@ def main() -> int:
     parser.add_argument("--wallaware-explore", type=Path, required=True)
     parser.add_argument("--wallaware-recall", type=Path, required=True)
     parser.add_argument("--wallaware-escape", type=Path, default=None)
+    parser.add_argument(
+        "--scene-manifests",
+        nargs="+",
+        type=Path,
+        required=True,
+        help="Exact scene-manifest set for every supplied arm.",
+    )
     parser.add_argument("--output", type=Path, default=None)
     parser.add_argument("--allowed-guard-states", default="EXPLORE")
     parser.add_argument("--max-explore-final-dist-m", type=float, default=1.2)
@@ -420,11 +499,13 @@ def main() -> int:
         for state in str(args.allowed_guard_states).split(",")
         if state.strip()
     }
+    scene_manifests = _load_scene_manifest_map(args.scene_manifests)
     result = evaluate_gate(
         _load_json(args.baseline_explore),
         _load_json(args.wallaware_explore),
         _load_json(args.wallaware_recall),
         _load_json(args.wallaware_escape) if args.wallaware_escape is not None else None,
+        scene_manifests=scene_manifests,
         allowed_guard_states=allowed_states,
         max_explore_final_dist_m=float(args.max_explore_final_dist_m),
         max_recall_final_dist_m=float(args.max_recall_final_dist_m),

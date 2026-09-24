@@ -1,0 +1,297 @@
+{
+  "access": {
+    "attempt_reservation_count": 0,
+    "checkpoint_open_count": 0,
+    "dataset_payload_or_rgb_open_count": 0,
+    "g2_payload_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "metadata_only_preflight_evidence_open_count": 1,
+    "navigation_run_count": 0,
+    "probability_calibration_open_count": 0,
+    "scientific_gpu_or_training_run_count": 0,
+    "source_only_cpu_test_run_count": 2,
+    "tensor_checkpoint_open_count": 0
+  },
+  "authority": "source_review_only_no_execution_generated_payload_checkpoint_tensor_dataset_rgb_gpu_training_probability_calibration_g2_navigation_memory_integration_heldout_sealed_production_promotion_retry_or_resume_authority",
+  "closure_and_custody_review": {
+    "checker_status": "PASS",
+    "dataset_payload_or_rgb_open_count": 0,
+    "entrypoint_count": 7,
+    "execution_authorized": false,
+    "generated_or_runtime_artifact_open_count": 0,
+    "implementation_commit_binding_failure_count": 0,
+    "implementation_commit_binding_pass_count": 114,
+    "manifest_canonical_content_hash_valid": true,
+    "manifest_source_binding_hash_valid": true,
+    "ordered_source_paths_equal_to_reviewed_replacement": true,
+    "probability_calibration_open_count": 0,
+    "sealed_or_heldout_open_count": 0,
+    "source_count": 114,
+    "source_path_set_equal_to_reviewed_replacement": true,
+    "tensor_checkpoint_open_count": 0,
+    "whole_tree_export_authorized": false,
+    "worktree_binding_failure_count": 0,
+    "worktree_binding_pass_count": 114
+  },
+  "content_sha256": "8109c25886a2ac056266864dc0fc3b5494caad00cb295c7c10da7daee023a57e",
+  "date": "2026-07-30",
+  "execution_authorized": false,
+  "implementation_delta_review": {
+    "changed_manifest_source_binding_count": 3,
+    "changed_manifest_source_bindings": [
+      {
+        "permitted_delta": "distinct_v2_schema_plus_registered_structural_candidate_lower_bound_40_to_32_and_behavior_preserving_candidate_enumeration_helper_with_metadata_only_preflight",
+        "path": "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "reviewed_replacement": {
+          "byte_count": 41611,
+          "file_sha256": "61c17eb59c126e0034d8050ffb51fa88451fba06f0117079401623a5bd3dad15"
+        },
+        "v2": {
+          "byte_count": 44559,
+          "file_sha256": "83a615e520468695d7b00cabc30fdf58d42b909fc11ef2b6a6bb513a4665f363"
+        }
+      },
+      {
+        "permitted_delta": "fresh_v2_lifecycle_schema_paths_source_root_and_output_root_only",
+        "path": "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "reviewed_replacement": {
+          "byte_count": 65125,
+          "file_sha256": "fd9384bbcdbaa9fc7422ea81d5aed26655eb2bbee890112ec9eefa00e0db7fdf"
+        },
+        "v2": {
+          "byte_count": 64904,
+          "file_sha256": "f95c30226a3ad4f7b7f65ad61439f4a2fd5064e5f160c5f167472c1d76a8ed5c"
+        }
+      },
+      {
+        "permitted_delta": "fresh_v2_lifecycle_identity_and_exact_committed_metadata_preflight_evidence_requirement_only",
+        "path": "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "reviewed_replacement": {
+          "byte_count": 30362,
+          "file_sha256": "a985d395e8ab1c928838096aada238badc6b4d7f2e1445d816c2da686501f2bb"
+        },
+        "v2": {
+          "byte_count": 30912,
+          "file_sha256": "623819d2740a9201d042414f798379d3c695b97bf4b722d9298da62d9c724c2d"
+        }
+      }
+    ],
+    "final_source_commit": "093e9647397b9ecfaa250b572ae70e0a48a58633",
+    "initial_v2_implementation_commit": "24af5eb332e905740a735466a0a3be775efdbe5c",
+    "reviewed_replacement_implementation_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5",
+    "reviewed_replacement_review_commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c",
+    "source_binding_unchanged_count": 111,
+    "source_manifest_commit": "95a2cdf8fd59dacf979972ce056afdd417a35e28",
+    "test_and_checker_changes_are_source_only_and_within_preregistered_scope": true
+  },
+  "independent_reviews": [
+    {
+      "finding": "exactly_three_of_114_source_bindings_changed_and_only_the_registered_structural_retrieval_bound_is_scientific",
+      "reviewer": "/root/v2_science_identity_audit",
+      "scope": "science_identity_and_candidate_enumeration_equivalence",
+      "status": "PASS"
+    },
+    {
+      "finding": "minimal_130_binding_certification_and_one_shot_authority_sequence_is_complete",
+      "reviewer": "/root/v2_cert_plan",
+      "scope": "lifecycle_evidence_and_clean_export_plan",
+      "status": "PASS"
+    },
+    {
+      "finding": "all_manifest_bindings_match_final_source_and_isolated_runtime_shells_fail_closed",
+      "reviewer": "/root/v2_manifest_closure_audit",
+      "scope": "recursive_closure_source_custody_and_isolated_import",
+      "status": "PASS"
+    }
+  ],
+  "manifest": {
+    "byte_count": 39168,
+    "commit": "95a2cdf8fd59dacf979972ce056afdd417a35e28",
+    "content_sha256": "bd1402b76325d1506fffe66208df06705f7d860081b89620c1a4af34509d7930",
+    "file_sha256": "cff2a5e356d9e54871b727f7d882a5648ae9d3ed5471c8c5dc95667e66bbaa63",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "62768470bff4209ddfe080310385474d3951757479a7758e6b554565d93e31da",
+    "source_count": 114
+  },
+  "predecessor": {
+    "integrity_replacement_attempt_closed": true,
+    "integrity_replacement_manifest": {
+      "byte_count": 38175,
+      "commit": "220895c3318512b8f08639f2235356d02896b14c",
+      "content_sha256": "52f21d2c18f036c50a774e8e469ce146632b28d42e4bd33e3940c20cf8b6a427",
+      "file_sha256": "d82c36c9e88c91408f8639d90e4d88f2d14862ffa3e3b91f682d056f7001e6af",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_manifest_2026-07-30.json",
+      "source_bindings_sha256": "dc4ec31374c00376f19fe7dfdf44a4da11b802eca041ecf39eb9e7cf120b5b56",
+      "source_count": 114
+    },
+    "integrity_replacement_review": {
+      "byte_count": 13230,
+      "commit": "57ddeb95f2822fa36c9a71f0741b086fb11f953c",
+      "content_sha256": "44285ee543c0147eeb150eb0d53f9f90eecd63737bd7839f0665df6f8c5f6740",
+      "file_sha256": "b3d482f8d86d955b25c384924e9025f280ef1be78bc4881cca713d668b167f30",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_review_2026-07-30.json"
+    },
+    "integrity_replacement_terminal_failure": {
+      "byte_count": 9867,
+      "classification": "TERMINAL_UPDATE0_PLACE_RETRIEVAL_CANDIDATE_CARDINALITY_CONTRACT_FAILURE_NOT_SCIENTIFIC_RESULT",
+      "commit": "79c83b21e6447881cb43961eea404b28ec6ad87a",
+      "content_sha256": "da6cc6a2bb6c859a3996341a3e5e2faf1ab82d5377177f75a8427d50afe03b79",
+      "file_sha256": "bedfafa247ee0c39697b16327eff96ed420204000f25f0255f5de26128f1c548",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_terminal_infrastructure_failure_result_2026-07-30.json",
+      "scientific_conclusion_available": false,
+      "status": "PASS_COMPLETE_TERMINAL_UPDATE0_INFRASTRUCTURE_FAILURE_AUDIT"
+    },
+    "retry_or_resume_integrity_replacement_authorized": false
+  },
+  "preregistration": {
+    "byte_count": 7194,
+    "commit": "429cb57bd89348502cd5b695a25ae864d33fdfa7",
+    "file_sha256": "1fc6201b6137d57b5c97cf2b042b1f987476facdee28ce430b1aa0da3d0c2ba3",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_preregistration_2026-07-30.md"
+  },
+  "retrieval_metadata_preflight": {
+    "all_candidate_counts_within_registered_bounds": true,
+    "all_paired_positives_present": true,
+    "byte_count": 3153,
+    "candidate_counts": [
+      63,
+      64,
+      59,
+      59,
+      64,
+      64,
+      32,
+      48
+    ],
+    "commit": "11f861428a3a5d3ca8bf25488d67a013b3af0db2",
+    "content_sha256": "225e0c647c8619ac7271dad574b71477e8242e1b8d438c20702fbc508dd4394b",
+    "file_sha256": "87d48203af83ac151f15f690f1e170a1fdb9bbd97cd7fae1f5c15f84c9b4c074",
+    "metadata_row_count": 320,
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_retrieval_metadata_preflight_2026-07-30.json",
+    "rgb_checkpoint_gpu_training_navigation_or_protected_open_count": 0,
+    "status": "PASS_EXACT_METADATA_ONLY_RETRIEVAL_PREFLIGHT"
+  },
+  "reviewed_source_commit": "093e9647397b9ecfaa250b572ae70e0a48a58633",
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v2_source_review_v1",
+  "science_delta_review": {
+    "candidate_construction_cap_64_unchanged": true,
+    "candidate_construction_identity_deduplication_unchanged": true,
+    "candidate_construction_positive_negative_anchor_order_unchanged": true,
+    "candidate_identifiers_and_target_tensors_unchanged": true,
+    "change_classification": "registered_structural_evaluator_contract_correction_not_learned_performance_threshold_relaxation",
+    "old_and_new_structural_minimum_candidates": [
+      40,
+      32
+    ],
+    "sole_scientific_delta": "place_retrieval_structural_minimum_candidate_count_40_to_32",
+    "synthetic_32_candidate_acceptance_and_31_candidate_rejection_tested": true
+  },
+  "science_identity_review": {
+    "accepted_n320_initialization_unchanged": true,
+    "architecture_model_and_shared_rgb_encoder_unchanged": true,
+    "checkpoint_publication_only_after_terminal_pass_unchanged": true,
+    "data_indexes_ordered_rows_and_split_unchanged": true,
+    "ema_target_and_update_order_unchanged": true,
+    "learned_evaluation_metrics_thresholds_and_conjunctive_gates_unchanged": true,
+    "learned_place_and_local_thresholds": {
+      "local_action_advantage_minimum": 0.05,
+      "place_advantage_minimum": 0.1,
+      "place_retrieval_chance_multiplier_minimum": 3.0,
+      "place_retrieval_r5_minimum": 0.4,
+      "place_retrieval_scenes_above_chance_minimum": 6,
+      "place_target_effective_rank_minimum": 4.0,
+      "place_target_rank_retention_minimum": 0.75,
+      "positive_family_count_minimum": 6
+    },
+    "losses_coefficients_and_margins_unchanged": true,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "model_source_binding": {
+      "byte_count": 14637,
+      "file_sha256": "f8ea587cc860300be18dab937378aea04490b83272da1674b6d2ab9384dc3673",
+      "path": "lewm/models/memory_role_factorized_joint_jepa_v1.py"
+    },
+    "observation_updates": [
+      0,
+      100,
+      400
+    ],
+    "optimizer_hyperparameters_and_parameter_groups_unchanged": true,
+    "physical_local_place_presentations_per_update": [
+      16,
+      8,
+      8
+    ],
+    "presentation_schedule_and_microbatch_order_unchanged": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "role_and_constructor_seeds_unchanged": true,
+    "shared_encoder_joint_optimization_unchanged": true
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY_DISTINCT_V2_STRUCTURAL_RETRIEVAL_BOUND_CORRECTION_WITH_FROZEN_LEARNED_SCIENCE",
+  "tests": {
+    "argv": [
+      "-I",
+      "-B",
+      "-m",
+      "pytest",
+      "-q",
+      "-W",
+      "error",
+      "lewm/tests/test_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_go2_memory_role_place_triplets_v1.py",
+      "lewm/tests/test_run_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py"
+    ],
+    "exit_code": 0,
+    "failed": 0,
+    "independent_reexecution_output": "56 passed in 7.31s",
+    "interpreter": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python",
+    "primary_output": "56 passed in 7.36s",
+    "passed": 56,
+    "test_file_bindings": [
+      {
+        "byte_count": 6688,
+        "file_sha256": "af2983446fd74c4ba53df6a39ae1e2cbda5206def76068bf361dde5fee70a2b5",
+        "path": "lewm/tests/test_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 14110,
+        "file_sha256": "4d1030e2442145d3f509cd0e9aa7a6ec536cf439b70a2338425e4493024e739e",
+        "path": "lewm/tests/test_go2_memory_role_place_triplets_v1.py"
+      },
+      {
+        "byte_count": 14793,
+        "file_sha256": "a8846c77f841f48e67291afcea6cf865cb3bc624082c5c8a449068aaaad11c6b",
+        "path": "lewm/tests/test_run_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 14759,
+        "file_sha256": "9481468254728a205db326b0e9ede77af0b8aafc9ca82df36629f67ca2375e53",
+        "path": "lewm/tests/test_evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 15336,
+        "file_sha256": "e0eaca5fb74ba52544c95583ca249d85711de7445bd33325485a7abd8c447093",
+        "path": "lewm/tests/test_execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 8976,
+        "file_sha256": "096e048f44bfbaa22fc655515816ffb8b4590b09e313808f6161751f51342e9d",
+        "path": "lewm/tests/test_launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 7740,
+        "file_sha256": "fdd82328d9ea2399d8060e1b0eaeac157ee548ce37fdc4f9fd72da6b651aaeee",
+        "path": "lewm/tests/test_check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py"
+      }
+    ],
+    "test_files_commit": "093e9647397b9ecfaa250b572ae70e0a48a58633",
+    "warnings_as_errors": true
+  }
+}

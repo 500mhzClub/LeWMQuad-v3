@@ -1,0 +1,103 @@
+{
+  "cases": [
+    [
+      "family_episode_026",
+      "family_episode_010",
+      "action"
+    ],
+    [
+      "family_episode_003",
+      "family_episode_089",
+      "action"
+    ]
+  ],
+  "goals": {
+    "family_episode_010": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_010/rgb_0023.png",
+      "sha256": "435236a9b84a24bf466815132a02126a8e06bc8b783b8f5ce0b16b3e06f7be0e",
+      "frame": 23
+    },
+    "family_episode_089": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_089/rgb_0023.png",
+      "sha256": "80a4a0fa2b424b1d682eae7f16ef2c02ca158b5ab79017c95e08a34845354d26",
+      "frame": 23
+    }
+  },
+  "source_sha256": {
+    "lewm/dense_visual_goal_control_development.py": "c516114973d882ab0e0bcf2b98cbcff028708b6279148b4940d6cbc6e726cf6b",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_goal_pilot_development.py": "e049931f46f6a222de60a37e3fe791e4a73a98e7533cc0277492a347eeac5998",
+    "lewm/dense_metric_goal_control_development.py": "cf5a6726fe735ed7092b201cc767d05d3ac7ebb271539931cffe394da195385c",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_metric_goal_pilot_development.py": "ac52c25fde2043e615a21a44a62e5ad0c2d35b60712d70d0f5853f9e57095766",
+    "lewm/dense_visual_arrival_control_development.py": "930ec1ce3964627bf2864d2c0c6bd68d8324282c60321bf6d2d333d38e75de4f",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_arrival_pilot_development.py": "165e9475fcbea3f7229cee56833f0c30880ffc8c3e2ed20542a7655227d8bc1a"
+  },
+  "predecessor": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_metric_goal_pilot_v1_attempt_001",
+  "correction": null,
+  "predictor_fit_sha256": "44c2a6e8f4a094c9b89ccf4293d83115da3e666bf781c4d0e2c602d2a9709bfd",
+  "checkpoints": {
+    "action": "beb9e4abd69d652126e7618ef9a18261b627578ea01aa894e287004734e609e7",
+    "no_future_action": "c5c52b37bef6527176b64c0b8481a82bc6d1cd6db3e543d8e1075cd546f89873"
+  },
+  "warmup_ticks": 10,
+  "decisions": 20,
+  "commit_ticks": 5,
+  "forecast_horizon_ms": 500,
+  "final_drain_ticks": 5,
+  "commands": "six unchanged primitive starts, each sustained for five 100-ms ticks; actual limiter trajectory",
+  "cost": "mean squared distance in learned 64-dimensional visual embedding",
+  "seed": 2026091706,
+  "evaluation": {
+    "position_tolerance_m": 0.03,
+    "heading_tolerance_deg": 5.0,
+    "sustained_camera_frames": 3,
+    "goal_pose_available_to_controller": false,
+    "no_success_based_early_stop": true
+  },
+  "precision": "float32 encoder and predictor; CPU Genesis physics and gait",
+  "sensors_used_for_control": [
+    "RGB",
+    "past applied commands"
+  ],
+  "additional_sensors_recorded_not_used": true,
+  "physics_paused_during_compute": true,
+  "new_native_execution": true,
+  "resources": {
+    "output_free_bytes": 1047384064,
+    "required_bytes": 1036621019,
+    "observed_reference_case_bytes": [
+      199218447,
+      199900043
+    ]
+  },
+  "execution": "up to two independent processes on disjoint four-core CPU groups; shared GPU; separate outputs",
+  "resource_limits": "stop before next block if output-volume free space drops below 512 MiB",
+  "source_scope": "development source only; no sealed material or historical experiment resumption",
+  "limitations": [
+    "two exposed development tasks; intervention motivated by their diagnosis",
+    "one-observation arrival latch can produce false arrivals; native outcome remains independent",
+    "success would isolate learned goal recognition, not improve the predictor or establish planning superiority",
+    "no new reactive baseline, independent maze, real-time or hardware qualification"
+  ],
+  "intervention": "latch terminal hold on first learned observed-goal estimate within original 3 cm / 5 degree tolerances",
+  "metric_checkpoint_sha256": "9f89fc391a27875075a47e9383879153e8ebc22dd5e19cd0209041caedc6a7f1",
+  "metric_fit_sha256": "ac3b8a6b7a9b839613cbd092a758b9bbdfda543974bd5584ee401c3b0e18f2a8",
+  "near_goal_diagnostic_sha256": "55b16417f36c65934ea38184af34c579406eeed0606664a9ecafdb48f01e24de",
+  "encoder_and_predictors_unchanged": true,
+  "goals_commands_timing_budget_stops_unchanged": true,
+  "stopping_rule_added": true,
+  "physical_pose_used_by_controller": false,
+  "raw_cost_reference": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_visual_goal_pilot_v1_attempt_002",
+  "additional_goal_metric_supervision": true,
+  "reference_cases": [
+    0,
+    3
+  ],
+  "arrival_readout_fit_sha256": "4b2d055b9f521b89e17c4cbf8dfbdd85a7b46988ce973fccc9a96ff93d93ce28",
+  "arrival_readout_checkpoint_sha256": "c270cffac40b0e917f05a4f83edf105d132b970586290ef610a0afc8077ef74c",
+  "arrival_evaluation_sha256": "19687bd247fd13ca05f295b86b54780c910a54d95022cdaa14fc221701b7f261",
+  "oracle_success_still_evaluator_only": true,
+  "no_budget_shortening": true,
+  "predictions_after_arrival": false,
+  "output_volume": "dedicated experiment volume; selected after checking measured output size and reserve"
+}

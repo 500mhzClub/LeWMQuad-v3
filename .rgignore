@@ -1,0 +1,6 @@
+# Sealed manifests are not source-search inputs. Access them only through the
+# audited one-shot evaluation launcher for the active benchmark generation.
+config/go2_generalization_*/sealed_test.json
+**/sealed_test.json
+**/sealed/**
+**/sealed_*/**

@@ -1,0 +1,102 @@
+{
+  "schema": "lewm_go2_dense_vjepa2_1_horizon_diagnostic_terminal_review_v1",
+  "status": "PASS_COMPLETE_FUTILITY_STOP_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "citable_as_scientific_evidence": false,
+  "protected_material_opened": false,
+  "rgb_opened": false,
+  "evaluation_targets_or_labels_opened": false,
+  "authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_horizon_diagnostic_v1_execution_authority_2026-08-03.json",
+    "sha256": "46bf6a29e4256e98825f06ddaa254b2243cc67fc90efd7cfffd9f7e572dd4f82",
+    "byte_count": 6236
+  },
+  "result_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_horizon_diagnostic_v1/attempt_v1/result.json",
+    "sha256": "ade09fc81d950bb4bf4d26f9620da9c46bacea945e39cef261020e6eb2121cad",
+    "byte_count": 8598
+  },
+  "terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_horizon_diagnostic_v1/attempt_v1/terminal.json",
+    "sha256": "39a5b3498be7b4fa84abd6ec566b01969b348c44f4403d834c585a0ef4e7c68a",
+    "byte_count": 631
+  },
+  "checkpoint_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_horizon_diagnostic_v1/attempt_v1/checkpoint_update_1600.pt",
+    "sha256": "f1264fad940b628250196ef1977c5c364504d853b4371e0d5e654617a964b1f6",
+    "byte_count": 5036145
+  },
+  "frozen_source_commit": "ac497e8df57faba95818ca38d1b3d43e59f44653",
+  "authority_commit": "b0eba6edba606624082cdc387f649e90883c77f4",
+  "checks": {
+    "preregistration_source_review_authority_and_live_source_bindings_match": true,
+    "predecessor_result_terminal_review_cache_and_source_bindings_match": true,
+    "update_800_full_trace_is_predecessor_identical": true,
+    "update_1600_checkpoint_is_finite_and_strict_loads": true,
+    "update_1600_metrics_reproduce_bit_exactly_twice": true,
+    "futility_arithmetic_recomputes_exactly": true,
+    "only_update_1600_checkpoint_exists": true,
+    "result_to_terminal_binding_matches": true,
+    "no_rgb_or_extraction_call_executed": true,
+    "terminal_stop_and_claim_boundaries_are_correct": true
+  },
+  "update_800_witness": {
+    "error_to_persistence_ratio": 0.9164363539053353,
+    "branch_retrieval_accuracy": 0.2803819444444444,
+    "action_intervention_margin": 0.028666746492187187,
+    "exact_predecessor_match": true
+  },
+  "update_1600_metrics": {
+    "matched_cosine_error": 0.06549464073032141,
+    "persistence_cosine_error": 0.07507951919817263,
+    "error_to_persistence_ratio": 0.8723369759128065,
+    "branch_retrieval_accuracy": 0.4305555555555556,
+    "cyclic_deranged_cosine_error": 0.1109184387864338,
+    "action_intervention_margin": 0.045423798056112394
+  },
+  "futility_gate": {
+    "maximum_error_to_persistence_ratio": 0.8582181769526677,
+    "minimum_branch_retrieval_accuracy": 0.3901909722222222,
+    "minimum_action_intervention_margin_exclusive": 0.0,
+    "error_ratio_passed": false,
+    "error_ratio_excess": 0.014118798960138831,
+    "retrieval_passed": true,
+    "retrieval_correct_count": 496,
+    "retrieval_minimum_effective_correct_count": 450,
+    "intervention_margin_passed": true,
+    "nonfinite_count": 0,
+    "deterministic_repeat_passed": true,
+    "conjunction_passed": false
+  },
+  "progress_from_update_800_to_1600": {
+    "error_ratio_change": -0.0440993779925288,
+    "retrieval_change": 0.15017361111111116,
+    "retrieval_correct_count_change": 173,
+    "intervention_margin_change": 0.016757051563925207,
+    "interpretation": "Action-specific successor identification improved strongly, but fidelity relative to persistence decelerated and did not reach the preregistered midpoint."
+  },
+  "terminal_decision": {
+    "status": "COMPLETE_FUTILITY_STOP",
+    "completed_updates": 1600,
+    "training_set_capacity_established": false,
+    "collection_justified": false,
+    "authorizes_rgb_access": false,
+    "authorizes_evaluation": false,
+    "next_route": "STOP_DENSE_VJEPA2_1_HORIZON_NO_FURTHER_TUNING"
+  },
+  "scientific_interpretation": {
+    "established": [
+      "The fixed dense predictor can increasingly identify action-specific successors on the 16-scene training set.",
+      "The fixed frozen-feature mechanism did not improve successor fidelity over persistence quickly enough to pass its preregistered capacity schedule."
+    ],
+    "not_established": [
+      "training-set capacity under the fixed gates",
+      "fresh-scene generalization",
+      "physical action ranking",
+      "planning usefulness",
+      "causal navigation benefit"
+    ],
+    "defensible_next_mechanism": "A materially different joint or self-supervised action-conditioned dense-token representation learner that reshapes the latent for action-relevant innovation; not another horizon, optimizer, loss-weight, width, seed, or frozen-feature predictor retry."
+  },
+  "findings": []
+}

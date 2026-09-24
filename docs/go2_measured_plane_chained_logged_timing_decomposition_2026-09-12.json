@@ -1,0 +1,84 @@
+{
+  "status": "COMPLETED_CHAINED_NATIVE_LOGGED_TIMING_DECOMPOSITION",
+  "native_result_sha256": "163e92d630d92f9f8633cd3823c7cbf282a92c81bde5d3db998e3a5a8c8b1849",
+  "input_sha256": {
+    "no_rgb_direct_measured_plane_chained_maze_02/context_decisions.jsonl.gz": "c7d131924208f8afdbf8e5d4ab2ba9f211ed2ca4a62faf70e498bb19a379fb7a",
+    "no_rgb_direct_measured_plane_chained_maze_02/decision_stream_timing.jsonl": "e077616e2d9cb1dddebe2cfc4f29e16723f15017998b88e26df41dadae949f0e"
+  },
+  "timing": {
+    "acquisition_wall_ms": {
+      "count": 4014,
+      "total_ms": 877779.75273,
+      "min_ms": 104.217,
+      "median_ms": 219.55553600000002,
+      "p95_ms": 248.3905475,
+      "max_ms": 262.77825,
+      "over_100_ms": 4014
+    },
+    "controller_wall_ms": {
+      "count": 4014,
+      "total_ms": 5580961.767933,
+      "min_ms": 0.15275,
+      "median_ms": 1360.2969685,
+      "p95_ms": 3013.3185298999997,
+      "max_ms": 5009.039762,
+      "over_100_ms": 4004
+    },
+    "observation_and_control_wall_ms": {
+      "count": 4014,
+      "total_ms": 6458741.520663,
+      "min_ms": 217.98203,
+      "median_ms": 1578.8952865,
+      "p95_ms": 3228.40486895,
+      "max_ms": 5234.258189,
+      "over_100_ms": 4014
+    },
+    "iteration_with_command_wall_ms": {
+      "count": 4013,
+      "total_ms": 6585797.833079,
+      "min_ms": 248.105874,
+      "median_ms": 1610.668455,
+      "p95_ms": 3260.337357999999,
+      "max_ms": 5266.563835,
+      "over_100_ms": 4013
+    },
+    "decision_receipt_write_wall_ms": {
+      "count": 4014,
+      "total_ms": 81936.412856,
+      "min_ms": 0.162401,
+      "median_ms": 20.5547235,
+      "p95_ms": 22.6162185,
+      "max_ms": 32.919033,
+      "over_100_ms": 0
+    },
+    "iteration_with_receipt_wall_ms": {
+      "count": 4014,
+      "total_ms": 6667979.051302,
+      "min_ms": 239.565551,
+      "median_ms": 1631.4066440000001,
+      "p95_ms": 3281.90664345,
+      "max_ms": 5289.390423,
+      "over_100_ms": 4014
+    },
+    "command_execution_and_overhead_wall_ms": {
+      "count": 4013,
+      "total_ms": 127295.703986,
+      "min_ms": 29.825863,
+      "median_ms": 31.708838000000014,
+      "p95_ms": 32.44729899999997,
+      "max_ms": 34.32486700000004,
+      "over_100_ms": 0
+    }
+  },
+  "all_original_observations_included": true,
+  "command_population_excludes_last_observation_without_command": true,
+  "original_timing_boundaries_preserved": true,
+  "quantiles": "linear interpolation at (n-1)*q",
+  "controller_reexecuted": false,
+  "native_reexecuted": false,
+  "component_profiler_used": false,
+  "paired_replay_timing": false,
+  "physics_paused_during_computation": true,
+  "real_time_qualified": false,
+  "wall_s": 45.4143592689652
+}

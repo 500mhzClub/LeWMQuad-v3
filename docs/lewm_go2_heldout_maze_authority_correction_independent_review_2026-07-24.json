@@ -1,0 +1,57 @@
+{
+  "content_sha256": "0bd75f37166ad0907bc3b3b8a0674b5c7372bc95bcc2fc407dfd74acd2f51156",
+  "date": "2026-07-24",
+  "findings": [
+    {
+      "code": "v4_custody_and_replacement_g8",
+      "status": "PASS"
+    },
+    {
+      "code": "literal_fully_learned_jepa_definition",
+      "status": "PASS"
+    },
+    {
+      "code": "encoder_requalification_and_post_g2_freeze",
+      "status": "PASS"
+    },
+    {
+      "code": "current_controller_barred_from_g3_through_g8",
+      "status": "PASS"
+    },
+    {
+      "code": "incident_chronology_and_search_guards",
+      "status": "PASS"
+    }
+  ],
+  "predecessor_commit": "99370af8d895a8de30a7d6a3ea663e080b535af8",
+  "review_scope": {
+    "checkpoint_opened": false,
+    "config_or_custody_root_inspected": false,
+    "dataset_opened": false,
+    "gpu_used": false,
+    "heldout_opened": false,
+    "navigation_or_runtime_executed": false,
+    "source_modified_by_reviewer": false,
+    "training_executed": false
+  },
+  "reviewed_sources": {
+    ".ignore": "b8cec05a9d3a6f7917a042e0067ba33e2acfa03c2d29c8e698b365c0ae6350ba",
+    ".rgignore": "dee54db8d929288cf39a2d256088c5346da53df3ad30ad91291dfe337d65a22c",
+    "AGENTS.md": "53e86c6245a721c2d4005ece02a7d07fa25685123a21b658085d4b1e9896f694",
+    "docs/lewm_go2_first_principles_plan_corrections_2026-07-11.md": "b1c5e6087e4956a71cf048cccdd8408384305761a64d9405e08906fd84cc8042",
+    "docs/lewm_go2_heldout_maze_authority_correction_2026-07-24.md": "47a06a8408f19491a7ccd581c4805948226bbca6a5265ebc726fe2aed0200d7d",
+    "docs/lewm_go2_heldout_maze_full_handoff_2026-07-24.md": "02d9be5a882058f0c94841b6b87c2577a0efb216d6479d10c18f3e0684dedfbe",
+    "docs/lewm_go2_v4_sealed_invalidation_2026-07-10.md": "696f2256144b6e2516a3276c76d8afa009a2dbbb96f2bd9269a4eccb52594605",
+    "docs/lewm_go2_v4_sealed_reaccess_2026-07-24.md": "1d10377b6562dd1902a8ca07afa5990717d760f85ee77edcdf60aacf0659c204",
+    "lewm/tests/test_sealed_search_guard.py": "3106a824e1cc10af73710d08c36e4a53ea601e2af40831388c979a859273c3cd"
+  },
+  "reviewer": "/root/handoff_audit",
+  "schema": "lewm_go2_heldout_maze_authority_correction_independent_review_v1",
+  "status": "PASS",
+  "test_execution": {
+    "accelerators_hidden": true,
+    "result": "2 passed in 0.01s",
+    "synthetic_fixtures_only": true
+  },
+  "verdict": "PASS_DOCUMENT_AND_GUARD_SOURCE_ONLY_NO_EXECUTION_AUTHORITY"
+}

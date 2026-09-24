@@ -1,0 +1,347 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_INFRASTRUCTURE_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "review_date": "2026-08-04",
+  "reviewer": {
+    "identity": "/root/replacement_v1_terminal_audit",
+    "independence_basis": "I authored neither the preregistration, exact plan, scene panel, split collector, recurrent runner, source review, execution authority, reservations, nor consumed replacement attempt. I independently rehashed the frozen documents, all 141 logical authority source-binding entries, both reservations, the collection plan copy, and the terminal. I inspected only ordinary source, preregistration, authority, source-review, reservation, terminal, and metadata-only partial-file inventory. I did not open any generated JSON payload below the scene root, RGB image contents, physics result, model checkpoint, scientific result, protected material, or sealed material."
+  },
+  "scope": {
+    "review_mode": "READ_ONLY_EXCLUSIVE_TERMINAL_INFRASTRUCTURE_AUDIT",
+    "authority_granted_by_this_document": false,
+    "successor_authority_granted_by_this_document": false,
+    "scientific_claim_granted_by_this_document": false,
+    "citable_as_scientific_evidence": false,
+    "protected_material_opened": false,
+    "held_out_material_opened": false,
+    "sealed_material_opened": false,
+    "generated_json_payloads_opened": false,
+    "rgb_payload_contents_opened": false,
+    "scientific_checkpoint_deserialized": false,
+    "scientific_metrics_computed_or_inspected": false,
+    "metadata_file_names_and_sizes_counted": true,
+    "source_or_handoff_edited": false
+  },
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_preregistration_2026-08-04.md",
+      "sha256": "508657a66a49b8658995d7ae957a0894f6631f97482b1bc3f32d6fbc7c5a0b53",
+      "byte_count": 6176
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_source_review_2026-08-04.json",
+      "sha256": "b2f05097daa5c49352c44543358f07a0b285499389f5c14722a6d6c8d851e9a6",
+      "byte_count": 45527
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_execution_authority_2026-08-04.json",
+      "sha256": "2f994d5039938e32947a24e42ad6ff5e8c836764cf0d6ee7c97338d391f32e8b",
+      "byte_count": 44554
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v1_exact_plan_2026-08-04.json",
+      "sha256": "10817ebfe568ed37c825a6bc9f17d3586740cb45512b5cf78bd27f23f9144eb6",
+      "byte_count": 346071,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "scene_panel": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_scene_panel_2026-08-04.json",
+      "sha256": "df145c2d70d82243b373ef6f6d8750dc231f9de2a4d07d9f698a1831b9b84fa7",
+      "byte_count": 207218,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "predecessor_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_v1/attempt_v1/terminal.json",
+      "sha256": "df4cecb5edc45f25a98f4753e82e95334a6b8c4e9e0d719bb13150b9be690bfa",
+      "byte_count": 451
+    },
+    "predecessor_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_v1_terminal_review_2026-08-04.json",
+      "sha256": "7f2ac7eb3f9fa16fd91a5311009cdbcd7d4777e8d9c3f7746666ce1afbc6da59",
+      "byte_count": 15809
+    },
+    "attempt_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/reservation.json",
+      "sha256": "00a0e2be69222b5bc66da51ba49c711c775df9cb14dc5823c1b4c14825901708",
+      "byte_count": 799
+    },
+    "collection_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/collection/reservation.json",
+      "sha256": "1045a614463a2b507fce81bd66aadee6cde07b0c93680bf8311edf7b7d5b7ce1",
+      "byte_count": 1572
+    },
+    "collection_authorized_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/collection/authorized_plan.json",
+      "sha256": "10817ebfe568ed37c825a6bc9f17d3586740cb45512b5cf78bd27f23f9144eb6",
+      "byte_count": 346071,
+      "audit_access": "OPAQUE_SHA256_AND_BYTE_COUNT_ONLY"
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/terminal.json",
+      "sha256": "c2650529ff6b1aa1322738e7d4f748fbab03ea9ef33a623ff3e182a98e1cb77d",
+      "byte_count": 473
+    }
+  },
+  "binding_audit": {
+    "all_listed_bindings_rehashed_exact": true,
+    "authority_preregistration_binding_matches": true,
+    "authority_source_review_binding_matches": true,
+    "authority_plan_binding_matches": true,
+    "source_review_preregistration_binding_matches_authority": true,
+    "source_review_plan_binding_matches_authority": true,
+    "source_review_scene_panel_binding_matches": true,
+    "source_review_predecessor_terminal_bindings_match": true,
+    "authority_source_bindings_canonical_equal_to_passed_source_review": true,
+    "authority_source_binding_logical_entries_rehashed": 141,
+    "authority_source_binding_unique_physical_paths": 130,
+    "authority_source_binding_failures": 0,
+    "forbidden_sealed_source_binding_paths": 0,
+    "collection_authorized_plan_is_byte_identical_to_bound_exact_plan": true,
+    "attempt_reservation_consumes_exact_authority_and_plan_bindings": true,
+    "collection_reservation_consumes_exact_authority_and_plan_bindings": true,
+    "attempt_tree_symlink_count": 0
+  },
+  "authority_audit": {
+    "status": "AUTHORIZED_ONE_SCENE_DIVERSITY_RECURRENT_REPLICATION_INTEGRITY_REPLACEMENT_V1",
+    "source_review_status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+    "attempt_id": "go2-scene-diversity-recurrent-replication-integrity-replacement-v1",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1",
+    "collection_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v1/attempt_v1/collection",
+    "one_shot_data_generation_authorized": true,
+    "retry_resume_overwrite_authorized": false,
+    "sealed_or_protected_access_authorized": false,
+    "successor_rgb_access_authorized": false,
+    "eval_receipt_and_context_access_requires_durable_checkpoint": true,
+    "selected_device_vram_byte_ceiling": 16977405952,
+    "stored_rgb_byte_ceiling": 536870912,
+    "stored_rgb_frame_cap": 3072,
+    "scene_cap": 64,
+    "state_cap": 256,
+    "candidate_branch_cap": 2304,
+    "wall_seconds_ceiling": 7200.0
+  },
+  "reservation_audit": {
+    "attempt_reservation_status": "CONSUMED_ONE_SHOT_ATTEMPT",
+    "attempt_reservation_retry_resume_overwrite_authorized": false,
+    "collection_reservation_status": "RESERVED_ONE_SHOT_SPLIT_COLLECTION_CONSUMED",
+    "collection_root_creation_consumes_attempt": true,
+    "collection_fixed_role_order": [
+      "train",
+      "eval"
+    ],
+    "collection_retry_authorized": false,
+    "collection_resume_authorized": false,
+    "collection_overwrite_authorized": false,
+    "collection_refill_authorized": false,
+    "collection_partial_artifact_reuse_authorized": false,
+    "attempt_consumed": true
+  },
+  "attempt_inventory": {
+    "exact_attempt_root_direct_inventory": [
+      "collection/",
+      "reservation.json",
+      "terminal.json"
+    ],
+    "exact_collection_root_direct_inventory": [
+      "authorized_plan.json",
+      "reservation.json",
+      "role_results/",
+      "scenes/"
+    ],
+    "root_physics_result_json_present": false,
+    "collection_physics_result_json_present": false,
+    "checkpoint_pt_present": false,
+    "result_json_present": false,
+    "standalone_metrics_or_gates_present": false,
+    "role_result_file_count": 0,
+    "terminal_result_binding": null,
+    "scientific_verdict_published": false
+  },
+  "partial_collection_inventory": {
+    "method": "Metadata-only regular-file names, counts, and sizes under the exact attempt_v1 scene root; no generated JSON payload or RGB image content was opened.",
+    "complete_persisted_scene_unit_contract": {
+      "state_receipts_per_scene": 4,
+      "rgb_frames_per_scene": 48,
+      "context_frames_per_scene": 12,
+      "candidate_successor_frames_per_scene": 36,
+      "scene_receipts_per_scene": 1,
+      "persisted_scene_units_checked": 2,
+      "scene_unit_shape_failures": 0
+    },
+    "train": {
+      "complete_persisted_scene_units": 2,
+      "persisted_states": 8,
+      "persisted_candidate_branches": 72,
+      "persisted_context_frames": 24,
+      "persisted_successor_frames": 72,
+      "persisted_rgb_frames": 96,
+      "persisted_scene_receipts": 2,
+      "persisted_state_receipts": 8,
+      "persisted_scene_json_files": 10,
+      "persisted_rgb_payload_bytes": 3198156
+    },
+    "evaluation": {
+      "complete_persisted_scene_units": 0,
+      "persisted_states": 0,
+      "persisted_candidate_branches": 0,
+      "persisted_context_frames": 0,
+      "persisted_successor_frames": 0,
+      "persisted_rgb_frames": 0,
+      "persisted_scene_receipts": 0,
+      "persisted_state_receipts": 0,
+      "persisted_scene_json_files": 0,
+      "persisted_rgb_payload_bytes": 0
+    },
+    "total": {
+      "complete_persisted_scene_units": 2,
+      "persisted_states": 8,
+      "persisted_candidate_branches": 72,
+      "persisted_context_frames": 24,
+      "persisted_successor_frames": 72,
+      "persisted_rgb_frames": 96,
+      "persisted_scene_receipts": 2,
+      "persisted_state_receipts": 8,
+      "persisted_scene_json_files": 10,
+      "persisted_rgb_payload_bytes": 3198156,
+      "complete_role_results": 0,
+      "stored_rgb_frame_cap": 3072,
+      "stored_rgb_byte_ceiling": 536870912
+    },
+    "live_failure_position": {
+      "reported_phase": "THIRD_TRAIN_SCENE_BUILD",
+      "completed_train_live_render_receipts_before_breach": 2,
+      "completed_eval_live_render_receipts_before_breach": 0,
+      "complete_train_role_result_present": false,
+      "basis": "The two completed train units and zero role-result files are independently confirmed by metadata. The more specific third-scene-build position is the launch controller's live infrastructure observation and is not a scientific observation."
+    },
+    "count_interpretation": "These are persisted infrastructure-accounting counts only. They are not a complete role result, complete collection receipt, admitted scientific sample, metric, gate, or evidence about the recurrent mechanism. They may not be completed, joined, refilled, resumed, copied into a successor, or reused under the consumed authority."
+  },
+  "failure_audit": {
+    "classification": "SELECTED_DEVICE_GLOBAL_VRAM_CEILING_INFRASTRUCTURE_FAILURE",
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "failure_type": "BoundedBranchSupervisionError",
+    "failure_message": "active selected-device VRAM ceiling exceeded (17259581440 > 16977405952)",
+    "pre_run_selected_device_used_bytes": 2302283776,
+    "active_selected_device_peak_bytes": 17259581440,
+    "post_process_exit_selected_device_used_bytes": 2328842240,
+    "authorized_selected_device_vram_ceiling_bytes": 16977405952,
+    "ceiling_excess_bytes": 282175488,
+    "peak_to_ceiling_ratio": 1.016620647983,
+    "peak_minus_pre_run_baseline_bytes": 14957297664,
+    "post_exit_minus_pre_run_baseline_bytes": 26558464,
+    "ceiling_binding_matches_execution_authority": true,
+    "peak_exceeded_ceiling": true,
+    "monitor_scope": "SELECTED_DEVICE_GLOBAL_NOT_PROCESS_ATTRIBUTED",
+    "failure_was_fail_closed": true,
+    "failure_phase": "PARTIAL_TRAIN_COLLECTION_BEFORE_ANY_ROLE_RESULT_OR_PHYSICS_RESULT_PUBLICATION",
+    "train_worker_completed": false,
+    "inter_role_process_exit_reached": false,
+    "vram_release_barrier_reached": false,
+    "evaluation_worker_started": false,
+    "failure_preceded_scientific_model_fit_and_evaluation": true
+  },
+  "diagnostic_interpretation": {
+    "established": [
+      "The active selected-device global counter exceeded the exact authorized 16,977,405,952-byte ceiling, and the supervisor failed closed.",
+      "The replacement stopped during the train worker before a complete train role result, the planned inter-role process exit/release barrier, the evaluation worker, the metadata join, and the scientific recurrent route.",
+      "Under the replacement execution conditions, the prior observation that the 32-scene train half could complete below the same ceiling did not reproduce: only two complete train scene units persisted before this breach."
+    ],
+    "not_established": [
+      "The breach does not establish whether the planned process exit between complete train and evaluation roles would have released retained Genesis/Vulkan memory, because that boundary was never reached.",
+      "The breach does not by itself identify process-lifetime geometry retention as the cause. The monitor is device-global rather than process-attributed, so an external transient cannot be excluded; early-scene peak demand, within-worker retention, runtime/resource-state differences, or another infrastructure mechanism also remain possible.",
+      "The near-return from the pre-run 2,302,283,776-byte baseline to 2,328,842,240 bytes after process exit is consistent with most attempt-associated allocation being released, but it does not attribute the peak or prove a particular leak mechanism.",
+      "The breach says nothing about recurrent-DINO representation quality, action conditioning, generalization, planning usefulness, preregistered thresholds, or whether any scientific gate would pass or fail."
+    ],
+    "revision_to_prior_diagnosis": "The simple cross-role cumulative-retention diagnosis is no longer sufficient as an explanation of the observed failures. This attempt failed before the intended train/eval process boundary, so the split replacement did not test its proposed release remedy and supplies no causal confirmation of that remedy."
+  },
+  "execution_boundary": {
+    "train_role_collection_completed": false,
+    "evaluation_role_collection_started": false,
+    "metadata_join_completed": false,
+    "collection_physics_result_published": false,
+    "collection_admitted_to_recurrent_runner": false,
+    "recurrent_model_training_started": false,
+    "scientific_checkpoint_written": false,
+    "evaluation_receipts_or_context_opened_by_recurrent_runner": 0,
+    "successor_observations_opened_by_recurrent_runner": 0,
+    "scientific_model_or_dino_execution_started": false,
+    "scientific_metrics_computed": false,
+    "bootstrap_or_fixed_gates_computed": false,
+    "result_artifact_written": false,
+    "partial_successor_frames_persisted_by_collection": 72,
+    "partial_successor_frames_opened_by_terminal_reviewer": 0,
+    "authoritative_terminalized_access_counts_present": false,
+    "zero_scientific_access_basis": "The passed source review verifies that model fitting and evaluation access occur only after both complete role results join into a validated physics_result.json. No role result, physics_result.json, checkpoint.pt, or result.json exists, so the scientific recurrent route was never entered. Persisted collection artifacts were counted only as filesystem metadata and were not opened or scientifically used."
+  },
+  "scientific_decision": {
+    "decision": "NO_SCIENTIFIC_DECISION",
+    "primary_result_citable": false,
+    "partial_collection_citable": false,
+    "provisional_metrics_reported_by_this_review": false,
+    "scientific_status_inferred_from_partial_counts": false,
+    "reason": "The fixed selected-device global memory ceiling terminated the first role's collection before a role result, authoritative physics result, model checkpoint, evaluation, gate report, or result artifact existed. The partial persisted counts cannot establish, qualify, pass, or stop the preregistered H1 mechanism."
+  },
+  "permission_audit": {
+    "any_replacement_v1_attempt_permission_remaining": false,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false,
+    "partial_attempt_artifact_reuse_authorized": false,
+    "partial_attempt_artifact_copy_into_successor_authorized": false,
+    "scientific_model_execution_authorized_from_partial_attempt": false,
+    "successor_observation_access_authorized_from_partial_attempt": false,
+    "successor_attempt_authorized_by_this_review": false,
+    "further_integrity_replacement_authorized_by_this_review": false,
+    "source_change_authorized_by_this_review": false,
+    "handoff_change_authorized_by_this_review": false,
+    "basis": "The preregistration explicitly grants no retry, resume, refill, overwrite, partial reuse, or further replacement. The execution authority, attempt reservation, split collection reservation, and terminal preserve that fail-closed boundary. This review records the consumed failure and grants no continuation or successor authority."
+  },
+  "checks": {
+    "preregistration_source_review_authority_plan_panel_predecessor_reservations_and_terminal_rehashed_exact": true,
+    "all_141_authority_source_binding_entries_rehashed_exact": true,
+    "passed_source_review_and_authority_source_closures_are_canonical_equal": true,
+    "authority_status_and_one_shot_root_exact": true,
+    "reservation_authority_and_plan_bindings_exact": true,
+    "attempt_and_collection_reservations_consumed": true,
+    "terminal_failure_type_message_status_and_null_result_binding_exact": true,
+    "terminal_peak_and_authority_vram_cap_exact": true,
+    "partial_persisted_counts_metadata_only_and_exact": true,
+    "zero_role_results_physics_result_checkpoint_result_metrics_and_gates": true,
+    "no_scientific_metric_or_verdict_admitted": true,
+    "no_successor_observation_or_scientific_model_access_occurred": true,
+    "replacement_v1_no_retry_no_resume_no_refill_no_overwrite_no_reuse_preserved": true,
+    "review_grants_no_successor_or_further_replacement_authority": true,
+    "no_generated_payload_or_protected_material_opened": true
+  },
+  "findings": [
+    {
+      "id": "selected_device_vram_ceiling_exceeded",
+      "severity": "terminal_infrastructure_failure",
+      "finding": "The active selected-device global peak reached 17,259,581,440 bytes against the exact authorized 16,977,405,952-byte ceiling, an excess of 282,175,488 bytes. The supervisor failed closed with BoundedBranchSupervisionError."
+    },
+    {
+      "id": "split_remedy_not_reached",
+      "severity": "diagnostic_limit",
+      "finding": "The replacement persisted two complete train scene units and no role result before failing during the reported third train scene build. It never reached the train-worker completion, inter-role process exit, release barrier, evaluation worker, or join, so it neither validates nor falsifies the intended inter-role release remedy."
+    },
+    {
+      "id": "attempt_consumed_before_scientific_route",
+      "severity": "no_scientific_decision",
+      "finding": "No role result, physics_result.json, checkpoint.pt, result.json, scientific metric, recurrent-model fit, evaluation access, gate, or scientific verdict exists. Partial file counts are infrastructure metadata only."
+    },
+    {
+      "id": "no_continuation_authority",
+      "severity": "terminal_permission_boundary",
+      "finding": "The exact preregistration, authority, reservations, and terminal prohibit retry, resume, overwrite, refill, and partial reuse. This review does not authorize a successor, further replacement, source edit, handoff edit, model execution, or generated-payload access."
+    }
+  ],
+  "limitations": [
+    "This review did not open or validate the content of any partial state receipt, live-render receipt, RGB artifact, exact-plan payload, scene-panel payload, checkpoint, or result; it counted only regular-file names and sizes under the generated scene root.",
+    "The selected-device monitor is global and not process-attributed. The observed peak cannot uniquely assign memory to the collector or exclude concurrent device consumers.",
+    "The pre-run baseline, post-exit value, and reported third-scene-build position came from the launch controller's live infrastructure observations; the terminal itself records only the peak breach, failure classification, null result binding, and no-authority flags.",
+    "The failure terminal contains no terminalized access-count object. The zero scientific-model and successor-observation access conclusion follows from passed source-reviewed phase ordering plus the absence of role results, physics_result.json, checkpoint.pt, and result.json.",
+    "This review does not convert partial infrastructure artifacts into scientific evidence and does not authorize any retry, resume, successor, further replacement, or partial-artifact reuse."
+  ]
+}

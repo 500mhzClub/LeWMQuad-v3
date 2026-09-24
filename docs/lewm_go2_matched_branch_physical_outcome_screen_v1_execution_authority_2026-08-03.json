@@ -1,0 +1,300 @@
+{
+  "schema": "lewm_go2_matched_branch_physical_outcome_screen_v1_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_MATCHED_BRANCH_PHYSICAL_OUTCOME_SCREEN_ATTEMPT",
+  "citable_as_scientific_evidence": false,
+  "development_screen_only": true,
+  "authorizes_physical_outcome_fitting": true,
+  "authorizes_collection": false,
+  "authorizes_rgb_access": false,
+  "authorizes_encoder_execution": false,
+  "authorizes_protected_access": false,
+  "authorizes_retry_or_resume": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_preregistration_2026-08-03.md",
+    "sha256": "6b758b33948ebd621698d47ec01a892c52f473fb6bec930fcdf1cb459fd8da3f",
+    "byte_count": 10369
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_physical_outcome_screen_v1_source_review_2026-08-03.json",
+    "sha256": "4b324b9d2d443d7d87beb043ca15eba9dfa8214b8a62219678eccb51366e61e0",
+    "byte_count": 6100
+  },
+  "source_bindings": {
+    "counterfactual_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "counterfactual_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "prior_calibration_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "dense_predecessor_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4",
+      "byte_count": 60963
+    },
+    "dense_predecessor_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a",
+      "byte_count": 12637
+    },
+    "counterfactual_action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "physical_outcome_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32",
+      "byte_count": 7951
+    },
+    "physical_outcome_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "425fc327c48070bd967d6a6924b10002364f09c0ba6bf16dbfcfa18bf6298953",
+      "byte_count": 70590
+    },
+    "physical_outcome_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "1931db12adf860def7254a5a41e2a61d29a5daf90873c801e0f308bf0c0aa2cd",
+      "byte_count": 50079
+    },
+    "physical_outcome_replay": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/replay_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "39cb1f0ada0a1decb6adced782a45a098f64cbc50afd2bf89cedae3ffcf1fb67",
+      "byte_count": 16839
+    },
+    "physical_outcome_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_physical_outcome_screen_model_v1.py",
+      "sha256": "5e08b013b23616002059154f1c932cc80afc9ce413f5b8a763de47c4072113b8",
+      "byte_count": 6543
+    },
+    "physical_outcome_evaluator_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "67ad5f755d52c468b4a8fdd2303d57948f112333da96c421d065c54091106000",
+      "byte_count": 15727
+    },
+    "physical_outcome_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "a8bdc5f4e0a23cedc88cf58573753bc7221ab858ea88fd5ff7843c3b279a145a",
+      "byte_count": 14934
+    },
+    "physical_outcome_replay_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_replay_go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "66c2879a68356f5eec7a198cb2470484a746a29d49e1ae91b952202e0f5ffe02",
+      "byte_count": 6789
+    }
+  },
+  "input_bindings": {
+    "posthoc_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json",
+      "sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+      "byte_count": 11964
+    },
+    "posthoc_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json",
+      "sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+      "byte_count": 1250
+    },
+    "posthoc_train_rows": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/train.jsonl",
+      "sha256": "edc6f88bb105c39575477fbfbb0224bf0312cf5ee3e90551f86a9c11c2ebb447",
+      "byte_count": 30432624
+    },
+    "posthoc_eval_rows": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/eval.jsonl",
+      "sha256": "531debbc431f2f8afc83a491b491b8822134c831b16ca4d283fe1e7f4ba07768",
+      "byte_count": 30411588
+    },
+    "posthoc_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json",
+      "sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+      "byte_count": 2844
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_result.json",
+      "sha256": "25caf0a5d4c69e99559a663aa4cae96fb23ef191ccf34486804c3f2243553314",
+      "byte_count": 183320
+    },
+    "physics_receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_receipt_check.json",
+      "sha256": "faeb50293bc684e35b6d725b027983ad0110e739db2d7b1aca1926e89a547dc6",
+      "byte_count": 892
+    },
+    "consumed_collection_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/terminal_supervision.json",
+      "sha256": "f7d2796139645892d22ad6bb99d26caffc2b5c3dcac2a655b1883b299d22bff4",
+      "byte_count": 12949
+    },
+    "authorized_collection_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_exact_plan_2026-08-02.json",
+      "sha256": "8fe34054bb9ae709b6a8ecfea5fdae55c742d1b2e22af3c289d27a77f11c66ef",
+      "byte_count": 343973
+    },
+    "calibration_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03-posthoc-analysis-v1/calibration_receipt.json",
+      "sha256": "58d1291ede7ee03a93d68eb7cec80c9322c47cd0b1d5fd1c41bf8f4b49ad484e",
+      "byte_count": 72475
+    },
+    "train_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.pt",
+      "sha256": "164f1fef8c859976c93f7fc978e938c6c8f7f9963cf92bb154f51b23d158b34b",
+      "byte_count": 302107682
+    },
+    "train_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.json",
+      "sha256": "e94ec5d188811c44d4cc870e76d1888aa6f30ee6d423557ee9f3e2918a700994",
+      "byte_count": 1770
+    },
+    "eval_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/dinov2_eval.pt",
+      "sha256": "00a2e197d98effcd192392f50170648622a7210f954075002dc8b43110c636f8",
+      "byte_count": 302106281
+    },
+    "eval_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1/dinov2_eval.json",
+      "sha256": "d3e928cc563beb4dd850f34ca41915b8e5974c6d0b1b182602f3e3f20828421c",
+      "byte_count": 1770
+    },
+    "predecessor_dense_dino_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_dense_shared_spatial_readout_calibration_v1_terminal_review_2026-08-03.json",
+      "sha256": "f6ed2d09a407a4cf70097eaa4b2dcffd223e598e4eb59cf8e751997459384020",
+      "byte_count": 27120
+    }
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_physical_outcome_screen_v1/attempt_v1",
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.14.0.dev20260726+rocm7.1",
+    "numpy": "1.26.4",
+    "pillow": "10.2.0"
+  },
+  "config": {
+    "scientific": {
+      "schema": "lewm_go2_matched_branch_physical_outcome_screen_config_v1",
+      "states_per_role": 128,
+      "scenes_per_role": 16,
+      "actions": 9,
+      "plan_identities": {
+        "train": "f6f94cf589ec44324fdefe0939aa7076e25543d984464d5b264a0b2f0ff9535b",
+        "eval": "5dbf9733fd245caff27ce5c5c2b3dc90a3fe9ca9e1bc894dc10a97d64dad9231",
+        "combined": "99e60638634eff6ac244cff023cd2ae8f7aa0c53326263ba7a36fa6847386375"
+      },
+      "physical_input_names": [
+        "pose_0_to_1_dx_body_m",
+        "pose_0_to_1_dy_body_m",
+        "pose_0_to_1_dyaw_rad",
+        "pose_1_to_2_dx_body_m",
+        "pose_1_to_2_dy_body_m",
+        "pose_1_to_2_dyaw_rad",
+        "history_0_mean_executed_vx",
+        "history_0_mean_executed_wz",
+        "history_1_mean_executed_vx",
+        "history_1_mean_executed_wz",
+        "candidate_requested_vx",
+        "candidate_requested_wz"
+      ],
+      "physical_input_width": 12,
+      "visual_slots": 16,
+      "model_input_width": 28,
+      "target_names": [
+        "endpoint_dx_body_m",
+        "endpoint_dy_body_m",
+        "endpoint_dyaw_rad",
+        "path_length_m"
+      ],
+      "target_width": 4,
+      "visual_projection": {
+        "context_frames": 3,
+        "source_grid": [
+          16,
+          16,
+          384
+        ],
+        "pool": "nonoverlapping_4x4_mean_float64",
+        "pooled_grid": [
+          4,
+          4,
+          384
+        ],
+        "flatten_order": "time_row_column_channel",
+        "input_dimension": 18432,
+        "pca_dimension": 16,
+        "fit_role": "train_only",
+        "solver": "numpy.linalg.svd_thin_float64",
+        "sign": "largest_absolute_loading_smallest_index_positive"
+      },
+      "model": {
+        "architecture": [
+          28,
+          16,
+          4
+        ],
+        "activation": "tanh",
+        "parameters_per_member": 532,
+        "seeds": [
+          2026080311,
+          2026080312,
+          2026080313
+        ],
+        "initialization": "dedicated_cpu_generator_xavier_uniform_zero_bias"
+      },
+      "training": {
+        "device": "cpu",
+        "dtype": "float32",
+        "deterministic_algorithms": true,
+        "torch_threads": 1,
+        "optimizer": "AdamW",
+        "learning_rate": 0.0003,
+        "weight_decay": 0.0001,
+        "betas": [
+          0.9,
+          0.999
+        ],
+        "epsilon": 1e-08,
+        "gradient_clip_norm": 1.0,
+        "batch_states": 16,
+        "complete_actions_per_state": 9,
+        "seed_local_permutations": 128,
+        "batches_per_seed_local_permutation": 8,
+        "updates_per_member": 1024,
+        "schedule": "independent_cpu_generator_manual_seed_member_seed_randperm_then_contiguous_batches",
+        "same_schedule_and_initial_state_for_matched_b_c": true,
+        "loss": "unweighted_mean_squared_standardized_residual_error"
+      },
+      "task_action_only": {
+        "coefficients": 27,
+        "identity_sha256": "69895316b19bc179e35fdd76905aadbd50b6ad3e22e965b662ba59672c52886a",
+        "required_eval_regret": 0.17441406250000002
+      },
+      "rank_tolerance_m": 0.01,
+      "bootstrap_resamples": 10000,
+      "bootstrap_seed": 2026080314
+    },
+    "direct_input_file_count": 15,
+    "source_file_count": 14,
+    "state_receipt_count": 256,
+    "output_inventory": [
+      "reservation.json",
+      "physical_outcome_checkpoint.pt",
+      "evaluation.json",
+      "replay.json",
+      "result.json",
+      "terminal.json"
+    ],
+    "replay_count": 1,
+    "cpu_float32_training_required": true,
+    "rgb_access_permitted": false,
+    "encoder_execution_permitted": false,
+    "protected_access_permitted": false,
+    "retry_or_resume_permitted": false,
+    "legacy_task_relevance_validation_permitted": false
+  },
+  "git_commit": "ec64c8f963a96a8a24e8af752420aa9aec2a34bd"
+}

@@ -1,0 +1,120 @@
+{
+  "schema": "go2_headroom_v42_monitor_handover.v1",
+  "recorded_at": "2026-09-24T17:15:28.370047+01:00",
+  "authority": {
+    "user_instruction": "do that",
+    "accepted_proposal": "Establish and check a controlled handover after a mission and its branches finish; resume only untouched assignments; carry cumulative resource usage; replace repeated directory scans with efficient storage accounting; record the monitoring-only implementation amendment."
+  },
+  "protocol": "docs/go2_decision_headroom_protocol_v42_2026-09-23.json",
+  "protocol_sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+  "original_approval": "docs/go2_decision_headroom_v42_approval_2026-09-23.json",
+  "original_approval_sha256": "4458d4272354cf1d52981e1369ffc57f2f445e40f412971b92f4c3a5ba9e16a7",
+  "scientific_configuration_changed": false,
+  "models_controllers_layouts_assignments_order_sampling_scoring_and_caps_unchanged": true,
+  "implementation_bindings": {
+    "scripts/handover_go2_headroom_v42_development.py": {
+      "sha256": "6e4978951ae452dc324e20b61c6125d5cab6e7afb577ccb86115ca1dbd659d25",
+      "bytes": 7949
+    },
+    "scripts/resume_go2_headroom_v42_development.py": {
+      "sha256": "70c3d43469256a48e9b774333cd02af1b8a1eb3869813ff4bbe7e8ab811d3cb8",
+      "bytes": 10015
+    },
+    "lewm/decision_headroom_resume_monitor_development.py": {
+      "sha256": "dc0bc7ba12baad325d9d14c9aef705db81383bc55327301d7ee03cd48eb9205b",
+      "bytes": 7980
+    },
+    "scripts/check_go2_headroom_monitor_handover_development.py": {
+      "sha256": "e0d85010b282961fa2b9b2954e0921a0a501a64faa35fd83337ffd6ef1f6b488",
+      "bytes": 8337
+    }
+  },
+  "handover": {
+    "boundary": "Root cell closeout after source, branches and cleanup; journal proves every admitted source is finished and has a closeout; no non-tracker worker remains.",
+    "mechanism": "Reversible OS pause on closeout; if next source already admitted, continue unchanged and await next boundary. Kill paused predecessor only after validated boundary and frozen bindings. No active trial is killed or restarted.",
+    "original_owner_pid": 328290,
+    "original_owner_created": 1790200384.01,
+    "attempt_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase2_v4_attempt_001",
+    "preserve_all_prior_outputs_and_failures": true,
+    "retries": false,
+    "new_physics_for_implementation_checks": 0
+  },
+  "resource_accounting": {
+    "wall": "Original process creation to completion, including handover; no clock reset.",
+    "cpu": "Predecessor full process plus child CPU carried forward, plus successor process and child CPU including verification.",
+    "gpu_owner": "Conservatively charge entire original-to-final wall duration, including pause, against unchanged 72-hour cap.",
+    "storage": "Cache completed source-directory byte totals; scan writable current source and root files every resource check. Reconcile all closed totals at each assignment boundary and finalization. Unexpected closed-tree size change stops. Preserve existing 0.5-second check cadence, forced admissions, cache-growth sampling and filesystem reserves.",
+    "cache_growth": "Carry maximum historical cache growth and add positive growth since handover baseline; conservative, no allowance reset.",
+    "peak_rss_vram_retained": "Carry historical maxima. Retain previous resource measurements and append to the original journal."
+  },
+  "compute_caps": {
+    "execution_wall_seconds": 259200,
+    "aggregate_cpu_seconds": 4147200,
+    "gpu_owner_wall_seconds": 259200,
+    "concurrent_native_owners": 1,
+    "concurrent_gpu_owners": 1,
+    "cpu_affinity": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "torch_threads": 4,
+    "aggregate_rss_bytes": 34359738368,
+    "gpu_allocated_bytes": 8589934592,
+    "minimum_available_ram_bytes": 17179869184,
+    "minimum_available_vram_bytes": 4294967296,
+    "encoder_timing_passes": 0,
+    "predictor_timing_passes": 0,
+    "readout_timing_passes_per_existing_head": 0,
+    "comparative_selections_or_rankings": "Explicit Phase 2 V4.1 approval recorded with exact configuration SHA-256"
+  },
+  "storage_caps": {
+    "retained_bytes": 21474836480,
+    "peak_additional_bytes": 23622320128,
+    "recovery_filesystem_reserve_bytes": 12884901888,
+    "workspace_filesystem_reserve_bytes": 4294967296,
+    "new_raw_depth_bytes": 0,
+    "new_dense_feature_file_bytes": 0,
+    "artifact_retirement_authorized": false
+  },
+  "validation": {
+    "synthetic_checks_passed": 6,
+    "checks": [
+      "boundary/next-admission race",
+      "failed assignment preservation",
+      "byte accounting/reconciliation",
+      "cumulative CPU/wall/reservations and write cap",
+      "original wall/GPU cap stop",
+      "real OS pause of synthetic owner before next assignment"
+    ],
+    "science_reruns": 0,
+    "models_loaded": 0,
+    "read_only_size_scan_benchmark": {
+      "closed_cases": 12,
+      "full_tree_median_s": 0.4176662140234839,
+      "cached_closed_median_s": 0.0002373220049776137,
+      "caveat": "Current source has little on-disk output; current-source scan grows during branching. Not an end-to-end simulation speedup estimate."
+    }
+  },
+  "output_integrity": {
+    "converter_unchanged": true,
+    "immediate_readback_and_schema_checks_unchanged": true,
+    "original_admission_preserved_before_owner_update": true,
+    "predecessor_journal_preserved_as_hashed_prefix": true,
+    "receipt_caveat": "Predecessor in-memory converter receipt is not transferable. Existing output files were checked immediately by the unchanged bound converter; final receipt enumerates successor writes."
+  },
+  "terminal_scope": "Finish the same fixed audit, branch panel and decision memo, then stop. No further recommendation execution."
+}

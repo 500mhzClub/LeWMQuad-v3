@@ -1,0 +1,1636 @@
+{
+  "domain": "historical_textured_v03_reference",
+  "mesh_asset_bindings_by_scene": {
+    "large_enclosed_maze_d89fe04e6f92": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "eda45969e1351434ef36d448de5691ba2c03affad95e526e3dfbecb37df36b45",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.174x0.800x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "4838873bfa430fea0b56e70531a15a6d1f2270ab275a2b1fc411f2df74affdbc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.174x10.749x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "1d4cc13abd75a2d7cd0cf9130ffdc47d5c45d29f6e2e9bc092bfcf808db2a5ba",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.800x0.174x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "3dd3823717fee44bad832c6ac6520ddd4e5eb89f24ec8eb7f370adb97a07414e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_10.749x0.174x0.800_t0.70.obj"
+      }
+    ],
+    "local_composite_motifs_e4c8cb32406a": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "53a99cb2d361b3b1c2aa687cc7ad22ecfe829f99f9ce1c1236f3ee99913e9f25",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x1.060x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "f0acce536531a7b92d0df4f25cc6690763e386cecc65bdfe73caebeb57e3d49b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_1.060x0.120x0.800_t0.70.obj"
+      }
+    ],
+    "loop_alias_stress_a1e349c54526": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "6b01d70eb2127d0c36e6faa23393a905ff9472d4c08fde5264ce3ef30f47a8e9",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x0.923x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "bc385412303bf1d98949952662c00456a30c135dc73b4d7bba565007ad7c00df",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x6.701x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "2e897143a585d57d09cdbbf36ea567103f908f87e05722a4ebda38feb0697016",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.923x0.120x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "38839cb6c3d2291f860de4f97df4d0ba29d98fcb899fef456aaed806d40b3895",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_6.701x0.120x0.800_t0.70.obj"
+      }
+    ],
+    "medium_enclosed_maze_28d6e25abe62": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "27646f11751f25d647f47f0d3b85100822fc5683ebb689f018f0a280a8eb970f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x0.963x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "f141076a072617f516905aa29956b9a976cca51662c69ab065fb6501a7dbfbc4",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x8.903x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "7518120387655e3befffe0711b1df7fc5ca96bfc62c28cf2cf1c132c127bf25c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.963x0.120x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "106f0e048521727aeca1ab5b485d43aae2f30a9f3877b90f17f21d724e95d5bc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_8.903x0.120x0.800_t0.70.obj"
+      }
+    ],
+    "open_obstacle_field_03fdc12540a1": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "691f6707286295ff94a28d3e04842be58b3ccc395b5fe297310a45c660f4cd51",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.427x0.362x0.267_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "a125014d3327cb2a11352c6f58740402b0a3389a0cbef7660a339d658e97f857",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.439x0.954x0.886_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "dc829eeb0bdede8d406d44384d8662c7e3c61c1e4d57caf949f65f723ea84c99",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.807x0.385x0.894_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "6e116fbb3e49e6810e0621e6736423175805de2bc6d6d02d3bba5a98241288a6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.824x0.978x0.394_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "50e0edb041eb1fa6188284ac0509ed2d230f9d753cb9df77f07fa20ead710edc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.865x0.486x0.821_t0.70.obj"
+      }
+    ],
+    "rough_local_dynamics_a30b352ecd55": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "0e0c65ed6e25d0f9991ea5aee632a813513984ddb2f6c714df51ef1fab807c6b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_1.108x1.028x0.085_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "debcee15914eaa8415f0ae8913efe0b5f5b5f934fb82530286f22cb976965f14",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_1.729x1.006x0.050_t0.70.obj"
+      }
+    ],
+    "small_enclosed_maze_9488f560cc2c": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "328ec5ee45fe5e291fbb453d21998e53a64dfb95b11f2b162dd0a89cfa094f55",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.268x0.800x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "c89c263b201ce83c59314488554986c680a5067d2914b37e32bc9e592e938451",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.268x7.736x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "e5e0ac5431678ffa50b561cacb1e51f30e4d838fbd4cad43f2fa5ddd8fd575d3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.800x0.268x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "e4c672b80ddc4574e0077e30908aba5b0804eff650dfb7471948d8866320f6da",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_7.736x0.268x0.800_t0.70.obj"
+      }
+    ],
+    "visual_sensor_stress_52f045048932": [
+      {
+        "byte_count": 1492,
+        "file_sha256": "04e6401a874b7805294ad417b3c73265e6a67b68f7ecbe1d0f69be4d380f827d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x0.818x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "d4431bb1b7fc914c77bb1b8d85080c365d853fce7850fb91365bdfba617f6737",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.120x6.782x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "380bdbb50cbe34bbec2e9bd0611284a966f38a9878d27cdf0533c06ceee021d5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_0.818x0.120x0.800_t0.70.obj"
+      },
+      {
+        "byte_count": 1492,
+        "file_sha256": "39dccc9970bef7783ff7e5dc531732b3c8154130295d72697df1f0e336314f8e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/box_meshes/box_6.782x0.120x0.800_t0.70.obj"
+      }
+    ]
+  },
+  "producer_lineage": {
+    "frames_jsonl_bindings_by_scene": {
+      "large_enclosed_maze_d89fe04e6f92": {
+        "byte_count": 120626546,
+        "file_sha256": "eed88da992ed7b144d4839b7a29c08c9f090ce54c4ca09bbb382e66b0d76d883",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/large_enclosed_maze/chunk_0120/plan/000002_large_enclosed_maze_d89fe04e6f92/frames.jsonl"
+      },
+      "local_composite_motifs_e4c8cb32406a": {
+        "byte_count": 120125023,
+        "file_sha256": "8f75d9d8a4e61f553d4e1c852c65e2f9aca931de1f72ba179190413a7609a118",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/local_composite_motifs/chunk_0120/plan/000017_local_composite_motifs_e4c8cb32406a/frames.jsonl"
+      },
+      "loop_alias_stress_a1e349c54526": {
+        "byte_count": 120498941,
+        "file_sha256": "8aab376db5d6b56ccf8852b2ee325cbd58429ab7bcfb0037af146a02194955ac",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/loop_alias_stress/chunk_0040/plan/000028_loop_alias_stress_a1e349c54526/frames.jsonl"
+      },
+      "medium_enclosed_maze_28d6e25abe62": {
+        "byte_count": 120307552,
+        "file_sha256": "a5b5530e13070feaa121c328956a549c464a512c38420429e7da6ebf4a438232",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/medium_enclosed_maze/chunk_0040/plan/000000_medium_enclosed_maze_28d6e25abe62/frames.jsonl"
+      },
+      "open_obstacle_field_03fdc12540a1": {
+        "byte_count": 120861780,
+        "file_sha256": "f3105e97448441ea16173ee795d697068ccb001d102d2b2186d600151c2724d4",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/open_obstacle_field/chunk_0000/plan/000000_open_obstacle_field_03fdc12540a1/frames.jsonl"
+      },
+      "rough_local_dynamics_a30b352ecd55": {
+        "byte_count": 121057144,
+        "file_sha256": "ba950d09532adabac7fddcf0e525cf08ad4cdf8c4357037a522890bf7a107623",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/rough_local_dynamics/chunk_0000/plan/000031_rough_local_dynamics_a30b352ecd55/frames.jsonl"
+      },
+      "small_enclosed_maze_9488f560cc2c": {
+        "byte_count": 120877936,
+        "file_sha256": "d45cb93fe52daa03d90e6e182cd42e6bf98cc514a2ca6a930e5b08615bec1010",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/small_enclosed_maze/chunk_0080/plan/000021_small_enclosed_maze_9488f560cc2c/frames.jsonl"
+      },
+      "visual_sensor_stress_52f045048932": {
+        "byte_count": 120738108,
+        "file_sha256": "9fae623469c59e96eca87d2398938bfae7909bc353d901c454a14d67bdfc0b5f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/visual_sensor_stress/chunk_0000/plan/000017_visual_sensor_stress_52f045048932/frames.jsonl"
+      }
+    },
+    "render_plan_bindings_by_scene": {
+      "large_enclosed_maze_d89fe04e6f92": {
+        "byte_count": 2592,
+        "file_sha256": "66715b6ddd3d05253a53a96a7f6999050107345bc0ba29baec22e9e535d02a15",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/large_enclosed_maze/chunk_0120/plan/000002_large_enclosed_maze_d89fe04e6f92/render_replay_plan.json"
+      },
+      "local_composite_motifs_e4c8cb32406a": {
+        "byte_count": 2640,
+        "file_sha256": "2b6a71e550b346753aca8896007b38f8791327d09a2a86041f5c986c5f00b4eb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/local_composite_motifs/chunk_0120/plan/000017_local_composite_motifs_e4c8cb32406a/render_replay_plan.json"
+      },
+      "loop_alias_stress_a1e349c54526": {
+        "byte_count": 2560,
+        "file_sha256": "c7f5d627dcba640364caa8d7f76a33ac0812af902f5102c082bba28cf89329c1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/loop_alias_stress/chunk_0040/plan/000028_loop_alias_stress_a1e349c54526/render_replay_plan.json"
+      },
+      "medium_enclosed_maze_28d6e25abe62": {
+        "byte_count": 2608,
+        "file_sha256": "68ed07f4d9d065881960eb0b32cbd842ffe40cb634d12928ba961c79693437ef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/medium_enclosed_maze/chunk_0040/plan/000000_medium_enclosed_maze_28d6e25abe62/render_replay_plan.json"
+      },
+      "open_obstacle_field_03fdc12540a1": {
+        "byte_count": 2592,
+        "file_sha256": "bb7748d0ab9e12295870a12122cc1e12472af88dcf3f799f1426106d55205e7e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/open_obstacle_field/chunk_0000/plan/000000_open_obstacle_field_03fdc12540a1/render_replay_plan.json"
+      },
+      "rough_local_dynamics_a30b352ecd55": {
+        "byte_count": 2608,
+        "file_sha256": "9e35e5cb807017787cedcd4892b262739bfa44843474d1b04abb23479ec6338f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/rough_local_dynamics/chunk_0000/plan/000031_rough_local_dynamics_a30b352ecd55/render_replay_plan.json"
+      },
+      "small_enclosed_maze_9488f560cc2c": {
+        "byte_count": 2592,
+        "file_sha256": "f8db0cef4de99e02d9834be297ff9824f2b59c673e8b3fda373cd52646a5c2c6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/small_enclosed_maze/chunk_0080/plan/000021_small_enclosed_maze_9488f560cc2c/render_replay_plan.json"
+      },
+      "visual_sensor_stress_52f045048932": {
+        "byte_count": 2608,
+        "file_sha256": "1d129200bf6c40c3b7fdd88fcdf6792cdbc547f0c63400d67c0b8bd99e2cd71d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/rollout/train/visual_sensor_stress/chunk_0000/plan/000017_visual_sensor_stress_52f045048932/render_replay_plan.json"
+      }
+    },
+    "render_summary_bindings_by_scene": {
+      "large_enclosed_maze_d89fe04e6f92": {
+        "byte_count": 541,
+        "file_sha256": "9755ec716e557348c45205596af61b19ec2c1dd918b86f306594c222d9613c69",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/large_enclosed_maze_d89fe04e6f92/summary.json"
+      },
+      "local_composite_motifs_e4c8cb32406a": {
+        "byte_count": 553,
+        "file_sha256": "dc9456dd7b51abeeadadd2114c32244a818c6b7f498775148f577f342dc84acf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/local_composite_motifs_e4c8cb32406a/summary.json"
+      },
+      "loop_alias_stress_a1e349c54526": {
+        "byte_count": 533,
+        "file_sha256": "35539ac42ecbf5a499261f62d98bbf30135a188f2980ab926bc84f927d281acb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/loop_alias_stress_a1e349c54526/summary.json"
+      },
+      "medium_enclosed_maze_28d6e25abe62": {
+        "byte_count": 545,
+        "file_sha256": "9c550bff797dc8e1ab23481208add4cf33e4ed4eb502440f9cd46c93e0261542",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/medium_enclosed_maze_28d6e25abe62/summary.json"
+      },
+      "open_obstacle_field_03fdc12540a1": {
+        "byte_count": 538,
+        "file_sha256": "ea1caada54d2ddd2e7a90f10f27eec2a69761385c769345eb64261896d157717",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/open_obstacle_field_03fdc12540a1/summary.json"
+      },
+      "rough_local_dynamics_a30b352ecd55": {
+        "byte_count": 545,
+        "file_sha256": "48f66153653a9f9a460157e2c10af303650cf80a53f2f5f04a9a34cba7d66203",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/rough_local_dynamics_a30b352ecd55/summary.json"
+      },
+      "small_enclosed_maze_9488f560cc2c": {
+        "byte_count": 540,
+        "file_sha256": "fab8613ad4ceb0fa6d7a05262f0e91a5a72abd113916cfd9b4724c033e673089",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/small_enclosed_maze_9488f560cc2c/summary.json"
+      },
+      "visual_sensor_stress_52f045048932": {
+        "byte_count": 544,
+        "file_sha256": "3cb53248c651b29f1964a40c8473fd9f857ff0cc35260ab177314ae8dbaf024b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/visual_sensor_stress_52f045048932/summary.json"
+      }
+    },
+    "scene_genesis_bindings_by_scene": {
+      "large_enclosed_maze_d89fe04e6f92": {
+        "byte_count": 105394,
+        "file_sha256": "911997476e27e23f36e02f61c0bf928aac1fb51f2e7646a1c173ff84f4f72bf8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_d89fe04e6f92/genesis_scene.json"
+      },
+      "local_composite_motifs_e4c8cb32406a": {
+        "byte_count": 10699,
+        "file_sha256": "1e86fb91cf2703931abafe2115affbfccf6f533180a076c702e2d6e581fbe204",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_e4c8cb32406a/genesis_scene.json"
+      },
+      "loop_alias_stress_a1e349c54526": {
+        "byte_count": 27944,
+        "file_sha256": "08e413d290a5a4e221f6b4c408cc1731ab9a54f7413c7c5c5367d6b2f189850d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_a1e349c54526/genesis_scene.json"
+      },
+      "medium_enclosed_maze_28d6e25abe62": {
+        "byte_count": 49700,
+        "file_sha256": "f232f110a8b21b514ccac02c8e2922dfc35325d18b93302999baa1a88b1c2807",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_28d6e25abe62/genesis_scene.json"
+      },
+      "open_obstacle_field_03fdc12540a1": {
+        "byte_count": 8055,
+        "file_sha256": "0781016339a526c9f9ff0a54bd077acfd4b46c2c392b31604cff0897e776f7b0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/genesis_scene.json"
+      },
+      "rough_local_dynamics_a30b352ecd55": {
+        "byte_count": 7675,
+        "file_sha256": "0a11b302f3d63526e9acdb822b86d6c237014d0c57f2fe57fa7e634ab4230078",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_a30b352ecd55/genesis_scene.json"
+      },
+      "small_enclosed_maze_9488f560cc2c": {
+        "byte_count": 51082,
+        "file_sha256": "f61597ea7c4ecd1cd505e4d20afc35a24e00baf02d58fbe54457b0c3be35a695",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_9488f560cc2c/genesis_scene.json"
+      },
+      "visual_sensor_stress_52f045048932": {
+        "byte_count": 49330,
+        "file_sha256": "e2ac55208ea4f4ce70ed95a4f5652f53d219cd4ac783dbf673a6f18684f9a09d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_52f045048932/genesis_scene.json"
+      }
+    },
+    "schema": "lewm_go2_world_model_visual_domain_parity_source_lineage_v2"
+  },
+  "producer_source_binding": {
+    "byte_count": 9590,
+    "file_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py"
+  },
+  "render_contract": {
+    "camera_mount_policy": "nominal_no_scene_jitter_no_safety_retraction",
+    "depth_validation": "separate_transient_render_not_persisted",
+    "genesis_yfov_deg": 78.323,
+    "historical_renderer_byte_count": 9590,
+    "historical_renderer_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+    "native_resolution": [
+      224,
+      224
+    ],
+    "physical_scene_rendering": false,
+    "replay_env_mode": "single_non_batched_sequential",
+    "replay_pose_source": "captured_physical_base_pose_nominal_platform_mount",
+    "rgb_format": "png",
+    "scene_geometry": "manifest_walls_obstacles_landmarks_no_robot_no_distractors",
+    "stored_resolution": [
+      224,
+      224
+    ],
+    "textures_enabled": true,
+    "visual_mode": "textured_v03_exact_historical_sensor"
+  },
+  "renderer_source_binding": {
+    "byte_count": 9590,
+    "file_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py"
+  },
+  "rgb_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03",
+  "rows": [
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -1.3260458707809448,
+          -4.798030853271484,
+          0.39580270648002625
+        ],
+        "position": [
+          -0.3261215090751648,
+          -4.798248767852783,
+          0.3834908902645111
+        ],
+        "up": [
+          0.012313013896346092,
+          0.006724311970174313,
+          0.9999015927314758
+        ]
+      },
+      "family": "large_enclosed_maze",
+      "pair_id": "large_enclosed_maze_d89fe04e6f92/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "1e032d3349aa83f3ff04ab74bdff27ef211c53337411fbb5baf17a81fd342ec5",
+      "rgb_binding": {
+        "byte_count": 44449,
+        "file_sha256": "db9a3fc6c12ee4ede3b65db99425eac594e5f454141f72577d5cec25bb04aff1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/large_enclosed_maze_d89fe04e6f92/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "large_enclosed_maze_d89fe04e6f92",
+      "scene_manifest_binding": {
+        "byte_count": 98719,
+        "file_sha256": "e54cd3872b7c740dc4b3f8fd0002c7deaec16f943140f8b10fb55ae983bac125",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_d89fe04e6f92/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.897587776184082,
+          1.3507508039474487,
+          0.39580267667770386
+        ],
+        "position": [
+          2.879450559616089,
+          1.5399441719055176,
+          0.3834908604621887
+        ],
+        "up": [
+          0.010816355235874653,
+          0.00893491692841053,
+          0.9999015927314758
+        ]
+      },
+      "family": "large_enclosed_maze",
+      "pair_id": "large_enclosed_maze_d89fe04e6f92/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "b02079dee1610405d2e42fb757296482047a4c1fd5555a4bc5b11528b2f31d83",
+      "rgb_binding": {
+        "byte_count": 44695,
+        "file_sha256": "3b0350700744b843cbcd2d950baffda0e6fa015074573f4645f70c0c61172eb1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/large_enclosed_maze_d89fe04e6f92/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "large_enclosed_maze_d89fe04e6f92",
+      "scene_manifest_binding": {
+        "byte_count": 98719,
+        "file_sha256": "e54cd3872b7c740dc4b3f8fd0002c7deaec16f943140f8b10fb55ae983bac125",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_d89fe04e6f92/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          3.473954439163208,
+          -3.1980321407318115,
+          0.39580267667770386
+        ],
+        "position": [
+          4.473878860473633,
+          -3.1982498168945312,
+          0.3834908604621887
+        ],
+        "up": [
+          0.012313004583120346,
+          0.006724328733980656,
+          0.9999015927314758
+        ]
+      },
+      "family": "large_enclosed_maze",
+      "pair_id": "large_enclosed_maze_d89fe04e6f92/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "9c3f84a44600929f5434a4d3dead32b7091f7c7f82086549e228de7f08a686c3",
+      "rgb_binding": {
+        "byte_count": 45379,
+        "file_sha256": "b2d8affe597f1c781253e459501d0de2c279d28e5a56241d5ff24b4e416ca014",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/large_enclosed_maze_d89fe04e6f92/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "large_enclosed_maze_d89fe04e6f92",
+      "scene_manifest_binding": {
+        "byte_count": 98719,
+        "file_sha256": "e54cd3872b7c740dc4b3f8fd0002c7deaec16f943140f8b10fb55ae983bac125",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_d89fe04e6f92/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          2.499542236328125,
+          -3.1085634231567383,
+          0.3889676034450531
+        ],
+        "position": [
+          2.3966073989868164,
+          -2.11430287361145,
+          0.4181280732154846
+        ],
+        "up": [
+          -0.2072160243988037,
+          -0.05010746791958809,
+          0.9770111441612244
+        ]
+      },
+      "family": "large_enclosed_maze",
+      "pair_id": "large_enclosed_maze_d89fe04e6f92/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "52246196799b342d7ce33583f32c61549cffdfb85aed628c137d1fd81b3e50cf",
+      "rgb_binding": {
+        "byte_count": 51387,
+        "file_sha256": "6ea386c820fbb933b9cc3a80fd5db2ed1fffb9ef372beb3db85c5593e30e4c31",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/large_enclosed_maze_d89fe04e6f92/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "large_enclosed_maze_d89fe04e6f92",
+      "scene_manifest_binding": {
+        "byte_count": 98719,
+        "file_sha256": "e54cd3872b7c740dc4b3f8fd0002c7deaec16f943140f8b10fb55ae983bac125",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_d89fe04e6f92/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -0.31640106439590454,
+          2.0371358394622803,
+          0.38774216175079346
+        ],
+        "position": [
+          0.6834982633590698,
+          2.0251870155334473,
+          0.3800780773162842
+        ],
+        "up": [
+          0.00783903244882822,
+          0.014662939123809338,
+          0.9998617768287659
+        ]
+      },
+      "family": "local_composite_motifs",
+      "pair_id": "local_composite_motifs_e4c8cb32406a/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "db3fbbc0a57600a30e910b78ffaf62e00d4f033226b219b8d1a9509bc3d93740",
+      "rgb_binding": {
+        "byte_count": 34527,
+        "file_sha256": "0dd0469b16e0b072eff34c118f7a88bcc5d3abbcc6265a1d5fcf7145b002de52",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/local_composite_motifs_e4c8cb32406a/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "local_composite_motifs_e4c8cb32406a",
+      "scene_manifest_binding": {
+        "byte_count": 10612,
+        "file_sha256": "f1b3e819c2529a03de1ba659b9fcbb8d441db2165f0f9d50d4d7e86a0f73ef1c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_e4c8cb32406a/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -0.3161783218383789,
+          2.0497169494628906,
+          0.38774219155311584
+        ],
+        "position": [
+          0.6835626363754272,
+          2.0282840728759766,
+          0.3800780773162842
+        ],
+        "up": [
+          0.007977781817317009,
+          0.014587916433811188,
+          0.9998617768287659
+        ]
+      },
+      "family": "local_composite_motifs",
+      "pair_id": "local_composite_motifs_e4c8cb32406a/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "aa3a25deeb1a6e0c98dcb134506b188b4b374545b8f2a7fe2fd0102568e34a20",
+      "rgb_binding": {
+        "byte_count": 34656,
+        "file_sha256": "d183c4c3f75445ccf8163c52d4ee6e15ac3216ac1b3c0695c4101f41878883dc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/local_composite_motifs_e4c8cb32406a/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "local_composite_motifs_e4c8cb32406a",
+      "scene_manifest_binding": {
+        "byte_count": 10612,
+        "file_sha256": "f1b3e819c2529a03de1ba659b9fcbb8d441db2165f0f9d50d4d7e86a0f73ef1c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_e4c8cb32406a/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -1.3161025047302246,
+          2.182098150253296,
+          0.39580267667770386
+        ],
+        "position": [
+          -0.3235231637954712,
+          2.0611226558685303,
+          0.3834908604621887
+        ],
+        "up": [
+          0.013034960255026817,
+          0.0051880646497011185,
+          0.9999015927314758
+        ]
+      },
+      "family": "local_composite_motifs",
+      "pair_id": "local_composite_motifs_e4c8cb32406a/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "ec60ff617fa9c5d483c77f793f8fb457a4edb650bbfd14f98f55c8b72792d5ad",
+      "rgb_binding": {
+        "byte_count": 35312,
+        "file_sha256": "6a8a5764947e1c13174d5128dd2b56572f3b3edd1efa45b2ff12058787d0a8a7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/local_composite_motifs_e4c8cb32406a/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "local_composite_motifs_e4c8cb32406a",
+      "scene_manifest_binding": {
+        "byte_count": 10612,
+        "file_sha256": "f1b3e819c2529a03de1ba659b9fcbb8d441db2165f0f9d50d4d7e86a0f73ef1c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_e4c8cb32406a/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          2.3124451637268066,
+          1.770925521850586,
+          0.39580267667770386
+        ],
+        "position": [
+          1.3300814628601074,
+          1.9574992656707764,
+          0.3834908604621887
+        ],
+        "up": [
+          -0.013350504450500011,
+          -0.004311687313020229,
+          0.9999015927314758
+        ]
+      },
+      "family": "local_composite_motifs",
+      "pair_id": "local_composite_motifs_e4c8cb32406a/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "49e70284362fd263bfd8badf02c1fc5c41fbb80c7861d1b09d82af32d65fb507",
+      "rgb_binding": {
+        "byte_count": 27984,
+        "file_sha256": "a7e5f2dad69c38ccdd71b1792b34a026da54627613f64160a51de62a279c778f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/local_composite_motifs_e4c8cb32406a/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "local_composite_motifs_e4c8cb32406a",
+      "scene_manifest_binding": {
+        "byte_count": 10612,
+        "file_sha256": "f1b3e819c2529a03de1ba659b9fcbb8d441db2165f0f9d50d4d7e86a0f73ef1c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_e4c8cb32406a/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          0.8922768235206604,
+          1.8494861125946045,
+          0.3849438726902008
+        ],
+        "position": [
+          1.6128015518188477,
+          2.5428824424743652,
+          0.37815597653388977
+        ],
+        "up": [
+          0.011838417500257492,
+          -0.002512944396585226,
+          0.999926745891571
+        ]
+      },
+      "family": "loop_alias_stress",
+      "pair_id": "loop_alias_stress_a1e349c54526/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "2936a23099c056c29379780d7d99aa68130341fdeb177227932e85910dec364f",
+      "rgb_binding": {
+        "byte_count": 30010,
+        "file_sha256": "b5968094587a33473e23ee9ec2c59dfcbb6d63bc85e261912ba6045a392c6546",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/loop_alias_stress_a1e349c54526/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "loop_alias_stress_a1e349c54526",
+      "scene_manifest_binding": {
+        "byte_count": 26165,
+        "file_sha256": "714e5481a0da3e410fbf81a87a4ff225244226531c2299e877a131937ea09a7a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_a1e349c54526/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          2.5284690856933594,
+          -1.1374831199645996,
+          0.3875869810581207
+        ],
+        "position": [
+          2.0131895542144775,
+          -0.28049564361572266,
+          0.3798658847808838
+        ],
+        "up": [
+          -0.016506442800164223,
+          -0.0009164630901068449,
+          0.99986332654953
+        ]
+      },
+      "family": "loop_alias_stress",
+      "pair_id": "loop_alias_stress_a1e349c54526/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "12724870a2b7665d0cac85ad797a3d351fa46e5053cdc273acc9281752dd8c3b",
+      "rgb_binding": {
+        "byte_count": 24155,
+        "file_sha256": "0ac8792bfd0f92e19e1cf1f86c243c68868c55dd45509172bf2ca8de2025af29",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/loop_alias_stress_a1e349c54526/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "loop_alias_stress_a1e349c54526",
+      "scene_manifest_binding": {
+        "byte_count": 26165,
+        "file_sha256": "714e5481a0da3e410fbf81a87a4ff225244226531c2299e877a131937ea09a7a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_a1e349c54526/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -0.5199440717697144,
+          -2.7706949710845947,
+          0.3954359292984009
+        ],
+        "position": [
+          -1.5198694467544556,
+          -2.7706494331359863,
+          0.3832179307937622
+        ],
+        "up": [
+          -0.012218043208122253,
+          -0.0065454160794615746,
+          0.9999039173126221
+        ]
+      },
+      "family": "loop_alias_stress",
+      "pair_id": "loop_alias_stress_a1e349c54526/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "acf7f40631757bdcf7c792d9fb5b22d1aec987e9de7b0737958561aed18f06bb",
+      "rgb_binding": {
+        "byte_count": 29308,
+        "file_sha256": "2f8b10f8e0104829ebfd6ecf16fb4fb54bea21988e44f6110d553cfb621e9c59",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/loop_alias_stress_a1e349c54526/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "loop_alias_stress_a1e349c54526",
+      "scene_manifest_binding": {
+        "byte_count": 26165,
+        "file_sha256": "714e5481a0da3e410fbf81a87a4ff225244226531c2299e877a131937ea09a7a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_a1e349c54526/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          0.7014978528022766,
+          -1.5909302234649658,
+          0.38217538595199585
+        ],
+        "position": [
+          1.5645500421524048,
+          -1.0858206748962402,
+          0.3798932433128357
+        ],
+        "up": [
+          0.0015250911237671971,
+          0.001912290113978088,
+          0.9999970197677612
+        ]
+      },
+      "family": "loop_alias_stress",
+      "pair_id": "loop_alias_stress_a1e349c54526/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "74bce8fbecca758aefd4aa12d39782a8797e354d46c3781e9f50201e0413ef60",
+      "rgb_binding": {
+        "byte_count": 31797,
+        "file_sha256": "78b9ebfb004773f99b1dd0bfeca83662567342b81de2e1391aa38f86df88c5c2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/loop_alias_stress_a1e349c54526/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "loop_alias_stress_a1e349c54526",
+      "scene_manifest_binding": {
+        "byte_count": 26165,
+        "file_sha256": "714e5481a0da3e410fbf81a87a4ff225244226531c2299e877a131937ea09a7a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_a1e349c54526/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -3.905285596847534,
+          -1.323999285697937,
+          0.38203009963035583
+        ],
+        "position": [
+          -3.86479115486145,
+          -0.324821799993515,
+          0.3797873854637146
+        ],
+        "up": [
+          -0.0007330850348807871,
+          0.002274272497743368,
+          0.9999971389770508
+        ]
+      },
+      "family": "medium_enclosed_maze",
+      "pair_id": "medium_enclosed_maze_28d6e25abe62/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "6ed22e5041645d46c1167cd710b094b26f00b8e40442809a083795aa3a6dddda",
+      "rgb_binding": {
+        "byte_count": 27688,
+        "file_sha256": "ce9b560576c00d2efb048a1c199aac28d8cb2db40470c88a166e6407e6477e62",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/medium_enclosed_maze_28d6e25abe62/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "medium_enclosed_maze_28d6e25abe62",
+      "scene_manifest_binding": {
+        "byte_count": 46625,
+        "file_sha256": "4c82cce5ba4c33fd875f92de2be2064627898787ba28528843a5ecf2bfd8a234",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_28d6e25abe62/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.2309656143188477,
+          2.091367721557617,
+          0.38801711797714233
+        ],
+        "position": [
+          1.7538658380508423,
+          1.2390164136886597,
+          0.37949398159980774
+        ],
+        "up": [
+          0.0007797532598488033,
+          -0.009520729072391987,
+          0.9999544024467468
+        ]
+      },
+      "family": "medium_enclosed_maze",
+      "pair_id": "medium_enclosed_maze_28d6e25abe62/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "85a686958c1cadb9b5e7fc8dce2006fb1a2410ed690a957367213fe17ea07663",
+      "rgb_binding": {
+        "byte_count": 21087,
+        "file_sha256": "d8152ea3f3f6cb45b9bb28b287285ea6142b42615190f7a8500b654693c3a2ed",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/medium_enclosed_maze_28d6e25abe62/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "medium_enclosed_maze_28d6e25abe62",
+      "scene_manifest_binding": {
+        "byte_count": 46625,
+        "file_sha256": "4c82cce5ba4c33fd875f92de2be2064627898787ba28528843a5ecf2bfd8a234",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_28d6e25abe62/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -4.1765828132629395,
+          -0.32127928733825684,
+          0.3820302188396454
+        ],
+        "position": [
+          -3.931323289871216,
+          0.6481755971908569,
+          0.3797874450683594
+        ],
+        "up": [
+          -0.00024929235223680735,
+          0.002376493765041232,
+          0.9999971389770508
+        ]
+      },
+      "family": "medium_enclosed_maze",
+      "pair_id": "medium_enclosed_maze_28d6e25abe62/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "4d77680c8894461618cb6f9bbe7b86b4c59586418e736cebe107130db4e19857",
+      "rgb_binding": {
+        "byte_count": 32332,
+        "file_sha256": "fb6213e6e2dcacdb056be8fb8812d62bc3023caa1dbf7e8c663658435ae0ad60",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/medium_enclosed_maze_28d6e25abe62/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "medium_enclosed_maze_28d6e25abe62",
+      "scene_manifest_binding": {
+        "byte_count": 46625,
+        "file_sha256": "4c82cce5ba4c33fd875f92de2be2064627898787ba28528843a5ecf2bfd8a234",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_28d6e25abe62/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -1.2369970083236694,
+          0.4867093563079834,
+          0.3966123163700104
+        ],
+        "position": [
+          -0.304279088973999,
+          0.847117006778717,
+          0.3846301734447479
+        ],
+        "up": [
+          0.013272061012685299,
+          -0.0011043001431971788,
+          0.9999113082885742
+        ]
+      },
+      "family": "medium_enclosed_maze",
+      "pair_id": "medium_enclosed_maze_28d6e25abe62/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "0471fd6ce16a01d2c844c12fedb0cebc0d1f2594862b77c7426c70d9d56e7bc5",
+      "rgb_binding": {
+        "byte_count": 37345,
+        "file_sha256": "b5b50531cf8dbc2ec34b6c6631111d7a63ad4d81d02d96119d1075489ece400b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/medium_enclosed_maze_28d6e25abe62/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "medium_enclosed_maze_28d6e25abe62",
+      "scene_manifest_binding": {
+        "byte_count": 46625,
+        "file_sha256": "4c82cce5ba4c33fd875f92de2be2064627898787ba28528843a5ecf2bfd8a234",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_28d6e25abe62/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          0.691050112247467,
+          1.267709493637085,
+          0.38774219155311584
+        ],
+        "position": [
+          0.1692855805158615,
+          2.12076473236084,
+          0.3800780773162842
+        ],
+        "up": [
+          -0.01658623293042183,
+          -0.0011617762502282858,
+          0.9998617768287659
+        ]
+      },
+      "family": "open_obstacle_field",
+      "pair_id": "open_obstacle_field_03fdc12540a1/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "380c08783d9c30814a6d9f9e1c3b04a0548a8c8777da51a3b39c9c3cde29f294",
+      "rgb_binding": {
+        "byte_count": 29153,
+        "file_sha256": "7f8e2d5071f07b5fbd9be2390f1a47c94cf03096e9c20dc9fba742702bf7c5d8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/open_obstacle_field_03fdc12540a1/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -1.0759711265563965,
+          -2.357708692550659,
+          0.38802850246429443
+        ],
+        "position": [
+          -2.075465679168701,
+          -2.3883752822875977,
+          0.379651814699173
+        ],
+        "up": [
+          -0.008533881045877934,
+          0.0049982452765107155,
+          0.9999510645866394
+        ]
+      },
+      "family": "open_obstacle_field",
+      "pair_id": "open_obstacle_field_03fdc12540a1/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "7d471456fb3651f10dba83da8d15194597b1847c686152037904c2aab34a0fae",
+      "rgb_binding": {
+        "byte_count": 28811,
+        "file_sha256": "e83b660a86a04bcac6e659ebd8de79aa161e38877cd12d38b803e41b5df1fa51",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/open_obstacle_field_03fdc12540a1/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -1.0986340045928955,
+          -2.1501307487487793,
+          0.38249796628952026
+        ],
+        "position": [
+          -2.080453872680664,
+          -2.3399312496185303,
+          0.380130410194397
+        ],
+        "up": [
+          -0.002135029062628746,
+          -0.0014296512817963958,
+          0.9999967217445374
+        ]
+      },
+      "family": "open_obstacle_field",
+      "pair_id": "open_obstacle_field_03fdc12540a1/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "b45e9b81eff8c5bb3292cfe13a42caec5dc4f120442fc1ce528490bb1a625276",
+      "rgb_binding": {
+        "byte_count": 28771,
+        "file_sha256": "b3050767deb626bde25db23559e1064f93ee559721c46b8655f06c429e7f2e4e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/open_obstacle_field_03fdc12540a1/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          2.735044002532959,
+          -1.1169774532318115,
+          0.39580267667770386
+        ],
+        "position": [
+          2.4836251735687256,
+          -2.084777593612671,
+          0.3834908604621887
+        ],
+        "up": [
+          0.0034152751322835684,
+          -0.01360742375254631,
+          0.9999015927314758
+        ]
+      },
+      "family": "open_obstacle_field",
+      "pair_id": "open_obstacle_field_03fdc12540a1/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "43c615f51613a6cf26ad4f9fc8018cd7f0872417d85cb62f04c5f8b043abb15f",
+      "rgb_binding": {
+        "byte_count": 28073,
+        "file_sha256": "075851593af4271c5f99120bc1925ac897e2b3eb1d9f07d1c253fd69a9169aef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/open_obstacle_field_03fdc12540a1/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          2.0956015586853027,
+          1.1088871955871582,
+          0.38774222135543823
+        ],
+        "position": [
+          2.324125289916992,
+          2.082395315170288,
+          0.3800780773162842
+        ],
+        "up": [
+          -0.012613791041076183,
+          0.010832595638930798,
+          0.9998617768287659
+        ]
+      },
+      "family": "rough_local_dynamics",
+      "pair_id": "rough_local_dynamics_a30b352ecd55/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "b7e95206c0e873037e69df73bc89a25fadd3cec721fc2fca283e4113f8644f5a",
+      "rgb_binding": {
+        "byte_count": 30742,
+        "file_sha256": "0cf7e7ebcac5cd65bf80991a513f43bc1d399e9d10b38c4b2ed9597952d967aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/rough_local_dynamics_a30b352ecd55/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "rough_local_dynamics_a30b352ecd55",
+      "scene_manifest_binding": {
+        "byte_count": 7483,
+        "file_sha256": "0d5e3248fd193189539178fd57a0a511787d1f92650eb958770417dc3b84506e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_a30b352ecd55/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          0.7671908140182495,
+          1.3190584182739258,
+          0.39718204736709595
+        ],
+        "position": [
+          0.18744975328445435,
+          2.1337685585021973,
+          0.3850260376930237
+        ],
+        "up": [
+          -0.002513824263587594,
+          0.01313049253076315,
+          0.9999106526374817
+        ]
+      },
+      "family": "rough_local_dynamics",
+      "pair_id": "rough_local_dynamics_a30b352ecd55/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "769c7dd37ad580654b3d1c992e13d4811955c4de25e69977ca496cb89adf4d89",
+      "rgb_binding": {
+        "byte_count": 27592,
+        "file_sha256": "48e17b4ab21676025aa99509b1794ebd797be6d2bc7e62fd8f8cb3f8430de1df",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/rough_local_dynamics_a30b352ecd55/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "rough_local_dynamics_a30b352ecd55",
+      "scene_manifest_binding": {
+        "byte_count": 7483,
+        "file_sha256": "0d5e3248fd193189539178fd57a0a511787d1f92650eb958770417dc3b84506e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_a30b352ecd55/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -0.24552716314792633,
+          3.702587127685547,
+          0.39718204736709595
+        ],
+        "position": [
+          -0.059103574603796005,
+          2.7201926708221436,
+          0.3850260376930237
+        ],
+        "up": [
+          -0.00320077920332551,
+          -0.012980153784155846,
+          0.9999106526374817
+        ]
+      },
+      "family": "rough_local_dynamics",
+      "pair_id": "rough_local_dynamics_a30b352ecd55/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "d6486d0f41a2e98e5ef6d261bbd93947587508b12d9772b73c882fc77bb64e65",
+      "rgb_binding": {
+        "byte_count": 28395,
+        "file_sha256": "a87b13950d715a20848f8b9f3aa3b8d0dce1cc7853b7298267e69801d4101913",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/rough_local_dynamics_a30b352ecd55/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "rough_local_dynamics_a30b352ecd55",
+      "scene_manifest_binding": {
+        "byte_count": 7483,
+        "file_sha256": "0d5e3248fd193189539178fd57a0a511787d1f92650eb958770417dc3b84506e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_a30b352ecd55/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.2548574209213257,
+          -1.971358299255371,
+          0.39580273628234863
+        ],
+        "position": [
+          0.3090249001979828,
+          -2.2957797050476074,
+          0.3834908902645111
+        ],
+        "up": [
+          -0.009463001042604446,
+          -0.010357540100812912,
+          0.9999015927314758
+        ]
+      },
+      "family": "rough_local_dynamics",
+      "pair_id": "rough_local_dynamics_a30b352ecd55/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "b8878c7fdf50460c0f90bbecd94267af85c4302b3cb185d6ff4d435709f42262",
+      "rgb_binding": {
+        "byte_count": 28647,
+        "file_sha256": "7dfad15660cfe65cef6d1bfe03029c711224035b20b5402f286c9ead91ef1532",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/rough_local_dynamics_a30b352ecd55/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "rough_local_dynamics_a30b352ecd55",
+      "scene_manifest_binding": {
+        "byte_count": 7483,
+        "file_sha256": "0d5e3248fd193189539178fd57a0a511787d1f92650eb958770417dc3b84506e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_a30b352ecd55/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -0.032325804233551025,
+          -3.2187507152557373,
+          0.41239133477211
+        ],
+        "position": [
+          0.9664933085441589,
+          -3.202667474746704,
+          0.4582405984401703
+        ],
+        "up": [
+          -0.04595319181680679,
+          0.006152021698653698,
+          0.9989246726036072
+        ]
+      },
+      "family": "small_enclosed_maze",
+      "pair_id": "small_enclosed_maze_9488f560cc2c/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "ba0a3203c00cb8ed33d329a1a6ba868728e040aeae74abd83a511e356d624c42",
+      "rgb_binding": {
+        "byte_count": 49558,
+        "file_sha256": "fea07f6ec5bc093ff708743112efde17bde9881a86cae924a49ef4c9419441a7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/small_enclosed_maze_9488f560cc2c/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "small_enclosed_maze_9488f560cc2c",
+      "scene_manifest_binding": {
+        "byte_count": 48007,
+        "file_sha256": "0c974c0c937d1376f509e2c7854fddcb02b2abf943aec2fdff8a7d903199a41a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_9488f560cc2c/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.6323189735412598,
+          0.010546645149588585,
+          0.4107344448566437
+        ],
+        "position": [
+          0.6334686279296875,
+          0.0031058709137141705,
+          0.4580923914909363
+        ],
+        "up": [
+          0.04718081280589104,
+          0.02240704372525215,
+          0.9986349940299988
+        ]
+      },
+      "family": "small_enclosed_maze",
+      "pair_id": "small_enclosed_maze_9488f560cc2c/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "76b65ad9917246b449a5cca62d0c30eacbd6f7cf02474213ded2006f822aa0eb",
+      "rgb_binding": {
+        "byte_count": 45707,
+        "file_sha256": "defdcff5d03dd32f6fc24fe98236f7e834e01218de02724b058e28ac0996e84f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/small_enclosed_maze_9488f560cc2c/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "small_enclosed_maze_9488f560cc2c",
+      "scene_manifest_binding": {
+        "byte_count": 48007,
+        "file_sha256": "0c974c0c937d1376f509e2c7854fddcb02b2abf943aec2fdff8a7d903199a41a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_9488f560cc2c/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.6324849128723145,
+          -2.396301746368408,
+          0.4121726453304291
+        ],
+        "position": [
+          0.6335482597351074,
+          -2.3987274169921875,
+          0.45821240544319153
+        ],
+        "up": [
+          0.04600108042359352,
+          0.014119140803813934,
+          0.9988415837287903
+        ]
+      },
+      "family": "small_enclosed_maze",
+      "pair_id": "small_enclosed_maze_9488f560cc2c/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "24b5809965f3249af526e808370416770e1cc0aeaa85b448638e80a89c251ab2",
+      "rgb_binding": {
+        "byte_count": 42489,
+        "file_sha256": "6eea8b9f19bdf2a658f967ff9d73bc0bb3354d5ce1a30dbfb9b65be32d84e349",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/small_enclosed_maze_9488f560cc2c/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "small_enclosed_maze_9488f560cc2c",
+      "scene_manifest_binding": {
+        "byte_count": 48007,
+        "file_sha256": "0c974c0c937d1376f509e2c7854fddcb02b2abf943aec2fdff8a7d903199a41a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_9488f560cc2c/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.6327085494995117,
+          -0.0026254444383084774,
+          0.4162859320640564
+        ],
+        "position": [
+          0.6336328983306885,
+          -0.0008799401111900806,
+          0.4592384994029999
+        ],
+        "up": [
+          0.04293413460254669,
+          -0.009494354017078876,
+          0.9990327954292297
+        ]
+      },
+      "family": "small_enclosed_maze",
+      "pair_id": "small_enclosed_maze_9488f560cc2c/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "5a00d8f5aac5d673a08d21352649021572cebd3243654bfcbb4b08d597fd1c7a",
+      "rgb_binding": {
+        "byte_count": 45693,
+        "file_sha256": "8c33faf344214e92c562ec796d9af13f7e2bafc48ad19180e541340ba26695d7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/small_enclosed_maze_9488f560cc2c/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "small_enclosed_maze_9488f560cc2c",
+      "scene_manifest_binding": {
+        "byte_count": 48007,
+        "file_sha256": "0c974c0c937d1376f509e2c7854fddcb02b2abf943aec2fdff8a7d903199a41a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_9488f560cc2c/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -2.552123546600342,
+          2.038027048110962,
+          0.38249796628952026
+        ],
+        "position": [
+          -1.552142858505249,
+          2.0437967777252197,
+          0.380130410194397
+        ],
+        "up": [
+          0.0023617614060640335,
+          0.0010120720835402608,
+          0.9999967217445374
+        ]
+      },
+      "family": "visual_sensor_stress",
+      "pair_id": "visual_sensor_stress_52f045048932/pose_00",
+      "pose_index": 0,
+      "producer_frame_identity": "frame_000000_env_00",
+      "raw_rgb_sha256": "ff549ffc14ac6d2727ddfc6a4aecbcfe39aa223d58d142116b7054e9455275c3",
+      "rgb_binding": {
+        "byte_count": 46199,
+        "file_sha256": "61fbc8696c2f57a1ae12d20b7df6bea6033d6e1bf8ec1519754e8f6b3c42238f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/visual_sensor_stress_52f045048932/rgb/frame_000000_env_00.png"
+      },
+      "scene_id": "visual_sensor_stress_52f045048932",
+      "scene_manifest_binding": {
+        "byte_count": 43047,
+        "file_sha256": "90e03604752fe06588fabb362ce139e91e0d3a99bf6fca9540be10dff396dab6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_52f045048932/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -2.381894111633301,
+          2.5977673530578613,
+          0.2920522689819336
+        ],
+        "position": [
+          -2.7500369548797607,
+          1.673172116279602,
+          0.3900049328804016
+        ],
+        "up": [
+          -0.042730916291475296,
+          0.12206543236970901,
+          0.9916017651557922
+        ]
+      },
+      "family": "visual_sensor_stress",
+      "pair_id": "visual_sensor_stress_52f045048932/pose_01",
+      "pose_index": 1,
+      "producer_frame_identity": "frame_000001_env_01",
+      "raw_rgb_sha256": "0f393a28bf9a5de4818cd4231069c024acc4441de3398c0b0ab9958181e1e78c",
+      "rgb_binding": {
+        "byte_count": 38042,
+        "file_sha256": "647021da2481ded54e755dbdb5326ff5ab8422ad7f5821649133432a3de782ff",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/visual_sensor_stress_52f045048932/rgb/frame_000001_env_01.png"
+      },
+      "scene_id": "visual_sensor_stress_52f045048932",
+      "scene_manifest_binding": {
+        "byte_count": 43047,
+        "file_sha256": "90e03604752fe06588fabb362ce139e91e0d3a99bf6fca9540be10dff396dab6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_52f045048932/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          1.535954236984253,
+          2.0459678173065186,
+          0.39580267667770386
+        ],
+        "position": [
+          2.5358786582946777,
+          2.045750141143799,
+          0.3834908604621887
+        ],
+        "up": [
+          0.012313004583120346,
+          0.006724325008690357,
+          0.9999015927314758
+        ]
+      },
+      "family": "visual_sensor_stress",
+      "pair_id": "visual_sensor_stress_52f045048932/pose_02",
+      "pose_index": 2,
+      "producer_frame_identity": "frame_000002_env_02",
+      "raw_rgb_sha256": "c4bce52a51476cc44c8b446d158c6e94abce5e31e4281ef4d5740c544b913a8c",
+      "rgb_binding": {
+        "byte_count": 42339,
+        "file_sha256": "426f5c4f48cbfe7743be405c1e2d12edb21ec51abcb3b06d491ead79ce076186",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/visual_sensor_stress_52f045048932/rgb/frame_000002_env_02.png"
+      },
+      "scene_id": "visual_sensor_stress_52f045048932",
+      "scene_manifest_binding": {
+        "byte_count": 43047,
+        "file_sha256": "90e03604752fe06588fabb362ce139e91e0d3a99bf6fca9540be10dff396dab6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_52f045048932/manifest.json"
+      }
+    },
+    {
+      "camera_pose_world": {
+        "lookat": [
+          -2.516892433166504,
+          0.8713521957397461,
+          0.39580264687538147
+        ],
+        "position": [
+          -2.775902271270752,
+          -0.09444400668144226,
+          0.3834908604621887
+        ],
+        "up": [
+          0.0033083499874919653,
+          -0.013633806258440018,
+          0.9999015927314758
+        ]
+      },
+      "family": "visual_sensor_stress",
+      "pair_id": "visual_sensor_stress_52f045048932/pose_03",
+      "pose_index": 3,
+      "producer_frame_identity": "frame_000003_env_03",
+      "raw_rgb_sha256": "194868fde181cbb7787a8dc8bf9e798f756c2c15f8ae17a348c640f02e326333",
+      "rgb_binding": {
+        "byte_count": 34831,
+        "file_sha256": "5d6daf5d45ef22eb3cbcb5bc2b8e0d36881543558f426b79e72074457b086182",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/datagen_full/render_textured_v03/visual_sensor_stress_52f045048932/rgb/frame_000003_env_03.png"
+      },
+      "scene_id": "visual_sensor_stress_52f045048932",
+      "scene_manifest_binding": {
+        "byte_count": 43047,
+        "file_sha256": "90e03604752fe06588fabb362ce139e91e0d3a99bf6fca9540be10dff396dab6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_52f045048932/manifest.json"
+      }
+    }
+  ],
+  "schema": "lewm_go2_world_model_visual_domain_parity_panel_v2",
+  "selected_texture_asset_bindings_by_scene": {
+    "large_enclosed_maze_d89fe04e6f92": {
+      "floor": {
+        "byte_count": 649557,
+        "file_sha256": "307c33f1fc5e05f47bfc513a1cca2b6f4f2b179d74d873dd874a24938889cd98",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/WoodFloor043.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1156430,
+        "file_sha256": "21236a873daeff5b25c772d38e785aee5d876bf75d037c5cec6d6c863bb7b462",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Cardboard004.jpg"
+      },
+      "wall": {
+        "byte_count": 878168,
+        "file_sha256": "408cd7f05194421e1884e40a087f7dd6e3ffa374f3176bbc5e443ac820796b88",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/Concrete045.jpg"
+      }
+    },
+    "local_composite_motifs_e4c8cb32406a": {
+      "floor": {
+        "byte_count": 649557,
+        "file_sha256": "307c33f1fc5e05f47bfc513a1cca2b6f4f2b179d74d873dd874a24938889cd98",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/WoodFloor043.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1156430,
+        "file_sha256": "21236a873daeff5b25c772d38e785aee5d876bf75d037c5cec6d6c863bb7b462",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Cardboard004.jpg"
+      },
+      "wall": {
+        "byte_count": 378542,
+        "file_sha256": "ed8a69a6437de9d41d2cf380f7e6a216232fc4754f256c3405985c857547ffef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/PaintedPlaster017.jpg"
+      }
+    },
+    "loop_alias_stress_a1e349c54526": {
+      "floor": {
+        "byte_count": 269501,
+        "file_sha256": "8ceb9186d990b31fce785e06fdc6974c160f1d27c43f6160266f164deba713aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/Concrete034.jpg"
+      },
+      "obstacle": {
+        "byte_count": 813574,
+        "file_sha256": "79938ccc3c75aaab3a2b1ed31068a8db3634d512286bb8c3aa6f6205cd59ca3a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Metal055A.jpg"
+      },
+      "wall": {
+        "byte_count": 878168,
+        "file_sha256": "408cd7f05194421e1884e40a087f7dd6e3ffa374f3176bbc5e443ac820796b88",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/Concrete045.jpg"
+      }
+    },
+    "medium_enclosed_maze_28d6e25abe62": {
+      "floor": {
+        "byte_count": 269501,
+        "file_sha256": "8ceb9186d990b31fce785e06fdc6974c160f1d27c43f6160266f164deba713aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/Concrete034.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1158249,
+        "file_sha256": "8b618898cadda99188f3d667e4a09c2108f07bbc800cc1c0a4f300653b221adb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Concrete036.jpg"
+      },
+      "wall": {
+        "byte_count": 378542,
+        "file_sha256": "ed8a69a6437de9d41d2cf380f7e6a216232fc4754f256c3405985c857547ffef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/PaintedPlaster017.jpg"
+      }
+    },
+    "open_obstacle_field_03fdc12540a1": {
+      "floor": {
+        "byte_count": 1059920,
+        "file_sha256": "a86ba7e3fb8dacdda45fbe132fdae14bf6a1af9cc53b6fba2dfd434b5367ca0f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/Tiles093.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1156430,
+        "file_sha256": "21236a873daeff5b25c772d38e785aee5d876bf75d037c5cec6d6c863bb7b462",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Cardboard004.jpg"
+      },
+      "wall": {
+        "byte_count": 378542,
+        "file_sha256": "ed8a69a6437de9d41d2cf380f7e6a216232fc4754f256c3405985c857547ffef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/PaintedPlaster017.jpg"
+      }
+    },
+    "rough_local_dynamics_a30b352ecd55": {
+      "floor": {
+        "byte_count": 1059920,
+        "file_sha256": "a86ba7e3fb8dacdda45fbe132fdae14bf6a1af9cc53b6fba2dfd434b5367ca0f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/Tiles093.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1158249,
+        "file_sha256": "8b618898cadda99188f3d667e4a09c2108f07bbc800cc1c0a4f300653b221adb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Concrete036.jpg"
+      },
+      "wall": {
+        "byte_count": 878168,
+        "file_sha256": "408cd7f05194421e1884e40a087f7dd6e3ffa374f3176bbc5e443ac820796b88",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/Concrete045.jpg"
+      }
+    },
+    "small_enclosed_maze_9488f560cc2c": {
+      "floor": {
+        "byte_count": 1804238,
+        "file_sha256": "98644aad83a6d570c1b66e48ecad9211a73c320f5a53021a46d98bf453f041db",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/PavingStones131.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1158249,
+        "file_sha256": "8b618898cadda99188f3d667e4a09c2108f07bbc800cc1c0a4f300653b221adb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Concrete036.jpg"
+      },
+      "wall": {
+        "byte_count": 878168,
+        "file_sha256": "408cd7f05194421e1884e40a087f7dd6e3ffa374f3176bbc5e443ac820796b88",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/Concrete045.jpg"
+      }
+    },
+    "visual_sensor_stress_52f045048932": {
+      "floor": {
+        "byte_count": 649557,
+        "file_sha256": "307c33f1fc5e05f47bfc513a1cca2b6f4f2b179d74d873dd874a24938889cd98",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/floor/WoodFloor043.jpg"
+      },
+      "obstacle": {
+        "byte_count": 1507799,
+        "file_sha256": "91a758b06ee054a80735da449434da8b3b264c272e8c3f2763195551ef351076",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/obstacle/Wood067.jpg"
+      },
+      "wall": {
+        "byte_count": 878168,
+        "file_sha256": "408cd7f05194421e1884e40a087f7dd6e3ffa374f3176bbc5e443ac820796b88",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/assets/textures/wall/Concrete045.jpg"
+      }
+    }
+  },
+  "texture_source_binding": {
+    "byte_count": 6996,
+    "file_sha256": "a8a9b958ffbf927f330ef9f8f950adabe884f9137668780cd9f8015184bda1fc",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/textures.py"
+  }
+}

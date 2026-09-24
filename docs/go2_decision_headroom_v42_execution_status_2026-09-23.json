@@ -1,0 +1,44 @@
+{
+  "status": "PHASE2_RUNNING",
+  "recorded_utc": "2026-09-23T21:54:47.003941+00:00",
+  "protocol_commit": "ea05fdc6",
+  "protocol_sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+  "owner_pid": 328290,
+  "owner_created": 1790200384.01,
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase2_v4_attempt_001",
+  "tool_session_id": 99774,
+  "current_source": {
+    "case": 0,
+    "layout": 0,
+    "controller": "command_history"
+  },
+  "reserved_source_physics_s_at_recording": 9.9,
+  "resource_snapshot": {
+    "kind": "resource_check",
+    "elapsed_s": 98.78245140900253,
+    "stage": "source_step",
+    "wall_s": 98.77081642200937,
+    "cpu_s": 140.640998,
+    "aggregate_rss_bytes": 8712773632,
+    "available_ram_bytes": 61845069824,
+    "gpu_used_bytes": 3997405184,
+    "available_vram_bytes": 30211338240,
+    "retained_bytes": 6688795,
+    "recovery_free_bytes": 37861834752,
+    "workspace_free_bytes": 5901914112,
+    "external_cache_growth_bytes": 0,
+    "peak_additional_observed_bytes": 6688795,
+    "violated": []
+  },
+  "output_check": "docs/go2_decision_headroom_v42_output_check_result_2026-09-23.json",
+  "historical_result": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_headroom_historical_rerender_v42_attempt_001/result.json",
+  "historical_training_render_provenance": "render_unverified; 16 sampled examples unresolved, zero rendered frames",
+  "next_actions": [
+    "Monitor this existing owner; do not start another attempt.",
+    "Any runtime writer failure or other protocol defect stops for disposition; preserve failures, no repair or restart.",
+    "After fixed audit closure, deliver audit report, versioned branch panel and one decision memo under the frozen A/B priority and regret table.",
+    "Do not execute the recommendation."
+  ],
+  "approval_already_recorded": true,
+  "scientific_audit_results_not_yet_available": true
+}

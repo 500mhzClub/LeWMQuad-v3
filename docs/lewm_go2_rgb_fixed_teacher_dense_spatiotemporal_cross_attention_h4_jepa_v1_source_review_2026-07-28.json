@@ -1,0 +1,155 @@
+{
+  "authority": {
+    "checkpoint_or_tensor_access_authorized": false,
+    "execution_training_or_gpu_authorized": false,
+    "generated_input_or_rgb_access_authorized": false,
+    "navigation_g2_heldout_sealed_production_promotion_or_deployment_authorized": false,
+    "source_only_review_authorized": true,
+    "synthetic_cpu_tests_authorized": true
+  },
+  "findings": [],
+  "frozen_source_commit": {
+    "author": "500mhzClub",
+    "commit": "e770445e79e9f54997041d57514466831e8c1308",
+    "committed_at": "2026-07-28T00:49:26+01:00",
+    "parent": "9d2898d017345d8844952d359ae886ba5577242d",
+    "subject": "add dense cross-attention H4 JEPA probe"
+  },
+  "new_file_bindings": [
+    {
+      "byte_count": 13664,
+      "file_sha256": "56cc9435e21e2611a3dd977b1352f950d1fa67f2d654dcd05b7481b72894e046",
+      "path": "docs/lewm_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1_preregistration_2026-07-28.md"
+    },
+    {
+      "byte_count": 23712,
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    },
+    {
+      "byte_count": 12364,
+      "file_sha256": "fe9239cccfcb611337b5499242ec8aea7379117b7478970a50ce4aae34d9ccca",
+      "path": "lewm/tests/test_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    },
+    {
+      "byte_count": 7933,
+      "file_sha256": "895c6ff9e57f003c372a88ea30a69d141ebd1f34a82fbfa5ccfd9d157867ba02",
+      "path": "lewm/tests/test_run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    },
+    {
+      "byte_count": 9842,
+      "file_sha256": "30838feadc6e211df0d8b32638abdcab761f9e77132dc52b90aedace232db142",
+      "path": "scripts/run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    }
+  ],
+  "reported_b16_synthetic_resource_evidence": {
+    "device": "AMD Radeon AI PRO R9700",
+    "evidence_status": "author_reported_pre_freeze_disposable_synthetic_smoke_not_reexecuted_by_source_reviewer",
+    "exact_persistence_max_abs": 0.0,
+    "full_default_forward_backward": "PASS",
+    "intended_gradient_tensors_present": true,
+    "measured_forward_backward_seconds": 0.7059051169781014,
+    "peak_allocated_gib": 2.327061653137207,
+    "peak_reserved_gib": 2.5625,
+    "presentations_optimizer_steps_or_artifact_writes": 0,
+    "teacher_gradient_tensor_count": 0,
+    "torch": "2.10.0.dev20250926+rocm6.3",
+    "total_parameter_count": 7846464,
+    "trainable_parameter_count": 5098944,
+    "shapes": {
+      "belief": [16, 1026, 192],
+      "prediction": [16, 4, 256, 192]
+    }
+  },
+  "review_scope": {
+    "frozen_commit_only": true,
+    "generated_data_index_rgb_checkpoint_receipt_or_tensor_access_count": 0,
+    "gpu_queries_or_uses_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "reviewer": "/root/h4_census_source_review",
+    "source_and_synthetic_tests_only": true
+  },
+  "runtime_closure_bindings": [
+    {
+      "byte_count": 9842,
+      "file_sha256": "30838feadc6e211df0d8b32638abdcab761f9e77132dc52b90aedace232db142",
+      "path": "scripts/run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    },
+    {
+      "byte_count": 70301,
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 13691,
+      "file_sha256": "6347adaaae9f66236b3988960ac45f8923d39a0be232572adb6531d401c63368",
+      "path": "scripts/run_go2_recurrent_h4_fixed_teacher_delta_joint_jepa_v3.py"
+    },
+    {
+      "byte_count": 23712,
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py"
+    },
+    {
+      "byte_count": 21166,
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py"
+    },
+    {
+      "byte_count": 7028,
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "path": "lewm/models/encoders.py"
+    }
+  ],
+  "schema": "lewm_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1_source_review_v1",
+  "scientific_checks": {
+    "architecture": "three_frame_770_token_dense_history_encoder_plus_four_independent_action_prefix_conditioned_dense_cross_attention_horizons",
+    "fixed_teacher_frozen_and_absent_from_optimizer": true,
+    "forbidden_families_absent": {
+      "bev_warp_offset_cost_volume_retrieval_transport_template": true,
+      "future_rgb_in_online_path": true,
+      "inverse_dynamics_action_classifier_reconstruction_or_navigation_loss": true,
+      "rnn_gru_lstm": true
+    },
+    "genuine_joint_jepa_objective": true,
+    "joint_training_evidence": "one_backward_routes_future_teacher_delta_regression_through_online_encoder_history_action_prefix_decoder_and_zero_initialized_delta_head_while_alignment_trains_online_encoder_and_teacher_remains_frozen",
+    "losses": {
+      "fixed_teacher_future_delta_regression_weight": 1.0,
+      "normalized_online_history_to_fixed_teacher_alignment_weight": 1.0,
+      "separately_trained_predictor_phase": false
+    },
+    "model_source_preregistration_tests_and_runner_agree": true,
+    "online_encoder_trainable_from_update_zero": true,
+    "schedule": {
+      "batch_size": 16,
+      "maximum_presentations": 16000,
+      "maximum_updates": 1000,
+      "no_retry_or_resume": true,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "seed": 20260727
+    },
+    "v3_gate_identity": "dense_decision_delegates_to_frozen_v3_decision_and_changes_only_names_and_authority; gates_failed_gates_and_diagnostics_are_tested_identical"
+  },
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_ZERO_FINDINGS",
+  "verification": {
+    "blocking_finding_count": 0,
+    "cpu_default_model_inventory": {
+      "belief_tokens": 1026,
+      "ema_count": 0,
+      "spatial_tokens": 256,
+      "target_trainable_parameter_count": 0,
+      "total_parameter_count": 7846464,
+      "trainable_parameter_count": 5098944
+    },
+    "frozen_commit_new_file_count": 5,
+    "runtime_closure_file_count": 6,
+    "source_suite_29": {
+      "independent_reproduction": "29_passed_in_3.84_seconds",
+      "reported_result": "29_passed_in_3.90_seconds"
+    },
+    "reviewer_suite_32": {
+      "independent_reproduction": "32_passed_in_5.60_seconds",
+      "reported_result": "32_passed_in_5.58_seconds"
+    }
+  }
+}

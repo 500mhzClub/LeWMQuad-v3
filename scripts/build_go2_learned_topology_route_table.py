@@ -16,6 +16,8 @@ def main() -> int:
     parser.add_argument("dataset", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--min-spacing-m", type=float, default=0.22)
+    parser.add_argument("--include-primitives", action="store_true",
+                        help="Store the executed/source primitive alongside each sampled waypoint.")
     args = parser.parse_args()
 
     with np.load(args.dataset, allow_pickle=False) as data:
@@ -43,18 +45,29 @@ def main() -> int:
                 "target_color": target_color,
                 "target_index": target_index,
                 "waypoints": [],
+                "primitives": [],
             },
         )
         waypoint = [float(pose_xy[0]), float(pose_xy[1])]
         waypoints = route["waypoints"]
+        primitives = route["primitives"]
+        primitive = _route_primitive(item)
         if not waypoints or _dist(waypoints[-1], waypoint) >= float(args.min_spacing_m):
             waypoints.append(waypoint)
+            if bool(args.include_primitives):
+                primitives.append(primitive)
         else:
             waypoints[-1] = waypoint
+            if bool(args.include_primitives) and primitives:
+                primitives[-1] = primitive
 
     for route in routes.values():
         if len(route["waypoints"]) == 1:
             route["waypoints"].append(list(route["waypoints"][0]))
+            if bool(args.include_primitives):
+                route["primitives"].append(route["primitives"][-1] if route["primitives"] else "hold")
+        if not bool(args.include_primitives):
+            route.pop("primitives", None)
 
     output = {
         "schema": "lewm_go2_learned_topology_route_table_v1",
@@ -76,6 +89,14 @@ def main() -> int:
 
 def _dist(a: list[float], b: list[float]) -> float:
     return float(np.hypot(float(a[0]) - float(b[0]), float(a[1]) - float(b[1])))
+
+
+def _route_primitive(item: dict[str, Any]) -> str:
+    for key in ("executed_label_source_primitive", "primitive", "label"):
+        value = item.get(key)
+        if value:
+            return str(value)
+    return "hold"
 
 
 if __name__ == "__main__":

@@ -1,0 +1,211 @@
+{
+  "status": "PASS",
+  "groups": [
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_02",
+        "hold"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_02",
+        "left_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_02",
+        "right_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_03",
+        "hold"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_03",
+        "left_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "geometry_transfer",
+        "cluster_03",
+        "right_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_00",
+        "hold"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_00",
+        "left_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_00",
+        "right_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_01",
+        "hold"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_01",
+        "left_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    },
+    {
+      "group": [
+        "train",
+        "cluster_01",
+        "right_turn"
+      ],
+      "distinct_requested_prefixes": [
+        1,
+        1,
+        1,
+        3,
+        3,
+        3,
+        3,
+        3
+      ]
+    }
+  ],
+  "evaluator_sha256": "6f4b2ccb4b88fe2dc256bd9f29f67e0d33c828deef1399982469147b85a954d1",
+  "interpretation": "No action-discrimination claim is possible before the branch at 400 ms; evaluator broadcasts identical-prefix forecasts and motion outputs."
+}

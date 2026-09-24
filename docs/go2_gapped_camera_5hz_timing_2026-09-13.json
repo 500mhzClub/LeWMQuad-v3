@@ -1,0 +1,69 @@
+{
+  "status": "GAPPED_CAMERA_5HZ_RECORDED_TIMING_ANALYSIS_COMPLETE",
+  "source_result_sha256": "6719b1d4927756283bd943c5c2972f555052cf9e8ab46d4b2453084aca25a2ba",
+  "visual_observations": 1036,
+  "source_artifact": "partial_result.json",
+  "complete_recorded_journey": false,
+  "tracking_failure": {
+    "reason": "SensorContractError('dual-camera RGBD pose unavailable; terminal failure')",
+    "gyro_packets_ingested": 2073,
+    "accepted_visual_observations": 1036,
+    "next_visual_frame": 2072,
+    "tracker_failed": true,
+    "automatic_retry": false
+  },
+  "accepted_prefix_only": true,
+  "failing_call_duration_included": false,
+  "gyro_packets_ingested": 2073,
+  "camera_period_ms": 200,
+  "camera_counts": {
+    "null": 1,
+    "primary": 1025,
+    "auxiliary": 10
+  },
+  "continuity_counts": {
+    "INITIAL_REFERENCE": 1,
+    "ANCHOR_MEASUREMENT": 1034,
+    "MEASURED_INCREMENT_BRIDGE": 1
+  },
+  "native_position_error_m": {
+    "median": 0.001829222741138925,
+    "maximum": 0.006660170606880277
+  },
+  "native_rotation_error_rad": {
+    "median": 0.0008530804702261959,
+    "maximum": 0.0034290777682611895
+  },
+  "tracker_ms": {
+    "mean": 97.27917518534133,
+    "median": 95.44806205667555,
+    "p95": 186.5835976204835,
+    "maximum": 296.4395210146904,
+    "calls_over_200ms": 48
+  },
+  "fifo_completion_age_ms": {
+    "median": 96.51782305445522,
+    "p95": 188.54597600875422,
+    "maximum": 296.4395210146904,
+    "final": 78.46773904748261,
+    "outputs_over_200ms": 49
+  },
+  "peak": {
+    "source_frame": 1630,
+    "queue_wait_ms": 0.0,
+    "service_ms": 296.4395210146904
+  },
+  "assumptions": {
+    "one_serial_worker": true,
+    "all_camera_frames_processed": true,
+    "unbounded_fifo": true,
+    "shared_host_recorded_durations_reused": true,
+    "acquisition_cost_s": 0.0,
+    "map_cost_s": 0.0,
+    "planning_cost_s": 0.0
+  },
+  "timing_simulation_only": true,
+  "native_execution": false,
+  "delayed_navigation_outcome_inferred": false,
+  "continuous_execution_qualified": false
+}

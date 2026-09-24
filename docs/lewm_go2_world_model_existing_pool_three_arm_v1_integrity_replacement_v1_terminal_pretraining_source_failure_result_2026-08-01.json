@@ -1,0 +1,137 @@
+{
+  "schema": "lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_terminal_pretraining_source_failure_result_v1",
+  "status": "PASS_COMPLETE_TERMINAL_PRETRAINING_SOURCE_FAILURE_AUDIT",
+  "date": "2026-08-01",
+  "attempt": {
+    "id": "world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1",
+    "consumed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "overwrite_authorized": false,
+    "refill_authorized": false
+  },
+  "terminal_artifacts": {
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1/reservation.json",
+      "file_sha256": "1c30664dd235b8d51441f4cbf344c583e27bb06a9686cd1c855acf5257bd88a6",
+      "byte_count": 16598
+    },
+    "failure": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1/failure.json",
+      "file_sha256": "baa822feae3a7cfa17ece50d29d0648fc62cfb302d71e9f10fa52f8151bf55be",
+      "byte_count": 1588
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_existing_pool_three_arm_v1_integrity_replacement_v1/attempt_v1/terminal_supervision.json",
+      "file_sha256": "cb7d3cd99e0faf8638fdf6c5e82382d1c9346944098e820ee59d1781fa3a227a",
+      "byte_count": 2778
+    }
+  },
+  "authorized_identity": {
+    "authority_commit": "e8eb99ed1c8642fc347779f2f4c160e4d12ef863",
+    "source_commit": "7acbd3279866a8294fb1798bf09f0d96bb17046f",
+    "authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_execution_authority_2026-08-01.json",
+      "file_sha256": "9d0da7231cd9a0c2c35bef07fbd59d154f336fd6239be9ac1bab38f62be9213c",
+      "byte_count": 15682
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_plan_2026-08-01.json",
+      "file_sha256": "da8345d4665a99e254e2b0cf4599535a1e71f3208a299c0cefcd730f49c23fd2",
+      "byte_count": 5709
+    },
+    "independent_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_independent_source_review_2026-08-01.json",
+      "file_sha256": "b5a4392f4e855dde44a0bc2f62921b2979bf7ec20ec4bf800017e15c4676e907",
+      "byte_count": 12719
+    },
+    "preregistration_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v1_preregistration_2026-08-01.md",
+      "file_sha256": "56ee693a8aeb193b878c0ce414c4c9d0a802d42070f4062bf1282a35696783d1",
+      "byte_count": 8116
+    }
+  },
+  "predecessor_failure_audit": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_existing_pool_three_arm_v1_terminal_pretraining_source_failure_result_2026-08-01.json",
+    "file_sha256": "e2c219352e9ad770a232641fe0c5a7bdd8d154c61f85b5afa76b0d132856b70f",
+    "byte_count": 5796
+  },
+  "execution_accounting": {
+    "supervisor_wall_elapsed_seconds_at_terminal": 12.543765088077635,
+    "training_updates_completed": 0,
+    "optimizer_steps_completed": 0,
+    "scientific_verdict_emitted": false,
+    "worker_result_published": false,
+    "receipt_checker_run": false
+  },
+  "terminal_evidence": {
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "worker_failure_status": "ATTEMPT_CONSUMED_WORKER_FAILURE",
+    "phase_receipts_empty": true,
+    "result_binding_absent": true,
+    "receipt_check_binding_absent": true,
+    "automatic_checkpoint_selection_performed": false,
+    "citable_as_scientific_evidence": false
+  },
+  "failure": {
+    "type": "ThreeArmWorkerError",
+    "message": "arm parameter partition is invalid",
+    "location": "build_frozen_substrate_and_arms while constructing the first arm optimizer, before update-zero evaluation",
+    "classification": "SOURCE_ARM_CLONE_PRESERVED_FROZEN_REQUIRES_GRAD_FLAGS",
+    "checkpoint_loader_integrity_correction_passed": true,
+    "packing_completed_before_failure": true
+  },
+  "root_cause": {
+    "shared_temporal_substrate_intentionally_frozen_before_arm_allocation": true,
+    "arm_deepcopy_preserved_template_requires_grad_false": true,
+    "direct_parameter_clones_defaulted_trainable": 2,
+    "deepcopied_module_parameter_tensors_left_frozen": 34,
+    "registered_arm_parameter_tensor_count": 36,
+    "predictor_parameter_tensor_count": 30,
+    "memory_parameter_tensor_count": 6,
+    "partition_name_coverage_passed": true,
+    "failed_predicate": "every partitioned arm parameter must require gradients and have dtype torch.float32",
+    "causal_chain": [
+      "the shared temporal template was frozen as required",
+      "ArmCore deep-copied predictor modules, embeddings, and GRU from that frozen template",
+      "deepcopy retained requires_grad=false on 34 parameter tensors",
+      "only the two newly wrapped direct predictor Parameters defaulted to trainable",
+      "the fail-closed arm partition rejected the mixed trainability inventory before optimizer construction"
+    ]
+  },
+  "narrow_integrity_correction": {
+    "science_identical": true,
+    "operation": "call requires_grad_(true) on each independently allocated ArmCore after all parameter copies",
+    "parameter_values_changed": false,
+    "parameter_names_shapes_dtypes_or_count_changed": false,
+    "optimizer_groups_or_hyperparameters_changed": false,
+    "expected_trainable_parameter_tensor_count": 36,
+    "expected_predictor_parameter_tensor_count": 30,
+    "expected_memory_parameter_tensor_count": 6,
+    "three_arm_identical_initialization_unchanged": true,
+    "three_arm_independent_allocation_unchanged": true,
+    "frozen_shared_encoder_and_target_unchanged": true
+  },
+  "scientific_conclusion": {
+    "data_learnability_tested": false,
+    "objective_learnability_tested": false,
+    "architecture_learnability_tested": false,
+    "checkpoint_loader_correction_validated": true,
+    "only_valid_conclusion": "integrity replacement V1 is a consumed pre-training arm-trainability source failure"
+  },
+  "successor_boundary": {
+    "retry_or_resume_attempt_v1": false,
+    "reuse_attempt_v1_pack_or_runtime_payloads": false,
+    "fresh_one_shot_authority_required": true,
+    "fresh_absent_output_root_required": true,
+    "fresh_integrity_replacement_v2_preregistration_required": true,
+    "this_document_authorizes_v2": false
+  },
+  "custody": {
+    "sealed_or_heldout_material_opened": false,
+    "protected_evaluation_authorized": false,
+    "network_access_used": false,
+    "replacement_v1_runtime_tensor_or_pack_payload_reopened_after_terminal": false
+  }
+}

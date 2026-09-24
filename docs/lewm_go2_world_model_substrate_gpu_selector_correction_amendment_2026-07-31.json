@@ -1,0 +1,93 @@
+{
+  "schema": "lewm_go2_world_model_substrate_gpu_selector_correction_amendment_v1",
+  "status": "PROPOSED_NOT_AUTHORIZED_PENDING_INDEPENDENT_REVIEW",
+  "date": "2026-07-31",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_authorized": false,
+  "reason": "The first real device preflight found that the reviewed selector HIP_VISIBLE_DEVICES=1 exposes the gfx1036 integrated GPU, while selector 0 exposes the intended 34.2 GB gfx1201 AMD Radeon AI PRO R9700. Executing the reviewed selector would target the wrong device.",
+  "frozen_predecessor_package": {
+    "commit": "9eeff2d030e73f9210fb140fe407f5cfd132b68d",
+    "run_manifest": {
+      "path": "docs/lewm_go2_world_model_substrate_u700_sched3000_run_manifest_2026-07-31.json",
+      "byte_count": 19819,
+      "sha256": "90a2058f28e49030651090c3e0ae5f98d578b81bec95837be2c32bfeb9959805"
+    },
+    "proposal": {
+      "path": "docs/lewm_go2_world_model_substrate_development_authority_proposal_2026-07-31.json",
+      "byte_count": 8306,
+      "sha256": "d9f1193980a944d6401bdef05f848840c7c16ed98484e8914b060624babe62f9"
+    },
+    "independent_review": {
+      "path": "docs/lewm_go2_world_model_next_tranche_independent_source_review_2026-07-31.json",
+      "byte_count": 6581,
+      "sha256": "0e61c5b80bf8ef852b8f244e762a365026d48030b5f5074fc5ddbe696fcdd06a"
+    }
+  },
+  "finding": {
+    "severity": "LAUNCH_BLOCKING",
+    "review_conclusion_withdrawn": "The predecessor review's no-remaining-findings verdict did not establish that selector 1 was the intended physical device.",
+    "selector_1": {
+      "torch_name": "AMD Radeon Graphics",
+      "gcn_arch": "gfx1036",
+      "rocm_smi_vram_bytes": 2147483648,
+      "disposition": "FORBIDDEN_FOR_THIS_ATTEMPT"
+    },
+    "selector_0": {
+      "torch_name": "AMD Radeon AI PRO R9700",
+      "gcn_arch": "gfx1201",
+      "rocm_smi_vram_bytes": 34208743424,
+      "disposition": "REQUESTED_CORRECT_DEVICE"
+    },
+    "preflight_interpreter": "/home/andrewknowles/TinyQuadJEPA/bin/python",
+    "preflight_torch": "2.10.0.dev20250926+rocm6.3",
+    "preflight_torch_hip": "6.3.42131-fa1d09cbd"
+  },
+  "sole_effective_contract_delta": {
+    "delta_count": 1,
+    "name": "physical_gpu_selector",
+    "old_value": "HIP_VISIBLE_DEVICES=1",
+    "new_value": "HIP_VISIBLE_DEVICES=0",
+    "effective_paths": [
+      "run_manifest.runtime.environment.HIP_VISIBLE_DEVICES",
+      "run_manifest.phases[S1_train].environment.HIP_VISIBLE_DEVICES",
+      "run_manifest.phases[S2_retention_baseline].environment.HIP_VISIBLE_DEVICES",
+      "run_manifest.phases[S3_retention_snapshots].external_environment.HIP_VISIBLE_DEVICES",
+      "proposal.requested_access_and_compute_caps.physical_gpu_selector",
+      "device fields in all training and retention success conditions"
+    ],
+    "all_other_manifest_proposal_science_data_schedule_caps_paths_and_attempt_semantics_preserved": true,
+    "output_root_preserved_because_the_predecessor_attempt_was_never_reserved": true
+  },
+  "required_launch_preflight": {
+    "environment": {
+      "HIP_VISIBLE_DEVICES": "0"
+    },
+    "logical_torch_device": "cuda:0",
+    "visible_device_count": 1,
+    "required_device_name": "AMD Radeon AI PRO R9700",
+    "required_gcn_arch": "gfx1201",
+    "required_total_memory_bytes": 34208743424,
+    "wrong_selector_must_not_be_visible": "gfx1036"
+  },
+  "unchanged_boundaries": {
+    "one_attempt": true,
+    "retry": false,
+    "resume": false,
+    "overwrite_or_reuse": false,
+    "maximum_updates": 700,
+    "schedule_horizon_updates": 3000,
+    "maximum_total_rgb_leaf_opens": 99456,
+    "wall_clock_ceiling_seconds": 14400,
+    "gpu_wall_clock_ceiling_seconds": 10800,
+    "network_access": false,
+    "counterfactual_operation_authorized": false,
+    "qualification_promotion_or_scientific_claim_authorized": false
+  },
+  "requirements_before_execution": [
+    "Independently review this correction and the exact follow-on supervisor source.",
+    "Commit and bind the reviewed follow-on source and review.",
+    "Issue a separate execution authority that binds this amendment and selector 0.",
+    "Repeat the exact device preflight immediately before launch and fail closed on any mismatch."
+  ],
+  "decision": "WITHHOLD_EXECUTION_UNTIL_CORRECTION_REVIEW_AND_SEPARATE_AUTHORITY"
+}

@@ -1,0 +1,13 @@
+{
+  "content_sha256": "1ad924101ab0cdc5b13a87a7f94bda965e4447d99c4febd5d1c4772cac995147",
+  "manifest": {
+    "content_sha256": "81ebe847f64da98afad23b187da38ae415317b16b884275b6567c07c7f1dfe20",
+    "file_sha256": "ef31edec77a25c546012a15c93045bcac556d43a16eaebb020fb239285f7a424",
+    "path": "docs/lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19_integrity_replacement_v1_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "551aa077b88de77d5e8604bba936bcc1f89c2f862b9800374a4335f83844e7f7"
+  },
+  "reviewed_source_commit": "21b38699f50ea1ea442fe8eb235755b00bdd2571",
+  "schema": "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19_integrity_replacement_v1_source_review_v1",
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY"
+}

@@ -1,0 +1,28 @@
+{
+  "status": "ORIGINAL_TRACKING_NATIVE_COLLECTION_OBSERVED",
+  "utc": "2026-09-11T10:34:40.032946+00:00",
+  "worker_pid": 2830305,
+  "worker_created": 1789122283.36,
+  "parent_pid": 2824049,
+  "worker_live": true,
+  "launch_sha256": "5b7a287f2ae7fd2fe1ca2745f5e7ccb980453b45d95894a7b4ab546f5aa55efe",
+  "case": "no_rgb_jepa_direct_flow_anchored_maze_02",
+  "first_complete_row_sha256": "eadb6c3b091b27db879ec490b9af8bc4086cdc3d91034fdcf79787353a9535be",
+  "first_observation": {
+    "tick": 0,
+    "observation_index": 0,
+    "pre_sample_index": 749
+  },
+  "first_requested_command": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "first_terminal": null,
+  "complete_stream_consumed": false,
+  "collection_started": true,
+  "completed_episode": false,
+  "native_outcome_audited": false,
+  "navigation_qualified": false,
+  "goal_achieved": false
+}

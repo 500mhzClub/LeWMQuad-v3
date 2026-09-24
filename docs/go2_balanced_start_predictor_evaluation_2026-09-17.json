@@ -1,0 +1,1164 @@
+{
+  "status": "COMPLETE",
+  "pulse_summaries": {
+    "train": {
+      "old_action": {
+        "dense": {
+          "mse": 0.0907293539494276,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.35651372247614577
+        },
+        "goal_embedding": {
+          "mse": 0.29888182857798207,
+          "correct_action_wins": 17,
+          "centered_effect_ratio": 0.21700495038496248
+        }
+      },
+      "old_no_future_action": {
+        "dense": {
+          "mse": 0.2513299464351601,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0000000154588446
+        },
+        "goal_embedding": {
+          "mse": 0.8561360471778445,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0000000408029026
+        }
+      },
+      "mixed_action": {
+        "dense": {
+          "mse": 0.10486883152690199,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.4131028052732221
+        },
+        "goal_embedding": {
+          "mse": 0.22106747784548336,
+          "correct_action_wins": 15,
+          "centered_effect_ratio": 0.2846566526188167
+        }
+      },
+      "mixed_no_future_action": {
+        "dense": {
+          "mse": 0.25805183003346127,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0000000154588446
+        },
+        "goal_embedding": {
+          "mse": 0.7235805748237504,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 0.9999999863990325
+        }
+      },
+      "parent_action": {
+        "dense": {
+          "mse": 0.11509114628036816,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.45205218324642166
+        },
+        "goal_embedding": {
+          "mse": 0.4172050464484427,
+          "correct_action_wins": 14,
+          "centered_effect_ratio": 0.27573644954984267
+        }
+      },
+      "parent_no_future_action": {
+        "dense": {
+          "mse": 0.25329409539699554,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0000000154588446
+        },
+        "goal_embedding": {
+          "mse": 0.9669378267394172,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 0.999999972798065
+        }
+      },
+      "persistence": {
+        "dense": {
+          "mse": 0.3932005109058486,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.000000030917689
+        },
+        "goal_embedding": {
+          "mse": 0.29744640996472704,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0000000136009677
+        }
+      }
+    },
+    "geometry_transfer": {
+      "old_action": {
+        "dense": {
+          "mse": 0.23553426480955547,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.7838728273783686
+        },
+        "goal_embedding": {
+          "mse": 0.6444301191303465,
+          "correct_action_wins": 12,
+          "centered_effect_ratio": 0.5412218552285587
+        }
+      },
+      "old_no_future_action": {
+        "dense": {
+          "mse": 0.343325206802951,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        },
+        "goal_embedding": {
+          "mse": 1.4599094208743837,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        }
+      },
+      "mixed_action": {
+        "dense": {
+          "mse": 0.24778912216424942,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.8461264685969725
+        },
+        "goal_embedding": {
+          "mse": 0.525702046851317,
+          "correct_action_wins": 15,
+          "centered_effect_ratio": 0.6670254957622961
+        }
+      },
+      "mixed_no_future_action": {
+        "dense": {
+          "mse": 0.35744735184643006,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        },
+        "goal_embedding": {
+          "mse": 1.9750557376278772,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        }
+      },
+      "parent_action": {
+        "dense": {
+          "mse": 0.24314135644170973,
+          "correct_action_wins": 18,
+          "centered_effect_ratio": 0.8239103416160787
+        },
+        "goal_embedding": {
+          "mse": 0.7707505929801199,
+          "correct_action_wins": 12,
+          "centered_effect_ratio": 0.5912581765057096
+        }
+      },
+      "parent_no_future_action": {
+        "dense": {
+          "mse": 0.3282499760389328,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.000000015338228
+        },
+        "goal_embedding": {
+          "mse": 1.414182146390279,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        }
+      },
+      "persistence": {
+        "dense": {
+          "mse": 0.3878302251299222,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        },
+        "goal_embedding": {
+          "mse": 0.6410843378139867,
+          "correct_action_wins": 0,
+          "centered_effect_ratio": 1.0
+        }
+      }
+    }
+  },
+  "goal_groups": [
+    {
+      "kind": "early",
+      "case": 0,
+      "departure": 35,
+      "evaluated_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_cost": [
+        2.7530506009250235,
+        16.038188938661804,
+        22.116884517713476,
+        16.1147376250248,
+        10.742088954646297,
+        6.996066902893448
+      ],
+      "actual_image_cost": [
+        2.1479501724243164,
+        8.151711463928223,
+        21.240949630737305,
+        11.892576217651367,
+        19.072959899902344,
+        20.80728530883789
+      ],
+      "actual_image_choice": "hold",
+      "models": {
+        "old_action": {
+          "all_six_costs": [
+            1.4412730932235718,
+            7.099635601043701,
+            25.934162139892578,
+            25.265329360961914,
+            29.32767105102539,
+            70.38306427001953
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.3208657205104828,
+          "factual_goal_embedding_mse": 7.987346649169922
+        },
+        "old_no_future_action": {
+          "all_six_costs": [
+            8.1043119430542,
+            8.1043119430542,
+            8.1043119430542,
+            8.1043119430542,
+            8.1043119430542,
+            8.1043119430542
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 9.70711898905245,
+          "factual_dense_mse": 0.47351762652397156,
+          "factual_goal_embedding_mse": 18.867408752441406
+        },
+        "mixed_action": {
+          "all_six_costs": [
+            2.99969744682312,
+            11.664711952209473,
+            31.328916549682617,
+            23.563344955444336,
+            35.553401947021484,
+            59.440921783447266
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.33204954862594604,
+          "factual_goal_embedding_mse": 6.680500507354736
+        },
+        "mixed_no_future_action": {
+          "all_six_costs": [
+            15.100652694702148,
+            15.100652694702148,
+            15.100652694702148,
+            15.100652694702148,
+            15.100652694702148,
+            15.100652694702148
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 9.70711898905245,
+          "factual_dense_mse": 0.48423829674720764,
+          "factual_goal_embedding_mse": 25.794496536254883
+        },
+        "parent_action": {
+          "all_six_costs": [
+            1.6057792901992798,
+            8.598066329956055,
+            31.755693435668945,
+            24.15605354309082,
+            38.57694625854492,
+            61.207210540771484
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.31650182604789734,
+          "factual_goal_embedding_mse": 7.648324489593506
+        },
+        "parent_no_future_action": {
+          "all_six_costs": [
+            3.797187328338623,
+            3.797187328338623,
+            3.797187328338623,
+            3.797187328338623,
+            3.797187328338623,
+            3.797187328338623
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 9.70711898905245,
+          "factual_dense_mse": 0.44873344898223877,
+          "factual_goal_embedding_mse": 15.267265319824219
+        },
+        "persistence": {
+          "all_six_costs": [
+            0.48227015137672424,
+            0.48227015137672424,
+            0.48227015137672424,
+            0.48227015137672424,
+            0.48227015137672424,
+            0.48227015137672424
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 9.70711898905245,
+          "factual_dense_mse": 0.5595622062683105,
+          "factual_goal_embedding_mse": 13.88305950164795
+        }
+      }
+    },
+    {
+      "kind": "early",
+      "case": 3,
+      "departure": 35,
+      "evaluated_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_cost": [
+        1.1860934099982645,
+        8.565326763040717,
+        11.871530341447983,
+        10.934879634821254,
+        6.9382666909916315,
+        5.036200405952207
+      ],
+      "actual_image_cost": [
+        3.131941556930542,
+        8.613271713256836,
+        11.550544738769531,
+        11.91477108001709,
+        10.46650218963623,
+        22.531635284423828
+      ],
+      "actual_image_choice": "hold",
+      "models": {
+        "old_action": {
+          "all_six_costs": [
+            5.936578273773193,
+            18.34888458251953,
+            16.479267120361328,
+            37.37132263183594,
+            17.084871292114258,
+            63.53399658203125
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.32213258743286133,
+          "factual_goal_embedding_mse": 5.801813125610352
+        },
+        "old_no_future_action": {
+          "all_six_costs": [
+            5.95784854888916,
+            5.95784854888916,
+            5.95784854888916,
+            5.95784854888916,
+            5.95784854888916,
+            5.95784854888916
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 6.2359561310437455,
+          "factual_dense_mse": 0.46688026189804077,
+          "factual_goal_embedding_mse": 14.895271301269531
+        },
+        "mixed_action": {
+          "all_six_costs": [
+            11.534924507141113,
+            25.385704040527344,
+            18.424530029296875,
+            38.45921325683594,
+            18.597734451293945,
+            53.80685806274414
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.32449430227279663,
+          "factual_goal_embedding_mse": 6.0598602294921875
+        },
+        "mixed_no_future_action": {
+          "all_six_costs": [
+            13.14244270324707,
+            13.14244270324707,
+            13.14244270324707,
+            13.14244270324707,
+            13.14244270324707,
+            13.14244270324707
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 6.2359561310437455,
+          "factual_dense_mse": 0.4827353060245514,
+          "factual_goal_embedding_mse": 21.843515396118164
+        },
+        "parent_action": {
+          "all_six_costs": [
+            5.686213970184326,
+            18.229238510131836,
+            19.849830627441406,
+            34.5794677734375,
+            23.079479217529297,
+            57.21776580810547
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.30937859416007996,
+          "factual_goal_embedding_mse": 5.835350513458252
+        },
+        "parent_no_future_action": {
+          "all_six_costs": [
+            2.7413251399993896,
+            2.7413251399993896,
+            2.7413251399993896,
+            2.7413251399993896,
+            2.7413251399993896,
+            2.7413251399993896
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 6.2359561310437455,
+          "factual_dense_mse": 0.4607240855693817,
+          "factual_goal_embedding_mse": 13.03511905670166
+        },
+        "persistence": {
+          "all_six_costs": [
+            2.3867194652557373,
+            2.3867194652557373,
+            2.3867194652557373,
+            2.3867194652557373,
+            2.3867194652557373,
+            2.3867194652557373
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 6.2359561310437455,
+          "factual_dense_mse": 0.5166497230529785,
+          "factual_goal_embedding_mse": 12.317229270935059
+        }
+      }
+    },
+    {
+      "kind": "late",
+      "case": 0,
+      "departure": 80,
+      "evaluated_actions": [
+        "hold",
+        "right_turn"
+      ],
+      "physical_cost": [
+        1.2631542286850572,
+        3.102548776581877
+      ],
+      "actual_image_cost": [
+        1.3569849729537964,
+        25.3752384185791
+      ],
+      "actual_image_choice": "hold",
+      "models": {
+        "old_action": {
+          "all_six_costs": [
+            3.6465821266174316,
+            13.583171844482422,
+            34.11643981933594,
+            32.898582458496094,
+            29.210803985595703,
+            65.50141143798828
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.29490572214126587,
+          "factual_goal_embedding_mse": 8.30836296081543
+        },
+        "old_no_future_action": {
+          "all_six_costs": [
+            2.0063374042510986,
+            2.0063374042510986,
+            2.0063374042510986,
+            2.0063374042510986,
+            2.0063374042510986,
+            2.0063374042510986
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 0.9196972739484099,
+          "factual_dense_mse": 0.44329944252967834,
+          "factual_goal_embedding_mse": 17.8017578125
+        },
+        "mixed_action": {
+          "all_six_costs": [
+            6.110231876373291,
+            17.59247398376465,
+            31.579572677612305,
+            31.0917911529541,
+            31.903467178344727,
+            55.61330795288086
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.3058303892612457,
+          "factual_goal_embedding_mse": 6.5631632804870605
+        },
+        "mixed_no_future_action": {
+          "all_six_costs": [
+            6.1784186363220215,
+            6.1784186363220215,
+            6.1784186363220215,
+            6.1784186363220215,
+            6.1784186363220215,
+            6.1784186363220215
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 0.9196972739484099,
+          "factual_dense_mse": 0.45564210414886475,
+          "factual_goal_embedding_mse": 24.784645080566406
+        },
+        "parent_action": {
+          "all_six_costs": [
+            2.526176929473877,
+            11.62043285369873,
+            36.64903259277344,
+            31.651138305664062,
+            37.30802917480469,
+            59.822837829589844
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.2915951907634735,
+          "factual_goal_embedding_mse": 6.598328590393066
+        },
+        "parent_no_future_action": {
+          "all_six_costs": [
+            1.6031967401504517,
+            1.6031967401504517,
+            1.6031967401504517,
+            1.6031967401504517,
+            1.6031967401504517,
+            1.6031967401504517
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 0.9196972739484099,
+          "factual_dense_mse": 0.42729663848876953,
+          "factual_goal_embedding_mse": 18.539995193481445
+        },
+        "persistence": {
+          "all_six_costs": [
+            1.543898105621338,
+            1.543898105621338,
+            1.543898105621338,
+            1.543898105621338,
+            1.543898105621338,
+            1.543898105621338
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 0.9196972739484099,
+          "factual_dense_mse": 0.33654388785362244,
+          "factual_goal_embedding_mse": 17.722087860107422
+        }
+      }
+    },
+    {
+      "kind": "late",
+      "case": 3,
+      "departure": 55,
+      "evaluated_actions": [
+        "hold",
+        "right_turn"
+      ],
+      "physical_cost": [
+        1.196735497150919,
+        3.563185979811883
+      ],
+      "actual_image_cost": [
+        1.980623722076416,
+        27.09796905517578
+      ],
+      "actual_image_choice": "hold",
+      "models": {
+        "old_action": {
+          "all_six_costs": [
+            4.824117660522461,
+            16.983362197875977,
+            21.519296646118164,
+            34.157615661621094,
+            20.923152923583984,
+            60.97010040283203
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.27143505215644836,
+          "factual_goal_embedding_mse": 8.958748817443848
+        },
+        "old_no_future_action": {
+          "all_six_costs": [
+            5.015202522277832,
+            5.015202522277832,
+            5.015202522277832,
+            5.015202522277832,
+            5.015202522277832,
+            5.015202522277832
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 1.183225241330482,
+          "factual_dense_mse": 0.4123609960079193,
+          "factual_goal_embedding_mse": 15.387292861938477
+        },
+        "mixed_action": {
+          "all_six_costs": [
+            8.818690299987793,
+            23.189254760742188,
+            24.219696044921875,
+            32.62489700317383,
+            22.196308135986328,
+            53.79639434814453
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.2740568220615387,
+          "factual_goal_embedding_mse": 7.584469795227051
+        },
+        "mixed_no_future_action": {
+          "all_six_costs": [
+            9.507223129272461,
+            9.507223129272461,
+            9.507223129272461,
+            9.507223129272461,
+            9.507223129272461,
+            9.507223129272461
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 1.183225241330482,
+          "factual_dense_mse": 0.41909661889076233,
+          "factual_goal_embedding_mse": 20.012399673461914
+        },
+        "parent_action": {
+          "all_six_costs": [
+            5.0856547355651855,
+            15.678720474243164,
+            26.401851654052734,
+            31.916767120361328,
+            26.63057518005371,
+            54.124610900878906
+          ],
+          "all_six_choices": [
+            "hold"
+          ],
+          "evaluated_choices": [
+            "hold"
+          ],
+          "physical_regret_among_evaluated": 0.0,
+          "factual_dense_mse": 0.27072402834892273,
+          "factual_goal_embedding_mse": 8.028385162353516
+        },
+        "parent_no_future_action": {
+          "all_six_costs": [
+            2.322618246078491,
+            2.322618246078491,
+            2.322618246078491,
+            2.322618246078491,
+            2.322618246078491,
+            2.322618246078491
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 1.183225241330482,
+          "factual_dense_mse": 0.39982596039772034,
+          "factual_goal_embedding_mse": 16.107030868530273
+        },
+        "persistence": {
+          "all_six_costs": [
+            1.9395848512649536,
+            1.9395848512649536,
+            1.9395848512649536,
+            1.9395848512649536,
+            1.9395848512649536,
+            1.9395848512649536
+          ],
+          "all_six_choices": [
+            "hold",
+            "forward",
+            "left_arc",
+            "right_arc",
+            "left_turn",
+            "right_turn"
+          ],
+          "evaluated_choices": [
+            "hold",
+            "right_turn"
+          ],
+          "physical_regret_among_evaluated": 1.183225241330482,
+          "factual_dense_mse": 0.34487298130989075,
+          "factual_goal_embedding_mse": 18.357847213745117
+        }
+      }
+    }
+  ],
+  "right_start": {
+    "models": {
+      "old_action": {
+        "dense_mse": 0.3482765853404999,
+        "factual_mse": [
+          0.21882590651512146,
+          0.3087235689163208,
+          0.35267525911331177,
+          0.4210324287414551,
+          0.4280742108821869,
+          0.36032816767692566
+        ],
+        "action_retrieval": 6,
+        "predicted_goal_costs": [
+          183.76402282714844,
+          138.3885498046875,
+          164.98162841796875,
+          141.186767578125,
+          181.1521453857422,
+          163.5068359375
+        ],
+        "chosen_actions": [
+          "forward"
+        ],
+        "physical_regret": 33.90208226787571
+      },
+      "old_no_future_action": {
+        "dense_mse": 0.5948871970176697,
+        "factual_mse": [
+          0.25444573163986206,
+          0.47538766264915466,
+          0.6743229627609253,
+          0.7402223348617554,
+          0.6880649328231812,
+          0.7368795275688171
+        ],
+        "action_retrieval": 0,
+        "predicted_goal_costs": [
+          185.81655883789062,
+          185.81655883789062,
+          185.81655883789062,
+          185.81655883789062,
+          185.81655883789062,
+          185.81655883789062
+        ],
+        "chosen_actions": [
+          "hold",
+          "forward",
+          "left_arc",
+          "right_arc",
+          "left_turn",
+          "right_turn"
+        ],
+        "physical_regret": 58.23408715924769
+      },
+      "mixed_action": {
+        "dense_mse": 0.2740362882614136,
+        "factual_mse": [
+          0.22264954447746277,
+          0.2584529519081116,
+          0.27611416578292847,
+          0.2873677611351013,
+          0.34523746371269226,
+          0.2543956935405731
+        ],
+        "action_retrieval": 6,
+        "predicted_goal_costs": [
+          184.28379821777344,
+          153.35049438476562,
+          186.11993408203125,
+          110.18702697753906,
+          209.3728790283203,
+          143.33847045898438
+        ],
+        "chosen_actions": [
+          "right_arc"
+        ],
+        "physical_regret": 0.0
+      },
+      "mixed_no_future_action": {
+        "dense_mse": 0.5015876889228821,
+        "factual_mse": [
+          0.294025719165802,
+          0.4015200734138489,
+          0.5251485109329224,
+          0.6197899580001831,
+          0.5449761152267456,
+          0.624065637588501
+        ],
+        "action_retrieval": 0,
+        "predicted_goal_costs": [
+          182.5836181640625,
+          182.5836181640625,
+          182.5836181640625,
+          182.5836181640625,
+          182.5836181640625,
+          182.5836181640625
+        ],
+        "chosen_actions": [
+          "hold",
+          "forward",
+          "left_arc",
+          "right_arc",
+          "left_turn",
+          "right_turn"
+        ],
+        "physical_regret": 58.23408715924769
+      },
+      "parent_action": {
+        "dense_mse": 0.34824737906455994,
+        "factual_mse": [
+          0.20703953504562378,
+          0.32273077964782715,
+          0.3609031140804291,
+          0.4062769412994385,
+          0.44956934452056885,
+          0.34296464920043945
+        ],
+        "action_retrieval": 5,
+        "predicted_goal_costs": [
+          182.9503936767578,
+          135.96119689941406,
+          170.26718139648438,
+          151.530029296875,
+          180.4461669921875,
+          168.33224487304688
+        ],
+        "chosen_actions": [
+          "forward"
+        ],
+        "physical_regret": 33.90208226787571
+      },
+      "parent_no_future_action": {
+        "dense_mse": 0.594500720500946,
+        "factual_mse": [
+          0.25186893343925476,
+          0.46689674258232117,
+          0.670574426651001,
+          0.7513479590415955,
+          0.6844135522842407,
+          0.7419025301933289
+        ],
+        "action_retrieval": 0,
+        "predicted_goal_costs": [
+          181.952392578125,
+          181.952392578125,
+          181.952392578125,
+          181.952392578125,
+          181.952392578125,
+          181.952392578125
+        ],
+        "chosen_actions": [
+          "hold",
+          "forward",
+          "left_arc",
+          "right_arc",
+          "left_turn",
+          "right_turn"
+        ],
+        "physical_regret": 58.23408715924769
+      },
+      "persistence": {
+        "dense_mse": 0.6280639171600342,
+        "factual_mse": [
+          0.032601624727249146,
+          0.5005103945732117,
+          0.7750146389007568,
+          0.8624803423881531,
+          0.7762750387191772,
+          0.821501612663269
+        ],
+        "action_retrieval": 0,
+        "predicted_goal_costs": [
+          181.592041015625,
+          181.592041015625,
+          181.592041015625,
+          181.592041015625,
+          181.592041015625,
+          181.592041015625
+        ],
+        "chosen_actions": [
+          "hold",
+          "forward",
+          "left_arc",
+          "right_arc",
+          "left_turn",
+          "right_turn"
+        ],
+        "physical_regret": 58.23408715924769
+      }
+    },
+    "physical_costs": [
+      181.79820354520373,
+      142.82547134185685,
+      196.2927834574258,
+      108.92338907398114,
+      225.24667596692717,
+      147.85833401397832
+    ],
+    "actual_image_goal_costs": [
+      181.2610626220703,
+      165.35670471191406,
+      189.1182861328125,
+      103.06937408447266,
+      191.7037353515625,
+      135.51852416992188
+    ]
+  },
+  "fit_sha256": "e7a150e5e9e6d4dd29b78b51b0af66259fd05d185e3929c5a12e45259795f189",
+  "goal_metric_sha256": "3d040c24de9481ea85ed6ca6eae2b2fca7081790268aedcdd6e9eb6615032f66",
+  "retained_panel_sha256": "43842ef51a9cd8cac37b3696615fbbf0f03b821520558925f0b646f77699ae49",
+  "source_sha256": "ab489f70032ecd7ce0c17247cafc38e499d6ca66384db562533d93358d95d647",
+  "wall_s": 49.78067933791317,
+  "new_navigation": false,
+  "limitations": [
+    "exposed development panels",
+    "training-role pulse scores are in sample",
+    "same frozen physically supervised goal metric for every arm",
+    "data coverage and future-action effects, not JEPA encoder objective isolation",
+    "prospective closed-loop control still required"
+  ]
+}

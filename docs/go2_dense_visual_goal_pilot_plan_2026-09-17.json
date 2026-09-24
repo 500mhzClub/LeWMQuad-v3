@@ -1,0 +1,85 @@
+{
+  "cases": [
+    [
+      "family_episode_026",
+      "family_episode_010",
+      "action"
+    ],
+    [
+      "family_episode_026",
+      "family_episode_010",
+      "no_future_action"
+    ],
+    [
+      "family_episode_003",
+      "family_episode_089",
+      "no_future_action"
+    ],
+    [
+      "family_episode_003",
+      "family_episode_089",
+      "action"
+    ]
+  ],
+  "goals": {
+    "family_episode_010": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_010/rgb_0023.png",
+      "sha256": "435236a9b84a24bf466815132a02126a8e06bc8b783b8f5ce0b16b3e06f7be0e",
+      "frame": 23
+    },
+    "family_episode_089": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_089/rgb_0023.png",
+      "sha256": "80a4a0fa2b424b1d682eae7f16ef2c02ca158b5ab79017c95e08a34845354d26",
+      "frame": 23
+    }
+  },
+  "source_sha256": {
+    "lewm/dense_visual_goal_control_development.py": "367f28c5faffbd91b64cfeef5a676ea87d1e28bf2173cae6ab2fbb8d4480d88a",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_goal_pilot_development.py": "0d7f59c547b03b6aceabfadf5a6c565179c78e11e6210dfb16264cd84d967583"
+  },
+  "predictor_fit_sha256": "44c2a6e8f4a094c9b89ccf4293d83115da3e666bf781c4d0e2c602d2a9709bfd",
+  "checkpoints": {
+    "action": "beb9e4abd69d652126e7618ef9a18261b627578ea01aa894e287004734e609e7",
+    "no_future_action": "c5c52b37bef6527176b64c0b8481a82bc6d1cd6db3e543d8e1075cd546f89873"
+  },
+  "warmup_ticks": 10,
+  "decisions": 20,
+  "commit_ticks": 5,
+  "forecast_horizon_ms": 500,
+  "final_drain_ticks": 5,
+  "commands": "six unchanged primitive starts, each sustained for five 100-ms ticks; actual limiter trajectory",
+  "cost": "normalized dense predicted-feature MSE to supplied goal image",
+  "seed": 2026091706,
+  "evaluation": {
+    "position_tolerance_m": 0.03,
+    "heading_tolerance_deg": 5.0,
+    "sustained_camera_frames": 3,
+    "goal_pose_available_to_controller": false,
+    "no_success_based_early_stop": true
+  },
+  "precision": "float32 encoder and predictor; CPU Genesis physics and gait",
+  "sensors_used_for_control": [
+    "RGB",
+    "past applied commands"
+  ],
+  "additional_sensors_recorded_not_used": true,
+  "physics_paused_during_compute": true,
+  "new_native_execution": true,
+  "resources": {
+    "available_ram_gib": 72,
+    "output_free_gib": 4.0,
+    "root_free_gib": 1.2,
+    "gpu": "Radeon AI PRO R9700",
+    "gpu_vram_gib": 31.86,
+    "competing_compute_jobs": 0
+  },
+  "execution": "up to two independent processes on disjoint four-core CPU groups; shared GPU; separate outputs",
+  "resource_limits": "stop before next block if output-volume free space drops below 512 MiB",
+  "source_scope": "development source only; no sealed material or historical experiment resumption",
+  "limitations": [
+    "two previously exposed transfer geometries, excluded from adaptation fit",
+    "supplied image goal, local reaching only; no autonomous maze exploration or memory integration",
+    "action-blind tie-randomization control is not a strong reactive visual-servo baseline",
+    "simulation paused during inference, no real-time or hardware claim"
+  ]
+}

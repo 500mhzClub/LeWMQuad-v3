@@ -1,0 +1,257 @@
+{
+  "schema": "explicit_floor_cache_source_derivatives.v1",
+  "derivatives": [
+    {
+      "source": "lewm/joint_visual_floor_map_development.py",
+      "source_sha256": "b5c4bd5d450572bbbbd61c8c87cf81ac05b3d7e4249ea84bd337edeb3b5c57e1",
+      "node": "floor_coverage",
+      "target": "FloorFrameGeometry.floor_coverage",
+      "replacements": [
+        [
+          "def floor_coverage(",
+          "def floor_coverage(self, "
+        ],
+        [
+          "observed_floor_cell_index(",
+          "self.index("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/observed_geometry_refinement_development.py",
+      "source_sha256": "37063446434ca06563765255957d4eee8c4f55f85291b48dc8d532c71b9b9403",
+      "node": "sampled_floor_patch",
+      "target": "FloorFrameGeometry.sampled_floor_patch",
+      "replacements": [
+        [
+          "def sampled_floor_patch(",
+          "def sampled_floor_patch(self, "
+        ],
+        [
+          "observed_floor_cell_index(",
+          "self.index("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/current_primary_floor_plane_development.py",
+      "source_sha256": "4902b54ad0f2ae67974274b49e8792124f0a4dc90d272da85379ce730e5438f3",
+      "node": "primary_floor_plane",
+      "target": "FloorFrameGeometry.primary_floor_plane",
+      "replacements": [
+        [
+          "def primary_floor_plane(",
+          "def primary_floor_plane(self, "
+        ],
+        [
+          "sampled_floor_patch(",
+          "self.sampled_floor_patch("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/current_primary_floor_plane_development.py",
+      "source_sha256": "4902b54ad0f2ae67974274b49e8792124f0a4dc90d272da85379ce730e5438f3",
+      "node": "confirm_auxiliary_floor",
+      "target": "FloorFrameGeometry.confirm_auxiliary_floor",
+      "replacements": [
+        [
+          "def confirm_auxiliary_floor(",
+          "def confirm_auxiliary_floor(self, "
+        ],
+        [
+          "observed_floor_cell_index(",
+          "self.index("
+        ],
+        [
+          "sampled_floor_patch(",
+          "self.sampled_floor_patch("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/retained_floor_patch_development.py",
+      "source_sha256": "d8d774fa3401b40ad60ae5a9d0d085616881b8d5656d26590345e54874693a58",
+      "node": "RetainedFloorPatches.append",
+      "target": "FloorFrameGeometry.append_patch",
+      "replacements": [
+        [
+          "def append(self,",
+          "def append_patch(self,history,"
+        ],
+        [
+          "self.frames",
+          "history.frames"
+        ],
+        [
+          "observed_floor_cell_index(",
+          "self.index("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/measured_floor_contact_development.py",
+      "source_sha256": "ad1053c9e5022b9347cd99810b902818678f0be66114c76e67d8853115b0cda6",
+      "node": "MeasuredFloorContactMemory.classify_current",
+      "target": "FrameCachedFloorMemory._classify_measured",
+      "replacements": [
+        [
+          "def classify_current(",
+          "def _classify_measured("
+        ],
+        [
+          "body_points(",
+          "primary_body_points("
+        ],
+        [
+          "sampled_floor_patch(",
+          "self.frame_geometry.sampled_floor_patch("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/retained_patch_contact_goal_probe_development.py",
+      "source_sha256": "c5388ad89b0f74355f0f284fdf20d4c92e7c55346ceb338604daf4505b313a87",
+      "node": "RetainedPatchContactMemory.classify_current",
+      "target": "FrameCachedFloorMemory._classify_retained",
+      "replacements": [
+        [
+          "def classify_current(",
+          "def _classify_retained("
+        ],
+        [
+          "super().classify_current(",
+          "self._classify_measured("
+        ],
+        [
+          "self.patches.append(",
+          "self.frame_geometry.append_patch(self.patches,"
+        ]
+      ]
+    },
+    {
+      "source": "lewm/confirmed_auxiliary_floor_memory_development.py",
+      "source_sha256": "b40d5fd5934f68d33f2a77dd128b990fcf8114860b7c4d98b9c049c91fcccab0",
+      "node": "ConfirmedAuxiliaryFloorMemory.classify_current",
+      "target": "FrameCachedFloorMemory.classify_current",
+      "replacements": [
+        [
+          "super().classify_current(",
+          "self._classify_retained("
+        ],
+        [
+          "primary_floor_plane(",
+          "self.frame_geometry.primary_floor_plane("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/auxiliary_downward45_floor_map_development.py",
+      "source_sha256": "114100581036be938fb9adaf162eeadfbb247f087ce7475738a903935bc29b0d",
+      "node": "AuxiliaryDownward45SurfaceMemory.observe_auxiliary",
+      "target": "FrameCachedFloorMemory._observe_auxiliary_original",
+      "replacements": [
+        [
+          "def observe_auxiliary(",
+          "def _observe_auxiliary_original("
+        ],
+        [
+          "validate_depth(",
+          "validate_auxiliary_depth("
+        ],
+        [
+          "body_points(",
+          "auxiliary_body_points("
+        ],
+        [
+          "sampled_floor_patch(",
+          "self.frame_geometry.sampled_floor_patch("
+        ],
+        [
+          "self.auxiliary_patches.append(",
+          "self.frame_geometry.append_patch(self.auxiliary_patches,"
+        ],
+        [
+          "floor_coverage(",
+          "self.frame_geometry.floor_coverage("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/confirmed_auxiliary_floor_memory_development.py",
+      "source_sha256": "b40d5fd5934f68d33f2a77dd128b990fcf8114860b7c4d98b9c049c91fcccab0",
+      "node": "ConfirmedAuxiliaryFloorMemory.observe_auxiliary",
+      "target": "FrameCachedFloorMemory.observe_auxiliary",
+      "replacements": [
+        [
+          "super().observe_auxiliary(",
+          "self._observe_auxiliary_original("
+        ],
+        [
+          "body_points(",
+          "auxiliary_body_points("
+        ],
+        [
+          "confirm_auxiliary_floor(",
+          "self.frame_geometry.confirm_auxiliary_floor("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/joint_visual_floor_map_development.py",
+      "source_sha256": "b5c4bd5d450572bbbbd61c8c87cf81ac05b3d7e4249ea84bd337edeb3b5c57e1",
+      "node": "JointVisualFloorMap.observe",
+      "target": "FrameCachedFloorMap._observe_primary",
+      "replacements": [
+        [
+          "def observe(",
+          "def _observe_primary("
+        ],
+        [
+          "body_points(",
+          "primary_body_points("
+        ],
+        [
+          "observed_floor_cell_index(",
+          "self.frame_geometry.index("
+        ],
+        [
+          "floor_coverage(",
+          "self.frame_geometry.floor_coverage("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/measured_floor_contact_goal_probe_development.py",
+      "source_sha256": "3005e939cba658005705f98bc22a0f254198295a4a18b0af6e745a009e680711",
+      "node": "MeasuredFloorContactMap.observe",
+      "target": "FrameCachedFloorMap._observe_classified_primary",
+      "replacements": [
+        [
+          "def observe(",
+          "def _observe_classified_primary("
+        ],
+        [
+          "super().observe(",
+          "self._observe_primary("
+        ]
+      ]
+    },
+    {
+      "source": "lewm/auxiliary_depth_floor_map_development.py",
+      "source_sha256": "4307561672a2b809160c1c8dea0aad03edaf539b613684d052e2270dbb782a04",
+      "node": "AuxiliaryDepthFloorMap.observe",
+      "target": "FrameCachedFloorMap._observe_both",
+      "replacements": [
+        [
+          "def observe(",
+          "def _observe_both("
+        ],
+        [
+          "super().observe(",
+          "self._observe_classified_primary("
+        ]
+      ]
+    }
+  ]
+}

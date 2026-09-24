@@ -1,0 +1,121 @@
+{
+  "status": "POSTHOC_RASTER_FOOTPRINT_ACCOUNTING_ONLY",
+  "source_sha256": {
+    "scripts/check_go2_recorded_raster_footprint_diagnostic_v1.py": "348419c6d76a99501763aac26c59b7c9d45fbe9b922fb5eb9b4c1e032e005de0",
+    "lewm/raster_footprint_visibility_development.py": "1a25b74cc631d6476bed02846f7265fd91b79b0768e703be5e15000cef1a6c3b",
+    "lewm/tests/test_raster_footprint_visibility_development.py": "f74e8f39d9f92a2a7746dc2e1d4ac3cddb32ad3c0ab870caa0509a2fad463a4e"
+  },
+  "input_sha256": {
+    "launch.json": "1d46515179b91d7134c83b6247f0cc22db1de786e3a99a1db9bde82ca85fb218",
+    "failure.json": "b97a6d5d3dad66fdd0fbffaad811dfb3b6feee5e9f4c7363e8aec3f5a04a556b",
+    "episode_063_commit.json": "b9ee75705169b07a3e3425fd650cfd3329ac2c60debed3ee715e3f95b06fb402",
+    "episode_063_raw_precheck.json": "1cb4f8f0637f91d08050f016b42b7071f86b5bfc3c63fede1ef7febb55c72401",
+    "l00_junction_recent_forward_nominal_a3/specification.json": "a918de91ac2f4b85bf73798d953bef14c09835f02e4282101e96f8420cd486d5",
+    "l00_junction_recent_forward_nominal_a3/camera_audit.json": "573568e40501121bc88c7e304d6fab116ffb48943ce2797635e64d9f4e4ef140",
+    "l00_junction_recent_forward_nominal_a3/native_depth_0010.npz": "b6ef7d488a197f069878a8cae8a0982469972d506dc32ba3803c5f064d230b15",
+    "l00_junction_recent_forward_nominal_a3/native_depth_0011.npz": "967d5209fd4c3d97441759f1474371bbf42c4f2991d4fdd0a9d619b64a225e67",
+    "l00_junction_recent_forward_nominal_a3/native_depth_0012.npz": "1d19d4a17b418ae35a4374897a5e6bb1c4df0d135be02b6587d62069f1949f31"
+  },
+  "rows": [
+    {
+      "frame": 10,
+      "report": {
+        "schema": "raster_footprint_visibility_diagnostic.v1",
+        "original_strict_score": {
+          "passes_sampled_physical_visibility": true,
+          "sampled_rays": 4800,
+          "compared_interior_rays": 4247,
+          "clipped_opaque_rays": 0,
+          "false_public_valid_near_rays": 0,
+          "within1mm": true,
+          "maximum_error_m": 0.00032277979161099424,
+          "below_public_range_rays": 0,
+          "render_near_m": 0.005,
+          "stride": 8,
+          "scope": "sampled opaque geometry only; no self-occlusion or hardware qualification"
+        },
+        "original_compared_rays": 4247,
+        "stable_interior_rays": 4155,
+        "boundary_ambiguous_rays": 92,
+        "all_projected_boundary_rays": 154,
+        "stable_interior_bad_rays": 0,
+        "boundary_bad_rays": 0,
+        "stable_interior_metric_pass": true,
+        "stable_interior_maximum_error_m": 0.00032277979161099424,
+        "near_occlusion_failure": false,
+        "boundary_pixels_certified": false,
+        "qualification_granted": false,
+        "policy_filter": false,
+        "scope": "prospective evaluator-only coverage accounting; old strict failures unchanged"
+      }
+    },
+    {
+      "frame": 11,
+      "report": {
+        "schema": "raster_footprint_visibility_diagnostic.v1",
+        "original_strict_score": {
+          "passes_sampled_physical_visibility": false,
+          "sampled_rays": 4800,
+          "compared_interior_rays": 4236,
+          "clipped_opaque_rays": 0,
+          "false_public_valid_near_rays": 0,
+          "within1mm": false,
+          "maximum_error_m": 1.152139957621492,
+          "below_public_range_rays": 0,
+          "render_near_m": 0.005,
+          "stride": 8,
+          "scope": "sampled opaque geometry only; no self-occlusion or hardware qualification"
+        },
+        "original_compared_rays": 4236,
+        "stable_interior_rays": 4137,
+        "boundary_ambiguous_rays": 99,
+        "all_projected_boundary_rays": 161,
+        "stable_interior_bad_rays": 0,
+        "boundary_bad_rays": 1,
+        "stable_interior_metric_pass": true,
+        "stable_interior_maximum_error_m": 0.00021797199676942824,
+        "near_occlusion_failure": false,
+        "boundary_pixels_certified": false,
+        "qualification_granted": false,
+        "policy_filter": false,
+        "scope": "prospective evaluator-only coverage accounting; old strict failures unchanged"
+      }
+    },
+    {
+      "frame": 12,
+      "report": {
+        "schema": "raster_footprint_visibility_diagnostic.v1",
+        "original_strict_score": {
+          "passes_sampled_physical_visibility": true,
+          "sampled_rays": 4800,
+          "compared_interior_rays": 4214,
+          "clipped_opaque_rays": 0,
+          "false_public_valid_near_rays": 0,
+          "within1mm": true,
+          "maximum_error_m": 0.0002520580501146341,
+          "below_public_range_rays": 0,
+          "render_near_m": 0.005,
+          "stride": 8,
+          "scope": "sampled opaque geometry only; no self-occlusion or hardware qualification"
+        },
+        "original_compared_rays": 4214,
+        "stable_interior_rays": 4098,
+        "boundary_ambiguous_rays": 116,
+        "all_projected_boundary_rays": 176,
+        "stable_interior_bad_rays": 0,
+        "boundary_bad_rays": 0,
+        "stable_interior_metric_pass": true,
+        "stable_interior_maximum_error_m": 0.0002520580501146341,
+        "near_occlusion_failure": false,
+        "boundary_pixels_certified": false,
+        "qualification_granted": false,
+        "policy_filter": false,
+        "scope": "prospective evaluator-only coverage accounting; old strict failures unchanged"
+      }
+    }
+  ],
+  "original_batch_failure_preserved": true,
+  "training_eligibility_changed": false,
+  "qualification_granted": false,
+  "goal_achieved": false
+}

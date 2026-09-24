@@ -1,0 +1,8 @@
+{
+  "status": "CHECK_HARNESS_FAILURE",
+  "reason": "Reactive own-source selection does not expose dense memory_forecast_candidates; harness used it for dense-gate shape check.",
+  "source_sha256": "639ce77c42fa6bbc3039e21f8003b987f6c855324f79374ab2c2b9414ef21e1e",
+  "physics_steps": 0,
+  "new_states": 0,
+  "controller_or_model_changes": false
+}

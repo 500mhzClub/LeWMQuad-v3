@@ -1,0 +1,338 @@
+{
+  "source_frames": [
+    687,
+    690
+  ],
+  "processed_fit_frame": 345,
+  "source_sha256": "35980eb3d645debb7e3ee2058274473bd8904321909a28591577214b9c7b11a8",
+  "rules": {
+    "sift_features": 600,
+    "ratio": 0.7,
+    "lk_window": 21,
+    "lk_levels": 3,
+    "fb_pixels": 0.5,
+    "minimum_matches": 12,
+    "minimum_grid_cells": 6,
+    "grid_columns": 4,
+    "grid_rows": 3,
+    "depth_spread_base_m": 0.02,
+    "depth_spread_fraction": 0.01,
+    "residual_m": 0.02,
+    "minimum_inlier_fraction": 0.6,
+    "reprojection_pixels": 1.0,
+    "maximum_translation_m": 0.15
+  },
+  "cameras": {
+    "primary": {
+      "association": {
+        "counts": {
+          "reference_corners": 49,
+          "distinct_reference_corners": 49,
+          "forward_finite": 9,
+          "reverse_finite": 9,
+          "forward_backward": 9,
+          "photometric": 9,
+          "distinct_current": 9,
+          "valid_depth_pair": 9
+        },
+        "association": "direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "same_pixel_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false
+      },
+      "reference_features": {
+        "detected_features": 49,
+        "liftable_features": 49,
+        "selected_features": 49,
+        "selected_per_cell": [
+          13,
+          1,
+          1,
+          1,
+          6,
+          10,
+          7,
+          4,
+          1,
+          1,
+          2,
+          2
+        ],
+        "feature_selection": "corner_upright_sift_support_v1",
+        "native_state_used": false
+      },
+      "current_features": {
+        "detected_features": 69,
+        "liftable_features": 67,
+        "selected_features": 67,
+        "selected_per_cell": [
+          1,
+          1,
+          1,
+          19,
+          1,
+          1,
+          1,
+          25,
+          1,
+          1,
+          1,
+          14
+        ],
+        "feature_selection": "corner_upright_sift_support_v1",
+        "native_state_used": false
+      },
+      "accepted": false,
+      "failure": "insufficient rigid-pose matches"
+    },
+    "auxiliary": {
+      "association": {
+        "counts": {
+          "reference_corners": 58,
+          "distinct_reference_corners": 58,
+          "forward_finite": 53,
+          "reverse_finite": 46,
+          "forward_backward": 34,
+          "photometric": 34,
+          "distinct_current": 34,
+          "valid_depth_pair": 34
+        },
+        "association": "direct_corner_lk_photometric_v1",
+        "original_descriptor_gates_applied": false,
+        "initial_flow": "same_pixel_hypothesis",
+        "flow_rules": {
+          "maximum_reference_corners": 600,
+          "patch_width": 11,
+          "minimum_patch_std": 2.0,
+          "minimum_patch_zncc": 0.9
+        },
+        "forward_backward_limit_pixels": 0.5,
+        "rigid_geometry_evaluated": false,
+        "pose_admitted": false,
+        "native_state_used": false
+      },
+      "reference_features": {
+        "detected_features": 58,
+        "liftable_features": 58,
+        "selected_features": 58,
+        "selected_per_cell": [
+          1,
+          1,
+          1,
+          1,
+          1,
+          5,
+          1,
+          9,
+          3,
+          12,
+          18,
+          5
+        ],
+        "feature_selection": "corner_upright_sift_support_v1",
+        "native_state_used": false
+      },
+      "current_features": {
+        "detected_features": 100,
+        "liftable_features": 96,
+        "selected_features": 96,
+        "selected_per_cell": [
+          1,
+          1,
+          1,
+          10,
+          2,
+          5,
+          9,
+          15,
+          14,
+          7,
+          14,
+          17
+        ],
+        "feature_selection": "corner_upright_sift_support_v1",
+        "native_state_used": false
+      },
+      "accepted": false,
+      "failure": "rigid consensus fraction, grid support or displacement rejected",
+      "rejected_fit": {
+        "inliers": 19,
+        "inlier_fraction": 0.5588235294117647,
+        "reference_grid_cells": 8,
+        "current_grid_cells": 9,
+        "translation_norm_m": 0.011199597633374888,
+        "rotation_rad": 0.13858127983903856,
+        "residual_rms_m": 0.0005532732157001127,
+        "reference_inlier_pixels": [
+          [
+            426.0,
+            325.0
+          ],
+          [
+            176.0,
+            414.0
+          ],
+          [
+            204.0,
+            316.0
+          ],
+          [
+            582.0,
+            436.0
+          ],
+          [
+            394.0,
+            141.0
+          ],
+          [
+            564.0,
+            317.0
+          ],
+          [
+            442.0,
+            427.0
+          ],
+          [
+            574.0,
+            144.0
+          ],
+          [
+            380.0,
+            251.0
+          ],
+          [
+            312.0,
+            321.0
+          ],
+          [
+            201.0,
+            326.0
+          ],
+          [
+            198.0,
+            336.0
+          ],
+          [
+            426.0,
+            331.0
+          ],
+          [
+            429.0,
+            351.0
+          ],
+          [
+            436.0,
+            398.0
+          ],
+          [
+            439.0,
+            418.0
+          ],
+          [
+            427.0,
+            339.0
+          ],
+          [
+            428.0,
+            346.0
+          ],
+          [
+            437.0,
+            406.0
+          ]
+        ],
+        "current_inlier_pixels": [
+          [
+            355.76806640625,
+            318.70172119140625
+          ],
+          [
+            101.48003387451172,
+            444.39794921875
+          ],
+          [
+            129.92593383789062,
+            337.5220642089844
+          ],
+          [
+            503.4771423339844,
+            406.51812744140625
+          ],
+          [
+            281.4793701171875,
+            143.00245666503906
+          ],
+          [
+            484.52667236328125,
+            294.7265319824219
+          ],
+          [
+            373.2227783203125,
+            417.5240783691406
+          ],
+          [
+            452.3399963378906,
+            132.5294189453125
+          ],
+          [
+            293.770751953125,
+            252.19113159179688
+          ],
+          [
+            242.63214111328125,
+            329.5788269042969
+          ],
+          [
+            126.94417572021484,
+            347.7815856933594
+          ],
+          [
+            123.970947265625,
+            358.54718017578125
+          ],
+          [
+            355.767578125,
+            324.7040100097656
+          ],
+          [
+            359.06793212890625,
+            344.13775634765625
+          ],
+          [
+            366.9748840332031,
+            390.47015380859375
+          ],
+          [
+            370.15771484375,
+            409.017333984375
+          ],
+          [
+            356.98065185546875,
+            333.4798889160156
+          ],
+          [
+            357.93695068359375,
+            339.3738708496094
+          ],
+          [
+            367.9658203125,
+            397.53948974609375
+          ]
+        ]
+      }
+    }
+  },
+  "original_fit_unchanged": true,
+  "rejected_pose_admitted": false,
+  "raw_native_pose_loaded": false,
+  "new_navigation": false
+}

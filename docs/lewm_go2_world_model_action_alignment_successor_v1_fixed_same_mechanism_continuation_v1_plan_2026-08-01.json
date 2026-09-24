@@ -1,0 +1,259 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_plan_v1",
+  "purpose": "bounded_u700_to_u900_absolute_treatment_progress_gate",
+  "route": "FIXED_SAME_MECHANISM_CONTINUATION_V1",
+  "development_only": true,
+  "authorizes_execution": false,
+  "citable_as_original_factual_learnability_claim": false,
+  "citable_as_planning_usefulness_evidence": false,
+  "predecessor_evidence": {
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_execution_authority_2026-08-01.json",
+      "file_sha256": "88b2c43264a9ee0fb46cf032d4323281d57f84148ff47a1dce98cde403b55cac",
+      "byte_count": 22455
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/reservation.json",
+      "file_sha256": "34d54c60ef4916eb942574de90f620a0bf15be337497e29fe73277c5abf26787",
+      "byte_count": 22188
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/result.json",
+      "file_sha256": "57d9cfc2bcfa946805255bfdd1144faaf40290f7a921f6d201e770e114d7dd9b",
+      "byte_count": 164670
+    },
+    "receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/receipt_check.json",
+      "file_sha256": "46b157fb685b41ce05a347f34d4e1a67ad38485350fdfe69412b21fbe4048ec4",
+      "byte_count": 1849
+    },
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/terminal_supervision.json",
+      "file_sha256": "098d42503da1255ddc7b5a0c49cbbb746e6c41e8aca64627cc9d25a3cc0824b7",
+      "byte_count": 6764
+    },
+    "terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_2026-08-01.json",
+      "file_sha256": "51e760bc868f4cc2307dcc98c2778f97502e7643c866067eb0d47f8b35de3f45",
+      "byte_count": 13967
+    },
+    "preauthority_identity_read_disclosure": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preauthority_identity_read_disclosure_2026-08-01.json",
+      "file_sha256": "a602a28b0cf4d9af34318dad98507a911e576cfdbd41e655c3e851bf1dbccc7c",
+      "byte_count": 5303
+    },
+    "continuation_governance_correction": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_governance_correction_2026-08-01.json",
+      "file_sha256": "1a13d90b567c0e25bb459848bdc5b818568226160f5b1b80467d9df5e15cb341",
+      "byte_count": 3431
+    }
+  },
+  "arms": [
+    {
+      "name": "baseline",
+      "alignment_coefficient": 0.0,
+      "u700_snapshot": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/baseline_update_000700.pt",
+        "file_sha256": "613693d06309f90b87a7ac3e836d6817eed8c1e473ed0063006eb88960bce770",
+        "byte_count": 10909343
+      }
+    },
+    {
+      "name": "alignment",
+      "alignment_coefficient": 1.0,
+      "u700_snapshot": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/alignment_update_000700.pt",
+        "file_sha256": "41435888521041aaa262db9a26eaa656d33a339998372ffd0b068d7c75679731",
+        "byte_count": 10909343
+      }
+    }
+  ],
+  "objective": "mean(E_factual) + coefficient * mean(relu(0.01 + E_factual - min_wrong_E))",
+  "action_margin": 0.01,
+  "head_row_presentations_per_arm_per_training_row": 10,
+  "continuation": {
+    "source_global_update": 700,
+    "terminal_global_update": 900,
+    "additional_updates": 200,
+    "load_both_arm_state_dicts": true,
+    "load_each_arms_own_adamw_state": true,
+    "optimizer_step_at_source": 700,
+    "optimizer_step_at_terminal": 900,
+    "warmup_reset": false,
+    "optimizer_reset": false,
+    "schedule_replay": false,
+    "schedule_prefix_exact": true,
+    "pretraining_u700_validation_replay": true,
+    "u700_public_anchor_absolute_tolerance": 1e-12,
+    "u700_public_anchor_relative_tolerance": 0.0
+  },
+  "training": {
+    "rows": 16000,
+    "validation_rows": 2048,
+    "global_schedule_updates": 900,
+    "trained_global_updates_inclusive": [
+      701,
+      900
+    ],
+    "additional_updates": 200,
+    "batch_size": 256,
+    "microbatch_size": 32,
+    "additional_presentations_per_arm": 51200,
+    "seed": 20260731,
+    "warmup_updates": 150,
+    "schedule_horizon_updates": 3000,
+    "observation_updates": [
+      700,
+      800,
+      900
+    ],
+    "checkpoint_selection": false,
+    "early_stopping": false,
+    "validation_gradient": false
+  },
+  "absolute_progress_decision": {
+    "definition": "hardest_action_margin_u900_minus_u700_within_alignment_arm",
+    "bootstrap_algorithm": "python_random_mt19937_getrandbits52_open01_neg_log1p_shared_checkpoint_family_scene_weights_v1",
+    "seed": 20260812,
+    "replicates": 10000,
+    "quantile_indices": [
+      500,
+      5000,
+      9499
+    ],
+    "u700_residual": 0.00660276124845185,
+    "u701_u900_learning_rate_fraction_sum": 175.22190359794223,
+    "u701_u3000_remaining_learning_rate_fraction_sum": 891.0844401632202,
+    "u701_u900_remaining_learning_rate_mass_share": 0.19663894430234558,
+    "on_trajectory_gain_threshold": 0.001298360001376009,
+    "u500_u700_loss_recovery_diagnostic": 0.0004319475801099867,
+    "requires_q05_positive": true,
+    "concurrent_baseline_relative_delta_is_diagnostic_only": true
+  },
+  "u700_descriptive_anchors": {
+    "balanced_accuracy_q05": 0.34701964075333114,
+    "rank_ratio": 0.47287848726118314,
+    "persistence_q05": -0.22601831547011703,
+    "wrong_history_q05": 0.1406183675693852,
+    "worst_action_margin_point": -0.00660276124845185,
+    "shared_minimum_margin_q05": -0.0078111838906331724
+  },
+  "continuation_retention": {
+    "balanced_accuracy_q05_strictly_above": 0.1111111111111111,
+    "wrong_history_q05_strictly_above": 0.0,
+    "rank_ratio_at_least": 0.25,
+    "rank_minimum_passing_observation_count": 2,
+    "rank_observation_updates": [
+      700,
+      800,
+      900
+    ],
+    "preserve_positive_action_margin_point_ids": [
+      0,
+      4,
+      7
+    ],
+    "preserve_positive_action_margin_q05_ids": [
+      0,
+      4,
+      7
+    ],
+    "all_contract_checks": true,
+    "all_train_fit_checks": true,
+    "persistence_is_post_alignment_routing_not_retention": true
+  },
+  "terminal_precedence": [
+    "FAIL_CONTRACT_CLOSE_ALIGNMENT_BRANCH",
+    "FAIL_RETENTION_CLOSE_ALIGNMENT_BRANCH",
+    "PASS_ACTION_ALIGNMENT_PROXY_REPAIR_PERSISTENCE_SYSTEMIC",
+    "PASS_ACTION_ALIGNMENT_PROXY_REPAIR_PLANNING_WITH_PROXY_CAVEAT",
+    "PASS_EXPLORATORY_ACTION_ALIGNMENT_AND_PREDICTOR_USEFULNESS_PROXY",
+    "MEANINGFUL_ABSOLUTE_PROGRESS_INCOMPLETE_CONTINUE_SAME_MECHANISM",
+    "POSITIVE_BUT_INSUFFICIENT_RATE_CLOSE_ALIGNMENT_BRANCH",
+    "INCONCLUSIVE_ABSOLUTE_CHANGE_CLOSE_ALIGNMENT_BRANCH",
+    "STALLED_OR_HARMFUL_CLOSE_ALIGNMENT_BRANCH"
+  ],
+  "action_alignment_repair": {
+    "all_nine_action_margin_points_positive": true,
+    "all_nine_action_margin_q05_positive": true,
+    "shared_minimum_margin_q05_positive": true,
+    "balanced_accuracy_q05_strictly_above_chance": true,
+    "wrong_history_q05_positive": true,
+    "rank_gate_passed": true,
+    "all_retention_contract_and_train_fit_checks_passed": true
+  },
+  "post_alignment_persistence_routing": {
+    "systemic_failure_minimum_nonpositive_per_action_q05_count": 5,
+    "systemic_next_step": "PERSISTENCE_RESIDUAL_VS_MATCHED_BASELINE",
+    "localized_or_aggregate_unrepaired_next_step": "PLANNING_USEFULNESS_GATE_WITH_PROXY_CAVEAT",
+    "passed_requires_zero_nonpositive_per_action_q05_and_positive_aggregate_q05": true,
+    "passed_next_step": "PROCEED_TO_PLANNING_USEFULNESS_GATE",
+    "automatic_execution_authority": false
+  },
+  "meaningful_progress_incomplete": {
+    "absolute_gain_at_least": 0.001298360001376009,
+    "absolute_gain_q05_positive": true,
+    "continuation_retention_passed": true,
+    "permits_separate_same_mechanism_preregistration": true,
+    "automatic_execution_authority": false,
+    "selected_next_step": "PREREGISTER_NEXT_FIXED_SAME_MECHANISM_BLOCK"
+  },
+  "reuse": {
+    "v3_pack_read_only": true,
+    "fresh_pack": false,
+    "rgb_open_count": 0,
+    "data_generation": false,
+    "network_access": false,
+    "predecessor_metric_bundle_input": false,
+    "prior_attempt_root_write_count": 0
+  },
+  "attempt": {
+    "id": "world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1/attempt_v1",
+    "maximum_attempts": 1,
+    "reservation_consumes_attempt": true,
+    "retry": false,
+    "resume": false,
+    "refill": false,
+    "overwrite": false,
+    "recovery": false,
+    "integrity_replacement": false,
+    "further_continuation": false,
+    "identical_replication": false
+  },
+  "caps": {
+    "maximum_wall_seconds": 9000,
+    "maximum_gpu_seconds": 7200,
+    "maximum_additional_training_updates": 200,
+    "maximum_global_training_update": 900
+  },
+  "forbidden": [
+    "sealed_or_heldout_access",
+    "protected_runtime_access",
+    "rgb_access",
+    "new_data_generation",
+    "alternate_pack_or_checkpoint",
+    "cross_arm_snapshot_load",
+    "optimizer_reset",
+    "warmup_reset",
+    "schedule_replay_or_change",
+    "architecture_or_objective_change",
+    "coefficient_or_threshold_search",
+    "validation_gradient",
+    "automatic_follow_on",
+    "retry_resume_refill_overwrite_or_recovery",
+    "integrity_replacement",
+    "unregistered_further_alignment_continuation_or_replication"
+  ],
+  "finality": {
+    "meaningful_progress_requires_separate_preregistration": true,
+    "all_other_alignment_unrepaired_outcomes_close_training": true,
+    "proxy_pass_does_not_authorize_planning_execution": true,
+    "automatic_follow_on": false
+  },
+  "bootstrap_claim_boundary": {
+    "conditional_on_adaptively_selected_continuation": true,
+    "validation_scene_reweighting_only": true,
+    "training_seed_uncertainty_measured": false,
+    "fresh_scene_generalization_measured": false
+  }
+}

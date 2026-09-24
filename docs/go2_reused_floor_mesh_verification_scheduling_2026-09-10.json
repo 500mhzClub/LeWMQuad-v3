@@ -1,0 +1,30 @@
+{
+  "status": "WAITING_FOR_EXACT_REPLAY_OWNER_TO_FINISH",
+  "preparation_path": "docs/go2_reused_floor_mesh_verification_preparation_2026-09-10.json",
+  "preparation_sha256": "6ead28e17b5d6d1bec85dc4d510b7e94f58822921f821cc7e8f7406488a0c4d4",
+  "launch_sha256": "15db8432621bbbc33fb098ce2a71bfa63b9b82fdf9e62421603508f8e879d6b0",
+  "replay_owner": {
+    "pid": 2726828,
+    "create_time": 1789062313.09,
+    "cmdline": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/replay_go2_reused_floor_mesh_prefix_v1.py",
+      "--profile-result-sha256",
+      "c636eb55c13f02624b73680295ab3f70d7faac00680d7e66dd820b870cfb9866"
+    ]
+  },
+  "waiter_owner": {
+    "pid": 2729358,
+    "create_time": 1789063423.95,
+    "cmdline": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-"
+    ]
+  },
+  "verification_source_count": 2020,
+  "poll_seconds": 30,
+  "timeout_seconds": 10800,
+  "automatic_replay_restart": false,
+  "model_inference": false,
+  "native_execution": false
+}

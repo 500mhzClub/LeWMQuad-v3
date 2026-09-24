@@ -1,0 +1,55 @@
+{
+  "access": {
+    "dataset_payload_or_rgb_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "scientific_gpu_or_training_run_count": 0,
+    "tensor_checkpoint_open_count": 0
+  },
+  "content_sha256": "d0a0394289c536d5a5cce2330b6964f337430e7b8f4a3c3f89db7cf877b2095b",
+  "implementation_commit": "6d7c10c2aa7394cfe5a2d367278f7a6c8a2d130c",
+  "independent_reviews": [
+    {
+      "finding": "scientific_modules_and_engine_byte_identical_lifecycle_delta_only_guard_precedes_reservation_and_scientific_imports",
+      "reviewer": "/root/v25_science_design",
+      "scope": "science_identity_and_pre_reservation_visibility_ordering",
+      "status": "PASS"
+    },
+    {
+      "finding": "exact_117_path_closure_preserved_and_replacement_bindings_complete",
+      "reviewer": "/root/v27_successor_feasibility",
+      "scope": "recursive_source_closure_and_custody",
+      "status": "PASS"
+    }
+  ],
+  "manifest": {
+    "byte_count": 36066,
+    "content_sha256": "cea3ff66b95123248310f80734e34598de8eb89e0779fc2417da09b94b631056",
+    "file_sha256": "5a9b3dd4595f93561dc5a253da1f65ba0b397476aa8a75beda45b68708bc2133",
+    "path": "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v1_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "ccbfc1de3bc072e1a35a18c78e50ec9819a7d114b296ca8bd3cd4c0f725d57cc",
+    "source_count": 117,
+    "source_paths_sha256": "1dfe0f87fc1514e240b72c5a2b0af83498ff8152059351dc396686036af214ad"
+  },
+  "predecessor_scientific_implementation_commit": "65df879f200654c0220b244558ea8015ae2c15e1",
+  "preregistration_commit": "374899de71f59fca4c4ad646e783a1662e0ed1f5",
+  "reviewed_source_commit": "2e3da79c590acdf57151cf480a9091f8ef84e742",
+  "schema": "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v1_source_review_v1",
+  "science_identity": {
+    "dataset_model_training_and_evaluator_byte_identical": true,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "pre_reservation_guard_mutates_environment": false,
+    "pre_reservation_guard_queries_hardware_or_imports_torch": false,
+    "reservation_mode_only_correction": true,
+    "schedule_seed_losses_thresholds_initialization_gates_and_engine_unchanged": true
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY_SCIENCE_IDENTICAL_GPU_VISIBILITY_INTEGRITY_REPLACEMENT",
+  "tests": {
+    "command_scope": "six_focused_v27_test_files_warnings_as_errors_cpu_only",
+    "failed": 0,
+    "passed": 58
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "status": "PASS",
+  "checks": [
+    {
+      "decision_sha256": "e7bfb3c1cfdc80a1b12f2eb0e9d1c7b522c245d7dd950ff47f2e64a161ae1fea",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    },
+    {
+      "decision_sha256": "fcea3b47d41e8d74aad0efdb9b12026fc6ea73886386f0dccc9007e2bd23ebde",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    },
+    {
+      "decision_sha256": "ed59ee4987f88c38d3c38ee13e8a278a4ad4e04fbeb5d05d08dcf61a7ab1bec0",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    },
+    {
+      "decision_sha256": "4180d7a438ea1b6181e079817996c648b0cc2bea88b245b995c889a565616aa0",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    },
+    {
+      "decision_sha256": "ffe7b7d5386e59899394157c7540cccaceaf49b37fb3d1ddb5198bf9923e74b0",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    },
+    {
+      "decision_sha256": "82ee8ff663d82ee2b987bf0455123428a66baf718869b626f7b83aa0a0e2643a",
+      "own_source_parity": true,
+      "missing_quantity_does_not_disable_other_rows": true,
+      "unknown_true_candidate_does_not_disable_other_candidate_gates": true
+    }
+  ],
+  "source_sha256": {
+    "lewm/decision_headroom_v4_development.py": "4787ee960b3ef67daa98075642946897559a04dc4c075e2a698e78318c04d12b",
+    "lewm/decision_headroom_v4_collection_development.py": "c40982715a7e39b6eda4013b76f3f9790f01047f24d8c82ef5c17b1c026a1520",
+    "lewm/decision_headroom_v4_layout_runtime_development.py": "2a810020a787861ceb91c5695d9f95b0bf8d59166cabb90d52381f33af7c93a3",
+    "scripts/run_go2_headroom_v4_development.py": "a0076211745e1f1bce83c560912429857c14c20634d2eeae21ef2405f4822884",
+    "scripts/run_go2_headroom_v4_source_development.py": "353506316e7b0754ba293deaf39bc0037e3e2ba63c9e7e0dd70046e72d934893",
+    "scripts/run_go2_headroom_v4_branches_development.py": "b9c853ebf72c1618826b9ceb231f6f854a5a81ca9c85b06d69651adc1532d696",
+    "scripts/read_go2_headroom_v4_development.py": "22171a92b60dbaa71b31370b32cf7f5d1923f723a11a0e0e3cd7c7eef74e2bf2"
+  },
+  "physics_steps": 0,
+  "new_states": 0,
+  "comparative_results_retained": false
+}

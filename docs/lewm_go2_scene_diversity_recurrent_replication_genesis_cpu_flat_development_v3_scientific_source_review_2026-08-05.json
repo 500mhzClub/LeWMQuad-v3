@@ -1,0 +1,198 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_source_review_v1",
+  "status": "PASS_INDEPENDENT_SCIENTIFIC_SOURCE_REVIEW",
+  "review_date": "2026-08-05",
+  "review_scope": "Independent source, frozen-plan, custody, qualification-boundary, runtime-isolation, and focused-test review for exactly one fresh CPU-flat V3 scientific invocation. This review does not execute, reserve, retry, resume, repair, refill, overwrite, or authorize a second invocation.",
+  "protected_material_opened": false,
+  "findings": [],
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_preregistration_2026-08-05.md",
+    "sha256": "ce99a5e1034288823f5e4cb92b65703ca5ca53d529010c0872571d2967613f80",
+    "byte_count": 10671
+  },
+  "scientific_plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_exact_plan_2026-08-05.json",
+    "sha256": "0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29",
+    "byte_count": 359692
+  },
+  "scientific_plan_builder_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_plan.py",
+    "sha256": "e563688ba5e5c6891adce7b2a37587cb8c07611a2faac81286d3744fdc27141a",
+    "byte_count": 21539
+  },
+  "scientific_runner_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+    "sha256": "0472fb4bb58e275bf3ad31dcee34843547dac74d500297fe206a7940c8dcc770",
+    "byte_count": 97006
+  },
+  "focused_test_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+    "sha256": "8d3954aa5f38465ec2940886488c6d59da7e8f5a79ae521b5055415ebabf38f0",
+    "byte_count": 15131
+  },
+  "source_bindings": {
+    "bounded_render_checks": {
+      "byte_count": 28603,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_bounded_branch_experiment_authorized_v1.py",
+      "sha256": "4aa20723053507f55d640e3c5f9639449ede69490558dc9d0e7caf1df5057405"
+    },
+    "collection_kernel": {
+      "byte_count": 142255,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "b5602e980baa616a9360115deec6f8bf23dbc99a24181f42800e0af4fecf1896"
+    },
+    "cpu_initialization": {
+      "byte_count": 9729,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+      "sha256": "c1cd446350b5d1d8b6f3862905decac6728c3be3cc4cbc832e1f053b9ee9cece"
+    },
+    "flat_worker_helpers": {
+      "byte_count": 51386,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1.py",
+      "sha256": "cd49a3a8d87fcca13b67ecf1e4a293306856f1b60ebf90013971b4e5814cdb9f"
+    },
+    "frozen_replication_benchmark": {
+      "byte_count": 22501,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "746598716f7f4dd8b655d58cca947c65ad547507ece3e1a0184810376f6e350a"
+    },
+    "frozen_replication_runner": {
+      "byte_count": 46338,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "4f3ab622e93570ac1567ccf6dad73c7aaa46089e533c3493de01c3cfa7cd8be5"
+    },
+    "qualified_worker_harness": {
+      "byte_count": 71879,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3.py",
+      "sha256": "c08653e27cb33048814539f2a8ba06be69ee917bbc0bac9a4bc5ea6206c468dd"
+    },
+    "runtime_supervision_helpers": {
+      "byte_count": 35532,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py",
+      "sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b"
+    },
+    "scene_closure_helpers": {
+      "byte_count": 81912,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "ff062cf1198abb6c5677fd946e6e956399c303b59c2a137565433131edd1c2cf"
+    },
+    "scientific_plan_builder": {
+      "byte_count": 21539,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_plan.py",
+      "sha256": "e563688ba5e5c6891adce7b2a37587cb8c07611a2faac81286d3744fdc27141a"
+    },
+    "scientific_runner": {
+      "byte_count": 97006,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+      "sha256": "0472fb4bb58e275bf3ad31dcee34843547dac74d500297fe206a7940c8dcc770"
+    },
+    "scientific_runner_test": {
+      "byte_count": 15131,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+      "sha256": "8d3954aa5f38465ec2940886488c6d59da7e8f5a79ae521b5055415ebabf38f0"
+    }
+  },
+  "qualification_pass_decision_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/qualification_decision.json",
+    "sha256": "6eac9ff6458092d6284011934c865b45519cbd2ff14c0b2da3a515bbf4a6a299",
+    "byte_count": 1789
+  },
+  "independent_qualification_terminal_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_terminal_review_2026-08-05.json",
+    "sha256": "bc13e880fc348515384b906ea7dce32bc7587df089f7aa7f6b630d71e87ce31d",
+    "byte_count": 13591
+  },
+  "dino": {
+    "checkpoint_binding": {
+      "byte_count": 88283115,
+      "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+      "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+    },
+    "repository_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "repository_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+  },
+  "independent_verification": {
+    "qualification_to_science_plan_delta": {
+      "recursive_changed_path_count": 24,
+      "changed_paths_outside_successor_contract": [
+        "attempt_id",
+        "output_root"
+      ],
+      "normalization_result": "Replacing attempt_id and output_root and removing successor_contract restores the exact qualification plan.",
+      "qualification_payload_reuse": false
+    },
+    "scientific_payload": {
+      "scene_count": 64,
+      "state_count": 256,
+      "branch_count": 2304,
+      "context_image_count": 768,
+      "target_image_count": 2304,
+      "train_state_count": 128,
+      "eval_state_count": 128
+    },
+    "execution_environment": {
+      "exact_key_count": 11,
+      "home_retained": true,
+      "path": "/usr/bin:/bin",
+      "model_training_backend": "CPU",
+      "render_backend": "AMD Radeon RX 9070 XT via the frozen Vulkan/EGL render contract",
+      "worker_isolation": "Exactly 64 fresh scene process groups, one for each scene index 0 through 63."
+    },
+    "protocol": {
+      "arm_count": 3,
+      "arms": [
+        "frozen_one_step",
+        "frozen_recurrent",
+        "trainable_recurrent"
+      ],
+      "live_action_conditioning": true,
+      "seed_count": 3,
+      "optimizer_update_count": 800,
+      "loss_rank_weight": 0.25,
+      "context_features": "Frozen DINOv2 ViT-S/14 context features only.",
+      "successor_rgb_available_to_evaluation": false,
+      "checkpoint_durability_boundary": "Checkpoint is written, fsynced, reopened on CPU, and ledgered before evaluation receipts are accessed.",
+      "evaluation_count": 2,
+      "gate_report_count": 5
+    },
+    "runtime_and_limits": {
+      "bound_torch_version": "2.12.0+cu130",
+      "torch_cuda_available": false,
+      "torch_cuda_device_count": 0,
+      "training_device": "cpu",
+      "whole_run_wall_clock_cap_seconds": 7200,
+      "fresh_scientific_root_absent_at_review": true
+    },
+    "qualification_boundary": {
+      "runtime_read_guard_result": "PASS",
+      "only_allowed_qualification_runtime_read": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/qualification_decision.json",
+      "independent_terminal_review_is_documentary_evidence": true,
+      "qualification_scene_state_branch_rgb_mesh_checkpoint_or_result_payload_read": false
+    },
+    "tests": {
+      "command": "PYTEST_DISABLE_PLUGIN_AUTOLOAD=1 /home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python -B -m pytest -q lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_plan.py lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+      "passed": 14,
+      "failed": 0,
+      "elapsed_seconds": 23.75,
+      "python_compile": "PASS"
+    },
+    "custody": {
+      "sealed_or_protected_material_opened": false,
+      "held_out_payload_opened": false,
+      "ordinary_source_discovery_honored_ignore_rules": true
+    }
+  },
+  "decision": {
+    "source_review_passed": true,
+    "exact_scientific_payload_identity_verified": true,
+    "exact_eleven_key_environment_verified": true,
+    "exact_64_fresh_scene_process_contract_verified": true,
+    "frozen_three_arm_protocol_and_gates_verified": true,
+    "minimal_qualification_decision_and_terminal_review_only": true,
+    "qualification_payload_reuse_authorized": false,
+    "fresh_scientific_root_verified": true,
+    "exactly_one_scientific_invocation_eligible_under_user_authorization": true,
+    "scientific_execution_authority_created_by_review": false,
+    "retry_resume_refill_overwrite_repair_or_second_invocation_authorized": false
+  }
+}

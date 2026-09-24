@@ -1,0 +1,120 @@
+{
+  "status": "COMPLETE",
+  "rows": [
+    {
+      "action": "hold",
+      "predicted_pose": [
+        0.2881588041782379,
+        -0.07962097972631454,
+        -0.5195715427398682
+      ],
+      "actual_image_pose": [
+        0.28076866269111633,
+        -0.09064797312021255,
+        -0.5712243318557739
+      ],
+      "predicted_signed_cost": 134.75389099121094,
+      "actual_image_signed_cost": 139.56692504882812,
+      "physical_cost": 181.79820354520373
+    },
+    {
+      "action": "forward",
+      "predicted_pose": [
+        0.24692432582378387,
+        -0.07340991497039795,
+        -0.5395466089248657
+      ],
+      "actual_image_pose": [
+        0.24877598881721497,
+        -0.07275783270597458,
+        -0.5444834232330322
+      ],
+      "predicted_signed_cost": 111.96043395996094,
+      "actual_image_signed_cost": 113.57711791992188,
+      "physical_cost": 142.82547134185685
+    },
+    {
+      "action": "left_arc",
+      "predicted_pose": [
+        0.25422802567481995,
+        -0.08480025827884674,
+        -0.7117055058479309
+      ],
+      "actual_image_pose": [
+        0.26789480447769165,
+        -0.07268478721380234,
+        -0.6880327463150024
+      ],
+      "predicted_signed_cost": 146.3162078857422,
+      "actual_image_signed_cost": 147.773681640625,
+      "physical_cost": 196.2927834574258
+    },
+    {
+      "action": "right_arc",
+      "predicted_pose": [
+        0.28328725695610046,
+        -0.07047481089830399,
+        -0.5195046663284302
+      ],
+      "actual_image_pose": [
+        0.24030835926532745,
+        -0.021889111027121544,
+        -0.32369932532310486
+      ],
+      "predicted_signed_cost": 130.12631225585938,
+      "actual_image_signed_cost": 78.45600128173828,
+      "physical_cost": 108.92338907398114
+    },
+    {
+      "action": "left_turn",
+      "predicted_pose": [
+        0.2600725293159485,
+        -0.09808868169784546,
+        -0.7347041964530945
+      ],
+      "actual_image_pose": [
+        0.28832390904426575,
+        -0.08823491632938385,
+        -0.6491705179214478
+      ],
+      "predicted_signed_cost": 156.72454833984375,
+      "actual_image_signed_cost": 156.3557891845703,
+      "physical_cost": 225.24667596692717
+    },
+    {
+      "action": "right_turn",
+      "predicted_pose": [
+        0.29666227102279663,
+        -0.07952039688825607,
+        -0.35874077677726746
+      ],
+      "actual_image_pose": [
+        0.26591330766677856,
+        -0.040844086557626724,
+        -0.2312791347503662
+      ],
+      "predicted_signed_cost": 121.71255493164062,
+      "actual_image_signed_cost": 87.44403839111328,
+      "physical_cost": 147.85833401397832
+    }
+  ],
+  "predicted_choice": "forward",
+  "actual_image_choice": "right_arc",
+  "physical_choice": "right_arc",
+  "cost_definition": "sum of squared signed readout displacement/heading in fixed 3-cm/5-degree units",
+  "readout_fit_sha256": "4b2d055b9f521b89e17c4cbf8dfbdd85a7b46988ce973fccc9a96ff93d93ce28",
+  "readout_checkpoint_sha256": "c270cffac40b0e917f05a4f83edf105d132b970586290ef610a0afc8077ef74c",
+  "source_sha256": "c173b3c9388f90bbbf35894a8d749317069a9de636660548d3ca3ca6ef9c34a1",
+  "diagnosis_sha256": "2456ce0b5c2ce5afd2950955c99be0aced9d71331eac3ef4d363f13c0c4d0386",
+  "old_costs_reproduced": true,
+  "forecasts_precede_future_rgb": true,
+  "wall_s": 6.119649216067046,
+  "no_training": true,
+  "new_navigation": false,
+  "post_hoc_diagnostic": true,
+  "limitations": [
+    "one previously exposed diagnostic state",
+    "readout trained on observed features; predicted-feature transfer assessed only here",
+    "same faulty arrival detector remains; no new reliability claim"
+  ]
+}

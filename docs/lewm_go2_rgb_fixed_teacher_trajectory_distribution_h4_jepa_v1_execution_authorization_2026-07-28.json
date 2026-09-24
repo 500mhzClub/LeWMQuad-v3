@@ -1,0 +1,88 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1_execution_authorization_v1",
+  "date": "2026-07-28",
+  "status": "AUTHORIZED_EXACTLY_ONE_PREFLIGHT_THEN_ONE_FRESH_CAPPED_EXECUTION",
+  "authority_basis": {
+    "user_standing_authority": "The user authorized autonomous scientific iteration and scientific-scope changes while progress is measured, within a perception-only learned JEPA for held-out-maze navigation, and explicitly directed inspection and use of the main training pool.",
+    "frozen_source_commit": "de660439a890c9074a59e0d67141180a80d9b7a9",
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1_source_review_2026-07-28.json",
+      "file_sha256": "be5155ec1289e610b948a89bea643b0a49a75c831e151f5df22ec14b83ab4bf5",
+      "byte_count": 5602,
+      "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_ZERO_FINDINGS"
+    }
+  },
+  "runtime": {
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "python": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+    "torch": "2.9.1+rocm6.4",
+    "hip": "6.4.43484-123eb5128",
+    "pillow": "10.2.0",
+    "accelerator": "AMD Radeon AI PRO R9700",
+    "visible_device_index": 0,
+    "precision": "float32_no_autocast",
+    "environment": {
+      "HIP_VISIBLE_DEVICES": "0",
+      "ROCR_VISIBLE_DEVICES": "0",
+      "CUDA_VISIBLE_DEVICES": "0",
+      "GPU_DEVICE_ORDINAL": "0",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "OMP_NUM_THREADS": "1",
+      "OPENBLAS_NUM_THREADS": "1",
+      "MKL_NUM_THREADS": "1",
+      "NUMEXPR_NUM_THREADS": "1",
+      "LEWM_TRAJECTORY_H4_WRAPPER_SHA256": "ce133263ec17feae9c729072153567253bd1529c3b27d350cb0c290fc6552b4c",
+      "LEWM_TRAJECTORY_H4_WRAPPER_BYTES": "32000"
+    },
+    "unset_environment": [
+      "HSA_OVERRIDE_GFX_VERSION",
+      "PYTHONHOME",
+      "PYTHONPATH",
+      "PYTHONSTARTUP",
+      "PYTHONUSERBASE"
+    ]
+  },
+  "preflight": {
+    "authorized_count": 1,
+    "arguments": ["--preflight-only", "--device", "cuda"],
+    "may_open": [
+      "bound_main_pool_census_receipt",
+      "bound_train_index",
+      "bound_validation_index",
+      "bound_six_file_runtime_source_closure",
+      "bound_accepted_n320_initialization_checkpoint"
+    ],
+    "required_receipt": "PASS_WITH_ZERO_RGB_OPENS_ZERO_OUTPUT_RESERVATIONS_ZERO_UPDATES"
+  },
+  "execution": {
+    "authorized_fresh_attempt_count": 1,
+    "arguments": ["--execute", "--device", "cuda"],
+    "output_root": ".generated/go2_rgb_fixed_teacher_trajectory_distribution_h4_jepa_v1/probe_v1",
+    "output_root_must_be_absent_before_launch": true,
+    "optimizer_updates": 1000,
+    "effective_batch_size": 16,
+    "training_presentations": 16000,
+    "validation_presentations": 10240,
+    "observation_updates": [0, 250, 500, 750, 1000],
+    "maximum_gpu_active_seconds": 5400,
+    "only_checkpoint_input": "exact_bound_accepted_n320_encoder_prefix",
+    "predecessor_predictor_checkpoint_input_count": 0,
+    "retry_resume_replacement_second_seed_or_cli_override": false
+  },
+  "prohibited": [
+    "heldout_test_or_sealed_access",
+    "label_semantic_pose_depth_flow_map_or_navigation_target_access",
+    "dataset_or_index_regeneration_reordering_filtering_or_substitution",
+    "predecessor_checkpoint_trace_or_tensor_access",
+    "navigation_g2_g8_qualification_promotion_production_or_deployment",
+    "schedule_loss_threshold_seed_k_or_architecture_change",
+    "retry_resume_extension_replacement_or_same_mechanism_v2"
+  ],
+  "terminal_rules": {
+    "preflight_failure": "Do not execute; no attempt is consumed because the output root is not reserved.",
+    "post_reservation_termination": "Consumes the sole execution attempt regardless of outcome.",
+    "stop": "Closes this exact finite-support/full-fixed-teacher-latent formulation; every written checkpoint remains inaccessible.",
+    "pass": "Establishes development JEPA substrate feasibility only; checkpoint access, navigation, held-out evaluation, promotion, and deployment remain unauthorized."
+  }
+}

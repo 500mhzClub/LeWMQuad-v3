@@ -1,0 +1,55 @@
+{
+  "status": "SAVED_RESIDUAL_CURRENT_PLANNING_BOUNDARY_VERIFIED",
+  "launch_sha256": "7441802f63b5ee8ebf86cadf9972cb036f5c65aee663ed9dd99c91bc71690416",
+  "decision_stream_sha256": "7bca35ed3f4c876e9b4cf4559fcfdfb46a9e36b639928d4140355e44d11a6743",
+  "input_result_sha256": "818a598ca6336866cf5f4768c11edaf67c8c1ca60896c305f93f69fd0ed5230c",
+  "frames": 12,
+  "first_changed_request": 11,
+  "original_commands_before_boundary_exact": 11,
+  "raw_forecast_banks_exact": 9,
+  "public_packet_fingerprints_reconstructed": 12,
+  "all_saved_comparisons_recomputed": true,
+  "final_input_admission_completion_not_assumed": true,
+  "common_physical_prefix_required_for_future_same_model_trial": 1300,
+  "boundary": [
+    {
+      "treatment": "original_persistent",
+      "requested_command": [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      "action": "right_turn",
+      "mode": "WAYPOINT",
+      "waypoint_map_xy_m": [
+        0.47500000000000003,
+        -0.025
+      ],
+      "proposal_status": "OBSERVED_FLOOR_ROUTE_TO_FRONTIER",
+      "observed_floor_cells": 1264,
+      "occupied_cells": 75,
+      "route_cells": 40
+    },
+    {
+      "treatment": "current_pair",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ],
+      "action": "left_turn",
+      "mode": "WAYPOINT",
+      "waypoint_map_xy_m": [
+        0.525,
+        0.07500000000000001
+      ],
+      "proposal_status": "OBSERVED_FLOOR_ROUTE_TO_FRONTIER",
+      "observed_floor_cells": 906,
+      "occupied_cells": 60,
+      "route_cells": 34
+    }
+  ],
+  "new_model_forward_pass_performed": false,
+  "new_native_execution": false,
+  "unexecuted_outcomes_inferred": false
+}

@@ -1,0 +1,264 @@
+{
+  "schema": "lewm_go2_task_coupled_recurrent_dynamics_v1_terminal_review_v1",
+  "status": "PASS_INDEPENDENT_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "scientific_status": "STOP_TASK_COUPLED_RECURRENT_DYNAMICS_H1",
+  "reviewer": "codex_independent_terminal_reviewer_2026-08-04",
+  "review_date": "2026-08-04",
+  "scope": "IMMUTABLE_ONE_SHOT_DEVELOPMENT_RESULT_ONLY",
+  "protected_material_opened": false,
+  "raw_role_rows_opened": false,
+  "rgb_opened": false,
+  "successor_observations_opened_by_reviewer": 0,
+  "sealed_material_opened": false,
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_task_coupled_recurrent_dynamics_v1_preregistration_2026-08-04.md",
+      "sha256": "de570b14223cd67c14c704152488e3dba96465c318a8911d5a9ccc06a4f6f178",
+      "byte_count": 10773
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_task_coupled_recurrent_dynamics_v1_source_review_2026-08-04.json",
+      "sha256": "55250fd7b41150d4112431ac360900d2a3348b8b04c91617bfc62c4dcd397e16",
+      "byte_count": 7450
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_task_coupled_recurrent_dynamics_v1_execution_authority_2026-08-04.json",
+      "sha256": "71608c57411b786b140f0d9293c1079abe46db91aba35c6493c2d5fa9514f439",
+      "byte_count": 12942
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_task_coupled_recurrent_dynamics_v1/attempt_v1/reservation.json",
+      "sha256": "8d63af3e3b22ac4c9be9c703f04c7002bdd900aa7f00ac874b3529d494878064",
+      "byte_count": 396
+    },
+    "checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_task_coupled_recurrent_dynamics_v1/attempt_v1/checkpoint.pt",
+      "sha256": "894757c861770e76a3bbe77ddc8ddab415ad5c518a9d9c20f298fe32cf76cf57",
+      "byte_count": 167423
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_task_coupled_recurrent_dynamics_v1/attempt_v1/result.json",
+      "sha256": "2bbccef41a10bb76db44c51f3072ce87bd11b5c4bcf4b5632bc8a3ec11d4c262",
+      "byte_count": 1867806
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_task_coupled_recurrent_dynamics_v1/attempt_v1/terminal.json",
+      "sha256": "9653fc45dbb8f802724ba848664ef18ebdbca0ec5336b921ec08dd8f62cb821c",
+      "byte_count": 549
+    }
+  },
+  "binding_and_identity_checks": {
+    "all_four_attempt_files_and_authority_rehashed": true,
+    "reservation_consumes_exact_authority_binding": true,
+    "result_uses_exact_authority_binding": true,
+    "result_uses_exact_checkpoint_binding": true,
+    "terminal_uses_exact_result_binding": true,
+    "preregistration_and_source_review_bindings_match_authority": true,
+    "all_22_authorized_source_bindings_rehashed_and_match": true,
+    "source_plus_preregistration_and_review_bindings_checked": 24,
+    "result_internal_identity": {
+      "embedded_sha256": "c5a61e0e3571c5224b41197614472b55595eb5a4af1211a4cd30f951d70ac56b",
+      "independently_recomputed_sha256": "c5a61e0e3571c5224b41197614472b55595eb5a4af1211a4cd30f951d70ac56b",
+      "matches": true
+    },
+    "checkpoint_identity": {
+      "method": "lewm.benchmarks.go2_task_coupled_recurrent_dynamics_v1.checkpoint_identity_v1 on weights_only CPU load",
+      "embedded_sha256": "d492c1a0b72da6d6d4f952417fdca89a96f37b096e7f79b2c4e9da94eeca46a2",
+      "independently_recomputed_sha256": "d492c1a0b72da6d6d4f952417fdca89a96f37b096e7f79b2c4e9da94eeca46a2",
+      "result_evaluation_identity_matches": true,
+      "result_summary_identity_matches": true,
+      "matches": true
+    },
+    "checkpoint_contract": {
+      "schema_matches": true,
+      "config_matches_authority_and_bound_source": true,
+      "arms": [
+        "no_vision_recurrent_direct",
+        "visual_recurrent_direct"
+      ],
+      "member_seeds": [
+        2026080411,
+        2026080412,
+        2026080413
+      ],
+      "all_members_have_exactly_800_updates": true,
+      "all_member_state_identities_recomputed_and_match": true,
+      "matched_initial_state_identity_per_seed": true,
+      "trace_updates_per_member": [
+        0,
+        400,
+        800
+      ]
+    }
+  },
+  "independent_recomputation_from_result": {
+    "role_geometry": {
+      "states_per_report": 128,
+      "unique_states_per_report": 128,
+      "scenes_per_report": 16,
+      "families_per_report": 8,
+      "state_family_scene_rows_aligned_across_visual_no_vision_task_and_oracle": true
+    },
+    "headline_normalized_rank_regret": {
+      "visual_recurrent_direct": 0.1536644345238095,
+      "no_vision_recurrent_direct": 0.14617745535714285,
+      "task_action_only": 0.17441406250000002,
+      "privileged_physical_oracle": 0.0,
+      "random_expected": 0.49541377314814816,
+      "all_report_means_match_stored_summaries": true
+    },
+    "oracle_equivalent_selection_rate": {
+      "visual_recurrent_direct": 0.5390625,
+      "no_vision_recurrent_direct": 0.5859375,
+      "task_action_only": 0.46875,
+      "privileged_physical_oracle": 1.0
+    },
+    "arithmetic_deltas": {
+      "visual_minus_task_action_only": -0.02074962797619051,
+      "visual_minus_no_vision": 0.007486979166666657,
+      "no_vision_minus_task_action_only": -0.028236607142857167
+    },
+    "family_equal_paired_whole_scene_bootstrap": {
+      "resamples": 10000,
+      "seed": 2026080407,
+      "paired_states": 128,
+      "scene_clusters": 16,
+      "family_strata": 8,
+      "visual_vs_task_action_only": {
+        "mean_delta": -0.020749627976190475,
+        "lower_95": -0.04106212797619047,
+        "upper_95": -0.00048363095238095283,
+        "stored_fields_match": true
+      },
+      "visual_vs_no_vision": {
+        "mean_delta": 0.007486979166666666,
+        "lower_95": -0.002929687499999999,
+        "upper_95": 0.017903645833333332,
+        "stored_fields_match": true
+      },
+      "no_vision_vs_task_action_only": {
+        "mean_delta": -0.02823660714285714,
+        "lower_95": -0.04845610119047619,
+        "upper_95": -0.00834263392857143,
+        "stored_fields_match": true
+      }
+    },
+    "fixed_gates": {
+      "1_integrity_and_oracle": {
+        "passed": true,
+        "oracle_regret": 0.0,
+        "oracle_equivalent_selection_rate": 1.0
+      },
+      "2_absolute_regret": {
+        "passed": false,
+        "visual_regret": 0.1536644345238095,
+        "maximum": 0.13
+      },
+      "3_visual_beats_task_action_only": {
+        "passed": true,
+        "visual_minus_task": -0.02074962797619051,
+        "required_maximum": -0.02,
+        "upper_95": -0.00048363095238095283
+      },
+      "4_visual_beats_no_vision": {
+        "passed": false,
+        "visual_minus_no_vision": 0.007486979166666657,
+        "required_maximum": -0.01,
+        "upper_95": 0.017903645833333332
+      },
+      "5_visual_beats_random": {
+        "passed": true,
+        "visual_regret": 0.1536644345238095,
+        "random_expected_regret": 0.49541377314814816
+      },
+      "all_five_passed": false,
+      "recomputed_status": "STOP_TASK_COUPLED_RECURRENT_DYNAMICS_H1",
+      "stored_gate_and_status_match": true
+    }
+  },
+  "determinism_and_custody": {
+    "repeat_evaluation_exact": {
+      "stored_literal_boolean_true": true,
+      "runner_sets_true_only_after_canonical_byte_equality_of_two_evaluations": true,
+      "result_internal_identity_binds_the_flag": true,
+      "independent_second_evaluation_not_run": true,
+      "reason_not_replayed": "The one-shot review does not reopen authorized evaluation receipts or RGB and the second evaluation payload is not stored separately."
+    },
+    "role_disjointness": {
+      "state_ids_disjoint": true,
+      "scene_ids_disjoint": true,
+      "artifact_ids_disjoint": true,
+      "train_state_count": 128,
+      "eval_state_count": 128,
+      "train_scene_count": 16,
+      "eval_scene_count": 16,
+      "train_artifact_count": 1536,
+      "eval_artifact_count": 1536,
+      "recomputed_contract_passed": true
+    },
+    "access_counts": {
+      "checkpoint_durable_before_eval": true,
+      "final_stage": "eval",
+      "receipt_loads": {
+        "train": 1,
+        "eval": 1
+      },
+      "role_index_opens": {
+        "train": 1,
+        "eval": 1
+      },
+      "state_receipt_opens": {
+        "train": 128,
+        "eval": 128
+      },
+      "rgb_opens": {
+        "train_context": 384,
+        "train_successor": 0,
+        "eval_context": 384,
+        "eval_successor": 0
+      },
+      "unique_context_artifacts": 768,
+      "successor_rgb_open_count": 0,
+      "top_level_successor_observations_opened": 0,
+      "evaluation_successor_observations_opened": 0,
+      "recomputed_contract_passed": true
+    },
+    "terminal_permissions": {
+      "authorizes_retry_or_resume": false,
+      "authorizes_navigation_claim": false,
+      "authorizes_blind_rollout_preregistration": false,
+      "failure": null
+    }
+  },
+  "additional_measurements": {
+    "evaluation_joint_standardized_mse": {
+      "visual_recurrent_direct": 0.8001208879799897,
+      "no_vision_recurrent_direct": 0.7760643819338865
+    },
+    "task_control_behavioral_witness": {
+      "observed_regret": 0.17441406250000002,
+      "expected_regret": 0.17441406250000002,
+      "matches": true
+    },
+    "development_only": true,
+    "citable_as_scientific_evidence": false
+  },
+  "scientific_findings": [
+    "The compact recurrent visual arm beats the task/action control by 0.02074962797619051 regret and its paired upper bound is just below zero, but it misses the absolute 0.13 regret gate.",
+    "The parameter-matched no-vision arm is better than the visual arm by 0.007486979166666657 regret. The visual-minus-no-vision interval crosses zero and has a positive upper bound, so incremental visual value is not established.",
+    "The no-vision arm beats task/action by 0.028236607142857167 regret with a wholly negative paired interval. The established gain is attributable to executed odometry/action history rather than visual evidence.",
+    "The visual arm also has worse scene-disjoint standardized physical MSE than no-vision, 0.8001208879799897 versus 0.7760643819338865, consistent with the branch-selection result rather than an objective/scorer reversal.",
+    "This is a valid development-only stop result, not evidence for closed-loop planning, navigation, a final world model, or a blind rollout promotion."
+  ],
+  "fixed_interpretation": {
+    "applied_preregistered_case": "NO_VISION_BEATS_TASK_AND_VISUAL_DOES_NOT_BEAT_NO_VISION",
+    "interpretation": "The measurable recurrent-direct improvement over task/action is explained by odometry and action history. The experiment establishes no incremental visual or world-model value.",
+    "required_action": "STOP_WITHOUT_ROLLOUT_OR_PLANNER_INTEGRATION",
+    "retry_or_resume_authorized": false,
+    "post_result_threshold_change_authorized": false,
+    "architecture_or_loss_tuning_on_this_evaluation_authorized": false,
+    "fresh_matched_counterfactual_scene_sizing_is_the_only_preregistered_data_direction_if_work_continues": true
+  },
+  "audit_findings": []
+}

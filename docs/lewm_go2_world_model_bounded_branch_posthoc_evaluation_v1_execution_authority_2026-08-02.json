@@ -1,0 +1,407 @@
+{
+  "attempt": {
+    "id": "go2_world_model_bounded_branch_evaluation_panel_v1",
+    "maximum_attempts": 1,
+    "must_be_absent": true,
+    "overwrite": false,
+    "resume": false,
+    "retry": false,
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1",
+    "root_creation_consumes_attempt": true
+  },
+  "authority_granted_by_this_document": true,
+  "authorizer": "Codex root agent under explicit user authorization to complete the fixed point-7 experiment",
+  "checkpoint_panel_bindings": {
+    "full_delta/seed_2026080201": {
+      "byte_count": 4441747,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/full_delta_update_000700.pt",
+      "sha256": "51fc438604e82df4b65067708909d5695bf0da692920ccab0b96795256eeadcc"
+    },
+    "full_delta/seed_2026080202": {
+      "byte_count": 4441747,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/full_delta_update_000700.pt",
+      "sha256": "43b411668a4327c369edae0dd092b14f6f962240b420666b9f080658de9b7498"
+    },
+    "full_delta/seed_2026080203": {
+      "byte_count": 4441747,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/full_delta_update_000700.pt",
+      "sha256": "fae4d3474a4a9d1e3914d193d13dd4e0ab196fe30430c1ba81f2d1968a09bd51"
+    },
+    "full_plain/seed_2026080201": {
+      "byte_count": 3635585,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/full_plain_update_000700.pt",
+      "sha256": "77c483524a3f98c117e634ae5ec216374060b1a0e52dd0f9e169880395fbcbdc"
+    },
+    "full_plain/seed_2026080202": {
+      "byte_count": 3635585,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/full_plain_update_000700.pt",
+      "sha256": "15bca79abe7e87d42e54d386fade67a2f6758f361144b0969d0c874bd72d3a95"
+    },
+    "full_plain/seed_2026080203": {
+      "byte_count": 3635585,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/full_plain_update_000700.pt",
+      "sha256": "c005f84fabcb89e9047750c802e71b7ae9ae2c8d77d5cb5d28ca5f03dbf105ce"
+    },
+    "masked_delta/seed_2026080201": {
+      "byte_count": 4441797,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/masked_delta_update_000700.pt",
+      "sha256": "6819ce586955b46060dabafdbad23164e47398b114076bb520d47a6f7586f539"
+    },
+    "masked_delta/seed_2026080202": {
+      "byte_count": 4441797,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/masked_delta_update_000700.pt",
+      "sha256": "88940e0e4a2c60718cff472a40c75860b0425d9adafe99f5a3cc58a95702aa01"
+    },
+    "masked_delta/seed_2026080203": {
+      "byte_count": 4441797,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/masked_delta_update_000700.pt",
+      "sha256": "cd6f41a3ec1e17e0bb8d04be3d574614823d50b12adb6d78332b1b8269f54e1e"
+    },
+    "masked_plain/seed_2026080201": {
+      "byte_count": 3635605,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/masked_plain_update_000700.pt",
+      "sha256": "bd29611aa8f79d56862def953d2b1092c00fe8ed5f2d5045eaf12807e2f7f72e"
+    },
+    "masked_plain/seed_2026080202": {
+      "byte_count": 3635605,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/masked_plain_update_000700.pt",
+      "sha256": "135a2cc95b8aaa1ec4fc40eb856e482622758bcd79ade863e60e8c784b482225"
+    },
+    "masked_plain/seed_2026080203": {
+      "byte_count": 3635605,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/masked_plain_update_000700.pt",
+      "sha256": "7de1e6403069e4c371f9eda0eab40336baa331f334f5feac06f7ce09da4cdea1"
+    }
+  },
+  "evaluation_contract": {
+    "candidate_model_input": "requested_action_id",
+    "claim_scope": "scene_disjoint_development_planning_evidence_only",
+    "direct_latent": {
+      "always_primary": [
+        "matched_branch_error"
+      ],
+      "collapse_diagnostic": "jointly_eligible_action_state_and_scene_coverage",
+      "distance": "root_mean_squared_standardized_euclidean",
+      "normalization": "per_dimension_train_true_future_mean_std_from_one_fixed_masked_plain_seed_2026080201_reference_for_all_12_members",
+      "outcome_equivalence": {
+        "basis": "equal_frozen_calibration_tolerance_aware_physical_oracle_dense_rank",
+        "below_coverage": "INCONCLUSIVE_DATA",
+        "family_requirement": "eligible_query_coverage_at_least_0.25_in_each_fixed_family",
+        "latent_proximity_used_for_equivalence": false,
+        "minimum_discrimination_coverage": 0.25,
+        "model_dependent": false,
+        "query_eligibility": "at_least_one_physically_nonequivalent_alternative_and_every_physically_nonequivalent_alternative_has_different_executed_tape_and_stored_rgb_raw_pixel_identity",
+        "scene_requirement": "both_fixed_evaluation_scenes_in_each_family_have_at_least_one_eligible_query"
+      },
+      "representation": "four_fixed_masks_target_encoder_mean_std_descriptor",
+      "separable_outcome_primary": [
+        "nearest_nonequivalent_minus_equivalent_margin",
+        "equivalence_aware_action_retrieval_advantage"
+      ]
+    },
+    "does_not_authorize": [
+      "held_out_or_sealed_access",
+      "deployment",
+      "promotion",
+      "checkpoint_promotion_or_planning_eligibility",
+      "automatic_rollout_from_development_evidence",
+      "retry",
+      "resume",
+      "hyperparameter_adaptation"
+    ],
+    "future_executed_command_tape_usage": "target_and_audit_only",
+    "mechanism_adjudication": {
+      "all_three_seed_rule": true,
+      "delta_proxy_routing_is_binding": true,
+      "full_grid_rollout_requires_masked_noninferiority": true,
+      "mechanism_and_usefulness_decisions_are_separate": true,
+      "paired_cross_model_unit": "scene_within_fixed_family_stratum",
+      "thresholds": {
+        "full_grid_direct_error_noninferiority_margin": 0.02,
+        "minimum_direct_error_treatment_reduction": 0.02,
+        "minimum_supportive_physical_regret_treatment_reduction": 0.02
+      }
+    },
+    "model_panel": {
+      "all_panel_members_reported": true,
+      "arms": [
+        "masked_plain",
+        "masked_delta",
+        "full_plain",
+        "full_delta"
+      ],
+      "checkpoint_selection_from_branch_eval": false,
+      "checkpoints": 12,
+      "common_latent_standardizer_reference": {
+        "arm": "masked_plain",
+        "seed": 2026080201
+      },
+      "confirmatory_primary_decision": "any_plain_arm_clears_all_gates_all_three_seeds",
+      "delta_arm_role_when_proxy_not_meaningful": "negative_and_mechanism_controls_only",
+      "delta_arms": [
+        "masked_delta",
+        "full_delta"
+      ],
+      "fixed_terminal_within_seed_factorial_comparisons": true,
+      "plain_arm_family_multiplicity": "bonferroni_two_arm_family_one_sided_family_alpha_0.025",
+      "plain_arm_family_two_sided_alpha_each": 0.025,
+      "primary_arm_family": [
+        "masked_plain",
+        "full_plain"
+      ],
+      "training_seeds": [
+        2026080201,
+        2026080202,
+        2026080203
+      ]
+    },
+    "per_checkpoint_output": "measurement_only_no_scientific_verdict",
+    "physical_utility": {
+      "primary": "normalized_dense_physical_rank_regret",
+      "progress": "physical_target_progress_m",
+      "safety": "fell_or_tipped",
+      "train_only_readout": "nine_action_specific_ridge_heads"
+    },
+    "readout": {
+      "action_specific_heads": 9,
+      "fit_role": "train",
+      "ridge_lambda": 0.001
+    },
+    "roles": {
+      "eval": "all_reported_generalization_claims",
+      "train": "readout_and_latent_standardization_only"
+    },
+    "schema": "lewm_go2_world_model_bounded_branch_evaluation_contract_v1",
+    "status": "PREREGISTERED_SOURCE_ONLY",
+    "thresholds": {
+      "ceiling_rank_regret_reduction_vs_current": 0.05,
+      "direct_error_reduction_vs_shuffled": 0.02,
+      "direct_margin_gain_vs_shuffled": 0.02,
+      "maximum_absolute_unsafe_rate": 0.05,
+      "maximum_unsafe_rate_increase_vs_current": 0.02,
+      "minimum_absolute_target_progress_m": 0.01,
+      "rank_regret_reduction_vs_current": 0.05,
+      "retrieval_advantage_over_chance": 0.05,
+      "target_progress_gain_vs_current_m": 0.01
+    },
+    "uncertainty": {
+      "bootstrap_resamples": 10000,
+      "bootstrap_seed": 20260802,
+      "family_weights": "fixed_equal_eight_family_weights",
+      "interval": "percentile_95",
+      "paired": true,
+      "unit": "scene_within_fixed_family_stratum"
+    },
+    "verdict_rule": "arm_agnostic_plain_family_usefulness_only_after_all_12_fixed_members_reported_and_at_least_one_bonferroni_controlled_plain_arm_passes_all_gates_in_all_three_seeds;_delta_cells_are_controls;_below_physical_action_separability_coverage_routes_INCONCLUSIVE_DATA",
+    "visual_domain_prerequisite": {
+      "candidate_domain": "counterfactual_branch_renderer_rgb",
+      "independent_review_required": true,
+      "missing_or_failed_parity_evidence": "STOP_NO_GENERATION_AUTHORITY",
+      "native_640x480_then_downsample_or_horizontal_to_vertical_fov_conversion_is_not_parity": true,
+      "reference_domain": "textured_world_model_training_rgb",
+      "reference_genesis_yfov_deg": 78.323,
+      "reference_native_resolution": [
+        224,
+        224
+      ],
+      "reference_renderer_source": "scripts/render_replay_v03.py",
+      "required_before_generation": true,
+      "requires_same_build_scene_texture_helpers_and_default_scene_options": true,
+      "solid_material_or_uniform_gray_substitute_is_ineligible": true
+    }
+  },
+  "issued_at": "2026-08-02T20:24:25.309959+00:00",
+  "permissions": {
+    "change_models_features_metrics_thresholds_or_gates": false,
+    "deployment_or_promotion": false,
+    "protected_material": false,
+    "read_progression_and_exact_checkpoints": true,
+    "read_reviewed_posthoc_pilot": true,
+    "retry_resume_overwrite_or_member_selection": false,
+    "run_exact_fixed_12_member_panel": true,
+    "write_only_fresh_panel_root": true
+  },
+  "posthoc_manifest_binding": {
+    "byte_count": 11964,
+    "file_sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json"
+  },
+  "posthoc_terminal_binding": {
+    "byte_count": 1250,
+    "file_sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json"
+  },
+  "posthoc_terminal_review_binding": {
+    "byte_count": 2844,
+    "file_sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json"
+  },
+  "progression_analysis_binding": {
+    "byte_count": 32958,
+    "file_sha256": "45c876c2c0156f4788cc9862060a0025db892ceb16692a28e6041c3245b2e19c",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/analysis.json"
+  },
+  "schema": "lewm_go2_world_model_bounded_branch_posthoc_evaluation_authority_v1",
+  "scientific_claim_authorized": false,
+  "source_bindings": [
+    {
+      "binding": {
+        "byte_count": 173816,
+        "file_sha256": "47e60be268289940059b4b672159eeb2dcb886c563266d097ee41ec8d9c3cb54",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_bounded_branch_experiment_v1.py"
+      },
+      "name": "bounded_evaluator"
+    },
+    {
+      "binding": {
+        "byte_count": 47994,
+        "file_sha256": "931502fabc07636a936cb36debabf94bd832ab7a477c1d554dbfef1cbd2d7248",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_bounded_branch_evaluation_panel_v1.py"
+      },
+      "name": "bounded_panel_runner"
+    },
+    {
+      "binding": {
+        "byte_count": 83380,
+        "file_sha256": "0181f09437edf2a7ff6ddc072e76c4c15237527303ff80deadc82f1312d23cee",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_experiment_v1.py"
+      },
+      "name": "bounded_evaluator_test"
+    },
+    {
+      "binding": {
+        "byte_count": 21098,
+        "file_sha256": "84e1ae984daa030077e9ee067ae65f21cd63b3c97cf366cdb43995e2f2b8c73e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_evaluation_panel_runner_v1.py"
+      },
+      "name": "bounded_panel_runner_test"
+    },
+    {
+      "binding": {
+        "byte_count": 55667,
+        "file_sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py"
+      },
+      "name": "posthoc_admission"
+    },
+    {
+      "binding": {
+        "byte_count": 24108,
+        "file_sha256": "0ffbc3cb6093fc07d6de419da91b321b0731a7dba5f94fb4d5eb007627e9759a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_posthoc_join_admission_v1.py"
+      },
+      "name": "posthoc_admission_test"
+    },
+    {
+      "binding": {
+        "byte_count": 28399,
+        "file_sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py"
+      },
+      "name": "action_regret_evaluator"
+    },
+    {
+      "binding": {
+        "byte_count": 18632,
+        "file_sha256": "37fb6a306bc2e1370581e968094cdf9453a0e9df2d8814079dc2a92368ca6f31",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_progression_v1.py"
+      },
+      "name": "progression_analyzer"
+    },
+    {
+      "binding": {
+        "byte_count": 51539,
+        "file_sha256": "0441837123792976489acc917ee87a0972a09eeb70e6950554b2c294f762003f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_probe_counterfactual_action_fidelity.py"
+      },
+      "name": "counterfactual_probe"
+    },
+    {
+      "binding": {
+        "byte_count": 17480,
+        "file_sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+      },
+      "name": "counterfactual_probe_model"
+    },
+    {
+      "binding": {
+        "byte_count": 78825,
+        "file_sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+      },
+      "name": "counterfactual_probe_evaluation"
+    },
+    {
+      "binding": {
+        "byte_count": 44605,
+        "file_sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py"
+      },
+      "name": "counterfactual_probe_metrics"
+    },
+    {
+      "binding": {
+        "byte_count": 33483,
+        "file_sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py"
+      },
+      "name": "counterfactual_probe_h6_dataset"
+    },
+    {
+      "binding": {
+        "byte_count": 35478,
+        "file_sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_temporal_jepa_scaled.py"
+      },
+      "name": "counterfactual_probe_trainer"
+    },
+    {
+      "binding": {
+        "byte_count": 102894,
+        "file_sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "posthoc_pilot_contract"
+    },
+    {
+      "binding": {
+        "byte_count": 114260,
+        "file_sha256": "809f9b0cf3812c1c478741b1cebf170c13fd637b07ed6d340900d6991d2452fc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+      },
+      "name": "posthoc_calibration_analyzer"
+    },
+    {
+      "binding": {
+        "byte_count": 28344,
+        "file_sha256": "8b5b2bf9e456a858a82ed33852809a6b5fd5220911f2afbd925d7cbcc7b7f15e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/join_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "posthoc_joiner"
+    },
+    {
+      "binding": {
+        "byte_count": 143612,
+        "file_sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "posthoc_checker"
+    },
+    {
+      "binding": {
+        "byte_count": 153820,
+        "file_sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "posthoc_consumer"
+    }
+  ],
+  "source_commit": "7a39c85bf5404103c93d00822e52c4bc50b8f5cd",
+  "source_review_binding": {
+    "byte_count": 7633,
+    "file_sha256": "c45daae6e75908ab99278d2c8874f2b3e88d442c8157833a9c51035642d081d2",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_source_review_2026-08-02.json"
+  },
+  "status": "AUTHORIZED_ONE_EXACT_FIXED_12_MEMBER_POSTHOC_EVALUATION_ONLY"
+}

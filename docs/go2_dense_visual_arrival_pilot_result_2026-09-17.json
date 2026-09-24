@@ -1,0 +1,60 @@
+{
+  "status": "COMPLETE",
+  "cases": [
+    {
+      "case": 0,
+      "scene": "family_episode_026",
+      "goal_reached": true,
+      "final_within_goal": true,
+      "completed_budget": true,
+      "disallowed_contact": false,
+      "physical_stop": null,
+      "decisions": 20,
+      "final_xy_error_m": 0.02623549521063286,
+      "final_yaw_error_deg": 3.6566888629577323,
+      "wall_s": 37.121523251989856,
+      "first_latched_tick": 30,
+      "hold_decisions": 16,
+      "actual_within_goal_at_latch": true,
+      "all_frames_within_after_latch": true,
+      "maximum_consecutive_goal_frames": 87,
+      "matched_planning_prefix": true,
+      "exact_rgb_prefix_through_tick": 30,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_visual_arrival_pilot_v1_attempt_001/case_00/result.json",
+      "result_sha256": "b4fdd266a70fa49f49b3051c20eab69431b032ee874f422f818bf384c1802da7"
+    },
+    {
+      "case": 1,
+      "scene": "family_episode_003",
+      "goal_reached": true,
+      "final_within_goal": true,
+      "completed_budget": true,
+      "disallowed_contact": false,
+      "physical_stop": null,
+      "decisions": 20,
+      "final_xy_error_m": 0.02623549521063286,
+      "final_yaw_error_deg": 3.6566888629577323,
+      "wall_s": 38.00129472790286,
+      "first_latched_tick": 30,
+      "hold_decisions": 16,
+      "actual_within_goal_at_latch": true,
+      "all_frames_within_after_latch": true,
+      "maximum_consecutive_goal_frames": 87,
+      "matched_planning_prefix": true,
+      "exact_rgb_prefix_through_tick": 30,
+      "result_path": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_dense_visual_arrival_pilot_v1_attempt_001/case_01/result.json",
+      "result_sha256": "7d3189c26a508d0704b990741f2978c2ef424c0f5a0c770b8e66371f15d58711"
+    }
+  ],
+  "plan_sha256": "094ef2a5a6e4db254ef42a01fc3005a817530a55a713975cb6e9f4a3b35d5dce",
+  "final_arrivals": 2,
+  "full_maze_navigation": false,
+  "real_time_qualified": false,
+  "hardware_validated": false,
+  "limitations": [
+    "two repeatedly exposed related development tasks",
+    "intervention motivated by these tasks; independent confirmation remains necessary",
+    "learned goal recognition added; predictor unchanged",
+    "no strong reactive baseline or isolated JEPA training advantage established"
+  ]
+}

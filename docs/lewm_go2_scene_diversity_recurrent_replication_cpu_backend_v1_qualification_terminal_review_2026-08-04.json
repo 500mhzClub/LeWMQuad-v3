@@ -1,0 +1,359 @@
+{
+  "attempt_census": {
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1",
+    "attempt_root_entries": [
+      "collection",
+      "reservation.json",
+      "terminal.json"
+    ],
+    "collection_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/collection",
+    "collection_root_entries": [
+      "reservation.json",
+      "scene_results",
+      "scenes"
+    ],
+    "combined_physics_result_absent": true,
+    "probe_scene_0_result_absent": true,
+    "probe_scene_0_root_absent": true,
+    "probe_scene_12_result_absent": true,
+    "probe_scene_12_root_absent": true,
+    "qualification_result_absent": true,
+    "rgb_frame_content_opened": false,
+    "scene_receipt_or_partial_payload_opened": false,
+    "scene_result_name_count": 0,
+    "scene_result_names": [],
+    "scene_role_root_name_count": 0,
+    "scene_role_root_names": [],
+    "scientific_attempt_root_absent": true,
+    "scientific_authority_absent": true
+  },
+  "audit_passed": true,
+  "authority_audit": {
+    "attempt_id": "go2-scene-diversity-recurrent-replication-cpu-backend-v1-qualification",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1",
+    "authority_was_qualification_only": true,
+    "collection_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/collection",
+    "field_set_exact": true,
+    "plan_binding_exact": true,
+    "qualification_contract_exact": true,
+    "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_authority_v1",
+    "scientific_execution_authorized": false,
+    "source_review_binding_exact": true,
+    "status": "AUTHORIZED_CPU_BACKEND_QUALIFICATION_ONLY"
+  },
+  "bindings": {
+    "attempt_reservation": {
+      "byte_count": 1018,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/reservation.json",
+      "sha256": "a95554f7af78cebeb738a123cb73917bf5ab2f52b8554b2e257954cfb486e719"
+    },
+    "collection_reservation": {
+      "byte_count": 2338,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "20de1dd13fc27e9dcfbcbaa7d4234b5ba9afa9c646924872e03e8ba91309dbd9"
+    },
+    "preregistration": {
+      "byte_count": 5949,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_preregistration_2026-08-04.md",
+      "sha256": "0d787aecdea634a7e5fca10e51927ee11539bfe38faca2c529e17a5bf8e5b106"
+    },
+    "qualification_authority": {
+      "byte_count": 60726,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_authority_2026-08-04.json",
+      "sha256": "1f9645589e7669393cca7d6cf326c4a5a93f60a67796add36afb6dc01c2643ce"
+    },
+    "qualification_exact_plan": {
+      "byte_count": 346073,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_exact_plan_2026-08-04.json",
+      "sha256": "8345612973b70cffda80395ae835bc2738a8aa5c64b8cce9f0becbea31c3fe5d"
+    },
+    "relevant_authority_bound_source_and_test_files": {
+      "cpu_backend_collector": {
+        "byte_count": 9729,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "c1cd446350b5d1d8b6f3862905decac6728c3be3cc4cbc832e1f053b9ee9cece"
+      },
+      "cpu_backend_collector_test": {
+        "byte_count": 4591,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_collect_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "7dcc87e65fac021d43903922985088b46be61a82711852043fa98912df6a10bf"
+      },
+      "cpu_backend_plan_builder": {
+        "byte_count": 10284,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_plan.py",
+        "sha256": "68d47374471bc3e49766232e718279c98e54bba0dc5920059e67ad6f1d964a9b"
+      },
+      "cpu_backend_plan_test": {
+        "byte_count": 2451,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_plan.py",
+        "sha256": "487ec8e515ed561b1633f5e156fdf208c3c83e0ce36ea75206220e3a180f579f"
+      },
+      "cpu_backend_qualification_authority_builder": {
+        "byte_count": 10311,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_authority.py",
+        "sha256": "8e373d7f1c395a888f2eecebe6997d427e7eb0dcaf318e1d6fee32ac6a421534"
+      },
+      "cpu_backend_qualification_authority_test": {
+        "byte_count": 3595,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_authority.py",
+        "sha256": "67155e0494b6405738f5f20cd27236bd166d9445ff75945201ff0f7ab28c6275"
+      },
+      "cpu_backend_qualifier": {
+        "byte_count": 28851,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "254e2a8780515e50731781d077b8850567cb1873940be5cd8c3d107708efcc1e"
+      },
+      "cpu_backend_qualifier_test": {
+        "byte_count": 8303,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_qualify_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "2a022a529eff4f1c3be84d0a82b364c9460ab33e2d556668c38c698452e553ee"
+      },
+      "cpu_backend_runner": {
+        "byte_count": 31727,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "06bc676ddbe75620f6a5a43863e2569c6c38f0d547bdc00a53851e9e2afafb71"
+      },
+      "cpu_backend_runner_test": {
+        "byte_count": 13018,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+        "sha256": "15bbe82dff6c1c275dbef5961953ceb9e66f02dc55ccd686e59affb90f5d115d"
+      }
+    },
+    "scientific_exact_plan": {
+      "byte_count": 346045,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_exact_plan_2026-08-04.json",
+      "sha256": "258d6bf004fa3618d492b583c56ea7fbc15b127ade36299fcba11295b147745e"
+    },
+    "source_review": {
+      "byte_count": 78392,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_source_review_2026-08-04.json",
+      "sha256": "1262934840b6b1077fb53d99ff7c4ca74e717ebe893e75e898aa19d56b8fc82c"
+    },
+    "terminal": {
+      "byte_count": 405,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/terminal.json",
+      "sha256": "1ee2d67003d9c06b6a07ec216d09bbbc7a4a2c5f528797ba4f01c091cbabdc12"
+    }
+  },
+  "custody_audit": {
+    "heldout_material_opened": false,
+    "legacy_sealed_role_opened": false,
+    "opened_material_scope": "named preregistration plans source review authority two reservations terminal exact authority-bound source files and directory-name/stat metadata only",
+    "predecessor_partial_runtime_payload_opened": false,
+    "protected_material_opened": false,
+    "protected_or_sealed_paths_searched_or_indexed": false,
+    "qualification_scene_payload_opened": false,
+    "rgb_frame_opened": false,
+    "sealed_or_sealed_prefixed_directory_opened": false,
+    "sealed_test_opened": false
+  },
+  "decision": {
+    "attempt_consumed": true,
+    "cpu_physics_or_render_decision": null,
+    "failure_is_backend_evidence": false,
+    "failure_is_pre_genesis_source_control_flow": true,
+    "failure_is_scientific": false,
+    "genesis_cpu_backend_qualified": null,
+    "qualification_pass": false,
+    "qualification_status": "FAIL_CPU_BACKEND_QUALIFICATION_HARD_STOP",
+    "representation_model_planning_or_navigation_decision": null,
+    "scientific_decision": null,
+    "scientific_metrics": null
+  },
+  "failure_evidence": {
+    "independent_cpu_only_source_reproduction": {
+      "genesis_import_initialization_scene_build_physics_or_render_called": false,
+      "gpu_workload_called": false,
+      "interpreter": "/usr/bin/python3.12",
+      "qualification_plan_identity_and_output_root_correct_before_recursive_frozen_validation": true,
+      "qualification_plan_under_nested_qualification_and_cpu_predecessor_overlays": {
+        "exception_type": "PilotContractError",
+        "message": "CPU plan identity or exact backend delta changed",
+        "status": "FAIL"
+      },
+      "qualification_plan_under_qualification_identity_without_cpu_predecessor_overlay": "PASS",
+      "reproduction_preceded_current_workspace_edits_recorded_in_source_binding_audit": true,
+      "reproduction_time_sources_equal_authority_bindings": true,
+      "scientific_plan_inside_cpu_predecessor_overlay": {
+        "exception_type": "PilotContractError",
+        "message": "CPU plan identity or exact backend delta changed",
+        "status": "FAIL"
+      },
+      "scientific_plan_outside_cpu_predecessor_overlay": "PASS"
+    },
+    "operator_retained_child_stderr": {
+      "does_not_support": [
+        "Genesis CPU physics result",
+        "render result",
+        "backend performance or stability decision"
+      ],
+      "exact_error": "CPU plan identity or exact backend delta changed",
+      "provenance": "operator-retained qualification launch stream supplied to the independent reviewer; not repository-bound",
+      "repository_binding": null,
+      "supports": "first probe worker rejected qualification plan during pre-Genesis validation"
+    },
+    "repository_terminal": {
+      "binding": {
+        "byte_count": 405,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification/attempt_v1/terminal.json",
+        "sha256": "1ee2d67003d9c06b6a07ec216d09bbbc7a4a2c5f528797ba4f01c091cbabdc12"
+      },
+      "reported_parent_failure_message": "CPU qualification worker 12 failed",
+      "reported_parent_failure_type": "CpuBackendQualificationError"
+    }
+  },
+  "findings": [],
+  "independence": {
+    "implemented_or_executed_cpu_v1_qualification": false,
+    "issued_cpu_v1_qualification_authority": false,
+    "modified_cpu_v1_or_successor_source": false,
+    "ran_genesis_gpu_render_or_physics_workload_during_review": false,
+    "scope": "post_execution read-only terminal reservation source control-flow custody and permission audit"
+  },
+  "permission_audit": {
+    "cpu_backend_v1_integrity_replacement_authorized": false,
+    "cpu_backend_v1_refill_or_overwrite_authorized": false,
+    "cpu_backend_v1_resume_authorized": false,
+    "cpu_backend_v1_retry_authorized": false,
+    "navigation_planner_promotion_or_deployment_claim_authorized": false,
+    "partial_predecessor_or_qualification_artifact_reuse_authorized": false,
+    "qualification_probe_output_reuse_authorized": false,
+    "scientific_cpu_v1_authority_authorized": false,
+    "source_fix_execution_authorized": false,
+    "successor_execution_authorized_by_this_review": false
+  },
+  "prelaunch_testability_audit": {
+    "minimal_missing_test": "enter _configured_qualification_collector and _configured_predecessor_collector_cpu together then call installed pilot.validate_plan on exact qualification plan; repeat CPU overlay for scientific plan and require both pass",
+    "prior_source_review_disposition": "exact source-review artifact remains historical binding witness, but findings-empty PASS missed this prelaunch-testable defect and cannot support further CPU V1 execution",
+    "stronger_missing_test": "exercise worker load_and_validate with exact bound plan authority and reservation under nested overlays while mocking before runtime imports",
+    "testable_without_genesis_or_gpu": true,
+    "why_existing_tests_missed_it": [
+      "runtime validator tests called _validate_cpu_plan_runtime outside CPU predecessor overlay",
+      "overlay tests asserted installed function/environment identities but did not invoke installed validator",
+      "qualification execution test mocked worker and scene-result loader instead of traversing worker plan loading",
+      "source review plan checks and in-memory authority construction occurred outside worker overlay"
+    ]
+  },
+  "reservation_audit": {
+    "attempt": {
+      "authority_binding_exact": true,
+      "plan_binding_exact": true,
+      "retry_resume_overwrite_authorized": false,
+      "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_reservation_v1",
+      "scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_cpu_backend_v1/attempt_v1",
+      "scientific_attempt_root_must_remain_absent": true,
+      "status": "CONSUMED_ONE_SHOT_QUALIFICATION_ATTEMPT"
+    },
+    "collection": {
+      "attempt_id": "go2-scene-diversity-recurrent-replication-cpu-backend-v1-qualification",
+      "authority_binding_exact": true,
+      "plan_binding_exact": true,
+      "probe_output_scientific_reuse_authorized": false,
+      "probe_scene_indices_in_order": [
+        12,
+        0
+      ],
+      "qualification_contract_exact": true,
+      "retry_resume_overwrite_authorized": false,
+      "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_reservation_v1",
+      "status": "RESERVED_TWO_PROBE_QUALIFICATION_CONSUMED"
+    },
+    "one_shot_attempt_consumed": true
+  },
+  "reviewed_at_utc": "2026-08-04T19:41:44Z",
+  "reviewer": "codex_independent_cpu_backend_v1_qualification_terminal_reviewer_2026-08-04",
+  "root_cause_audit": {
+    "affects_scientific_cpu_worker_route_too": true,
+    "backend_or_scene_specific_failure": false,
+    "call_chain": [
+      "qualifier worker enters _configured_qualification_collector",
+      "CPU collector enters _configured_predecessor_collector_cpu",
+      "CPU overlay replaces shared pilot.validate_plan with _validate_cpu_plan_runtime",
+      "CPU validate_cpu_plan validates its frozen V1 reference through frozen_builder._validated_frozen_plan_v1",
+      "frozen builder dynamically calls replaced shared pilot.validate_plan on frozen Vulkan V1 plan",
+      "recursive CPU validator expects qualification attempt_id/output_root and rejects frozen V1 identity/output_root"
+    ],
+    "classification": "PRE_GENESIS_SOURCE_VALIDATOR_RECURSION_CONTROL_FLOW_FAILURE",
+    "failure_stage": "worker authority and exact-plan load before runtime imports or Genesis initialization",
+    "misleading_error_explanation": "identity/backend-delta message describes recursively validated frozen V1 plan, not outer qualification plan, whose identity root backend and environment were exact",
+    "mutable_global_environment_coupling": "CPU overlay also replaces pilot.EXECUTION_ENVIRONMENT, so normalization is not independent of runtime overlay state; frozen-reference validation must use immutable original validation state",
+    "qualification_plan_itself_has_wrong_attempt_id_or_output_root": false,
+    "source_fix_or_replacement_authorized_by_this_review": false
+  },
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_terminal_review_v1",
+  "source_binding_audit": {
+    "authority_logical_source_bindings": 190,
+    "authority_unique_physical_paths": 179,
+    "current_workspace_drift_disposition": "post-consumption edits are not part of the authority-bound failed attempt and grant no retry, replacement, or execution authority",
+    "current_workspace_rehash": {
+      "logical_bindings_checked": 190,
+      "mismatch_count": 2,
+      "mismatches": {
+        "cpu_backend_plan_builder": {
+          "authority_binding": {
+            "byte_count": 10284,
+            "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_plan.py",
+            "sha256": "68d47374471bc3e49766232e718279c98e54bba0dc5920059e67ad6f1d964a9b"
+          },
+          "current_binding": {
+            "byte_count": 11247,
+            "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_cpu_backend_v1_plan.py",
+            "sha256": "62595f8365bd3ab4708846f1d44a6a8658927eb4fe0ebe6c0f02a1b121bffd56"
+          }
+        },
+        "cpu_backend_qualifier_test": {
+          "authority_binding": {
+            "byte_count": 8303,
+            "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_qualify_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+            "sha256": "2a022a529eff4f1c3be84d0a82b364c9460ab33e2d556668c38c698452e553ee"
+          },
+          "current_binding": {
+            "byte_count": 9044,
+            "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_qualify_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+            "sha256": "1aa9c62eb193e6a15de86fe41b23522a9287ce8736541aeb186bb15a5c71e6ec"
+          }
+        }
+      },
+      "passed_as_current_authority_closure": false
+    },
+    "historical_consumed_attempt_source_identity_remains_bound_by_authority": true,
+    "independent_initial_post_terminal_rehash_before_later_edits": {
+      "logical_bindings_checked": 190,
+      "mismatches": 0,
+      "observation": "performed in this review session before the two later workspace edits recorded below"
+    },
+    "launch_time_closure_basis": "qualification authority runtime validation rehashes all authority source bindings before execute_qualification can create either reservation",
+    "launch_time_closure_passed_before_reservation": true,
+    "nonregular_or_absent_paths": 0,
+    "protected_sealed_or_heldout_paths": 0
+  },
+  "status": "PASS_FAIL_CLOSED_PRE_GENESIS_QUALIFICATION_TERMINAL_REVIEW",
+  "successor_eligibility": {
+    "cpu_v1_retry_or_science_identical_replacement_eligible": false,
+    "genesis_0_4_6_rocm_hip_qualification_authorized_now": false,
+    "mandatory_before_any_such_run": [
+      "separate preregistration and exact plan",
+      "fresh source closure and independent source review",
+      "fresh qualification authority and attempt namespace",
+      "prelaunch nested-context and worker-load validation tests",
+      "explicit ROCm/HIP backend and EGL/R9700 render-route validation",
+      "no CPU V1 or Vulkan predecessor partial reuse"
+    ],
+    "only_eligible_next_backend_direction": "Genesis 0.4.6 ROCm/HIP backend under a separate fresh qualification design"
+  },
+  "summary": "CPU backend V1 qualification was correctly consumed and terminalized but did not test Genesis CPU physics or R9700 rendering. Probe worker 12 failed before scene output because nested CPU overlay redirected frozen V1 reference validation into qualification-aware CPU validator. Outer qualification plan identity was correct; recursive frozen V1 identity produced misleading mismatch. No qualification result scene result scene root scientific authority model metric backend decision or science decision exists. CPU V1 hard stop applies.",
+  "terminal_audit": {
+    "authorizes_cpu_scientific_authority": false,
+    "authorizes_retry_or_resume": false,
+    "binding_passed": true,
+    "durable_terminal_detail_limit": "repository terminal retains the parent qualification-worker failure but not child stderr PID/exit code graphics receipt or in-memory worker receipt",
+    "failure": {
+      "message": "CPU qualification worker 12 failed",
+      "type": "CpuBackendQualificationError"
+    },
+    "qualification_result_binding": null,
+    "schema": "lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_terminal_v1",
+    "status": "FAIL_CPU_BACKEND_QUALIFICATION_HARD_STOP",
+    "strict_json": true
+  }
+}

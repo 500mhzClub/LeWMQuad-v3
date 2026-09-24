@@ -1,0 +1,1509 @@
+{
+  "status": "COMPLETE",
+  "summaries": {
+    "current_to_goal": {
+      "direct_goal": {
+        "pairs": 20,
+        "mean_xy_error_cm": 1.9990711921898874,
+        "mean_yaw_error_deg": 1.1767257486411382,
+        "true_goal_detections": 2,
+        "missed_goal_detections": 7,
+        "false_goal_detections": 0,
+        "true_outside_detections": 11
+      },
+      "previous_500ms": {
+        "pairs": 20,
+        "mean_xy_error_cm": 7.661374645965006,
+        "mean_yaw_error_deg": 9.043711796887338,
+        "true_goal_detections": 5,
+        "missed_goal_detections": 4,
+        "false_goal_detections": 0,
+        "true_outside_detections": 11
+      }
+    },
+    "goal_to_current": {
+      "direct_goal": {
+        "pairs": 20,
+        "mean_xy_error_cm": 1.9024472425856858,
+        "mean_yaw_error_deg": 1.373369534863203,
+        "true_goal_detections": 2,
+        "missed_goal_detections": 7,
+        "false_goal_detections": 0,
+        "true_outside_detections": 11
+      },
+      "previous_500ms": {
+        "pairs": 20,
+        "mean_xy_error_cm": 8.816671595417604,
+        "mean_yaw_error_deg": 16.973618833302755,
+        "true_goal_detections": 2,
+        "missed_goal_detections": 7,
+        "false_goal_detections": 3,
+        "true_outside_detections": 8
+      }
+    }
+  },
+  "rows": [
+    {
+      "case": 0,
+      "frame": 10,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.24789796225421734,
+        0.1235504546973376,
+        0.884855363869641
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.24765720963478088,
+            0.13291071355342865,
+            0.9667414426803589
+          ],
+          "xy_error_cm": 0.9363354509832283,
+          "yaw_error_deg": 4.6917267167297725,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 210.5000473428638
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.06569378077983856,
+            0.006536590866744518,
+            0.25789663195610046
+          ],
+          "xy_error_cm": 21.654239325202106,
+          "yaw_error_deg": 35.92208926751991,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 13.57633286075738
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 10,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.25262515477955394,
+        0.11357220486685399,
+        -0.884855363869641
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.23372264206409454,
+            0.130828857421875,
+            -0.9518629312515259
+          ],
+          "xy_error_cm": 2.5594863632432534,
+          "yaw_error_deg": 3.8392508064204813,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 198.6884019536406
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.021016370505094528,
+            -0.0016164833214133978,
+            -0.049354225397109985
+          ],
+          "xy_error_cm": 29.689748777421944,
+          "yaw_error_deg": 47.8706890128514,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.813523191977545
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 15,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.2139183250077324,
+        0.07358566950534444,
+        0.670030443453139
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.21606308221817017,
+            0.09204849600791931,
+            0.7089977860450745
+          ],
+          "xy_error_cm": 1.8586983239781165,
+          "yaw_error_deg": 2.232664269358276,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 127.29240859699013
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.09295274317264557,
+            0.009744013659656048,
+            0.299251914024353
+          ],
+          "xy_error_cm": 13.677875935181019,
+          "yaw_error_deg": 21.244044870336626,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 21.464968039407566
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 15,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.213367199182513,
+        0.0751687358126596,
+        -0.670030443453139
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.20070742070674896,
+            0.0767785832285881,
+            -0.732490062713623
+          ],
+          "xy_error_cm": 1.2761724011981703,
+          "yaw_error_deg": 3.5786725736197633,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 121.76385401540911
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.016058282926678658,
+            -0.005574049428105354,
+            0.03590620309114456
+          ],
+          "xy_error_cm": 24.321893267069346,
+          "yaw_error_deg": 40.447190450606,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.49033778810491646
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 20,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.15202245556752664,
+        0.03379250088105513,
+        0.44826098253309865
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.1568959802389145,
+            0.03913525119423866,
+            0.45703259110450745
+          ],
+          "xy_error_cm": 0.7231612796026128,
+          "yaw_error_deg": 0.5025761506825014,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 56.481585196885916
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.08434988558292389,
+            0.008697385899722576,
+            0.2686968445777893
+          ],
+          "xy_error_cm": 7.217576826225862,
+          "yaw_error_deg": 10.288267256744101,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 17.469978829950154
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 20,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.15164859982036127,
+        0.0354325032293888,
+        -0.44826098253309865
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.14255701005458832,
+            0.03547067567706108,
+            -0.4883560836315155
+          ],
+          "xy_error_cm": 0.9091669901886498,
+          "yaw_error_deg": 2.2972800720896367,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 55.29540018051476
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            -0.0027070287615060806,
+            -0.002935417229309678,
+            0.22912710905075073
+          ],
+          "xy_error_cm": 15.380406012132783,
+          "yaw_error_deg": 38.81147874017585,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 6.911508810630092
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 25,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.07829038677533429,
+        0.008465491668495952,
+        0.2221414798907584
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.07342257350683212,
+            0.01585487276315689,
+            0.2166622132062912
+          ],
+          "xy_error_cm": 0.8848647296572411,
+          "yaw_error_deg": 0.3139388558466096,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 12.433295505485587
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.0693574994802475,
+            0.00634878221899271,
+            0.1977151483297348
+          ],
+          "xy_error_cm": 0.9180246964016779,
+          "yaw_error_deg": 1.3995257074338512,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 10.522908261366396
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 25,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.07823173435084244,
+        0.0089913820450492,
+        -0.2221414798907584
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.07822741568088531,
+            0.0037798117846250534,
+            -0.21766772866249084
+          ],
+          "xy_error_cm": 0.5211572049799139,
+          "yaw_error_deg": 0.2563270639711983,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 13.036825411877958
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.009183567017316818,
+            -0.001798428362235427,
+            0.1624169945716858
+          ],
+          "xy_error_cm": 8.807868596835021,
+          "yaw_error_deg": 22.033577562687498,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.5612252296993794
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 30,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.0038986512377700267,
+        -4.317346151496131e-05,
+        -0.0024291205549270556
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.008981280028820038,
+            -0.0003254270413890481,
+            -0.005304600577801466
+          ],
+          "xy_error_cm": 0.5090459950825881,
+          "yaw_error_deg": 0.16475286938488512,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.0934386272676122
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.031116753816604614,
+            -0.0007772782118991017,
+            0.01412227563560009
+          ],
+          "xy_error_cm": 2.7228000620253017,
+          "yaw_error_deg": 0.948325146766114,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.1026959961801124
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 30,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.0038987446089726032,
+        3.370304959506758e-05,
+        0.0024291205549270556
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.008562684059143066,
+            0.0014825677499175072,
+            0.005268231965601444
+          ],
+          "xy_error_cm": 0.48838038571073666,
+          "yaw_error_deg": 0.1626691013990759,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.08755288152801924
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.020288875326514244,
+            -0.0010740505531430244,
+            0.01730591058731079
+          ],
+          "xy_error_cm": 2.4212973303333483,
+          "yaw_error_deg": 0.8523772815578793,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.49798513283487855
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 35,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.026669347575739986,
+        0.004138454378032985,
+        -0.03219419335734497
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.049810249358415604,
+            0.0035584615543484688,
+            -0.0245634987950325
+          ],
+          "xy_error_cm": 2.314816897706955,
+          "yaw_error_deg": 0.4372065931739314,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.8500332688986325
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.04031965509057045,
+            -0.0011773286387324333,
+            0.025501733645796776
+          ],
+          "xy_error_cm": 6.7199583535229435,
+          "yaw_error_deg": 3.305733112374902,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.8932426140388696
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 35,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.026788739018479668,
+        -0.0032778600571826445,
+        0.03219419335734497
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.05055045336484909,
+            -0.0013572120806202292,
+            0.0245123989880085
+          ],
+          "xy_error_cm": 2.383921050136375,
+          "yaw_error_deg": 0.4401343964503397,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.9202226017135366
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.04387146979570389,
+            9.663589298725128e-05,
+            0.02070550248026848
+          ],
+          "xy_error_cm": 1.741283761265913,
+          "yaw_error_deg": 0.658253499386935,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.1948683500108634
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 40,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.028998784867152537,
+        0.004733462201846901,
+        -0.04156230441053688
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.05905258655548096,
+            0.005255999509245157,
+            -0.03105362318456173
+          ],
+          "xy_error_cm": 3.0058343952370286,
+          "yaw_error_deg": 0.6021030824967397,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 4.031998585682929
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.03262759745121002,
+            -0.0013078576885163784,
+            0.03563060611486435
+          ],
+          "xy_error_cm": 6.192179376977615,
+          "yaw_error_deg": 4.4228279814364795,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.3514512901188462
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 40,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.029170418818752136,
+        -0.0035244650837112264,
+        0.04156230441053688
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.060266174376010895,
+            -0.001444859430193901,
+            0.03098929114639759
+          ],
+          "xy_error_cm": 3.116521736408925,
+          "yaw_error_deg": 0.6057890367710194,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 4.163992120626696
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.038601890206336975,
+            -0.0007517143385484815,
+            0.02389102801680565
+          ],
+          "xy_error_cm": 0.9830605232112214,
+          "yaw_error_deg": 1.0124895559699612,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.7312516817764438
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 55,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.02610765747488209,
+        0.0028241779408264174,
+        -0.056354249077096075
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.04775442183017731,
+            -0.001446847920306027,
+            -0.008759469725191593
+          ],
+          "xy_error_cm": 2.206409003245186,
+          "yaw_error_deg": 2.7269799837205224,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.546273337579789
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.029185106977820396,
+            -0.0003366312012076378,
+            0.03979620710015297
+          ],
+          "xy_error_cm": 5.538303454357125,
+          "yaw_error_deg": 5.509015337213945,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 1.1545017639021355
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 55,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.026225282277732256,
+        -0.0013491958050926948,
+        0.056354249077096075
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.05161023512482643,
+            0.003926396369934082,
+            0.007707853801548481
+          ],
+          "xy_error_cm": 2.5927354354935606,
+          "yaw_error_deg": 2.7872331378140247,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.9845046804360043
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.037746116518974304,
+            -0.0007284978637471795,
+            0.028794486075639725
+          ],
+          "xy_error_cm": 1.153754252640335,
+          "yaw_error_deg": 1.5790581043642469,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.6925406253563993
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 80,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.025422326409007316,
+        0.0010333486513630138,
+        -0.06373228710493695
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.045079149305820465,
+            -0.0020739983301609755,
+            -0.023326627910137177
+          ],
+          "xy_error_cm": 1.9900911829870107,
+          "yaw_error_deg": 2.315073740305995,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.334152444229009
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.029229028150439262,
+            -0.0003701349487528205,
+            0.03536848723888397
+          ],
+          "xy_error_cm": 5.466937279133662,
+          "yaw_error_deg": 5.678056116379289,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 1.113676963950569
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 80,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.025436526722243787,
+        0.0005878756585896809,
+        0.06373228710493695
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.04989897087216377,
+            0.0037662219256162643,
+            0.021878616884350777
+          ],
+          "xy_error_cm": 2.4668057458605785,
+          "yaw_error_deg": 2.3980386607719653,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.8451798809057025
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.03279606252908707,
+            -0.001101090805605054,
+            0.046300746500492096
+          ],
+          "xy_error_cm": 0.7550852601486989,
+          "yaw_error_deg": 0.998753707045614,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.4779397522395836
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 110,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.027759438320521856,
+        -0.010309410367373976,
+        0.11973264199648646
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.040149006992578506,
+            0.017999282106757164,
+            0.11778241395950317
+          ],
+          "xy_error_cm": 3.090118899774791,
+          "yaw_error_deg": 0.11173983560722593,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.9726739158630284
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.040853459388017654,
+            0.00041496154153719544,
+            0.07083539664745331
+          ],
+          "xy_error_cm": 6.944596377618464,
+          "yaw_error_deg": 2.801605788315294,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.5135208657476746
+        }
+      }
+    },
+    {
+      "case": 0,
+      "frame": 110,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.02879212332016908,
+        0.006919826060671697,
+        -0.11973264199648646
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.040267422795295715,
+            -0.01772499457001686,
+            -0.11787466704845428
+          ],
+          "xy_error_cm": 2.7185468213048196,
+          "yaw_error_deg": 0.10645412296328231,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.9752218257115155
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.0364094041287899,
+            -0.00048172101378440857,
+            0.009067662991583347
+          ],
+          "xy_error_cm": 1.0621010592818971,
+          "yaw_error_deg": 7.379713875814206,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.4839932280068584
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 10,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.24789796225421734,
+        0.1235504546973376,
+        0.884855363869641
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.2434312254190445,
+            0.12021590769290924,
+            0.9315938353538513
+          ],
+          "xy_error_cm": 0.5574131473102517,
+          "yaw_error_deg": 2.677917156937798,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 195.86227719266307
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.059002771973609924,
+            0.005945174023509026,
+            0.23931707441806793
+          ],
+          "xy_error_cm": 22.25138084558279,
+          "yaw_error_deg": 36.98661949966965,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 11.428015903722489
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 10,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.25262515477955394,
+        0.11357220486685399,
+        -0.884855363869641
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.24601255357265472,
+            0.11661192774772644,
+            -0.8934949040412903
+          ],
+          "xy_error_cm": 0.7277802547059414,
+          "yaw_error_deg": 0.49500918876923294,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 187.1870558651799
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.017667748034000397,
+            -0.0018918807618319988,
+            -0.027352934703230858
+          ],
+          "xy_error_cm": 29.392211278065837,
+          "yaw_error_deg": 49.13127011345113,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.449055082544098
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 15,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.2139183250077324,
+        0.07358566950534444,
+        0.670030443453139
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.2335667908191681,
+            0.08821994066238403,
+            0.668848991394043
+          ],
+          "xy_error_cm": 2.449947144411321,
+          "yaw_error_deg": 0.06769221668324342,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 128.00616368993602
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.07837467640638351,
+            0.008987105451524258,
+            0.3289567828178406
+          ],
+          "xy_error_cm": 15.01501087378276,
+          "yaw_error_deg": 19.542081257479925,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 21.124478000983665
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 15,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.213367199182513,
+        0.0751687358126596,
+        -0.670030443453139
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.21807833015918732,
+            0.0760030746459961,
+            -0.6991624236106873
+          ],
+          "xy_error_cm": 0.47844410716606683,
+          "yaw_error_deg": 1.6691395118863739,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 123.44981385333026
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.008150216192007065,
+            -0.006399521604180336,
+            0.12955185770988464
+          ],
+          "xy_error_cm": 23.605792918736608,
+          "yaw_error_deg": 45.81269122999959,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.323214355768121
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 20,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.15202245556752664,
+        0.03379250088105513,
+        0.44826098253309865
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.17270150780677795,
+            0.039307232946157455,
+            0.4482235312461853
+          ],
+          "xy_error_cm": 2.140176327463587,
+          "yaw_error_deg": 0.0021458006774683776,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 61.237722442916265
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.08771610260009766,
+            0.009367268532514572,
+            0.27084439992904663
+          ],
+          "xy_error_cm": 6.8788800013168965,
+          "yaw_error_deg": 10.165221398846322,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 18.27914370294745
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 20,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.15164859982036127,
+        0.0354325032293888,
+        -0.44826098253309865
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.16122445464134216,
+            0.040763188153505325,
+            -0.4837587773799896
+          ],
+          "xy_error_cm": 1.095961665902171,
+          "yaw_error_deg": 2.033873826748095,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 61.45776501339675
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.0050712693482637405,
+            -0.0034309036564081907,
+            0.2104112207889557
+          ],
+          "xy_error_cm": 16.146665843759187,
+          "yaw_error_deg": 37.73913733293656,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 5.855226207708124
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 25,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.07829038677533429,
+        0.008465491668495952,
+        0.2221414798907584
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.07711777091026306,
+            0.00802693609148264,
+            0.2583273649215698
+          ],
+          "xy_error_cm": 0.12519420757951288,
+          "yaw_error_deg": 2.0732984902111182,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 15.442400134325482
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.07538680732250214,
+            0.007196823135018349,
+            0.20921720564365387
+          ],
+          "xy_error_cm": 0.3168642215010281,
+          "yaw_error_deg": 0.7405063676287084,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 12.119962171666398
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 25,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.07823173435084244,
+        0.0089913820450492,
+        -0.2221414798907584
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.07853539288043976,
+            0.010080542415380478,
+            -0.25894588232040405
+          ],
+          "xy_error_cm": 0.11306983748539551,
+          "yaw_error_deg": 2.1087369267197293,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 15.770904702358909
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.026942012831568718,
+            -0.00040202937088906765,
+            0.1304532289505005
+          ],
+          "xy_error_cm": 10.559239212376438,
+          "yaw_error_deg": 20.202188695248225,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.041381932484139
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 30,
+      "direction": "current_to_goal",
+      "target_motion": [
+        0.0038986512377700267,
+        -4.317346151496131e-05,
+        -0.0024291205549270556
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.0009148978861048818,
+            0.0004072666051797569,
+            -0.013070793822407722
+          ],
+          "xy_error_cm": 0.3017561982338876,
+          "yaw_error_deg": 0.6097229651838346,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.023548465571400765
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.028385648503899574,
+            -0.0008803209057077765,
+            0.021910108625888824
+          ],
+          "xy_error_cm": 2.4501303046057665,
+          "yaw_error_deg": 1.3945351086624058,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.9591701629568111
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 30,
+      "direction": "goal_to_current",
+      "target_motion": [
+        -0.0038987446089726032,
+        3.370304959506758e-05,
+        0.0024291205549270556
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.0009237384656444192,
+            -0.00044497489579953253,
+            0.013069878332316875
+          ],
+          "xy_error_cm": 0.30132696739999276,
+          "yaw_error_deg": 0.609670511465443,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.023599091047747357
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.021971484646201134,
+            -0.0010444659274071455,
+            0.018240196630358696
+          ],
+          "xy_error_cm": 2.5892686420265805,
+          "yaw_error_deg": 0.905907928682502,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 0.5812849321540746
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 35,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.026669347575739986,
+        0.004138454378032985,
+        -0.03219419335734497
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.055623263120651245,
+            0.0034303951542824507,
+            -0.019945994019508362
+          ],
+          "xy_error_cm": 2.896257193769559,
+          "yaw_error_deg": 0.7017701286929672,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.5030360754923424
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.03180345520377159,
+            -0.0013052669819444418,
+            0.04709373041987419
+          ],
+          "xy_error_cm": 5.872565680464316,
+          "yaw_error_deg": 4.542863398789626,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.416964075595565
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 35,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.026788739018479668,
+        -0.0032778600571826445,
+        0.03219419335734497
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.05549139901995659,
+            -0.0038179492112249136,
+            0.019957728683948517
+          ],
+          "xy_error_cm": 2.8707740897790917,
+          "yaw_error_deg": 0.701097781946544,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.4899387747563284
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.0545911081135273,
+            -0.0006408505141735077,
+            0.008750015869736671
+          ],
+          "xy_error_cm": 2.792714712653587,
+          "yaw_error_deg": 1.3432524241955732,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.3218311580754154
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 40,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.028998784867152537,
+        0.004733462201846901,
+        -0.04156230441053688
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.057844847440719604,
+            0.0008945417357608676,
+            -0.03827212005853653
+          ],
+          "xy_error_cm": 2.9100388938003574,
+          "yaw_error_deg": 0.1885136771896055,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.911036503824076
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.025568410754203796,
+            -0.001310011139139533,
+            0.05499482527375221
+          ],
+          "xy_error_cm": 5.490084159648724,
+          "yaw_error_deg": 5.532316012807124,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 1.1254334459660935
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 40,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.029170418818752136,
+        -0.0035244650837112264,
+        0.04156230441053688
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.0570351779460907,
+            -0.0024841546546667814,
+            0.03840236738324165
+          ],
+          "xy_error_cm": 2.788417198005665,
+          "yaw_error_deg": 0.1810510551911319,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.8149656144150326
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.048204205930233,
+            -0.0011302328202873468,
+            0.0216827355325222
+          ],
+          "xy_error_cm": 1.918377960508291,
+          "yaw_error_deg": 1.139015395249862,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.644982938826332
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 55,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.02610765747488209,
+        0.0028241779408264174,
+        -0.056354249077096075
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.051723018288612366,
+            -0.001864700228907168,
+            -0.02972545474767685
+          ],
+          "xy_error_cm": 2.604097325577891,
+          "yaw_error_deg": 1.5257175285976208,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.092414221172786
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.02607378549873829,
+            -0.0007873482536524534,
+            0.057509031146764755
+          ],
+          "xy_error_cm": 5.230627220766744,
+          "yaw_error_deg": 6.523885398342638,
+          "predicted_within_goal": true,
+          "predicted_normalized_goal_cost": 1.190356648478388
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 55,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.026225282277732256,
+        -0.0013491958050926948,
+        0.056354249077096075
+      ],
+      "actual_within_goal": true,
+      "native_goal_tolerance_label": true,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.05198613181710243,
+            0.0008546876488253474,
+            0.02955234795808792
+          ],
+          "xy_error_cm": 2.585495061431219,
+          "yaw_error_deg": 1.5356358170461253,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.118334179856235
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.03793064504861832,
+            -0.0015839210245758295,
+            0.035400476306676865
+          ],
+          "xy_error_cm": 1.170771598249235,
+          "yaw_error_deg": 1.2005627446211673,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.7659404031170272
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 80,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.02974218251801703,
+        -0.010361026817143232,
+        0.1462041814195948
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            7.59887698222883e-05,
+            0.019470684230327606,
+            0.1609697788953781
+          ],
+          "xy_error_cm": 4.21788373828715,
+          "yaw_error_deg": 0.846006417351406,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.82370425140267
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.031753480434417725,
+            0.0008470284519717097,
+            0.11499618738889694
+          ],
+          "xy_error_cm": 6.250869591404856,
+          "yaw_error_deg": 1.7880863450284532,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.857601609829393
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 80,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.030934303401314554,
+        0.005917530795527632,
+        -0.1462041814195948
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.001116743078455329,
+            -0.013943166472017765,
+            -0.1612931787967682
+          ],
+          "xy_error_cm": 3.770566106570013,
+          "yaw_error_deg": 0.8645358667960044,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 3.633551464599073
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.03639405593276024,
+            -0.0014188538771122694,
+            0.0317097082734108
+          ],
+          "xy_error_cm": 0.9145022568018804,
+          "yaw_error_deg": 10.193714996165298,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.6059690438770566
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 110,
+      "direction": "current_to_goal",
+      "target_motion": [
+        -0.030695966877672964,
+        -0.012209673389239064,
+        0.1411501344897368
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            0.0026266765780746937,
+            0.014318632893264294,
+            0.12818288803100586
+          ],
+          "xy_error_cm": 4.259283509109472,
+          "yaw_error_deg": 0.7429684939912449,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.3930419561883323
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.032275982201099396,
+            0.00021454686066135764,
+            0.10382398962974548
+          ],
+          "xy_error_cm": 6.418588333580473,
+          "yaw_error_deg": 2.138630565971433,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.5730089977080217
+        }
+      }
+    },
+    {
+      "case": 3,
+      "frame": 110,
+      "direction": "goal_to_current",
+      "target_motion": [
+        0.03210837091579852,
+        0.007769879275805509,
+        -0.1411501344897368
+      ],
+      "actual_within_goal": false,
+      "native_goal_tolerance_label": false,
+      "models": {
+        "direct_goal": {
+          "predicted_motion": [
+            -0.005678257904946804,
+            -0.012419743463397026,
+            -0.1272435039281845
+          ],
+          "xy_error_cm": 4.284215428743173,
+          "yaw_error_deg": 0.7967912384245918,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 2.33327883847462
+        },
+        "previous_500ms": {
+          "predicted_motion": [
+            0.031275201588869095,
+            -0.001466505229473114,
+            0.036193713545799255
+          ],
+          "xy_error_cm": 0.9273886448339071,
+          "yaw_error_deg": 10.16105401504565,
+          "predicted_within_goal": false,
+          "predicted_normalized_goal_cost": 1.261226927748123
+        }
+      }
+    }
+  ],
+  "wall_s": 8.755640293937176,
+  "unique_images": 22,
+  "identical_pair_output_exact_zero": true,
+  "native_vs_planar_goal_label_disagreements": 0,
+  "native_tolerance_confusion_current_to_goal": {
+    "direct_goal": {
+      "false_goal_detections": 0,
+      "missed_goal_detections": 7
+    },
+    "previous_500ms": {
+      "false_goal_detections": 0,
+      "missed_goal_detections": 4
+    }
+  },
+  "previous_cpu_vs_current_gpu_max_abs_displacement_radian_difference": 6.109476089477539e-07,
+  "plan_sha256": "5f0934c011f122940456acd8114d1d874f799ad232e6a7cf28a48ed4bd654c92",
+  "new_navigation": false,
+  "limitations": [
+    "two exposed related local tasks; correlated frames",
+    "new readout changes pair coverage, direction augmentation, architecture and loss together",
+    "goal-state prediction is not prospective controller performance"
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "authority_granted_by_this_document": false,
+  "conclusion": {
+    "exact_common_prefix_gate": "PASS",
+    "gs_para_level": 0,
+    "policy_exactness_fix_disposition": "validated_for_one_shared_hold_block",
+    "successor_readiness": "Eligible for independent source review and a separately committed one-shot V3 smoke authority; this result does not itself authorize that attempt."
+  },
+  "limitations": [
+    "This is a development-only common-prefix diagnostic, not scientific evidence.",
+    "It executed one shared HOLD block in ten lanes and no candidate or sentinel branch.",
+    "It persisted no RGB and emits no evidence about rendering, artifact completeness, training fitness, generalization, or world-model performance.",
+    "It validates exact equality only for captured state and controller components; hidden simulator state remains outside the receipt.",
+    "The result grants no training, branch-generation, retry, resume, refill, overwrite, promotion, or production authority."
+  ],
+  "measurements": {
+    "all_initial_synchronization_audits_passed": true,
+    "all_policy_step_synchronization_audits_passed": true,
+    "executed_block_sha256": "bd50e12c55dda3ee443c1cb6d71c7bcf6351c4ec96f7bc8d6adec015d1192eea",
+    "lane_count": 10,
+    "observed_para_level": 0,
+    "observed_policy_steps_per_lane": 25,
+    "observed_sim_time_ns": 500000000,
+    "policy_step_audit_count": 25,
+    "requested_policy_steps_per_lane": 25
+  },
+  "plan_binding": {
+    "byte_count": 6504,
+    "file_sha256": "8dc8fb82f18e340751d21240b6712ade5608d4eb71eb8f9f0e9c41c0062bc41d",
+    "path": "docs/lewm_go2_world_model_counterfactual_smoke_v3_exact_plan_2026-08-01.json"
+  },
+  "predecessor_evidence": {
+    "ab_diagnostic_result": {
+      "byte_count": 4445,
+      "file_sha256": "f5735a289b6cf81ffe63766a1faa1df9d4bffbf4c0430b307e20017f6b5cbf86",
+      "path": "docs/lewm_go2_world_model_counterfactual_lockstep_determinism_ab_v1_result_2026-08-01.json"
+    },
+    "v2_terminal_failure_review": {
+      "byte_count": 3837,
+      "file_sha256": "54e94535c5503408a3792b2ce22b411a312d7c3379881635cc081733e714e01c",
+      "path": "docs/lewm_go2_world_model_counterfactual_smoke_v2_terminal_failure_review_2026-08-01.json"
+    }
+  },
+  "probe_receipt_binding": {
+    "byte_count": 169720,
+    "file_sha256": "6203504f29d9a110b85f3ebc30e784a3500da8ca9353a5f6e0e85ff2707b249b",
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_counterfactual_lockstep_determinism_postfix_v1/para_level_0/probe_result.json"
+  },
+  "reviewed_at": "2026-08-01T10:09:19+01:00",
+  "schema": "lewm_go2_world_model_counterfactual_lockstep_postfix_result_v1",
+  "source_commit": "797cfa722c23234119476fc4ce376ef9629757c4",
+  "status": "EXACT_COMMON_PREFIX_PASS_CONFIRMED",
+  "successor_attempt_authorized_by_this_document": false
+}

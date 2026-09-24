@@ -1,0 +1,308 @@
+{
+  "architecture": {
+    "decoder": {
+      "align_corners": false,
+      "convolution": {
+        "bias": true,
+        "kernel_size": 3,
+        "padding": 1,
+        "stride": 1
+      },
+      "input": [
+        "B",
+        192,
+        16,
+        16
+      ],
+      "output": [
+        "B",
+        36,
+        112,
+        112
+      ],
+      "parameter_count": 345264,
+      "parameter_tensor_count": 20,
+      "resize_mode": "bilinear_explicit_size",
+      "stages": [
+        {
+          "input_channels": 192,
+          "output_channels": 112,
+          "output_size": [
+            16,
+            16
+          ],
+          "post": [
+            "group_norm_8",
+            "gelu"
+          ]
+        },
+        {
+          "input_channels": 112,
+          "output_channels": 80,
+          "output_size": [
+            28,
+            28
+          ],
+          "post": [
+            "group_norm_8",
+            "gelu"
+          ]
+        },
+        {
+          "input_channels": 80,
+          "output_channels": 56,
+          "output_size": [
+            56,
+            56
+          ],
+          "post": [
+            "group_norm_8",
+            "gelu"
+          ]
+        },
+        {
+          "input_channels": 56,
+          "output_channels": 36,
+          "output_size": [
+            112,
+            112
+          ],
+          "post": [
+            "group_norm_4",
+            "gelu"
+          ]
+        },
+        {
+          "input_channels": 36,
+          "output_channels": 36,
+          "output_size": [
+            112,
+            112
+          ],
+          "post": [
+            "group_norm_4",
+            "gelu"
+          ]
+        }
+      ]
+    },
+    "evidence_head_parameter_ceiling": 357993,
+    "evidence_head_parameter_count": 352689,
+    "evidence_head_parameter_tensor_count": 26,
+    "existing_encoder_parameter_count": 2747520,
+    "model_family": "shared_observable_camera_ray_jepa_v5_multires_v1",
+    "one_science_delta": "replace_single_stride_seven_dense_lift_with_progressive_multiresolution_spatial_decoder",
+    "total_trainable_parameter_count": 3100209,
+    "total_trainable_parameter_tensor_count": 104
+  },
+  "authority": "source_only_preregistration_no_gpu_data_checkpoint_training_calibration_g2_navigation_runtime_production_or_heldout_authority",
+  "author": "/root",
+  "content_sha256": "6fdf626175dbd262696546ac7f38267d54999cc3c0ea988edaeec06d9f4ad6c8",
+  "date": "2026-07-24",
+  "decision": {
+    "final_update": 1000,
+    "integrity_precedence": true,
+    "pass_conjunction": {
+      "complete_physical_scope_count_minimum": 1,
+      "passed_margin_count_minimum": 98,
+      "rough_ground_balanced_accuracy_strictly_greater_than": 0.647134926562893,
+      "rough_pixel_balanced_accuracy_strictly_greater_than": 0.8198594673963917,
+      "rough_depth_p95_m_strictly_less_than": 0.9777327477931971,
+      "total_shortfall_strictly_less_than": 41.01776266878769
+    },
+    "threshold_equality_passes": false,
+    "update_100": "integrity_and_informational_only",
+    "update_400": "integrity_and_informational_only"
+  },
+  "downstream": {
+    "action_conditioned_predictor_must_causally_score_deployed_actions": true,
+    "fresh_external_g8_required": true,
+    "matched_no_jepa_arm_mandatory": true,
+    "perception_requalification_required_after_any_encoder_change": true,
+    "probe_pass_authorizes": "separate_bounded_perception_qualification_preregistration_only",
+    "probe_pass_does_not_qualify_checkpoint": true
+  },
+  "frozen_unchanged_contracts": [
+    "rgb_input_normalization_and_encoder_topology",
+    "ray_depth_ground_output_tensor_contract",
+    "camera_geometry_and_fixed_rasterization",
+    "raw_v13_roles_and_ordering",
+    "wrong_rgb_mapping",
+    "nine_scope_189_margin_physical_evaluator_and_thresholds",
+    "tail_depth_loss_and_all_other_loss_terms_and_coefficients",
+    "adamw_and_uncompressed_predecessor_learning_rate_function",
+    "float32_without_autocast",
+    "four_real_b4_microbatches_per_update",
+    "independent_head_and_encoder_clip_norm_one",
+    "frozen_jepa_and_ema_components"
+  ],
+  "frozen_source_bindings": {
+    "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py": "708d368e461fe60aacb860dda5b0cbfd1acaf43e5cb3ae18a77bb48de739fb85",
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py": "6a0e40f9dcb496831553dc5bbc6d1efcdf6d82676d6f18aa20e417f8de4fa6a0",
+    "lewm/models/observable_camera_ray_evidence_v4.py": "6238f7fb2b9c0c5201c9d7ebb5343ceef72fa97b423dddb466465b6c594cc882",
+    "lewm/models/observable_camera_ray_evidence_v4_training.py": "c0f3f944883987950edb7579a9e108171486122a9a3ae9d84d2a1abb6ac015ed",
+    "lewm/models/shared_observable_camera_ray_jepa_v5.py": "b438295d7ec5cb0897cc953a229f461da7fca16322c4c936555d37833a36e4b9",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_protected_camera_adaptation_v4_tail_depth.py": "6fc0a114386ee2fb0ae98704a970d38a7194db192283b904138015498fb02384"
+  },
+  "initialization": {
+    "base_initialization_seed": 20260712,
+    "canonical_ground_support_must_match_exactly": true,
+    "copied_predecessor_dense_decoder_entries": 0,
+    "decoder": {
+      "convolution_bias": "zeros",
+      "convolution_weight": "xavier_uniform",
+      "group_norm_bias": "zeros",
+      "group_norm_weight": "ones",
+      "local_cpu_rng_seed": 20260724,
+      "must_restore_caller_rng": true
+    },
+    "future_runtime_tensor_input": {
+      "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+      "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+      "role": "n320_fit_initialization_only"
+    },
+    "hard_sync_ema_once": true,
+    "permitted_copies": [
+      "encoder",
+      "pixel_head",
+      "ground_head"
+    ],
+    "rejected_adaptation_checkpoint_open_count": 0,
+    "source_phase_tensor_open_count": 0,
+    "strict_v5_state_loading_must_fail": true
+  },
+  "lifecycle": {
+    "generated_inputs_are_deferred_runtime_bindings": true,
+    "immutable_order": [
+      "source_and_authority_rehash",
+      "hardware_preflight",
+      "reserve_unique_mode_0700_output_root",
+      "deferred_torch_and_runtime_input_load",
+      "training_update",
+      "cpu_snapshot",
+      "one_inline_nonmutating_selection_evaluation",
+      "atomic_mode_0444_metric_sidecar",
+      "control_branch",
+      "terminal_publication",
+      "seal_all_terminal_files_read_only"
+    ],
+    "reservation_consumes_attempt": true,
+    "source_review_may_open_generated_inputs": false,
+    "whole_tree_export_authorized": false
+  },
+  "operation_count_compute_cap": {
+    "accelerator": "one_AMD_Radeon_AI_PRO_R9700",
+    "backward_calls": 4000,
+    "checkpoint_selection_evaluations": 3,
+    "head_clip_invocations": 1000,
+    "maximum_optimizer_updates": 1000,
+    "maximum_pair_index_presentations": 16000,
+    "microbatch_size": 4,
+    "microbatches_per_update": 4,
+    "observer_evaluation_reruns": 0,
+    "encoder_clip_invocations": 1000
+  },
+  "optimizer": {
+    "amsgrad": false,
+    "betas": [
+      0.9,
+      0.999
+    ],
+    "encoder_learning_rate_scale": 1.0,
+    "epsilon": 1e-08,
+    "group_order": [
+      "evidence_head",
+      "encoder"
+    ],
+    "independent_clip_norm": 1.0,
+    "learning_rate_horizon_updates": 8000,
+    "learning_rate_schedule": "unchanged_predecessor_warmup_plus_cosine_prefix",
+    "post_clip_tolerance": 1e-05,
+    "type": "AdamW",
+    "weight_decay": 0.0001
+  },
+  "presentation_schedule": {
+    "checkpoint_prefix_sha256": {
+      "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
+      "1000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528"
+    },
+    "checkpoints": [
+      {
+        "presentations": 1600,
+        "update": 100
+      },
+      {
+        "presentations": 6400,
+        "update": 400
+      },
+      {
+        "presentations": 16000,
+        "update": 1000
+      }
+    ],
+    "effective_batch_size": 16,
+    "schedule_content_sha256": "274c0cbd9a87cbbc5bbc3123fff046f02ac3555014b5ec750d4a32b552650a15",
+    "schedule_file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270",
+    "seed": 20260713
+  },
+  "predecessor_commits": [
+    "f3568880ecdda0d3f01ff8f661b19eb0753b58c9",
+    "031568aac537f7c707a8e27b13a243ec1a02c646",
+    "8cce85e016fb0160b65407dab17db7abad0397e3"
+  ],
+  "prohibitions": [
+    "temporal_or_attitude_context_in_v1",
+    "depth_input",
+    "direct_bev_output",
+    "raster_rule_or_threshold_change",
+    "data_role_rebuild_refinement_or_reordering",
+    "loss_or_coefficient_change",
+    "calibration_access_or_search",
+    "v1_through_v6_adaptation_checkpoint_or_terminal_runtime_access",
+    "retry_resume_recovery_second_seed_or_extension",
+    "soft_or_closest_checkpoint_promotion",
+    "jepa_training_in_this_probe",
+    "g2_navigation_runtime_production_or_heldout_use"
+  ],
+  "runtime_bindings": {
+    "n320_is_only_permitted_tensor_initialization_input": true,
+    "raw_audit_content_sha256": "0c16e368c9de258d0fbf46e3123d7a3cfcdf60162fd9efa6440d4a7773056aca",
+    "raw_audit_file_sha256": "0680e1680f30c45feda60498792c3f208c28313e8f087dfbdd1c5807bcf1fe76",
+    "raw_manifest_content_sha256": "74ae5799919ff4d9a06f56d98929cb4cb702d64db52ecdfc93cfa9a8e82fb35a",
+    "raw_manifest_file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360",
+    "selection": {
+      "pair_count": 495,
+      "scene_count": 8,
+      "unique_endpoint_count": 924
+    },
+    "train": {
+      "pair_count": 4262,
+      "scene_count": 72,
+      "unique_endpoint_count": 7777
+    },
+    "validation_phase": "after_authority_rehash_and_output_root_reservation_only"
+  },
+  "schema": "lewm_go2_rgb_multiresolution_perception_v1_preregistration",
+  "source_phase": {
+    "clean_export_requires_later_narrow_allowlist_amendment": true,
+    "existing_72_path_g2_runner_manifest_must_not_change": true,
+    "required_independent_review": true,
+    "required_new_recursive_source_manifest": true,
+    "required_source_tests": [
+      "architecture_and_parameter_contract",
+      "shape_dtype_finiteness_and_invalid_input",
+      "output_geometry_and_schema_parity",
+      "one_online_encoder_semantics",
+      "migration_copy_allowlist_and_rng_restoration",
+      "finite_nonzero_gradient_reachability",
+      "frozen_state_integrity",
+      "deployment_state_roundtrip",
+      "synthetic_microfit_and_wrong_rgb_guard",
+      "presentation_and_terminal_control",
+      "deferred_import_reservation_and_immutable_lifecycle",
+      "recursive_source_closure"
+    ]
+  },
+  "status": "PREREGISTERED_SOURCE_ONLY_PENDING_INDEPENDENT_REVIEW"
+}

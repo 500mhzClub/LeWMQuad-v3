@@ -1,0 +1,427 @@
+{
+  "status": "COMPLETE",
+  "groups": [
+    {
+      "state": "fresh_right_initial",
+      "actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_cost": [
+        181.79820354520373,
+        142.82547134185685,
+        196.2927834574258,
+        108.92338907398114,
+        225.24667596692717,
+        147.85833401397832
+      ],
+      "physical_best": "right_arc",
+      "models": {
+        "within_only": {
+          "predicted": {
+            "costs": [
+              168.67066955566406,
+              150.21380615234375,
+              115.07288360595703,
+              131.53646850585938,
+              92.6164779663086,
+              138.27198791503906
+            ],
+            "chosen_actions": [
+              "left_turn"
+            ],
+            "physical_regret": 116.32328689294603
+          },
+          "actual_images": {
+            "costs": [
+              155.85845947265625,
+              152.61807250976562,
+              110.89217376708984,
+              115.32595825195312,
+              110.54827117919922,
+              125.23725891113281
+            ],
+            "chosen_actions": [
+              "left_turn"
+            ],
+            "physical_regret": 116.32328689294603
+          }
+        },
+        "mixed_pairs": {
+          "predicted": {
+            "costs": [
+              182.9503936767578,
+              135.96119689941406,
+              170.26718139648438,
+              151.530029296875,
+              180.4461669921875,
+              168.33224487304688
+            ],
+            "chosen_actions": [
+              "forward"
+            ],
+            "physical_regret": 33.90208226787571
+          },
+          "actual_images": {
+            "costs": [
+              181.2610626220703,
+              165.35670471191406,
+              189.1182861328125,
+              103.06937408447266,
+              191.7037353515625,
+              135.51852416992188
+            ],
+            "chosen_actions": [
+              "right_arc"
+            ],
+            "physical_regret": 0.0
+          }
+        }
+      }
+    },
+    {
+      "state": "left_near_case_0",
+      "actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_cost": [
+        2.7530506009250235,
+        16.038188938661804,
+        22.116884517713476,
+        16.1147376250248,
+        10.742088954646297,
+        6.996066902893448
+      ],
+      "physical_best": "hold",
+      "models": {
+        "within_only": {
+          "predicted": {
+            "costs": [
+              6.384782791137695,
+              12.470850944519043,
+              18.7220458984375,
+              6.028885841369629,
+              12.487037658691406,
+              9.365255355834961
+            ],
+            "chosen_actions": [
+              "right_arc"
+            ],
+            "physical_regret": 13.361687024099778
+          },
+          "actual_images": {
+            "costs": [
+              2.861506223678589,
+              9.098631858825684,
+              19.81592559814453,
+              5.889486789703369,
+              11.174033164978027,
+              3.8538432121276855
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          }
+        },
+        "mixed_pairs": {
+          "predicted": {
+            "costs": [
+              1.6057792901992798,
+              8.5980806350708,
+              31.755693435668945,
+              24.15605926513672,
+              38.57694625854492,
+              61.20719909667969
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          },
+          "actual_images": {
+            "costs": [
+              2.1479501724243164,
+              8.151721954345703,
+              21.240949630737305,
+              11.892587661743164,
+              19.072961807250977,
+              20.807287216186523
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          }
+        }
+      }
+    },
+    {
+      "state": "left_near_case_3",
+      "actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_cost": [
+        1.1860934099982645,
+        8.565326763040717,
+        11.871530341447983,
+        10.934879634821254,
+        6.9382666909916315,
+        5.036200405952207
+      ],
+      "physical_best": "hold",
+      "models": {
+        "within_only": {
+          "predicted": {
+            "costs": [
+              8.277023315429688,
+              16.026832580566406,
+              15.799461364746094,
+              11.431331634521484,
+              10.93869400024414,
+              10.468414306640625
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          },
+          "actual_images": {
+            "costs": [
+              2.6029605865478516,
+              5.349900245666504,
+              9.589324951171875,
+              2.9218709468841553,
+              5.582535266876221,
+              4.744117736816406
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          }
+        },
+        "mixed_pairs": {
+          "predicted": {
+            "costs": [
+              5.686213493347168,
+              18.229244232177734,
+              19.849830627441406,
+              34.57945251464844,
+              23.079479217529297,
+              57.217742919921875
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          },
+          "actual_images": {
+            "costs": [
+              3.131941318511963,
+              8.613279342651367,
+              11.550544738769531,
+              11.91476058959961,
+              10.46650218963623,
+              22.531620025634766
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "physical_regret": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "training_turn_separation": [
+    {
+      "layout": "cluster_00_left_open",
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "physical_cost": 106.14133823685908,
+          "costs": {
+            "within_only": 108.1575927734375,
+            "mixed_pairs": 106.51657104492188
+          },
+          "mixed_cost_ratio": 1.0035352183635131,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "initial_to_right",
+          "physical_cost": 108.17356439848137,
+          "costs": {
+            "within_only": 107.11970520019531,
+            "mixed_pairs": 106.41366577148438
+          },
+          "mixed_cost_ratio": 0.9837307882310874,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "left_to_right",
+          "physical_cost": 427.81217963092826,
+          "costs": {
+            "within_only": 201.9493865966797,
+            "mixed_pairs": 380.2020263671875
+          },
+          "mixed_cost_ratio": 0.8887124875574748,
+          "exact_pair_in_mixed_fit": false
+        }
+      ],
+      "angle_between_turn_displacements_deg": {
+        "physical": 175.02307839456319,
+        "within_only": 86.45048207146516,
+        "mixed_pairs": 141.77351532024883
+      }
+    },
+    {
+      "layout": "cluster_00_right_open",
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "physical_cost": 106.14133823685908,
+          "costs": {
+            "within_only": 110.37725830078125,
+            "mixed_pairs": 112.47459411621094
+          },
+          "mixed_cost_ratio": 1.0596681366991898,
+          "exact_pair_in_mixed_fit": true
+        },
+        {
+          "pair": "initial_to_right",
+          "physical_cost": 108.17356439848137,
+          "costs": {
+            "within_only": 112.83634948730469,
+            "mixed_pairs": 111.96903991699219
+          },
+          "mixed_cost_ratio": 1.0350869044541173,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "left_to_right",
+          "physical_cost": 427.81217963092826,
+          "costs": {
+            "within_only": 14.058097839355469,
+            "mixed_pairs": 416.2520751953125
+          },
+          "mixed_cost_ratio": 0.9729785523039839,
+          "exact_pair_in_mixed_fit": false
+        }
+      ],
+      "angle_between_turn_displacements_deg": {
+        "physical": 175.02307839456319,
+        "within_only": 20.433766879179036,
+        "mixed_pairs": 148.71527667836799
+      }
+    },
+    {
+      "layout": "cluster_01_left_open",
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "physical_cost": 106.14133823685908,
+          "costs": {
+            "within_only": 102.65467834472656,
+            "mixed_pairs": 103.15805053710938
+          },
+          "mixed_cost_ratio": 0.9718932533798248,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "initial_to_right",
+          "physical_cost": 108.17356439848137,
+          "costs": {
+            "within_only": 106.58038330078125,
+            "mixed_pairs": 109.78668212890625
+          },
+          "mixed_cost_ratio": 1.0149123100398412,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "left_to_right",
+          "physical_cost": 427.81217963092826,
+          "costs": {
+            "within_only": 191.30950927734375,
+            "mixed_pairs": 389.7098083496094
+          },
+          "mixed_cost_ratio": 0.9109366841444542,
+          "exact_pair_in_mixed_fit": false
+        }
+      ],
+      "angle_between_turn_displacements_deg": {
+        "physical": 175.02307839456319,
+        "within_only": 85.08447331659639,
+        "mixed_pairs": 146.15022049292844
+      }
+    },
+    {
+      "layout": "cluster_01_right_open",
+      "comparisons": [
+        {
+          "pair": "initial_to_left",
+          "physical_cost": 106.14133823685908,
+          "costs": {
+            "within_only": 104.7540283203125,
+            "mixed_pairs": 109.09976196289062
+          },
+          "mixed_cost_ratio": 1.027872493179139,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "initial_to_right",
+          "physical_cost": 108.17356439848137,
+          "costs": {
+            "within_only": 111.43318176269531,
+            "mixed_pairs": 114.60652160644531
+          },
+          "mixed_cost_ratio": 1.0594688475297598,
+          "exact_pair_in_mixed_fit": false
+        },
+        {
+          "pair": "left_to_right",
+          "physical_cost": 427.81217963092826,
+          "costs": {
+            "within_only": 16.887454986572266,
+            "mixed_pairs": 426.5281982421875
+          },
+          "mixed_cost_ratio": 0.9969987264274514,
+          "exact_pair_in_mixed_fit": false
+        }
+      ],
+      "angle_between_turn_displacements_deg": {
+        "physical": 175.02307839456319,
+        "within_only": 22.731567309728522,
+        "mixed_pairs": 155.08294052231582
+      }
+    }
+  ],
+  "fit_sha256": "3e301ed90575f2765526b62c78c95b2a3268ae004a8c08292a13579a52eae688",
+  "source_sha256": "8c00d8c24131bb464b319ca4a488677d69d0f28e5db92f56eefbebbf103ffc1d",
+  "forecasts_precede_successor_rgb": true,
+  "old_predicted_and_actual_costs_reproduced": true,
+  "unique_encoded_images": 42,
+  "wall_s": 15.153585996013135,
+  "no_training": true,
+  "new_navigation": false,
+  "limitations": [
+    "three exposed post-hoc decision states",
+    "turn probes use training images and are not a transfer test",
+    "goal-head pair-coverage intervention, not JEPA representation training",
+    "prospective control still required"
+  ]
+}

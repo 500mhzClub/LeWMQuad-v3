@@ -1,0 +1,2152 @@
+{
+  "status": "PROVISIONAL_SUPERVISED_SAVED_EARLY_HOLD_DIAGNOSIS",
+  "provisional_readout_sha256": "162c5f43fade5297cf3f6fbbac3e5fe111cb3f3c04d068ed05db8de703589155",
+  "decision_stream_sha256": "eb5a044d40a14f3cfd442ab33eb1d4a8d6c7913555a6b61231bd3027ee50c66c",
+  "command_tape_sha256": "daaf94f5fb56df97311908c39f192760efe2bf6afd25599564f7b3076ac352e4",
+  "consumed_frames": 15,
+  "canonical_consumed_prefix_sha256": "2167d3603e557cb9963093d3c1298927c0efafe560aeee3772ba0d0ce535cdd3",
+  "frames": [
+    {
+      "frame": 0,
+      "original_row_sha256": "1e75f739f782256a93d6156f706993a4a70141a2abcb78e0aef3d869ebccad39",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame": 1,
+      "original_row_sha256": "a3fbaf8f39c6fcada1c9bec89cdc97c2ca49e606fdc513ce5d16f44b7c4ed2a5",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame": 2,
+      "original_row_sha256": "c71332ea7e67bff2b4f43a9a4fdc3aa72dc1904b16a3c73f5406f0c36031ba41",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "frame": 3,
+      "original_row_sha256": "0bea94d23dcf6893c90d3144152f4b6cdb8e1314c4c4056ae1f4bac1a1b08c5f",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ],
+      "action": "left_turn",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": 0.006953363171004798,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.030347309633353532,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.00536705121371513,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.015700782881052637,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": 0.007151042664764228,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": 0.006118492934327252,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 4,
+      "original_row_sha256": "e1289eff2be8be47f0c1a42340a1fed0ac6238ab736cb4df95e52d028ee94d45",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.00292733725639237,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.03884238967737365,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.015252512083963967,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.023942583329896877,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.0034337950341532582,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.00305378321245602,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 5,
+      "original_row_sha256": "170636426fd6081e5e73da085624bd2e4640307e7023e1613f2bc714bc448d72",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.0033676436748648376,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.039472758774340616,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.015874142067767192,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.02439886637895302,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.003977453058749742,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.00338905693770281,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 6,
+      "original_row_sha256": "9c26e0bb57c9b533edea397199630961f75c796bb65ed6654ccaec1ce9e25126",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.0036069901753387063,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.039946114948776264,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.01622171428513235,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.02478772211103683,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004220342122996481,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.0036246367706060014,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 7,
+      "original_row_sha256": "543bee16bfbfce471b374f2f836a8f1001949f10b4118e4084930a8221aebb38",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.0037636839016687964,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.040332425838707275,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.016473542060173776,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.02510712690599657,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.00436471076837719,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.0037933019301197137,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 8,
+      "original_row_sha256": "94e3d1f30f363d2ecbf226b44b5c0d3e0a1a7a97c53d3b08e0ed7516f661f1ff",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.003909456267291617,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.040795662051965276,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.01677499414701907,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.025454277508219304,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004504481340965658,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.003943135440774877,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 9,
+      "original_row_sha256": "adbe8736ba1b029729c8319b86da4089b49eb024004d521575d1e2fafbaf11ad",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.003958711817289292,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.04102523024416146,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.01690103103733222,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.025628818401863297,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004541893336739279,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004003751871054906,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 10,
+      "original_row_sha256": "358f36e35190e58955c89ef7b001b932d25f9c35a5a1936d1dfe26aab6a28d2d",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.003973720815968081,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.04121659568902208,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.01699032424686232,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.025768849296217124,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004545079501605535,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004029990701806575,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 11,
+      "original_row_sha256": "b0d8bba34b45c5e84305be3d3db09f5d756a50e357a64f1f096e9a8266a423cf",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.003993670955457737,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.04139210513925829,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.017080623632102283,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.025894192215368914,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004559853605585246,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004054743573190268,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 12,
+      "original_row_sha256": "29c1ffe220ebbc773c20130d378d9481bdd5fb8bc9b8e4f5ae3120f9d2b2780d",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.0041059116537326265,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.041645340876412355,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.017254708851441338,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.026103958449738673,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004666325228767102,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004172157644487727,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 13,
+      "original_row_sha256": "35f03bd25bc4fbdad4f37c9b9cd7b5a956db84312dcea0eedf8fd54ee616a4da",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.004098145078157171,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.041766620902626235,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.01729691592089912,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.026193118048497714,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.004647709799040462,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004175205802840624,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    },
+    {
+      "frame": 14,
+      "original_row_sha256": "db7479462470f0e19b5e60536a8aff28e94880835497ce5e6b40ad52f280b63f",
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "action": "hold",
+      "mode": "WAYPOINT",
+      "phase_allowed_actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "intermediate_target_is_mission_goal": false,
+      "recovery_active": false,
+      "candidates": [
+        {
+          "action": "hold",
+          "utility_m": -0.004067977393876686,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "forward",
+          "utility_m": -0.04184926901677317,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_arc",
+          "utility_m": -0.017311166491587218,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_arc",
+          "utility_m": -0.026246718373857898,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "left_turn",
+          "utility_m": -0.0046093942177728095,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        },
+        {
+          "action": "right_turn",
+          "utility_m": -0.004152912397042293,
+          "surface_intersection": false,
+          "all_segments_clear": true
+        }
+      ]
+    }
+  ],
+  "command_runs": [
+    {
+      "first_frame": 0,
+      "last_frame": 2,
+      "commands": 3,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 3,
+      "last_frame": 3,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 4,
+      "last_frame": 122,
+      "commands": 119,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 123,
+      "last_frame": 123,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 124,
+      "last_frame": 172,
+      "commands": 49,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 173,
+      "last_frame": 173,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 174,
+      "last_frame": 216,
+      "commands": 43,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 217,
+      "last_frame": 217,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 218,
+      "last_frame": 259,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 260,
+      "last_frame": 260,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 261,
+      "last_frame": 300,
+      "commands": 40,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 301,
+      "last_frame": 301,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 302,
+      "last_frame": 342,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 343,
+      "last_frame": 343,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 344,
+      "last_frame": 384,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 385,
+      "last_frame": 385,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 386,
+      "last_frame": 426,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 427,
+      "last_frame": 427,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 428,
+      "last_frame": 468,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 469,
+      "last_frame": 469,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 470,
+      "last_frame": 510,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 511,
+      "last_frame": 511,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 512,
+      "last_frame": 552,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 553,
+      "last_frame": 553,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 554,
+      "last_frame": 595,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 596,
+      "last_frame": 596,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 597,
+      "last_frame": 637,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 638,
+      "last_frame": 638,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 639,
+      "last_frame": 680,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 681,
+      "last_frame": 681,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 682,
+      "last_frame": 722,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 723,
+      "last_frame": 723,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 724,
+      "last_frame": 764,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 765,
+      "last_frame": 765,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 766,
+      "last_frame": 807,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 808,
+      "last_frame": 808,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 809,
+      "last_frame": 849,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 850,
+      "last_frame": 850,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 851,
+      "last_frame": 891,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 892,
+      "last_frame": 892,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 893,
+      "last_frame": 934,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 935,
+      "last_frame": 935,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 936,
+      "last_frame": 976,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 977,
+      "last_frame": 977,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 978,
+      "last_frame": 1019,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1020,
+      "last_frame": 1020,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1021,
+      "last_frame": 1061,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1062,
+      "last_frame": 1062,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1063,
+      "last_frame": 1103,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1104,
+      "last_frame": 1104,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1105,
+      "last_frame": 1146,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1147,
+      "last_frame": 1147,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1148,
+      "last_frame": 1188,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1189,
+      "last_frame": 1189,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1190,
+      "last_frame": 1230,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1231,
+      "last_frame": 1231,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1232,
+      "last_frame": 1273,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1274,
+      "last_frame": 1274,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1275,
+      "last_frame": 1315,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1316,
+      "last_frame": 1316,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1317,
+      "last_frame": 1358,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1359,
+      "last_frame": 1359,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1360,
+      "last_frame": 1400,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1401,
+      "last_frame": 1401,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1402,
+      "last_frame": 1443,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1444,
+      "last_frame": 1444,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1445,
+      "last_frame": 1485,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1486,
+      "last_frame": 1486,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1487,
+      "last_frame": 1527,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1528,
+      "last_frame": 1528,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1529,
+      "last_frame": 1570,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1571,
+      "last_frame": 1571,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1572,
+      "last_frame": 1613,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1614,
+      "last_frame": 1614,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1615,
+      "last_frame": 1655,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1656,
+      "last_frame": 1656,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1657,
+      "last_frame": 1697,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1698,
+      "last_frame": 1698,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1699,
+      "last_frame": 1740,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1741,
+      "last_frame": 1741,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1742,
+      "last_frame": 1782,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1783,
+      "last_frame": 1783,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1784,
+      "last_frame": 1824,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1825,
+      "last_frame": 1825,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1826,
+      "last_frame": 1867,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1868,
+      "last_frame": 1868,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1869,
+      "last_frame": 1909,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1910,
+      "last_frame": 1910,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1911,
+      "last_frame": 1952,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1953,
+      "last_frame": 1953,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1954,
+      "last_frame": 1994,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 1995,
+      "last_frame": 1995,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 1996,
+      "last_frame": 2036,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2037,
+      "last_frame": 2037,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2038,
+      "last_frame": 2079,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2080,
+      "last_frame": 2080,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2081,
+      "last_frame": 2121,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2122,
+      "last_frame": 2122,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2123,
+      "last_frame": 2163,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2164,
+      "last_frame": 2164,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2165,
+      "last_frame": 2206,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2207,
+      "last_frame": 2207,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2208,
+      "last_frame": 2248,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2249,
+      "last_frame": 2249,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2250,
+      "last_frame": 2290,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2291,
+      "last_frame": 2291,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2292,
+      "last_frame": 2333,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2334,
+      "last_frame": 2334,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2335,
+      "last_frame": 2375,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2376,
+      "last_frame": 2376,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2377,
+      "last_frame": 2417,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2418,
+      "last_frame": 2418,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2419,
+      "last_frame": 2460,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2461,
+      "last_frame": 2461,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2462,
+      "last_frame": 2502,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2503,
+      "last_frame": 2503,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2504,
+      "last_frame": 2545,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2546,
+      "last_frame": 2546,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2547,
+      "last_frame": 2587,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2588,
+      "last_frame": 2588,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2589,
+      "last_frame": 2629,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2630,
+      "last_frame": 2630,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2631,
+      "last_frame": 2672,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2673,
+      "last_frame": 2673,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2674,
+      "last_frame": 2714,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2715,
+      "last_frame": 2715,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2716,
+      "last_frame": 2756,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2757,
+      "last_frame": 2757,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2758,
+      "last_frame": 2799,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2800,
+      "last_frame": 2800,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2801,
+      "last_frame": 2841,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2842,
+      "last_frame": 2842,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2843,
+      "last_frame": 2883,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2884,
+      "last_frame": 2884,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2885,
+      "last_frame": 2926,
+      "commands": 42,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2927,
+      "last_frame": 2927,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2928,
+      "last_frame": 2968,
+      "commands": 41,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "first_frame": 2969,
+      "last_frame": 2969,
+      "commands": 1,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "first_frame": 2970,
+      "last_frame": 3012,
+      "commands": 43,
+      "requested_command": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    }
+  ],
+  "inspected_discretionary_hold_frames": [
+    4,
+    13,
+    14
+  ],
+  "all_six_actions_pass_recorded_geometry_and_phase_at_inspected_holds": true,
+  "original_scores_favor_hold_at_inspected_holds": true,
+  "model_inference_performed": false,
+  "full_controller_reconstructed": false,
+  "raw_audit_pending": true,
+  "candidate_policy_applied": false,
+  "candidate_commands_executed": false,
+  "future_candidate_outcomes_inferred": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false
+}

@@ -1,0 +1,36 @@
+{
+  "status": "SCOPED_BATCHED_LATE_HISTORY_PROFILE_RUNNING",
+  "utc": "2026-09-11T01:08:52.646801+00:00",
+  "source_count": 2157,
+  "launch_sha256": "b0928142d3d2368bcaffe1fa093347c0f8207941d5c2e439ca85315a212a594f",
+  "paired_result_sha256": "5ebc45e317e217a39a144eacbb0029e3a57e59cf9713c27a1a0cf26c8d0cb5d0",
+  "owner": {
+    "pid": 2776882,
+    "created": 1789088841.43,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/profile_go2_scoped_batched_footprint_late_history_v1.py",
+      "--paired-result-sha256",
+      "5ebc45e317e217a39a144eacbb0029e3a57e59cf9713c27a1a0cf26c8d0cb5d0"
+    ]
+  },
+  "tool_session": 79227,
+  "latest_complete_comparison": {
+    "frame": 67,
+    "original_decision_sha256": "b58b15e9f21a84694829a6d879463f57b00ecb63fc7c91bd4cb045a5391f8509",
+    "candidate_decision_sha256": "f08b6cad8ffbdd168ae8c7e0971a6b1ef3472ae139658b637b1d9f599919ab35",
+    "candidate_normalized_decision_exact": true,
+    "public_input_sha256": "9fb9bc0a4ebd4e4149538b68c43bffbdabd2fccf66ad2e19e59a3dbb282a7f2a",
+    "complete_original_decision_reconstructed": true,
+    "public_input_arrays_unchanged": true,
+    "profiled_window": null,
+    "controller_wall_s": 0.5530202770605683
+  },
+  "original_paired_owner_ended": true,
+  "initial_bound_input_admission_completed": true,
+  "full_training_ancestry_reexecuted": false,
+  "native_execution": false,
+  "profile_complete": false,
+  "goal_achieved": false
+}

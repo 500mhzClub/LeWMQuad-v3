@@ -1,0 +1,217 @@
+{
+  "schema": "lewm_go2_dual_residual_token_adapter_jepa_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_EXACT_NO_RGB_DUAL_ADAPTER_SCREEN",
+  "citable_as_scientific_evidence": false,
+  "authorizes_collection": false,
+  "authorizes_rgb_access": false,
+  "authorizes_feature_extraction": false,
+  "authorizes_evaluation": false,
+  "authorizes_retry": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_preregistration_2026-08-03.md",
+    "sha256": "c3c9e76c450f842a64f56577b038117e579b0d3c0d0e2e8892bd4590886f6c09",
+    "byte_count": 16756
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_source_review_2026-08-03.json",
+    "sha256": "fd7d4c2aaf91cd9f4a1d0fd34eda135492fbbb154a1f432a3bb14002917bc105",
+    "byte_count": 6935
+  },
+  "source_bindings": {
+    "adapter_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "f3780c5c9414c5c40b4f30d6e371a1eedf472e2722b6ce96e46f17a72c15bd63",
+      "byte_count": 10911
+    },
+    "adapter_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "ca3217e10b33e0ad11b91ac6502eab0ba842e477019d6d2bc4ee81fc52a0c0d9",
+      "byte_count": 8386
+    },
+    "dual_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "f94c6e1d361edd2bc9c126916d88bbeff948df7798b0c92e31cf97c774dbe705",
+      "byte_count": 56563
+    },
+    "dual_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dual_residual_token_adapter_jepa_v1.py",
+      "sha256": "bac26b06a99c15b27d91dd0fc9e076ae07b217525e8f14541d16fc27785e6f28",
+      "byte_count": 31602
+    },
+    "horizon_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "83a92faf0a547a973783d20e8fe7475e887e3029a155380f3bf6330b405410b9",
+      "byte_count": 27714
+    },
+    "horizon_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dense_vjepa2_1_horizon_diagnostic_v1.py",
+      "sha256": "0cfd330f134352a04ad28e5e6c01da90124e6844c08fcdba81c457a9bdabcdd7",
+      "byte_count": 10677
+    },
+    "predecessor_data_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "predecessor_data_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_data_v1.py",
+      "sha256": "a6c3803d17a0832885810a9377f28434374dea8e8158db89bed70d48c2b16882",
+      "byte_count": 10075
+    },
+    "predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "predecessor_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "746a182077dad17cde75e746b9f1f1cfca77922e418f6e5927408501460420db",
+      "byte_count": 7552
+    },
+    "predecessor_pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "predecessor_posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "predecessor_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "b299969d2c3c3af0bc7bd50e6fec70104a719aa80fc235e1966b873fa83f0980",
+      "byte_count": 10014
+    }
+  },
+  "predecessor_bindings": {
+    "screen_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/result.json",
+      "sha256": "a6caf2ed1950781815925ccc76b4dbbf40b0f331f4b14a5e60befc88f3aae605",
+      "byte_count": 21377
+    },
+    "screen_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/terminal.json",
+      "sha256": "bf3bf322c2f3db877be405ebf5ca1daf9dd1a5ffd667b769d44cccab22ede758",
+      "byte_count": 510
+    },
+    "screen_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_terminal_review_2026-08-03.json",
+      "sha256": "c450baab14b50caed3469fa88f5812c92c02b04676059568e8dae3dc2e5bad83",
+      "byte_count": 4991
+    },
+    "horizon_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_horizon_diagnostic_v1/attempt_v1/result.json",
+      "sha256": "ade09fc81d950bb4bf4d26f9620da9c46bacea945e39cef261020e6eb2121cad",
+      "byte_count": 8598
+    },
+    "horizon_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_horizon_diagnostic_v1/attempt_v1/terminal.json",
+      "sha256": "39a5b3498be7b4fa84abd6ec566b01969b348c44f4403d834c585a0ef4e7c68a",
+      "byte_count": 631
+    },
+    "horizon_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_horizon_diagnostic_v1_terminal_review_2026-08-03.json",
+      "sha256": "0751a9c2d6d2d7d7131ca32f3d3fdc5b4aa9740632fd9a84a51f5e87b82ee1cd",
+      "byte_count": 4913
+    },
+    "vjepa2_1_feature_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/vjepa2_1.json",
+      "sha256": "5d4f8a82d10a33c21b41f1543d6f56b3a230a38f67b02d3f8e7330a8d30180f5",
+      "byte_count": 1822
+    },
+    "vjepa2_1_feature_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/vjepa2_1.pt",
+      "sha256": "3549855ea857906dfe3a4b55fc817633b5114b2457f8facaa4fa87f9eddd798b",
+      "byte_count": 604097648
+    },
+    "dinov2_feature_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.json",
+      "sha256": "e94ec5d188811c44d4cc870e76d1888aa6f30ee6d423557ee9f3e2918a700994",
+      "byte_count": 1770
+    },
+    "dinov2_feature_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.pt",
+      "sha256": "164f1fef8c859976c93f7fc978e938c6c8f7f9963cf92bb154f51b23d158b34b",
+      "byte_count": 302107682
+    }
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1",
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.12.0+rocm7.2",
+    "hip": "7.2.53211"
+  },
+  "config": {
+    "action_count": 9,
+    "arms": [
+      "residual_joint_vjepa2_1",
+      "residual_joint_dinov2"
+    ],
+    "adapter_blocks": 2,
+    "adapter_bottleneck": 64,
+    "adapter_residual_scale": 0.125,
+    "batch_states": 8,
+    "cross_entropy_coefficient": 0.25,
+    "cross_entropy_temperature": 0.1,
+    "ema_momentum": 0.996,
+    "ema_target_coefficient": 0.5,
+    "frozen_target_coefficient": 0.5,
+    "identity_coefficient": 0.1,
+    "relative_variance_coefficient": 0.1,
+    "relative_variance_floor": 0.9,
+    "hidden_dim": 128,
+    "learning_rate": 0.0003,
+    "weight_decay": 0.0001,
+    "adamw_betas": [
+      0.9,
+      0.999
+    ],
+    "adamw_eps": 1e-08,
+    "adamw_amsgrad": false,
+    "adamw_maximize": false,
+    "adamw_foreach": false,
+    "adamw_capturable": false,
+    "adamw_differentiable": false,
+    "adamw_fused": false,
+    "gradient_clip_norm": 1.0,
+    "seed": 2026080301,
+    "trace_updates": [
+      0,
+      400,
+      800,
+      1600
+    ],
+    "minimum_updates": 800,
+    "maximum_updates": 1600,
+    "maximum_error_to_persistence_ratio": 0.8,
+    "minimum_branch_retrieval_accuracy": 0.5,
+    "minimum_intervention_margin": 0.0,
+    "minimum_retention_cosine": 0.965,
+    "minimum_effective_rank_ratio": 0.9,
+    "unit_norm_absolute_tolerance": 1e-05,
+    "midpoint_gates": {
+      "residual_joint_vjepa2_1": {
+        "maximum_error_to_persistence_ratio": 0.8582181769526677,
+        "minimum_branch_retrieval_accuracy": 0.3901909722222222
+      },
+      "residual_joint_dinov2": {
+        "maximum_error_to_persistence_ratio": 0.8833446296789655,
+        "minimum_branch_retrieval_accuracy": 0.3524305555555556
+      }
+    },
+    "evaluation_batch_states": 4,
+    "retention_batch_artifacts": {
+      "vjepa2_1": 16,
+      "dinov2": 32
+    },
+    "cache_compute_dtype": "float32",
+    "autocast_enabled": false
+  },
+  "git_commit": "39627c9659d0caccce043947e9a6c169dccf6847"
+}

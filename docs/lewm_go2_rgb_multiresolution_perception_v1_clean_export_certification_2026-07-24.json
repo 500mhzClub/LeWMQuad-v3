@@ -1,0 +1,103 @@
+{
+  "authority": "source_only_clean_export_certification_no_generated_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
+  "certified_commit": "cd0193da8fb25175b1201a0fa7b898d679434765",
+  "content_sha256": "23e24566a3107816949d801594a78612916bea2917f6710e5a070a7536ba1db6",
+  "date": "2026-07-24",
+  "export": {
+    "all_45_snapshot_file_bindings_sha256": "4566a40a50289154ac8c21bf5b328579235eb68f62e530d84e7c991d9ea3bfdd",
+    "construction": "source-only directory assembled by one explicit cp --parents invocation naming all 35 manifest paths and all ten verification paths",
+    "exported_file_count": 45,
+    "forbidden_path_match_count": 0,
+    "forbidden_path_patterns": [
+      "config/",
+      "configs/",
+      "custody/",
+      "data/",
+      "datasets/",
+      "artifacts/",
+      ".generated/",
+      "generated/",
+      "checkpoints/",
+      "sealed/",
+      "sealed_*/",
+      "sealed_test.json"
+    ],
+    "manifest_source_count": 35,
+    "snapshot_root": "/tmp/lewm-multires-source-n52R1ZwV",
+    "verification_path_count": 10,
+    "verification_paths": [
+      ".ignore",
+      ".rgignore",
+      "AGENTS.md",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_source_manifest_2026-07-24.json",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_preregistration_2026-07-24.json",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_source_review_2026-07-24.json",
+      "scripts/check_go2_multires_probe_source_closure.py",
+      "lewm/tests/test_go2_multires_probe_source_closure.py",
+      "lewm/tests/test_go2_shared_jepa_v5_multires_probe_v1.py",
+      "lewm/tests/test_shared_observable_camera_ray_jepa_v5_multires_v1.py"
+    ],
+    "verification_paths_sha256": {
+      ".ignore": "b8cec05a9d3a6f7917a042e0067ba33e2acfa03c2d29c8e698b365c0ae6350ba",
+      ".rgignore": "dee54db8d929288cf39a2d256088c5346da53df3ad30ad91291dfe337d65a22c",
+      "AGENTS.md": "9afef4b486c6d0f82a7b61420c1ca80b803c9975df2c40dba8bf3ac70b1da40a",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_preregistration_2026-07-24.json": "13ee847c4651be12e46888fbac3db9d3ec86f57c4ccc0f2006784885c879ebd9",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_source_manifest_2026-07-24.json": "54d145e120b7eacb11f608cac7fa410175f6289f3c8da24de91286dd039649ec",
+      "docs/lewm_go2_rgb_multiresolution_perception_v1_source_review_2026-07-24.json": "c1ac5d6103a47b81b7b9ecae88ea3ec3e5a2f203b0e089b68ce895211c861934",
+      "lewm/tests/test_go2_multires_probe_source_closure.py": "fb09c98b0f008eb863622dab1b4204535b719734eaf9293adb6eaefd3417f846",
+      "lewm/tests/test_go2_shared_jepa_v5_multires_probe_v1.py": "dba0954f9eed9d700bfe808b6911466cce8728cef247788fbcfe00b65798de0b",
+      "lewm/tests/test_shared_observable_camera_ray_jepa_v5_multires_v1.py": "a241910c83bc44cf15b56270659becf1def66f358f3f2bb1a89d89a9bce30fae",
+      "scripts/check_go2_multires_probe_source_closure.py": "ac9fcaa9107ad43201b5082581c0743ebb46653ff8b51a6f09c33fc992142911"
+    },
+    "working_bytes_equal_certified_commit": true
+  },
+  "manifest": {
+    "content_sha256": "a4d2662c26bede46b15473d85dcf0fbf2830e5cf2817217b748ade49637279b8",
+    "file_sha256": "54d145e120b7eacb11f608cac7fa410175f6289f3c8da24de91286dd039649ec",
+    "path": "docs/lewm_go2_rgb_multiresolution_perception_v1_source_manifest_2026-07-24.json",
+    "source_bindings_sha256": "13cb7d2ab37bbe976e35f51df4ae0a85ef1c28c4d4ed1b150d7aec58f0406705"
+  },
+  "results": {
+    "accelerator_environment": "CUDA_VISIBLE_DEVICES, HIP_VISIBLE_DEVICES, ROCR_VISIBLE_DEVICES, and ZE_AFFINITY_MASK hidden; JAX_PLATFORMS=cpu",
+    "byte_comparison": {
+      "mismatch_count": 0,
+      "snapshot_and_certified_working_source_equal": true
+    },
+    "commit_correspondence": {
+      "explicit_path_git_diff": "PASS",
+      "paths_checked": 45
+    },
+    "manifest_checker": {
+      "source_only_snapshot_without_git_index": "PASS"
+    },
+    "pytest": {
+      "duration_seconds": 1.97,
+      "passed": 40,
+      "test_paths": [
+        "lewm/tests/test_shared_observable_camera_ray_jepa_v5_multires_v1.py",
+        "lewm/tests/test_go2_shared_jepa_v5_multires_probe_v1.py",
+        "lewm/tests/test_go2_multires_probe_source_closure.py"
+      ]
+    },
+    "snapshot_inventory": {
+      "duplicate_path_count": 0,
+      "expected_file_count": 45,
+      "missing_file_count": 0,
+      "observed_file_count": 45,
+      "unexpected_file_count": 0
+    }
+  },
+  "schema": "lewm_go2_rgb_multiresolution_perception_v1_clean_export_certification",
+  "source_review": {
+    "content_sha256": "e28792f644dc11c8ac3ebc06208a7ff3a748934604522ab693b99e504fb098df",
+    "file_sha256": "c1ac5d6103a47b81b7b9ecae88ea3ec3e5a2f203b0e089b68ce895211c861934",
+    "path": "docs/lewm_go2_rgb_multiresolution_perception_v1_source_review_2026-07-24.json",
+    "reviewed_source_count": 41
+  },
+  "status": "PASS_SOURCE_ONLY_NO_EXECUTION_AUTHORITY",
+  "unresolved": [
+    "the clean snapshot grants no execution authority",
+    "generated runtime inputs and the N320 tensor checkpoint remain unopened by this certification",
+    "perception qualification, JEPA training, G2, navigation, held-out evaluation, production, and promotion remain unauthorized"
+  ]
+}

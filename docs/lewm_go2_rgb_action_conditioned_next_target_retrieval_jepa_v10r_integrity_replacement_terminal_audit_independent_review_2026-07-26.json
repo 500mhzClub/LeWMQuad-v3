@@ -1,0 +1,134 @@
+{
+  "authority": {
+    "automatic_successor_execution_authorized": false,
+    "checkpoint_access_or_use_authorized": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "production_or_promotion_authorized": false,
+    "retry_or_resume_authorized": false,
+    "sealed_authorized": false
+  },
+  "content_sha256": "d9584441c8d9d3ee5136426a2aec899aeb121d750eb3de1658c8334490b5a730",
+  "date": "2026-07-26",
+  "findings": [
+    {
+      "code": "frozen_governance_chain",
+      "evidence": {
+        "execution_authorization_commit": "df1318517eb2722295d366c0ff9c0bf32f6a2d1d",
+        "frozen_source_commit": "cb70ba749c02051a49046669f17dc2076543e717",
+        "source_review_commit": "f39e93bdbf5b1a884c50678af98bfff051757141"
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "canonical_receipt_integrity_and_cross_binding",
+      "evidence": {
+        "canonical_duplicate_safe_ascii_single_line_self_hash_pass_count": 6,
+        "receipt_file_sha256": {
+          "access.json": "77007edf43623474a3dec23e55d0bc661d028eaf049231c5dff396f72aa62e16",
+          "completed.json": "2cf9ed2e84686d8d0b2dde21c3285f45dd7b32323468c77ce2ad0cfbf97ceb54",
+          "phase_a/artifact.json": "056382b94758666ca4d18f8cd17277a58c25fbb4c2555bbfd69f1073a708f0ba",
+          "phase_a/metrics.json": "57d925f9989041c267cac59d7cd5d1a519cd513eeca9a5a922f7b1c2dcdfc8a9",
+          "reservation.json": "570d98ad71bd2397036c9f3bc97e35c59d63ac896e3dcad35b4e0466587614f2",
+          "result.json": "1d4bb7e89f7115468ff9ad35598425e09e2220f04d16bbdd43d97986f8c9ffdb"
+        },
+        "status_chain_and_metrics_artifact_access_result_completion_bindings_exact": true
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "scientific_gate_reconstruction",
+      "evidence": {
+        "control": "FAIL_PHASE_A_UPDATE_100_CONTINUATION_GATE_TERMINAL",
+        "failed_conjuncts": [
+          "action_macro_balanced_accuracy_strictly_above_one_ninth",
+          "hold_margin_positive_in_at_least_six_families",
+          "permuted_margin_positive_in_at_least_six_families",
+          "same_action_two_target_nll_strictly_below_update0"
+        ],
+        "passed_conjunct_count": 19,
+        "total_conjunct_count": 23
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "operation_and_access_boundary",
+      "evidence": {
+        "ema_updates": 100,
+        "forbidden_access_counters_all_zero": true,
+        "observer_reruns": 0,
+        "optimizer_updates": 100,
+        "pair_presentations": 1600,
+        "phase_b_entered": false
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "scientific_interpretation",
+      "evidence": {
+        "checkpoint_qualified": false,
+        "classification": "VALID_EARLY_SCIENTIFIC_FAILURE_NOT_OPERATIONAL_OR_INTEGRITY_FAILURE",
+        "reason": "Target and representation health gates largely passed, but action macro balanced accuracy was below chance, hold and permuted action necessity margins failed, and same-action two-target NLL worsened from update zero.",
+        "single_frame_current_plus_action_family_closed": true
+      },
+      "status": "PASS"
+    },
+    {
+      "code": "custody_and_terminal_inventory",
+      "evidence": {
+        "all_terminal_directories_mode_0555": true,
+        "all_terminal_files_mode_0444": true,
+        "checkpoint_and_trace_checked_by_filename_mode_size_and_receipt_declared_metadata_only": true,
+        "checkpoint_or_trace_payload_opened_or_hashed_by_reviewer": false,
+        "exact_terminal_file_count": 8
+      },
+      "status": "PASS"
+    }
+  ],
+  "governance_bindings": {
+    "execution_authorization": {
+      "byte_count": 26152,
+      "content_sha256": "67cb27c88d2bc4ec9da151ab06740f4243ddc6cdebeea0acad1feecfb759df6b",
+      "file_sha256": "b6e20ed7b0b923bda1c1897772806378345f2ab1fdf8d4d186d7ac6113b9524c",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_execution_authorization_2026-07-26.json"
+    },
+    "independent_source_review": {
+      "byte_count": 30953,
+      "content_sha256": "78d34990fcde2cb611d33d7d8a7fe82a2e8106df0c54f62e88ea931192f746cc",
+      "file_sha256": "4c871af2fe7931f7a9bb267c44f9fd7bb08a9b4eb9c8b0c732ba65ae8c81f56d",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_source_review_2026-07-26.json"
+    },
+    "preregistration": {
+      "byte_count": 16613,
+      "content_sha256": "4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e",
+      "file_sha256": "38e3f4d9378d4974f77b4a10b069a704b6722caea31bd97f237f0eac00f2308a",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_2026-07-26.json"
+    },
+    "source_manifest": {
+      "byte_count": 15811,
+      "content_sha256": "cc4993edffd0b08814f1cf46b585dae74e6f1659bf25c4fa14e71be13f4ace29",
+      "file_sha256": "89e98fdc1940b38cbbf9d9c3a1c2c00ae6ff7bf11917be77bf936d1999b29b7a",
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_source_manifest_2026-07-26.json"
+    }
+  },
+  "reviewed_terminal_audit": {
+    "byte_count": 12862,
+    "content_sha256": "ab6b9d9ad3b6de1462fe142c42e18bf30751cc483aceaa9fabb632b2999cca73",
+    "file_sha256": "8cd27a7d21e9ce1875d322cad2ea5aae8a846a301247f774d4da86074ebd28a5",
+    "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_2026-07-26.json"
+  },
+  "reviewer": "/root/plan_full_stack",
+  "schema": "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_terminal_audit_independent_review_v1",
+  "scope": {
+    "canonical_receipt_json_open_count": 6,
+    "checkpoint_tensor_deserialization_count": 0,
+    "gpu_query_or_allocation_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "opaque_runtime_artifact_metadata_check_count": 2,
+    "rgb_open_count": 0,
+    "runtime_checkpoint_or_training_trace_payload_open_count": 0
+  },
+  "status": "PASS_INDEPENDENT_TERMINAL_AUDIT_REVIEW_CONFIRMED_VALID_SCIENTIFIC_FAILURE_NO_CHECKPOINT_QUALIFIED"
+}

@@ -1,0 +1,180 @@
+{
+  "access": {
+    "h6_index_bundle_loaded": true,
+    "h6_train_rgb_open_count": 0,
+    "h6_validation_update0": {
+      "rgb_byte_count": 375187759,
+      "rgb_decode_success_count": 10240,
+      "rgb_open_attempt_count": 10240,
+      "rgb_open_success_count": 10240,
+      "rgb_tensor_request_count": 25328,
+      "validation_cache_entry_count": 10240,
+      "validation_cache_hit_count": 15088,
+      "validation_cache_miss_count": 10240,
+      "validation_row_count": 2048
+    },
+    "n320_input_checkpoint_deserialized": true,
+    "physical_metadata_schedule_and_label_bundle_loaded": true,
+    "physical_pre_update0_structural_probe_rgb_request_count": 2,
+    "physical_train_rgb_or_label_tensor_construction_count": 0,
+    "physical_update0": {
+      "checkpoint_selection_pair_count": 495,
+      "count_semantics": "scored_frame_or_tensor_requests_not_verified_unique_disk_opens",
+      "qualifying_matched_endpoint_frame_count": 924,
+      "qualifying_total_endpoint_frame_count": 1848,
+      "qualifying_wrong_endpoint_frame_count": 924,
+      "v12_current_next_and_wrong_frame_request_count": 1485
+    },
+    "runtime_composition_completed": true,
+    "v27_model_and_optimizer_initialized": true
+  },
+  "attempt": {
+    "authority_commit": "e4fc08e2efe84e9dcf679f314471789c1415c41f",
+    "authority_content_sha256": "85362469c87de0b144924cc2f9e11d73ce4750573ec1e2ac2e38affd97935549",
+    "authority_file_sha256": "5ea122911d113e61e03e6affcfc521bdac8fb5417cc5d207fa0bd3e27266e4b0",
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v27-explicit-plan-successor-integrity-replacement-v1-source",
+    "implementation_commit": "6d7c10c2aa7394cfe5a2d367278f7a6c8a2d130c",
+    "one_shot_consumed": true,
+    "output_root": ".generated/go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v1/attempt_v1",
+    "pinned_source_and_review_commit": "c076d4159cad83af5c4660f7d7dbd2ac06dc2414",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "classification": "TERMINAL_FIRST_UPDATE_PHYSICAL_BUILDER_SCHEMA_COMPATIBILITY_FAILURE_NOT_SCIENTIFIC_RESULT",
+  "content_sha256": "a2f5c8c0f458c0638e89b04af865129f19978b8f1065364447042107f7374be6",
+  "date": "2026-07-30",
+  "decision": {
+    "explicit_plan_successor_state_hypothesis_conclusion_available": false,
+    "integrity_replacement_v1_closed": true,
+    "mechanism_rejected": false,
+    "recommended_next_action": "preregister_at_most_one_science_identical_full_physical_builder_facade_successor_with_one_cpu_live_composition_test_before_any_new_execution",
+    "retry_or_resume_this_attempt": false,
+    "status": "CLOSE_V27_REPLACEMENT_V1_WITHOUT_SCIENTIFIC_CONCLUSION"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_source_and_hash": "V21 training negative-row key changed",
+    "exception_message_sha256": "8da95746971494ea6caddfc8d6b10cb944b904fcd133aa34071d2e0e72fac827",
+    "exception_type": "RuntimeError",
+    "reported_stage": "train_update_1",
+    "root_cause": "the_frozen_v25_physical_builder_reaches_its_captured_v21_builder_but_the_runtime_selected_v27_training_module_omits_the_exact_inherited_physical_builder_compatibility_facade",
+    "source_location": "scripts/launch_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21.py:381"
+  },
+  "initial_observation": {
+    "binding": {
+      "byte_count": 14769,
+      "content_sha256": "a1921de7c3a7fb600aa2543dc63aa59249c05d3a74960a6f3c452b2d6ebeb50d",
+      "file_sha256": "d8d36869475e697834490e4f8b34afa1f68bad2cb37d63f634924ba7d30c8c6b",
+      "mode_at_audit": "0444",
+      "path": "metrics/update_0.json"
+    },
+    "interpretation": "untrained_initialization_baseline_only_not_learning_evidence",
+    "physical": {
+      "complete_physical_scope_count": 0,
+      "margin_count": 189,
+      "passed_margin_count": 39,
+      "total_shortfall": 191.5839970395566,
+      "worst_margin": -18.476295852661128
+    },
+    "plan": {
+      "all_registered_values_finite": true,
+      "integrity_passed": true,
+      "mean_prior_advantage": {
+        "bootstrap_lower_95": 0.6047056472353594,
+        "equal_family_mean": 0.9651035584172963,
+        "positive_family_count": 8
+      },
+      "persistence_advantage": {
+        "bootstrap_lower_95": -137.93016283532683,
+        "equal_family_mean": -113.11245611670108,
+        "positive_family_count": 0
+      },
+      "tail_advantage": {
+        "bootstrap_lower_95": -1.2428401523099772,
+        "equal_family_mean": -0.7197098542839973,
+        "positive_family_count": 3
+      },
+      "wrong_plan_advantage": {
+        "bootstrap_lower_95": -0.7523384868810672,
+        "equal_family_mean": -0.12108607610657249,
+        "positive_family_count": 4
+      },
+      "wrong_scene_advantage": {
+        "bootstrap_lower_95": 0.07799637684646706,
+        "equal_family_mean": 0.2573626345419614,
+        "positive_family_count": 7
+      }
+    },
+    "state_mutation_count": 0,
+    "update": 0
+  },
+  "integration_gap": {
+    "facade_names_expected": 22,
+    "facade_names_present": 3,
+    "facade_names_missing": 19,
+    "first_missing_name": "SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21",
+    "missing_names": [
+      "CURRENT_RGB_KEY",
+      "REQUIRED_BATCH_KEYS",
+      "CURRENT_CAMERA_ORIGIN_KEY",
+      "NEXT_CAMERA_ORIGIN_KEY",
+      "CURRENT_CAMERA_BASIS_KEY",
+      "NEXT_CAMERA_BASIS_KEY",
+      "CURRENT_GROUND_PLANE_Z_KEY",
+      "NEXT_GROUND_PLANE_Z_KEY",
+      "CURRENT_PIXEL_HIT_KEY",
+      "NEXT_PIXEL_HIT_KEY",
+      "CURRENT_PIXEL_DISTANCE_KEY",
+      "NEXT_PIXEL_DISTANCE_KEY",
+      "CURRENT_GROUND_IN_FRUSTUM_KEY",
+      "NEXT_GROUND_IN_FRUSTUM_KEY",
+      "CURRENT_GROUND_CLEAR_KEY",
+      "NEXT_GROUND_CLEAR_KEY",
+      "SCENE_INNOVATION_NEGATIVE_ROW_KEY_V21",
+      "REQUIRED_BATCH_KEYS_V21",
+      "REQUIRED_BATCH_KEYS_V23"
+    ],
+    "required_test": "assert_all_22_runtime_training_aliases_equal_the_frozen_v25_source_and_assert_the_base_v21_v23_v24_v25_tuple_extension_chain",
+    "test_gap": "focused_tests_checked_builder_function_identity_and_synthetic_ready_made_batches_but_never_composed_the_real_v25_builder_with_the_runtime_selected_v27_training_module"
+  },
+  "receipts": {
+    "failure": {
+      "byte_count": 812,
+      "content_sha256": "7e255bef5031d5a1692a7d0124b2b8d3356998fb66beb6d4c71e61faa428971b",
+      "file_sha256": "6f0f7c5dd62ecbd3f408f9b20243c9d5a8b826f0288ba89799710db04be434e8",
+      "mode_at_audit": "0444",
+      "path": "failure.json"
+    },
+    "reservation": {
+      "byte_count": 583,
+      "content_sha256": "a378b95cc4b17f6cf27fee9d6089c80cae0adde4ab61cd96273a947587677c66",
+      "file_sha256": "ba5fe536570254352a57d52a0c10982a0ec3fd3a2319e1a61d7af1f009cf47d4",
+      "mode_at_audit": "0444",
+      "path": "reservation.json"
+    },
+    "reserved_root_mode_at_audit": "0700"
+  },
+  "schema": "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v1_terminal_runtime_schema_failure_result_v1",
+  "scientific_accounting": {
+    "autograd_grad_calls": 0,
+    "ema_steps": 0,
+    "failed_training_update_attempt": 1,
+    "h6_plan_microbatch_graphs": 0,
+    "h6_presentations": 0,
+    "optimizer_steps": 0,
+    "output_checkpoint_count": 0,
+    "physical_microbatch_graphs": 0,
+    "physical_presentations": 0,
+    "presentations": 0,
+    "successful_updates": 0,
+    "training_loss_receipt_count": 0,
+    "update0_observation_completed": true,
+    "v27_model_initialized": true
+  },
+  "status": "PASS_COMPLETE_TERMINAL_RUNTIME_SCHEMA_FAILURE_AUDIT",
+  "unauthorized_access": {
+    "heldout_or_sealed_opened": false,
+    "navigation_executed": false,
+    "probability_calibration_opened": false,
+    "rejected_or_output_checkpoint_opened": false
+  }
+}

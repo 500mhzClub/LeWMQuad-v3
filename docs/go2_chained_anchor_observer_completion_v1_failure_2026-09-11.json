@@ -1,0 +1,15 @@
+{
+  "status": "COMPLETION_CHECKER_JSON_IDENTITY_REPRESENTATION_FAILURE",
+  "source_sha256": {
+    "scripts/verify_go2_chained_anchor_observer_completion_v1.py": "da6d2097c512ddb86c57ee9be07bf6445fa17a6ee7d5736b3c546a02c8a8bf00",
+    "lewm/tests/test_chained_anchor_observer_completion_development.py": "99c82b9aae146161770999813c5a963ba3c28f462ebeffd3013fed7060ff860a"
+  },
+  "tool_session": 59582,
+  "exit_code": 1,
+  "failure": "SensorContractError: identity must be (environment, episode, reset)",
+  "stage": "current_dual_camera_pose on serialized observer evidence",
+  "observer_result_sha256": "5cbce75a34aa610d7cf227b772a757509fb213cfb1a0980d7f9ffb6cb7ac2c9e",
+  "original_source_preserved": true,
+  "observer_restarted": false,
+  "runtime_validator_changed": false
+}

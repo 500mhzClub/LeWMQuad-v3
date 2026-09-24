@@ -1,0 +1,14 @@
+{
+  "status": "READ_ONLY_DIAGNOSTIC_IMPLEMENTATION_FAILURE",
+  "utc": "2026-09-11T08:04:05.225261+00:00",
+  "source_path": "scripts/diagnose_go2_completed_hold_reorientation_maze02_v1.py",
+  "source_sha256": "fde00290b34db90963af69cd9b9589b32dd80f76f1ba30147e5dcd4a8ae4d8ff",
+  "session_id": 17953,
+  "exit_code": 1,
+  "failure": "SensorContractError: identity must be (environment, episode, reset)",
+  "cause": "Saved JSON identity list passed to live tuple-only witness validator",
+  "failure_phase": "three_frame_floor_boundary_reconstruction",
+  "native_execution": false,
+  "policy_changed": false,
+  "completed_diagnostic_emitted": false
+}

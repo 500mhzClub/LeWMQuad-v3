@@ -1,0 +1,45 @@
+{
+  "source": "scripts/profile_go2_frozen_footprint_late_history_v1.py",
+  "source_sha256": "847a7483182303bf8c89087942d2ebe75fbb01da6fb1afe33e1920d80ef2258a",
+  "source_function": "replay",
+  "target": "scripts/external_body_projection_profile_replay_development.py",
+  "target_function": "replay_body",
+  "replacements": [
+    [
+      "def replay():",
+      "def replay_body():"
+    ],
+    [
+      "profiles = {name:cProfile.Profile() for name in WINDOWS}; captured = {name:[] for name in WINDOWS}",
+      "captured = {name:[] for name in WINDOWS}"
+    ],
+    [
+      "count = forecasts = 0; sizes = {}",
+      "count = forecasts = 0; sizes = {}; states = []"
+    ],
+    [
+      "            profiler = profiles[window] if window else None\n            start = time.perf_counter()\n            if profiler is not None: profiler.enable()\n            try: actual = controller.observe(p,d,fast,now_ns=now,auxiliary_depth=aux,auxiliary_rgb=image)\n            finally:\n                if profiler is not None: profiler.disable()",
+      "            start = time.perf_counter()\n            actual = observe_window(frame, window, controller.observe, p,d,fast,now_ns=now,auxiliary_depth=aux,auxiliary_rgb=image)"
+    ],
+    [
+      "            count += 1; forecasts += int(bool(selection and 'prediction' in selection))",
+      "            if frame in STATE_FRAMES:\n                state_sha = fingerprint(state_tree(dict(memory=controller.memory, floor=controller.mapper.floor,\n                    occupied=controller.mapper.occupied, residual=controller.residual, history=controller.history)))\n                states.append(dict(frame=frame, state_sha256=state_sha, retained_observed_state_equal=True))\n            count += 1; forecasts += int(bool(selection and 'prediction' in selection))"
+    ],
+    [
+      "    summaries = {}\n    for name, profiler in profiles.items():\n        first,last = WINDOWS[name]\n        if [r['frame'] for r in captured[name]] != list(range(first,last+1)):\n            raise ValueError('all three fixed ten-observation windows required')\n        summary = profile_summary(pstats.Stats(profiler).stats)\n        profiler.dump_stats(str(OUTPUT/(name+'.prof'))); write_json(OUTPUT/(name+'.json'), summary)\n        summaries[name] = dict(observations=captured[name], total_exclusive_profiled_s=summary['total_exclusive_profiled_s'],\n            top_functions_by_cumulative_time=summary['functions'][:15],\n            top_modules_by_exclusive_time=summary['modules_by_exclusive_time'][:15])\n",
+      "    summaries = {}\n    for name, (first,last) in WINDOWS.items():\n        if [r['frame'] for r in captured[name]] != list(range(first,last+1)):\n            raise ValueError('all three fixed ten-observation windows required')\n        summaries[name] = dict(observations=captured[name],\n            python_stack_markers=[MARKERS[frame] for frame in range(first,last+1)])\n"
+    ],
+    [
+      "windows=summaries,",
+      "windows=summaries, observed_state_checks=states,"
+    ],
+    [
+      "sensor_acquisition_profiled=False, controller_observe_only_profiled=True",
+      "sensor_acquisition_profiled=True, controller_observe_only_profiled=False"
+    ],
+    [
+      "normalization_outside_profiled_region=True",
+      "normalization_outside_profiled_region=False"
+    ]
+  ]
+}

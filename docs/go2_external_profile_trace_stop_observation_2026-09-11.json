@@ -1,0 +1,242 @@
+{
+  "status": "EXTERNAL_PROFILE_TRACE_STOP_OBSERVATION",
+  "artifact_bindings": {
+    "launch.json": "89192077c33ab33bd1eb147fa4877f6e5d2f801c22633071be1897fd2b35d207",
+    "child_execution.json": "e3f2a842b40f58c1101315a0cc7104694d6c0de2ea9753db0973f62dbc4f28e0",
+    "profiler_execution.json": "65d98f434d54d8c95629ec4b3d6493772db791f7dc0e007ef65f6998cd0cc900"
+  },
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "snapshots": [
+    {
+      "utc": "2026-09-11T18:03:04.443536+00:00",
+      "last_complete_frame": 1274,
+      "processes": {
+        "child_execution.json": {
+          "owner": {
+            "pid": 2885366,
+            "created": 1789148600.92,
+            "command": [
+              "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+              "-B",
+              "scripts/run_go2_body_projection_external_profile_v1.py",
+              "--child-launch-sha256",
+              "89192077c33ab33bd1eb147fa4877f6e5d2f801c22633071be1897fd2b35d207"
+            ]
+          },
+          "cpu": {
+            "user": 957.97,
+            "system": 27.42,
+            "children_user": 0.0,
+            "children_system": 0.0,
+            "iowait": 0.0
+          },
+          "io": {
+            "read_count": 1327043,
+            "write_count": 105,
+            "read_bytes": 1400832,
+            "write_bytes": 884736,
+            "read_chars": 246990436366,
+            "write_chars": 638868
+          },
+          "threads": [
+            {
+              "id": 2885366,
+              "user": 956.96,
+              "system": 27.38,
+              "state": "t (tracing stop)",
+              "tracer_pid": 2885639,
+              "wchan": "ptrace_stop"
+            },
+            {
+              "id": 2885367,
+              "user": 0.22,
+              "system": 0.83,
+              "state": "t (tracing stop)",
+              "tracer_pid": 2885639,
+              "wchan": "ptrace_stop"
+            }
+          ]
+        },
+        "profiler_execution.json": {
+          "owner": {
+            "pid": 2885638,
+            "created": 1789148732.81,
+            "command": [
+              "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/tools/go2_py_spy_0_4_2_v1/py-spy",
+              "record",
+              "--format",
+              "speedscope",
+              "--output",
+              "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_body_projected_external_sampling_v1_attempt_001/profile.json",
+              "--rate",
+              "100",
+              "--idle",
+              "--threads",
+              "--full-filenames",
+              "--pid",
+              "2885366"
+            ]
+          },
+          "cpu": {
+            "user": 61.29,
+            "system": 142.33,
+            "children_user": 0.0,
+            "children_system": 0.0,
+            "iowait": 0.0
+          },
+          "io": {
+            "read_count": 172403,
+            "write_count": 2,
+            "read_bytes": 0,
+            "write_bytes": 4096,
+            "read_chars": 53992771,
+            "write_chars": 71
+          },
+          "threads": [
+            {
+              "id": 2885638,
+              "user": 2.49,
+              "system": 0.24,
+              "state": "S (sleeping)",
+              "tracer_pid": 0,
+              "wchan": "futex_do_wait"
+            },
+            {
+              "id": 2885639,
+              "user": 58.99,
+              "system": 141.88,
+              "state": "R (running)",
+              "tracer_pid": 0,
+              "wchan": "0"
+            },
+            {
+              "id": 2885640,
+              "user": 0.0,
+              "system": 0.0,
+              "state": "S (sleeping)",
+              "tracer_pid": 0,
+              "wchan": "futex_do_wait"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "utc": "2026-09-11T18:03:14.444336+00:00",
+      "last_complete_frame": 1274,
+      "processes": {
+        "child_execution.json": {
+          "owner": {
+            "pid": 2885366,
+            "created": 1789148600.92,
+            "command": [
+              "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+              "-B",
+              "scripts/run_go2_body_projection_external_profile_v1.py",
+              "--child-launch-sha256",
+              "89192077c33ab33bd1eb147fa4877f6e5d2f801c22633071be1897fd2b35d207"
+            ]
+          },
+          "cpu": {
+            "user": 957.97,
+            "system": 27.42,
+            "children_user": 0.0,
+            "children_system": 0.0,
+            "iowait": 0.0
+          },
+          "io": {
+            "read_count": 1327043,
+            "write_count": 105,
+            "read_bytes": 1400832,
+            "write_bytes": 884736,
+            "read_chars": 246990436366,
+            "write_chars": 638868
+          },
+          "threads": [
+            {
+              "id": 2885366,
+              "user": 956.96,
+              "system": 27.38,
+              "state": "t (tracing stop)",
+              "tracer_pid": 2885639,
+              "wchan": "ptrace_stop"
+            },
+            {
+              "id": 2885367,
+              "user": 0.22,
+              "system": 0.83,
+              "state": "t (tracing stop)",
+              "tracer_pid": 2885639,
+              "wchan": "ptrace_stop"
+            }
+          ]
+        },
+        "profiler_execution.json": {
+          "owner": {
+            "pid": 2885638,
+            "created": 1789148732.81,
+            "command": [
+              "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/tools/go2_py_spy_0_4_2_v1/py-spy",
+              "record",
+              "--format",
+              "speedscope",
+              "--output",
+              "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_body_projected_external_sampling_v1_attempt_001/profile.json",
+              "--rate",
+              "100",
+              "--idle",
+              "--threads",
+              "--full-filenames",
+              "--pid",
+              "2885366"
+            ]
+          },
+          "cpu": {
+            "user": 64.17,
+            "system": 149.45,
+            "children_user": 0.0,
+            "children_system": 0.0,
+            "iowait": 0.0
+          },
+          "io": {
+            "read_count": 172403,
+            "write_count": 2,
+            "read_bytes": 0,
+            "write_bytes": 4096,
+            "read_chars": 53992771,
+            "write_chars": 71
+          },
+          "threads": [
+            {
+              "id": 2885638,
+              "user": 2.49,
+              "system": 0.24,
+              "state": "S (sleeping)",
+              "tracer_pid": 0,
+              "wchan": "futex_do_wait"
+            },
+            {
+              "id": 2885639,
+              "user": 61.88,
+              "system": 148.99,
+              "state": "R (running)",
+              "tracer_pid": 0,
+              "wchan": "0"
+            },
+            {
+              "id": 2885640,
+              "user": 0.0,
+              "system": 0.0,
+              "state": "S (sleeping)",
+              "tracer_pid": 0,
+              "wchan": "futex_do_wait"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "signals_sent": false,
+  "profile_read": false,
+  "native_job_touched": false
+}

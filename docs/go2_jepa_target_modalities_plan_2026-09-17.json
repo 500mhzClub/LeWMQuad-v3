@@ -1,0 +1,101 @@
+{
+  "schema": "jepa_target_modalities.v1",
+  "source_sha256": "cfa9000193e07a03c3c2b763b18faf961631890c31197bfac37b8c3bbb578bb5",
+  "sample_ids": [
+    "short_pulse/pulse_episode_031/frame_13",
+    "short_pulse/pulse_episode_001/frame_13",
+    "short_pulse/pulse_episode_022/frame_13",
+    "short_pulse/pulse_episode_027/frame_13",
+    "short_pulse/pulse_episode_007/frame_13",
+    "short_pulse/pulse_episode_021/frame_13",
+    "short_pulse/pulse_episode_024/frame_13",
+    "short_pulse/pulse_episode_032/frame_13",
+    "short_pulse/pulse_episode_008/frame_13",
+    "short_pulse/pulse_episode_000/frame_13",
+    "short_pulse/pulse_episode_035/frame_13",
+    "short_pulse/pulse_episode_012/frame_13",
+    "short_pulse/pulse_episode_004/frame_13",
+    "short_pulse/pulse_episode_016/frame_13",
+    "short_pulse/pulse_episode_002/frame_13",
+    "short_pulse/pulse_episode_029/frame_13",
+    "short_pulse/pulse_episode_019/frame_13",
+    "short_pulse/pulse_episode_014/frame_13",
+    "short_pulse/pulse_episode_023/frame_13",
+    "short_pulse/pulse_episode_018/frame_13",
+    "short_pulse/pulse_episode_025/frame_13",
+    "short_pulse/pulse_episode_015/frame_13",
+    "short_pulse/pulse_episode_011/frame_13",
+    "short_pulse/pulse_episode_030/frame_13",
+    "short_pulse/pulse_episode_009/frame_13",
+    "short_pulse/pulse_episode_020/frame_13",
+    "short_pulse/pulse_episode_010/frame_13",
+    "short_pulse/pulse_episode_026/frame_13",
+    "short_pulse/pulse_episode_013/frame_13",
+    "short_pulse/pulse_episode_006/frame_13",
+    "short_pulse/pulse_episode_033/frame_13",
+    "short_pulse/pulse_episode_005/frame_13",
+    "short_pulse/pulse_episode_028/frame_13",
+    "short_pulse/pulse_episode_017/frame_13",
+    "short_pulse/pulse_episode_034/frame_13",
+    "short_pulse/pulse_episode_003/frame_13"
+  ],
+  "original_result_sha256": "47faacd7697e56fcf6adfd3edd6125c901ee00dbca806c8fc5b6e2a354cf6fc7",
+  "refitted_result_sha256": "b17a870d3a42af5dd6bf6bcc21a872b29f5ab3374679477fda5efdaebb148c71",
+  "modalities": [
+    "rgb",
+    "body",
+    "control"
+  ],
+  "masks": [
+    "000",
+    "001",
+    "010",
+    "011",
+    "100",
+    "101",
+    "110",
+    "111"
+  ],
+  "mask_one": "actual future",
+  "mask_zero": "current observation repeated",
+  "primary_role": "geometry_transfer",
+  "primary_horizon_ms": 800,
+  "all_horizons_ms": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700,
+    800
+  ],
+  "arms": [
+    "jepa",
+    "supervised_rollout",
+    "untrained"
+  ],
+  "no_fitting": true,
+  "hybrid_targets_not_physical_counterfactuals": true,
+  "metrics": [
+    "temporal target change MSE",
+    "within-identical-history action target variance",
+    "target and centered action effect change versus all-future target",
+    "frozen original/refitted forecasts versus each diagnostic target"
+  ],
+  "limits": [
+    "two exposed transfer geometries",
+    "nonlinear modality effects are not additive",
+    "sensitivity is not causal attribution of learning",
+    "future command history is part of the existing mixed target",
+    "no navigation or JEPA advantage established"
+  ],
+  "resources": {
+    "cpu_core": 8,
+    "numerical_threads": 1,
+    "ram_available_gib": 72,
+    "output_free_gib": 4.4,
+    "both_gpus_idle": true,
+    "reason": "small shared-input frozen-model assay; sequential arms avoid repeated input loading"
+  }
+}

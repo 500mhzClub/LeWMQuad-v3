@@ -1,0 +1,184 @@
+{
+  "attempt_id": "world-model-counterfactual-smoke-v3-attempt-v1",
+  "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1",
+  "authority_granted_by_this_document": false,
+  "completion_evidence": {
+    "branch_execution_completed": true,
+    "checker_status": "PASS",
+    "failure": null,
+    "observed_counts": {
+      "actions": 9,
+      "candidate_branches": 9,
+      "context_frames": 3,
+      "roles": {
+        "calibration": 1
+      },
+      "scenes": 1,
+      "sentinel_branches": 1,
+      "states": 1,
+      "target_frames": 10,
+      "total_branches": 10
+    },
+    "observed_counts_equal_plan": true,
+    "physics_result_status": "PHYSICS_COMPLETE",
+    "render_result_status": "RENDER_COMPLETE",
+    "supervisor_status": "COMPLETE_PENDING_TERMINAL_REVIEW"
+  },
+  "execution_identity": {
+    "authority_binding": {
+      "byte_count": 19805,
+      "file_sha256": "8ef58b8431eed570836367029711bd60dd753ee4db24738d75a05bb8d977cd9a",
+      "path": "docs/lewm_go2_world_model_counterfactual_smoke_v3_execution_authority_2026-08-01.json"
+    },
+    "execution_head": "c14876e8b36634769f31f5e9a3cdeb7ab0a0dc09",
+    "plan_binding": {
+      "byte_count": 6504,
+      "file_sha256": "8dc8fb82f18e340751d21240b6712ade5608d4eb71eb8f9f0e9c41c0062bc41d",
+      "path": "docs/lewm_go2_world_model_counterfactual_smoke_v3_exact_plan_2026-08-01.json"
+    },
+    "review_binding": {
+      "byte_count": 23173,
+      "file_sha256": "3766393dd3346f6db848acf1b164a49363c1243e63a78a452788946226f16306",
+      "path": "docs/lewm_go2_world_model_counterfactual_smoke_v3_independent_source_review_2026-08-01.json"
+    },
+    "source_commit": "797cfa722c23234119476fc4ce376ef9629757c4"
+  },
+  "exactness_evidence": {
+    "all_prebranch_components_exact": true,
+    "duplicate_sentinel": {
+      "action_id": 6,
+      "candidate_lane": 6,
+      "candidate_trajectory_sha256": "ea67c310d37c1de6ae2ce7d3ed875fc0fa0c546b6cd25478b2d4c3840ecf3955",
+      "max_abs_difference_all_components": 0.0,
+      "physics_equal": true,
+      "policy_step_count": 25,
+      "sentinel_lane": 9,
+      "sentinel_trajectory_sha256": "ea67c310d37c1de6ae2ce7d3ed875fc0fa0c546b6cd25478b2d4c3840ecf3955"
+    },
+    "lane_count": 10,
+    "prebranch_state_sha256": "7505fb235125bbbcf1c77e2a470546b18a5407d86a2e4765a9ed77c5576fa353",
+    "unique_prebranch_lane_state_sha256_count": 1
+  },
+  "interpretation": {
+    "critical_path_update": "The source-safe counterfactual generator is now demonstrated end to end for one bounded state. The next scaling risk is campaign generation cost and coverage, not another architecture change triggered by the V1/V2 integration failures.",
+    "executed_action_warning": "Five of nine requested candidate blocks were safety-ramp clipped (arc_left, arc_right, backward, yaw_left, yaw_right). All nine executed block hashes remained distinct. Any downstream world-model objective must condition on the recorded executed command blocks rather than requested action names alone.",
+    "what_this_establishes": "A real Genesis/Go2 counterfactual source-integration experiment completed under the external one-shot supervisor: exact common history, nine action-conditioned candidate futures, an exact duplicate sentinel, pose-linked sequential RGB replay, strict receipt checking, and durable terminal supervision.",
+    "what_this_does_not_establish": "This one-state non-citable smoke does not validate world-model learning, architecture quality, generalization, 160-branch campaign cost, production visual fidelity, hidden simulator-state equivalence, navigation, held-out performance, or any G2-G8 gate."
+  },
+  "one_shot_disposition": {
+    "attempt_consumed": true,
+    "overwrite_authorized": false,
+    "refill_authorized": false,
+    "reservation_status": "RESERVED_ATTEMPT_CONSUMED",
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "successor_authorized_by_this_document": false
+  },
+  "physical_evidence": {
+    "all_branches_policy_step_samples": 25,
+    "candidate_action_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8
+    ],
+    "clipped_candidate_action_ids": [
+      0,
+      1,
+      2,
+      7,
+      8
+    ],
+    "fall_count": 0,
+    "maximum_physical_target_progress_m": 0.0828990521529045,
+    "minimum_physical_target_progress_m": -0.0047864237152897005,
+    "tip_count": 0,
+    "unique_candidate_executed_block_sha256_count": 9
+  },
+  "receipt_bindings": {
+    "authorized_plan": {
+      "byte_count": 6504,
+      "file_sha256": "8dc8fb82f18e340751d21240b6712ade5608d4eb71eb8f9f0e9c41c0062bc41d",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/authorized_plan.json"
+    },
+    "live_render_receipt": {
+      "byte_count": 32751,
+      "file_sha256": "3679d53076b664640fd210a65176b12c715626b465168780f8eb82223a79b3e0",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/scenes/calibration/open_obstacle_field_26fd0d67c8e0/live_render_receipt.json"
+    },
+    "physics_result": {
+      "byte_count": 22379,
+      "file_sha256": "fc370bbd15a45b76f5a954942fbfdbbb93bf608d4805dfc41113f3cdef352e9e",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/physics_result.json"
+    },
+    "receipt_check": {
+      "byte_count": 845,
+      "file_sha256": "a7b4ccf2745f464fd4b55936e7dabb3db6338c5fe13c610a3e5e600986d00c1a",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/receipt_check.json"
+    },
+    "reservation": {
+      "byte_count": 1262,
+      "file_sha256": "2d011abd1577b774b6c445900ee255c02a26940fe65122f9d3d908cb27f6755e",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/reservation.json"
+    },
+    "state_receipt": {
+      "byte_count": 454129,
+      "file_sha256": "d66d6bd62f65653b7c624d727cad59ad894aee1d7bb321c08f4a847024f55265",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/scenes/calibration/open_obstacle_field_26fd0d67c8e0/state_receipts/world-model-counterfactual-smoke-state-0.json"
+    },
+    "terminal_supervision": {
+      "byte_count": 4855,
+      "file_sha256": "ef63b78c2bac4d8bcf92828567eb962110baf6385a0f62d5d3b350e5e6bfabfc",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_counterfactual_smoke_v3/attempt_v1/terminal_supervision.json"
+    }
+  },
+  "render_evidence": {
+    "all_camera_valid": true,
+    "all_quality_audits_valid": true,
+    "depth_persisted": false,
+    "depth_rendered_transiently": true,
+    "native_render_calls": 13,
+    "render_sentinel_equal": true,
+    "render_sentinel_stored_rgb_sha256": "621d91e2c091713c58db26d6dd59b2662939ac641337b9f7e33d203441fc6a4c",
+    "stored_resolution": [
+      224,
+      224
+    ],
+    "stored_rgb_frames": 13,
+    "unique_stored_rgb_sha256_count": 12,
+    "visual_domain_fidelity_claimed": false,
+    "visual_mode": "solid_materials_box_physics_preserved"
+  },
+  "reviewed_at": "2026-08-01T10:31:50+01:00",
+  "reviewer": "/root/terminal_evidence_reviewer",
+  "runtime_accounting": {
+    "authorized_total_lane_physics_steps": 7500,
+    "authorized_total_lane_policy_steps": 750,
+    "collection_wall_seconds": 28.12432390404865,
+    "runtime_versions": {
+      "genesis": "0.3.14",
+      "numpy": "2.4.6",
+      "pillow": "11.3.0",
+      "python": "3.12.3",
+      "torch": "2.12.0+cu130"
+    },
+    "supervisor_wall_elapsed_seconds": 29.49122385494411,
+    "wall_ceiling_seconds": 1200.0
+  },
+  "schema": "lewm_go2_world_model_counterfactual_smoke_terminal_review_v1",
+  "scientific_disposition": {
+    "citable_as_scientific_evidence": false,
+    "outputs_eligible_for_promotion": false,
+    "outputs_eligible_for_training": false,
+    "physics_validated": false,
+    "pilot_contract_frozen": false,
+    "scientific_verdict_emitted": false,
+    "world_model_training_result_emitted": false
+  },
+  "status": "PASS_NONCITABLE_SOURCE_INTEGRATION_SMOKE_CONFIRMED"
+}

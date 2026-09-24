@@ -1,0 +1,118 @@
+{
+  "schema": "lewm_go2_world_model_next_tranche_independent_source_review_v1",
+  "status": "PASS_PROPOSAL_ONLY_NOT_AUTHORITY",
+  "date": "2026-07-31",
+  "authority_granted_by_this_document": false,
+  "runtime_execution_authorized": false,
+  "scientific_claim_authorized": false,
+  "reviewer_kind": "independent Codex sub-agent",
+  "review_scope": "Source, contracts, custody boundaries, deterministic arithmetic, and synthetic validation for the proposed world-model substrate tranche and the source-only counterfactual sizing decision.",
+  "repository_state": {
+    "observed_head": "0279294e5679fa81f845f13c9e47326bab291238",
+    "reviewed_material_committed": false,
+    "source_freeze_complete": false,
+    "consequence": "This review may satisfy the proposal's independent-review requirement only after a future authority binds the exact reviewed bytes and their containing reviewed commit."
+  },
+  "reviewed_contract_artifacts": [
+    {
+      "path": "docs/lewm_go2_world_model_substrate_u700_sched3000_run_manifest_2026-07-31.json",
+      "byte_count": 19819,
+      "sha256": "90a2058f28e49030651090c3e0ae5f98d578b81bec95837be2c32bfeb9959805"
+    },
+    {
+      "path": "docs/lewm_go2_world_model_counterfactual_pilot_sizing_decision_2026-07-31.md",
+      "byte_count": 13671,
+      "sha256": "185f17e1fca2edd1d553fc59b9881f014fed647d1b724e8cb79fe8449cee788c"
+    },
+    {
+      "path": "docs/lewm_go2_world_model_substrate_development_authority_proposal_2026-07-31.json",
+      "byte_count": 8306,
+      "sha256": "d9f1193980a944d6401bdef05f848840c7c16ed98484e8914b060624babe62f9"
+    }
+  ],
+  "reviewed_runtime_source_closure": {
+    "binding_location": "docs/lewm_go2_world_model_substrate_u700_sched3000_run_manifest_2026-07-31.json#source_bindings",
+    "binding_count": 16,
+    "all_path_byte_count_sha256_bindings_match": true,
+    "runtime_self_checks_cover_complete_local_import_closure": true
+  },
+  "reviewed_source_and_test_files": {
+    "development_scripts": [
+      "scripts/audit_go2_family_clearance_navigability.py",
+      "scripts/dev_eval_temporal_retention_and_rollout.py",
+      "scripts/dev_pack_h6_temporal_frames.py",
+      "scripts/dev_probe_counterfactual_action_fidelity.py",
+      "scripts/dev_probe_counterfactual_overfit_capacity.py",
+      "scripts/dev_temporal_v1_rank_asymptote_probe.py",
+      "scripts/dev_train_temporal_jepa_scaled.py"
+    ],
+    "synthetic_tests": [
+      "lewm/tests/test_audit_go2_family_clearance_navigability.py",
+      "lewm/tests/test_dev_counterfactual_diagnostic_protocol.py",
+      "lewm/tests/test_july31_h6_temporal_pack_provenance.py",
+      "lewm/tests/test_july31_temporal_diagnostic_contracts.py"
+    ]
+  },
+  "findings_resolved_during_review": [
+    {
+      "finding": "The first accounting table omitted retention reads from the H6 RGB total.",
+      "resolution": "The manifest and proposal now distinguish 72,384 pack opens, 18,432 retention opens, 90,816 total H6 opens, 8,640 place opens, and 99,456 total RGB opens."
+    },
+    {
+      "finding": "The first draft described standalone reservation and terminal receipts that current source does not emit, and treated time ceilings as though the source enforced them.",
+      "resolution": "Reservation is now exactly S0's exclusive pack-root creation; fictitious receipts were removed; external time supervision and a named terminal reviewer are explicit issue gates."
+    },
+    {
+      "finding": "The first source closure omitted the spatial evaluator and later five transitive model/data dependencies.",
+      "resolution": "The manifest now binds the complete 16-file local runtime import closure and all runtime entrypoints revalidate their applicable closure."
+    },
+    {
+      "finding": "The first phase ordering allowed runtime-input checks before attempt reservation.",
+      "resolution": "Pre-reservation checks are source/interpreter/device/fresh-root only; each phase validates only its own declared runtime inputs after S0 reserves the attempt."
+    },
+    {
+      "finding": "The first retention receipt contract did not fully bind device selection and success conditions.",
+      "resolution": "Retention receipts now bind requested and resolved device, HIP selector, source and input identities, exact access counts, schema, and the required skipped structural evaluation."
+    }
+  ],
+  "validation_results": {
+    "strict_json_duplicate_key_check": "PASS for the run manifest and authority proposal",
+    "proposal_bound_document_hashes": "PASS",
+    "manifest_source_hashes_and_byte_counts": "PASS for all 16 bindings",
+    "runtime_import_closure": "PASS",
+    "access_storage_presentation_cycle_checkpoint_and_learning_rate_arithmetic": "PASS",
+    "declared_cli_argument_acceptance": "PASS for all three manifest entrypoints",
+    "retention_receipt_contract": "PASS",
+    "independent_focused_contract_tests": "13 passed",
+    "root_focused_contract_tests": "41 passed",
+    "python_syntax_checks": "PASS for all reviewed changed source and test files",
+    "remaining_findings": []
+  },
+  "custody_observation": {
+    "generated_payload_opened": false,
+    "checkpoint_opened": false,
+    "rgb_opened": false,
+    "sealed_or_held_out_material_opened": false,
+    "simulator_or_renderer_run": false,
+    "gpu_used": false,
+    "network_used": false
+  },
+  "counterfactual_disposition": {
+    "execution_ready": false,
+    "blocking_source_contracts": [
+      "online synchronized physics branch collector with restorable simulator and controller state",
+      "immutable manifest-bound pilot consumer with parameterized context and target roots",
+      "WM-A.4 physical action-ranking and regret evaluator with current-state and control arms"
+    ],
+    "next_permitted_step_without_new_runtime_authority": "Implement and synthetically test the missing source contracts.",
+    "first_possible_runtime_step_after_source_review_and_separate_authority": "The calibration-only tranche capped at eight excluded scenes, 16 states, and 160 total branches including repeat controls."
+  },
+  "requirements_remaining_before_substrate_authority_may_be_issued": [
+    "Commit and freeze the exact reviewed source and contract bytes.",
+    "Bind the reviewed source commit and this review identity in the issued authority.",
+    "Attest the exact attempt root is fresh without opening undeclared runtime payloads.",
+    "Name the authorizer and issue timestamp.",
+    "Bind the external wall-clock and GPU-time supervisor and name the terminal reviewer."
+  ],
+  "verdict": "PACKAGE_READY_FOR_SEPARATE_AUTHORIZATION_NOT_AUTHORIZED"
+}

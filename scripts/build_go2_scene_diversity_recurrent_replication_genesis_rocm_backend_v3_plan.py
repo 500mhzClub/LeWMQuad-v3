@@ -1,0 +1,574 @@
+#!/usr/bin/env python3
+"""Build the fresh V3 host-identity Genesis ROCm plans.
+
+V3 is a material infrastructure successor to consumed V2, not a retry,
+resume, refill, or science-identical replacement.  Its sole runtime delta is
+the exact non-secret host identity ``HOME=/home/andrewknowles``.  The corrected
+V2 Python, selector sanitation, ``ld.lld`` driver, replay, data, model,
+evaluation, cap, and decision-gate contracts otherwise remain unchanged.
+
+This source emits metadata only and grants no execution authority.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import json
+import os
+from pathlib import Path
+import shutil
+import sys
+from typing import Any, Mapping, Sequence
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+
+from scripts import build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_plan as predecessor  # noqa: E402
+
+
+pilot = predecessor.pilot
+
+V2_QUALIFICATION_TERMINAL_REVIEW = REPO_ROOT / (
+    "docs/lewm_go2_scene_diversity_recurrent_replication_"
+    "genesis_rocm_backend_v2_qualification_terminal_review_2026-08-04.json"
+)
+V2_QUALIFICATION_TERMINAL_REVIEW_SHA256 = (
+    "166aec87b6e61d62116069a12472b768c3ff462c09cf1e6088af62ab7397dd0e"
+)
+V2_QUALIFICATION_TERMINAL_REVIEW_BYTE_COUNT = 16_198
+REQUIRED_HOST_HOME = "/home/andrewknowles"
+
+DEFAULT_ATTEMPT_ID = (
+    "go2-scene-diversity-recurrent-replication-genesis-rocm-backend-v3"
+)
+DEFAULT_ATTEMPT_ROOT = REPO_ROOT / (
+    ".generated/dev/"
+    "go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v3/"
+    "attempt_v1"
+)
+DEFAULT_OUTPUT_ROOT = DEFAULT_ATTEMPT_ROOT / "collection"
+DEFAULT_PLAN_OUTPUT = REPO_ROOT / (
+    "docs/lewm_go2_scene_diversity_recurrent_replication_"
+    "genesis_rocm_backend_v3_exact_plan_2026-08-04.json"
+)
+
+QUALIFICATION_ATTEMPT_ID = (
+    "go2-scene-diversity-recurrent-replication-"
+    "genesis-rocm-backend-v3-qualification"
+)
+QUALIFICATION_ATTEMPT_ROOT = REPO_ROOT / (
+    ".generated/dev/"
+    "go2_scene_diversity_recurrent_replication_"
+    "genesis_rocm_backend_v3_qualification/attempt_v1"
+)
+QUALIFICATION_OUTPUT_ROOT = QUALIFICATION_ATTEMPT_ROOT / "collection"
+QUALIFICATION_PLAN_OUTPUT = REPO_ROOT / (
+    "docs/lewm_go2_scene_diversity_recurrent_replication_"
+    "genesis_rocm_backend_v3_qualification_exact_plan_2026-08-04.json"
+)
+
+ROCM_VENV = predecessor.ROCM_VENV
+ROCM_PYTHON = predecessor.ROCM_PYTHON
+ROCM_SITE_PACKAGES = predecessor.ROCM_SITE_PACKAGES
+WORLD_MODEL_ROCM_SITE_PACKAGES = predecessor.WORLD_MODEL_ROCM_SITE_PACKAGES
+ROCM_PREFIX = predecessor.ROCM_PREFIX
+ROCM_LLVM_BIN = predecessor.ROCM_LLVM_BIN
+ROCM_EXECUTION_PATH = predecessor.ROCM_EXECUTION_PATH
+ROCM_RUNTIME_PATHS = predecessor.ROCM_RUNTIME_PATHS
+ROCM_EXECUTION_ENVIRONMENT_COMMON = copy.deepcopy(
+    predecessor.ROCM_EXECUTION_ENVIRONMENT_COMMON
+)
+
+ROCM_LD_LLD_DRIVER_ENTRYPOINT = ROCM_LLVM_BIN / "ld.lld"
+ROCM_LD_LLD_DRIVER_LINK_TEXT = "lld"
+ROCM_LLD_VERSION_STDOUT_PREFIX = "AMD LLD 20.0.0"
+
+ROCM_GRAPHICS_PREFLIGHT_EXPECTATION = {
+    **copy.deepcopy(predecessor.ROCM_GRAPHICS_PREFLIGHT_EXPECTATION),
+    "rocm_lld_driver_entrypoint": str(ROCM_LD_LLD_DRIVER_ENTRYPOINT),
+    "rocm_lld_driver_link_text": ROCM_LD_LLD_DRIVER_LINK_TEXT,
+    "rocm_lld_resolved_target_path": str(
+        predecessor.ROCM_RUNTIME_PATHS["rocm_lld_executable"].resolve(
+            strict=True
+        )
+    ),
+    "rocm_lld_version_stdout_prefix": ROCM_LLD_VERSION_STDOUT_PREFIX,
+    "rocm_lld_direct_target_invocation_forbidden": True,
+}
+
+QUALIFICATION_SCENE_INDICES = predecessor.QUALIFICATION_SCENE_INDICES
+QUALIFICATION_WORKER_WATCHDOG_SECONDS = (
+    predecessor.QUALIFICATION_WORKER_WATCHDOG_SECONDS
+)
+QUALIFICATION_FIXED_NONCOLLECTION_RESERVE_SECONDS = (
+    predecessor.QUALIFICATION_FIXED_NONCOLLECTION_RESERVE_SECONDS
+)
+SCIENTIFIC_SCENE_COUNT = predecessor.SCIENTIFIC_SCENE_COUNT
+SUCCESSOR_CONTRACT_SCHEMA = (
+    "lewm_go2_scene_diversity_recurrent_replication_"
+    "genesis_rocm_backend_v3_host_identity_environment_successor_contract_v1"
+)
+
+# Re-export the older, still-required source premises for downstream wrappers.
+CPU_TERMINAL_REVIEW = predecessor.CPU_TERMINAL_REVIEW
+CPU_TERMINAL_REVIEW_SHA256 = predecessor.CPU_TERMINAL_REVIEW_SHA256
+CPU_TERMINAL_REVIEW_BYTE_COUNT = predecessor.CPU_TERMINAL_REVIEW_BYTE_COUNT
+CPU_TERMINAL_REVIEW_BINDING = predecessor.CPU_TERMINAL_REVIEW_BINDING
+
+
+class SceneDiversityGenesisRocmV3PlanError(RuntimeError):
+    """Raised before a changed or non-fresh V3 plan can be emitted."""
+
+
+# Compatibility name used by the inherited collector/runner exception paths.
+SceneDiversityGenesisRocmPlanError = SceneDiversityGenesisRocmV3PlanError
+
+
+def _canonical_bytes(value: object) -> bytes:
+    return json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False
+    ).encode("utf-8")
+
+
+def _exact_review_binding() -> dict[str, Any]:
+    expected = {
+        "path": str(V2_QUALIFICATION_TERMINAL_REVIEW.resolve(strict=True)),
+        "file_sha256": V2_QUALIFICATION_TERMINAL_REVIEW_SHA256,
+        "byte_count": V2_QUALIFICATION_TERMINAL_REVIEW_BYTE_COUNT,
+    }
+    actual = pilot.file_binding(V2_QUALIFICATION_TERMINAL_REVIEW)
+    if actual != expected:
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V2 qualification terminal review binding changed"
+        )
+    try:
+        review = json.loads(V2_QUALIFICATION_TERMINAL_REVIEW.read_bytes())
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V2 qualification terminal review is not strict JSON"
+        ) from exc
+    successor = review.get("successor_eligibility", {})
+    permission = review.get("permission_audit", {})
+    decision = review.get("decision", {})
+    if (
+        review.get("schema")
+        != "lewm_go2_scene_diversity_recurrent_replication_"
+        "genesis_rocm_backend_v2_qualification_terminal_review_v1"
+        or review.get("status")
+        != "PASS_FAIL_CLOSED_PRE_GENESIS_INITIALIZATION_"
+        "QUALIFICATION_TERMINAL_REVIEW"
+        or review.get("audit_passed") is not True
+        or decision.get("attempt_consumed") is not True
+        or decision.get("failure_is_source_control_flow_infrastructure")
+        is not True
+        or decision.get("failure_is_backend_evidence") is not False
+        or decision.get("failure_phase")
+        != "identity_subprocess_genesis_import_before_genesis_initialization"
+        or decision.get("identity_with_bound_home_passed_in_isolated_replay")
+        is not True
+        or successor.get(
+            "separately_preregistered_fresh_v3_host_identity_environment_"
+            "hypothesis_eligible"
+        )
+        is not True
+        or successor.get("v2_payload_reuse_authorized") is not False
+        or successor.get("v2_runtime_metadata_as_identity_evidence_authorized")
+        is not False
+        or successor.get("v2_reservation_direct_successor_binding_authorized")
+        is not False
+        or successor.get("v2_terminal_direct_successor_binding_authorized")
+        is not False
+        or successor.get(
+            "v2_terminal_review_document_as_source_evidence_authorized"
+        )
+        is not True
+        or permission.get(
+            "authorizes_v3_source_development_and_independent_review"
+        )
+        is not True
+        or permission.get("authorizes_v3_qualification_execution") is not False
+        or permission.get("authorizes_v3_scientific_execution") is not False
+        or permission.get("authorizes_v2_payload_or_runtime_metadata_reuse")
+        is not False
+        or permission.get("creates_execution_authority") is not False
+    ):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V2 terminal review does not permit this source-only V3"
+        )
+    return expected
+
+
+def v2_qualification_terminal_review_binding() -> dict[str, Any]:
+    return _exact_review_binding()
+
+
+def rocm_execution_environment(plan_role: str) -> dict[str, str]:
+    if plan_role == "scientific":
+        attempt_root = DEFAULT_ATTEMPT_ROOT
+    elif plan_role == "qualification":
+        attempt_root = QUALIFICATION_ATTEMPT_ROOT
+    else:
+        raise SceneDiversityGenesisRocmV3PlanError("V3 plan role changed")
+    return {
+        **ROCM_EXECUTION_ENVIRONMENT_COMMON,
+        "HOME": REQUIRED_HOST_HOME,
+        "GS_CACHE_FILE_PATH": str(
+            (attempt_root / "quadrants_cache").resolve(strict=False)
+        ),
+    }
+
+
+def _validate_driver_entrypoint(
+    runtime_bindings: Mapping[str, Any], *, plan_role: str
+) -> None:
+    environment = rocm_execution_environment(plan_role)
+    driver = ROCM_LD_LLD_DRIVER_ENTRYPOINT
+    target = Path(str(runtime_bindings["rocm_lld_executable"]["path"]))
+    path_driver = shutil.which("ld.lld", path=environment["PATH"])
+    rocm_path_driver = (
+        Path(environment["ROCM_PATH"]) / "lib/llvm/bin/ld.lld"
+    )
+    try:
+        link_text = os.readlink(driver)
+        resolved = driver.resolve(strict=True)
+    except OSError as exc:
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "exact ld.lld driver entrypoint is unavailable"
+        ) from exc
+    if (
+        path_driver != str(driver)
+        or rocm_path_driver != driver
+        or not driver.is_symlink()
+        or link_text != ROCM_LD_LLD_DRIVER_LINK_TEXT
+        or resolved != target
+        or target.is_symlink()
+        or not target.is_file()
+        or str(target) != ROCM_GRAPHICS_PREFLIGHT_EXPECTATION[
+            "rocm_lld_resolved_target_path"
+        ]
+    ):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "ld.lld driver/target identity changed"
+        )
+
+
+def build_rocm_runtime_bindings() -> dict[str, dict[str, Any]]:
+    bindings = predecessor.build_rocm_runtime_bindings()
+    _validate_driver_entrypoint(bindings, plan_role="scientific")
+    return bindings
+
+
+def _validate_rocm_runtime_bindings(
+    runtime_bindings: Mapping[str, Any], *, rehash: bool
+) -> dict[str, dict[str, Any]]:
+    try:
+        validated = predecessor._validate_rocm_runtime_bindings(  # noqa: SLF001
+            runtime_bindings, rehash=rehash
+        )
+    except predecessor.SceneDiversityGenesisRocmPlanError as exc:
+        raise SceneDiversityGenesisRocmV3PlanError(str(exc)) from exc
+    return validated
+
+
+def _successor_contract(*, plan_role: str) -> dict[str, Any]:
+    qualification = plan_role == "qualification"
+    if plan_role not in {"scientific", "qualification"}:
+        raise SceneDiversityGenesisRocmV3PlanError("V3 plan role changed")
+    return {
+        "schema": SUCCESSOR_CONTRACT_SCHEMA,
+        "plan_role": plan_role,
+        "frozen_vulkan_scientific_plan_binding": copy.deepcopy(
+            predecessor.predecessor.FROZEN_V1_EXACT_PLAN_BINDING
+        ),
+        "frozen_cpu_scientific_plan_binding": copy.deepcopy(
+            predecessor.predecessor.FROZEN_CPU_EXACT_PLAN_BINDING
+        ),
+        "cpu_qualification_terminal_review_binding": copy.deepcopy(
+            predecessor.CPU_TERMINAL_REVIEW_BINDING
+        ),
+        "v2_qualification_terminal_review_binding": copy.deepcopy(
+            v2_qualification_terminal_review_binding()
+        ),
+        "material_infrastructure_hypothesis": (
+            "restore the exact required non-secret host HOME identity while "
+            "preserving the corrected V2 Genesis ROCm execution contract"
+        ),
+        "required_host_home": REQUIRED_HOST_HOME,
+        "rocm_lld_driver_entrypoint": str(ROCM_LD_LLD_DRIVER_ENTRYPOINT),
+        "rocm_lld_direct_target_invocation_forbidden": True,
+        "genesis_world_version": "0.4.6",
+        "quadrants_version": "0.6.2",
+        "torch_version": "2.12.0+rocm7.2",
+        "torchvision_version": "0.27.0+rocm7.2",
+        "tensordict_version": "0.13.0",
+        "rsl_rl_version": "5.4.1",
+        "genesis_backend_symbol": "gs.amdgpu",
+        "qualification_scene_indices_in_order": (
+            list(QUALIFICATION_SCENE_INDICES) if qualification else []
+        ),
+        "qualification_worker_watchdog_seconds": (
+            QUALIFICATION_WORKER_WATCHDOG_SECONDS if qualification else None
+        ),
+        "qualification_timing_gate": (
+            {
+                "scene_count": SCIENTIFIC_SCENE_COUNT,
+                "fixed_noncollection_reserve_seconds": (
+                    QUALIFICATION_FIXED_NONCOLLECTION_RESERVE_SECONDS
+                ),
+                "formula": "64 * max(worker_elapsed_seconds) + 900 <= 7200",
+                "scientific_wall_cap_seconds": 7_200,
+            }
+            if qualification
+            else None
+        ),
+        "v2_runtime_payload_reuse_authorized": False,
+        "v2_runtime_metadata_as_identity_evidence_authorized": False,
+        "qualification_execution_authorized": False,
+        "scientific_execution_authorized": False,
+        "probe_output_reuse_authorized": False,
+    }
+
+
+def _expected_rocm_plan(
+    *,
+    attempt_id: str,
+    output_root: Path,
+    plan_role: str,
+    runtime_bindings: Mapping[str, Any],
+) -> dict[str, Any]:
+    candidate = copy.deepcopy(
+        predecessor.predecessor._IMMUTABLE_FROZEN_VULKAN_PLAN  # noqa: SLF001
+    )
+    candidate["attempt_id"] = attempt_id
+    candidate["output_root"] = str(output_root.resolve(strict=False))
+    candidate["runtime_bindings"] = copy.deepcopy(dict(runtime_bindings))
+    execution = candidate["execution_contract"]
+    execution["backend"] = "amdgpu"
+    # Preserve the lexical venv launcher; resolving it would bypass pyvenv.cfg.
+    execution["python_invocation_path"] = str(ROCM_PYTHON.absolute())
+    execution["environment"] = rocm_execution_environment(plan_role)
+    execution["graphics_preflight"] = copy.deepcopy(
+        ROCM_GRAPHICS_PREFLIGHT_EXPECTATION
+    )
+    candidate["successor_contract"] = _successor_contract(
+        plan_role=plan_role
+    )
+    return candidate
+
+
+def validate_rocm_plan(
+    plan: Mapping[str, Any],
+    *,
+    expected_attempt_id: str,
+    expected_output_root: Path,
+    plan_role: str,
+) -> dict[str, Any]:
+    if not isinstance(plan, Mapping):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V3 ROCm plan must be an object"
+        )
+    candidate = copy.deepcopy(dict(plan))
+    runtime = _validate_rocm_runtime_bindings(
+        candidate.get("runtime_bindings", {}), rehash=True
+    )
+    _validate_driver_entrypoint(runtime, plan_role=plan_role)
+    expected = _expected_rocm_plan(
+        attempt_id=expected_attempt_id,
+        output_root=expected_output_root,
+        plan_role=plan_role,
+        runtime_bindings=runtime,
+    )
+    if _canonical_bytes(candidate) != _canonical_bytes(expected):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V3 ROCm plan changed beyond the exact driver successor overlay"
+        )
+    return candidate
+
+
+def _require_fresh_exact_root(
+    *, output_root: Path, expected_root: Path, attempt_root: Path, label: str
+) -> Path:
+    selected = Path(output_root)
+    development = (REPO_ROOT / ".generated/dev").resolve(strict=True)
+    resolved = selected.resolve(strict=False)
+    if (
+        not selected.is_absolute()
+        or not resolved.is_relative_to(development)
+        or resolved != expected_root.resolve(strict=False)
+        or attempt_root.exists()
+        or attempt_root.is_symlink()
+        or selected.exists()
+        or selected.is_symlink()
+    ):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            f"{label} output_root must be its exact fresh V3 path"
+        )
+    return resolved
+
+
+def build_rocm_plan(
+    *,
+    frozen_plan: Mapping[str, Any],
+    attempt_id: str,
+    output_root: Path,
+    expected_attempt_id: str,
+    expected_output_root: Path,
+    attempt_root: Path,
+    plan_role: str,
+    runtime_bindings: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    if attempt_id != expected_attempt_id:
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V3 ROCm attempt identifier changed"
+        )
+    try:
+        predecessor.predecessor._require_exact_frozen_input(  # noqa: SLF001
+            frozen_plan
+        )
+    except predecessor.predecessor.SceneDiversityGenesisRocmPlanError as exc:
+        raise SceneDiversityGenesisRocmV3PlanError(str(exc)) from exc
+    selected_root = _require_fresh_exact_root(
+        output_root=output_root,
+        expected_root=expected_output_root,
+        attempt_root=attempt_root,
+        label=plan_role,
+    )
+    runtime = (
+        build_rocm_runtime_bindings()
+        if runtime_bindings is None
+        else _validate_rocm_runtime_bindings(runtime_bindings, rehash=True)
+    )
+    _validate_driver_entrypoint(runtime, plan_role=plan_role)
+    return validate_rocm_plan(
+        _expected_rocm_plan(
+            attempt_id=attempt_id,
+            output_root=selected_root,
+            plan_role=plan_role,
+            runtime_bindings=runtime,
+        ),
+        expected_attempt_id=expected_attempt_id,
+        expected_output_root=expected_output_root,
+        plan_role=plan_role,
+    )
+
+
+def build_scientific_plan(
+    *,
+    frozen_plan: Mapping[str, Any],
+    runtime_bindings: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    return build_rocm_plan(
+        frozen_plan=frozen_plan,
+        attempt_id=DEFAULT_ATTEMPT_ID,
+        output_root=DEFAULT_OUTPUT_ROOT,
+        expected_attempt_id=DEFAULT_ATTEMPT_ID,
+        expected_output_root=DEFAULT_OUTPUT_ROOT,
+        attempt_root=DEFAULT_ATTEMPT_ROOT,
+        plan_role="scientific",
+        runtime_bindings=runtime_bindings,
+    )
+
+
+def build_qualification_plan(
+    *,
+    frozen_plan: Mapping[str, Any],
+    runtime_bindings: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    return build_rocm_plan(
+        frozen_plan=frozen_plan,
+        attempt_id=QUALIFICATION_ATTEMPT_ID,
+        output_root=QUALIFICATION_OUTPUT_ROOT,
+        expected_attempt_id=QUALIFICATION_ATTEMPT_ID,
+        expected_output_root=QUALIFICATION_OUTPUT_ROOT,
+        attempt_root=QUALIFICATION_ATTEMPT_ROOT,
+        plan_role="qualification",
+        runtime_bindings=runtime_bindings,
+    )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--plan-output", type=Path, default=DEFAULT_PLAN_OUTPUT)
+    parser.add_argument(
+        "--qualification-plan-output",
+        type=Path,
+        default=QUALIFICATION_PLAN_OUTPUT,
+    )
+    return parser
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    args = build_parser().parse_args(argv)
+    if any(
+        path.exists() or path.is_symlink()
+        for path in (args.plan_output, args.qualification_plan_output)
+    ):
+        raise SceneDiversityGenesisRocmV3PlanError(
+            "V3 plan outputs must be fresh"
+        )
+    runtime = build_rocm_runtime_bindings()
+    frozen = copy.deepcopy(
+        predecessor.predecessor._IMMUTABLE_FROZEN_VULKAN_PLAN  # noqa: SLF001
+    )
+    science = build_scientific_plan(
+        frozen_plan=frozen, runtime_bindings=runtime
+    )
+    qualification = build_qualification_plan(
+        frozen_plan=frozen, runtime_bindings=runtime
+    )
+    science_binding = pilot.write_json_exclusive(args.plan_output, science)
+    qualification_binding = pilot.write_json_exclusive(
+        args.qualification_plan_output, qualification
+    )
+    print(
+        json.dumps(
+            {
+                "scientific_plan": science_binding,
+                "qualification_plan": qualification_binding,
+                "v2_qualification_terminal_review": (
+                    v2_qualification_terminal_review_binding()
+                ),
+            },
+            sort_keys=True,
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+__all__ = [
+    "CPU_TERMINAL_REVIEW",
+    "CPU_TERMINAL_REVIEW_BINDING",
+    "DEFAULT_ATTEMPT_ID",
+    "DEFAULT_ATTEMPT_ROOT",
+    "DEFAULT_OUTPUT_ROOT",
+    "DEFAULT_PLAN_OUTPUT",
+    "QUALIFICATION_ATTEMPT_ID",
+    "QUALIFICATION_ATTEMPT_ROOT",
+    "QUALIFICATION_OUTPUT_ROOT",
+    "QUALIFICATION_PLAN_OUTPUT",
+    "QUALIFICATION_SCENE_INDICES",
+    "ROCM_EXECUTION_ENVIRONMENT_COMMON",
+    "ROCM_GRAPHICS_PREFLIGHT_EXPECTATION",
+    "ROCM_LD_LLD_DRIVER_ENTRYPOINT",
+    "ROCM_LD_LLD_DRIVER_LINK_TEXT",
+    "ROCM_LLD_VERSION_STDOUT_PREFIX",
+    "ROCM_PYTHON",
+    "ROCM_RUNTIME_PATHS",
+    "SceneDiversityGenesisRocmPlanError",
+    "SceneDiversityGenesisRocmV3PlanError",
+    "V2_QUALIFICATION_TERMINAL_REVIEW",
+    "V2_QUALIFICATION_TERMINAL_REVIEW_BYTE_COUNT",
+    "V2_QUALIFICATION_TERMINAL_REVIEW_SHA256",
+    "build_qualification_plan",
+    "build_rocm_runtime_bindings",
+    "build_scientific_plan",
+    "rocm_execution_environment",
+    "validate_rocm_plan",
+    "v2_qualification_terminal_review_binding",
+]

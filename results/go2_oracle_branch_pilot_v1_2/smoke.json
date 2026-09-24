@@ -1,0 +1,44 @@
+{
+  "schema": "go2_oracle_branch_pilot_v1_2_smoke",
+  "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING",
+  "genesis_backend": "cpu",
+  "state": {
+    "scene_id": "large_enclosed_maze_047e61730db3",
+    "family": "large_enclosed_maze",
+    "source_step": 201
+  },
+  "snapshot_digest": "63de902e4f5c038db8a1dc5a999d243da28485099de790b35806135a701a7f63",
+  "exact_replay": {
+    "trace_digests": [
+      "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a",
+      "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a",
+      "a63639f01129b45deecc27e4e46614ec184982de6695e21743025a6e2da86f8a"
+    ],
+    "identical": true
+  },
+  "last_actions_sensitivity": {
+    "diverges": true,
+    "observation_differs": true,
+    "applied_action_differs": true
+  },
+  "last_executed_sensitivity": {
+    "diverges": true,
+    "baseline_first_post_slew": [
+      0.30000001192092896,
+      0.0,
+      0.0
+    ],
+    "perturbed_first_post_slew": [
+      0.30000001192092896,
+      0.20000000298023224,
+      0.0
+    ]
+  },
+  "branch_order": {
+    "identical": true,
+    "mismatches": [],
+    "candidates": 12
+  },
+  "wall_time_s": 17.68,
+  "pass": true
+}

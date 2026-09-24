@@ -1,0 +1,133 @@
+{
+  "schema": "external_profile_v2_declared_source_derivatives.v1",
+  "files": [
+    {
+      "source": "scripts/run_go2_body_projection_external_profile_v1.py",
+      "source_sha256": "33a93c7ec2bc3fce5667fad8fb480c457f396bcf3e65565c3934b2e1af603b54",
+      "target": "scripts/run_go2_body_projection_external_profile_v2.py",
+      "target_sha256": "650d57ecf0d85fb525c5845b4f164c709b24e9083a26a98986d61cd80ec107f8",
+      "replacements": [
+        [
+          "from scripts import external_body_projection_profile_replay_development as replay\nfrom scripts import body_projection_external_profile_admission_development as admission",
+          "from scripts.external_body_projection_profile_v2_bindings_development import replay, admission, failed_sources"
+        ],
+        [
+          "SOURCE = 'scripts/run_go2_body_projection_external_profile_v1.py'",
+          "SOURCE = 'scripts/run_go2_body_projection_external_profile_v2.py'"
+        ],
+        [
+          "TEST = 'lewm/tests/test_body_projection_external_profile_execution_development.py'",
+          "TEST = 'lewm/tests/test_body_projection_external_profile_v2_development.py'"
+        ],
+        [
+          "CHECKER = 'scripts/verify_go2_body_projection_external_profile_completion_v1.py'",
+          "CHECKER = 'scripts/verify_go2_body_projection_external_profile_completion_v2.py'"
+        ],
+        [
+          "PROTOCOL = 'docs/go2_body_projection_external_profile_v1_2026-09-11.md'",
+          "PROTOCOL = 'docs/go2_body_projection_external_profile_v2_2026-09-11.md'"
+        ],
+        [
+          "SMOKE = '.generated/tools/go2_py_spy_0_4_2_v1/marker_owned_child_smoke_v2/result.json'",
+          "SMOKE = '.generated/tools/go2_py_spy_0_4_2_v1/marker_nonblocking_owned_child_smoke_v3/result.json'"
+        ],
+        [
+          "SMOKE_SHA = '466c8f94e34616a3d67012bce9f498238e04f9c9bbe332000d0742c3d1016f3f'",
+          "SMOKE_SHA = '341eb89e317ba7d99ea530c9933df1b8e158ed70a9173f60c6062c64c92c7369'"
+        ],
+        [
+          "sources = discover_sources(seeds, witness['source_sha256'])",
+          "sources = discover_sources(seeds, failed_sources(witness['source_sha256']))"
+        ],
+        [
+          "return [str(TOOL), 'record', '--format', 'speedscope', '--output',",
+          "return [str(TOOL), 'record', '--nonblocking', '--format', 'speedscope', '--output',"
+        ],
+        [
+          "or launch['automatic_retry'] is not False):",
+          "or launch['automatic_retry'] is not False or launch['sampling_mode'] != 'nonblocking'\n            or launch['stack_snapshot_consistency_guaranteed'] is not False):"
+        ],
+        [
+          "native_execution=False, model_training=False)",
+          "native_execution=False, model_training=False, sampling_mode='nonblocking',\n        stack_snapshot_consistency_guaranteed=False)"
+        ],
+        [
+          "status='BODY_PROJECTION_EXTERNAL_PROFILE_V1_COMPLETE'",
+          "status='BODY_PROJECTION_EXTERNAL_PROFILE_V2_COMPLETE'"
+        ],
+        [
+          "controller='BodyProjectedTiledController', native_execution=False,",
+          "controller='BodyProjectedTiledController', native_execution=False,\n            sampling_mode='nonblocking', stack_snapshot_consistency_guaranteed=False,"
+        ]
+      ]
+    },
+    {
+      "source": "scripts/verify_go2_body_projection_external_profile_completion_v1.py",
+      "source_sha256": "1e357342d6486dbe6b78447c134fea9de4fc3d78260ef353b87a47582019c216",
+      "target": "scripts/verify_go2_body_projection_external_profile_completion_v2.py",
+      "target_sha256": "1b110c8b9892b87c05ea59132219d1e6bf3f26f9dfe3a867157d700d3173aa8c",
+      "replacements": [
+        [
+          "from scripts import run_go2_body_projection_external_profile_v1 as run",
+          "from scripts import run_go2_body_projection_external_profile_v2 as run"
+        ],
+        [
+          "OUTPUT = ROOT/'docs/go2_body_projection_external_profile_completion_verification_2026-09-11.json'",
+          "OUTPUT = ROOT/'docs/go2_body_projection_external_profile_v2_completion_verification_2026-09-11.json'"
+        ],
+        [
+          "result['status'] != 'BODY_PROJECTION_EXTERNAL_PROFILE_V1_COMPLETE'",
+          "result['status'] != 'BODY_PROJECTION_EXTERNAL_PROFILE_V2_COMPLETE'"
+        ],
+        [
+          "or result['controller'] != 'BodyProjectedTiledController'",
+          "or result['controller'] != 'BodyProjectedTiledController'\n            or result['sampling_mode'] != 'nonblocking'\n            or result['stack_snapshot_consistency_guaranteed'] is not False"
+        ],
+        [
+          "status='BODY_PROJECTION_EXTERNAL_PROFILE_COMPLETION_VERIFIED'",
+          "status='BODY_PROJECTION_EXTERNAL_PROFILE_V2_COMPLETION_VERIFIED'"
+        ],
+        [
+          "profiler_overhead_removed=False, native_execution=False, real_time_qualified=False,",
+          "profiler_overhead_removed=False, sampling_mode='nonblocking',\n        stack_snapshot_consistency_guaranteed=False, native_execution=False, real_time_qualified=False,"
+        ]
+      ]
+    },
+    {
+      "source": "scripts/await_go2_body_projection_external_profile_completion_v1.py",
+      "source_sha256": "edaeaa6c6806851e4c11426fb1d598c2d23a647c253fac83ca4c9bade4cdf1e2",
+      "target": "scripts/await_go2_body_projection_external_profile_completion_v2.py",
+      "target_sha256": "a94a8ee0461fb7c43916e86968af69b0d250ba0b6214cf171b933011f01aa2cb",
+      "replacements": [
+        [
+          "from scripts import run_go2_body_projection_external_profile_v1 as run",
+          "from scripts import run_go2_body_projection_external_profile_v2 as run"
+        ],
+        [
+          "from scripts import verify_go2_body_projection_external_profile_completion_v1 as check",
+          "from scripts import verify_go2_body_projection_external_profile_completion_v2 as check"
+        ],
+        [
+          "SOURCE='scripts/await_go2_body_projection_external_profile_completion_v1.py'",
+          "SOURCE='scripts/await_go2_body_projection_external_profile_completion_v2.py'"
+        ],
+        [
+          "TEST='lewm/tests/test_body_projection_external_profile_watch_development.py'",
+          "TEST='lewm/tests/test_body_projection_external_profile_v2_watch_development.py'"
+        ],
+        [
+          "WATCH=ROOT/'docs/go2_body_projection_external_profile_completion_watch_execution_2026-09-11.json'",
+          "WATCH=ROOT/'docs/go2_body_projection_external_profile_v2_completion_watch_execution_2026-09-11.json'"
+        ],
+        [
+          "RESULT=ROOT/'docs/go2_body_projection_external_profile_completion_watch_result_2026-09-11.json'",
+          "RESULT=ROOT/'docs/go2_body_projection_external_profile_v2_completion_watch_result_2026-09-11.json'"
+        ],
+        [
+          "FAILURE=ROOT/'docs/go2_body_projection_external_profile_completion_watch_failure_2026-09-11.json'",
+          "FAILURE=ROOT/'docs/go2_body_projection_external_profile_v2_completion_watch_failure_2026-09-11.json'"
+        ]
+      ]
+    }
+  ]
+}

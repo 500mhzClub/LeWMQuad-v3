@@ -1,0 +1,200 @@
+# Decision-headroom protocol — working draft
+
+Status: **not frozen, not approved for Phase 2**. Written before pilot
+comparative scoring (which is prohibited). The authoritative specification is
+[the final handoff](go2_decision_headroom_agent_handoff_final_2026-09-23.md).
+This document will be completed using the blinded technical evidence and
+committed with its machine-readable configuration at checkpoint (a).
+
+## Question and scope
+
+Measure decision headroom beyond command-history and reactive controls, then
+locate gains or losses in the frozen V-JEPA 2.1 prediction/readout pathway.
+The reference is conditional on the source route, memory, observation packet,
+six-candidate bank and 800-ms horizon. It is not unrestricted optimal control.
+Navigation success and feature error remain supporting evidence. This study
+cannot identify a causal effect of the JEPA training objective.
+
+Controllers, encoder, predictor, matched old-data/maze-data readouts, sensing,
+limiter, scorer weights and candidate bank remain unchanged. Source collection
+is for restorable audit decisions, not another navigation-performance cohort.
+No fitted parameter or checkpoint is selected from audit outcomes. Both heads
+are reported. The initial readout's retained Stage A comparator is historical
+evidence, not a third audit head or another independent layout.
+
+## Physical experiment and information boundary
+
+Each decision has a frozen observation/selector packet and a separately stored
+physical snapshot. The former includes native RGB context and timestamps,
+causal commands, observed map/pose, route target, mission/recovery state,
+prefix, exact six requested/projected tapes and eligibility reasons. The latter
+includes exposed mutable solver/contact state, policy action history, limiter,
+command dispatch, clocks and RNG. Record source/config/model hashes and
+coordinate conventions for both; do not replace observed inputs with truth.
+
+Restore at the original decision timestamp. Execute exactly 800 ms, including
+the committed first 300 ms, through the unchanged limiter and locomotion
+policy. Retain 100–800-ms physical outcomes, attributed disallowed contacts,
+swept-footprint clearance and native lossless RGB at consumed timestamps.
+Support contacts are separate. Retain every partial termination and failure;
+never fabricate a missing image or endpoint. Shared-prefix horizons are not
+action-discrimination observations.
+
+Before admitting a state, replay its complete forty-command, 20-ms applied
+source trace three times, including changes from later source replanning.
+The pilot's predeclared acceptance limits are 1 mm position and 0.1 degree yaw
+at every 100-ms horizon, with identical attributed-contact outcomes. Candidate
+repeat variability is a different measurement: three repeats per action,
+all pairwise comparisons, including intermediate horizons and terminal events.
+Systematic disagreement with the source is never absorbed into a tie margin.
+
+The pilot has 24 fixed source slots and a 90% restoration-validity requirement,
+with at least one valid state from each source-controller class. Missing slots
+count against that denominator. The frozen Phase 2 coverage rule must also
+report layout, source and stratum failures; a global pass cannot conceal a
+failed subgroup. The final reference/scoring-coverage thresholds remain open
+until technical validity is measured, without computing method outcomes.
+
+## Independent reference
+
+The provisional evaluator uses a 0.46-m disk, 5-mm minimum clearance and a
+20-mm inflated geodesic grid. These values are subject to the prewritten
+24-case reference sanity panel, not comparative method performance. True
+geometry is available only to this evaluator and R1. The source target is
+transformed through the source's initial physical-frame anchor, never
+re-anchored at its current true pose or snapped to a convenient true-map goal.
+Absent positional route targets and physically invalid targets are flags.
+
+Safety is a constraint. Incomplete outcomes or disallowed contact do not
+receive an invented finite cost. The non-safety reference retains separate
+time-equivalent components for geodesic distance, endpoint heading, opposing
+motion and phase-appropriate settling. No privileged continuation is planned.
+Its final formula, numerical precision, near ties and usefulness rule will be
+frozen only after reference qualification and legitimate repeat measurements.
+No acceptable useful candidate is a bank/target limitation, not a ranking loss.
+
+## Sampling design
+
+Freeze all layout identities, exposure histories, source quotas, collection
+durations, sample counts and seeds before Phase 2 collection. The four dense
+cohort layouts are exposed development layouts; pilot layouts 0 and 2 are
+additionally pilot-exposed. They cannot appear in a never-examined subset.
+Fresh layouts must use the existing static-maze family and generator, with no
+runtime-outcome-based rejection or substitution. No new layouts have been
+generated by this draft. Final identities and counts await measured costs.
+
+Collect separate trajectories from command-history, reactive-feedback and
+the current action-conditioned controller. Use the named old-data control
+head for collection, as in the pilot; both matched heads are evaluated on
+every selected decision. Keep each source controller equally weighted within
+a layout, then each layout equally weighted within its exposure stratum.
+Report exposed and never-examined populations separately.
+
+The representative frame is the complete set of eligible decision timestamps
+within each fixed source collection window, determined without branch outcomes.
+Draw a simple random sample without replacement in each layout/source cell.
+For N available decisions and a quota k, record n=min(k,N), inclusion
+probability n/N, and inverse-probability weight N/n. An empty source cell is
+missing coverage, not permission to borrow another controller's states.
+Use known design weights for the full frame; validity exclusions create
+explicit conditional populations and do not redefine the sampling frame.
+
+Build a separate diagnostic panel from pre-outcome observation and command
+metadata: clearance margin, moving/turning/holding history, turn reversal and
+mission phase (exploration, approach/settle, return). Freeze numerical bin
+boundaries and quotas in the configuration. Draw randomly within each declared
+diagnostic cell. Unfilled cells remain unfilled; no extra rollouts, substituted
+layouts or changed thresholds. Record overlap with the representative sample
+and reuse identical branches rather than execute duplicates. Never pool the
+diagnostic panel into prevalence estimates without the appropriate design.
+
+Determine the required snapshot timing/retention mechanism before choosing
+source quotas. Selecting only after collection does not permit silently
+retaining an unbudgeted full trajectory of physical snapshots. The approved
+budget must cover the chosen sampling mechanism, including temporary writes.
+
+## Rows and paired populations
+
+Attempt all required rows on every sampled state. R0 draws uniformly from the
+recorded eligible subset using a frozen seed. R1 supplies the physical optimum
+in the full bank and separately the eligible bank. R2 substitutes actual
+branch motion into the unchanged scorer. R3 decodes actual future features;
+R4 decodes predicted features. R2b replaces only R4 translation magnitudes by
+true magnitudes, retaining predicted direction and yaw; undefined small
+vectors remain undefined. R4s uses a fixed candidate-suffix derangement with
+history and prefix unchanged. R5c is command history; R5r is the frozen
+reactive rule. There is no action-blind competitive selection row.
+
+R3, R4, R2b and R4s each use both existing matched heads. Neither R2 nor the
+learned rows receive true geometry, future contacts or future clearance as
+scorer inputs. Observation-only exclusions remain fixed; substituted-motion
+eligibility is recomputed by the unchanged checks and retained with reasons.
+Unavailability or a row failure is not silently converted to hold.
+
+Define reactive bank membership by tape equivalence, including the shared
+prefix and limiter contract, not by the action's label. An off-bank reactive
+tape receives a separate branch and never changes R1's bank. Its acceptable
+outcome has a signed bank-relative gap, which may be negative. Final tape
+tolerance, tie-breaking, R0 seed, derangement and R2b zero threshold must be
+numerically fixed in the configuration.
+
+For acceptable in-bank choices, regret is cost minus the minimum acceptable
+bank cost. Safety violations have a separate harm indicator, not a finite
+penalty. Report nominal G on all scoreable states with an acceptable R5c
+selection. Each paired difference uses the intersection of its two valid,
+acceptable selection populations, with identical weights. For each head,
+the R2/R3/R4/R5c telescoping chain uses one common population and recomputes G
+on that population. Do not telescope differently masked means.
+
+Harm is reported on the full restoration-valid population with a valid
+reference and an acceptable alternative, including states excluded from
+finite regret. Report useful-bank coverage separately. Preserve raw contacts
+when targets or scalar references are invalid. For every row and subgroup,
+show denominator, inclusion weights, failures, invalid targets, unacceptable
+choices and finite-regret/common-mask coverage.
+
+## Estimands and uncertainty
+
+The proposed five-primary family is nominal G, H_scorer, H_motion and
+D_learned for each matched head. Proposed delta is 0.25 s: 5 cm at 0.2 m/s,
+or 0.1125 rad at 0.45 rad/s. This motivates practical scale only; summing
+local regret is not a proved mission-time prediction.
+
+L_readout, L_forecast, A_action, R2b shrinkage, eligibility, reactive gaps,
+unnecessary holds, optimal-set membership and all physical cost components
+are secondary diagnostics. Prespecify their intervals and multiplicity
+treatment; post-hoc analyses cannot choose a decision-table recommendation.
+
+Layouts are the inference units. Decisions, overlapping futures, repeats and
+different source controllers within one layout are not independent layout
+replicates. Show every layout's weighted estimates and paired differences.
+The [blinded precision scenarios](go2_decision_headroom_precision_scenarios_2026-09-23.json)
+use hypothetical layout variability, not observed method-regret variance.
+The proposed primary familywise error is 5%, with 99% individual two-sided
+intervals for five contrasts. Final interval construction, harm uncertainty,
+absolute and paired harm limits, and coverage requirements remain to be frozen.
+Zero observed harms must not yield a zero uncertainty bound merely because a
+nonparametric bootstrap reproduces only zeros.
+
+Use measured pilot cost/storage and declared variance scenarios to propose
+fixed layout/state counts. Aim for interval half-width about delta/2 under
+stated assumptions. An affordable design that cannot credibly achieve this is
+explicitly exploratory, with inconclusive results preserved. More within-layout
+states cannot cure insufficient independent layouts. No effect-dependent
+sample expansion, preferred-head selection or follow-up fitting is permitted.
+
+## Required checkpoint-(a) completion
+
+Still required: Stage A closeout; actual restoration/repeat/RGB validity;
+reference sanity qualification; measured component, branch and collection
+costs; final sample/layout identities and exposure evidence; numerical rules
+left open above; exact checkpoint/source/config hashes; a finite Phase 2
+resource budget, output identities, path/mount accounting and reserves.
+Pilot caps are already recorded separately and are not a Phase 2 budget.
+
+Commit the complete proposed protocol and hashed machine configuration with
+pilot evidence. Submit their identified version to Andrew and **stop**.
+A passing pilot, this draft, its later commit or historical goal continuation
+does not authorise Phase 2. If technical validity fails within the pilot caps,
+report that failure and the resulting design limitation rather than presenting
+an executable comparative audit as qualified.

@@ -1,0 +1,375 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_INFRASTRUCTURE_TERMINAL_REVIEW",
+  "audit_passed": true,
+  "reviewer": "codex_independent_scene_diversity_integrity_replacement_v2_terminal_reviewer_2026-08-04",
+  "reviewed_at_utc": "2026-08-04T17:46:22Z",
+  "independence": {
+    "reviewer_did_not_implement_or_execute_v2": true,
+    "reviewer_did_not_issue_execution_authority": true,
+    "reviewer_did_not_create_retry_resume_or_replacement_authority": true,
+    "source_or_runtime_modified_by_review": false,
+    "attempt_artifacts_modified_by_review": false,
+    "only_output_written": "docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_terminal_review_2026-08-04.json"
+  },
+  "verdict": {
+    "attempt_id": "go2-scene-diversity-recurrent-replication-integrity-replacement-v2",
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "classification": "TERMINAL_FAIL_CLOSED_INFRASTRUCTURE_FAILURE",
+    "scientific_decision": null,
+    "scientific_metrics": null,
+    "gate_decisions": null,
+    "result_binding": null,
+    "attempt_consumed": true,
+    "retry_or_resume_authorized": false,
+    "partial_artifact_reuse_authorized": false,
+    "summary": "The first 12 one-scene workers completed and persisted infrastructure receipts. The thirteenth worker, fixed scene index 12, encountered an AMDGPU gfx-ring timeout/device wedge and a native Taichi semaphore assertion, then returned nonzero. The kernel reset succeeded, the collector reached its post-release completion check, rejected worker 12, and exited 1. No combined physics result was published and the DINO, training, checkpoint, evaluation, metric, and gate stages were never entered."
+  },
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_preregistration_2026-08-04.md",
+      "sha256": "ce31b54626a57c338497fd71d6d857e6433b4c70de25f88f4f70fd714020f600",
+      "byte_count": 10085
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_exact_plan_2026-08-04.json",
+      "sha256": "c4f7175d507092c20d460d107aedd43016737598675c19fdc9b2dc0b32b7b65b",
+      "byte_count": 346071
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_source_review_2026-08-04.json",
+      "sha256": "5b8e5df408de89fac1f671cdbf8610e11f8293ab5db919bf5ffdd0897cbf4165",
+      "byte_count": 65473
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_integrity_replacement_v2_execution_authority_2026-08-04.json",
+      "sha256": "fc4cf0dc37c80d2c9ebbbf16c5cabbd79b802188caaf42e63b773f527f5c58ed",
+      "byte_count": 51565
+    },
+    "collector": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "ff062cf1198abb6c5677fd946e6e956399c303b59c2a137565433131edd1c2cf",
+      "byte_count": 81912
+    },
+    "runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_integrity_replacement_v2.py",
+      "sha256": "a345768e8e54bdf57955d41701cbf909a49ba636f5da33dc732de1a58b6fbdb6",
+      "byte_count": 19032
+    },
+    "attempt_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/reservation.json",
+      "sha256": "cbe3f8957104ede3e7572352b26590dfad14c6c54e78964195ee599d24492429",
+      "byte_count": 799
+    },
+    "collection_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/reservation.json",
+      "sha256": "0b5ecd22d1b771041f0d7ce6da001171af70307491bf95462e7d289170831293",
+      "byte_count": 1702
+    },
+    "collection_authorized_plan_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/authorized_plan.json",
+      "sha256": "c4f7175d507092c20d460d107aedd43016737598675c19fdc9b2dc0b32b7b65b",
+      "byte_count": 346071
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/terminal.json",
+      "sha256": "ebb520c596ae69c19e3be255c0f661fe55286883e03994a43a0e506936120465",
+      "byte_count": 442
+    },
+    "persisted_scene_results": [
+      {
+        "scene_index": 0,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/000.json",
+        "sha256": "b6e4ae931c12f6811b208c858690c0eb7969e17d9cf8ba6902f386e223acfacb",
+        "byte_count": 58302
+      },
+      {
+        "scene_index": 1,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/001.json",
+        "sha256": "df5d284cd876bd5393bce86576869c550fcf30018888c6e84fd1f855bc28991d",
+        "byte_count": 58301
+      },
+      {
+        "scene_index": 2,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/002.json",
+        "sha256": "47609b129fa85701c7b63d7c81f8f16eb7155e0c157ca176bc3ebbcd930d92f9",
+        "byte_count": 58304
+      },
+      {
+        "scene_index": 3,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/003.json",
+        "sha256": "2186db94a235a736a39b418680eef68910e7578c58f1f00420b84bee93090284",
+        "byte_count": 58307
+      },
+      {
+        "scene_index": 4,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/004.json",
+        "sha256": "406a229837bd7760ab22d486c42c8118a651d3d4a410566c31c2872f379c598f",
+        "byte_count": 57578
+      },
+      {
+        "scene_index": 5,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/005.json",
+        "sha256": "a9de2093be513fbca9d16f2193179ccc79aa6aa5cd8669a415934127475671df",
+        "byte_count": 57577
+      },
+      {
+        "scene_index": 6,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/006.json",
+        "sha256": "f12af102578d02d4e07f4b4eab18a7aa6fd219d0b0e125f3543864548554e1d6",
+        "byte_count": 57579
+      },
+      {
+        "scene_index": 7,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/007.json",
+        "sha256": "2731e3e868f9e3d142826d7d03c719896e76e3440f621431a668187881513d9b",
+        "byte_count": 57581
+      },
+      {
+        "scene_index": 8,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/008.json",
+        "sha256": "54a037e581f371175cc496d1569132f3c7191134eaee7a2afca249cf20b4c7eb",
+        "byte_count": 58264
+      },
+      {
+        "scene_index": 9,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/009.json",
+        "sha256": "749f94588bbc7f9982ca032c8fe65c824c85d5d0001c508d24ac4eaacc835a06",
+        "byte_count": 58265
+      },
+      {
+        "scene_index": 10,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/010.json",
+        "sha256": "12ec43856d3cd67525c7bfd8184f8e367fbb1994aa8864e46d6ea6215e7e8920",
+        "byte_count": 58262
+      },
+      {
+        "scene_index": 11,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/scene_results/011.json",
+        "sha256": "c464235a3484da80dda6985df4009646f01cba299f5802982d5e9986a0797168",
+        "byte_count": 58268
+      }
+    ]
+  },
+  "attempt_census": {
+    "planned_worker_processes": 64,
+    "launched_worker_processes": 13,
+    "worker_processes_reaching_parent_wait": 13,
+    "successful_scene_workers_with_persisted_results": 12,
+    "failed_scene_workers": 1,
+    "remaining_unlaunched_workers": 51,
+    "persisted_successful_scene_indices": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11
+    ],
+    "persisted_successful_roles": {
+      "train": 12,
+      "eval": 0
+    },
+    "persisted_successful_scene_counts": {
+      "scenes": 12,
+      "states": 48,
+      "context_frames": 144,
+      "candidate_branches": 432,
+      "target_frames": 432
+    },
+    "failed_worker": {
+      "scene_index": 12,
+      "role": "train",
+      "family": "medium_enclosed_maze",
+      "scene_id": "medium_enclosed_maze_00d3d19d1f00",
+      "pid_from_host_kernel_log": 3936335,
+      "numeric_exit_code_or_signal": null,
+      "scene_result_persisted": false,
+      "scene_root_persisted": false
+    },
+    "combined_physics_result_persisted": false,
+    "partial_scene_results_admitted_to_science": false
+  },
+  "failure_evidence": {
+    "repository_terminal": {
+      "failure_type": "BoundedBranchSupervisionError",
+      "failure_message": "supervised collector exited with status 1",
+      "terminal_mtime_local": "2026-08-04T18:41:23.887930762+01:00",
+      "detail_level": "The durable terminal records the supervised collector failure and fail-closed status, but intentionally does not retain the child stderr, numeric worker return code, or in-memory worker/release receipts."
+    },
+    "retained_pty_stderr_tail": {
+      "provenance": "operator-retained launch PTY tail supplied to the independent reviewer; not a repository-bound file",
+      "repository_binding": null,
+      "full_stream_retained": false,
+      "middle_was_truncated": true,
+      "exact_retained_lines": [
+        "...std::vector<std::shared_ptr<gstaichi::lang::StreamSemaphoreObject> >&): Assertion 'false && \"Error without return code\"' failed.",
+        "error: scene worker 12 completion contract failed",
+        "error: supervised collector exited with status 1"
+      ],
+      "supports": [
+        "worker index 12 was launched and reached a native Taichi assertion",
+        "the worker completion contract was rejected by the parent",
+        "the supervised collector exited nonzero"
+      ],
+      "does_not_support": [
+        "a complete native assertion call site",
+        "the exact numeric worker return code or signal",
+        "the complete child stderr chronology"
+      ]
+    },
+    "host_kernel_journal_observation": {
+      "provenance": "read-only host kernel journal query during terminal review",
+      "repository_binding": null,
+      "mutable_host_observation": true,
+      "host": "pop-os",
+      "boot_id": "88c4f1a1-a1ee-480c-870c-17a29e1675f9",
+      "query": "journalctl -k --since '2026-08-04 18:40:45' --until '2026-08-04 18:41:45' --no-pager -o short-iso | rg 'amdgpu|3936335|gfx_0\\.0\\.0|wedged|coredump|timeout|reset'",
+      "observed_at_local": "2026-08-04T18:41:22+01:00",
+      "observed_at_utc": "2026-08-04T17:41:22Z",
+      "device": "amdgpu 0000:03:00.0",
+      "process_pid": 3936335,
+      "observations": [
+        "Dumping IP State",
+        "AMDGPU device coredump file has been created",
+        "ring gfx_0.0.0 timeout, signaled seq=46882808, emitted seq=46882810",
+        "Process python pid 3936335 thread python pid 3936335",
+        "Starting gfx_0.0.0 ring reset",
+        "Ring gfx_0.0.0 reset succeeded",
+        "device wedged, but recovered through reset"
+      ],
+      "device_coredump_opened": false
+    },
+    "best_supported_cause": {
+      "stage": "collection_worker_12_native_gpu_execution",
+      "category": "GPU_DRIVER_OR_NATIVE_RENDER_RUNTIME_INFRASTRUCTURE_FAILURE",
+      "cause": "The worker's Python process was named by the kernel at an AMDGPU gfx-ring timeout and recoverable device wedge; the retained PTY tail then shows a Taichi stream-semaphore assertion and the parent rejecting worker 12's completion contract.",
+      "scientific_model_or_metric_cause": false,
+      "confidence": "HIGH_FOR_GPU_HANG_AND_NONZERO_WORKER; LIMITED_FOR_DEEPER_DRIVER_OR_TAICHI_ROOT_CAUSE"
+    }
+  },
+  "control_flow_audit": {
+    "worker_wait_precedes_release_barrier": true,
+    "release_barrier_precedes_completion_contract_validation": true,
+    "completion_contract_validation_precedes_scene_result_load": true,
+    "worker_12_reached_completion_contract_validation": true,
+    "worker_12_release_barrier_returned_before_rejection": true,
+    "worker_12_release_barrier_receipt_persisted": false,
+    "basis": "The bound collector has one source occurrence of the retained `scene worker {index} completion contract failed` error. Its fixed parent loop calls `_run_worker_process_v2` (which waits), `_wait_for_vram_release_v2`, `_validate_completed_worker_v2`, then `_load_scene_result_v2`. Therefore reaching the worker-12 completion-contract error establishes that the matching release barrier returned before rejection, while the absence of a final join means the in-memory receipt was not durably published.",
+    "all_64_workers_required_before_combined_result": true,
+    "all_64_worker_evidence_and_pre_science_closure_required_before_science": true
+  },
+  "no_science_audit": {
+    "combined_physics_result_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_integrity_replacement_v2/attempt_v1/collection/physics_result.json",
+    "combined_physics_result_absent": true,
+    "runner_returned_from_collection_stage": false,
+    "pre_dino_scene_process_join_reached": false,
+    "pre_dino_filesystem_closure_reached": false,
+    "dino_feature_extraction_started": false,
+    "training_started": false,
+    "scientific_checkpoint_written": false,
+    "evaluation_started": false,
+    "repeat_evaluation_started": false,
+    "scientific_result_written": false,
+    "metric_computation_started": false,
+    "gate_decision_started": false,
+    "navigation_or_blind_rollout_authorized": false,
+    "basis": "The frozen V2 route cannot enter any ledger, DINO, model, training, or evaluation step until collection publishes and the runner validates the exact 64-worker combined physics index and complete pre-science closure. Collection stopped at worker 12 and `physics_result.json` is absent. The attempt root contains only its reservation, terminal, and partial collection tree; the terminal result binding is null."
+  },
+  "permission_audit": {
+    "attempt_reservation_status": "CONSUMED_ONE_SHOT_ATTEMPT",
+    "collection_reservation_status": "RESERVED_ONE_SHOT_PER_SCENE_COLLECTION_CONSUMED",
+    "terminal_authorizes_retry_or_resume": false,
+    "plan_authorizes_retry_or_resume": false,
+    "authority_retry_resume_overwrite_permission": false,
+    "refill_authorized": false,
+    "adaptive_batching_authorized": false,
+    "overwrite_authorized": false,
+    "partial_attempt_artifact_reuse_authorized": false,
+    "successor_attempt_authorized_by_this_review": false,
+    "scientific_conclusion_authorized": false,
+    "navigation_claim_authorized": false
+  },
+  "process_liveness_audit": {
+    "checked_at_utc": "2026-08-04T17:45:00Z",
+    "orchestrator_pid": 3928213,
+    "persisted_successful_worker_pids": [
+      3928514,
+      3929190,
+      3929908,
+      3930600,
+      3931256,
+      3931897,
+      3932537,
+      3933170,
+      3933793,
+      3934418,
+      3935034,
+      3935699
+    ],
+    "failed_worker_pid_from_kernel_log": 3936335,
+    "specific_pid_query_returned_no_processes": true,
+    "exact_v2_runner_or_collector_process_name_query_returned_no_processes": true,
+    "attempt_process_remains": false,
+    "kernel_reported_gpu_ring_reset_succeeded": true
+  },
+  "custody_audit": {
+    "sealed_test_opened": false,
+    "sealed_or_sealed_prefixed_directory_opened": false,
+    "sealed_or_protected_paths_searched_or_indexed": false,
+    "legacy_sealed_role_opened": false,
+    "partial_rgb_opened": false,
+    "partial_tensor_or_embedding_opened": false,
+    "scientific_output_opened": false,
+    "host_gpu_devcoredump_opened": false,
+    "attempt_reads_limited_to_infrastructure_metadata_and_scene_result_receipt_fields": true,
+    "protected_material_opened": false
+  },
+  "checks": {
+    "terminal_is_strict_json_and_exactly_bound": true,
+    "terminal_status_is_fail_infrastructure_no_scientific_decision": true,
+    "terminal_result_binding_is_null": true,
+    "terminal_retry_resume_is_false": true,
+    "attempt_and_collection_reservations_are_consumed_and_non_resumable": true,
+    "twelve_contiguous_success_scene_results_000_through_011_are_bound": true,
+    "each_persisted_scene_result_reports_scene_physics_complete_and_no_failure": true,
+    "each_persisted_scene_result_forbids_retry_refill_overwrite_and_adaptive_batching": true,
+    "failed_scene_matches_frozen_plan_index_12": true,
+    "failed_scene_result_012_is_absent": true,
+    "failed_scene_root_is_absent": true,
+    "combined_physics_result_is_absent": true,
+    "zero_dino_training_checkpoint_evaluation_result_metric_and_gate_stages_reached": true,
+    "retained_stderr_and_kernel_journal_align_on_failed_worker_native_gpu_failure": true,
+    "worker_12_failure_was_rejected_after_matching_release_barrier": true,
+    "no_attempt_process_remains": true,
+    "no_scientific_metric_or_verdict_admitted": true,
+    "no_retry_resume_reuse_or_successor_authority_created": true,
+    "protected_material_opened": false
+  },
+  "findings": [
+    {
+      "id": "V2-TERM-INFRA-001",
+      "severity": "TERMINAL_INFRASTRUCTURE_FAILURE",
+      "disposition": "ATTEMPT_CONSUMED_NO_SCIENTIFIC_DECISION",
+      "finding": "Worker 12 failed during native GPU execution after an AMDGPU gfx-ring timeout/device wedge. The kernel reset recovered the device, but Taichi aborted and the collector correctly failed closed."
+    },
+    {
+      "id": "V2-TERM-EVIDENCE-001",
+      "severity": "EVIDENCE_LIMITATION",
+      "disposition": "DOES_NOT_INVALIDATE_FAIL_CLOSED_TERMINAL_CLASSIFICATION",
+      "finding": "The durable terminal collapses the collector failure to exit status 1, while the worker's numeric return code, full stderr, and in-memory worker/release receipts were not persisted. The narrow retained PTY tail and independently queried host kernel journal are sufficient to localize the infrastructure failure, but not to assign a deeper Taichi-versus-driver root cause."
+    }
+  ],
+  "limitations": [
+    "No rendered RGB, tensor, embedding, partial scientific output, sealed material, or GPU devcoredump payload was opened; this review intentionally does not assess the content of the 12 partial scene datasets.",
+    "The host kernel journal is mutable operational evidence rather than a repository-bound artifact, and the retained PTY tail is partial and unbound. Their aligned timestamp, PID, native assertion, and parent error strongly support the infrastructure classification but do not preserve a complete native crash trace.",
+    "The worker-12 release-barrier return is established by the exact bound collector call order and the reached completion-contract error; its detailed samples were held only in memory and were not published because the final 64-worker join never occurred.",
+    "This terminal review grants no retry, resume, partial reuse, replacement attempt, scientific conclusion, navigation claim, or blind-rollout authority."
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "schema": "visual_target_motion_readout.v1",
+  "feature_sources": {
+    "jepa": {
+      "condition": "jepa",
+      "filename": "jepa.pt",
+      "sha256": "e2fdd7e15041b3b912eb4fb7447a08f7ad78a947cd8215f865049faa042941e5",
+      "model_sha256": "2e08818bfd4169109938a6d6846ba63dca147dba59bded1c0e5555c83ab6328e",
+      "initial_sha256": "779b6bf38acf74fe8bab85d92c2dd7b446264dc1020025ef5c0aa80083a1b1d5",
+      "configuration": {
+        "condition": "jepa",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.0001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "9aaca6ffd53bb1364efeabc57b4f1e7671cd12cbb10d1f5d10456db4b11db5a8",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+        "input_variant": "full"
+      },
+      "wall_s": 165.9225368720945,
+      "peak_rss_bytes": 10094321664,
+      "prediction_evaluated": false,
+      "navigation_tested": false
+    },
+    "supervised_rollout": {
+      "condition": "supervised_rollout",
+      "filename": "supervised_rollout.pt",
+      "sha256": "3813a4151ef0bc5e982ec0a1b4904dcfd69769c148793991e924968779cf0c50",
+      "model_sha256": "79993a3763f99a19ece62af7bab29a1d607a9a5c67673c48328a4c158ee2a8e9",
+      "initial_sha256": "779b6bf38acf74fe8bab85d92c2dd7b446264dc1020025ef5c0aa80083a1b1d5",
+      "configuration": {
+        "condition": "supervised_rollout",
+        "seed": 2026091001,
+        "latent_dim": 32,
+        "learning_rate": 0.0001,
+        "ema_momentum": 0.99,
+        "updates": 1200
+      },
+      "binding": {
+        "experiment_sha256": "9aaca6ffd53bb1364efeabc57b4f1e7671cd12cbb10d1f5d10456db4b11db5a8",
+        "dataset_sha256": "dcfae1fb93567e9d84dbcc90e02c78f78063e41c8461a30a7ecb2822b9d8561a",
+        "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+        "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+        "input_variant": "full"
+      },
+      "wall_s": 138.86179503495805,
+      "peak_rss_bytes": 10089762816,
+      "prediction_evaluated": false,
+      "navigation_tested": false
+    }
+  },
+  "source_directory": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_command_residual_lower_rate_matched_fits_v1_attempt_001",
+  "seed": 2026091001,
+  "latent_dim": 32,
+  "feature_arms": [
+    "jepa",
+    "supervised_rollout",
+    "untrained"
+  ],
+  "untrained_reference_is_common_initialization": true,
+  "training_contexts": 4694,
+  "scheduled_draws": 7200,
+  "schedule_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_short_pulse_training_schedule_v1_attempt_001/schedule.json",
+  "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+  "reference_sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2",
+  "evaluation_roots": [
+    "go2_view_replan_repeatability_01_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_view_replan_repeatability_02_supervised_rollout_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_view_replan_repeatability_03_supervised_rollout_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_view_replan_repeatability_04_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_earlier_visual_recovery_01_jepa_noise_2mm_native_layout01_4800_v1_attempt_001",
+    "go2_earlier_visual_recovery_02_jepa_noise_2mm_native_layout01_4800_v1_attempt_001"
+  ],
+  "ridge_penalty": 1.0,
+  "fit_features": "256 frozen activations immediately before the final rollout linear layer",
+  "fit_targets": "XY residual and sin/cos of yaw residual relative to the frozen command-history fit",
+  "weights": "original context draw count divided by its number of valid motion horizons",
+  "feature_standardization": "weighted training means and standard deviations; scale below 1e-8 replaced by 1",
+  "fit_objective": "weighted squared residual error plus fixed ridge penalty; unpenalized intercept",
+  "change": "jepa label now visual-only target JEPA; supervised/untrained controls reproduced unchanged",
+  "inference_standardization": "explicit float64 standardization and linear fit, cast motion outputs to model float32",
+  "contact_head_unchanged": true,
+  "contact_scores_not_evaluated_or_used_for_this_motion_comparison": true,
+  "training_only_labels": true,
+  "new_navigation_labels_in_training": false,
+  "hyperparameter_search": false,
+  "original_heads_and_reference_remain_comparators": true,
+  "primary": "same 3726 executed windows in six exposed recordings; per-run/action prefix, increment, whole XY and yaw error",
+  "native_navigation_started": false,
+  "independent_generalization_claim": false,
+  "source_sha256": {
+    "scripts/fit_go2_frozen_motion_readout_development.py": "aa2c8f3a438455f60b46d1a96da3fef0ade33ba0ed537b5615f6bb2277faac16",
+    "lewm/frozen_motion_readout_development.py": "892e72bf99c2a1b1376864cd2e179024322bca89d2ee9cb467c42824431b248b",
+    "lewm/command_history_residual_learning_development.py": "85ae61c8a5e1148a76efbe0b2a33e65872884f8e27237d3cd962fe8fb2e3e219",
+    "scripts/pre_switch_training_data_development.py": "4d0c0e0ba7758e0b26ad5769232fe05a59189a49d18881dc3b6d9d6099b6b66c",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_visual_target_jepa_development.py": "895f04603b925f952a14ad45cd9d98063e0e254b8491cc18713ff0476c570a69"
+  },
+  "visual_target_fit_sha256": "9174970b55ef43903f6da2503b062a34bd70738537f81199e13957794976b1e6",
+  "common_training_rows_weights_ridge_penalty_and_hidden_feature_protocol": true
+}

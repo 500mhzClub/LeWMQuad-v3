@@ -1,0 +1,16 @@
+{
+  "schema": "lewm_counterfactual_paper_package_v1",
+  "source_commit": "89734b9",
+  "files": {
+    "number_audit.json": "49b6d7c8285ba2e8fc0eb534aca4da00db727d49dbc1b7d24fe17ce0fa3b52fe",
+    "seed_effects.csv": "42780f95d3c4a8d7c24a82abad87fbaf451137aa4a7b47ccb58a5dac4b809237",
+    "figure1_design.svg": "b51a0e5b6be0ef3d25282ee696189e7638499d7293f7c2f6b71f0c9e24ed4e86",
+    "figure2_direct_fidelity.svg": "dcf87043d5b18055b5e3609e21ede512f184a0982dd6cdfaf3c41577c11406a4",
+    "figure3_action_specificity.svg": "e378ebbff77ea3c753833cc94eb7a2584bcac859a75c8d5e587b967e58fd5e48",
+    "figure4_seed_effects.svg": "d6e9e01ceca10007c11cf53d063bb555feb80fa687a0c8130b55ccc2d171a2a0",
+    "figure5_family_heterogeneity.svg": "b7fe4b0b59ef1e722d5c0637297d2b7daa7948e637e157654aca3206f337982e",
+    "figure6_horizon_tradeoff.svg": "cf39ad46fbd9003cfd1c193da9c0f0008ac4869123b875e72543856a4f34a120",
+    "tables.json": "f9fedaab376df3228ce1f80c81a0eae99180ad427890df37b2b5856c21154323",
+    "package_manifest.json": "dd670dc054663cb2d1e892ff0f1be45406c062b6c56456e5583942d890c1f6bf"
+  }
+}

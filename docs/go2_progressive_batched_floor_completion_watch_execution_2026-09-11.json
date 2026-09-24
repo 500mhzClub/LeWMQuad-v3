@@ -1,0 +1,44 @@
+{
+  "status": "PROGRESSIVE_COMPLETION_WATCH_STARTED",
+  "owner": {
+    "pid": 2860273,
+    "created": 1789135792.48,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "-"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "tool_session": 30020,
+  "watched_owner": {
+    "pid": 2856701,
+    "created": 1789134105.22,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_progressive_batched_floor_late_history_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "watched_execution_sha256": "c7b73ff683ba557843418450deafae7e841f099c3095b3135ea824a0065d9da4",
+  "checker_source": "scripts/verify_go2_progressive_batched_floor_controller_completion_v1.py",
+  "checker_source_sha256": "7808bb91b6aec6deb5e8a243070dca35cf998293efdb5491b4c1e3effb677da2",
+  "checker_preparation_sha256": "1ea8c1d5b757dbee755c44dad899bca3bf93ca9e1f89092daabfc60fd3420109",
+  "action": "Wait for exact replay owner to end; reject failure; hash actual result; invoke prepared completion checker once.",
+  "poll_seconds": 15,
+  "retry": false,
+  "replay_restarted": false,
+  "completion_exists": false,
+  "provisional_successor_launcher": "scripts/replay_go2_tiled_density_progressive_floor_late_history_v1.py",
+  "successor_actual_predecessor_hashes_bound": false,
+  "successor_source_preflight_completed": false,
+  "successor_admission_tests": {
+    "passed": 22,
+    "wall_s": 2.6,
+    "tool_session": 72096,
+    "exit_code": 0
+  },
+  "native_execution": false,
+  "goal_achieved": false
+}

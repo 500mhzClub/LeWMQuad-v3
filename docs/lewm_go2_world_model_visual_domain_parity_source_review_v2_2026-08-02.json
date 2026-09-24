@@ -1,0 +1,506 @@
+{
+  "accepted_limitations": [
+    "This is source-only review, not execution or scientific authority. The old V1 authority binds pre-correction source and is superseded; a new immutable authority must bind this review and the unchanged exact plan.",
+    "The experiment is a deterministic implementation-equivalence check on 8 ordinary TRAIN scenes and 32 fixed poses using shared historical rendering machinery. It is neither statistically independent nor evidence of held-out, real-robot, or navigation generalization.",
+    "Parity performs 64 RGB calls, zero physics or depth calls, and no model inference, training, or planning; it cannot establish world-model usefulness.",
+    "Third-party package contents are not recursively hash-closed, and live GPU availability remains an external preflight condition. Exact decoded-pixel equality is the terminal gate.",
+    "The currently absent root is the one-shot consumption boundary. Any later successful output remains COMPLETE_PENDING_TERMINAL_REVIEW until the result, terminal, and independent terminal review pass deep joint revalidation."
+  ],
+  "authority_granted_by_this_document": false,
+  "remaining_findings": [],
+  "review_method": [
+    "Regenerated committed_source_bindings_v1 at frozen commit 2f45a09012bb0a179c37ad45f5080e5fc3404723 and required every live no-symlink regular file to equal its Git blob: 59 sorted unique roles, 56 unique paths, and only the documented collector and supervisor alias groups. Inspected the complete correction commit and confirmed every _rehash_chain call explicitly uses fresh-root state before atomic consumption and existing-root state after it.",
+    "Independently re-derived the unchanged 8-family, 8-scene, 32-pose TRAIN source panel, rebuilt the unchanged exact plan in memory from its bound evidence and runtime contract, required canonical equality with both official documents, and passed validate_plan_v1(require_fresh_output=True).",
+    "Ran the focused four-file parity suite and exact preregistered 17-file integration suite under the bound Genesis-render Python with plugin autoload and bytecode writes disabled. Ran git diff --check over the exact 56-path closure and correction commit.",
+    "Verified the immutable pre-consumption failure record, old-authority supersession, absent nonsymlink attempt root, and custody scan across all 59 source, 152 source-panel, and 185 plan binding occurrences. No simulator, renderer, worker, authority builder, training job, root creation, or protected-material access occurred during review."
+  ],
+  "reviewed_at": "2026-08-02T16:24:37+01:00",
+  "reviewed_source_bindings": [
+    {
+      "binding": {
+        "byte_count": 362,
+        "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py"
+      },
+      "name": "benchmarks_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 27489,
+        "file_sha256": "c91941f6bdcc201f9f878f292e395dff38472ee0c2d55193701272e87a8c8fb2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_runbook_2026-08-02.md"
+      },
+      "name": "bounded_branch_runbook"
+    },
+    {
+      "binding": {
+        "byte_count": 114253,
+        "file_sha256": "46a558ecf4eb68ebf1af68f3aab2b366d6bd818ca9bcff772be36e4648cbe8fb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/analyze_go2_world_model_counterfactual_calibration_v1.py"
+      },
+      "name": "calibration_analyzer"
+    },
+    {
+      "binding": {
+        "byte_count": 13992,
+        "file_sha256": "2526bf940dc27bcf8270b310320f7ed6228bb95d02b0851b4e88250c85d19998",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/camera_safety.py"
+      },
+      "name": "camera_safety"
+    },
+    {
+      "binding": {
+        "byte_count": 143612,
+        "file_sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "checker"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "collector"
+    },
+    {
+      "binding": {
+        "byte_count": 7122,
+        "file_sha256": "4e088a9682ff3c589555a7f9b92d5c61c88ee6f7196b64540b0e1bddb0f0f5ba",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/base.py"
+      },
+      "name": "collector_base"
+    },
+    {
+      "binding": {
+        "byte_count": 4728,
+        "file_sha256": "98fc61a6e4d7fc9c7d13109a7c9d7072992b883c56911931250f799ea0e0aeb3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/frontier.py"
+      },
+      "name": "collector_frontier"
+    },
+    {
+      "binding": {
+        "byte_count": 3211,
+        "file_sha256": "01f2db82c4f47f58d9d17fe41677924c3947cdad5e23ce0098f5745d4c4c9d3b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/ou_noise.py"
+      },
+      "name": "collector_ou_noise"
+    },
+    {
+      "binding": {
+        "byte_count": 1530,
+        "file_sha256": "595ea3799731076a7d8381fbf377c556175b07480f89052416685161eb6d8966",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/primitive_curriculum.py"
+      },
+      "name": "collector_primitive_curriculum"
+    },
+    {
+      "binding": {
+        "byte_count": 7256,
+        "file_sha256": "cf7b50f7394e39986cf9339b253d1255bbb15109fb212e33c3e6d61fe3fa2bd5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/recovery.py"
+      },
+      "name": "collector_recovery"
+    },
+    {
+      "binding": {
+        "byte_count": 51313,
+        "file_sha256": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/route_teacher.py"
+      },
+      "name": "collector_route_teacher"
+    },
+    {
+      "binding": {
+        "byte_count": 1932,
+        "file_sha256": "3449122454b946f81b0cc936877c33993d173dedb729b169c6198dfb02064d81",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/collectors/__init__.py"
+      },
+      "name": "collectors_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 95214,
+        "file_sha256": "1d860bb0a5ec610276d5b7d693936c0d08b28db1bb0f082e3a5ab8f4c8ffddcf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "contract"
+    },
+    {
+      "binding": {
+        "byte_count": 10300,
+        "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py"
+      },
+      "name": "counterfactual_benchmark_support"
+    },
+    {
+      "binding": {
+        "byte_count": 73,
+        "file_sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py"
+      },
+      "name": "datasets_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 73334,
+        "file_sha256": "4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "external_supervisor"
+    },
+    {
+      "binding": {
+        "byte_count": 1834,
+        "file_sha256": "04010c9e5be2d20383eab86398c47b12f94d1a2f96fa105a4ae1e631e21255f2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/batch_renderer.py"
+      },
+      "name": "genesis_batch_renderer"
+    },
+    {
+      "binding": {
+        "byte_count": 24807,
+        "file_sha256": "d7e8b021c4411e0e5f83b9ed61dbee1d70493d23d8c3e87123bd84f24a26db6d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/lewm_contract.py"
+      },
+      "name": "genesis_contract"
+    },
+    {
+      "binding": {
+        "byte_count": 3262,
+        "file_sha256": "07a2cdb8c1087ca0517c3a581941de6b772ba75b6d3e3f22bd8aec8a5320b874",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/__init__.py"
+      },
+      "name": "genesis_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 1564,
+        "file_sha256": "22c6653ed1751fcb82653a71a32d37faea2b0c61b9bbc215c70c0593f2a85f26",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/parity_checks.py"
+      },
+      "name": "genesis_parity_checks"
+    },
+    {
+      "binding": {
+        "byte_count": 13960,
+        "file_sha256": "dc3414132f5d226bbde036cf62fddcdd7d392c0374a4586327fba7a530ce5f54",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/render_replay.py"
+      },
+      "name": "genesis_render_replay"
+    },
+    {
+      "binding": {
+        "byte_count": 2167,
+        "file_sha256": "66df7b2d6836f354ce40e7cf775a53b0d8747a90fbe305df9da7a84fb18fa9ce",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/go2_adapter.py"
+      },
+      "name": "go2_adapter"
+    },
+    {
+      "binding": {
+        "byte_count": 9590,
+        "file_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py"
+      },
+      "name": "historical_textured_v03_renderer"
+    },
+    {
+      "binding": {
+        "byte_count": 313,
+        "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py"
+      },
+      "name": "lewm_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 23820,
+        "file_sha256": "ff3cde2aadb465860752f785e9fa7468b5aadd8e0be868f08b8c367763070baa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_authority_v1.py"
+      },
+      "name": "parity_authority_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 63538,
+        "file_sha256": "8e4d214bcbc0501fd9a68d3b4e30bdcd9962e83f8342929e7907dc7afa5aa962",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_v1.py"
+      },
+      "name": "parity_evaluator"
+    },
+    {
+      "binding": {
+        "byte_count": 40781,
+        "file_sha256": "a590c110dc3bf69729973a2c258cd2ed673765cd4477376b46eda02993a37733",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_bounded_branch_lineage_v1.py"
+      },
+      "name": "parity_evaluator_lineage_test"
+    },
+    {
+      "binding": {
+        "byte_count": 35532,
+        "file_sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py"
+      },
+      "name": "parity_graphics_supervisor_helpers"
+    },
+    {
+      "binding": {
+        "byte_count": 53203,
+        "file_sha256": "3fc3993aceb8cd332073b4032bc07dda88d1f537f709bedbee50f627a21d80cd",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_plan_v1.py"
+      },
+      "name": "parity_plan_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 16294,
+        "file_sha256": "fe4dda1f0b23cdb8618ad68d8a0dee70ed2c2c47d8828b93e1c7726fa2ab967e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_visual_domain_parity_plan_v1.py"
+      },
+      "name": "parity_plan_test"
+    },
+    {
+      "binding": {
+        "byte_count": 50975,
+        "file_sha256": "ac0df82c378be1b06a9a88865c9caa01248664f445736fad2914972f6813c4f1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "parity_runtime_boundary_test"
+    },
+    {
+      "binding": {
+        "byte_count": 18990,
+        "file_sha256": "f4deffe647c2270a153d715f8438943ba69d8f8df6b8765f658b569675c66e0e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_counterfactual_calibration_plan_v1.py"
+      },
+      "name": "parity_runtime_contract_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 15854,
+        "file_sha256": "fee36bb6edcb71c3f88b19fc4af5f7b785706e54464e85d8db4c1e8dd4f4400c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_bounded_branch_scene_panel_v1.py"
+      },
+      "name": "parity_scene_inventory"
+    },
+    {
+      "binding": {
+        "byte_count": 73334,
+        "file_sha256": "4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py"
+      },
+      "name": "parity_supervisor"
+    },
+    {
+      "binding": {
+        "byte_count": 153820,
+        "file_sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "pilot_consumer"
+    },
+    {
+      "binding": {
+        "byte_count": 86066,
+        "file_sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/rollout.py"
+      },
+      "name": "rollout"
+    },
+    {
+      "binding": {
+        "byte_count": 15877,
+        "file_sha256": "1eec27ee97de1e853890e34f6c008ff748ce6034f9467d20fea8d212c78f3158",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_builder.py"
+      },
+      "name": "scene_builder"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "scene_generator_materializer"
+    },
+    {
+      "binding": {
+        "byte_count": 17787,
+        "file_sha256": "fcfc065716172320561803f274754b1ba3046c922f83b37abf16d796fe9417ea",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/scene_loader.py"
+      },
+      "name": "scene_loader"
+    },
+    {
+      "binding": {
+        "byte_count": 9765,
+        "file_sha256": "92f8004d79be9b6cadc77f51e0d586443aa09e4ce376d7c14e5d355a1d4ec846",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_counterfactual_textured_v03.py"
+      },
+      "name": "shared_textured_v03_helper_test"
+    },
+    {
+      "binding": {
+        "byte_count": 138420,
+        "file_sha256": "7f6df6118c54b2f6ab3339e30b2e33fd169c6150dbe39b0ccd607bf53b4e1138",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py"
+      },
+      "name": "smoke_rgb_writer"
+    },
+    {
+      "binding": {
+        "byte_count": 6996,
+        "file_sha256": "a8a9b958ffbf927f330ef9f8f950adabe884f9137668780cd9f8015184bda1fc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/textures.py"
+      },
+      "name": "textures"
+    },
+    {
+      "binding": {
+        "byte_count": 6031,
+        "file_sha256": "aa3b63399a7638f69cadce772721cf420d28d7965f28ce1a16886728afeb42a5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_genesis/lewm_genesis/vision_quality.py"
+      },
+      "name": "vision_quality"
+    },
+    {
+      "binding": {
+        "byte_count": 5337,
+        "file_sha256": "776a8638da81939101f7ce0c7d856fada9c08b7ce2b5ecc104f708425e6067d3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/corpus.py"
+      },
+      "name": "world_corpus"
+    },
+    {
+      "binding": {
+        "byte_count": 60,
+        "file_sha256": "a658289b9d01aefb220d23f89c2d23d78d86562382779690f832da41d1f4e70c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/__init__.py"
+      },
+      "name": "world_exporters_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 62884,
+        "file_sha256": "87515b932773aa518d18f9777af7c1567ae76368ce31e5519da7019f72d30189",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/families.py"
+      },
+      "name": "world_families"
+    },
+    {
+      "binding": {
+        "byte_count": 8011,
+        "file_sha256": "daf8a41ba06bd250c618775184462b641263ec485ecb4674fc96a31f4348fc57",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_gazebo_sdf.py"
+      },
+      "name": "world_gazebo_exporter"
+    },
+    {
+      "binding": {
+        "byte_count": 2202,
+        "file_sha256": "9ad0e97d584b50a1c28a26da8b0a59344081b5b8bf0e79d6ad227b66c982b313",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/exporters/to_genesis.py"
+      },
+      "name": "world_genesis_exporter"
+    },
+    {
+      "binding": {
+        "byte_count": 26364,
+        "file_sha256": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/derived.py"
+      },
+      "name": "world_labels_derived"
+    },
+    {
+      "binding": {
+        "byte_count": 926,
+        "file_sha256": "23e578d23044873cd7cd5bee8cbef994ba37ce085f3e6b0e6543db2db760f4c8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/__init__.py"
+      },
+      "name": "world_labels_package_init"
+    },
+    {
+      "binding": {
+        "byte_count": 5998,
+        "file_sha256": "1cb83d219f43e862f77aac44f3f98f66578594be662055e070d41cc397ad0185",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/labels/topology.py"
+      },
+      "name": "world_labels_topology"
+    },
+    {
+      "binding": {
+        "byte_count": 12154,
+        "file_sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/manifest.py"
+      },
+      "name": "world_manifest"
+    },
+    {
+      "binding": {
+        "byte_count": 20806,
+        "file_sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/planning_grid.py"
+      },
+      "name": "world_planning_grid"
+    },
+    {
+      "binding": {
+        "byte_count": 12139,
+        "file_sha256": "df600c33020713af2bf623468270a40f9d4dcf5459f3f1526faf1a53875ab190",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/randomization.py"
+      },
+      "name": "world_randomization"
+    },
+    {
+      "binding": {
+        "byte_count": 23227,
+        "file_sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_graph.py"
+      },
+      "name": "world_scene_graph"
+    },
+    {
+      "binding": {
+        "byte_count": 10113,
+        "file_sha256": "9ecf9c7c6d87f2ba2be083883bbd621dcd9372f1ea74bf4545434f0135ad9ad3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/scene_validation.py"
+      },
+      "name": "world_scene_validation"
+    },
+    {
+      "binding": {
+        "byte_count": 12032,
+        "file_sha256": "0536c7694f28a8cdde6391743a160ec4b9f5c08795a67c641a241891d7c0dfcd",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/splits.py"
+      },
+      "name": "world_splits"
+    },
+    {
+      "binding": {
+        "byte_count": 1540,
+        "file_sha256": "9e0b6599316b0d361e99c405cbc27be4e9948206c55aeaa0f5316a90d320002d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm_worlds/lewm_worlds/__init__.py"
+      },
+      "name": "worlds_package_init"
+    }
+  ],
+  "reviewed_source_commit": "2f45a09012bb0a179c37ad45f5080e5fc3404723",
+  "reviewer": {
+    "identity": "/root/parity_source_review_v2 (independent Codex subagent)",
+    "independence_basis": "New delegated reviewer distinct from the V1 source reviewer and from the author of correction commit 2f45a09012bb0a179c37ad45f5080e5fc3404723; made no source or test changes and independently audited the exact frozen closure, fresh-root lifecycle correction, unchanged official panel, and unchanged exact plan."
+  },
+  "schema": "lewm_go2_world_model_follow_on_independent_source_review_v1",
+  "status": "PASS_SOURCE_ONLY_NOT_AUTHORITY",
+  "test_evidence": [
+    "67 focused parity tests passed in 3.23 seconds; 315 tests in the exact 17-file integration suite passed in 7.70 seconds.",
+    "All 59 reviewed roles equal live files and Git blobs at 2f45a09012bb0a179c37ad45f5080e5fc3404723 (56 unique paths). Corrected supervisor: 73,334 bytes / 4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3. Corrected test: 50,975 bytes / ac0df82c378be1b06a9a88865c9caa01248664f445736fad2914972f6813c4f1.",
+    "Official panel re-derived exactly: 72,547 bytes / ec7e076ff5387537b4b765a56f3eba467a21d8ec1325d8f5f823fe4e76d5e4d8. Official plan rebuilt and fresh-validated exactly: 98,945 bytes / 1e5553cb006eae127fecaecf60502b34392e93ffbc98818be3622c93cb29b5ab. Counts remain 8 scenes, 32 poses, 64 RGB calls, zero depth calls, and zero physics steps.",
+    "Runtime contract remained 3,110 bytes / db623f15a16fdd1ff8e03b41f84df68bada2f8346f57f2eba84e798744d63f27. Failure/supersession record remained 3,930 bytes / 3e82a468222b51212d6f427982abd553295899e9ac63728caa248a0220994656. The exact attempt root remained absent and was not a symlink.",
+    "Protected-path scan and exact-closure git diff checks passed. This reviewer did not open, parse, search, or index sealed or protected benchmark material."
+  ]
+}

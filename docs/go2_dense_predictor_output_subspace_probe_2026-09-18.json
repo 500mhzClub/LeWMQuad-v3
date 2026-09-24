@@ -1,0 +1,66 @@
+{
+  "status": "COMPLETE",
+  "output_width": 384,
+  "latent_width": 1024,
+  "centered_affine_span_rank": 385,
+  "rows": [
+    {
+      "name": "stall_current",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_dense_horizon_untimed_exposed_maze_full_v1_attempt_001/native/rgb_0444.png",
+      "output_subspace_mse_lower_bound": 0.018600745126605034,
+      "image_file_sha256": "e748cb32ac9894f3a8384b7fc958584e5945d01e93206214b070bcd5ce7d3577"
+    },
+    {
+      "name": "hold_700ms",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_dense_stall_turn_branches_v1_attempt_001/hold/rgb_0451.png",
+      "output_subspace_mse_lower_bound": 0.018704621121287346,
+      "image_file_sha256": "2cc8ebb48906fa4ea547355d76476fdc16639aac2da7477aba533e10677d5ac5"
+    },
+    {
+      "name": "left_turn_700ms",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_dense_stall_turn_branches_v1_attempt_001/left_turn/rgb_0451.png",
+      "output_subspace_mse_lower_bound": 0.022694995626807213,
+      "image_file_sha256": "c0a332fb6380ff000d4fc6bde046878b8b9fccde1fe2f34a11be1d8f4cb2e91d"
+    },
+    {
+      "name": "right_turn_700ms",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_dense_stall_turn_branches_v1_attempt_001/right_turn/rgb_0451.png",
+      "output_subspace_mse_lower_bound": 0.018706195056438446,
+      "image_file_sha256": "f91e41138098e3be33bbe0409f485ada587e31d47257680adfcf0ba0e32d1401"
+    },
+    {
+      "name": "training_example_0",
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_001/rgb_0000.png",
+      "output_subspace_mse_lower_bound": 0.009224925190210342,
+      "image_file_sha256": "fdcea14c0f7c5c731814e72ecd4d68a60d95e5190b293fc2b4f0465f46f0e9d1"
+    },
+    {
+      "name": "training_example_2776",
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0047.png",
+      "output_subspace_mse_lower_bound": 0.010303768329322338,
+      "image_file_sha256": "8262b1293165f663a24304f87026f10e8c47bbb72e77d73c8bbd607c887d854c"
+    },
+    {
+      "name": "training_example_5551",
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_143/rgb_0053.png",
+      "output_subspace_mse_lower_bound": 0.009329082444310188,
+      "image_file_sha256": "35d9ecefed06d5300492295aee13756cd79a271733f2d10d691ec88b45c31561"
+    },
+    {
+      "name": "hold_delta_with_existing_output_basis",
+      "mse_lower_bound": 0.005521688144654036,
+      "delta_energy": 0.08273378014564514
+    },
+    {
+      "name": "left_turn_delta_with_existing_output_basis",
+      "mse_lower_bound": 0.034888774156570435,
+      "delta_energy": 0.7556667327880859
+    },
+    {
+      "name": "right_turn_delta_with_existing_output_basis",
+      "mse_lower_bound": 0.032841771841049194,
+      "delta_energy": 0.7759631872177124
+    }
+  ],
+  "interpretation": "Orthogonal projection is a lower bound on errors representable after output layer normalization, allowing arbitrary trunk activations and ignoring nonlinear reachability. Three training images are illustrative, not a population estimate. Delta rows reuse the existing absolute-output basis; a retrained residual head can learn a different basis."
+}

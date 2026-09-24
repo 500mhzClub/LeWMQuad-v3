@@ -1,0 +1,254 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_source_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_QUALIFICATION_SOURCE_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent source-only review of the fresh flat Genesis/CPU V2 qualification as the single HOME-augmented successor to consumed V1.",
+    "qualification_cli_invoked_by_review": false,
+    "genesis_initialization_executed_by_review": false,
+    "gpu_or_graphics_preflight_executed_by_review": false,
+    "qualification_runtime_payload_opened": false,
+    "scientific_plan_or_harness_reviewed": false,
+    "sealed_held_out_or_production_material_opened": false
+  },
+  "source_bindings": {
+    "v2_plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_plan.py",
+      "sha256": "dcc3fc794001ff70b894bc62fb83a6958d2bbefc2b5fed04629338a822e41cc0",
+      "byte_count": 16225
+    },
+    "v2_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_preregistration_2026-08-05.md",
+      "sha256": "ff50441e8eca4e1b05391dfd22137532e42a8c0c6d41626a7332323325350f51",
+      "byte_count": 9087
+    },
+    "v2_qualification_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_exact_plan_2026-08-05.json",
+      "sha256": "df4516631a646b46ee89ca9be7aa55b47bf5927a9440a26c4c4fee19e0147ce0",
+      "byte_count": 353031
+    },
+    "v2_qualification_harness": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2.py",
+      "sha256": "8dc0606af0ef4f0df0dcd04160afbf5aed845031e4e36cfddd8589c2a0141703",
+      "byte_count": 71736
+    },
+    "v2_plan_builder_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_plan.py",
+      "sha256": "837b7b39211d7980af886bd2b9e4ebfa9abe025e769b74c1bd5256c810034ec1",
+      "byte_count": 4320
+    },
+    "v2_qualification_harness_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2.py",
+      "sha256": "eca9ce0214c8c765829c86d99fd3e17f93a1bed0240dd747b4ed6865ad2cf279",
+      "byte_count": 12350
+    },
+    "v1_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_terminal_review_2026-08-05.json",
+      "sha256": "590abd021b33781d7786fc7bdc9f6286173ecd218b53428ae751bad4cd832a9c",
+      "byte_count": 9730
+    },
+    "v1_qualification_exact_plan_comparison": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_exact_plan_2026-08-05.json",
+      "sha256": "397c1932f69bcbf29239fd6b86188f177222f9e350e97775cbe2968e97e868a9",
+      "byte_count": 350749
+    },
+    "v1_qualification_harness_comparison": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1.py",
+      "sha256": "d66ed881de1cb660ae0e05e356a25dcd43e7d3faf487c792d49be389c51140fa",
+      "byte_count": 71494
+    },
+    "v1_independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_source_review_2026-08-05.json",
+      "sha256": "da21af1a2daae879ade39260312a17ded480e94671cd1198d07816028f3a87da",
+      "byte_count": 15684
+    }
+  },
+  "resolved_findings": [
+    {
+      "finding": "The initially frozen V2 harness retained V1's phrase 'nine-key CPU environment' in the _child_environment docstring.",
+      "risk": "The documentation contradicted the exact ten-key V2 contract even though runtime validation and tests were already correct.",
+      "resolution": "The docstring now says 'ten-key'; the harness was re-frozen at SHA-256 8dc0606af0ef4f0df0dcd04160afbf5aed845031e4e36cfddd8589c2a0141703 and the focused suite was rerun.",
+      "closed": true
+    }
+  ],
+  "independent_verification": {
+    "predecessor_scope": {
+      "v1_terminal_review_schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_terminal_review_v1",
+      "v1_terminal_review_status": "PASS_FAIL_CLOSED_PRE_GENESIS_HOME_ENVIRONMENT_ABORT_TERMINAL_REVIEW",
+      "v1_consumed_and_retired": true,
+      "v1_retry_resume_refill_overwrite_repair_or_reuse_authorized": false,
+      "v1_produced_cpu_physics_lane_render_or_model_evidence": false,
+      "v1_recommended_delta": {
+        "HOME": "/home/andrewknowles"
+      },
+      "v1_terminal_review_authorized_v2_execution_by_itself": false
+    },
+    "recursive_plan_delta": {
+      "total_changed_leaf_or_added_paths": 17,
+      "changed_paths_outside_successor_contract": [
+        "attempt_id",
+        "execution_contract.environment.HOME",
+        "output_root"
+      ],
+      "successor_contract_changed_paths": [
+        "successor_contract.all_other_child_environment_keys_unchanged",
+        "successor_contract.child_environment_key_count",
+        "successor_contract.deferred_scientific_attempt_id",
+        "successor_contract.deferred_scientific_attempt_root",
+        "successor_contract.fixed_child_home",
+        "successor_contract.schema",
+        "successor_contract.v1_authority_reservation_runtime_or_payload_reuse_authorized",
+        "successor_contract.v1_plan_builder_binding",
+        "successor_contract.v1_preregistration_binding",
+        "successor_contract.v1_qualification_harness_binding",
+        "successor_contract.v1_qualification_plan_binding",
+        "successor_contract.v1_source_review_binding",
+        "successor_contract.v1_terminal_review_binding",
+        "successor_contract.v2_material_delta"
+      ],
+      "normalizing_attempt_id_output_root_home_and_successor_contract_restores_exact_v1_plan": true,
+      "scenes_states_histories_actions_horizons_render_model_seeds_gates_thresholds_and_access_order_unchanged": true,
+      "scene_count": 64,
+      "state_count": 256,
+      "branch_mechanism": "parallel_lockstep_envs_no_restore"
+    },
+    "exact_environment": {
+      "key_count": 10,
+      "mapping": {
+        "EGL_DEVICE_ID": "1",
+        "GS_BACKEND": "cpu",
+        "GS_PARA_LEVEL": "0",
+        "HOME": "/home/andrewknowles",
+        "MESA_VK_DEVICE_SELECT": "1002:7551!",
+        "PYOPENGL_PLATFORM": "egl",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONHASHSEED": "0",
+        "PYTHONNOUSERSITE": "1",
+        "PYTHONSAFEPATH": "1"
+      },
+      "home_is_fixed_plan_input_not_inherited_ambient_state": true,
+      "only_cpython_lc_ctype_c_utf_8_coercion_accepted_after_exec": true,
+      "other_ambient_environment_keys_accepted_by_worker": false,
+      "physics_backend": "cpu",
+      "policy_device": "cpu",
+      "render_backend": "vulkan_egl_r9700",
+      "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python"
+    },
+    "harness_delta": {
+      "top_level_function_count_v1": 31,
+      "top_level_function_count_v2": 31,
+      "function_name_sets_equal": true,
+      "runtime_changed_functions_after_removing_docstrings": [
+        "_read_and_validate_plan",
+        "_validate_child_environment"
+      ],
+      "changed_functions_only_add_ten_key_and_fixed_home_checks": true,
+      "all_other_29_function_asts_identical": true,
+      "deep_scene_state_render_png_and_mesh_receipt_validation_identical": true,
+      "diagnostic_persistence_and_worker_failure_propagation_identical": true,
+      "watchdog_vram_release_and_process_group_semantics_identical": true,
+      "kernel_and_timing_gate_semantics_identical": true,
+      "result_terminal_and_decision_last_semantics_identical": true,
+      "probe_scene_indices_in_order": [
+        12,
+        0
+      ],
+      "states_per_worker": 4,
+      "lanes_per_state": 9,
+      "branches_per_worker": 36
+    },
+    "source_ast": {
+      "configured_adapter_context_calls": 0,
+      "imported_project_module_attribute_writes": 0,
+      "shared_pilot_backend_or_environment_mutations": 0,
+      "setattr_calls": 0,
+      "delattr_calls": 0,
+      "mock_patch_calls_in_runtime_harness": 0
+    },
+    "custody_and_freshness": {
+      "reviewed_plan_path_strings_reference_protected_material": false,
+      "qualification_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification/attempt_v1",
+      "qualification_attempt_root_absent_and_not_symlink": true,
+      "deferred_scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2/attempt_v1",
+      "deferred_scientific_attempt_root_absent_and_not_symlink": true,
+      "v2_scientific_exact_plan_absent": true,
+      "plan_builder_has_scientific_plan_emission_path": false,
+      "v1_runtime_cache_payload_or_partial_output_reuse_authorized": false,
+      "v2_qualification_payload_scientific_reuse_authorized": false
+    },
+    "retained_runtime_gates": {
+      "all_static_plan_input_parity_and_interpreter_validation_precedes_reservation": true,
+      "historical_static_validation_after_reservation": false,
+      "runtime_and_graphics_contact_only_after_reservation": true,
+      "exact_two_fresh_worker_process_groups": true,
+      "worker_watchdog_seconds": 300.0,
+      "selected_device_vram_ceiling_bytes": 16977405952,
+      "matching_prelaunch_vram_release_barrier_after_every_worker": true,
+      "release_barrier_precedes_failure_or_result_open": true,
+      "leaked_process_group_rejected": true,
+      "kernel_journal_gate_brackets_preflight_and_workers": true,
+      "timing_gate_formula": "64 * max(worker_elapsed_seconds) + 900 <= 7200",
+      "exact_nine_lane_prebranch_equality_and_zero_component_deltas_required": true,
+      "all_48_pngs_rehashed_decoded_and_pixel_checked_per_scene": true,
+      "candidate_lane_offsets_and_action_ids_exactly_zero_through_eight": true,
+      "failure_terminal_preserves_available_json_safe_diagnostics": true,
+      "rich_result_and_terminal_non_authorizing": true,
+      "minimal_exact_pass_decision_written_last": true
+    },
+    "focused_tests": {
+      "interpreter": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "pytest_plugin_autoload_disabled": true,
+      "plan_builder_tests_passed": 5,
+      "qualification_harness_tests_passed": 7,
+      "total_passed": 12,
+      "failed": 0,
+      "wall_seconds": 22.04,
+      "genesis_executed": false
+    }
+  },
+  "execution_eligibility": {
+    "exact_one_shot_working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3",
+    "exact_one_shot_command_argv": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "-B",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2.py",
+      "--plan",
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_exact_plan_2026-08-05.json",
+      "--expected-plan-sha256",
+      "df4516631a646b46ee89ca9be7aa55b47bf5927a9440a26c4c4fee19e0147ce0",
+      "--expected-plan-byte-count",
+      "353031"
+    ],
+    "exact_one_shot_shell_command": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python -B /home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2.py --plan /home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v2_qualification_exact_plan_2026-08-05.json --expected-plan-sha256 df4516631a646b46ee89ca9be7aa55b47bf5927a9440a26c4c4fee19e0147ce0 --expected-plan-byte-count 353031",
+    "exactly_one_fresh_invocation_eligible": true,
+    "retry_resume_refill_overwrite_repair_or_second_invocation_eligible": false
+  },
+  "permission_audit": {
+    "authority_source": "The user's instruction recorded by the V2 preregistration; this review clears only the independent source gate.",
+    "qualification_execution_authority_created_by_this_review": false,
+    "authorizes_exactly_one_fresh_v2_qualification_invocation": true,
+    "authorizes_cpu_physics_graphics_preflight_and_two_preregistered_scene_probes": true,
+    "authorizes_qualification_output_as_scientific_or_training_data": false,
+    "authorizes_scientific_plan_creation_or_execution": false,
+    "authorizes_retry_resume_refill_overwrite_repair_partial_reuse_or_environment_expansion": false,
+    "authorizes_navigation_planning_representation_world_model_or_generalization_claim": false
+  },
+  "unresolved_runtime_evidence": {
+    "v2_qualification_has_not_run": true,
+    "home_augmented_cpu_genesis_initialization_result_unknown": true,
+    "cpu_exact_lane_equality_result_unknown": true,
+    "vulkan_egl_render_and_png_closure_result_unknown": true,
+    "timing_vram_release_and_kernel_gate_results_unknown": true
+  },
+  "decision": {
+    "source_review_passed": true,
+    "all_discovered_findings_closed": true,
+    "exact_home_only_successor_delta_verified": true,
+    "exactly_one_fresh_qualification_source_gate_passed": true,
+    "qualification_execution_eligible_under_preregistered_user_authorization": true,
+    "scientific_plan_release_authorized": false,
+    "scientific_execution_authorized": false,
+    "retry_resume_refill_overwrite_repair_partial_reuse_or_second_invocation_authorized": false
+  }
+}

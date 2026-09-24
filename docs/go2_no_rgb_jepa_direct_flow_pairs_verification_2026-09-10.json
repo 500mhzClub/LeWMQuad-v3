@@ -1,0 +1,26 @@
+{
+  "status": "NO_RGB_JEPA_DIRECT_FLOW_PAIR_PROBE_BINDINGS_AND_ARRAY_ACCOUNTING_VERIFIED",
+  "result_sha256": "4db83292904deee9bd35e10079e6a9dc424c0e8ec78567bf1829fbeb9621977b",
+  "source_count": 1915,
+  "artifact_sha256": {
+    "launch.json": "a746c5f16dfd72da96153e7642675ad636e09f16392ab8703c533b8dc6e3af68",
+    "associations.npz": "129920d5ef123e0509e92839b03f9fe4488cdb068e1de0259aaa3e02231376c0",
+    "probe.json": "cf20c55aab7641ec80949d8761b5a9e0ecd792ea9fe8abd56b245d8c2d02ae23"
+  },
+  "original_input_artifact_count": 5260,
+  "counts": {
+    "primary": {
+      "original_pairs": 4,
+      "direct_flow_pairs": 13
+    },
+    "auxiliary": {
+      "original_pairs": 12,
+      "direct_flow_pairs": 45
+    }
+  },
+  "finite_array_shapes_and_receipt_counts_verified": true,
+  "association_independently_rerun": false,
+  "repeat_identity_is_original_probe_assertion": true,
+  "pose_admitted": false,
+  "native_execution": false
+}

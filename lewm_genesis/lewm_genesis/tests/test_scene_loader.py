@@ -18,6 +18,7 @@ from lewm_genesis.scene_loader import (
     ScenePack,
     camera_mount_from_platform,
     find_scene_dirs,
+    genesis_vertical_fov_deg,
     iter_scene_packs,
     load_platform_manifest,
     load_scene_pack,
@@ -60,6 +61,13 @@ def test_camera_mount_pulled_from_real_manifest():
     assert mount.encoding == "rgb8"
     # Mount is forward of base by ~0.326m per manifest.
     assert mount.xyz_body_m[0] == pytest.approx(0.326)
+
+
+def test_horizontal_manifest_fov_is_converted_for_genesis_vertical_api():
+    manifest = load_platform_manifest(_require_platform_manifest())
+    mount = camera_mount_from_platform(manifest)
+
+    assert genesis_vertical_fov_deg(mount) == pytest.approx(62.8370386364)
 
 
 def test_physics_timing_pulled_from_real_manifest():

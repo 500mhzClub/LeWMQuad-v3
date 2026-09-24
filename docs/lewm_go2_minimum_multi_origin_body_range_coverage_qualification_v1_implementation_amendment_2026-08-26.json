@@ -1,0 +1,52 @@
+{
+  "schema": "minimum_multi_origin_body_range_coverage_implementation_amendment_v1",
+  "experiment_id": "MINIMUM_MULTI_ORIGIN_BODY_RANGE_COVERAGE_QUALIFICATION_V1",
+  "status": "IMPLEMENTATION_DEFECT_FIXED_BEFORE_CONDITION_MATERIALIZATION",
+  "contract_freeze_commit": "b6646b8992c551ec0ecf2bde2dd6fd6af4e9f82f",
+  "contract_sha256": "94baafb6bb51ba2b444213b979e2fba17e3bf137c3201ea8b7c5a07a18811aee",
+  "output_schema_sha256": "7606d41346050fc2b60994b12ce57ddcf81f768fbab9d244b5306a8631c55444",
+  "mount_library_sha256": "47028f5ca82e983995aac6dea989acba1dd049fcffb553bbbee464b788e5d7b8",
+  "fixture_sha256": "79afa918a8070971819ada25f240f6c087946271e135a849d6e827f0418c24df",
+  "failed_attempt": {
+    "archive_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/minimum_multi_origin_body_range_coverage_qualification_v1_failed_b6646b8_layout_p05",
+    "receipt_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/minimum_multi_origin_body_range_coverage_qualification_v1_failed_b6646b8_layout_p05/FAILED_LAYOUT_SELECTION_ATTEMPT.json",
+    "receipt_sha256": "2c3df172f86fe2c3413f23e466dcdf509e9a6fca4eacd40b87e8635c5defb3b8",
+    "receipt_content_digest": "5f31c24167d4a34a7a8da11f54e5e547eb41908613658a66a59bb98877299a77",
+    "receipt_bytes": 2494,
+    "training_layout_states_computed": 128,
+    "training_layout_evidence_rows": 23548,
+    "selected_layout_receipt_published": false,
+    "condition_materialization_started": false,
+    "calibration_started": false,
+    "heldout_evaluation_started": false,
+    "result_published": false
+  },
+  "defect": {
+    "exception": "RuntimeError: training layout aggregate score drift",
+    "field": "transition_support_p05",
+    "former_authority": "worker transition-support convenience array quantized to float32",
+    "correct_authority": "persisted integer supported_witnesses / total_witnesses evaluated in float64",
+    "maximum_absolute_drift": 2.5125650227053598e-08,
+    "all_other_aggregate_fields_regenerated_exactly": true,
+    "selected_layouts_recomputed_after_only_p05_correction": true
+  },
+  "implementation_fix": {
+    "worker_transition_support_dtype": "float64",
+    "selection_p05_source": "integer transition_supported_count / transition_total_count",
+    "numeric_tolerance": 0.0,
+    "regression_fixture": "test_layout_selection_p05_uses_integer_counts_without_float32_drift"
+  },
+  "scientific_contract_unchanged": true,
+  "output_schema_unchanged": true,
+  "mount_library_unchanged": true,
+  "fixture_receipt_unchanged": true,
+  "state_transition_action_identities_changed": false,
+  "contact_labels_changed": false,
+  "protected_links_changed": false,
+  "layout_candidates_or_selection_order_changed": false,
+  "training_steps": 0,
+  "fresh_panel_rows": 0,
+  "jepa_predictor_opens": 0,
+  "g2_opens": 0,
+  "retry_policy": "refresh and commit the source closure, require a clean fresh preflight in an empty canonical output root, and restart label-free layout selection from state zero without reusing the failed ledger"
+}

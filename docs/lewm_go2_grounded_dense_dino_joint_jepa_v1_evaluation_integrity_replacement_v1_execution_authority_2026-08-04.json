@@ -1,0 +1,254 @@
+{
+  "schema": "lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_EXACT_GROUNDED_DENSE_DINO_JOINT_JEPA_V1_EVALUATION_INTEGRITY_REPLACEMENT_V1",
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_preregistration_2026-08-04.md",
+    "sha256": "0c563e2dd6cd7fce4fa8b00958eed28148faf5eb981fe01a6f8dde5576704e74",
+    "byte_count": 8708
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_source_review_2026-08-04.json",
+    "sha256": "c64701b3831beacb8eaeb4e543e1adbe2bc570dda9d78a9932f3a7acb9c1d956",
+    "byte_count": 6494
+  },
+  "source_bindings": {
+    "recovery_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1.py",
+      "sha256": "b51e600952c3faf98d0a241100c5a03e6f5da48e98a422cca03b41e33b2ab903",
+      "byte_count": 37290
+    },
+    "recovery_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1.py",
+      "sha256": "32e4ef9d3ea4596f694779a1e8381e97e4fb868a06c7e22fdc292a558a27f6ac",
+      "byte_count": 12094
+    },
+    "v1_action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "v1_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "a2e920bc02e6e4a8eaabc50649851503b210ab6539c9d9a68581d42e34fd2240",
+      "byte_count": 24233
+    },
+    "v1_benchmark_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1_benchmark.py",
+      "sha256": "6eeb921abb89ddce16fbf5a14502137b884f9fb213f788e90ec242f2c3055bae",
+      "byte_count": 12873
+    },
+    "v1_counterfactual_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "v1_counterfactual_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "v1_dense_predictor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/dense_dinov2_temporal_predictor.py",
+      "sha256": "cc04f167cc5043a1b8ccaed3746c794011d7fc037ef522c04b467b282677d4ea",
+      "byte_count": 10313
+    },
+    "v1_dense_readout_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "de7d7defd5047f84fa8d71ba62c05c441a965018ec6f41c5771384ea11d4295a",
+      "byte_count": 12637
+    },
+    "v1_feature_plan_and_bootstrap": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "v1_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "5f8951f9a2a859c15c2d2c00c394257e2b97fae6073089f44f53e0bfa57acbcf",
+      "byte_count": 19526
+    },
+    "v1_model_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "3e6dfd76c394a93dbe559f0a6e1782d473ca3f5e74944a22cd473ba052846259",
+      "byte_count": 12654
+    },
+    "v1_physical_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "00e23fcdc9252895bfa9489e7d7b6223c6421afae5ba325b18d78ad77933b16f",
+      "byte_count": 70959
+    },
+    "v1_physical_outcome_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_physical_outcome_screen_v1.py",
+      "sha256": "81947b04c23a789ce8d4a8a45005db4f08181784322504b1b140d969b2f5ff32",
+      "byte_count": 7951
+    },
+    "v1_predictor_core": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+      "sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+      "byte_count": 14275
+    },
+    "v1_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "44e72614f44e41d68199a00276494471a5b6ee588a5b4123400fd051de740be3",
+      "byte_count": 96316
+    },
+    "v1_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_grounded_dense_dino_joint_jepa_v1.py",
+      "sha256": "9e79e4720b68cb03255fe9b738232c7be4e6667a44797a1635a3388da270c508",
+      "byte_count": 18213
+    },
+    "v1_task_action_baseline": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_dense_shared_spatial_readout_calibration_v1.py",
+      "sha256": "6c8ed2398b1889c49b0699a236495530c63cfb0d363b0351b419c07efaf778e4",
+      "byte_count": 60963
+    }
+  },
+  "input_bindings": {
+    "calibration_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v3-textured-v03-posthoc-analysis-v1/calibration_receipt.json",
+      "sha256": "58d1291ede7ee03a93d68eb7cec80c9322c47cd0b1d5fd1c41bf8f4b49ad484e",
+      "byte_count": 72475
+    },
+    "collection_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_exact_plan_2026-08-02.json",
+      "sha256": "8fe34054bb9ae709b6a8ecfea5fdae55c742d1b2e22af3c289d27a77f11c66ef",
+      "byte_count": 343973
+    },
+    "collection_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/terminal_supervision.json",
+      "sha256": "f7d2796139645892d22ad6bb99d26caffc2b5c3dcac2a655b1883b299d22bff4",
+      "byte_count": 12949
+    },
+    "physics_receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_receipt_check.json",
+      "sha256": "faeb50293bc684e35b6d725b027983ad0110e739db2d7b1aca1926e89a547dc6",
+      "byte_count": 892
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_result.json",
+      "sha256": "25caf0a5d4c69e99559a663aa4cae96fb23ef191ccf34486804c3f2243553314",
+      "byte_count": 183320
+    },
+    "posthoc_eval_rows": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/eval.jsonl",
+      "sha256": "531debbc431f2f8afc83a491b491b8822134c831b16ca4d283fe1e7f4ba07768",
+      "byte_count": 30411588
+    },
+    "posthoc_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json",
+      "sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+      "byte_count": 11964
+    },
+    "posthoc_rgb_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/rgb_manifest.json",
+      "sha256": "5e03afa7665ffef54a1cab5e37135a18d42761bc844ecefacaa433f75a1b1f7e",
+      "byte_count": 1880307
+    },
+    "posthoc_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json",
+      "sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+      "byte_count": 1250
+    },
+    "posthoc_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json",
+      "sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+      "byte_count": 2844
+    },
+    "posthoc_train_rows": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/train.jsonl",
+      "sha256": "edc6f88bb105c39575477fbfbb0224bf0312cf5ee3e90551f86a9c11c2ebb447",
+      "byte_count": 30432624
+    }
+  },
+  "predecessor_bindings": {
+    "original_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_execution_authority_2026-08-04.json",
+      "sha256": "c5a1627e5b0528507a52ee07e2e8442a32a7c0017161aeb4d080e0d3357c76e4",
+      "byte_count": 10445
+    },
+    "original_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1/attempt_v1/reservation.json",
+      "sha256": "509e2a839e07caf40cf2b21fc7c7991b53c8bc6f257ddb9e09a36dfca2f1c97c",
+      "byte_count": 9088
+    },
+    "original_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1/attempt_v1/terminal.json",
+      "sha256": "481f0f5eb46c11151241b8ce577e41154a3eefae2bc40bfb3671e5a96f45209d",
+      "byte_count": 270
+    },
+    "physical_only_update_800_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1/attempt_v1/checkpoints/physical_only_matched_update_800.pt",
+      "sha256": "58ac1dfe4f083db038839766235c1ddeee83bb48f338082028da4f28662ab7bc",
+      "byte_count": 263193051
+    },
+    "joint_jepa_update_800_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1/attempt_v1/checkpoints/joint_jepa_grounded_update_800.pt",
+      "sha256": "a9d2f4cb585ce2098b08024edd5faba8a8bdc6e88bfe1fa4d5a35822769311bc",
+      "byte_count": 263193051
+    }
+  },
+  "dino": {
+    "repository_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "repository_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "checkpoint_binding": {
+      "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+      "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+      "byte_count": 88283115
+    }
+  },
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.10.0.dev20250926+rocm6.3",
+    "hip": "6.3.42131-fa1d09cbd",
+    "numpy": "2.4.2",
+    "blas_name": "scipy-openblas",
+    "blas_version": "0.3.31.dev",
+    "blas_configuration": "OpenBLAS 0.3.31.dev  USE64BITINT DYNAMIC_ARCH NO_AFFINITY Haswell MAX_THREADS=64",
+    "device_index": 0,
+    "device_name": "AMD Radeon AI PRO R9700"
+  },
+  "permissions": {
+    "predecessor_evidence_access": true,
+    "predecessor_checkpoint_read_once": true,
+    "train_receipt_access": true,
+    "train_rgb_access": false,
+    "eval_receipt_access_after_qualification": true,
+    "eval_context_rgb_access_after_qualification": true,
+    "eval_successor_rgb_access": false,
+    "training_or_optimizer_access": false,
+    "checkpoint_write_or_mutation": false,
+    "data_generation": false,
+    "protected_or_sealed_access": false,
+    "retry_resume_overwrite": false
+  },
+  "config": {
+    "action_count": 9,
+    "bootstrap_draws": 10000,
+    "bootstrap_seed": 2026080407,
+    "checkpoint_policy": "one_byte_read_per_arm_no_optimizer_restore",
+    "checkpoint_update": 800,
+    "context_frames_per_eval_state": 3,
+    "eval_state_count": 128,
+    "learned_arms": [
+      "physical_only_matched",
+      "joint_jepa_grounded"
+    ],
+    "prediction_repeats": 2,
+    "task_action_only": {
+      "expected_eval_regret": 0.17441406250000002,
+      "expected_train_identity_sha256": "8163103162bcad02b5d06542ed6087cfe6f99bd9e9deccb81f66f051a12ebc7d",
+      "features": [
+        "goal_x_body_m",
+        "goal_y_body_m",
+        "constant_one"
+      ],
+      "heads": 9,
+      "ridge_lambda": 0.001,
+      "same_process_exact_refits": 2
+    },
+    "train_state_count": 128,
+    "training_allowed": false
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1/attempt_v1",
+  "reviewed_git_commit": "4adcbdad16baa81c93112e9f0f4a6aa643008fad"
+}

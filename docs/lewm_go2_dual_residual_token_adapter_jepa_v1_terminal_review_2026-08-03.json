@@ -1,0 +1,198 @@
+{
+  "schema": "lewm_go2_dual_residual_token_adapter_jepa_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_BOTH_ATTEMPTED_NO_CAPACITY_ESTABLISHED_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewers": [
+    "dual_source_review",
+    "dual_core_audit"
+  ],
+  "citable_as_scientific_evidence": false,
+  "protected_material_opened": false,
+  "rgb_opened": false,
+  "evaluation_features_opened": false,
+  "evaluation_targets_opened": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_preregistration_2026-08-03.md",
+    "sha256": "c3c9e76c450f842a64f56577b038117e579b0d3c0d0e2e8892bd4590886f6c09",
+    "byte_count": 16756
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_source_review_2026-08-03.json",
+    "sha256": "fd7d4c2aaf91cd9f4a1d0fd34eda135492fbbb154a1f432a3bb14002917bc105",
+    "byte_count": 6935
+  },
+  "execution_authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dual_residual_token_adapter_jepa_v1_execution_authority_2026-08-03.json",
+    "sha256": "6586bee4398ddf320a5d843700e0410b33884947b56b078cf2d4d02799b31df4",
+    "byte_count": 9730
+  },
+  "result_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1/result.json",
+    "sha256": "86502769e319a32b888550f25c4f1401a6fd019e3e793bf5313c799d1494ce41",
+    "byte_count": 18619
+  },
+  "terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1/terminal.json",
+    "sha256": "f5f4459587efa0aa92d48cc695da485b883ac2e190982cb704b6bacf8c4d6368",
+    "byte_count": 993
+  },
+  "checkpoint_bindings": {
+    "residual_joint_vjepa2_1_update_800": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1/residual_joint_vjepa2_1_checkpoint_update_800.pt",
+      "sha256": "1935174b5f722eae92436bb8fe6e439892d3ed3e50157dd7107c25f342f2e7f0",
+      "byte_count": 9298183
+    },
+    "residual_joint_dinov2_update_800": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1/residual_joint_dinov2_checkpoint_update_800.pt",
+      "sha256": "987744f728e68d83151adb835bebc2d3d62fcd46c472d119fd6a8c9e0a0d43fe",
+      "byte_count": 6101209
+    },
+    "residual_joint_dinov2_update_1600": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dual_residual_token_adapter_jepa_v1/attempt_v1/residual_joint_dinov2_checkpoint_update_1600.pt",
+      "sha256": "262191e117ea6c4b313b8fb1c0e6514c768e4a48699c9326c4a9957d7c86b602",
+      "byte_count": 6101456
+    }
+  },
+  "joint_review": {
+    "result_status": "COMPLETE_BOTH_ATTEMPTED_NO_CAPACITY_ESTABLISHED",
+    "both_arms_launched_and_resolved": true,
+    "eligible_arms": [],
+    "training_set_capacity_established": false,
+    "collection_justified": false,
+    "next_route": "STOP_CACHED_TOKEN_ADAPTER_FAMILY_NO_FRESH_DATA_GENERATION",
+    "decision": "PASS_EXACT_PREREGISTERED_NO_CAPACITY_TERMINAL"
+  },
+  "arm_reviews": {
+    "residual_joint_vjepa2_1": {
+      "status": "COMPLETE_UPDATE_800_FUTILITY_STOP",
+      "completed_updates": 800,
+      "trainable_parameter_count": 627456,
+      "ema_parameter_count": 210944,
+      "update_400": {
+        "error_to_persistence_ratio": 1.0792441903113936,
+        "branch_retrieval_accuracy": 0.1605902777777778,
+        "correct_branches_of_1152": 185,
+        "action_intervention_margin": 0.009562304036484837
+      },
+      "update_800": {
+        "error_to_persistence_ratio": 0.928816489064548,
+        "branch_retrieval_accuracy": 0.2873263888888889,
+        "correct_branches_of_1152": 331,
+        "action_intervention_margin": 0.029862810961074307,
+        "mean_online_to_frozen_token_cosine": 0.9920414616514487,
+        "effective_rank_ratio": 1.047189609331171,
+        "maximum_unit_norm_error": 2.384185791015625e-07
+      },
+      "midpoint_gate": {
+        "maximum_error_to_persistence_ratio": 0.8582181769526677,
+        "minimum_branch_retrieval_accuracy": 0.3901909722222222,
+        "ratio_miss": 0.07059831211188028,
+        "retrieval_miss": 0.10286458333333331,
+        "passed": false
+      },
+      "frozen_control_delta_at_terminal": {
+        "error_to_persistence_ratio": 0.012380135159212657,
+        "branch_retrieval_accuracy": 0.006944444444444475,
+        "correct_branch_delta": 8,
+        "action_intervention_margin": 0.0011960644688871203
+      },
+      "interpretation": "NO_MATERIAL_VJEPA_ADAPTER_GAIN"
+    },
+    "residual_joint_dinov2": {
+      "status": "COMPLETE_TRAIN_SET_CAPACITY_NOT_ESTABLISHED",
+      "completed_updates": 1600,
+      "trainable_parameter_count": 428160,
+      "ema_parameter_count": 110336,
+      "update_400": {
+        "error_to_persistence_ratio": 0.9306405418481738,
+        "branch_retrieval_accuracy": 0.22916666666666666,
+        "correct_branches_of_1152": 264,
+        "action_intervention_margin": 0.05665831598970625
+      },
+      "update_800": {
+        "error_to_persistence_ratio": 0.8017922795540899,
+        "branch_retrieval_accuracy": 0.3628472222222222,
+        "correct_branches_of_1152": 418,
+        "action_intervention_margin": 0.09058949558271301,
+        "mean_online_to_frozen_token_cosine": 0.9917805025711459,
+        "effective_rank_ratio": 1.0709209805460513
+      },
+      "update_800_midpoint_gate": {
+        "maximum_error_to_persistence_ratio": 0.8833446296789655,
+        "minimum_branch_retrieval_accuracy": 0.3524305555555556,
+        "ratio_slack": 0.0815523501248756,
+        "retrieval_slack": 0.01041666666666663,
+        "strict_update_400_to_800_progress": true,
+        "passed": true
+      },
+      "update_1600": {
+        "error_to_persistence_ratio": 0.7149017188472702,
+        "branch_retrieval_accuracy": 0.4887152777777778,
+        "correct_branches_of_1152": 563,
+        "action_intervention_margin": 0.11813797346419758,
+        "mean_online_to_frozen_token_cosine": 0.991417992568889,
+        "effective_rank_ratio": 1.084733913980453,
+        "maximum_unit_norm_error": 1.7881393432617188e-07
+      },
+      "final_capacity_gate": {
+        "maximum_error_to_persistence_ratio": 0.8,
+        "minimum_branch_retrieval_accuracy": 0.5,
+        "ratio_passed": true,
+        "retrieval_passed": false,
+        "positive_intervention_margin_passed": true,
+        "retention_passed": true,
+        "retrieval_miss": 0.01128472222222221,
+        "correct_branch_shortfall": 13,
+        "passed": false
+      },
+      "frozen_control_delta_at_terminal": {
+        "error_to_persistence_ratio": -0.25178754051066077,
+        "branch_retrieval_accuracy": 0.2838541666666667,
+        "correct_branch_delta": 327,
+        "action_intervention_margin": 0.0721057417492072
+      },
+      "interpretation": "MATERIAL_TRAIN_PANEL_MECHANISM_GAIN_WITHOUT_CAPACITY_ELIGIBILITY"
+    }
+  },
+  "independent_replay": {
+    "bound_train_caches_only": true,
+    "checkpoint_primary_metrics_replayed_bit_exact": true,
+    "checkpoint_retention_metrics_replayed_bit_exact": true,
+    "each_replay_repeated_exactly": true,
+    "fresh_model_and_optimizer_checkpoint_loads_passed": true,
+    "optimizer_step_counts_match_updates": true,
+    "ema_update_counts_match_updates": true,
+    "all_checkpoint_states_finite": true
+  },
+  "access_review": {
+    "rgb_leaf_open_count": 0,
+    "evaluation_feature_open_count": 0,
+    "evaluation_target_open_count": 0,
+    "metadata_role_disjointness_inspected": true,
+    "protected_material_opened": false
+  },
+  "claim_boundary": {
+    "fresh_scene_generalization_measured": false,
+    "physical_action_ranking_measured": false,
+    "planning_utility_measured": false,
+    "navigation_usefulness_established": false,
+    "backbone_fine_tuning_performed": false,
+    "strongest_positive_statement": "DINOv2 residual token adaptation produced material action-conditional improvement on the fixed matched-branch training panel but missed the registered retrieval gate by 13 of 1152 rows.",
+    "forbidden_inference": "The result does not establish fresh-scene generalization, physical planning value, rollout composability, or navigation capability for DINOv2 or V-JEPA 2.1."
+  },
+  "checks": {
+    "authority_and_all_bound_sources_unchanged": true,
+    "result_and_terminal_bindings_exact": true,
+    "all_checkpoint_bindings_exact": true,
+    "checkpoint_payloads_complete_finite_and_loadable": true,
+    "both_arms_reached_minimum_update_or_registered_terminal": true,
+    "primary_and_retention_metrics_reproduced_exactly": true,
+    "vjepa_update_800_futility_route_exact": true,
+    "dinov2_update_800_continuation_route_exact": true,
+    "dinov2_update_1600_capacity_failure_route_exact": true,
+    "joint_no_capacity_terminal_exact": true,
+    "zero_rgb_evaluation_and_protected_access": true,
+    "claim_and_no_collection_boundaries_exact": true
+  },
+  "findings": []
+}

@@ -1,0 +1,1024 @@
+{
+  "action_catalog": [
+    {
+      "action_id": 0,
+      "name": "arc_left",
+      "requested_block": [
+        [
+          0.2,
+          0.0,
+          0.45
+        ],
+        [
+          0.2,
+          0.0,
+          0.45
+        ],
+        [
+          0.2,
+          0.0,
+          0.45
+        ],
+        [
+          0.2,
+          0.0,
+          0.45
+        ],
+        [
+          0.2,
+          0.0,
+          0.45
+        ]
+      ]
+    },
+    {
+      "action_id": 1,
+      "name": "arc_right",
+      "requested_block": [
+        [
+          0.2,
+          0.0,
+          -0.45
+        ],
+        [
+          0.2,
+          0.0,
+          -0.45
+        ],
+        [
+          0.2,
+          0.0,
+          -0.45
+        ],
+        [
+          0.2,
+          0.0,
+          -0.45
+        ],
+        [
+          0.2,
+          0.0,
+          -0.45
+        ]
+      ]
+    },
+    {
+      "action_id": 2,
+      "name": "backward",
+      "requested_block": [
+        [
+          -0.2,
+          0.0,
+          0.0
+        ],
+        [
+          -0.2,
+          0.0,
+          0.0
+        ],
+        [
+          -0.2,
+          0.0,
+          0.0
+        ],
+        [
+          -0.2,
+          0.0,
+          0.0
+        ],
+        [
+          -0.2,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "action_id": 3,
+      "name": "forward_fast",
+      "requested_block": [
+        [
+          0.3,
+          0.0,
+          0.0
+        ],
+        [
+          0.3,
+          0.0,
+          0.0
+        ],
+        [
+          0.3,
+          0.0,
+          0.0
+        ],
+        [
+          0.3,
+          0.0,
+          0.0
+        ],
+        [
+          0.3,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "action_id": 4,
+      "name": "forward_medium",
+      "requested_block": [
+        [
+          0.25,
+          0.0,
+          0.0
+        ],
+        [
+          0.25,
+          0.0,
+          0.0
+        ],
+        [
+          0.25,
+          0.0,
+          0.0
+        ],
+        [
+          0.25,
+          0.0,
+          0.0
+        ],
+        [
+          0.25,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "action_id": 5,
+      "name": "forward_slow",
+      "requested_block": [
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ],
+        [
+          0.2,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "action_id": 6,
+      "name": "hold",
+      "requested_block": [
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "action_id": 7,
+      "name": "yaw_left",
+      "requested_block": [
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ],
+        [
+          0.0,
+          0.0,
+          0.45
+        ]
+      ]
+    },
+    {
+      "action_id": 8,
+      "name": "yaw_right",
+      "requested_block": [
+        [
+          0.0,
+          0.0,
+          -0.45
+        ],
+        [
+          0.0,
+          0.0,
+          -0.45
+        ],
+        [
+          0.0,
+          0.0,
+          -0.45
+        ],
+        [
+          0.0,
+          0.0,
+          -0.45
+        ],
+        [
+          0.0,
+          0.0,
+          -0.45
+        ]
+      ]
+    }
+  ],
+  "allows_overwrite": false,
+  "allows_refill": false,
+  "attempt_id": "lewm-go2-wm-counterfactual-calibration-v1",
+  "authorizes_retry_or_resume": false,
+  "branch_mechanism": "parallel_lockstep_envs_no_restore",
+  "citable_as_scientific_evidence": false,
+  "execution_contract": {
+    "backend": "vulkan",
+    "environment": {
+      "EGL_DEVICE_ID": "1",
+      "GS_BACKEND": "vulkan",
+      "GS_PARA_LEVEL": "0",
+      "MESA_VK_DEVICE_SELECT": "1002:7551!",
+      "PYOPENGL_PLATFORM": "egl",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONHASHSEED": "0",
+      "PYTHONNOUSERSITE": "1",
+      "PYTHONSAFEPATH": "1"
+    },
+    "fall_z_threshold_m": 0.15,
+    "graphics_preflight": {
+      "egl_device_index": 1,
+      "egl_renderer_name_contains": "AMD Radeon AI PRO R9700",
+      "eglinfo_expected_exit_code": 2,
+      "vulkan_device_id": "0x7551",
+      "vulkan_device_index": 0,
+      "vulkan_device_name": "AMD Radeon AI PRO R9700",
+      "vulkan_vendor_id": "0x1002"
+    },
+    "policy_device": "cpu",
+    "policy_steps_per_command_tick": 5,
+    "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+    "seed": 20260802,
+    "tip_threshold_rad": 1.0471975511965976
+  },
+  "expected_counts": {
+    "actions": 9,
+    "candidate_branches": 144,
+    "context_frames": 48,
+    "roles": {
+      "calibration": 16
+    },
+    "scenes": 8,
+    "sentinel_branches": 16,
+    "states": 16,
+    "target_frames": 160,
+    "total_branches": 160
+  },
+  "history_blocks": 2,
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1",
+  "purpose": "sizing_calibration_only",
+  "render_contract": {
+    "depth_validation": "transient_not_persisted",
+    "native_resolution": [
+      640,
+      480
+    ],
+    "physical_scene_rendering": false,
+    "replay_env_mode": "single_non_batched_sequential",
+    "replay_pose_source": "captured_physical_base_pose",
+    "rgb_format": "png",
+    "stored_resolution": [
+      224,
+      224
+    ]
+  },
+  "runtime_bindings": {
+    "eglinfo_executable": {
+      "byte_count": 235912,
+      "file_sha256": "5c8559c668261af76c5642c99926f74a73fc73077c463a371995379a2482d470",
+      "path": "/usr/bin/eglinfo.x86_64-linux-gnu"
+    },
+    "go2_urdf": {
+      "byte_count": 24170,
+      "file_sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages/genesis/assets/urdf/go2/urdf/go2.urdf"
+    },
+    "platform_manifest": {
+      "byte_count": 4613,
+      "file_sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_platform_manifest.yaml"
+    },
+    "policy_checkpoint": {
+      "byte_count": 4547691,
+      "file_sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/model_500.pt"
+    },
+    "policy_config": {
+      "byte_count": 2409,
+      "file_sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/upstream_genesis/locomotion/logs/lewm-go2-contract-20260516T163413Z/cfgs.pkl"
+    },
+    "primitive_registry": {
+      "byte_count": 2454,
+      "file_sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_primitive_registry.yaml"
+    },
+    "python_environment_config": {
+      "byte_count": 219,
+      "file_sha256": "41c6a8f52f3404bd3b7fcd805519c1976e2f4194ef9aa8eccf2f0919383386a9",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/pyvenv.cfg"
+    },
+    "python_executable_target": {
+      "byte_count": 8020928,
+      "file_sha256": "1643dacd9feaedc58f3cc581e4d22577dfe25c09b10282936186ccf0f2e61118",
+      "path": "/usr/bin/python3.12"
+    },
+    "vulkaninfo_executable": {
+      "byte_count": 649712,
+      "file_sha256": "f850851cd176c646851f42287902d5ee737849f275c1a64cb319b4985bdfbb4c",
+      "path": "/usr/bin/vulkaninfo"
+    }
+  },
+  "schema": "lewm_go2_world_model_counterfactual_pilot_plan_v1",
+  "states": [
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "large_enclosed_maze",
+      "group_index": 0,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 106079,
+        "file_sha256": "a9dc271aaa4cda98393ae0c0261a91b5df0a285383e22b25cd40c46e4c26a57f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/genesis_scene.json"
+      },
+      "scene_id": "large_enclosed_maze_0294e4b379e1",
+      "scene_manifest_binding": {
+        "byte_count": 99404,
+        "file_sha256": "55d4994dda6796f420d2b10903fa7453e634b64949525b87c7ae6c35a70dbb1e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 0,
+      "state_id": "calibration-large-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        -4.002,
+        -4.002
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "large_enclosed_maze",
+      "group_index": 1,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 106079,
+        "file_sha256": "a9dc271aaa4cda98393ae0c0261a91b5df0a285383e22b25cd40c46e4c26a57f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/genesis_scene.json"
+      },
+      "scene_id": "large_enclosed_maze_0294e4b379e1",
+      "scene_manifest_binding": {
+        "byte_count": 99404,
+        "file_sha256": "55d4994dda6796f420d2b10903fa7453e634b64949525b87c7ae6c35a70dbb1e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/large_enclosed_maze/large_enclosed_maze_0294e4b379e1/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 1,
+      "state_id": "calibration-large-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        -4.002,
+        -4.002
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "local_composite_motifs",
+      "group_index": 2,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 12650,
+        "file_sha256": "e3674ab7e5a0e222fb453c9f58b25256721507e78288f2176704055552583858",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/genesis_scene.json"
+      },
+      "scene_id": "local_composite_motifs_0302989c334d",
+      "scene_manifest_binding": {
+        "byte_count": 12503,
+        "file_sha256": "7c5228a13ad101eb8e939f88a84ef4404968bc1db2984c0b3070989a5c122765",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 2,
+      "state_id": "calibration-local-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        5.128,
+        3.077
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "local_composite_motifs",
+      "group_index": 3,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 12650,
+        "file_sha256": "e3674ab7e5a0e222fb453c9f58b25256721507e78288f2176704055552583858",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/genesis_scene.json"
+      },
+      "scene_id": "local_composite_motifs_0302989c334d",
+      "scene_manifest_binding": {
+        "byte_count": 12503,
+        "file_sha256": "7c5228a13ad101eb8e939f88a84ef4404968bc1db2984c0b3070989a5c122765",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/local_composite_motifs/local_composite_motifs_0302989c334d/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 3,
+      "state_id": "calibration-local-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        5.128,
+        3.077
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "loop_alias_stress",
+      "group_index": 4,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 21580,
+        "file_sha256": "2c0fd34e0a0d45cd7c96e7ffc87d0828ac37a9b238207c16e24fdefb6cdc253d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/genesis_scene.json"
+      },
+      "scene_id": "loop_alias_stress_02bc8ab4058a",
+      "scene_manifest_binding": {
+        "byte_count": 20324,
+        "file_sha256": "91aa96125ddd0f76d36446bc1176fc7a1e2b5de1d4386e5cd3459b619d0104e6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 4,
+      "state_id": "calibration-loop-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        -2.443,
+        -1.466
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "loop_alias_stress",
+      "group_index": 5,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 21580,
+        "file_sha256": "2c0fd34e0a0d45cd7c96e7ffc87d0828ac37a9b238207c16e24fdefb6cdc253d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/genesis_scene.json"
+      },
+      "scene_id": "loop_alias_stress_02bc8ab4058a",
+      "scene_manifest_binding": {
+        "byte_count": 20324,
+        "file_sha256": "91aa96125ddd0f76d36446bc1176fc7a1e2b5de1d4386e5cd3459b619d0104e6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/loop_alias_stress/loop_alias_stress_02bc8ab4058a/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 5,
+      "state_id": "calibration-loop-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        -2.443,
+        -1.466
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "medium_enclosed_maze",
+      "group_index": 6,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 49827,
+        "file_sha256": "966b8f6960192a56536544d38396ce2d7b1247204ba3258c7751a2fc2f1680fe",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/genesis_scene.json"
+      },
+      "scene_id": "medium_enclosed_maze_0011a1affc54",
+      "scene_manifest_binding": {
+        "byte_count": 46754,
+        "file_sha256": "f34f219f58baeaf4d8575b9865066af2937e854cd3c35fb1bff66b4a3d0fab0d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 6,
+      "state_id": "calibration-medium-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        2.035,
+        2.035
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "medium_enclosed_maze",
+      "group_index": 7,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 49827,
+        "file_sha256": "966b8f6960192a56536544d38396ce2d7b1247204ba3258c7751a2fc2f1680fe",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/genesis_scene.json"
+      },
+      "scene_id": "medium_enclosed_maze_0011a1affc54",
+      "scene_manifest_binding": {
+        "byte_count": 46754,
+        "file_sha256": "f34f219f58baeaf4d8575b9865066af2937e854cd3c35fb1bff66b4a3d0fab0d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/medium_enclosed_maze/medium_enclosed_maze_0011a1affc54/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 7,
+      "state_id": "calibration-medium-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        2.035,
+        2.035
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "open_obstacle_field",
+      "group_index": 8,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 8055,
+        "file_sha256": "0781016339a526c9f9ff0a54bd077acfd4b46c2c392b31604cff0897e776f7b0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/genesis_scene.json"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 8,
+      "state_id": "calibration-open-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        4.4,
+        -4.4
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "open_obstacle_field",
+      "group_index": 9,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 8055,
+        "file_sha256": "0781016339a526c9f9ff0a54bd077acfd4b46c2c392b31604cff0897e776f7b0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/genesis_scene.json"
+      },
+      "scene_id": "open_obstacle_field_03fdc12540a1",
+      "scene_manifest_binding": {
+        "byte_count": 7859,
+        "file_sha256": "fa3eca4ab263b54d2daf2cd33de5fc920bda3fa5984a2fec032f0c2d380ccf20",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/open_obstacle_field/open_obstacle_field_03fdc12540a1/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 0,
+      "state_id": "calibration-open-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        4.4,
+        -4.4
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "rough_local_dynamics",
+      "group_index": 10,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 7342,
+        "file_sha256": "8b2e5b17bd7c3a18cf6af57af11124cca4c54bf09abb80f36dd3c4fb45d0d29a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/genesis_scene.json"
+      },
+      "scene_id": "rough_local_dynamics_088e9f856dda",
+      "scene_manifest_binding": {
+        "byte_count": 7151,
+        "file_sha256": "991b1f85c51855746016c7aa607798cf9567748284e8809eae647c725234ecbb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 1,
+      "state_id": "calibration-rough-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        4.4,
+        -4.4
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "rough_local_dynamics",
+      "group_index": 11,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 7342,
+        "file_sha256": "8b2e5b17bd7c3a18cf6af57af11124cca4c54bf09abb80f36dd3c4fb45d0d29a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/genesis_scene.json"
+      },
+      "scene_id": "rough_local_dynamics_088e9f856dda",
+      "scene_manifest_binding": {
+        "byte_count": 7151,
+        "file_sha256": "991b1f85c51855746016c7aa607798cf9567748284e8809eae647c725234ecbb",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/rough_local_dynamics/rough_local_dynamics_088e9f856dda/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 2,
+      "state_id": "calibration-rough-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        4.4,
+        -4.4
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "small_enclosed_maze",
+      "group_index": 12,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 51080,
+        "file_sha256": "49ce6fa041ac15bb989057280dbe853b7b14caa708b8138184c008aabd84ba8b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/genesis_scene.json"
+      },
+      "scene_id": "small_enclosed_maze_02deac455458",
+      "scene_manifest_binding": {
+        "byte_count": 48006,
+        "file_sha256": "bee55b9e62fc663c96466c57bffe48698aa6fcf26b0c82b0db261a3cf1de87cf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 3,
+      "state_id": "calibration-small-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        -1.6,
+        -1.6
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "small_enclosed_maze",
+      "group_index": 13,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 51080,
+        "file_sha256": "49ce6fa041ac15bb989057280dbe853b7b14caa708b8138184c008aabd84ba8b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/genesis_scene.json"
+      },
+      "scene_id": "small_enclosed_maze_02deac455458",
+      "scene_manifest_binding": {
+        "byte_count": 48006,
+        "file_sha256": "bee55b9e62fc663c96466c57bffe48698aa6fcf26b0c82b0db261a3cf1de87cf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/small_enclosed_maze/small_enclosed_maze_02deac455458/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 4,
+      "state_id": "calibration-small-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        -1.6,
+        -1.6
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "visual_sensor_stress",
+      "group_index": 14,
+      "history_action_ids": [
+        6,
+        6
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 38647,
+        "file_sha256": "510d980bd3fe408f7e25f96783b700c10e48a3bed8e4af4d4eb65b319b637012",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/genesis_scene.json"
+      },
+      "scene_id": "visual_sensor_stress_02a4094c2467",
+      "scene_manifest_binding": {
+        "byte_count": 33668,
+        "file_sha256": "db612965dd1aa0b60bbf404c38618bbc4b961e3513fb244c517d5934cb4bbaa6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 5,
+      "state_id": "calibration-visual-0",
+      "state_index_in_scene": 0,
+      "target_xy_m": [
+        -1.6,
+        1.6
+      ]
+    },
+    {
+      "candidate_action_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "family": "visual_sensor_stress",
+      "group_index": 15,
+      "history_action_ids": [
+        5,
+        7
+      ],
+      "role": "calibration",
+      "scene_generation": null,
+      "scene_genesis_binding": {
+        "byte_count": 38647,
+        "file_sha256": "510d980bd3fe408f7e25f96783b700c10e48a3bed8e4af4d4eb65b319b637012",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/genesis_scene.json"
+      },
+      "scene_id": "visual_sensor_stress_02a4094c2467",
+      "scene_manifest_binding": {
+        "byte_count": 33668,
+        "file_sha256": "db612965dd1aa0b60bbf404c38618bbc4b961e3513fb244c517d5934cb4bbaa6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_tex_20260520T211541Z/train/visual_sensor_stress/visual_sensor_stress_02a4094c2467/manifest.json"
+      },
+      "sentinel_duplicate_action_id": 6,
+      "state_id": "calibration-visual-1",
+      "state_index_in_scene": 1,
+      "target_xy_m": [
+        -1.6,
+        1.6
+      ]
+    }
+  ],
+  "states_per_scene": 2
+}

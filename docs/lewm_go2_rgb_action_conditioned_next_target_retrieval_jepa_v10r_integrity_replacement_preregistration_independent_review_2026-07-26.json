@@ -1,0 +1,208 @@
+{
+  "schema": "lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_independent_review_v1",
+  "status": "PASS_SOURCE_ONLY_EXACT_SCIENCE_IDENTITY_ONE_INTEGRITY_TOLERANCE_DELTA_FRESH_ONE_SHOT_CUSTODY",
+  "date": "2026-07-26",
+  "reviewer": "/root/v10r_prereg_review",
+  "reviewed_preregistration": {
+    "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10r_integrity_replacement_preregistration_2026-07-26.json",
+    "commit": "bdf30305645efbcde56c7e52711e2ded7bf728fb",
+    "byte_count": 16613,
+    "file_sha256": "38e3f4d9378d4974f77b4a10b069a704b6722caea31bd97f237f0eac00f2308a",
+    "content_sha256": "4100001b5217091bea6b917057eb33cb9331b77c47dd24468c036d5535e8d97e",
+    "matches_committed_bytes": true,
+    "canonical_content_hash_valid": true
+  },
+  "governing_evidence_bindings": {
+    "v10_preregistration": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_preregistration_2026-07-25.md",
+      "commit": "25b93c92fbfb2816d52f0dfc27603c759e7c3c68",
+      "byte_count": 23010,
+      "file_sha256": "b199d396a9aa9196fa3acc50837f492edef9d4255634e44f399f470a7489785b"
+    },
+    "v10_execution_authorization": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_execution_authorization_2026-07-25.json",
+      "commit": "15fa1673ac29959f6c0073a95d261b88d9fe036c",
+      "byte_count": 25989,
+      "file_sha256": "b66516454ce23a6c777729526ea909be1868c65cc5da64d0bc81278c23e54684",
+      "content_sha256": "0e916ff2a8da52cc8422cfff269ec2bb4a9adc2731b4e67d3f380fe194912cf1"
+    },
+    "v10_source_manifest": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_source_manifest_2026-07-25.json",
+      "commit": "824bac6e7b4c96c055d6341371e46e889ee80f61",
+      "byte_count": 13143,
+      "file_sha256": "84a88a392cf3462be801440df33f2fe40e98297b2b9c7e7b1fe750f3a2e8c8d6",
+      "content_sha256": "cdc8ee69a5296ba038d34c7e065a11de18493a4d61814ed314356a7e1ec4abb9"
+    },
+    "v10_source_review": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_source_review_2026-07-25.json",
+      "commit": "824bac6e7b4c96c055d6341371e46e889ee80f61",
+      "byte_count": 29328,
+      "file_sha256": "14ad3a4cfe18fc4cfdfcfec0b40bdc081d4d99d433eaf9c31536d5f810984663",
+      "content_sha256": "8cd109a58d576fca6a3fc5594ef1f6a32d7672051894e6d3d9fc68bfdf9e0e27",
+      "status": "PASS_SOURCE_AND_SCIENCE"
+    },
+    "v10_terminal_audit": {
+      "path": "docs/lewm_go2_rgb_action_conditioned_next_target_retrieval_jepa_v10_terminal_audit_2026-07-26.json",
+      "commit": "b590e50af272ae046618819eed4b88f1cd7a0cab",
+      "byte_count": 5999,
+      "file_sha256": "e33030f59c1d36aecf61d98750213daa89d7aeb8ee0daf83ff92812ca31ce4e5",
+      "content_sha256": "9ab2aec125e2d8ced8f35da7dab6c2d2794035d33c3888c28f8584b6e7070eb4",
+      "status": "PASS_TERMINAL_AUDIT_OPERATIONAL_INTEGRITY_FAILURE_SCIENCE_NON_EVALUABLE"
+    },
+    "v10_frozen_contract_source": {
+      "path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
+      "commit": "824bac6e7b4c96c055d6341371e46e889ee80f61",
+      "byte_count": 124355,
+      "file_sha256": "8c35f0cbafe78185ac74d4412914c177de20f899b0f009a9b9dc7aafdf7695a5",
+      "v10_source_manifest_bound": true,
+      "v10_source_review_passed": true
+    }
+  },
+  "review_activity": {
+    "source_and_committed_document_only": true,
+    "generated_or_runtime_root_open_count": 0,
+    "v10_terminal_root_open_count": 0,
+    "v10r_output_root_inspection_or_mutation_count": 0,
+    "checkpoint_trace_or_tensor_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "accelerator_query_or_use_count": 0,
+    "g2_navigation_heldout_or_sealed_open_count": 0,
+    "training_or_evaluation_operation_count": 0
+  },
+  "terminal_failure_review": {
+    "v10_reservation_consumed_attempt": true,
+    "v10_completed_updates": 100,
+    "v10_completed_pair_presentations": 1600,
+    "v10_phase_b_entered": false,
+    "v10_checkpoint_qualified": false,
+    "v10_normal_scientific_metrics_or_result_published": false,
+    "v10_science_evaluable": false,
+    "v10_scientific_pass_observed": false,
+    "v10_scientific_failure_observed": false,
+    "failure_classification": "DETERMINISTIC_FLOAT32_REDUCTION_PATH_RECEIPT_MISMATCH",
+    "failure_was_integrity_or_operational_not_a_scientific_gate_result": true,
+    "terminal_audit_requires_separate_version_distinct_root_explicit_dated_supersession_reviewed_source_and_new_execution_authority_for_any_replacement": true,
+    "v10r_preregistration_satisfies_the_preregistration_level_explicit_dated_limited_supersession_requirement": true,
+    "verdict": "PASS_V10_WAS_SCIENTIFICALLY_NON_EVALUABLE_AND_REMAINS_TERMINAL"
+  },
+  "science_identity_review": {
+    "canonicalization": {
+      "json_pointer": "/experiment",
+      "sort_keys": true,
+      "separators": [
+        ",",
+        ":"
+      ],
+      "ensure_ascii": true,
+      "allow_nan": false
+    },
+    "v10_authorization_experiment_canonical_byte_count": 19524,
+    "v10_authorization_experiment_canonical_sha256": "3dfcc168a570c9e69be57d03b0281fb66ce08b7acc33f1929a0b9e54237f158c",
+    "declared_anchor_matches_v10_authorization": true,
+    "v10r_scientific_delta_count": 0,
+    "future_v10r_authorization_must_reproduce_the_complete_v10_experiment_recursively": true,
+    "preserved_exactly": [
+      "model_family_architecture_width_depth_parameters_and_forward_graph",
+      "raw_v13_data_roles_counts_payload_mappings_negative_candidates_filters_balance_and_order",
+      "base_seed_schedule_seed_exact_1600_6400_16000_prefixes_and_presentation_order",
+      "n320_and_v5_initialization_draw_order_values_rng_preservation_and_zero_new_parameters",
+      "executed_jepa_action_retrieval_target_retrieval_and_whitening_losses_coefficients_normalization_and_gradient_routes",
+      "adamw_parameter_groups_learning_rates_betas_epsilon_weight_decay_clip_float32_precision_and_ema",
+      "updates_0_100_400_1000_observations_metrics_controls_tie_breaks_and_all_scientific_gate_thresholds_and_comparators",
+      "phase_a_1000_update_16000_presentation_60_gpu_active_minute_cap",
+      "conditional_phase_b_entry_state_transfer_trainable_boundary_schedule_caps_metrics_and_thresholds",
+      "one_fresh_v10r_seed_one_attempt_no_retry_no_resume_no_observer_rerun"
+    ],
+    "forbidden_scientific_deltas_are_complete_for_the_declared_replacement": true,
+    "verdict": "PASS_EXACT_V10_SCIENCE_IDENTITY_CONTRACT"
+  },
+  "integrity_delta_review": {
+    "allowed_behavioral_source_delta_count": 1,
+    "source_path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
+    "function": "_normalize_phase_a_inputs",
+    "comparison": "update0_factorized_retrieval.action_retrieval_nll versus immutable post-reservation execution-device float32 action_equal_logit_reference",
+    "old_absolute_tolerance": 1e-07,
+    "new_absolute_tolerance": 9.5367431640625e-07,
+    "new_absolute_tolerance_exact_expression": "8*2^-23",
+    "relative_tolerance": 0.0,
+    "recursive_registered_behavioral_leaf_difference_count": 1,
+    "sole_registered_behavioral_leaf_difference": {
+      "semantic_pointer": "/_normalize_phase_a_inputs/update0_action_symmetry/action_nll_vs_action_equal_logit_reference/abs_tol",
+      "v10": 1e-07,
+      "v10r": 9.5367431640625e-07
+    },
+    "delta_is_confined_to_validation_of_the_update0_integrity_receipt": true,
+    "delta_does_not_change_training_loss_optimizer_metric_formula_reference_value_observation_population_scientific_gate_threshold_or_comparator": true,
+    "unchanged_neighboring_checks": [
+      "action_equal_logit_reference_itself_is_computed_once_after_reservation_and_is_immutable",
+      "all_action_predictions_bitwise_equal",
+      "action_retrieval_macro_balanced_accuracy_equals_one_ninth_with_abs_tol_1e-12",
+      "all_four_update0_action_control_ratios_equal_exactly_one",
+      "all_per_family_update0_action_margins_equal_exactly_zero",
+      "separate_action_reference_to_log9_and_two_target_reference_to_log2_validation",
+      "every_update100_update400_update1000_and_phase_b_scientific_gate"
+    ],
+    "required_focused_regression_accepts_valid_difference_at_or_below_bound_and_rejects_difference_strictly_above_bound": true,
+    "implementation_and_frozen_source_review_are_still_required_to_prove_exact_conformance": true,
+    "allowed_nonbehavioral_deltas": [
+      "v10r_version_labels",
+      "fresh_v10r_output_root_and_attempt_identity",
+      "v10r_source_manifest_review_authorization_and_receipt_bindings"
+    ],
+    "fallback_compatibility_refactor_cleanup_or_unrelated_source_delta_authorized": false,
+    "verdict": "PASS_EXACTLY_ONE_NARROW_INTEGRITY_VALIDATION_DELTA"
+  },
+  "standing_authority_review": {
+    "user_retry_clarification_verbatim": "when i said dont iterate earlier, i more meant dont waste 30+ versions on an idea that clearly doesnt work - not that you cant retry when an obvious tweak may fix things",
+    "user_scope_verbatim": "you have permission to iterate as long as metrics are improvng, and you can change scientific scope as long as we dont violate the constraint of a perception only learned jepa for maze nav, validated on held out mazes - beyond that scope is flexible",
+    "standing_authority_precedent_preregistration_commit": "311d06fc0ccfd79c347d4f89edc0f5f9c9654ff9",
+    "standing_authority_precedent_independent_review_commit": "68f5c23f1303482ad58a24f667bfb6c7e1785415",
+    "standing_user_authority_supports_one_science_identical_mechanical_integrity_replacement": true,
+    "additional_copy_paste_user_authorization_required": false,
+    "v10_execution_authorization_is_not_reused_as_v10r_execution_authority": true,
+    "future_exact_machine_authorization_after_source_freeze_and_independent_source_science_pass_is_required": true,
+    "this_review_does_not_authorize_runtime_execution": true,
+    "verdict": "PASS_STANDING_RETRY_AUTHORITY_WITH_INTERNAL_FAIL_CLOSED_EXECUTION_GATES"
+  },
+  "fresh_attempt_custody_review": {
+    "v10_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10",
+    "v10_root_remains_sealed_immutable_unopened_and_ineligible_for_retry_resume_repair_mutation_or_reuse": true,
+    "v10r_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_action_conditioned_next_target_retrieval_jepa_probe_v10r_integrity_replacement",
+    "v10r_root_is_distinct_from_and_not_nested_under_v10_root": true,
+    "v10r_root_absence_inspected_during_this_review": false,
+    "future_launcher_must_fail_closed_unless_v10r_root_is_absent_before_mode_0700_reservation": true,
+    "v10r_attempt_index": 1,
+    "v10r_maximum_attempts": 1,
+    "v10r_reservation_consumes_attempt": true,
+    "v10r_retry_resume_repair_recovery_replacement_second_seed_schedule_extension_threshold_change_or_observer_rerun_authorized": false,
+    "v10r_failure_creates_no_second_integrity_replacement_authority": true,
+    "v10_runtime_output_checkpoint_trace_or_tensor_reuse_authorized": false,
+    "verdict": "PASS_FRESH_ROOT_ONE_SHOT_NO_RETRY_CUSTODY"
+  },
+  "mandatory_preexecution_source_review_requirements": {
+    "v10_scientific_review_check_that_may_not_be_inherited_unchanged": "final_single_frame_v5_family_closure_exact",
+    "reason": "That V10 leaf encodes the no-replacement family closure that this dated preregistration supersedes only for one V10R attempt; inheriting it unchanged would make the V10R source review semantically contradictory.",
+    "required_replacement_checks": [
+      "the_supersession_is_exactly_one_named_fresh_v10r_attempt_only",
+      "the_consumed_v10_root_remains_terminal_sealed_immutable_and_unopened",
+      "the_v10r_root_is_distinct_absent_before_reservation_and_maximum_attempts_is_one",
+      "v10r_operational_integrity_or_scientific_failure_creates_no_retry_or_further_replacement_authority",
+      "all_v10_scientific_gates_and_the_masked_tubelet_successor_boundary_remain_exact"
+    ],
+    "all_other_applicable_v10_scientific_review_checks_must_remain_exact": true,
+    "future_source_review_must_fail_if_the_contradictory_v10_closure_leaf_is_merely_inherited": true,
+    "preregistration_pass_is_conditional_on_satisfying_this_later_source_review_gate": true
+  },
+  "downstream_and_access_boundary": {
+    "source_implementation_focused_testing_freeze_and_independent_review_may_proceed": true,
+    "runtime_execution_authorized_by_preregistration_or_this_review": false,
+    "generated_input_checkpoint_tensor_rgb_gpu_training_or_evaluation_access_before_all_execution_gates_pass": false,
+    "phase_b_entry_authorized_only_by_a_complete_real_v10r_phase_a_pass_in_the_same_authorized_process": true,
+    "perception_qualification_g2_navigation_heldout_sealed_production_promotion_or_deployment_authorized": false,
+    "v4_legacy_sealed_role_remains_permanently_ineligible": true,
+    "automatic_successor_execution_authorized": false,
+    "repository_goal_preserved": "fully_learned_perception_only_JEPA_navigation_validated_once_on_externally_custodied_heldout_mazes"
+  },
+  "findings": [],
+  "content_sha256": "8f1316b203734fdf844cc04819e8b370510258da3d6680381667228f22037763"
+}

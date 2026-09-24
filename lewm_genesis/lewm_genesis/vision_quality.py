@@ -11,6 +11,7 @@ import numpy as np
 
 LOW_INFO_REASON_NAMES: frozenset[str] = frozenset(
     {
+        "camera_safety_unresolved",
         "low_rgb_texture",
         "near_wall_depth",
         "near_forward_geometry",

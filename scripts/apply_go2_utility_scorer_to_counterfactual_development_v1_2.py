@@ -1,0 +1,1717 @@
+#!/usr/bin/env python3
+"""One bounded utility-scorer transfer to the frozen 20-state development set.
+
+DEVELOPMENT_ONLY_NOT_CLAIM_BEARING.
+
+This consumer is intentionally separate from the paused 200-state final-corpus
+implementation.  It cannot generate a branch, render or encode a frame, load a
+world-model checkpoint, or run predictor inference.  It first verifies that the
+single shared scorer passed every frozen true-latent qualification gate.  Only
+then may it open the already frozen Stage-A target shards and B/C prediction
+shards from the completed counterfactual-predictor qualification.
+
+Scoring is interruption safe at one immutable unit: true targets, the no-latent
+baseline, or one of the 32 seed/cell prediction packages.  Invalid score shards
+are preserved and only that exact registered unit is regenerated.  A complete
+result bound to the same prospective specification is reused without repeating
+the exploratory analysis.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import math
+import os
+import shutil
+import sys
+import time
+from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable, Mapping, Sequence
+
+import numpy as np
+import torch
+import torch.nn.functional as F
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from scripts import analyze_go2_counterfactual_predictor_qualification_v1_2 as A  # noqa: E402
+from scripts import train_go2_utility_scorer_v1_2 as S  # noqa: E402
+from lewm.oracle import go2_scorer_fit_corpus_v2_design as V2_DESIGN  # noqa: E402
+from lewm.oracle.go2_scorer_contract_v1_2 import contract_digest  # noqa: E402
+
+STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
+OUT_DIR = S.PACKAGE_DIR / "counterfactual_development_transfer_v1_2"
+SCORE_DIR = OUT_DIR / "score_shards"
+SPEC_PATH = OUT_DIR / "development_transfer_spec.json"
+RESULT_PATH = OUT_DIR / "result.json"
+V2_OUT_DIR = S.V2_PACKAGE_DIR / "counterfactual_development_transfer_v2"
+V2_SPEC_NAME = "development_transfer_spec_v2.json"
+V2_RESULT_NAME = "result_v2.json"
+V2_SPEC_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_development_transfer_spec_v1"
+)
+V2_RESULT_SCHEMA = (
+    "go2_utility_scorer_fit_corpus_v2_development_transfer_result_v1"
+)
+
+FROZEN_PREDICTOR_QUALIFICATION_COMMIT = (
+    "ee47b47e7964c16360f265c4cfbe7f8181d16402"
+)
+FROZEN_STAGE_A_IDENTITY_DIGEST = (
+    "ce2cbbe8dab9a89ad6f85d16c56a9d712d791c8bbfd8925a8f01efc0c039705a"
+)
+FROZEN_STAGE_A_CORPUS_DIGEST = (
+    "f84eb3271f1a3b7052bbf2e84240453e84772b0a530e60ec47f723a44e2e10e9"
+)
+FROZEN_STAGE_A_LATENT_INDEX_DIGEST = (
+    "861285ec9c8fc6c92c6f3a31cade0f031172bf6818d76d1899634a60c7e5c291"
+)
+FROZEN_BC_RESULT_DIGEST = (
+    "3b5c500b4b1326056ce18c6276d7842f4230faec36f8f29cc65945f54527bbcb"
+)
+FROZEN_OCCUPANCY_RESULT_DIGEST = (
+    "09dc413d9ce30c2cb19c99e93eeaad410983a7f53575387bc6694f3844a070d6"
+)
+FROZEN_OCCUPANCY_GATE_DIGEST = (
+    "4bf9a92144fa728d953c9dffebb235c9b476ded59d7462a107fe2e6ade0894e4"
+)
+
+EXPECTED_STATES = 20
+EXPECTED_BRANCHES = 240
+EXPECTED_CANDIDATES = 12
+EXPECTED_CHECKPOINTS = 32
+EXPECTED_FAMILIES = 8
+TOKENS = 768
+TOKEN_DIM = 1024
+HORIZONS = 4
+ACTION_GOAL_DIM = 43
+SCORE_TIE_TOLERANCE = 0.02
+T_CRITICAL_95_DF7 = 2.3646242510102993
+CELLS = tuple(A.D.CELLS)
+SEEDS = tuple(A.D.SEED_REGISTRY[:8])
+FAMILIES = tuple(A.FAMILIES)
+
+METRIC_DIRECTIONS = {
+    "normalised_rank_regret": "lower",
+    "absolute_rank_regret": "lower",
+    "realised_selected_utility": "higher",
+    "spearman_rank_correlation": "higher",
+    "top1_recovery": "higher",
+    "top3_recovery": "higher",
+    "pairwise_ordering_accuracy": "higher",
+    "candidate_score_spread": "descriptive",
+    "scorer_tie_rate": "lower",
+}
+RECOVERY_EVENTS: list[dict[str, Any]] = []
+
+
+class DevelopmentTransferRefused(RuntimeError):
+    """A frozen qualification, provenance, or no-leakage gate failed."""
+
+
+@dataclass(frozen=True)
+class ScorerBundle:
+    qualification: dict[str, Any]
+    package: dict[str, Any]
+    package_sha256: str
+    selector_provenance: dict[str, Any]
+    latent: S.UtilityScorer
+    no_latent: S.UtilityScorer
+
+
+@dataclass(frozen=True)
+class PredictionPackage:
+    seed: int
+    cell: str
+    checkpoint_sha256: str
+    index: dict[str, Any]
+    state_shards: dict[str, dict[str, Any]]
+    input_digest: str
+    storage_bytes: int
+
+
+def _is_full_bank_v2_scorer(value: Mapping[str, Any]) -> bool:
+    return "scorer_fit_corpus_v2_scorer_contract_digest" in value
+
+
+def _scorer_transfer_provenance_keys(
+        value: Mapping[str, Any]) -> tuple[str, ...]:
+    return (S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+            if _is_full_bank_v2_scorer(value)
+            else S.SELECTOR_BINDING_KEYS)
+
+
+def _scorer_contract_fields(value: Mapping[str, Any]) -> dict[str, Any]:
+    if _is_full_bank_v2_scorer(value):
+        return {
+            "scorer_fit_corpus_v2_scorer_contract_digest": value[
+                "scorer_fit_corpus_v2_scorer_contract_digest"],
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest": value[
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest"],
+        }
+    return {
+        "scorer_contract_v1_2_digest":
+            S.operational_scorer_contract_digest(value),
+    }
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise DevelopmentTransferRefused(message)
+
+
+def canonical_digest(value: Any, omit: Iterable[str] = ()) -> str:
+    omitted = set(omit)
+    if isinstance(value, Mapping):
+        value = {key: item for key, item in value.items() if key not in omitted}
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, separators=(",", ":"), allow_nan=False,
+        default=str).encode("utf-8")).hexdigest()
+
+
+def legacy_digest(value: Any, omit: Iterable[str] = ()) -> str:
+    """Digest convention used by the frozen trainer and B/C result."""
+
+    omitted = set(omit)
+    if isinstance(value, Mapping):
+        value = {key: item for key, item in value.items() if key not in omitted}
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, default=str).encode("utf-8")).hexdigest()
+
+
+def sha256_file(path: Path, block_size: int = 8 << 20) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(block_size), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def read_json(path: Path, label: str) -> dict[str, Any]:
+    _require(path.is_file(), f"missing {label}: {path}")
+    try:
+        value = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise DevelopmentTransferRefused(f"unreadable {label}: {exc}") from exc
+    _require(isinstance(value, dict), f"{label} is not a JSON object")
+    return value
+
+
+def atomic_json(path: Path, value: Mapping[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.partial")
+    encoded = (json.dumps(value, indent=2, sort_keys=True,
+                          allow_nan=False, default=str) + "\n").encode()
+    with temporary.open("wb") as sink:
+        sink.write(encoded); sink.flush(); os.fsync(sink.fileno())
+    os.replace(temporary, path)
+    descriptor = os.open(path.parent, os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+
+
+def _safe_relative(root: Path, value: Any, label: str) -> Path:
+    _require(isinstance(value, str) and value, f"{label} path is absent")
+    candidate = Path(value)
+    resolved = candidate.resolve() if candidate.is_absolute() else (root / candidate).resolve()
+    allowed = root.resolve()
+    _require(resolved != allowed and allowed in resolved.parents,
+             f"{label} escapes its frozen artifact root")
+    return resolved
+
+
+def _validate_live_selector_provenance(
+        qualification: Mapping[str, Any], *, pool_dir: Path | None = None,
+        ) -> dict[str, Any]:
+    """Re-open the exact pre-outcome selector chain before any scorer weights.
+
+    Training already validates this chain before constructing either scorer.
+    The development-transfer boundary independently repeats the validation so
+    that a self-consistent package cannot outlive, substitute, or lose the
+    frozen reachability-feasibility pass, the exact 37/8 mixed disposition,
+    the post-allocation receipt, or their frozen state/allocation manifests.
+    """
+
+    enforce_managed_paths = pool_dir is None
+    selected_pool = (S.OUT_ROOT / S.EXPECTED_POOL
+                     if enforce_managed_paths else Path(pool_dir))
+    pre_identity_path = selected_pool / "pre_identity_allocation_validation.json"
+    allocation_path = selected_pool / "candidate_allocation_manifest.json"
+    state_manifest_path = selected_pool / "state_manifest.json"
+    feasibility_path = (
+        selected_pool / S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME)
+    disposition_path = (
+        selected_pool
+        / S.STATE_SELECTOR.PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME)
+    revalidation_path = (
+        selected_pool / S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME)
+    try:
+        state_manifest = (
+            S.CORPUS_BUILDER.load_active_state_manifest_for_consumption(
+                state_manifest_path, pool=S.EXPECTED_POOL
+            )
+        )
+        if enforce_managed_paths:
+            state_manifest_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    state_manifest_path, "state_manifest.json"))
+            pre_identity_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    pre_identity_path,
+                    "pre_identity_allocation_validation.json"))
+            allocation_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    allocation_path, "candidate_allocation_manifest.json"))
+            feasibility_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    feasibility_path,
+                    S.STATE_SELECTOR.STATE_SELECTOR_FEASIBILITY_RECEIPT_NAME))
+            disposition_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    disposition_path,
+                    S.STATE_SELECTOR
+                    .PRESERVED_STATE_MIXED_PRECONTRACT_DISPOSITION_RECEIPT_NAME))
+            revalidation_path = (
+                S.CORPUS_BUILDER.pin_active_scorer_fit_artifact_for_consumption(
+                    revalidation_path,
+                    S.STATE_SELECTOR.PRESERVED_STATE_REVALIDATION_RECEIPT_NAME))
+        pre_identity = S._read_json(pre_identity_path)
+        allocation = S._read_json(allocation_path)
+        disposition = (
+            S.STATE_SELECTOR
+            .load_and_validate_preserved_state_mixed_precontract_disposition_receipt(
+                root=ROOT)
+            if enforce_managed_paths else S._read_json(disposition_path)
+        )
+        recorded_manifest_digest = state_manifest.get("state_manifest_digest")
+        computed_manifest_digest = hashlib.sha256(json.dumps(
+            {key: value for key, value in state_manifest.items()
+             if key != "state_manifest_digest"},
+            sort_keys=True,
+        ).encode()).hexdigest()
+        _require(
+            recorded_manifest_digest == computed_manifest_digest,
+            "live scorer state manifest self digest does not verify",
+        )
+        S.validate_pre_identity_structural_validation(pre_identity)
+        (launch, manifest_launch,
+         selector_launch) = S._load_manifest_launch_lineage(
+            state_manifest, selected_pool, pre_identity,
+            enforce_managed_paths=enforce_managed_paths)
+        selector = S._validate_selector_successor(
+            selected_pool, selector_launch, allocation,
+            state_manifest.get("states", []),
+            enforce_managed_paths=enforce_managed_paths,
+            global_exact_manifest=(
+                state_manifest if isinstance(
+                    state_manifest.get(
+                        "small_completion_global_exact_execution"), Mapping)
+                else None))
+        if not enforce_managed_paths:
+            S.STATE_SELECTOR.validate_preserved_state_mixed_precontract_disposition_receipt(
+                disposition,
+                expected_source_commit=selector_launch[
+                    "source_repository_commit"],
+                expected_successor_selection_digest=
+                    S.contract()["corpus_selection_digest"],
+                expected_clean_source_binding_digest=selector_launch[
+                    "clean_source_binding_digest"],
+                expected_bound_implementations_digest=selector_launch[
+                    "bound_implementations_digest"],
+                root=ROOT,
+            )
+    except (OSError, ValueError, KeyError, RuntimeError, S.CandidateAllocationError,
+            S.CorpusValidationError,
+            S.STATE_SELECTOR.StateSelectorAmendmentError) as exc:
+        raise DevelopmentTransferRefused(
+            f"live scorer selector provenance does not verify: {exc}") from exc
+
+    for key in S.SELECTOR_BINDING_KEYS:
+        _require(selector.get(key) == qualification.get(key),
+                 f"live scorer selector provenance differs at {key}")
+    global_exact = "small_completion_global_exact_execution" in state_manifest
+    operational_provenance = S.scorer_provenance_bindings({
+        **selector, **launch,
+    }) if global_exact else {}
+    for key, expected in operational_provenance.items():
+        _require(qualification.get(key) == expected,
+                 f"qualified scorer operational provenance differs at {key}")
+    corpus_bindings = qualification.get("corpus_bindings")
+    _require(isinstance(corpus_bindings, Mapping),
+             "qualified scorer has no corpus provenance bindings")
+    allocation_digest = S.allocation_manifest_digest(allocation)
+    for key, expected in (
+        ("candidate_allocation_manifest_digest", allocation_digest),
+        ("candidate_allocation_post_identity_validation_digest",
+         allocation["post_identity_pre_outcome_validation"][
+             "post_identity_validation_digest"]),
+        ("pre_identity_allocation_validation_digest",
+         pre_identity["pre_identity_validation_digest"]),
+        ("state_manifest_digest", state_manifest["state_manifest_digest"]),
+        ("state_manifest_file_sha256", sha256_file(state_manifest_path)),
+    ):
+        _require(corpus_bindings.get(key) == expected,
+                 f"live scorer allocation provenance differs at {key}")
+    _require(
+        disposition.get("mixed_precontract_disposition_receipt_digest")
+        == selector_launch["mixed_precontract_disposition_receipt_digest"],
+        "live mixed precontract disposition differs from scorer launch",
+    )
+
+    for path, label in (
+        (pre_identity_path, "pre-identity allocation validation"),
+        (allocation_path, "candidate allocation manifest"),
+        (state_manifest_path, "state manifest"),
+        (feasibility_path, "selector feasibility receipt"),
+        (disposition_path, "mixed precontract disposition"),
+        (revalidation_path, "preserved-state phase-2 receipt"),
+    ):
+        _require(path.is_file(), f"missing live {label}: {path}")
+
+    def binding(path: Path) -> dict[str, Any]:
+        try:
+            display = str(path.resolve().relative_to(ROOT.resolve()))
+        except ValueError:
+            display = str(path.resolve())
+        return {
+            "path": display,
+            "sha256": sha256_file(path),
+            "byte_count": path.stat().st_size,
+        }
+
+    result = {
+        "status": "PASS_LIVE_PRE_WEIGHT_SELECTOR_PROVENANCE_REVALIDATION",
+        "selector_bindings": dict(selector),
+        **({
+            "operational_scorer_contract_bindings": operational_provenance,
+            "scientific_manifest_launch_bindings": dict(manifest_launch),
+        } if global_exact else {}),
+        "mixed_precontract_disposition_receipt_digest":
+            selector_launch["mixed_precontract_disposition_receipt_digest"],
+        "pre_identity_allocation_validation": binding(pre_identity_path),
+        "candidate_allocation_manifest": binding(allocation_path),
+        "state_manifest": binding(state_manifest_path),
+        "selector_feasibility_receipt": binding(feasibility_path),
+        "preserved_state_mixed_precontract_disposition_receipt":
+            binding(disposition_path),
+        "mixed_state_post_allocation_revalidation_receipt":
+            binding(revalidation_path),
+        "scorer_weights_opened_during_validation": False,
+        "predictor_artifacts_opened_during_validation": False,
+    }
+    result["verification_digest"] = legacy_digest(result)
+    return result
+
+
+# ----------------------------------------------------------- scorer gate -----
+def _validate_live_full_bank_v2_provenance(
+        qualification: Mapping[str, Any],
+        terminal: Mapping[str, Any]) -> dict[str, Any]:
+    """Replay only V2 producers before opening scorer or predictor bytes."""
+
+    corpus = terminal.get("corpus")
+    _require(isinstance(corpus, Mapping),
+             "full-bank V2 terminal lacks exact corpus producer replay")
+    bindings = corpus.get("bindings")
+    _require(isinstance(bindings, Mapping),
+             "full-bank V2 corpus bindings are absent")
+    try:
+        authority = V2_DESIGN.load_active_design_authority(root=ROOT)
+        artifact = S.V2_CONTRACT.load_contract_for_consumption(root=ROOT)
+        artifact = S.V2_CONTRACT.validate_contract_artifact(artifact)
+    except (OSError, ValueError, KeyError, RuntimeError) as exc:
+        raise DevelopmentTransferRefused(
+            f"full-bank V2 successor contract does not verify: {exc}") from exc
+    contract = artifact["contract"]
+    lineage = contract.get("preoutcome_lineage")
+    correction_digest = authority.get("source_correction_digest")
+    _require(
+        isinstance(correction_digest, str)
+        and S.HEX64.fullmatch(correction_digest) is not None
+        and isinstance(lineage, Mapping)
+        and lineage.get("scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and qualification.get(
+            "scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest
+        and bindings.get("scorer_fit_corpus_v2_source_correction_digest")
+        == correction_digest,
+        "full-bank V2 active authority/successor source-correction "
+        "lineage changed")
+    for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS:
+        _require(qualification.get(key) == bindings.get(key),
+                 f"full-bank V2 qualification differs at {key}")
+    _require(
+        qualification.get("scorer_fit_corpus_v2_scorer_contract_digest")
+        == contract[S.V2_CONTRACT.CONTRACT_SELF_KEY]
+        and qualification.get(
+            "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+        == artifact[S.V2_CONTRACT.ARTIFACT_SELF_KEY]
+        and contract.get("final_200_state_evaluation_corpus_authorised")
+        is False,
+        "full-bank V2 qualification binds another successor contract")
+    result = {
+        "status": "PASS_LIVE_FULL_BANK_V2_PRE_WEIGHT_PROVENANCE_REVALIDATION",
+        "scorer_fit_corpus_v2_scorer_contract_digest": contract[
+            S.V2_CONTRACT.CONTRACT_SELF_KEY],
+        "scorer_fit_corpus_v2_scorer_contract_artifact_digest": artifact[
+            S.V2_CONTRACT.ARTIFACT_SELF_KEY],
+        "full_bank_v2_provenance_bindings": {
+            key: qualification[key]
+            for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+        },
+        "state_manifest_digest": bindings["state_manifest_digest"],
+        "corpus_digest": bindings["corpus_digest"],
+        "source_binding_digest": contract["source_binding_digest"],
+        "scorer_weights_opened_during_validation": False,
+        "predictor_artifacts_opened_during_validation": False,
+        "legacy_allocation_or_mask_validator_called": False,
+    }
+    result["verification_digest"] = legacy_digest(result)
+    return result
+
+
+def validate_qualified_full_bank_v2_scorer() -> ScorerBundle:
+    """Validate V2 qualification and all bytes before torch deserialisation."""
+
+    try:
+        terminal = (
+            S.load_and_validate_full_bank_v2_training_terminal_for_consumption(
+                require_qualified=True, verify_encoder_checkpoint=False))
+    except (OSError, ValueError, KeyError, RuntimeError,
+            S.CorpusValidationError) as exc:
+        raise DevelopmentTransferRefused(
+            f"full-bank V2 scorer qualification does not verify: {exc}") from exc
+    qualification = terminal["terminal"]
+    _require(qualification.get("schema") == S.FULL_BANK_V2_QUALIFICATION_SCHEMA
+             and qualification.get("qualified") is True
+             and qualification.get("qualification_evaluations") == 1
+             and qualification.get("epoch_selection_permitted") is False,
+             "full-bank V2 scorer did not pass one-shot qualification")
+    criteria = qualification.get("criteria")
+    _require(isinstance(criteria, Mapping) and criteria
+             and all(value is True for value in criteria.values()),
+             "full-bank V2 scorer failed a frozen criterion")
+    provenance = _validate_live_full_bank_v2_provenance(
+        qualification, terminal)
+    package_path = terminal["scorer_package_path"]
+    baseline_path = terminal["baseline_path"]
+    package_sha = str(qualification["scorer_package_sha256"])
+
+    # Every qualification/provenance/byte gate above precedes torch.load.
+    package = torch.load(package_path, map_location="cpu", weights_only=False)
+    baseline_package = torch.load(
+        baseline_path, map_location="cpu", weights_only=False)
+    provenance_keys = S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+    _require(package.get("schema") == S.FULL_BANK_V2_PACKAGE_SCHEMA
+             and package.get("qualified") is True
+             and package.get("scorer_fit_corpus_v2_scorer_contract_digest")
+             == qualification[
+                 "scorer_fit_corpus_v2_scorer_contract_digest"]
+             and package.get("training_run_digest")
+             == qualification.get("training_run_digest")
+             and all(package.get(key) == qualification.get(key)
+                     for key in provenance_keys)
+             and package.get("final_epoch") == S.V2_CONTRACT.EPOCHS
+             and package.get("epoch_selection")
+             == "final_epoch_only_no_selection",
+             "full-bank V2 scorer package metadata changed")
+    final_digests = package.get("final_state_digests")
+    _require(isinstance(final_digests, Mapping),
+             "full-bank V2 scorer final-state digests are absent")
+    for name in ("latent", "no_latent"):
+        _require(isinstance(package.get(name), Mapping)
+                 and S.state_dict_digest(package[name])
+                 == final_digests.get(name),
+                 f"full-bank V2 {name} final-state digest changed")
+    baseline_receipt = terminal["baseline_receipt"]
+    _require(
+        baseline_package.get("schema") == S.FULL_BANK_V2_BASELINE_SCHEMA
+        and baseline_package.get("training_run_digest")
+        == qualification.get("training_run_digest")
+        and baseline_package.get(
+            "scorer_fit_corpus_v2_scorer_contract_digest")
+        == qualification["scorer_fit_corpus_v2_scorer_contract_digest"]
+        and all(baseline_package.get(key) == qualification.get(key)
+                for key in provenance_keys)
+        and isinstance(baseline_package.get("model_state_dict"), Mapping)
+        and S.state_dict_digest(baseline_package["model_state_dict"])
+        == final_digests.get("no_latent")
+        == baseline_receipt.get("final_state_digest"),
+        "full-bank V2 no-latent package changed")
+    latent = S.UtilityScorer(use_latent=True)
+    no_latent = S.UtilityScorer(use_latent=False)
+    latent.load_state_dict(package["latent"], strict=True)
+    no_latent.load_state_dict(
+        baseline_package["model_state_dict"], strict=True)
+    latent.eval()
+    no_latent.eval()
+    return ScorerBundle(
+        dict(qualification), package, package_sha, provenance,
+        latent, no_latent)
+
+
+def validate_qualified_scorer(*, full_bank_v2: bool = False) -> ScorerBundle:
+    """Refuse before torch.load unless every frozen qualification gate passed."""
+
+    if full_bank_v2:
+        return validate_qualified_full_bank_v2_scorer()
+
+    qualification = read_json(S.PACKAGE_DIR / "qualification.json",
+                              "scorer qualification")
+    _require(qualification.get("schema") == "go2_utility_scorer_v1_2_qualification",
+             "wrong scorer qualification schema")
+    _require(qualification.get("qualification_report_digest")
+             == legacy_digest(qualification, ("qualification_report_digest",)),
+             "scorer qualification self digest differs")
+    criteria = qualification.get("criteria")
+    _require(isinstance(criteria, Mapping) and criteria
+             and all(value is True for value in criteria.values()),
+             "shared scorer did not pass every frozen criterion")
+    _require(qualification.get("qualified") is True
+             and qualification.get("qualification_evaluations") == 1
+             and qualification.get("epoch_selection_permitted") is False,
+             "scorer was not frozen by the one-shot final-epoch qualification")
+    _require(qualification.get("scorer_contract_v1_2_digest") == contract_digest(),
+             "qualified scorer binds a different current frozen contract")
+    for key in S.SELECTOR_BINDING_KEYS:
+        _require(isinstance(qualification.get(key), str)
+                 and S.HEX64.fullmatch(qualification[key]) is not None,
+                 f"qualified scorer has no {key}")
+    _require(qualification["state_selector_amendment_digest"]
+             == S.STATE_SELECTOR.state_selector_amendment_digest(),
+             "qualified scorer binds a different state-selector amendment")
+    # This invokes only JSON/source/allocation validators.  Keep it above both
+    # the scorer-package byte read and torch.load so the receipt/mask chain is
+    # a genuine pre-weight gate at the application boundary.
+    selector_provenance = _validate_live_selector_provenance(qualification)
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest" in qualification
+    )
+    if global_exact:
+        live_operational = selector_provenance.get(
+            "operational_scorer_contract_bindings")
+        _require(isinstance(live_operational, Mapping),
+                 "live global scorer operational provenance is absent")
+        try:
+            contract_lineage = S.validate_global_exact_scorer_contract_lineage(
+                qualification.get("global_exact_scorer_contract_lineage"),
+                expected=live_operational.get(
+                    "global_exact_scorer_contract_lineage"),
+            )
+        except S.CorpusValidationError as exc:
+            raise DevelopmentTransferRefused(
+                f"qualified global scorer contract lineage is invalid: {exc}"
+            ) from exc
+        _require(
+            qualification.get("scorer_contract_v1_2_digest")
+            == contract_lineage["current_scorer_contract_v1_2_digest"]
+            == qualification.get("current_scorer_contract_v1_2_digest"),
+            "qualified scorer top-level operational digest differs from lineage",
+        )
+        _require(
+            qualification.get("global_exact_successor_scorer_contract_digest")
+            == contract_lineage[
+                "global_exact_successor_scorer_contract_digest"],
+            "qualified scorer successor digest differs from lineage",
+        )
+    try:
+        current_source = S.clean_source_binding()
+    except RuntimeError as exc:
+        raise DevelopmentTransferRefused(
+            f"development transfer requires the scorer's clean committed source: {exc}"
+        ) from exc
+    expected_source_bindings = {
+        "source_repository_commit": current_source["source_repository_commit"],
+        "clean_source_binding_digest": S.canonical_digest(current_source),
+        "bound_implementations_digest": current_source["bound_implementations_digest"],
+    }
+    for key, expected in expected_source_bindings.items():
+        _require(qualification.get(key) == expected,
+                 f"qualified scorer {key} differs from current clean source")
+    for key in ("clean_source_launch_receipt_digest",
+                "scorer_contract_artifact_digest"):
+        _require(isinstance(qualification.get(key), str)
+                 and len(qualification[key]) == 64,
+                 f"qualified scorer has no {key}")
+    try:
+        provenance_keys = S.scorer_provenance_binding_keys(qualification)
+    except (KeyError, S.CorpusValidationError) as exc:
+        raise DevelopmentTransferRefused(
+            f"qualified scorer operational provenance is incomplete: {exc}"
+        ) from exc
+    for key in provenance_keys:
+        _require(key in qualification,
+                 f"qualified scorer has no operational provenance field {key}")
+    package_sha = qualification.get("scorer_package_sha256")
+    _require(isinstance(package_sha, str) and len(package_sha) == 64,
+             "qualification has no frozen scorer-package digest")
+    package_path = S.PACKAGE_DIR / "scorer_package.pt"
+    _require(package_path.is_file() and sha256_file(package_path) == package_sha,
+             "qualified scorer package bytes differ")
+    receipt = read_json(S.PACKAGE_DIR / "scorer_package_receipt.json",
+                        "scorer package receipt")
+    _require(receipt.get("scorer_package_receipt_digest")
+             == legacy_digest(receipt, ("scorer_package_receipt_digest",)),
+             "scorer package receipt self digest differs")
+    _require(receipt.get("complete") is True and receipt.get("qualified") is True
+             and receipt.get("scorer_package_sha256") == package_sha
+             and receipt.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
+             and all(receipt.get(key) == qualification.get(key)
+                     for key in provenance_keys),
+             "scorer package receipt is incomplete or differently bound")
+    baseline_receipt = qualification.get("no_latent_baseline_package")
+    _require(isinstance(baseline_receipt, Mapping)
+             and baseline_receipt.get("receipt_digest")
+             == legacy_digest(baseline_receipt, ("receipt_digest",))
+             and baseline_receipt.get("complete") is True
+             and baseline_receipt.get("training_run_digest")
+             == qualification.get("training_run_digest")
+             and baseline_receipt.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
+             and all(baseline_receipt.get(key) == qualification.get(key)
+                     for key in provenance_keys),
+             "no-latent baseline package receipt is absent or invalid")
+    baseline_path = _safe_relative(
+        S.PACKAGE_DIR, baseline_receipt.get("path"), "no-latent baseline package")
+    _require(baseline_path.is_file()
+             and baseline_path.stat().st_size == baseline_receipt.get("byte_count")
+             and sha256_file(baseline_path) == baseline_receipt.get("sha256"),
+             "no-latent baseline package bytes differ")
+
+    # torch.load is deliberately below every JSON/byte qualification gate.
+    package = torch.load(package_path, map_location="cpu", weights_only=False)
+    _require(package.get("qualified") is True
+             and package.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
+             and package.get("training_run_digest")
+             == qualification.get("training_run_digest")
+             and all(package.get(key) == qualification.get(key)
+                     for key in provenance_keys)
+             and package.get("final_epoch") == 60
+             and package.get("epoch_selection") == "final_epoch_only_no_selection",
+             "scorer package metadata differs from the frozen qualified run")
+    final_digests = package.get("final_state_digests")
+    _require(isinstance(final_digests, Mapping), "scorer final-state digests absent")
+    for name in ("latent", "no_latent"):
+        _require(isinstance(package.get(name), Mapping)
+                 and S.state_dict_digest(package[name]) == final_digests.get(name),
+                 f"{name} final state digest differs")
+    baseline_package = torch.load(
+        baseline_path, map_location="cpu", weights_only=False)
+    _require(baseline_package.get("schema")
+             == "go2_utility_no_latent_baseline_package_v1_2"
+             and baseline_package.get("training_run_digest")
+             == qualification.get("training_run_digest")
+             and baseline_package.get("scorer_contract_v1_2_digest")
+             == qualification.get("scorer_contract_v1_2_digest")
+             and all(baseline_package.get(key) == qualification.get(key)
+                     for key in provenance_keys)
+             and isinstance(baseline_package.get("model_state_dict"), Mapping)
+             and S.state_dict_digest(baseline_package["model_state_dict"])
+             == final_digests.get("no_latent")
+             == baseline_receipt.get("final_state_digest"),
+             "separate no-latent baseline package differs from the qualified scorer")
+    latent = S.UtilityScorer(use_latent=True)
+    no_latent = S.UtilityScorer(use_latent=False)
+    latent.load_state_dict(package["latent"], strict=True)
+    no_latent.load_state_dict(baseline_package["model_state_dict"], strict=True)
+    latent.eval(); no_latent.eval()
+    return ScorerBundle(
+        qualification, package, str(package_sha), selector_provenance,
+        latent, no_latent)
+
+
+def prospective_spec(scorer: ScorerBundle) -> dict[str, Any]:
+    full_bank_v2 = _is_full_bank_v2_scorer(scorer.qualification)
+    sources = (
+        "scripts/apply_go2_utility_scorer_to_counterfactual_development_v1_2.py",
+        "scripts/train_go2_utility_scorer_v1_2.py",
+        "scripts/analyze_go2_counterfactual_predictor_qualification_v1_2.py",
+        "lewm/oracle/go2_scorer_contract_v1_2.py",
+        *(('lewm/oracle/go2_scorer_fit_corpus_v2_scorer_contract.py',)
+          if full_bank_v2 else ()),
+    )
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest"
+        in scorer.qualification)
+    value: dict[str, Any] = {
+        "schema": (V2_SPEC_SCHEMA if full_bank_v2 else
+                   "go2_utility_scorer_counterfactual_development_transfer_spec_v1_2"),
+        "status": STATUS, "frozen_before_prediction_shard_access": True,
+        "predictor_qualification_commit": FROZEN_PREDICTOR_QUALIFICATION_COMMIT,
+        **_scorer_contract_fields(scorer.qualification),
+        "qualification_report_digest":
+            scorer.qualification["qualification_report_digest"],
+        "scorer_package_sha256": scorer.package_sha256,
+        **({
+            "scorer_full_bank_v2_bindings": {
+                key: scorer.qualification[key]
+                for key in S.FULL_BANK_V2_PROVENANCE_BINDING_KEYS
+            },
+        } if full_bank_v2 else {
+            "scorer_source_bindings": {
+                key: scorer.qualification[key] for key in S.LAUNCH_BINDING_KEYS
+            },
+        }),
+        **({
+            "global_exact_successor_bindings": {
+                key: scorer.qualification[key]
+                for key in S.GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+            },
+        } if global_exact else {}),
+        "scorer_selector_successor_bindings": {
+            key: scorer.qualification[key]
+            for key in _scorer_transfer_provenance_keys(
+                scorer.qualification)
+        },
+        "live_selector_provenance": scorer.selector_provenance,
+        "frozen_inputs": {
+            "stage_a_identity_manifest_digest": FROZEN_STAGE_A_IDENTITY_DIGEST,
+            "stage_a_corpus_digest": FROZEN_STAGE_A_CORPUS_DIGEST,
+            "stage_a_latents_index_digest": FROZEN_STAGE_A_LATENT_INDEX_DIGEST,
+            "direct_fidelity_and_retrieval_result_digest": FROZEN_BC_RESULT_DIGEST,
+            "occupancy_result_digest_not_consumed": FROZEN_OCCUPANCY_RESULT_DIGEST,
+            "occupancy_gate_digest_not_consumed": FROZEN_OCCUPANCY_GATE_DIGEST,
+        },
+        "scope": {"states": 20, "branches": 240, "candidates_per_state": 12,
+                  "predictor_checkpoints": 32, "new_branches": 0,
+                  "new_frames": 0, "new_latents": 0,
+                  "predictor_checkpoint_loads": 0, "predictor_inference": False},
+        "true_target_handling": (
+            "reload raw float16 target tokens as float32, apply token-wise "
+            "F.layer_norm over 1024 dimensions, then mean over 768 tokens"),
+        "predicted_handling": (
+            "reload already-normalised frozen float16 predictor tokens as float32, "
+            "then mean over 768 tokens; no second calibration or normalisation"),
+        "scorer_features": {
+            "latent": "full H1-H4 spatial-mean trajectory [4,1024]",
+            "action": "frozen 4x10 post-slew action_blocks flattened to 40D",
+            "goal": "frozen goal_binding_input [sin(bearing),cos(bearing),range]",
+        },
+        "metric_contract": {
+            "true_utility_tie_tolerance": SCORE_TIE_TOLERANCE,
+            "score_tie_tolerance": SCORE_TIE_TOLERANCE,
+            "state_first": True,
+            "equal_family_primary": "state mean -> family mean -> unweighted 8-family mean",
+            "corpus_weighted_secondary": "unweighted mean of the 20 state metrics",
+            "replication": "eight predictor-training seed quadruplets, df=7",
+            "directions": METRIC_DIRECTIONS,
+        },
+        "source_sha256": {relative: sha256_file(ROOT / relative)
+                          for relative in sources},
+    }
+    value["development_transfer_spec_digest"] = legacy_digest(value)
+    return value
+
+
+def freeze_spec(value: Mapping[str, Any]) -> None:
+    if SPEC_PATH.exists():
+        existing = read_json(SPEC_PATH, "development transfer spec")
+        _require(existing == value, "existing development-transfer spec differs")
+        return
+    atomic_json(SPEC_PATH, value)
+
+
+# ---------------------------------------------------------- frozen inputs ----
+def validate_stage_a() -> tuple[A.StageABundle, dict[str, Any]]:
+    bundle = A.validate_stage_a_metadata()
+    _require(bundle.identity_digest == FROZEN_STAGE_A_IDENTITY_DIGEST,
+             "Stage-A identity differs")
+    _require(bundle.corpus_digest == FROZEN_STAGE_A_CORPUS_DIGEST,
+             "Stage-A corpus differs")
+    _require(bundle.latent_index_digest == FROZEN_STAGE_A_LATENT_INDEX_DIGEST,
+             "Stage-A latent index differs")
+    # This transfer consumes horizon targets only.  The completed B/C assay
+    # already bound the encoder checkpoint and context shards; reopening the
+    # 5-GB encoder or unused observed-context storage here would add no evidence.
+    # Verify the exact 240 target shards that will actually be scored.
+    started = time.time()
+    rows: list[dict[str, Any]] = []
+    total_bytes = 0
+    for key in sorted(bundle.horizon_records):
+        record = bundle.horizon_records[key]
+        path = Path(str(record["_resolved_path"]))
+        byte_count = int(record["byte_count"])
+        _require(path.is_file() and path.stat().st_size == byte_count
+                 and sha256_file(path) == record["sha256"],
+                 f"Stage-A horizon target shard differs: {key}")
+        total_bytes += byte_count
+        rows.append({"key": key, "sha256": record["sha256"],
+                     "byte_count": byte_count, "shape": record["shape"]})
+    _require(len(rows) == EXPECTED_BRANCHES,
+             "Stage-A target-shard set does not contain 240 branches")
+    verification = {
+        "complete": True, "horizon_shards": len(rows), "bytes": total_bytes,
+        "target_encoder_checkpoint_opened": False,
+        "context_shards_opened": False,
+        "verified_shard_set_digest": A.sequence_digest(rows),
+        "wall_time_s": round(time.time() - started, 3),
+    }
+    return bundle, verification
+
+
+def ordered_rows(bundle: A.StageABundle) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    states = sorted(bundle.states, key=lambda value: value.state_index)
+    _require([state.state_index for state in states] == list(range(EXPECTED_STATES)),
+             "development state indices are not contiguous")
+    for state in states:
+        for candidate_index in range(EXPECTED_CANDIDATES):
+            row = dict(bundle.row_by_pair[(state.state_id, candidate_index)])
+            _require(row.get("valid") is True
+                     and row.get("oracle_outcome_equal") is True,
+                     "development branch is not a valid frozen oracle-equal row")
+            action = np.asarray(row.get("action_blocks"), dtype=np.float64)
+            goal = np.asarray(row.get("goal_binding_input"), dtype=np.float64)
+            _require(action.shape == (HORIZONS, 10)
+                     and goal.shape == (3,)
+                     and np.isfinite(action).all() and np.isfinite(goal).all(),
+                     "development scorer action/goal input differs")
+            for key in ("utility", "progress", "safety", "completion"):
+                _require(isinstance(row.get(key), (int, float))
+                         and math.isfinite(float(row[key])),
+                         f"development oracle label {key} is invalid")
+            rows.append(row)
+    _require(len(rows) == EXPECTED_BRANCHES, "development row order is incomplete")
+    return rows
+
+
+def action_goal(rows: Sequence[Mapping[str, Any]]) -> torch.Tensor:
+    result = np.empty((len(rows), ACTION_GOAL_DIM), dtype=np.float32)
+    for position, row in enumerate(rows):
+        action = np.asarray(row["action_blocks"], dtype=np.float32).reshape(-1)
+        goal = np.asarray(row["goal_binding_input"], dtype=np.float32)
+        result[position] = np.concatenate([action, goal])
+    return torch.from_numpy(result)
+
+
+def validate_bc_result(bundle: A.StageABundle) -> tuple[
+        dict[str, Any], dict[tuple[int, str], str],
+        dict[tuple[int, str], dict[str, Any]]]:
+    result = read_json(A.RESULT_PATH, "frozen B/C result")
+    _require(result.get("report_digest")
+             == A.json_digest(result, ("report_digest",))
+             == FROZEN_BC_RESULT_DIGEST,
+             "frozen B/C result digest differs")
+    _require(result.get("complete") is True and result.get("utility_scorer_used") is False,
+             "B/C result is incomplete or already utility-scored")
+    stage = result.get("stage_a", {})
+    _require(stage.get("identity_manifest_digest") == bundle.identity_digest
+             and stage.get("corpus_digest") == bundle.corpus_digest
+             and stage.get("latents_index_digest") == bundle.latent_index_digest,
+             "B/C result binds a different Stage-A corpus")
+    inventory: dict[tuple[int, str], str] = {}
+    for record in result.get("verified_checkpoints", []):
+        key = (int(record["seed"]), str(record["cell"]))
+        _require(key not in inventory, "duplicate B/C checkpoint inventory row")
+        inventory[key] = str(record["sha256"])
+    expected = {(seed, cell) for seed in SEEDS for cell in CELLS}
+    _require(set(inventory) == expected and len(inventory) == EXPECTED_CHECKPOINTS,
+             "B/C checkpoint inventory is not the frozen eight quadruplets")
+    receipts: dict[tuple[int, str], dict[str, Any]] = {}
+    for receipt in result.get("checkpoint_prediction_receipts", []):
+        _require(isinstance(receipt, dict), "B/C checkpoint receipt is not an object")
+        key = (int(receipt["seed"]), str(receipt["cell"]))
+        _require(key not in receipts
+                 and receipt.get("receipt_digest")
+                 == A.json_digest(receipt, ("receipt_digest",)),
+                 "B/C checkpoint receipt is duplicated or has a bad digest")
+        receipts[key] = receipt
+    _require(set(receipts) == expected,
+             "B/C result does not bind all 32 checkpoint prediction receipts")
+    return result, inventory, receipts
+
+
+def validate_prediction_package(bundle: A.StageABundle, seed: int, cell: str,
+                                checkpoint_sha256: str,
+                                frozen_checkpoint_receipt: Mapping[str, Any]
+                                ) -> PredictionPackage:
+    directory = A.PREDICTION_DIR / f"seed_{seed}_{cell}"
+    index = read_json(directory / "predictions_index.json",
+                      f"prediction index {seed}/{cell}")
+    _require(index.get("predictions_index_digest")
+             == A.json_digest(index, ("predictions_index_digest",)),
+             f"prediction index self digest differs {seed}/{cell}")
+    _require(index.get("schema")
+             == "go2_counterfactual_predictor_predictions_index_v1_2"
+             and index.get("complete") is True
+             and index.get("utility_scorer_used") is False,
+             f"prediction index incomplete {seed}/{cell}")
+    for key, expected in (
+        ("stage_a_identity_manifest_digest", bundle.identity_digest),
+        ("stage_a_corpus_digest", bundle.corpus_digest),
+        ("stage_a_latents_index_digest", bundle.latent_index_digest),
+        ("checkpoint_sha256", checkpoint_sha256),
+        ("checkpoint_epoch", A.D.CHECKPOINT_EPOCH),
+        ("seed", seed), ("cell", cell), ("states", EXPECTED_STATES),
+        ("branches", EXPECTED_BRANCHES),
+    ):
+        _require(index.get(key) == expected,
+                 f"prediction index {key} differs {seed}/{cell}")
+    state_records = index.get("state_shards")
+    branch_records = index.get("branch_records")
+    _require(isinstance(state_records, list) and len(state_records) == EXPECTED_STATES
+             and isinstance(branch_records, list)
+             and len(branch_records) == EXPECTED_BRANCHES,
+             f"prediction index counts differ {seed}/{cell}")
+
+    state_shards: dict[str, dict[str, Any]] = {}
+    storage = 0
+    for record in state_records:
+        _require(isinstance(record, dict), "prediction state-shard record is not an object")
+        state_id = str(record.get("state_id"))
+        _require(state_id not in state_shards, "duplicate prediction state shard")
+        path = _safe_relative(A.RESULT_DIR, record.get("relative_path"),
+                              "prediction state shard")
+        sidecar = path.with_suffix(".receipt.json")
+        receipt = read_json(sidecar, "prediction state-shard receipt")
+        _require(receipt == record
+                 and receipt.get("receipt_digest")
+                 == A.json_digest(receipt, ("receipt_digest",)),
+                 f"prediction shard receipt/index differs {seed}/{cell}/{state_id}")
+        expected_bytes = EXPECTED_CANDIDATES * HORIZONS * TOKENS * TOKEN_DIM * 2
+        _require(receipt.get("shape") == [EXPECTED_CANDIDATES, HORIZONS, TOKENS, TOKEN_DIM]
+                 and receipt.get("dtype") == "float16"
+                 and int(receipt.get("byte_count", -1)) == expected_bytes
+                 and path.is_file() and path.stat().st_size == expected_bytes
+                 and sha256_file(path) == receipt.get("sha256"),
+                 f"prediction shard bytes differ {seed}/{cell}/{state_id}")
+        stored = dict(record); stored["_path"] = str(path)
+        state_shards[state_id] = stored
+        storage += expected_bytes + sidecar.stat().st_size
+    _require(set(state_shards) == {state.state_id for state in bundle.states},
+             f"prediction state identities differ {seed}/{cell}")
+
+    expected_branch_digests: list[str] = []
+    for position, record in enumerate(branch_records):
+        state_index, candidate_index = divmod(position, EXPECTED_CANDIDATES)
+        state = sorted(bundle.states, key=lambda value: value.state_index)[state_index]
+        row = bundle.row_by_pair[(state.state_id, candidate_index)]
+        expected_branch_digests.append(str(row["branch_identity_digest"]))
+        _require(record.get("position") == position
+                 and record.get("state_id") == state.state_id
+                 and int(record.get("candidate_index", -1)) == candidate_index
+                 and record.get("candidate") == row.get("candidate")
+                 and record.get("branch_identity_digest") == row.get("branch_identity_digest")
+                 and record.get("sha256") == state_shards[state.state_id]["sha256"],
+                 f"prediction branch index differs {seed}/{cell}/{position}")
+    _require(index.get("ordered_branch_identity_set_digest")
+             == A.sequence_digest(expected_branch_digests),
+             f"prediction branch order digest differs {seed}/{cell}")
+
+    ledger_path = A.PREDICTION_DIR / f"seed_{seed}_{cell}.jsonl"
+    checkpoint_receipt = read_json(
+        A.PREDICTION_DIR / f"seed_{seed}_{cell}.receipt.json",
+        f"checkpoint prediction receipt {seed}/{cell}")
+    _require(checkpoint_receipt.get("receipt_digest")
+             == A.json_digest(checkpoint_receipt, ("receipt_digest",))
+             and checkpoint_receipt.get("complete") is True
+             and checkpoint_receipt.get("predictions_index_digest")
+             == index["predictions_index_digest"]
+             and checkpoint_receipt.get("checkpoint_sha256") == checkpoint_sha256
+             and ledger_path.is_file()
+             and checkpoint_receipt.get("ledger_sha256") == sha256_file(ledger_path),
+             f"checkpoint prediction receipt differs {seed}/{cell}")
+    _require(checkpoint_receipt == frozen_checkpoint_receipt,
+             f"checkpoint receipt bytes are not the receipt bound by B/C {seed}/{cell}")
+    storage += (directory / "predictions_index.json").stat().st_size
+    storage += ledger_path.stat().st_size
+    input_digest = legacy_digest({
+        "predictions_index_digest": index["predictions_index_digest"],
+        "state_shard_receipt_digests": [
+            state_shards[state.state_id]["receipt_digest"]
+            for state in sorted(bundle.states, key=lambda value: value.state_index)],
+    })
+    return PredictionPackage(seed, cell, checkpoint_sha256, index,
+                             state_shards, input_digest, storage)
+
+
+# --------------------------------------------------------------- scoring -----
+def _model_scores(model: S.UtilityScorer, latent: torch.Tensor | None,
+                  context: torch.Tensor) -> np.ndarray:
+    with torch.no_grad():
+        progress, safety, completion = model(latent, context)
+        utility = S.composite(progress, safety, completion)
+    return utility.detach().cpu().numpy().astype(np.float32)
+
+
+def _atomic_f32(path: Path, values: np.ndarray) -> tuple[str, int]:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.{os.getpid()}.partial")
+    array = np.asarray(values, dtype=np.float32)
+    with temporary.open("wb") as sink:
+        sink.write(array.tobytes(order="C")); sink.flush(); os.fsync(sink.fileno())
+    os.replace(temporary, path)
+    descriptor = os.open(path.parent, os.O_DIRECTORY)
+    try:
+        os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    return sha256_file(path), path.stat().st_size
+
+
+def _preserve_invalid(path: Path, reason: str) -> str | None:
+    if not path.exists():
+        return None
+    target_dir = OUT_DIR / "invalid_attempts"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    digest = sha256_file(path)
+    target = target_dir / f"{path.name}.{digest[:12]}.{reason}.{time.time_ns()}"
+    shutil.move(str(path), str(target))
+    RECOVERY_EVENTS.append({"source": str(path), "preserved_as": str(target),
+                            "sha256": digest, "reason": reason})
+    return str(target)
+
+
+def _score_receipt(unit: str, input_digest: str, scorer: ScorerBundle,
+                   score_path: Path) -> dict[str, Any]:
+    full_bank_v2 = _is_full_bank_v2_scorer(scorer.qualification)
+    global_exact = (
+        "global_exact_successor_scorer_contract_digest"
+        in scorer.qualification
+    )
+    value: dict[str, Any] = {
+        "schema": ("go2_utility_scorer_fit_corpus_v2_development_score_shard_receipt_v1"
+                   if full_bank_v2 else
+                   "go2_utility_scorer_development_score_shard_receipt_v1_2"),
+        "status": STATUS, "complete": True, "unit": unit,
+        "input_digest": input_digest,
+        "scorer_package_sha256": scorer.package_sha256,
+        **_scorer_contract_fields(scorer.qualification),
+        **({
+            "current_scorer_contract_v1_2_digest":
+                scorer.qualification[
+                    "current_scorer_contract_v1_2_digest"],
+            "global_exact_successor_scorer_contract_digest":
+                scorer.qualification[
+                    "global_exact_successor_scorer_contract_digest"],
+            "global_exact_scorer_contract_lineage":
+                scorer.qualification[
+                    "global_exact_scorer_contract_lineage"],
+        } if global_exact else {}),
+        **{
+            key: scorer.qualification[key]
+            for key in _scorer_transfer_provenance_keys(
+                scorer.qualification)
+        },
+        "selector_provenance_verification_digest":
+            scorer.selector_provenance["verification_digest"],
+        "rows": EXPECTED_BRANCHES, "shape": [EXPECTED_BRANCHES],
+        "dtype": "float32", "path": str(score_path.relative_to(OUT_DIR)),
+        "sha256": sha256_file(score_path), "byte_count": score_path.stat().st_size,
+    }
+    value["receipt_digest"] = legacy_digest(value)
+    return value
+
+
+def validate_existing_result(result: Mapping[str, Any], spec_digest: str,
+                             scorer: ScorerBundle) -> None:
+    """Require a terminal report and every score shard it claims to bind."""
+
+    contract_fields = _scorer_contract_fields(scorer.qualification)
+    provenance_keys = _scorer_transfer_provenance_keys(
+        scorer.qualification)
+    _require(result.get("result_digest")
+             == legacy_digest(result, ("result_digest",))
+             and result.get("complete") is True
+             and result.get("development_transfer_spec_digest") == spec_digest
+             and result.get("scorer_package_sha256") == scorer.package_sha256
+             and all(result.get(key) == value
+                     for key, value in contract_fields.items()),
+             "existing development-transfer result differs")
+    if "global_exact_successor_scorer_contract_digest" in scorer.qualification:
+        expected_global_bindings = {
+            key: scorer.qualification[key]
+            for key in S.GLOBAL_EXACT_PROVENANCE_BINDING_KEYS
+        }
+        _require(
+            result.get("global_exact_successor_bindings")
+            == expected_global_bindings,
+            "existing development-transfer result global scorer lineage differs",
+        )
+    receipts = result.get("score_shard_receipts")
+    expected_units = {"no_latent", "true_latent"} | {
+        f"seed_{seed}_{cell}" for seed in SEEDS for cell in CELLS
+    }
+    _require(isinstance(receipts, list) and len(receipts) == len(expected_units),
+             "existing transfer result has an incomplete score-shard ledger")
+    observed: set[str] = set()
+    expected_contract_lineage = scorer.qualification.get(
+        "global_exact_scorer_contract_lineage")
+    for receipt in receipts:
+        _require(isinstance(receipt, Mapping),
+                 "existing score-shard receipt is not an object")
+        unit = str(receipt.get("unit"))
+        _require(unit in expected_units and unit not in observed,
+                 "existing score-shard units are duplicated or unregistered")
+        observed.add(unit)
+        _require(receipt.get("receipt_digest")
+                 == legacy_digest(receipt, ("receipt_digest",))
+                 and receipt.get("complete") is True
+                 and receipt.get("scorer_package_sha256") == scorer.package_sha256
+                 and all(receipt.get(key) == value
+                         for key, value in contract_fields.items())
+                 and (expected_contract_lineage is None
+                      or (receipt.get("global_exact_scorer_contract_lineage")
+                          == expected_contract_lineage
+                          and receipt.get(
+                              "current_scorer_contract_v1_2_digest")
+                          == scorer.qualification.get(
+                              "current_scorer_contract_v1_2_digest")
+                          and receipt.get(
+                              "global_exact_successor_scorer_contract_digest")
+                          == scorer.qualification.get(
+                              "global_exact_successor_scorer_contract_digest")))
+                 and all(receipt.get(key) == scorer.qualification.get(key)
+                         for key in provenance_keys)
+                 and receipt.get("selector_provenance_verification_digest")
+                 == scorer.selector_provenance.get("verification_digest")
+                 and receipt.get("shape") == [EXPECTED_BRANCHES]
+                 and receipt.get("dtype") == "float32",
+                 f"existing {unit} score-shard receipt differs")
+        path = _safe_relative(OUT_DIR, receipt.get("path"),
+                              f"existing {unit} score shard")
+        sidecar = SCORE_DIR / f"{unit}.receipt.json"
+        _require(path.is_file()
+                 and path.stat().st_size == EXPECTED_BRANCHES * 4
+                 and path.stat().st_size == receipt.get("byte_count")
+                 and sha256_file(path) == receipt.get("sha256")
+                 and sidecar.is_file()
+                 and read_json(sidecar, f"existing {unit} score receipt")
+                 == dict(receipt),
+                 f"existing {unit} score-shard bytes differ")
+    _require(observed == expected_units,
+             "existing transfer result omits a registered score-shard unit")
+
+
+def _existing_scores(unit: str, input_digest: str, scorer: ScorerBundle
+                     ) -> tuple[np.ndarray, dict[str, Any]] | None:
+    score_path = SCORE_DIR / f"{unit}.f32"
+    receipt_path = SCORE_DIR / f"{unit}.receipt.json"
+    if not score_path.exists() and not receipt_path.exists():
+        return None
+    contract_fields = _scorer_contract_fields(scorer.qualification)
+    provenance_keys = _scorer_transfer_provenance_keys(
+        scorer.qualification)
+    try:
+        receipt = read_json(receipt_path, f"{unit} score receipt")
+        _require(receipt.get("receipt_digest")
+                 == legacy_digest(receipt, ("receipt_digest",))
+                 and receipt.get("complete") is True
+                 and receipt.get("unit") == unit
+                 and receipt.get("input_digest") == input_digest
+                 and receipt.get("scorer_package_sha256") == scorer.package_sha256
+                 and all(receipt.get(key) == value
+                         for key, value in contract_fields.items())
+                 and (
+                     "global_exact_scorer_contract_lineage"
+                     not in scorer.qualification
+                     or receipt.get("global_exact_scorer_contract_lineage")
+                     == scorer.qualification[
+                         "global_exact_scorer_contract_lineage"]
+                     and receipt.get("current_scorer_contract_v1_2_digest")
+                     == scorer.qualification[
+                         "current_scorer_contract_v1_2_digest"]
+                     and receipt.get(
+                         "global_exact_successor_scorer_contract_digest")
+                     == scorer.qualification[
+                         "global_exact_successor_scorer_contract_digest"])
+                 and all(receipt.get(key) == scorer.qualification.get(key)
+                         for key in provenance_keys)
+                 and receipt.get("selector_provenance_verification_digest")
+                 == scorer.selector_provenance.get("verification_digest")
+                 and receipt.get("shape") == [EXPECTED_BRANCHES]
+                 and receipt.get("dtype") == "float32"
+                 and score_path.stat().st_size == EXPECTED_BRANCHES * 4
+                 and receipt.get("sha256") == sha256_file(score_path),
+                 f"invalid existing {unit} score shard")
+        return np.fromfile(score_path, dtype=np.float32), receipt
+    except (DevelopmentTransferRefused, OSError, ValueError):
+        _preserve_invalid(score_path, "invalid_score")
+        _preserve_invalid(receipt_path, "invalid_receipt")
+        return None
+
+
+def _finish_scores(unit: str, input_digest: str, scorer: ScorerBundle,
+                   values: np.ndarray) -> tuple[np.ndarray, dict[str, Any]]:
+    score_path = SCORE_DIR / f"{unit}.f32"
+    receipt_path = SCORE_DIR / f"{unit}.receipt.json"
+    _atomic_f32(score_path, values)
+    receipt = _score_receipt(unit, input_digest, scorer, score_path)
+    atomic_json(receipt_path, receipt)
+    return np.asarray(values, dtype=np.float32), receipt
+
+
+def score_no_latent(rows: Sequence[Mapping[str, Any]], scorer: ScorerBundle,
+                    context: torch.Tensor) -> tuple[np.ndarray, dict[str, Any]]:
+    input_digest = legacy_digest({
+        "branch_identity_digests": [row["branch_identity_digest"] for row in rows],
+        "action_goal_sha256": S.tensor_digest(context),
+        "model_state_digest": scorer.package["final_state_digests"]["no_latent"],
+    })
+    prior = _existing_scores("no_latent", input_digest, scorer)
+    if prior is not None:
+        return prior
+    return _finish_scores("no_latent", input_digest, scorer,
+                          _model_scores(scorer.no_latent, None, context))
+
+
+def score_true_latents(bundle: A.StageABundle, rows: Sequence[Mapping[str, Any]],
+                       scorer: ScorerBundle, context: torch.Tensor
+                       ) -> tuple[np.ndarray, dict[str, Any]]:
+    records = [bundle.horizon_records[str(row["branch_identity_digest"])] for row in rows]
+    input_digest = legacy_digest({
+        "stage_a_latents_index_digest": bundle.latent_index_digest,
+        "target_receipts": [record["latent_shard_receipt_digest"] for record in records],
+        "normalisation": "f16->f32->F.layer_norm(1024)->mean_tokens",
+        "model_state_digest": scorer.package["final_state_digests"]["latent"],
+    })
+    prior = _existing_scores("true_latent", input_digest, scorer)
+    if prior is not None:
+        return prior
+    scores = np.empty(EXPECTED_BRANCHES, dtype=np.float32)
+    for state_index in range(EXPECTED_STATES):
+        start = state_index * EXPECTED_CANDIDATES
+        batch = np.stack([
+            A._read_f16_shard(records[position])
+            for position in range(start, start + EXPECTED_CANDIDATES)], axis=0)
+        tokens = F.layer_norm(torch.from_numpy(batch.astype(np.float32)), (TOKEN_DIM,))
+        latent = tokens.mean(dim=2)
+        scores[start:start + EXPECTED_CANDIDATES] = _model_scores(
+            scorer.latent, latent, context[start:start + EXPECTED_CANDIDATES])
+    return _finish_scores("true_latent", input_digest, scorer, scores)
+
+
+def score_prediction_package(package: PredictionPackage, bundle: A.StageABundle,
+                             scorer: ScorerBundle, context: torch.Tensor
+                             ) -> tuple[np.ndarray, dict[str, Any]]:
+    unit = f"seed_{package.seed}_{package.cell}"
+    input_digest = legacy_digest({
+        "prediction_package_input_digest": package.input_digest,
+        "normalisation": "already-normalised-f16->f32->mean_tokens",
+        "model_state_digest": scorer.package["final_state_digests"]["latent"],
+    })
+    prior = _existing_scores(unit, input_digest, scorer)
+    if prior is not None:
+        return prior
+    scores = np.empty(EXPECTED_BRANCHES, dtype=np.float32)
+    for state in sorted(bundle.states, key=lambda value: value.state_index):
+        record = package.state_shards[state.state_id]
+        shape = (EXPECTED_CANDIDATES, HORIZONS, TOKENS, TOKEN_DIM)
+        tokens = np.asarray(np.memmap(record["_path"], mode="r", dtype=np.float16,
+                                     shape=shape), dtype=np.float32)
+        latent = torch.from_numpy(tokens.mean(axis=2, dtype=np.float32))
+        start = state.state_index * EXPECTED_CANDIDATES
+        scores[start:start + EXPECTED_CANDIDATES] = _model_scores(
+            scorer.latent, latent, context[start:start + EXPECTED_CANDIDATES])
+    return _finish_scores(unit, input_digest, scorer, scores)
+
+
+# --------------------------------------------------------------- metrics -----
+def _mean(values: Sequence[float]) -> float:
+    finite = [float(value) for value in values if math.isfinite(float(value))]
+    return float(np.mean(finite)) if finite else float("nan")
+
+
+def state_metrics(rows: Sequence[Mapping[str, Any]], scores: np.ndarray
+                 ) -> list[dict[str, Any]]:
+    _require(len(rows) == len(scores) == EXPECTED_BRANCHES,
+             "metric input has the wrong branch count")
+    output: list[dict[str, Any]] = []
+    for state_index in range(EXPECTED_STATES):
+        start = state_index * EXPECTED_CANDIDATES
+        selected = rows[start:start + EXPECTED_CANDIDATES]
+        truth = np.asarray([row["utility"] for row in selected], dtype=np.float64)
+        predicted = np.asarray(scores[start:start + EXPECTED_CANDIDATES],
+                               dtype=np.float64)
+        order = np.argsort(-predicted, kind="mergesort")
+        chosen = int(order[0])
+        best = truth == truth.max()
+        spread = float(truth.max() - truth.min())
+        pair_correct = pair_considered = 0
+        for left in range(EXPECTED_CANDIDATES):
+            for right in range(left + 1, EXPECTED_CANDIDATES):
+                true_gap = float(truth[left] - truth[right])
+                if abs(true_gap) <= SCORE_TIE_TOLERANCE:
+                    continue
+                pair_considered += 1
+                pair_correct += int(
+                    float(predicted[left] - predicted[right]) * true_gap > 0)
+        output.append({
+            "state_index": state_index,
+            "state_id": str(selected[0]["state_id"]),
+            "family": str(selected[0]["family"]),
+            "normalised_rank_regret": (
+                0.0 if spread <= 0 else float((truth.max() - truth[chosen]) / spread)),
+            "absolute_rank_regret": float(truth.max() - truth[chosen]),
+            "realised_selected_utility": float(truth[chosen]),
+            "spearman_rank_correlation": S.spearman(truth, predicted),
+            "top1_recovery": float(best[chosen]),
+            "top3_recovery": float(np.any(best[order[:3]])),
+            "pairwise_ordering_accuracy": (
+                pair_correct / pair_considered if pair_considered else float("nan")),
+            "pairs_considered": pair_considered,
+            "candidate_score_spread": float(predicted.max() - predicted.min()),
+            "scorer_tie_rate": float(
+                np.sum(np.abs(predicted - predicted.max())
+                       <= SCORE_TIE_TOLERANCE) > 1),
+            "selected_candidate_index": chosen,
+            "selected_candidate": str(selected[chosen]["candidate"]),
+        })
+    return output
+
+
+def aggregate_metrics(states: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    per_family: dict[str, dict[str, float]] = {}
+    for family in FAMILIES:
+        selected = [row for row in states if row["family"] == family]
+        _require(selected, f"development family {family} is absent")
+        per_family[family] = {
+            metric: _mean([float(row[metric]) for row in selected])
+            for metric in METRIC_DIRECTIONS
+        }
+        per_family[family]["states"] = len(selected)
+    equal_family = {
+        metric: _mean([per_family[family][metric] for family in FAMILIES])
+        for metric in METRIC_DIRECTIONS
+    }
+    corpus = {
+        metric: _mean([float(row[metric]) for row in states])
+        for metric in METRIC_DIRECTIONS
+    }
+    return {"equal_family": equal_family, "corpus_weighted": corpus,
+            "per_family": per_family, "per_state": list(states)}
+
+
+def t_interval(values: Sequence[float]) -> dict[str, Any]:
+    _require(len(values) == 8,
+             "paired treatment interval requires exactly eight registered seeds")
+    array = np.asarray(values, dtype=np.float64)
+    finite = np.isfinite(array)
+    defined = array[finite]
+    complete = bool(finite.all())
+    mean = float(defined.mean()) if len(defined) else None
+    sd = float(defined.std(ddof=1)) if len(defined) > 1 else None
+    interval = None
+    if complete:
+        assert mean is not None and sd is not None
+        half = T_CRITICAL_95_DF7 * sd / math.sqrt(8)
+        interval = [mean - half, mean + half]
+    return {
+        "values_by_seed": [float(value) if math.isfinite(float(value)) else None
+                           for value in array],
+        "mean": mean,
+        "sample_standard_deviation": sd,
+        "two_sided_95_t_interval": interval,
+        "registered_n": 8,
+        "defined_n": int(finite.sum()),
+        "degrees_of_freedom": 7 if complete else None,
+        "interval_available": complete,
+        "unavailable_reason": (None if complete else
+                               "one or more registered seed values undefined"),
+    }
+
+
+def _benefit(one_step: float, rollout: float, direction: str) -> float:
+    if direction == "lower":
+        return float(one_step - rollout)
+    return float(rollout - one_step)
+
+
+def paired_factorial(cells: Mapping[int, Mapping[str, Mapping[str, Any]]],
+                     weighting: str, metric: str,
+                     family: str | None = None) -> dict[str, Any]:
+    direction = METRIC_DIRECTIONS[metric]
+    def value(seed: int, cell: str) -> float:
+        result = cells[seed][cell]
+        if family is None:
+            return float(result[weighting][metric])
+        return float(result["per_family"][family][metric])
+    rgb = [_benefit(value(seed, "rgb_one_step"), value(seed, "rgb_rollout"),
+                    direction) for seed in SEEDS]
+    prop = [_benefit(value(seed, "proprio_one_step"),
+                     value(seed, "proprio_rollout"), direction) for seed in SEEDS]
+    main = [(left + right) / 2 for left, right in zip(rgb, prop)]
+    interaction = [right - left for left, right in zip(rgb, prop)]
+    return {"sign_convention": (
+                "positive means rollout benefit" if direction != "descriptive"
+                else "rollout minus one-step; descriptive, no benefit direction"),
+            "B_RGB": t_interval(rgb), "B_prop": t_interval(prop),
+            "M": t_interval(main), "J": t_interval(interaction)}
+
+
+def analyse_cells(cells: Mapping[int, Mapping[str, Mapping[str, Any]]]) -> dict[str, Any]:
+    cell_means: dict[str, Any] = {}
+    for cell in CELLS:
+        cell_means[cell] = {}
+        for weighting in ("equal_family", "corpus_weighted"):
+            cell_means[cell][weighting] = {
+                metric: t_interval([cells[seed][cell][weighting][metric]
+                                    for seed in SEEDS])
+                for metric in METRIC_DIRECTIONS
+            }
+        cell_means[cell]["per_family"] = {
+            family: {metric: t_interval([
+                cells[seed][cell]["per_family"][family][metric]
+                for seed in SEEDS]) for metric in METRIC_DIRECTIONS}
+            for family in FAMILIES
+        }
+    paired = {
+        weighting: {
+            metric: paired_factorial(cells, weighting, metric)
+            for metric in METRIC_DIRECTIONS
+        } for weighting in ("equal_family", "corpus_weighted")
+    }
+    per_family_principal = {
+        family: {
+            metric: paired_factorial(cells, "equal_family", metric, family)
+            for metric in ("normalised_rank_regret", "realised_selected_utility")
+        } for family in FAMILIES
+    }
+    return {"cell_means_across_seeds": cell_means,
+            "paired_seed_factorial": paired,
+            "per_family_principal_factorial": per_family_principal}
+
+
+def safe_json(value: Any) -> Any:
+    if isinstance(value, Mapping):
+        return {str(key): safe_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [safe_json(item) for item in value]
+    if isinstance(value, np.generic):
+        value = value.item()
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    return value
+
+
+def synthetic_self_test() -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    scores: list[float] = []
+    for state_index in range(EXPECTED_STATES):
+        family = FAMILIES[state_index % len(FAMILIES)]
+        for candidate_index in range(EXPECTED_CANDIDATES):
+            rows.append({"state_id": f"state-{state_index}", "family": family,
+                         "candidate": f"c{candidate_index}",
+                         "utility": float(candidate_index)})
+            scores.append(float(candidate_index))
+    states = state_metrics(rows, np.asarray(scores, dtype=np.float32))
+    aggregate = aggregate_metrics(states)
+    _require(aggregate["equal_family"]["normalised_rank_regret"] == 0.0
+             and aggregate["equal_family"]["top1_recovery"] == 1.0
+             and aggregate["equal_family"]["pairwise_ordering_accuracy"] == 1.0,
+             "synthetic perfect-ranking test failed")
+    interval = t_interval([0.0] * 8)
+    _require(interval["two_sided_95_t_interval"] == [0.0, 0.0],
+             "synthetic t-interval test failed")
+    return {"pass": True, "perfect_ranking": aggregate["equal_family"],
+            "zero_interval": interval}
+
+
+def load_and_validate_full_bank_v2_development_terminal_for_consumption(
+        *, root: Path = ROOT) -> dict[str, Any]:
+    """Validate the sole V2 exploratory terminal without rerunning scoring."""
+
+    global OUT_DIR, SCORE_DIR, SPEC_PATH, RESULT_PATH
+    _require(Path(root).resolve() == ROOT.resolve(),
+             "full-bank V2 development terminal is at the custody root")
+    OUT_DIR = V2_OUT_DIR
+    SCORE_DIR = OUT_DIR / "score_shards"
+    SPEC_PATH = OUT_DIR / V2_SPEC_NAME
+    RESULT_PATH = OUT_DIR / V2_RESULT_NAME
+    scorer = validate_qualified_scorer(full_bank_v2=True)
+    expected_spec = prospective_spec(scorer)
+    recorded_spec = read_json(SPEC_PATH, "full-bank V2 development spec")
+    _require(recorded_spec == expected_spec,
+             "full-bank V2 development spec changed")
+    result = read_json(RESULT_PATH, "full-bank V2 development result")
+    validate_existing_result(
+        result, expected_spec["development_transfer_spec_digest"], scorer)
+    _require(result.get("schema") == V2_RESULT_SCHEMA
+             and result.get("exploratory_fixed_development_states") is True
+             and result.get("scope") == {
+                 "states": EXPECTED_STATES,
+                 "branches": EXPECTED_BRANCHES,
+                 "candidates_per_state": EXPECTED_CANDIDATES,
+                 "checkpoint_prediction_packages": EXPECTED_CHECKPOINTS,
+             }
+             and result.get("interpretation_boundary", {}).get(
+                 "final_benchmark_claim_authorised") is False,
+             "full-bank V2 development terminal scope changed")
+    return {
+        "spec": recorded_spec,
+        "result": result,
+        "terminal_digest": result["result_digest"],
+        "qualified_scorer_digest": scorer.package_sha256,
+        "qualified_scorer_bound": True,
+        "development_state_count": EXPECTED_STATES,
+        "development_branch_count": EXPECTED_BRANCHES,
+        "terminal_status":
+            "PASS_EXPLORATORY_FIXED_20_STATE_DEVELOPMENT_TRANSFER",
+        "nothing_running": True,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def load_and_validate_full_bank_v2_development_transfer_result_for_consumption(
+        ) -> dict[str, Any]:
+    """Compatibility alias for the frozen runner-facing terminal validator."""
+
+    return load_and_validate_full_bank_v2_development_terminal_for_consumption(
+        root=ROOT)
+
+
+# ------------------------------------------------------------------- main ----
+def main() -> int:
+    global OUT_DIR, SCORE_DIR, SPEC_PATH, RESULT_PATH
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--scorer-corpus-design", "--corpus-design",
+        dest="scorer_corpus_design", choices=("legacy", "full-bank-v2"),
+        default="legacy",
+        help="select the exact qualified scorer lineage")
+    parser.add_argument("--self-test", action="store_true",
+                        help="pure synthetic metrics only; open no scientific artifact")
+    args = parser.parse_args()
+    if args.self_test:
+        print(json.dumps(safe_json(synthetic_self_test()), indent=2))
+        return 0
+
+    full_bank_v2 = args.scorer_corpus_design == "full-bank-v2"
+    if full_bank_v2:
+        OUT_DIR = V2_OUT_DIR
+        SCORE_DIR = OUT_DIR / "score_shards"
+        SPEC_PATH = OUT_DIR / V2_SPEC_NAME
+        RESULT_PATH = OUT_DIR / V2_RESULT_NAME
+    else:
+        OUT_DIR = S.PACKAGE_DIR / "counterfactual_development_transfer_v1_2"
+        SCORE_DIR = OUT_DIR / "score_shards"
+        SPEC_PATH = OUT_DIR / "development_transfer_spec.json"
+        RESULT_PATH = OUT_DIR / "result.json"
+
+    started = time.time()
+    scorer = validate_qualified_scorer(full_bank_v2=full_bank_v2)
+    spec = prospective_spec(scorer)
+    freeze_spec(spec)
+    if RESULT_PATH.is_file():
+        try:
+            existing = read_json(RESULT_PATH, "development transfer result")
+            validate_existing_result(
+                existing, spec["development_transfer_spec_digest"], scorer)
+            print(json.dumps(existing, indent=2))
+            return 0
+        except (DevelopmentTransferRefused, OSError, ValueError) as exc:
+            _preserve_invalid(RESULT_PATH, "invalid_terminal_result")
+            RECOVERY_EVENTS.append({
+                "source": str(RESULT_PATH),
+                "reason": f"terminal_result_revalidation_failed:{exc}",
+                "action": "preserved_result_then_resumed_exact_missing_score_units",
+            })
+
+    bundle, target_verification = validate_stage_a()
+    rows = ordered_rows(bundle)
+    context = action_goal(rows)
+    bc_result, checkpoint_inventory, checkpoint_receipts = validate_bc_result(bundle)
+
+    score_receipts: list[dict[str, Any]] = []
+    no_latent_scores, receipt = score_no_latent(rows, scorer, context)
+    score_receipts.append(receipt)
+    true_scores, receipt = score_true_latents(bundle, rows, scorer, context)
+    score_receipts.append(receipt)
+    no_latent = aggregate_metrics(state_metrics(rows, no_latent_scores))
+    true_latent = aggregate_metrics(state_metrics(rows, true_scores))
+
+    packages: dict[tuple[int, str], PredictionPackage] = {}
+    cells: dict[int, dict[str, dict[str, Any]]] = {seed: {} for seed in SEEDS}
+    for seed in SEEDS:
+        for cell in CELLS:
+            package = validate_prediction_package(
+                bundle, seed, cell, checkpoint_inventory[(seed, cell)],
+                checkpoint_receipts[(seed, cell)])
+            packages[(seed, cell)] = package
+            scores, receipt = score_prediction_package(package, bundle, scorer, context)
+            score_receipts.append(receipt)
+            cells[seed][cell] = aggregate_metrics(state_metrics(rows, scores))
+
+    analysis = analyse_cells(cells)
+    output: dict[str, Any] = {
+        "schema": (V2_RESULT_SCHEMA if full_bank_v2 else
+                   "go2_utility_scorer_counterfactual_development_transfer_result_v1_2"),
+        "status": STATUS, "complete": True,
+        "exploratory_fixed_development_states": True,
+        "development_transfer_spec_digest": spec["development_transfer_spec_digest"],
+        **_scorer_contract_fields(scorer.qualification),
+        "qualification_report_digest": scorer.qualification["qualification_report_digest"],
+        "scorer_package_sha256": scorer.package_sha256,
+        "scorer_selector_successor_bindings":
+            spec["scorer_selector_successor_bindings"],
+        **({
+            "global_exact_successor_bindings":
+                spec["global_exact_successor_bindings"],
+        } if "global_exact_successor_bindings" in spec else {}),
+        "live_selector_provenance": spec["live_selector_provenance"],
+        "frozen_inputs": spec["frozen_inputs"],
+        "scope": {"states": EXPECTED_STATES, "branches": EXPECTED_BRANCHES,
+                  "candidates_per_state": EXPECTED_CANDIDATES,
+                  "checkpoint_prediction_packages": EXPECTED_CHECKPOINTS},
+        "true_latent_scorer_diagnostic": true_latent,
+        "no_latent_baseline": no_latent,
+        "true_latent_vs_no_latent_equal_family": {
+            "sign_convention": "positive means true-latent scorer benefit; spread is descriptive",
+            "benefit": {
+                metric: _benefit(no_latent["equal_family"][metric],
+                                 true_latent["equal_family"][metric], direction)
+                for metric, direction in METRIC_DIRECTIONS.items()},
+        },
+        "cells_by_seed": cells,
+        "exploratory_paired_seed_analysis": analysis,
+        "interpretation_boundary": {
+            "scorer_qualified_on_independent_true_latent_calibration": True,
+            "development_states_fixed": 20,
+            "training_seed_replication_units": 8,
+            "state_or_branch_count_used_as_model_replication": False,
+            "planning_claim_authorised": False,
+            "final_benchmark_claim_authorised": False,
+        },
+        "no_leakage": {
+            "predictor_checkpoints_loaded": 0, "predictors_rerun": False,
+            "new_branches": 0, "new_frames": 0, "new_true_latents": 0,
+            "new_predictor_latents": 0, "model_specific_calibration": False,
+            "oracle_labels_used_as_scorer_input": False,
+            "oracle_labels_used_for_post_score_evaluation_only": True,
+        },
+        "score_shard_receipts": score_receipts,
+        "recovery": {"events": RECOVERY_EVENTS,
+                     "invalid_or_interrupted_attempts_preserved": bool(RECOVERY_EVENTS),
+                     "resume_unit": "one true/no-latent/checkpoint score vector"},
+        "runtime": {"total_wall_time_s": round(time.time() - started, 3)},
+        "storage": {
+            "source_target_latent_bytes_read_only": target_verification["bytes"],
+            "source_prediction_package_bytes_read_only": sum(
+                package.storage_bytes for package in packages.values()),
+            "score_shards_and_receipts_bytes": sum(
+                (OUT_DIR / receipt["path"]).stat().st_size
+                + (SCORE_DIR / f"{receipt['unit']}.receipt.json").stat().st_size
+                for receipt in score_receipts),
+            "scope_note": "explicit bound files only; no recursive custody-root traversal",
+        },
+        "source_bc_result_digest": bc_result["report_digest"],
+    }
+    output = safe_json(output)
+    output["result_digest"] = legacy_digest(output)
+    atomic_json(RESULT_PATH, output)
+    print(json.dumps(output, indent=2))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

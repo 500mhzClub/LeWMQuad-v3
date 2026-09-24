@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "training_records": [
+    {
+      "trial": "pulse_episode_023",
+      "prefix_action": "hold",
+      "pixel_max_abs_error": 0.0,
+      "raw_control_exact": true
+    },
+    {
+      "trial": "pulse_episode_003",
+      "prefix_action": "right_turn",
+      "pixel_max_abs_error": 0.0,
+      "raw_control_exact": true
+    }
+  ],
+  "rejected_inputs": [
+    {
+      "case": "wrong_spacing",
+      "error": "exact causal packet times and common episode required"
+    },
+    {
+      "case": "missing_frame",
+      "error": "three native packets at 500-ms spacing required"
+    },
+    {
+      "case": "downsampled_rgb",
+      "error": "policy RGB identity mismatch"
+    },
+    {
+      "case": "future_command_availability",
+      "error": "noncausal or stale policy history"
+    }
+  ],
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_dense_native_observation_development.py": "0e0ab02df3d22c64f6f48bca4e0fbdc905e174af9866a7392977ad942065f901",
+    "lewm/dense_native_observation_development.py": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3"
+  },
+  "encoder_preprocessing_sha256": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2",
+  "gpu_used": false,
+  "new_training": false,
+  "new_navigation": false,
+  "interpretation": "Native packet adapter exactly matches retained file preprocessing and raw control order; runtime buffering, inference latency and navigation still need integration."
+}

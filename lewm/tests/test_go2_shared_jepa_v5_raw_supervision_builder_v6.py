@@ -1,0 +1,1227 @@
+"""Source-free author tests for the standalone raw-supervision Builder V6."""
+from __future__ import annotations
+
+import ast
+from collections.abc import Mapping as MappingABC
+from copy import deepcopy
+from dataclasses import fields, replace
+import hashlib
+import inspect
+import json
+import os
+from pathlib import Path
+import types
+from typing import Any, Callable
+
+import pytest
+
+from lewm.datasets import go2_shared_jepa_v5_raw_supervision_builder_v6 as builder
+from lewm.datasets import go2_shared_jepa_v5_raw_supervision_plan_v5 as metadata
+from lewm.tests import go2_shared_jepa_v5_raw_supervision_builder_v6_test_support as support
+from scripts.build_go2_observable_camera_ray_fit_v4 import synthetic_scene_jobs
+
+
+ROOT = Path(__file__).resolve().parents[2]
+AMENDMENT = (
+    "docs/lewm_go2_shared_jepa_v5_raw_supervision_builder_auditor_v6_"
+    "authorization_successor_amendment_2026-07-13.md"
+)
+AMENDMENT_SHA256 = (
+    "09ced36b2eab16585c759e65f7eda844f76006b93de013e5f7057fb9a8e7a137"
+)
+V5_BLOCK = {
+    "docs/lewm_go2_shared_jepa_v5_raw_supervision_builder_auditor_v5_"
+    "authorization_successor_amendment_2026-07-13.md": (
+        "fe6a29a27eb0284ce84fcba409b530c6351befad18ee9d655f5f2e9b337d9e91"
+    ),
+    "lewm/datasets/go2_shared_jepa_v5_raw_supervision_builder_v5.py": (
+        "8d85635a85d5a6a3575602a89f37a01f97acf03bd0059a8ae452b21ed4cddce2"
+    ),
+    "scripts/build_go2_shared_jepa_v5_development_raw_supervision_v5.py": (
+        "3116c2a5b429cf0fbed0674de91b0569d6ecf6e10c26cd6064a3bb0349e78019"
+    ),
+    "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_builder_v5.py": (
+        "6b49d5d5847e22cea413a7b72da34d5fbf221f876b89bfdf899804024c9d05d6"
+    ),
+    "docs/lewm_go2_shared_jepa_v5_development_raw_supervision_builder_v5_"
+    "author_handoff_2026-07-13.md": (
+        "a8037613cca9c3879eb2dc8f9df847097a9053326ff973f01a79b3299aec9d26"
+    ),
+    "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_builder_v5_"
+    "independent_qa.py": (
+        "fc0ba7af24aeacf975a4b75855e830e9691475391979068385d9d256e8a66812"
+    ),
+    "docs/lewm_go2_shared_jepa_v5_development_raw_supervision_builder_v5_"
+    "independent_review_2026-07-13.json": (
+        "2687d43da0eb69c39b964ce72f5065fecceb5c2d28652589371d257711702307"
+    ),
+    "lewm/datasets/go2_shared_jepa_v5_raw_supervision_auditor_v5.py": (
+        "6df29a2faea62191db3b48a93ce114adc23265458a2bb2986fa1a4c5ca732855"
+    ),
+    "scripts/audit_go2_shared_jepa_v5_raw_supervision_v5.py": (
+        "3f2b99ffbf3ab55f6d57c7686f95650f1086394739148978ab618e1b6d8e9b27"
+    ),
+}
+
+
+class _InlineFuture:
+    def __init__(self, value: Any) -> None:
+        self._value = value
+
+    def result(self) -> Any:
+        return self._value
+
+
+class _InlineExecutor:
+    def __init__(
+        self,
+        *,
+        initializer: Any = None,
+        initargs: tuple[Any, ...] = (),
+        **_kwargs: Any,
+    ) -> None:
+        if initializer is not None:
+            initializer(*initargs)
+
+    def __enter__(self) -> "_InlineExecutor":
+        return self
+
+    def __exit__(self, *_args: Any) -> None:
+        return None
+
+    def submit(self, function: Any, *args: Any) -> _InlineFuture:
+        return _InlineFuture(function(*args))
+
+
+def _sha(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def _rehash(value: dict[str, Any]) -> dict[str, Any]:
+    result = deepcopy(value)
+    result.pop("content_sha256", None)
+    return {
+        **result,
+        "content_sha256": builder.canonical_json_sha256(result),
+    }
+
+
+def _synthetic_job_and_pair() -> tuple[
+    builder.PreparedSceneJobV6, dict[str, Any]
+]:
+    frames = synthetic_scene_jobs(2)
+    scene_id = "synthetic_builder_v5_scene"
+    family = "synthetic_builder_v5_family"
+    endpoints: list[builder.PreparedEndpointV6] = []
+    identities: list[str] = []
+    for index, side in enumerate(("current", "next")):
+        frame = frames[index].frames[0]
+        identity = {
+            "dataset_role": "train",
+            "scene_id": scene_id,
+            "episode_id": "synthetic_episode",
+            "env_index": 0,
+            "episode_step": index,
+            "frame_index": index,
+            "timestamp_ns": 1_000 + index,
+            "image_sha256": frame.image_sha256,
+        }
+        identity_sha256 = builder.canonical_json_sha256(identity)
+        core = {
+            "schema": metadata.ENDPOINT_SCHEMA,
+            "identity": identity,
+            "identity_sha256": identity_sha256,
+            "image_path_metadata_only": frame.image_path_metadata_only,
+            "frames_jsonl_sha256": hashlib.sha256(
+                f"frames:{scene_id}".encode("ascii")
+            ).hexdigest(),
+            "scene_manifest_sha256": hashlib.sha256(
+                f"manifest:{scene_id}".encode("ascii")
+            ).hexdigest(),
+            "base_quat_world_xyzw": [0.0, 0.0, 0.0, 1.0],
+            "stored_base_yaw_rad": 0.0,
+        }
+        endpoint = {
+            **core,
+            "content_sha256": builder.canonical_json_sha256(core),
+        }
+        endpoints.append(
+            builder.PreparedEndpointV6(
+                plan_endpoint=endpoint,
+                family=family,
+                frame=frame,
+            )
+        )
+        identities.append(identity_sha256)
+    job = builder.PreparedSceneJobV6(
+        scene_id=scene_id,
+        role="train",
+        family=family,
+        endpoints=tuple(endpoints),
+    )
+    pair_core = {
+        "schema": metadata.PAIR_SCHEMA,
+        "dataset_role": "train",
+        "global_row": 0,
+        "scene_id": scene_id,
+        "family": family,
+        "current_endpoint_sha256": identities[0],
+        "next_endpoint_sha256": identities[1],
+    }
+    return job, {
+        **pair_core,
+        "content_sha256": builder.canonical_json_sha256(pair_core),
+    }
+
+
+def _tree_hashes(root: Path) -> dict[str, str]:
+    return {
+        path.relative_to(root).as_posix(): _sha(path)
+        for path in sorted(root.rglob("*"), key=str)
+        if path.is_file()
+    }
+
+
+def _function(tree: ast.Module, name: str) -> ast.FunctionDef:
+    matches = [
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == name
+    ]
+    assert len(matches) == 1
+    return matches[0]
+
+
+def _call_name(node: ast.Call) -> str:
+    if isinstance(node.func, ast.Name):
+        return node.func.id
+    if isinstance(node.func, ast.Attribute):
+        return node.func.attr
+    return ""
+
+
+def _ordered_calls(source: Path, function_name: str) -> list[tuple[int, str]]:
+    tree = ast.parse(source.read_text(encoding="utf-8"))
+    function = _function(tree, function_name)
+    return sorted(
+        (
+            (node.lineno, _call_name(node))
+            for node in ast.walk(function)
+            if isinstance(node, ast.Call)
+        ),
+        key=lambda item: item[0],
+    )
+
+
+def _open_synthetic_transaction(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> tuple[
+    builder._ClosedPublicationTransaction,
+    builder._RetainedPublicationParent,
+    dict[str, Path],
+]:
+    source_parent = tmp_path / "sources"
+    publication_parent = tmp_path / "publication"
+    source_parent.mkdir()
+    publication_parent.mkdir()
+    source = source_parent / "source.bin"
+    source.write_bytes(b"frozen source bytes\n")
+    destination = publication_parent / "dataset"
+    staging_name = ".dataset.staging.synthetic"
+    staging = publication_parent / staging_name
+    staging.mkdir(mode=0o700)
+    data = staging / "data.bin"
+    data.write_bytes(b"validated staging bytes\n")
+    manifest = builder._with_content_sha256(
+        {"schema": "synthetic_closed_publication_transaction_v1"}
+    )
+    (staging / "manifest.json").write_bytes(
+        builder.canonical_json_bytes(manifest) + b"\n"
+    )
+    expected_files = (
+        {
+            "path": "data.bin",
+            "byte_count": data.stat().st_size,
+            "file_sha256": _sha(data),
+        },
+    )
+    retained = builder._open_publication_parent(publication_parent)
+    identity = builder._named_directory_identity(retained.parent_fd, staging_name)
+    monkeypatch.setattr(
+        builder,
+        "_exact_publication_source_hashes",
+        lambda _context: {source: _sha(source)},
+    )
+    try:
+        transaction = builder._ClosedPublicationTransaction(
+            context=object(),  # type: ignore[arg-type]
+            retained=retained,
+            staging=staging,
+            staging_name=staging_name,
+            staging_identity=identity,
+            destination=destination,
+            expected_files=expected_files,
+            manifest=manifest,
+        )
+    except BaseException:
+        retained.close()
+        raise
+    return transaction, retained, {
+        "source": source,
+        "source_parent": source_parent,
+        "staging": staging,
+        "data": data,
+        "destination": destination,
+    }
+
+
+def _publish_synthetic_transaction(
+    transaction: builder._ClosedPublicationTransaction,
+    retained: builder._RetainedPublicationParent,
+) -> None:
+    transaction.validate_before_rename()
+    transaction.rename_owned()
+    retained.refresh_after_owned_mutation()
+    transaction.validate_after_rename()
+    os.fsync(retained.parent_fd)
+    transaction.require_final_quiet()
+
+
+def test_v6_amendment_and_v5_block_are_frozen() -> None:
+    assert _sha(ROOT / AMENDMENT) == AMENDMENT_SHA256
+    assert {relative: _sha(ROOT / relative) for relative in V5_BLOCK} == V5_BLOCK
+    assert builder.FROZEN_PARENT_HASHES[AMENDMENT] == AMENDMENT_SHA256
+    assert all(
+        builder.FROZEN_PARENT_HASHES[relative] == digest
+        for relative, digest in V5_BLOCK.items()
+    )
+    review = json.loads(
+        (
+            ROOT
+            / "docs/lewm_go2_shared_jepa_v5_development_raw_supervision_builder_v5_"
+            "independent_review_2026-07-13.json"
+        ).read_text(encoding="utf-8")
+    )
+    assert review["verdict"] == "BLOCK"
+    assert review["content_sha256"] == (
+        "5fd83545022f2109102407929a62568c557ff8a3a226faeab8a58c62b61201e9"
+    )
+
+
+def test_v5_race_is_reproduced_and_v6_transaction_spans_publication() -> None:
+    v5_calls = _ordered_calls(
+        ROOT / "lewm/datasets/go2_shared_jepa_v5_raw_supervision_builder_v5.py",
+        "_build_exact_prepared_dataset_v5",
+    )
+    v6_calls = _ordered_calls(Path(builder.__file__), "_build_exact_prepared_dataset_v6")
+    v5_names = [name for _line, name in v5_calls]
+    assert v5_names.count("_revalidate_exact_before_publication") == 1
+    assert v5_names.count("_libc_renameat2") == 1
+    assert v5_names.index("_revalidate_exact_before_publication") < v5_names.index(
+        "_libc_renameat2"
+    )
+    assert "_validate_staging_inventory" not in v5_names[
+        v5_names.index("_revalidate_exact_before_publication") + 1 :
+        v5_names.index("_libc_renameat2")
+    ]
+
+    v6_names = [name for _line, name in v6_calls]
+    assert v6_names.count("_ClosedPublicationTransaction") == 1
+    assert v6_names.count("_revalidate_exact_before_publication") == 1
+    assert v6_names.count("validate_before_rename") == 1
+    assert v6_names.count("rename_owned") == 1
+    assert v6_names.count("validate_after_rename") == 1
+    assert v6_names.count("require_final_quiet") == 1
+    assert "_libc_renameat2" not in v6_names
+    transaction_index = v6_names.index("_ClosedPublicationTransaction")
+    revalidate_index = v6_names.index("_revalidate_exact_before_publication")
+    validate_index = v6_names.index("validate_before_rename")
+    rename_index = v6_names.index("rename_owned")
+    post_index = v6_names.index("validate_after_rename")
+    quiet_index = v6_names.index("require_final_quiet")
+    assert transaction_index < revalidate_index < validate_index < rename_index
+    assert rename_index < post_index < quiet_index
+
+    required_before_second_pass = {
+        "_precommitted_audit_sample",
+        "_with_content_sha256",
+        "_validate_staging_inventory",
+        "_write_json_exclusive",
+        "_fsync_directory",
+    }
+    for name in required_before_second_pass:
+        prepublication_occurrences = [
+            line
+            for line, observed_name in v6_calls
+            if observed_name == name
+        ]
+        assert prepublication_occurrences
+        transaction_line = next(
+            line
+            for line, observed_name in v6_calls
+            if observed_name == "_ClosedPublicationTransaction"
+        )
+        assert max(prepublication_occurrences) < transaction_line
+    assert any(
+        line < transaction_line
+        for line, observed_name in v6_calls
+        if observed_name == "fsync"
+    )
+
+
+def test_canonical_v6_roles_schemas_and_authors_are_exact() -> None:
+    assert builder.AUTHORIZED_ROLE_PATHS == (
+        (
+            "builder_source",
+            "lewm/datasets/go2_shared_jepa_v5_raw_supervision_builder_v6.py",
+        ),
+        (
+            "builder_cli",
+            "scripts/build_go2_shared_jepa_v5_development_raw_supervision_v6.py",
+        ),
+        (
+            "builder_test",
+            "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_builder_v6.py",
+        ),
+        (
+            "builder_handoff",
+            "docs/lewm_go2_shared_jepa_v5_development_raw_supervision_builder_v6_"
+            "author_handoff_2026-07-13.md",
+        ),
+        (
+            "builder_review",
+            "docs/lewm_go2_shared_jepa_v5_development_raw_supervision_builder_v6_"
+            "independent_review_2026-07-13.json",
+        ),
+        (
+            "auditor_source",
+            "lewm/datasets/go2_shared_jepa_v5_raw_supervision_auditor_v6.py",
+        ),
+        (
+            "auditor_cli",
+            "scripts/audit_go2_shared_jepa_v5_raw_supervision_v6.py",
+        ),
+        (
+            "auditor_test",
+            "lewm/tests/test_go2_shared_jepa_v5_raw_supervision_auditor_v6.py",
+        ),
+        (
+            "auditor_review",
+            "docs/lewm_go2_shared_jepa_v5_raw_supervision_auditor_v6_"
+            "independent_review_2026-07-13.json",
+        ),
+    )
+    assert builder.AUTHORIZATION_SCHEMA.endswith("build_authorization_v6")
+    assert builder.REVIEW_BINDING_SCHEMA.endswith("review_binding_v6")
+    assert builder.BUILDER_REVIEW_SCHEMA.endswith(
+        "builder_v6_independent_review_v1"
+    )
+    assert builder.AUDITOR_REVIEW_SCHEMA.endswith(
+        "auditor_v6_independent_review_v1"
+    )
+    assert builder.BUILDER_IMPLEMENTATION_AUTHOR == "/root/raw_builder_arch"
+    assert builder.AUDITOR_IMPLEMENTATION_AUTHOR == "/root/raw_auditor_author"
+
+
+def test_import_surface_exposes_no_legacy_builder_or_nonpure_loader() -> None:
+    namespace = vars(builder)
+    forbidden_names = {
+        "execute_exact_build_v1",
+        "execute_exact_build_v2",
+        "execute_exact_build_v3",
+        "execute_exact_build_v4",
+        "load_frozen_development_metadata",
+        "load_frozen_development_source_inventory",
+        "plan_v5",
+        "v4_builder",
+        "_v1",
+        "_v2",
+        "_v3",
+        "_v4",
+        "__getattr__",
+    }
+    assert forbidden_names.isdisjoint(namespace)
+    legacy_modules = {
+        value.__name__
+        for value in namespace.values()
+        if isinstance(value, types.ModuleType)
+        and (
+            "raw_supervision_builder_v1" in value.__name__
+            or "raw_supervision_builder_v2" in value.__name__
+            or "raw_supervision_builder_v3" in value.__name__
+            or "raw_supervision_builder_v4" in value.__name__
+            or "raw_supervision_auditor" in value.__name__
+        )
+    }
+    assert legacy_modules == set()
+    assert set(builder.__all__) == {
+        "ACCELERATOR_ENVIRONMENT",
+        "ARRAY_LAYOUT",
+        "AUTHORIZATION_PATH",
+        "CANONICAL_OUTPUT",
+        "DATASET_SCHEMA",
+        "FAILURE_RECEIPT",
+        "MAX_WORKERS",
+        "PreparedEndpointV6",
+        "PreparedSceneJobV6",
+        "RawSupervisionBuildError",
+        "THREAD_ENVIRONMENT",
+        "canonical_json_bytes",
+        "canonical_json_sha256",
+        "execute_exact_build_v6",
+    }
+
+
+def test_production_signatures_have_no_injection_seams() -> None:
+    phase_two = inspect.signature(builder._validate_authorization_phase_two)
+    assert tuple(phase_two.parameters) == ("phase_one",)
+    exact = inspect.signature(builder.execute_exact_build_v6)
+    assert tuple(exact.parameters) == ("authorization_sha256", "workers")
+    assert all(
+        value.kind is inspect.Parameter.KEYWORD_ONLY
+        for value in exact.parameters.values()
+    )
+    build = inspect.signature(builder._build_exact_prepared_dataset_v6)
+    forbidden = {
+        "output_directory",
+        "prepublication_validator",
+        "callback",
+        "function",
+        "reader",
+        "repository_root",
+        "exact",
+        "skip",
+        "mapping",
+    }
+    assert forbidden.isdisjoint(build.parameters)
+    for name in (
+        "_run_exact_scene_load_pool",
+        "_run_exact_source_revalidation_pool",
+    ):
+        assert forbidden.isdisjoint(inspect.signature(getattr(builder, name)).parameters)
+    assert tuple(field.name for field in fields(builder.AcceptedAuthorizationV6)) == (
+        "authorization_file_sha256",
+        "authorization_content_sha256",
+        "source_map_sha256",
+    )
+    receipt = builder.AcceptedAuthorizationV6("1" * 64, "2" * 64, "3" * 64)
+    assert not isinstance(receipt, MappingABC)
+
+
+def test_source_uses_only_fixed_worker_targets_and_authorized_initializers() -> None:
+    source_path = ROOT / builder.__file__.removeprefix(str(ROOT) + "/")
+    tree = ast.parse(source_path.read_text(encoding="utf-8"))
+    imported = {
+        node.module
+        for node in ast.walk(tree)
+        if isinstance(node, ast.ImportFrom) and node.module is not None
+    }
+    assert not any(
+        "raw_supervision_builder_v1" in module
+        or "raw_supervision_builder_v2" in module
+        or "raw_supervision_builder_v3" in module
+        or "raw_supervision_builder_v4" in module
+        or "raw_supervision_auditor" in module
+        for module in imported
+    )
+    submitted: list[str] = []
+    initializers: list[str] = []
+    for node in ast.walk(tree):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Attribute)
+            and node.func.attr == "submit"
+        ):
+            assert node.args and isinstance(node.args[0], ast.Name)
+            submitted.append(node.args[0].id)
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name):
+            if node.func.id == "ProcessPoolExecutor":
+                keywords = {item.arg: item.value for item in node.keywords}
+                assert isinstance(keywords.get("initializer"), ast.Name)
+                initializers.append(keywords["initializer"].id)
+                assert "initargs" in keywords
+    assert set(submitted) == {
+        "_write_prepared_scene_job",
+        "_load_exact_scene_job",
+        "_revalidate_exact_scene_sources",
+    }
+    assert initializers and set(initializers) == {"_initialize_exact_worker"}
+    for node in ast.walk(tree):
+        if isinstance(node, (ast.Assign, ast.AnnAssign, ast.AugAssign)):
+            targets = (
+                node.targets
+                if isinstance(node, ast.Assign)
+                else [node.target]
+            )
+            assert all(
+                not (
+                    isinstance(target, ast.Name)
+                    and target.id == "_require_exact_authority"
+                )
+                and not (
+                    isinstance(target, ast.Attribute)
+                    and target.attr == "_require_exact_authority"
+                )
+                for target in targets
+            )
+
+
+Mutation = Callable[[dict[str, Any]], None]
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        lambda value: value["source_map"].pop(),
+        lambda value: value["source_map"].append(
+            {"role": "extra", "path": "review/extra.json", "sha256": "1" * 64}
+        ),
+        lambda value: value["source_map"][1].update(value["source_map"][0]),
+        lambda value: value["source_map"][0].__setitem__(
+            "path", "lewm/datasets/../unbound.py"
+        ),
+        lambda value: value["source_map"].__setitem__(
+            slice(0, 2), [value["source_map"][1], value["source_map"][0]]
+        ),
+        lambda value: value["builder_review"]["candidate"][0].__setitem__(
+            "sha256", "2" * 64
+        ),
+        lambda value: value.__setitem__("unexpected", False),
+        lambda value: value["builder_review"].__setitem__(
+            "implementation_author", "/synthetic/wrong_author"
+        ),
+        lambda value: value["auditor_review"].__setitem__(
+            "reviewer", value["builder_review"]["reviewer"]
+        ),
+    ],
+)
+def test_phase_one_adversaries_reach_zero_openers(
+    mutation: Mutation,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    authority, _raw_by_role, _digests = support.valid_authorization()
+    mutation(authority)
+    authority = _rehash(authority)
+    opened: list[str] = []
+
+    def forbidden(*_args: Any, **_kwargs: Any) -> bytes:
+        opened.append("opened")
+        raise AssertionError("phase-one rejection reached a byte opener")
+
+    monkeypatch.setattr(builder, "_read_bound_regular_file", forbidden)
+    with pytest.raises((PermissionError, builder.RawSupervisionBuildError)):
+        builder._validate_authorization_phase_one(
+            authority,
+            authorization_file_sha256="4" * 64,
+        )
+    assert opened == []
+
+
+def test_synthetic_phase_two_checks_exact_nine_in_order() -> None:
+    authority, raw_by_role, digests = support.valid_authorization()
+    phase_one = builder._validate_authorization_phase_one(
+        authority,
+        authorization_file_sha256="5" * 64,
+    )
+    role_by_path = dict(
+        (path, role) for role, path in builder.AUTHORIZED_ROLE_PATHS
+    )
+
+    def reader(
+        *, repository_root: Path, path: Path, expected_sha256: str
+    ) -> bytes:
+        role = role_by_path[path.relative_to(repository_root).as_posix()]
+        assert expected_sha256 == digests[role]
+        return raw_by_role[role]
+
+    receipt, opened = support.validate_phase_two_for_tests(
+        phase_one,
+        repository_root=Path("/synthetic/repository"),
+        reader=reader,
+    )
+    assert opened == tuple(role for role, _path in builder.AUTHORIZED_ROLE_PATHS)
+    assert receipt.authorization_file_sha256 == "5" * 64
+    assert receipt.authorization_content_sha256 == authority["content_sha256"]
+    assert receipt.source_map_sha256 == builder.canonical_json_sha256(
+        authority["source_map"]
+    )
+
+
+def test_fabricated_phase_capsule_rejects_before_any_read(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    authority, _raw_by_role, _digests = support.valid_authorization()
+    phase_one = builder._validate_authorization_phase_one(
+        authority,
+        authorization_file_sha256="6" * 64,
+    )
+    fabricated = replace(phase_one, source_map_sha256="7" * 64)
+    opened: list[str] = []
+
+    def forbidden(*_args: Any, **_kwargs: Any) -> bytes:
+        opened.append("opened")
+        raise AssertionError("fabricated capsule reached a byte opener")
+
+    monkeypatch.setattr(builder, "_read_bound_regular_file", forbidden)
+    with pytest.raises(PermissionError, match="capsule was fabricated"):
+        builder._validate_authorization_phase_two(fabricated)
+    assert opened == []
+
+
+def test_absent_authority_reaches_no_byte_or_metadata_opener(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def forbidden(*_args: Any, **_kwargs: Any) -> Any:
+        calls.append("opened")
+        raise AssertionError("absent authority reached protected data")
+
+    monkeypatch.setattr(builder, "AUTHORIZATION_PATH", tmp_path / "absent.json")
+    monkeypatch.setattr(builder, "CANONICAL_OUTPUT", tmp_path / "output")
+    monkeypatch.setattr(builder, "FAILURE_RECEIPT", tmp_path / "failure.json")
+    monkeypatch.setattr(builder, "_read_bound_regular_file", forbidden)
+    monkeypatch.setattr(metadata, "load_frozen_development_metadata", forbidden)
+    monkeypatch.setattr(
+        metadata, "load_frozen_development_source_inventory", forbidden
+    )
+    with pytest.raises(PermissionError, match="authorization is absent"):
+        builder.execute_exact_build_v6(
+            authorization_sha256="8" * 64,
+            workers=1,
+        )
+    assert calls == []
+    assert not (tmp_path / "output").exists()
+    assert not (tmp_path / "failure.json").exists()
+
+
+@pytest.mark.parametrize("raw", [b"{not json}\n", b'{"x":1,"x":2}\n'])
+def test_malformed_authority_opens_only_the_fixed_authority_file(
+    raw: bytes,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    authority = tmp_path / "authorization.json"
+    authority.write_bytes(raw)
+    opened: list[Path] = []
+    metadata_calls: list[str] = []
+    def tracking_reader(
+        *, repository_root: Path, path: Path, expected_sha256: str
+    ) -> bytes:
+        assert repository_root == builder.ROOT
+        assert path == authority
+        assert expected_sha256 == hashlib.sha256(raw).hexdigest()
+        opened.append(path)
+        return raw
+
+    monkeypatch.setattr(builder, "AUTHORIZATION_PATH", authority)
+    monkeypatch.setattr(builder, "_read_bound_regular_file", tracking_reader)
+    monkeypatch.setattr(
+        metadata,
+        "load_frozen_development_metadata",
+        lambda *_args, **_kwargs: metadata_calls.append("metadata"),
+    )
+    with pytest.raises(builder.RawSupervisionBuildError):
+        builder._require_exact_authority(hashlib.sha256(raw).hexdigest())
+    assert opened == [authority]
+    assert metadata_calls == []
+
+
+@pytest.mark.parametrize("workers", [False, True, 0, 7, 1.0, "1"])
+def test_worker_bound_rejects_before_authority(
+    workers: object,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+
+    def forbidden(_digest: str) -> Any:
+        calls.append("authority")
+        raise AssertionError("invalid worker count reached authority")
+
+    monkeypatch.setattr(builder, "_require_exact_authority", forbidden)
+    with pytest.raises(ValueError, match="workers"):
+        builder.execute_exact_build_v6(
+            authorization_sha256="9" * 64,
+            workers=workers,  # type: ignore[arg-type]
+        )
+    assert calls == []
+
+
+def test_worker_initializer_authorizes_and_hides_accelerators(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[str] = []
+    monkeypatch.setattr(
+        builder,
+        "_require_exact_authority",
+        lambda digest: calls.append(digest),
+    )
+    builder._initialize_exact_worker("a" * 64)
+    assert calls == ["a" * 64]
+    assert all(os.environ[name] == "1" for name in builder.THREAD_ENVIRONMENT)
+    assert all(os.environ[name] == "" for name in builder.ACCELERATOR_ENVIRONMENT)
+
+
+def test_deterministic_shard_science_and_layout_without_exact_data(
+    tmp_path: Path,
+) -> None:
+    job, pair = _synthetic_job_and_pair()
+    first = tmp_path / "first"
+    second = tmp_path / "second"
+    (first / "shards").mkdir(parents=True)
+    (second / "shards").mkdir(parents=True)
+    first_result = support.write_prepared_scene_job_for_tests(job, first)
+    reversed_job = builder.PreparedSceneJobV6(
+        scene_id=job.scene_id,
+        role=job.role,
+        family=job.family,
+        endpoints=tuple(reversed(job.endpoints)),
+    )
+    second_result = support.write_prepared_scene_job_for_tests(
+        reversed_job, second
+    )
+    assert first_result["shard"] == second_result["shard"]
+    assert _tree_hashes(first) == _tree_hashes(second)
+    files = {
+        item["path"]: item for item in first_result["shard"]["files"]
+    }
+    assert tuple(name for name, _dtype, _shape in builder.ARRAY_LAYOUT) == (
+        "camera_origin_body_m.f4",
+        "camera_basis_body_fru.f4",
+        "ground_plane_z_body_m.f4",
+        "ground_support_in_frustum.u1",
+        "ground_support_clear_to_target.u1",
+        "pixel_hit_mask.u1",
+        "pixel_first_hit_distance_m.f4",
+        "raster_labels.u1",
+    )
+    assert files["ground_plane_z_body_m.f4"]["shape"] == [2]
+    assert files["raster_labels.u1"]["dtype"] == "|u1"
+    assert files["raster_labels.u1"]["shape"] == [2, 64, 64]
+    ordered_jobs, ordered_pairs = builder._validate_jobs_and_pairs(
+        (job,), (pair,)
+    )
+    assert ordered_jobs == (job,)
+    assert ordered_pairs == (pair,)
+
+
+def test_join_rejects_duplicate_endpoint_and_cross_role() -> None:
+    job, pair = _synthetic_job_and_pair()
+    duplicate = builder.PreparedSceneJobV6(
+        scene_id=job.scene_id,
+        role=job.role,
+        family=job.family,
+        endpoints=(job.endpoints[0], job.endpoints[0]),
+    )
+    with pytest.raises(ValueError, match="scheduled more than once"):
+        builder._validate_jobs_and_pairs((duplicate,), (pair,))
+    crossed = deepcopy(pair)
+    crossed["dataset_role"] = "checkpoint_selection"
+    crossed = _rehash(crossed)
+    with pytest.raises(ValueError, match="role, scene, or family"):
+        builder._validate_jobs_and_pairs((job,), (crossed,))
+
+
+def test_bound_reader_and_publication_parent_reject_alias_replacement(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source.json"
+    source.write_bytes(b"{}\n")
+    alias = tmp_path / "alias.json"
+    alias.symlink_to(source)
+    with pytest.raises(PermissionError):
+        builder._read_bound_regular_file(
+            repository_root=tmp_path,
+            path=alias,
+            expected_sha256=_sha(source),
+        )
+    container = tmp_path / "container"
+    container.mkdir()
+    retained = builder._open_publication_parent(container)
+    moved = tmp_path / "moved"
+    try:
+        container.rename(moved)
+        container.mkdir()
+        with pytest.raises(builder.RawSupervisionBuildError):
+            retained.validate()
+    finally:
+        retained.close()
+
+
+@pytest.mark.parametrize("mutation_scope", ["staging", "source"])
+def test_full_build_rejects_mutation_during_final_source_pass(
+    mutation_scope: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    output = tmp_path / "publication" / "dataset"
+    source_parent = tmp_path / "source"
+    source_parent.mkdir()
+    source = source_parent / "source.bin"
+    source.write_bytes(b"frozen source\n")
+    authorization_sha256 = "a" * 64
+    job, pair = _synthetic_job_and_pair()
+    context = builder.ExactPrepublicationContextV6(
+        plan=None,  # type: ignore[arg-type]
+        inventory=None,  # type: ignore[arg-type]
+        source_records=(),
+        authorization_sha256=authorization_sha256,
+        workers=1,
+    )
+    observed_staging: list[Path] = []
+
+    monkeypatch.setattr(builder, "CANONICAL_OUTPUT", output)
+    monkeypatch.setattr(builder, "_require_exact_authority", lambda _digest: None)
+    monkeypatch.setattr(builder, "ProcessPoolExecutor", _InlineExecutor)
+    monkeypatch.setattr(
+        builder,
+        "_precommitted_audit_sample",
+        lambda _rows: {"records": [{} for _ in range(24)]},
+    )
+    monkeypatch.setattr(
+        builder,
+        "_exact_publication_source_hashes",
+        lambda _context: {source: _sha(source)},
+    )
+
+    def mutate_during_source_pass(_context: Any) -> None:
+        candidates = [
+            path
+            for path in output.parent.iterdir()
+            if path.name.startswith(f".{output.name}.staging.")
+        ]
+        assert len(candidates) == 1
+        observed_staging.append(candidates[0])
+        target = candidates[0] / "pairs.jsonl" if mutation_scope == "staging" else source
+        target.write_bytes(b"mutated during final source pass\n")
+
+    monkeypatch.setattr(
+        builder,
+        "_revalidate_exact_before_publication",
+        mutate_during_source_pass,
+    )
+    with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+        builder._build_exact_prepared_dataset_v6(
+            (job,),
+            (pair,),
+            workers=1,
+            input_provenance={},
+            access_ledger={},
+            prepublication_context=context,
+        )
+    assert observed_staging
+    assert not output.exists()
+    assert not any(output.parent.glob(f".{output.name}.staging.*"))
+
+
+def test_closed_transaction_clean_publication_has_exact_owned_rename_events(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    try:
+        _publish_synthetic_transaction(transaction, retained)
+        assert paths["destination"].is_dir()
+        assert not transaction.poisoned
+        assert transaction.renamed
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_transaction_baseline_rejects_extant_hash_change(tmp_path: Path) -> None:
+    source = tmp_path / "source.bin"
+    source.write_bytes(b"expected\n")
+    expected = _sha(source)
+    source.write_bytes(b"changed before baseline\n")
+    with pytest.raises(builder.RawSupervisionBuildError, match="baseline"):
+        builder._open_transaction_leaf(
+            source,
+            expected_sha256=expected,
+            namespace="source",
+            relative_path=None,
+        )
+
+
+@pytest.mark.parametrize("namespace", ["source", "staging"])
+@pytest.mark.parametrize(
+    "operation",
+    ["modify_restore", "create_delete", "rename_restore", "replace_restore"],
+)
+def test_closed_transaction_rejects_namespace_mutation_and_restoration(
+    namespace: str,
+    operation: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    target = paths["source"] if namespace == "source" else paths["data"]
+    parent = paths["source_parent"] if namespace == "source" else paths["staging"]
+    original = target.read_bytes()
+    try:
+        if operation == "modify_restore":
+            target.write_bytes(b"transient mutation\n")
+            target.write_bytes(original)
+        elif operation == "create_delete":
+            ephemeral = parent / "ephemeral.bin"
+            ephemeral.write_bytes(b"ephemeral\n")
+            ephemeral.unlink()
+        elif operation == "rename_restore":
+            moved = parent / "moved.bin"
+            target.rename(moved)
+            moved.rename(target)
+        elif operation == "replace_restore":
+            saved = parent / "saved.bin"
+            target.rename(saved)
+            target.write_bytes(b"replacement\n")
+            target.unlink()
+            saved.rename(target)
+        else:
+            raise AssertionError(operation)
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.validate_before_rename()
+        assert transaction.poisoned
+        assert not paths["destination"].exists()
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_rejects_mutation_during_descriptor_validation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    original_sha256_fd = builder._sha256_fd
+    mutated = False
+
+    def mutating_sha256_fd(descriptor: int) -> str:
+        nonlocal mutated
+        if not mutated:
+            mutated = True
+            paths["source"].write_bytes(b"mutated during validation\n")
+        return original_sha256_fd(descriptor)
+
+    monkeypatch.setattr(builder, "_sha256_fd", mutating_sha256_fd)
+    try:
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.validate_before_rename()
+        assert mutated
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_rejects_mutation_after_validation_at_rename(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    try:
+        transaction.validate_before_rename()
+        paths["source"].write_bytes(b"mutated after validation\n")
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.rename_owned()
+        assert transaction.renamed
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_rejects_mutation_inside_rename_call(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    original_rename = builder._libc_renameat2
+
+    def racing_rename(*args: Any) -> None:
+        paths["source"].write_bytes(b"rename-time mutation\n")
+        original_rename(*args)
+
+    monkeypatch.setattr(builder, "_libc_renameat2", racing_rename)
+    try:
+        transaction.validate_before_rename()
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.rename_owned()
+        assert transaction.renamed
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_rejects_post_rename_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    try:
+        transaction.validate_before_rename()
+        transaction.rename_owned()
+        retained.refresh_after_owned_mutation()
+        paths["source"].write_bytes(b"post-rename mutation\n")
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.validate_after_rename()
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_destination_race_is_poisoned_without_replacement(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    try:
+        transaction.validate_before_rename()
+        paths["destination"].mkdir()
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.rename_owned()
+        assert transaction.poisoned
+        assert not transaction.renamed
+        assert paths["destination"].is_dir()
+        assert paths["staging"].is_dir()
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_post_rename_cleanup_removes_only_proven_owned_destination(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    identity = builder._named_directory_identity(
+        retained.parent_fd, paths["staging"].name
+    )
+    replacement = paths["destination"]
+    moved_owned = replacement.with_name("moved-owned")
+    try:
+        transaction.validate_before_rename()
+        transaction.rename_owned()
+        retained.refresh_after_owned_mutation()
+        replacement.rename(moved_owned)
+        replacement.mkdir()
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction.validate_after_rename()
+        transaction.close()
+        assert not builder._cleanup_owned_directory(
+            retained, replacement.name, identity
+        )
+        assert replacement.is_dir()
+        assert moved_owned.is_dir()
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_post_rename_cleanup_can_remove_exact_owned_destination(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    identity = builder._named_directory_identity(
+        retained.parent_fd, paths["staging"].name
+    )
+    try:
+        transaction.validate_before_rename()
+        transaction.rename_owned()
+        retained.refresh_after_owned_mutation()
+        transaction.close()
+        assert builder._cleanup_owned_directory(
+            retained, paths["destination"].name, identity
+        )
+        assert not paths["destination"].exists()
+    finally:
+        transaction.close()
+        retained.close()
+
+
+@pytest.mark.parametrize(
+    "fault",
+    ["overflow", "ignored", "unknown_watch", "unknown_mask", "malformed"],
+)
+def test_closed_transaction_poison_events_are_fail_closed(
+    fault: str,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, _paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    valid_watch = next(iter(transaction._watch_by_descriptor))
+    if fault == "overflow":
+        payload = builder._INOTIFY_HEADER.pack(-1, builder._IN_Q_OVERFLOW, 0, 0)
+    elif fault == "ignored":
+        payload = builder._INOTIFY_HEADER.pack(valid_watch, builder._IN_IGNORED, 0, 0)
+    elif fault == "unknown_watch":
+        payload = builder._INOTIFY_HEADER.pack(2**30, builder._IN_MODIFY, 0, 0)
+    elif fault == "unknown_mask":
+        payload = builder._INOTIFY_HEADER.pack(valid_watch, 0x00100000, 0, 0)
+    elif fault == "malformed":
+        payload = builder._INOTIFY_HEADER.pack(valid_watch, builder._IN_MODIFY, 0, 8) + b"x"
+    else:
+        raise AssertionError(fault)
+
+    class FakePoll:
+        def __init__(self) -> None:
+            self.calls = 0
+
+        def register(self, *_args: Any) -> None:
+            return None
+
+        def poll(self, _milliseconds: int) -> list[tuple[int, int]]:
+            self.calls += 1
+            return (
+                [(transaction._inotify_fd, builder.select.POLLIN)]
+                if self.calls == 1
+                else []
+            )
+
+    monkeypatch.setattr(builder.select, "poll", FakePoll)
+    monkeypatch.setattr(builder.os, "read", lambda _fd, _count: payload)
+    try:
+        with pytest.raises(builder.RawSupervisionBuildError, match="poisoned"):
+            transaction._read_events()
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_closed_transaction_rejects_watch_descriptor_reuse(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    transaction, retained, _paths = _open_synthetic_transaction(tmp_path, monkeypatch)
+    reused = next(iter(transaction._watch_by_descriptor))
+    monkeypatch.setattr(builder, "_inotify_add", lambda *_args, **_kwargs: reused)
+    try:
+        with pytest.raises(builder.RawSupervisionBuildError, match="reused"):
+            transaction._add_watch(
+                tmp_path / "distinct-watch-path",
+                is_directory=False,
+                role="synthetic",
+            )
+        assert transaction.poisoned
+    finally:
+        transaction.close()
+        retained.close()
+
+
+def test_v2_block_reproducers_are_absent() -> None:
+    assert "_run_authorized_scene_pool" not in vars(builder)
+    assert "_call_v1_load_parent_contracts" not in vars(builder)
+    assert "_call_v1_load_exact_scene_job" not in vars(builder)
+    assert "_call_v1_revalidate_exact_scene_sources" not in vars(builder)
+    assert tuple(inspect.signature(builder._validate_authorization_phase_two).parameters) == (
+        "phase_one",
+    )
+    assert support.PRODUCTION_ELIGIBLE is False
+    source = Path(builder.__file__).read_text(encoding="utf-8")
+    assert "from lewm.tests" not in source
+    assert "_require_exact_authority =" not in source

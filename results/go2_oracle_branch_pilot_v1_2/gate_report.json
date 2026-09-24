@@ -1,0 +1,122 @@
+{
+  "schema": "go2_oracle_branch_pilot_v1_2_gate_report",
+  "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING",
+  "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+  "progress_contract_digest": "840328d918f446bad1a5855e72f13f8937fc9a42eafd87818bf8cd94305e2c3d",
+  "safety_contract_digest": "5cf4572be2490c1b6f748abc704fff3a3c15fb1ea8dc060e49314e2bbaf01e0f",
+  "oracle_v1_2_digest": "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4",
+  "superseded_oracle_v1_1": "03dbe01100870cb4cc082f936bc3d0b62aa1e5d23e8eedb44188e88992acbb53",
+  "state_manifest_digest": "5f380bf7f49ef10437c7d9644f04dbef065f0550dfd30d0ec36208cda25d08cf",
+  "genesis_backend": "cpu",
+  "tie_tolerance": 0.02,
+  "statistics": {
+    "attempted": 240,
+    "valid": 240,
+    "invalid": 0,
+    "invalid_rate": 0.0,
+    "states_scored": 20,
+    "uniquely_separated_fraction": 0.75,
+    "median_distinct_levels": 10.0,
+    "median_spread": 0.9783183036757102,
+    "families_with_two_valid_states": 8,
+    "families_present": 8,
+    "per_family_valid_states": {
+      "large_enclosed_maze": 3,
+      "local_composite_motifs": 3,
+      "loop_alias_stress": 3,
+      "medium_enclosed_maze": 3,
+      "open_obstacle_field": 2,
+      "rough_local_dynamics": 2,
+      "small_enclosed_maze": 2,
+      "visual_sensor_stress": 2
+    }
+  },
+  "gate": {
+    "components": {
+      "uniquely_separated_ge_0.70": true,
+      "median_distinct_levels_ge_5": true,
+      "median_spread_ge_0.10": true,
+      "invalid_rate_le_0.20": true,
+      "all_eight_families_two_valid_states": true
+    },
+    "pass": true
+  },
+  "distributions": {
+    "progress": {
+      "min": -1.0,
+      "p25": -0.17432350696817794,
+      "median": 0.05702785782296734,
+      "p75": 0.2923717979392756,
+      "max": 1.0,
+      "mean": 0.10141919911044696,
+      "distinct": 216
+    },
+    "contact_fraction": {
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.05,
+      "max": 0.45,
+      "mean": 0.045625000000000006,
+      "distinct": 10
+    },
+    "clearance_cost": {
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.0,
+      "p75": 0.0,
+      "max": 0.029663702845573413,
+      "mean": 0.0003856089297268123,
+      "distinct": 8
+    },
+    "stuck_fraction": {
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.05,
+      "p75": 0.15,
+      "max": 0.95,
+      "mean": 0.10104166666666667,
+      "distinct": 13
+    },
+    "safety": {
+      "min": 0.0,
+      "p25": 0.0,
+      "median": 0.03333333333333333,
+      "p75": 0.06666666666666667,
+      "max": 0.45,
+      "mean": 0.04901742519879782,
+      "distinct": 25
+    },
+    "utility": {
+      "min": -1.0,
+      "p25": -0.3452905813712124,
+      "median": -0.07941103492984963,
+      "p75": 0.24624288867475785,
+      "max": 1.0,
+      "mean": 0.0033843487128513592,
+      "distinct": 224
+    },
+    "start_geodesic_m": {
+      "min": 1.2859102176589405,
+      "p25": 1.9578150298778707,
+      "median": 4.224855134329469,
+      "p75": 7.553625274059801,
+      "max": 12.54125613366857,
+      "mean": 4.978191364780344,
+      "distinct": 20
+    },
+    "final_geodesic_m": {
+      "min": 0.7530415819725294,
+      "p25": 2.0657396063393114,
+      "median": 4.068473853592541,
+      "p75": 7.185856961927239,
+      "max": 12.508029494116931,
+      "mean": 4.837139317405446,
+      "distinct": 240
+    }
+  },
+  "invalid_reasons": {},
+  "completion_count": 0,
+  "fall_count": 0,
+  "branch_wall_time_s": 58.9
+}

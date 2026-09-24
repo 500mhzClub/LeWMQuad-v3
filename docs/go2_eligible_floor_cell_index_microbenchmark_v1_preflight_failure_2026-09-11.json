@@ -1,0 +1,11 @@
+{
+  "status": "ELIGIBLE_INDEX_MICROBENCHMARK_V1_PREFLIGHT_FAILED",
+  "source": "scripts/benchmark_go2_eligible_floor_cell_index_v1.py",
+  "source_sha256": "16d284299b6d61c4f51800d8456767dc9e4d4444f849a31ec4c5a99569e8d269",
+  "session": 54539,
+  "reason": "TypeError: discover_sources() missing 1 required positional argument: 'inherited'",
+  "benchmark_pairs_executed": 0,
+  "output_created": false,
+  "algorithm_tests_passed": 32,
+  "original_source_preserved": true
+}

@@ -1,0 +1,57 @@
+{
+  "status": "READ_ONLY_HOLD_SCHEMA_CENSUS_COMPLETE",
+  "input_sha256": {
+    "context_decisions.jsonl.gz": "c7d131924208f8afdbf8e5d4ab2ba9f211ed2ca4a62faf70e498bb19a379fb7a",
+    "command_tape.json": "f325bfc1c5eacc87642bd584b42d6a90612dc4f8264541422ab2ce0f4fc1d14a"
+  },
+  "observations": 4014,
+  "total_holds": 604,
+  "utility_reconstructed_holds": 593,
+  "other_scoring_form_holds": 11,
+  "intermediate_waypoint_hold_reasons": {
+    "no_strictly_better_allowed_nonhold": 410,
+    "every_better_nonhold_has_a_first_point_invariant_veto": 183
+  },
+  "return_holds": 118,
+  "return_utility_reconstructed_holds": 118,
+  "return_hold_reasons": {
+    "no_strictly_better_allowed_nonhold": 118
+  },
+  "schema_groups": [
+    {
+      "schema": {
+        "mode": "WAYPOINT",
+        "intermediate_target_is_mission_goal": false,
+        "nominal_clearance_reentry": null,
+        "score_contract": "causal_executed_waypoint_potential_minus_full_plan_contact",
+        "scored_pose_horizon_ns": 100000000,
+        "scored_contact_horizon_ns": 800000000
+      },
+      "count": 593,
+      "first_frame": 13,
+      "last_frame": 4002,
+      "return_count": 118
+    },
+    {
+      "schema": {
+        "mode": "WAYPOINT",
+        "intermediate_target_is_mission_goal": true,
+        "nominal_clearance_reentry": null,
+        "score_contract": "causal_residual_exact_goal_potential_minus_full_plan_contact",
+        "scored_pose_horizon_ns": 100000000,
+        "scored_contact_horizon_ns": 800000000
+      },
+      "count": 11,
+      "first_frame": 2962,
+      "last_frame": 3047,
+      "return_count": 0
+    }
+  ],
+  "all_hold_forms_accounted_for": true,
+  "all_hold_utilities_reconstructed": false,
+  "alternative_physical_outcomes_inferred": false,
+  "model_loaded": false,
+  "original_controller_reexecuted": false,
+  "native_final_result_pending": true,
+  "wall_s": 47.237301459070295
+}

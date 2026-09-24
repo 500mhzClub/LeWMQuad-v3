@@ -1,0 +1,71 @@
+{
+  "schema": "dense_task_predictor.v1",
+  "arms": {
+    "dense_action": [
+      "action",
+      false
+    ],
+    "metric_action": [
+      "action",
+      true
+    ],
+    "dense_no_future_action": [
+      "no_future_action",
+      false
+    ],
+    "metric_no_future_action": [
+      "no_future_action",
+      true
+    ]
+  },
+  "seed": 2026091708,
+  "epochs": 8,
+  "samples": 3518,
+  "effective_batch": 16,
+  "microbatch": 16,
+  "encoder_batch": 8,
+  "initial_checkpoint_sha256": {
+    "action": "beb9e4abd69d652126e7618ef9a18261b627578ea01aa894e287004734e609e7",
+    "no_future_action": "c5c52b37bef6527176b64c0b8481a82bc6d1cd6db3e543d8e1075cd546f89873"
+  },
+  "metric_checkpoint_sha256": "9f89fc391a27875075a47e9383879153e8ebc22dd5e19cd0209041caedc6a7f1",
+  "samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "frame_paths_sha256": "f5bf9c10cd6bbd26f1c42479115e8c09fe0373b8bf1e08ff5a338f91a34d16be",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_dense_task_predictor_development.py": "3acca4ca7817d0f2208382d15d6e88ebf9cf7f3cc99721981601f1c86a824bce",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "lewm/dense_visual_motion_readout_development.py": "4325ff97dfad3b75648896940089347509e9dad773dfdef0cd841c522383dba5",
+    "scripts/train_go2_frozen_vjepa_native_adaptation_development.py": "58bc65886332d624b673a62e41f2cc89e7f86b111c60fafd69b4861321862a68"
+  },
+  "objective": "dense L1 + lambda * mean(log1p(mean squared frozen goal-embedding error))",
+  "coefficient": "initial dense L1 / auxiliary loss, averaged on 128 seeded training samples using action parent; fixed thereafter and shared by both auxiliary arms",
+  "calibration_samples": 128,
+  "calibration_uses_transfer": false,
+  "continuation": "restore parent model and AdamW states; same extra updates and example order in all arms",
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.0003,
+    "weight_decay": 0.01,
+    "gradient_clip": 1.0
+  },
+  "encoder_frozen": true,
+  "metric_frozen": true,
+  "future_visual_target_only": true,
+  "extra_physical_supervision": "only inherited frozen goal metric; no new pose or control target",
+  "checkpoint_rule": "fixed final extra epoch; no transfer selection",
+  "precision": "float32 encoder/head; bf16 predictor autocast with float32 losses",
+  "feature_storage": "full normalized tokens, FP16 host RAM only; identical RGB reuse",
+  "concurrency": "one GPU process; four arms interleaved, identical minibatches; CPU cores 8-11",
+  "resources": {
+    "available_ram_kib": 75325164,
+    "output_free_bytes": 1999421440,
+    "gpu_total_bytes": 34208743424
+  },
+  "storage": "four latest resumable checkpoints; at most one temporary replacement; 512 MiB free reserve",
+  "evaluation": "fixed exposed branch fidelity, earlier near-goal and late-turn rankings, then same prospective local reaching tasks; retain failures",
+  "limitations": [
+    "single continuation seed",
+    "auxiliary objective inherits physical supervision",
+    "exposed development diagnostics; no isolated JEPA representation benefit or final maze evaluation"
+  ]
+}

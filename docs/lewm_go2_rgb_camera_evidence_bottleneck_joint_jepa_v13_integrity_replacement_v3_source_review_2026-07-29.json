@@ -1,0 +1,13 @@
+{
+  "content_sha256": "d532199fa49286369ee660e37b67ab16a972c485a6c122a8c3f18f2ae8c4cfe9",
+  "manifest": {
+    "content_sha256": "c1030cdcfac7c18f800f6b59e497b04766549c06235021cb2ac80f8b6f0ddf9d",
+    "file_sha256": "e786229c0da962a3888dfae914c714ed40d9e2c6c8a6344baa843147b9c45c7e",
+    "path": "docs/lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_integrity_replacement_v3_source_manifest_2026-07-29.json",
+    "source_bindings_sha256": "63984a087c5a8a1edd084c2ba15c34ca75cc2113915b034e393f8140ab8d6f4d"
+  },
+  "reviewed_source_commit": "f6203946a3ad6350dcf05898cba22c2cf264a57c",
+  "schema": "lewm_go2_rgb_camera_evidence_bottleneck_joint_jepa_v13_source_review_v1",
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY"
+}

@@ -1,0 +1,8 @@
+{
+  "oracle_reducer": true,
+  "random_reducer": true,
+  "tie_break": 0,
+  "schema_reload": true,
+  "pass": true,
+  "cases": 3
+}

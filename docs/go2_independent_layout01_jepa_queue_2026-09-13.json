@@ -1,0 +1,26 @@
+{
+  "waiting_for_pid": 3167292,
+  "waiting_for_created": 1789269417.58,
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_commitment_contact_seed_2026091001_full_supervised_rollout_v1_attempt_001",
+  "preceding_assignment": {
+    "layout_index": 0,
+    "mode": "commitment_contact",
+    "model_name": "seed_2026091001_full_supervised_rollout"
+  },
+  "preceding_model_state_sha256": "755c074325af96d53649aba4927937113d8fab561ea05341a2f3c328598b2bb5",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_01_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001",
+  "layout_index": 1,
+  "mode": "frozen_reference",
+  "model_name": "seed_2026091001_full_jepa",
+  "expected_model_state_sha256": "35496b6b402013f7a33d9c30110e115b90ded672f0d0da829a07128601507b6a",
+  "receipt_path": "docs/go2_independent_layout01_jepa_queue_2026-09-13.json",
+  "pair_protocol": "docs/go2_independent_layout01_training_pair_2026-09-13.md",
+  "status": "INDEPENDENT_LAYOUT01_TRAINING_CASE_QUEUED",
+  "pid": 3173524,
+  "created": 1789272839.49,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "start_requires_operational_completion": true,
+  "start_requires_scientific_success": false,
+  "automatic_retry": false,
+  "serial_native_and_audit_jobs": true
+}

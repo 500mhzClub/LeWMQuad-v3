@@ -1,0 +1,269 @@
+{
+  "episodes": 24,
+  "full_horizons": 16,
+  "successful_progress": 4,
+  "contact_episodes": 8,
+  "by_action": {
+    "hold": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.0006921386261335982,
+        0.0006921386261335982,
+        0.0006921386261335982,
+        0.0006921386261335982
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    },
+    "forward": {
+      "episodes": 4,
+      "full_horizons": 0,
+      "successful_progress": 0,
+      "contact_episodes": 4,
+      "complete_horizon_progress_m": [],
+      "stopped_prefix_progress_m": [
+        0.2717388821075307,
+        0.27173888214869557,
+        0.2717388821075307,
+        0.27173888214869557
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 4
+      }
+    },
+    "left_arc": {
+      "episodes": 4,
+      "full_horizons": 2,
+      "successful_progress": 2,
+      "contact_episodes": 2,
+      "complete_horizon_progress_m": [
+        0.3132475489716663,
+        0.3132475489716663
+      ],
+      "stopped_prefix_progress_m": [
+        0.30021791320488733,
+        0.30021791320488733
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 2
+      }
+    },
+    "right_arc": {
+      "episodes": 4,
+      "full_horizons": 2,
+      "successful_progress": 2,
+      "contact_episodes": 2,
+      "complete_horizon_progress_m": [
+        0.3510816264263712,
+        0.3510816264263712
+      ],
+      "stopped_prefix_progress_m": [
+        0.3265896684940647,
+        0.3265896684940647
+      ],
+      "stop_reasons": {
+        "DISALLOWED_CONTACT": 2
+      }
+    },
+    "left_turn": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.00856919388195565,
+        0.00856919388195565,
+        0.00856919388195565,
+        0.00856919388195565
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    },
+    "right_turn": {
+      "episodes": 4,
+      "full_horizons": 4,
+      "successful_progress": 0,
+      "contact_episodes": 0,
+      "complete_horizon_progress_m": [
+        0.04881946291943784,
+        0.04881946291943784,
+        0.04881946291943784,
+        0.04881946291943784
+      ],
+      "stopped_prefix_progress_m": [],
+      "stop_reasons": {}
+    }
+  },
+  "panel": {
+    "mirrored_reversals": [
+      {
+        "appearance_seed": 2026090911,
+        "mirrored_arc_success_reversal": true
+      },
+      {
+        "appearance_seed": 2026090912,
+        "mirrored_arc_success_reversal": true
+      }
+    ],
+    "nonprogress_controls_fail": true,
+    "constant_success_actions": [],
+    "informative_for_next_dataset": true,
+    "independent_maze_layouts": 0,
+    "model_trained": false,
+    "navigation_qualified": false
+  },
+  "design_and_measurement_gate_pass": false,
+  "target_accounting": {
+    "expected_slots": 192,
+    "recorded_slots": 192,
+    "missing_departures": 0,
+    "motion_valid": 160,
+    "future_image_valid": 160,
+    "contact_valid": 192,
+    "contact_positive": 32,
+    "positive_with_missing_image": 32,
+    "positive_with_missing_motion": 32
+  },
+  "raw_replay": {
+    "decisions": 906,
+    "frames": 906,
+    "physics_samples": 62194,
+    "depth_frames": 906,
+    "maximum_depth_error_m": 3.3721944908915447e-05,
+    "failed_depth_frames": [
+      {
+        "trial": "episode_008",
+        "frame": 16,
+        "rays": 0,
+        "maximum_error_m": null,
+        "within1mm": false,
+        "sufficient_native_depth_rays": false,
+        "measurement_status": "INSUFFICIENT_NATIVE_DEPTH_RAYS",
+        "public_depth_valid_pixels": 0,
+        "native_near_surface_rays": 0,
+        "floor_rays": 0,
+        "floor_max_error_m": null,
+        "wall_rays": 0,
+        "wall_max_error_m": null
+      },
+      {
+        "trial": "episode_021",
+        "frame": 16,
+        "rays": 0,
+        "maximum_error_m": null,
+        "within1mm": false,
+        "sufficient_native_depth_rays": false,
+        "measurement_status": "INSUFFICIENT_NATIVE_DEPTH_RAYS",
+        "public_depth_valid_pixels": 0,
+        "native_near_surface_rays": 0,
+        "floor_rays": 0,
+        "floor_max_error_m": null,
+        "wall_rays": 0,
+        "wall_max_error_m": null
+      }
+    ]
+  },
+  "model_context_identity_counts": {
+    "materialized_episodes": 24,
+    "distinct_rgb_histories": 4,
+    "distinct_body_histories": 1,
+    "distinct_control_histories": 1,
+    "distinct_non_rgb_history_pairs": 1
+  },
+  "observation_and_control_wall_ms": {
+    "count": 906,
+    "median": 126.58344600000001,
+    "maximum": 188.273966,
+    "above100ms": 833,
+    "includes_shadow_observer": true,
+    "includes_physics_tick": false,
+    "real_time_qualified": false
+  },
+  "collection_sha256": {
+    "launch.json": "265357dc47e8ceaecf7932f63441cd7020312c14bcce182e0cd07563888a2323",
+    "result.json": "067a03f208cfc389e08ebba25b2c7a739dfb1b62f2001e1dc4238140cadfe6cc"
+  },
+  "original_audit_remains_failed": true,
+  "prior_command_readout_remains_failed": true,
+  "original_failure_sha256": "28318e3a5510bcbb04009af3d78f8a2703f2fcd0bc9430b053b00588e2bca3d7",
+  "prior_command_readout_failure_sha256": "6cbec6405ef94b34c9ab56eba276223968514fae2f32904a91be339666d67c7b",
+  "status": "GEOMETRY_PROGRESS_COMPACT_SCIENTIFIC_READOUT",
+  "artifact_base": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1",
+  "source_result_sha256": {
+    "go2_geometry_progress_science_v1_attempt_001/result.json": "e3255efaac6d4d759dfe6c9b5c5f44f3e3ca58c83d4184ecb132a0c94d22bc8b",
+    "go2_geometry_progress_physical_visibility_v1_attempt_001/result.json": "9bb467653bc6e733c185af103180b28191723d2e57cd98db0e3377a99ecce85b"
+  },
+  "physical_visibility": {
+    "status": "GEOMETRY_PROGRESS_PHYSICAL_VISIBILITY_READOUT_COMPLETE",
+    "episodes": 24,
+    "frames": 906,
+    "failed_frames": 8,
+    "clipped_opaque_rays": 37242,
+    "false_public_valid_near_rays": 35792,
+    "failed_input_history_frames": 0,
+    "failed_future_target_frames": 4,
+    "launch_sha256": "b80ab81b982bba96df489ea5a236abd592a47f3b07e9fccf7973582b18eb57d9",
+    "all_raw_artifacts_unchanged": true,
+    "training_eligibility_granted": false,
+    "model_trained": false,
+    "navigation_qualified": false,
+    "goal_achieved": false
+  },
+  "physical_visibility_failed_cases": {
+    "episode_006": {
+      "failed_frames": [
+        17,
+        18
+      ],
+      "failed_input_history_frames": [],
+      "failed_future_target_frames": [
+        18
+      ]
+    },
+    "episode_008": {
+      "failed_frames": [
+        17,
+        18
+      ],
+      "failed_input_history_frames": [],
+      "failed_future_target_frames": [
+        18
+      ]
+    },
+    "episode_014": {
+      "failed_frames": [
+        17,
+        18
+      ],
+      "failed_input_history_frames": [],
+      "failed_future_target_frames": [
+        18
+      ]
+    },
+    "episode_021": {
+      "failed_frames": [
+        17,
+        18
+      ],
+      "failed_input_history_frames": [],
+      "failed_future_target_frames": [
+        18
+      ]
+    }
+  },
+  "materialized_model_samples": 24,
+  "materialization_is_not_training_eligibility": true,
+  "exact_nonreference_sensor_prefix_pairs": 20,
+  "declared_independent_episode_design": true,
+  "independent_maze_evaluation_layouts": 0,
+  "further_training_gate_pass": false,
+  "model_trained": false,
+  "rgb_benefit_established": false,
+  "navigation_qualified": false,
+  "goal_achieved": false,
+  "focused_tests_passed": 52,
+  "next_step": "Prospective successor using the existing 5mm core-ordered acquisition and physical/raster-footprint modality checks; retain this failed 5cm attempt and its native action-design result."
+}

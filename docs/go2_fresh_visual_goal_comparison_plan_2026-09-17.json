@@ -1,0 +1,1104 @@
+{
+  "cases": [
+    [
+      "fresh_00",
+      "fresh_00",
+      "action"
+    ],
+    [
+      "fresh_00",
+      "fresh_00",
+      "action"
+    ],
+    [
+      "fresh_01",
+      "fresh_01",
+      "action"
+    ],
+    [
+      "fresh_01",
+      "fresh_01",
+      "action"
+    ],
+    [
+      "fresh_02",
+      "fresh_02",
+      "action"
+    ],
+    [
+      "fresh_02",
+      "fresh_02",
+      "action"
+    ],
+    [
+      "fresh_03",
+      "fresh_03",
+      "action"
+    ],
+    [
+      "fresh_03",
+      "fresh_03",
+      "action"
+    ]
+  ],
+  "goals": {
+    "fresh_00": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/goals/fresh_00/rgb_0023.png",
+      "sha256": "8a443c8fb2dbc3cb7d2e6495428d8ca8c2ed013961399ab645c9216526125745",
+      "frame": 23
+    },
+    "fresh_01": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/goals/fresh_01/rgb_0023.png",
+      "sha256": "063f4a1e930cd193433e0cb9cdf6d4369a4a1c5b5d34eed879ecaa76b75f5868",
+      "frame": 23
+    },
+    "fresh_02": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/goals/fresh_02/rgb_0023.png",
+      "sha256": "e8d984ef9ea5aac3626c8b4cc224b11db75d6f3b9b0775e00486d2bfc769dac6",
+      "frame": 23
+    },
+    "fresh_03": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/goals/fresh_03/rgb_0023.png",
+      "sha256": "838316c93d2b2a2d714ed5422dc043a86b5bba6c3cc9bd90b3f1dee24da6234b",
+      "frame": 23
+    }
+  },
+  "source_sha256": {
+    "lewm/dense_visual_goal_control_development.py": "c516114973d882ab0e0bcf2b98cbcff028708b6279148b4940d6cbc6e726cf6b",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_goal_pilot_development.py": "e049931f46f6a222de60a37e3fe791e4a73a98e7533cc0277492a347eeac5998",
+    "lewm/dense_metric_goal_control_development.py": "cf5a6726fe735ed7092b201cc767d05d3ac7ebb271539931cffe394da195385c",
+    "lewm/dense_goal_metric_development.py": "006a2cc76106f312e11e07d2c3f8060a316536ec11b26cef3399fdca854150a8",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_metric_goal_pilot_development.py": "ac52c25fde2043e615a21a44a62e5ad0c2d35b60712d70d0f5853f9e57095766",
+    "lewm/dense_visual_arrival_control_development.py": "930ec1ce3964627bf2864d2c0c6bd68d8324282c60321bf6d2d333d38e75de4f",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dense_visual_arrival_pilot_development.py": "165e9475fcbea3f7229cee56833f0c30880ffc8c3e2ed20542a7655227d8bc1a",
+    "lewm/direct_visual_feedback_control_development.py": "d7bb47c2319f1b5d9278b311210d2964d7da56050d0aab8e3facd93eb767fff5",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_direct_visual_feedback_pilot_development.py": "cedcf20ea7b6d1ec82d46407aa6306294751ab10d79534e421219c63475536ca",
+    "scripts/rgb_only_goal_session_development.py": "3cdd7a793b08d8e6cceaea67ea3cc0b659307c46bbb15aabb957ccffb37341cd",
+    "lewm/fresh_visual_goal_layouts_development.py": "6ffa693000a90d1f1333482c45f5ca1cf49e410b2a646efa5c2e4a4e92b3de19",
+    "scripts/fresh_visual_goal_session_development.py": "22580a9951da774c03a2de2af19006c578576c0eb897161b56da886736518480",
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_fresh_visual_goal_comparison_development.py": "e72e9dcacdc79d7f9339a60ad23b9205306cd96b3f90b83b272292db4cf6a474"
+  },
+  "predecessor": "frozen visual-arrival planner and direct-feedback pilot controllers",
+  "predictor_fit_sha256": "44c2a6e8f4a094c9b89ccf4293d83115da3e666bf781c4d0e2c602d2a9709bfd",
+  "checkpoints": {
+    "action": "beb9e4abd69d652126e7618ef9a18261b627578ea01aa894e287004734e609e7",
+    "no_future_action": "c5c52b37bef6527176b64c0b8481a82bc6d1cd6db3e543d8e1075cd546f89873"
+  },
+  "warmup_ticks": 10,
+  "decisions": 20,
+  "commit_ticks": 5,
+  "forecast_horizon_ms": 500,
+  "final_drain_ticks": 5,
+  "commands": "six unchanged primitive starts, each sustained for five 100-ms ticks; actual limiter trajectory",
+  "cost": "mean squared distance in learned 64-dimensional visual embedding",
+  "seed": 2026091706,
+  "evaluation": {
+    "position_tolerance_m": 0.03,
+    "heading_tolerance_deg": 5.0,
+    "sustained_camera_frames": 3,
+    "goal_pose_available_to_controller": false,
+    "no_success_based_early_stop": true
+  },
+  "precision": "float32 encoder and predictor; CPU Genesis physics and gait",
+  "sensors_used_for_control": [
+    "RGB",
+    "past applied commands"
+  ],
+  "additional_sensors_recorded_not_used": true,
+  "physics_paused_during_compute": true,
+  "new_native_execution": true,
+  "resources": {
+    "output_free_bytes": 750858240,
+    "additional_allowance_bytes": 134217728,
+    "storage_reserve_bytes": 536870912,
+    "concurrency": 2,
+    "cpu_groups": [
+      [
+        4,
+        5,
+        6,
+        7
+      ],
+      [
+        8,
+        9,
+        10,
+        11
+      ]
+    ]
+  },
+  "execution": "up to two independent processes on disjoint four-core CPU groups; shared GPU; separate outputs",
+  "resource_limits": "stop before next block if output-volume free space drops below 512 MiB",
+  "source_scope": "development source only; no sealed material or historical experiment resumption",
+  "limitations": [
+    "four new parameter combinations in the same local obstruction family",
+    "same appearance seed and physical dynamics as training; not new environment-type transfer",
+    "task setup fixed tapes only supply goal photographs; evaluated controllers execute online",
+    "both use previously exposed-development-designed arrival latch, with known false-positive failure",
+    "no parameter tuning after fresh outcomes, no final benchmark or JEPA-training-isolation claim",
+    "no complete maze, real-time or hardware evidence"
+  ],
+  "intervention": "new geometry and goal tasks; both prior controllers and checkpoints frozen",
+  "metric_checkpoint_sha256": "9f89fc391a27875075a47e9383879153e8ebc22dd5e19cd0209041caedc6a7f1",
+  "metric_fit_sha256": "ac3b8a6b7a9b839613cbd092a758b9bbdfda543974bd5584ee401c3b0e18f2a8",
+  "near_goal_diagnostic_sha256": "55b16417f36c65934ea38184af34c579406eeed0606664a9ecafdb48f01e24de",
+  "encoder_and_predictors_unchanged": true,
+  "goals_commands_timing_budget_stops_unchanged": false,
+  "stopping_rule_added": true,
+  "physical_pose_used_by_controller": false,
+  "additional_goal_metric_supervision": true,
+  "arrival_readout_fit_sha256": "4b2d055b9f521b89e17c4cbf8dfbdd85a7b46988ce973fccc9a96ff93d93ce28",
+  "arrival_readout_checkpoint_sha256": "c270cffac40b0e917f05a4f83edf105d132b970586290ef610a0afc8077ef74c",
+  "arrival_evaluation_sha256": "19687bd247fd13ca05f295b86b54780c910a54d95022cdaa14fc221701b7f261",
+  "oracle_success_still_evaluator_only": true,
+  "no_budget_shortening": true,
+  "predictions_after_arrival": false,
+  "output_volume": "root volume, prospectively RGB-only recording",
+  "case_directories": [
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_00",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_01",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_02",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_03",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_04",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_05",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_06",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_fresh_visual_goal_comparison_v1_attempt_001/case_07"
+  ],
+  "feedback_rule": {
+    "bearing_gain": 1.5,
+    "final_heading_gain": -0.5,
+    "turn_heading_gain": 1.5,
+    "max_yaw_rate": 0.45,
+    "position_tolerance_m": 0.03,
+    "forward": "nearest yaw-rate among forward/left_arc/right_arc when goal is in forward half-plane",
+    "turn": "nearest pure turn when goal is behind or position already within tolerance",
+    "hold": "same learned arrival latch; no other hold"
+  },
+  "encoder_and_readout_unchanged": true,
+  "task_definitions": [
+    {
+      "scene_id": "fresh-local-visual-goal-fresh_00",
+      "family": "FRESH_LOCAL_VISUAL_GOAL_DEVELOPMENT",
+      "case_index": 1,
+      "kind": "straight",
+      "width_m": 1.0,
+      "procedural_seed": 2026090910,
+      "geometry": {
+        "spawn_se2_world": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "wall_boxes": [
+          {
+            "wall_id": "front_partial_panel",
+            "centre_xyz": [
+              0.78,
+              -0.42,
+              0.36
+            ],
+            "size_xyz": [
+              0.08,
+              0.98,
+              0.72
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "rear",
+            "centre_xyz": [
+              -1.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "far",
+            "centre_xyz": [
+              2.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "left",
+            "centre_xyz": [
+              0.5,
+              2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "right",
+            "centre_xyz": [
+              0.5,
+              -2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          }
+        ]
+      },
+      "probe_index": 0,
+      "stimulus_name": "zero",
+      "stimulus_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "trial": "fresh_00",
+      "appearance_arm": "distinctive",
+      "appearance_seed": 2026090940,
+      "layout_id": "fresh_00",
+      "data_role": "fresh_development_transfer",
+      "friction_mu": 1.0,
+      "render_near_m": 0.005,
+      "visual_surface_contract": "floor_first_variable_height_union_walls"
+    },
+    {
+      "scene_id": "fresh-local-visual-goal-fresh_01",
+      "family": "FRESH_LOCAL_VISUAL_GOAL_DEVELOPMENT",
+      "case_index": 1,
+      "kind": "straight",
+      "width_m": 1.0,
+      "procedural_seed": 2026090910,
+      "geometry": {
+        "spawn_se2_world": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "wall_boxes": [
+          {
+            "wall_id": "front_partial_panel",
+            "centre_xyz": [
+              0.75,
+              0.49,
+              0.45
+            ],
+            "size_xyz": [
+              0.08,
+              1.18,
+              0.9
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "rear",
+            "centre_xyz": [
+              -1.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "far",
+            "centre_xyz": [
+              2.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "left",
+            "centre_xyz": [
+              0.5,
+              2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "right",
+            "centre_xyz": [
+              0.5,
+              -2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          }
+        ]
+      },
+      "probe_index": 0,
+      "stimulus_name": "zero",
+      "stimulus_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "trial": "fresh_01",
+      "appearance_arm": "distinctive",
+      "appearance_seed": 2026090940,
+      "layout_id": "fresh_01",
+      "data_role": "fresh_development_transfer",
+      "friction_mu": 1.0,
+      "render_near_m": 0.005,
+      "visual_surface_contract": "floor_first_variable_height_union_walls"
+    },
+    {
+      "scene_id": "fresh-local-visual-goal-fresh_02",
+      "family": "FRESH_LOCAL_VISUAL_GOAL_DEVELOPMENT",
+      "case_index": 1,
+      "kind": "straight",
+      "width_m": 1.0,
+      "procedural_seed": 2026090910,
+      "geometry": {
+        "spawn_se2_world": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "wall_boxes": [
+          {
+            "wall_id": "front_partial_panel",
+            "centre_xyz": [
+              0.61,
+              -0.41000000000000003,
+              0.3
+            ],
+            "size_xyz": [
+              0.08,
+              0.88,
+              0.6
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "rear",
+            "centre_xyz": [
+              -1.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "far",
+            "centre_xyz": [
+              2.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "left",
+            "centre_xyz": [
+              0.5,
+              2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "right",
+            "centre_xyz": [
+              0.5,
+              -2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          }
+        ]
+      },
+      "probe_index": 0,
+      "stimulus_name": "zero",
+      "stimulus_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "trial": "fresh_02",
+      "appearance_arm": "distinctive",
+      "appearance_seed": 2026090940,
+      "layout_id": "fresh_02",
+      "data_role": "fresh_development_transfer",
+      "friction_mu": 1.0,
+      "render_near_m": 0.005,
+      "visual_surface_contract": "floor_first_variable_height_union_walls"
+    },
+    {
+      "scene_id": "fresh-local-visual-goal-fresh_03",
+      "family": "FRESH_LOCAL_VISUAL_GOAL_DEVELOPMENT",
+      "case_index": 1,
+      "kind": "straight",
+      "width_m": 1.0,
+      "procedural_seed": 2026090910,
+      "geometry": {
+        "spawn_se2_world": [
+          0.0,
+          0.0,
+          0.0
+        ],
+        "wall_boxes": [
+          {
+            "wall_id": "front_partial_panel",
+            "centre_xyz": [
+              0.82,
+              0.43,
+              0.39
+            ],
+            "size_xyz": [
+              0.08,
+              1.02,
+              0.78
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "rear",
+            "centre_xyz": [
+              -1.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "far",
+            "centre_xyz": [
+              2.5,
+              0.0,
+              0.7
+            ],
+            "size_xyz": [
+              0.08,
+              4.0,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "left",
+            "centre_xyz": [
+              0.5,
+              2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          },
+          {
+            "wall_id": "right",
+            "centre_xyz": [
+              0.5,
+              -2.0,
+              0.7
+            ],
+            "size_xyz": [
+              4.0,
+              0.08,
+              1.4
+            ],
+            "yaw_rad": 0.0,
+            "material_id": "NEUTRAL_WALL"
+          }
+        ]
+      },
+      "probe_index": 0,
+      "stimulus_name": "zero",
+      "stimulus_command": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "trial": "fresh_03",
+      "appearance_arm": "distinctive",
+      "appearance_seed": 2026090940,
+      "layout_id": "fresh_03",
+      "data_role": "fresh_development_transfer",
+      "friction_mu": 1.0,
+      "render_near_m": 0.005,
+      "visual_surface_contract": "floor_first_variable_height_union_walls"
+    }
+  ],
+  "goal_setup_commands": {
+    "fresh_00": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ]
+    ],
+    "fresh_01": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ],
+      [
+        0.2,
+        0.0,
+        0.0
+      ]
+    ],
+    "fresh_02": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.16,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ],
+      [
+        0.0,
+        0.0,
+        0.45
+      ]
+    ],
+    "fresh_03": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.16,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ],
+      [
+        0.0,
+        0.0,
+        -0.45
+      ]
+    ]
+  },
+  "controllers": [
+    "world_model",
+    "direct_feedback",
+    "world_model",
+    "direct_feedback",
+    "world_model",
+    "direct_feedback",
+    "world_model",
+    "direct_feedback"
+  ],
+  "depth_recorded": false,
+  "full_maze_navigation": false,
+  "design_sha256": "dcba92b80ef6138672d666d2809df4e0e3dd57e60fa1fd4e6e0fd3d9aafe7e2a",
+  "predictor_called_by_case": [
+    true,
+    false,
+    true,
+    false,
+    true,
+    false,
+    true,
+    false
+  ],
+  "timing_budget_physical_stops_unchanged": true,
+  "feedback_rule_applies_to": "direct_feedback",
+  "metadata_normalized_before_trials": true
+}

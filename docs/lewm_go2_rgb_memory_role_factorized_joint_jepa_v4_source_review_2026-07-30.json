@@ -1,0 +1,91 @@
+{
+  "access": {
+    "g2_payload_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "probability_calibration_open_count": 0,
+    "v4_attempt_reservation_count": 0,
+    "v4_rgb_decode_count": 0,
+    "v4_runtime_payload_open_count": 0,
+    "v4_scientific_gpu_or_training_run_count": 0
+  },
+  "adapter_regression": {
+    "actual_v3_model_module": true,
+    "actual_v3_training_module": true,
+    "adamw_constructed": true,
+    "ema_update_count": 0,
+    "projection_initialization_seed": 20260729,
+    "real_V13ComposedRuntime_initialize_model_v13_invoked": true,
+    "synthetic_cpu_inputs_only": true,
+    "target_hard_sync_count": 1
+  },
+  "authority": "source_review_only_no_execution_generated_payload_checkpoint_tensor_dataset_rgb_gpu_training_probability_calibration_g2_navigation_memory_integration_heldout_sealed_production_promotion_retry_or_resume_authority",
+  "blockers": [],
+  "content_sha256": "0ab3186c83d4b27bd01bf73ad272c0bb0ec39e36a64a942dd66a2799355d100d",
+  "date": "2026-07-30",
+  "execution_authorized": false,
+  "implementation_commit": "65820a728ef199bc0251f461ed5c23a6eeb99f64",
+  "independent_audit": {
+    "lifecycle_reviewer_count": 1,
+    "remaining_blocker_count": 0,
+    "science_reviewer_count": 1
+  },
+  "lifecycle_review": {
+    "attempt_count": 1,
+    "denied_by_default_launcher": true,
+    "fresh_v4_certified_source_root": true,
+    "fresh_v4_output_root": true,
+    "fresh_v4_schema": true,
+    "heldout_or_sealed_access_authorized": false,
+    "isolated_no_bytecode_launch_required": true,
+    "resume_authorized": false,
+    "retry_authorized": false,
+    "update100_and_update400_restart_states_preserved": true
+  },
+  "manifest": {
+    "byte_count": 40103,
+    "content_sha256": "0974e8717b9467b10a3fa45f37ab37faac0f8d8f9bcfe35703dd15d41bb56ba2",
+    "file_sha256": "25d1144aefdbb140b87d0755d5f5511de595144abe97b83bdd31b2c24576f0ff",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "34552aea0a263f2ff306f2ebea311180f8b571c4766f8fdad502c609bc3d5dce",
+    "source_count": 115
+  },
+  "manifest_commit": "1dea3dcab7852ab6748e14deb2bc8ce60196f917",
+  "passed": true,
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v4_source_review_v1",
+  "science_identity_review": {
+    "evaluator_scientific_delta_count": 0,
+    "executor_scientific_delta_count": 0,
+    "fresh_initialization_required": true,
+    "launcher_scientific_delta_count": 0,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "model_state_reuse": false,
+    "place_dataset_blob_identical": true,
+    "place_index_builder_blob_identical": true,
+    "runner_blob_identical": true,
+    "terminal_v3_comparison_commit": "935de69b98e05ec4a67eb499b1373e604f4b662c",
+    "v4_model_delta": [
+      "import_inherited_PROJECTION_INITIALIZATION_SEED_V13",
+      "publicly_reexport_inherited_PROJECTION_INITIALIZATION_SEED_V13"
+    ],
+    "v4_model_tensor_operation_delta_count": 0,
+    "v4_parameter_delta_count": 0
+  },
+  "status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+  "v3_terminal_witness": {
+    "byte_count": 3244,
+    "commit": "617c44322034b85fe0d89cb88e8f5967fdbe1e42",
+    "file_sha256": "a7b2bbac590221ee574f77d03945c5224687a6703f7041c8c74f07f666aca6eb",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_terminal_infrastructure_failure_result_2026-07-30.json"
+  },
+  "verification": {
+    "clean_export_test_required_before_certification": true,
+    "focused_worktree_test_count": 61,
+    "focused_worktree_test_failures": 0,
+    "gpu_hidden_for_source_tests": true,
+    "source_binding_failure_count": 0,
+    "source_closure_require_tracked_pass": true,
+    "warnings_as_errors": true
+  }
+}

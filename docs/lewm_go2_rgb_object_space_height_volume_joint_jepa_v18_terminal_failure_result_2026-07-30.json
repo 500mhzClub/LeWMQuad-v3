@@ -1,0 +1,128 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 13,
+    "certified_source_bindings_sha256": "de7c73ef11f13cdb2fb08337c833ec2506d274fa3925ffe5b233b8c2f0261ec8",
+    "certified_source_rehash_count": 103,
+    "development_rgb_file_count": 0,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 4,
+    "raw_consumed_records_sha256": "bd7d1a2c3a503b57f0bc7126fd89ad27adf2037d49ce2efd0c95760dbb87e244",
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "a84996c7ce6cd8115e358f954ec5ff3a6a015d7caaeaabe4aed54f8ad451cfcb",
+    "authority_commit": "99ab8f14d34e820055c892fbcc3f96eeb3cd7590",
+    "authority_file_sha256": "ec3123a7789ea73f7f1aae361fb6472cfbfb55de2ccac8b4109cfc918ec66128",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_object_space_height_volume_joint_jepa_v18/attempt_v1",
+    "reservation_content_sha256": "8dd61417b90e405119914940590cf98701a667a4c4691259d8b1d88c82678cda",
+    "reservation_created_utc": "2026-07-30T01:09:11Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "content_sha256": "f3a4ca1cddae7a3dbdb7d1c167bdbae7093ed1cdb72edb9c9ff1d632a6ac8eea",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_published": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "original_attempt_retry_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_gate_reached": false,
+    "scientific_interpretation": "The attempt terminated before update 0 observation and before any optimizer update or training presentation. It supplies no evidence for or against the V18 object-space height-volume hypothesis.",
+    "status": "PASS_COMPLETE_ZERO_PRESENTATION_INFRASTRUCTURE_FAILURE_AUDIT"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_source_and_hash": "module 'scripts.execute_go2_rgb_object_space_height_volume_joint_jepa_v18' has no attribute 'registered_wrong_rgb_mapping_v13'",
+    "exception_message_sha256": "fb849bcba3193b7d0c26a5ea1130ae7472b22b781f51902f1ed7113486af59d6",
+    "exception_type": "AttributeError",
+    "failure_content_sha256": "d20cd81a773d8a45b8b057c16b38d6c159f8767f323a09c1bb50f51c9f3c4d81",
+    "stage": "initialize_n320_v13_model_optimizer",
+    "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME"
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 1121,
+      "content_sha256": "d20cd81a773d8a45b8b057c16b38d6c159f8767f323a09c1bb50f51c9f3c4d81",
+      "file_sha256": "d8f7ea7e0e64b5c8e2fff487bf7c9eed939dda7b0f4ae3a7a4c0880e52dde0a2",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 22164,
+      "content_sha256": "927be147b2946c5dd148740d645f38b6c0379e88476f5fafc65f480b5557aece",
+      "file_sha256": "7b03f149b6bb232fc12982e7db768ae7147ddfe4cd66c9120220690c482a55e3",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 493,
+      "content_sha256": "8dd61417b90e405119914940590cf98701a667a4c4691259d8b1d88c82678cda",
+      "file_sha256": "df40a7aa1f3887e5a4d5ab86196e556a6232ef99a202620d333396ccd9b5ec8a",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 0,
+      "file_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "path": "trace.jsonl",
+      "row_count": 0
+    }
+  ],
+  "root_cause": {
+    "exact_fault": "The V18 executor adapter omitted the inherited registered_wrong_rgb_mapping_v13 compatibility export required by the frozen custody runtime before it selects the structural wrong-RGB probe.",
+    "message_hash_exact_match": true,
+    "minimal_science_identical_repair": "Re-export the exact already-frozen helper object and add one focused runtime-interface regression; preserve every scientific setting and use a distinct one-shot replacement root.",
+    "model_or_data_fault": false,
+    "source_location": "scripts/execute_go2_rgb_object_space_height_volume_joint_jepa_v18.py compatibility export block; caller scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py:1442"
+  },
+  "schema": "lewm_go2_rgb_object_space_height_volume_joint_jepa_v18_terminal_failure_result_v1",
+  "scientific_accounting": {
+    "backward_calls": 0,
+    "checkpoint_artifact_count": 0,
+    "completed_updates": 0,
+    "ema_steps": 0,
+    "metric_artifact_count": 0,
+    "optimizer_steps": 0,
+    "presentations": 0,
+    "published_observation_updates": [],
+    "trace_row_count": 0
+  },
+  "scientific_identity": {
+    "clean_export_certification_sha256": "f3f2b0432df83d1314147cf3ef8553d296d11eefa389c11bd3d27f1a6a7b45d1",
+    "frozen_source_and_review_commit": "8b348f60d941921ce80ef95786a8e12b915376d9",
+    "preregistration_commit": "5522b226e845907b091ff98ebac3b6f6315a4ca7",
+    "science_identity_preserved_through_failure": {
+      "data": true,
+      "initialization": true,
+      "losses": true,
+      "model": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v18-object-space-height-volume-source"
+  },
+  "validation": {
+    "checkpoint_artifact_count": 0,
+    "content_binding_mismatch_count": 0,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 4,
+    "independent_failure_review_passed": true,
+    "metric_artifact_count": 0,
+    "success_artifact_count": 0,
+    "symlink_count": 0
+  }
+}

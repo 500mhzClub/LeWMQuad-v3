@@ -1,0 +1,40 @@
+{
+  "status": "RECORDED_TRACKER_FIFO_TIMING_ANALYSIS_COMPLETE",
+  "observations": 4740,
+  "arrival_period_s": 0.1,
+  "assumptions": {
+    "one_serial_worker": true,
+    "uninterrupted_periodic_arrivals": true,
+    "unbounded_fifo": true,
+    "all_observations_processed": true,
+    "preemption": false,
+    "recorded_durations_reused_in_original_order": true,
+    "acquisition_cost_s": 0.0,
+    "map_cost_s": 0.0,
+    "planning_cost_s": 0.0,
+    "recorded_shared_host_wall_times": true
+  },
+  "mean_service_ms": 97.27389441610545,
+  "isolated_calls_over_100ms": 1615,
+  "completion_age_median_s": 2.2290587665280555,
+  "completion_age_p95_s": 12.002771910810814,
+  "peak_completion_age": {
+    "frame": 4483,
+    "age_s": 13.341719881445158,
+    "queue_wait_s": 13.14906719145364,
+    "service_s": 0.19265268999151886
+  },
+  "observations_waiting": 3641,
+  "completion_age_over_100ms": 3642,
+  "completion_age_over_800ms": 2807,
+  "completion_age_over_1s": 2715,
+  "final_completion_age_s": 9.229409525077756,
+  "source_trace_sha256": "3d2f5f1f0a19e202f6543b0150810182e55a86b1e001fc998aa9a2a9a6deb8ee",
+  "source_result_sha256": "adc5e27923ebe25464fd3b57d373b7a21130c726b192881bf2c5202ca83e4910",
+  "timing_simulation_only": true,
+  "new_tracker_execution": false,
+  "native_execution": false,
+  "dropped_frame_tracker_support_tested": false,
+  "delayed_navigation_outcome_inferred": false,
+  "continuous_execution_qualified": false
+}

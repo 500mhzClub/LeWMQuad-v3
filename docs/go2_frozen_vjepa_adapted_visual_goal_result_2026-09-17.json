@@ -1,0 +1,1519 @@
+{
+  "status": "COMPLETE",
+  "source": "docs/go2_frozen_vjepa_native_adaptation_branch_result_2026-09-17.json",
+  "source_sha256": "d352501f98a01fd1923920e4f4cc087238781c58a13e7721ab9097d84d4d10e4",
+  "windows_sha256": "567d8ec146853155e87c84908a01c74160b843e593bb1afaf6991f881f43d0ed",
+  "script_sha256": "17aa43a66bb0059ed5085d63bb0a2318279bf3576c732d63f5b5182370810a5d",
+  "horizon_ms": 500,
+  "goals_per_role": 18,
+  "matched_groups_per_role": 6,
+  "layouts_per_role": 2,
+  "summaries": {
+    "train": {
+      "action": {
+        "expected_position_error_mm": 0.0,
+        "expected_heading_error_deg": 0.0,
+        "expected_correct_action": 1.0,
+        "groups_better_position_than_persistence": 6
+      },
+      "no_future_action": {
+        "expected_position_error_mm": 1.0998810029867352,
+        "expected_heading_error_deg": 1.7911688298317938,
+        "expected_correct_action": 0.3333333333333333,
+        "groups_better_position_than_persistence": 0
+      },
+      "persistence": {
+        "expected_position_error_mm": 1.0998810029867352,
+        "expected_heading_error_deg": 1.7911688298317938,
+        "expected_correct_action": 0.3333333333333333,
+        "groups_better_position_than_persistence": 0
+      }
+    },
+    "geometry_transfer": {
+      "action": {
+        "expected_position_error_mm": 0.0,
+        "expected_heading_error_deg": 0.0,
+        "expected_correct_action": 1.0,
+        "groups_better_position_than_persistence": 6
+      },
+      "no_future_action": {
+        "expected_position_error_mm": 1.0998810029867352,
+        "expected_heading_error_deg": 1.7911688298317938,
+        "expected_correct_action": 0.3333333333333333,
+        "groups_better_position_than_persistence": 0
+      },
+      "persistence": {
+        "expected_position_error_mm": 1.0998810029867352,
+        "expected_heading_error_deg": 1.7911688298317938,
+        "expected_correct_action": 0.3333333333333333,
+        "groups_better_position_than_persistence": 0
+      }
+    }
+  },
+  "groups": [
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "hold",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_031",
+              "selected_trials": [
+                "pulse_episode_031"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_001",
+              "selected_trials": [
+                "pulse_episode_001"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_022",
+              "selected_trials": [
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_031",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_001",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_022",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_031",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_001",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_022",
+              "selected_trials": [
+                "pulse_episode_031",
+                "pulse_episode_001",
+                "pulse_episode_022"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "left_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_027",
+              "selected_trials": [
+                "pulse_episode_027"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_007",
+              "selected_trials": [
+                "pulse_episode_007"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_021",
+              "selected_trials": [
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_027",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_007",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_021",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_027",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_007",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_021",
+              "selected_trials": [
+                "pulse_episode_027",
+                "pulse_episode_007",
+                "pulse_episode_021"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_02",
+      "prefix_action": "right_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_024",
+              "selected_trials": [
+                "pulse_episode_024"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_032",
+              "selected_trials": [
+                "pulse_episode_032"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_008",
+              "selected_trials": [
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_024",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_032",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_008",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_024",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_032",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_008",
+              "selected_trials": [
+                "pulse_episode_024",
+                "pulse_episode_032",
+                "pulse_episode_008"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "hold",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_000",
+              "selected_trials": [
+                "pulse_episode_000"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_035",
+              "selected_trials": [
+                "pulse_episode_035"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_012",
+              "selected_trials": [
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_000",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_035",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_012",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_000",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_035",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_012",
+              "selected_trials": [
+                "pulse_episode_000",
+                "pulse_episode_035",
+                "pulse_episode_012"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "left_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_004",
+              "selected_trials": [
+                "pulse_episode_004"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_016",
+              "selected_trials": [
+                "pulse_episode_016"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_002",
+              "selected_trials": [
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_004",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_016",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_002",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_004",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_016",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_002",
+              "selected_trials": [
+                "pulse_episode_004",
+                "pulse_episode_016",
+                "pulse_episode_002"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "geometry_transfer",
+      "cluster": "cluster_03",
+      "prefix_action": "right_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_029",
+              "selected_trials": [
+                "pulse_episode_029"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_019",
+              "selected_trials": [
+                "pulse_episode_019"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_014",
+              "selected_trials": [
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_029",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_019",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_014",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_029",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_019",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_014",
+              "selected_trials": [
+                "pulse_episode_029",
+                "pulse_episode_019",
+                "pulse_episode_014"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "hold",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_023",
+              "selected_trials": [
+                "pulse_episode_023"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_018",
+              "selected_trials": [
+                "pulse_episode_018"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_025",
+              "selected_trials": [
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_023",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_018",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_025",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_023",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_018",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_025",
+              "selected_trials": [
+                "pulse_episode_023",
+                "pulse_episode_018",
+                "pulse_episode_025"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "left_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_015",
+              "selected_trials": [
+                "pulse_episode_015"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_011",
+              "selected_trials": [
+                "pulse_episode_011"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_030",
+              "selected_trials": [
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_015",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_011",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_030",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_015",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_011",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_030",
+              "selected_trials": [
+                "pulse_episode_015",
+                "pulse_episode_011",
+                "pulse_episode_030"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_00",
+      "prefix_action": "right_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_009",
+              "selected_trials": [
+                "pulse_episode_009"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_020",
+              "selected_trials": [
+                "pulse_episode_020"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_010",
+              "selected_trials": [
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_009",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_020",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_010",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_009",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_020",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_010",
+              "selected_trials": [
+                "pulse_episode_009",
+                "pulse_episode_020",
+                "pulse_episode_010"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "hold",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_026",
+              "selected_trials": [
+                "pulse_episode_026"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_013",
+              "selected_trials": [
+                "pulse_episode_013"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_006",
+              "selected_trials": [
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_026",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_013",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_006",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_026",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 0.7269100312167556,
+              "expected_heading_error_deg": 1.499899904367746,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_013",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 1.083289377719733,
+              "expected_heading_error_deg": 2.230571461867159,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_006",
+              "selected_trials": [
+                "pulse_episode_026",
+                "pulse_episode_013",
+                "pulse_episode_006"
+              ],
+              "expected_position_error_mm": 0.9946698075358128,
+              "expected_heading_error_deg": 2.2691282512360798,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9349564054907671,
+          "expected_heading_error_deg": 1.999866539156995,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "left_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_033",
+              "selected_trials": [
+                "pulse_episode_033"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_005",
+              "selected_trials": [
+                "pulse_episode_005"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_028",
+              "selected_trials": [
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_033",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_005",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_028",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_033",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 0.9588024994283785,
+              "expected_heading_error_deg": 1.2796741845312805,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_005",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 0.8825930074461595,
+              "expected_heading_error_deg": 1.9173391062876204,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_028",
+              "selected_trials": [
+                "pulse_episode_033",
+                "pulse_episode_005",
+                "pulse_episode_028"
+              ],
+              "expected_position_error_mm": 1.0886947516339816,
+              "expected_heading_error_deg": 1.9216834473062208,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 0.9766967528361732,
+          "expected_heading_error_deg": 1.7062322460417072,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    },
+    {
+      "role": "train",
+      "cluster": "cluster_01",
+      "prefix_action": "right_turn",
+      "models": {
+        "action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_017",
+              "selected_trials": [
+                "pulse_episode_017"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_034",
+              "selected_trials": [
+                "pulse_episode_034"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            },
+            {
+              "goal_trial": "pulse_episode_003",
+              "selected_trials": [
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 0.0,
+              "expected_heading_error_deg": 0.0,
+              "expected_correct_action": 1.0
+            }
+          ],
+          "expected_position_error_mm": 0.0,
+          "expected_heading_error_deg": 0.0,
+          "expected_correct_action": 1.0
+        },
+        "no_future_action": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_017",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_034",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_003",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        },
+        "persistence": {
+          "goals": [
+            {
+              "goal_trial": "pulse_episode_017",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.7910390466159611,
+              "expected_heading_error_deg": 1.2505557782225092,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_034",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.0534469896087373,
+              "expected_heading_error_deg": 1.8669815655214905,
+              "expected_correct_action": 0.3333333333333333
+            },
+            {
+              "goal_trial": "pulse_episode_003",
+              "selected_trials": [
+                "pulse_episode_017",
+                "pulse_episode_034",
+                "pulse_episode_003"
+              ],
+              "expected_position_error_mm": 1.3194835156750968,
+              "expected_heading_error_deg": 1.8846857691460372,
+              "expected_correct_action": 0.3333333333333333
+            }
+          ],
+          "expected_position_error_mm": 1.387989850633265,
+          "expected_heading_error_deg": 1.667407704296679,
+          "expected_correct_action": 0.3333333333333333
+        }
+      }
+    }
+  ],
+  "selection": "minimum forecast-to-goal feature MSE; uniform probability over exact ties",
+  "physical_labels_used_for_selection": false,
+  "goal_images_are_recorded_future_images": true,
+  "navigation_tested": false,
+  "new_model_execution": false,
+  "limitations": [
+    "retrospective reachable visual-goal diagnostic on exposed pulse branches",
+    "18 goals per role are dependent; six history groups across two geometries",
+    "millimetre-scale endpoint differences; not sustained-command navigation",
+    "uniform tie expectation is an analytic reference, not a deployed policy",
+    "no uncertainty interval or JEPA-training superiority claim"
+  ]
+}

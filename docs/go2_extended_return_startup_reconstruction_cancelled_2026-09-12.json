@@ -1,0 +1,24 @@
+{
+  "stopped_at_unix_s": 1789242707.6981997,
+  "owner_pid": 3091513,
+  "owner_created": 1789240789.96,
+  "command": [
+    ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+    "-B",
+    "scripts/run_go2_extended_return_budget_maze02_v1.py",
+    "--controller-prefix-result-sha256",
+    "5d139d6bca5ac1fe1ab33ba4f224f7aa72dad82d837cce5c790451122eec9d36"
+  ],
+  "cpu_seconds": 1915.17,
+  "reason": "Deliberate cancellation of redundant startup public-prefix reconstruction after completed positive audit; no simulation worker or output existed. Simplify admission to reuse completed audit with full bound-input hash checks.",
+  "output_existed": false,
+  "children": [],
+  "source_sha256_before": {
+    "scripts/extended_return_budget_native_inputs_development.py": "6b1f76825b4c175a1322673079a9ed823e1dbe8ccde13bd34451c652545469b0",
+    "lewm/tests/test_extended_return_budget_native_inputs_development.py": "b54fc9db99463e580e9094d182a6879158483f454737fd50ea7e73c6dd1d5b6f",
+    "docs/go2_extended_return_budget_maze02_v1_2026-09-12.md": "5cb55c1e1d14be203611ad9bffbed2ec676afe24e161a3433357574fdc79175f"
+  },
+  "exit_code": 130,
+  "original_session": 92037,
+  "completed_prefix_result_sha256": "5d139d6bca5ac1fe1ab33ba4f224f7aa72dad82d837cce5c790451122eec9d36"
+}

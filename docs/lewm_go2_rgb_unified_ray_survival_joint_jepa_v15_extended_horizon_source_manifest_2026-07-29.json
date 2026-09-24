@@ -1,0 +1,574 @@
+{
+  "authority": "source_closure_only_no_generated_or_runtime_input_checkpoint_training_gpu_qualification_g2_navigation_heldout_production_or_promotion_authority",
+  "content_sha256": "8b9a5315b50e0712f03eaa769d5afc04c6f129c742213323c1f5498cc461ee83",
+  "dataset_or_rgb_open_count": 0,
+  "date": "2026-07-29",
+  "entrypoints": [
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v14_unified_ray_survival.py",
+    "scripts/run_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py",
+    "scripts/launch_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py"
+  ],
+  "excluded_runtime_categories": [
+    ".generated artifacts, attempt registries, and runtime outputs",
+    "tensor checkpoints, schedules, receipts, and metric sidecars",
+    "raw RGB, scene shards, datasets, and role payloads",
+    "configuration and custody roots",
+    "sealed or held-out benchmark material",
+    "review, authorization, result, and completion records"
+  ],
+  "forced_dynamic_sources": [
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
+    "scripts/run_go2_shared_jepa_v5_matched_training_v1.py",
+    "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py",
+    "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py",
+    "lewm/benchmarks/go2_swept_progress_survival_labels_v1.py",
+    "lewm/benchmarks/go2_direct_egocentric_bev_state_jepa_v1.py",
+    "lewm/benchmarks/go2_swept_progress_survival_joint_jepa_v1.py",
+    "lewm/benchmarks/go2_post_action_projective_support_metrics_v1.py",
+    "lewm/benchmarks/go2_post_action_projective_support_joint_jepa_v1.py",
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py",
+    "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v1.py",
+    "lewm/models/observable_camera_ray_evidence_v4.py",
+    "lewm/models/observable_camera_ray_evidence_v4_training.py",
+    "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_lifecycle.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+  ],
+  "generated_or_runtime_artifact_open_count": 0,
+  "schema": "lewm_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_source_manifest",
+  "sealed_or_heldout_open_count": 0,
+  "source_bindings": [
+    {
+      "byte_count": 313,
+      "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+      "path": "lewm/__init__.py"
+    },
+    {
+      "byte_count": 362,
+      "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+      "path": "lewm/benchmarks/__init__.py"
+    },
+    {
+      "byte_count": 10300,
+      "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+      "path": "lewm/benchmarks/counterfactual.py"
+    },
+    {
+      "byte_count": 1676,
+      "file_sha256": "108b1ec543501b885aebd37a328e9a62ae2e9cd96a722c9e6dc74ddab0ca91ad",
+      "path": "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g2.py"
+    },
+    {
+      "byte_count": 1668,
+      "file_sha256": "99350461def8e99a09f0061531ea4a0b4ae6fd109795c0bafd12016a951ec8b8",
+      "path": "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g3.py"
+    },
+    {
+      "byte_count": 80541,
+      "file_sha256": "79e66a4ca5bd814030f374413e4ac0a2edda2552d0614ec23b54b6b0e52ff1b6",
+      "path": "lewm/benchmarks/go2_direct_egocentric_bev_state_jepa_v1.py"
+    },
+    {
+      "byte_count": 23757,
+      "file_sha256": "708d368e461fe60aacb860dda5b0cbfd1acaf43e5cb3ae18a77bb48de739fb85",
+      "path": "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py"
+    },
+    {
+      "byte_count": 14068,
+      "file_sha256": "6a0e40f9dcb496831553dc5bbc6d1efcdf6d82676d6f18aa20e417f8de4fa6a0",
+      "path": "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py"
+    },
+    {
+      "byte_count": 28571,
+      "file_sha256": "058ac19eb7841b2490321f2734b73ee47d07aa4268b696b5e6883a947bb24aee",
+      "path": "lewm/benchmarks/go2_post_action_projective_support_corridor_contract_v1.py"
+    },
+    {
+      "byte_count": 37510,
+      "file_sha256": "5121a217290fb70064c854f839ffbe92b0669d5b25668b6a19f068936a227a30",
+      "path": "lewm/benchmarks/go2_post_action_projective_support_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 112295,
+      "file_sha256": "4c33f2b2a4282806c998c842897542404cc0157a8ed0102dfce28d84b0c520e5",
+      "path": "lewm/benchmarks/go2_post_action_projective_support_labels_v1.py"
+    },
+    {
+      "byte_count": 40129,
+      "file_sha256": "763c6ad5ac33dccb174522f0c2097f39b45cec6363dee74de8f5f3bb11ac7138",
+      "path": "lewm/benchmarks/go2_post_action_projective_support_metrics_v1.py"
+    },
+    {
+      "byte_count": 124355,
+      "file_sha256": "8c35f0cbafe78185ac74d4412914c177de20f899b0f009a9b9dc7aafdf7695a5",
+      "path": "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py"
+    },
+    {
+      "byte_count": 41189,
+      "file_sha256": "53a7fac793a1b46764d49e7259fd637ec02b20111927effd01cdcd09682c206a",
+      "path": "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py"
+    },
+    {
+      "byte_count": 77055,
+      "file_sha256": "3553810c79686f642a30fdfd0d2ff6ae047a97ea65c1366cae4cb3231e44e669",
+      "path": "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py"
+    },
+    {
+      "byte_count": 17663,
+      "file_sha256": "46d3f198fccb1c3cfd270cc96cc91cab64d89e8a441cab2e8dcab336b51c1e7a",
+      "path": "lewm/benchmarks/go2_swept_progress_survival_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 23894,
+      "file_sha256": "7d89e561835f040ec4e47b95a9b1fe94e497f95921cc00b4993db1c18bb6b270",
+      "path": "lewm/benchmarks/go2_swept_progress_survival_labels_v1.py"
+    },
+    {
+      "byte_count": 12035,
+      "file_sha256": "9e93930100f4369c7a95d8564a4ba81e68d78ecd06fca47c3be3b6b60f5deb06",
+      "path": "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_finalizer_core.py"
+    },
+    {
+      "byte_count": 16570,
+      "file_sha256": "8f13a504777f020f49cc8103897193f6a8b6a572691c9b0644aa2c4344b3bf07",
+      "path": "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_runner_policy.py"
+    },
+    {
+      "byte_count": 2210,
+      "file_sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36",
+      "path": "lewm/models/__init__.py"
+    },
+    {
+      "byte_count": 85584,
+      "file_sha256": "c4006e9804182b077399229d43bc8c9be64b5af12c81fff4076d5a78e6ef359b",
+      "path": "lewm/models/egomotion_bev_jepa.py"
+    },
+    {
+      "byte_count": 7028,
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "path": "lewm/models/encoders.py"
+    },
+    {
+      "byte_count": 29387,
+      "file_sha256": "d08e096427207b328f940dc0dfc083887c1287fb4828b787b96097624de28b79",
+      "path": "lewm/models/geometry_anchored_deformable_bev_lift_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 5837,
+      "file_sha256": "129c233fbb4466750e73821699d0623e2ba2097e957aa4edefe059b1610f6586",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 19203,
+      "file_sha256": "68ade72ef4293bd23136ad739c269af360a962c901216c996c2247d494a88196",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v10_projective_cell_volume_token_lift.py"
+    },
+    {
+      "byte_count": 27001,
+      "file_sha256": "a4ec329f9da019dd2a6dfa85650c73a74c2ac6528bce8c431ae3cf842e328ab0",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v11_height_role_factorized_evidence_lift.py"
+    },
+    {
+      "byte_count": 8945,
+      "file_sha256": "6bcdb2b2551f0950d2abe120a9081eb6aeed19dd39207fe648bcc1d18e1c3426",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v12_neutral_disjoint_ternary_competition.py"
+    },
+    {
+      "byte_count": 35982,
+      "file_sha256": "ac46ff9cd604e003a300a2f78704d8b58e2e43dec4aae713cdd01ca23f2dbd03",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
+      "byte_count": 19959,
+      "file_sha256": "5b788c981d72d6562b16d6b25291ec8825873d46ca40f0c1a3c207eef5ff9090",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v14_unified_ray_survival.py"
+    },
+    {
+      "byte_count": 4659,
+      "file_sha256": "1c5a26f02a856d9a84903063c53bf23095142d86885787556b09388c508711ef",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v4_residual_local_semantic_decoder.py"
+    },
+    {
+      "byte_count": 18096,
+      "file_sha256": "eb5ac85cfe1394b946eddd5f56167066085bfa6598aaa364e15cf432c2228d0c",
+      "path": "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v9_content_adaptive_dense_local_token_lift.py"
+    },
+    {
+      "byte_count": 13068,
+      "file_sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a",
+      "path": "lewm/models/lewm.py"
+    },
+    {
+      "byte_count": 23144,
+      "file_sha256": "6238f7fb2b9c0c5201c9d7ebb5343ceef72fa97b423dddb466465b6c594cc882",
+      "path": "lewm/models/observable_camera_ray_evidence_v4.py"
+    },
+    {
+      "byte_count": 14344,
+      "file_sha256": "735563f811c5d7b9efb9e37dca8348825a8467bd0a059f83ab94d41d45d57662",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py"
+    },
+    {
+      "byte_count": 9240,
+      "file_sha256": "52bc99f0ba59c2cf7444221931169ba57af61f343308b85625877c7a257adffd",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py"
+    },
+    {
+      "byte_count": 32751,
+      "file_sha256": "c0f3f944883987950edb7579a9e108171486122a9a3ae9d84d2a1abb6ac015ed",
+      "path": "lewm/models/observable_camera_ray_evidence_v4_training.py"
+    },
+    {
+      "byte_count": 44882,
+      "file_sha256": "6489460b61f705dcc4b795c4f8f81c8c61087726718e67256c5255dd62f2fe46",
+      "path": "lewm/models/patch_whitened_action_residual_jepa.py"
+    },
+    {
+      "byte_count": 37610,
+      "file_sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987",
+      "path": "lewm/models/phase2d_spatial_lewm.py"
+    },
+    {
+      "byte_count": 14275,
+      "file_sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+      "path": "lewm/models/predictor.py"
+    },
+    {
+      "byte_count": 17334,
+      "file_sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e",
+      "path": "lewm/models/primitive_affordance.py"
+    },
+    {
+      "byte_count": 183593,
+      "file_sha256": "ee3fd612bb0a40d615fda7f7110091a330c849f8b1ec2b48cc0af3e406c928fc",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5.py"
+    },
+    {
+      "byte_count": 3395,
+      "file_sha256": "a024b9e28c2572bfefa6cd630bf4f7798cae946b353e41033e884529bb0ca20c",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_authority.py"
+    },
+    {
+      "byte_count": 9538,
+      "file_sha256": "8422c253c3eca3b34dd42b4f823dab4ac67f0e90fb2cff8eeaa67a1310b3c53a",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_full_training_v4_loss.py"
+    },
+    {
+      "byte_count": 21903,
+      "file_sha256": "a63da1137539953b2f40d184def1652ae05f63d7b434084b1a91787e1fc83d0b",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_multires_v1.py"
+    },
+    {
+      "byte_count": 7374,
+      "file_sha256": "6fc0a114386ee2fb0ae98704a970d38a7194db192283b904138015498fb02384",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_protected_camera_adaptation_v4_tail_depth.py"
+    },
+    {
+      "byte_count": 2359,
+      "file_sha256": "3c15410607f10a5b82b5c1e3dd86acccb6ac9bc2c538a907b7b3ad62a90c759f",
+      "path": "lewm/models/shared_observable_camera_ray_jepa_v5_registry_policy.py"
+    },
+    {
+      "byte_count": 3045,
+      "file_sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae",
+      "path": "lewm/models/sigreg.py"
+    },
+    {
+      "byte_count": 12899,
+      "file_sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1",
+      "path": "lewm/models/source_action_utility.py"
+    },
+    {
+      "byte_count": 11337,
+      "file_sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983",
+      "path": "lewm/models/spatial_lewm.py"
+    },
+    {
+      "byte_count": 5543,
+      "file_sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c",
+      "path": "lewm/models/spatial_predictor.py"
+    },
+    {
+      "byte_count": 507,
+      "file_sha256": "a891a410a2012ba96b37d7d801052ed2e3da2e415e69ace26b81bd5af97e5adc",
+      "path": "lewm/planning/__init__.py"
+    },
+    {
+      "byte_count": 13563,
+      "file_sha256": "6873a9550399a5decc90e4a31b2945e54074bdb56855a035924f49b4511c813b",
+      "path": "lewm/planning/geometry_contract.py"
+    },
+    {
+      "byte_count": 30334,
+      "file_sha256": "5831379e52eb0eaa1c2cf8d195b6d46b29ad8b66dbadc98f51629f22bc656b37",
+      "path": "lewm/planning/oriented_footprint.py"
+    },
+    {
+      "byte_count": 1540,
+      "file_sha256": "9e0b6599316b0d361e99c405cbc27be4e9948206c55aeaa0f5316a90d320002d",
+      "path": "lewm_worlds/lewm_worlds/__init__.py"
+    },
+    {
+      "byte_count": 5337,
+      "file_sha256": "776a8638da81939101f7ce0c7d856fada9c08b7ce2b5ecc104f708425e6067d3",
+      "path": "lewm_worlds/lewm_worlds/corpus.py"
+    },
+    {
+      "byte_count": 60,
+      "file_sha256": "a658289b9d01aefb220d23f89c2d23d78d86562382779690f832da41d1f4e70c",
+      "path": "lewm_worlds/lewm_worlds/exporters/__init__.py"
+    },
+    {
+      "byte_count": 8011,
+      "file_sha256": "daf8a41ba06bd250c618775184462b641263ec485ecb4674fc96a31f4348fc57",
+      "path": "lewm_worlds/lewm_worlds/exporters/to_gazebo_sdf.py"
+    },
+    {
+      "byte_count": 2202,
+      "file_sha256": "9ad0e97d584b50a1c28a26da8b0a59344081b5b8bf0e79d6ad227b66c982b313",
+      "path": "lewm_worlds/lewm_worlds/exporters/to_genesis.py"
+    },
+    {
+      "byte_count": 62884,
+      "file_sha256": "87515b932773aa518d18f9777af7c1567ae76368ce31e5519da7019f72d30189",
+      "path": "lewm_worlds/lewm_worlds/families.py"
+    },
+    {
+      "byte_count": 926,
+      "file_sha256": "23e578d23044873cd7cd5bee8cbef994ba37ce085f3e6b0e6543db2db760f4c8",
+      "path": "lewm_worlds/lewm_worlds/labels/__init__.py"
+    },
+    {
+      "byte_count": 26364,
+      "file_sha256": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d",
+      "path": "lewm_worlds/lewm_worlds/labels/derived.py"
+    },
+    {
+      "byte_count": 5998,
+      "file_sha256": "1cb83d219f43e862f77aac44f3f98f66578594be662055e070d41cc397ad0185",
+      "path": "lewm_worlds/lewm_worlds/labels/topology.py"
+    },
+    {
+      "byte_count": 12154,
+      "file_sha256": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888",
+      "path": "lewm_worlds/lewm_worlds/manifest.py"
+    },
+    {
+      "byte_count": 20806,
+      "file_sha256": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510",
+      "path": "lewm_worlds/lewm_worlds/planning_grid.py"
+    },
+    {
+      "byte_count": 12139,
+      "file_sha256": "df600c33020713af2bf623468270a40f9d4dcf5459f3f1526faf1a53875ab190",
+      "path": "lewm_worlds/lewm_worlds/randomization.py"
+    },
+    {
+      "byte_count": 23227,
+      "file_sha256": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46",
+      "path": "lewm_worlds/lewm_worlds/scene_graph.py"
+    },
+    {
+      "byte_count": 10113,
+      "file_sha256": "9ecf9c7c6d87f2ba2be083883bbd621dcd9372f1ea74bf4545434f0135ad9ad3",
+      "path": "lewm_worlds/lewm_worlds/scene_validation.py"
+    },
+    {
+      "byte_count": 12032,
+      "file_sha256": "0536c7694f28a8cdde6391743a160ec4b9f5c08795a67c641a241891d7c0dfcd",
+      "path": "lewm_worlds/lewm_worlds/splits.py"
+    },
+    {
+      "byte_count": 14324,
+      "file_sha256": "ed6f7c8eec6b23d387bcc615859c7b0c7fccb351beabce7d9e23f96567bdad94",
+      "path": "scripts/diagnose_go2_post_action_projective_support_selection_admissibility_v1.py"
+    },
+    {
+      "byte_count": 14548,
+      "file_sha256": "30d026696c7c55a6df8e67a2482cebbf64e30e4722bbdbbaf1e4d873b7ad9e8e",
+      "path": "scripts/diagnose_go2_swept_progress_selection_v1.py"
+    },
+    {
+      "byte_count": 47494,
+      "file_sha256": "870022fc84ad391c97c3fe06da83357d8575408a7d57874aa0aac118ace9deb2",
+      "path": "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 93547,
+      "file_sha256": "86a2986b31406f51ae0a3e0bbb33f8f35bc3d775f41d34b355b8f39f8a5296b1",
+      "path": "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
+      "byte_count": 13830,
+      "file_sha256": "bc9be8a0edfcfa2609e3948d266c4788ffd991b4b1832187aafe0e9de45af951",
+      "path": "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py"
+    },
+    {
+      "byte_count": 15373,
+      "file_sha256": "e3699947d341a3ea462e584e35c66ea40b510804f39e6f31b7009717b49cd4be",
+      "path": "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py"
+    },
+    {
+      "byte_count": 25793,
+      "file_sha256": "0d70bd47728c049f392564b9f8094da63d18b4e9638c69673a3f44954f377312",
+      "path": "scripts/go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_lifecycle.py"
+    },
+    {
+      "byte_count": 85583,
+      "file_sha256": "b08656ff7de49d0d498dea966202663788e0c8da3964f947f7ebf2742974c23a",
+      "path": "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
+      "byte_count": 12196,
+      "file_sha256": "48827b4cf3431d4333f49e8a60b20487e5d1d9b7195a2ff2b7513e94beea16fa",
+      "path": "scripts/launch_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py"
+    },
+    {
+      "byte_count": 113094,
+      "file_sha256": "33617086a5481f2fa0bf8ae6993110c40bf8db85f066d1d6e874dde12fb07000",
+      "path": "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py"
+    },
+    {
+      "byte_count": 183259,
+      "file_sha256": "ce256dcb1ef67dff313855680365ce07d867aca986dfcad7b8e9493373fe099c",
+      "path": "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py"
+    },
+    {
+      "byte_count": 97541,
+      "file_sha256": "aa2abdf5c1baaf5c55744787686d3cddadc6783b41d571a27e5428e9593ad1b5",
+      "path": "scripts/run_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 23805,
+      "file_sha256": "0d0d5b30c4674ac678de8898c6a55e5103268636cbdff7dc2388461ceb38b662",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py"
+    },
+    {
+      "byte_count": 32558,
+      "file_sha256": "f194d0451855d49c5338bfd06f66f8b13b0312a71662d24e140cb151bbccbe08",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py"
+    },
+    {
+      "byte_count": 18988,
+      "file_sha256": "6f76dd5b098ff360a3ada5bbb18f74a13342f3a5212e871da6db8f5f3a5bb1bf",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v2_occupied_safety_aux.py"
+    },
+    {
+      "byte_count": 5497,
+      "file_sha256": "7cab73752593b12b638b55710714ff956a2441e92df2fe775902472a7b69a8cb",
+      "path": "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v3_half_occupied_safety_aux.py"
+    },
+    {
+      "byte_count": 4143,
+      "file_sha256": "821a320f1bf65335c642481dc271aca13aaee3c28311a3c2c3fc542133c3ff9a",
+      "path": "scripts/run_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py"
+    },
+    {
+      "byte_count": 103481,
+      "file_sha256": "392bd9c5e3b6f803f829aa11935ef60b9667d0919c8fbb5c181bc8a5d235db80",
+      "path": "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
+    }
+  ],
+  "source_bindings_sha256": "acb20d7a0638b0816f705e791aaf9201df00a96033578ae12d5db762f4a85e96",
+  "source_count": 86,
+  "source_paths": [
+    "lewm/__init__.py",
+    "lewm/benchmarks/__init__.py",
+    "lewm/benchmarks/counterfactual.py",
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g2.py",
+    "lewm/benchmarks/finalize_shared_observable_camera_ray_jepa_v5_g3.py",
+    "lewm/benchmarks/go2_direct_egocentric_bev_state_jepa_v1.py",
+    "lewm/benchmarks/go2_observable_camera_ray_evidence_v4.py",
+    "lewm/benchmarks/go2_observable_camera_ray_fit_v4_metrics.py",
+    "lewm/benchmarks/go2_post_action_projective_support_corridor_contract_v1.py",
+    "lewm/benchmarks/go2_post_action_projective_support_joint_jepa_v1.py",
+    "lewm/benchmarks/go2_post_action_projective_support_labels_v1.py",
+    "lewm/benchmarks/go2_post_action_projective_support_metrics_v1.py",
+    "lewm/benchmarks/go2_rgb_jepa_encoder_pretraining_v1.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_matched_training_v1.py",
+    "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py",
+    "lewm/benchmarks/go2_swept_progress_survival_joint_jepa_v1.py",
+    "lewm/benchmarks/go2_swept_progress_survival_labels_v1.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_finalizer_core.py",
+    "lewm/benchmarks/shared_observable_camera_ray_jepa_v5_runner_policy.py",
+    "lewm/models/__init__.py",
+    "lewm/models/egomotion_bev_jepa.py",
+    "lewm/models/encoders.py",
+    "lewm/models/geometry_anchored_deformable_bev_lift_joint_jepa_v1.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v1.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v10_projective_cell_volume_token_lift.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v11_height_role_factorized_evidence_lift.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v12_neutral_disjoint_ternary_competition.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v14_unified_ray_survival.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v4_residual_local_semantic_decoder.py",
+    "lewm/models/geometry_anchored_swept_progress_survival_joint_jepa_v9_content_adaptive_dense_local_token_lift.py",
+    "lewm/models/lewm.py",
+    "lewm/models/observable_camera_ray_evidence_v4.py",
+    "lewm/models/observable_camera_ray_evidence_v4_gate_aligned_raster_nll_v12.py",
+    "lewm/models/observable_camera_ray_evidence_v4_hierarchical_first_hit_v9.py",
+    "lewm/models/observable_camera_ray_evidence_v4_training.py",
+    "lewm/models/patch_whitened_action_residual_jepa.py",
+    "lewm/models/phase2d_spatial_lewm.py",
+    "lewm/models/predictor.py",
+    "lewm/models/primitive_affordance.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_authority.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_full_training_v4_loss.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_multires_v1.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_protected_camera_adaptation_v4_tail_depth.py",
+    "lewm/models/shared_observable_camera_ray_jepa_v5_registry_policy.py",
+    "lewm/models/sigreg.py",
+    "lewm/models/source_action_utility.py",
+    "lewm/models/spatial_lewm.py",
+    "lewm/models/spatial_predictor.py",
+    "lewm/planning/__init__.py",
+    "lewm/planning/geometry_contract.py",
+    "lewm/planning/oriented_footprint.py",
+    "lewm_worlds/lewm_worlds/__init__.py",
+    "lewm_worlds/lewm_worlds/corpus.py",
+    "lewm_worlds/lewm_worlds/exporters/__init__.py",
+    "lewm_worlds/lewm_worlds/exporters/to_gazebo_sdf.py",
+    "lewm_worlds/lewm_worlds/exporters/to_genesis.py",
+    "lewm_worlds/lewm_worlds/families.py",
+    "lewm_worlds/lewm_worlds/labels/__init__.py",
+    "lewm_worlds/lewm_worlds/labels/derived.py",
+    "lewm_worlds/lewm_worlds/labels/topology.py",
+    "lewm_worlds/lewm_worlds/manifest.py",
+    "lewm_worlds/lewm_worlds/planning_grid.py",
+    "lewm_worlds/lewm_worlds/randomization.py",
+    "lewm_worlds/lewm_worlds/scene_graph.py",
+    "lewm_worlds/lewm_worlds/scene_validation.py",
+    "lewm_worlds/lewm_worlds/splits.py",
+    "scripts/diagnose_go2_post_action_projective_support_selection_admissibility_v1.py",
+    "scripts/diagnose_go2_swept_progress_selection_v1.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
+    "scripts/execute_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v14.py",
+    "scripts/execute_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py",
+    "scripts/go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon_lifecycle.py",
+    "scripts/launch_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/launch_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py",
+    "scripts/run_go2_direct_egocentric_bev_state_jepa_v1.py",
+    "scripts/run_go2_rgb_jepa_encoder_pretraining_v1.py",
+    "scripts/run_go2_rgb_post_action_projective_support_corridor_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v1.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v13_camera_evidence_bottleneck.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v2_occupied_safety_aux.py",
+    "scripts/run_go2_rgb_swept_progress_survival_joint_jepa_v3_half_occupied_safety_aux.py",
+    "scripts/run_go2_rgb_unified_ray_survival_joint_jepa_v15_extended_horizon.py",
+    "scripts/run_go2_shared_jepa_v5_matched_training_v1.py"
+  ],
+  "status": "SOURCE_ONLY_RECURSIVE_CLOSURE",
+  "tensor_checkpoint_open_count": 0,
+  "whole_tree_export_authorized": false
+}

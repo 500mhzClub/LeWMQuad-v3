@@ -1,0 +1,221 @@
+{
+  "allocation_circularity_resolution": {
+    "deterministic_search": {
+      "candidate_outcomes_consumed": false,
+      "candidate_pool_order": "continue the unchanged one-pass lexical scene traversal strictly after the scene cursor consumed while filling the five general and five safety-enriched small-family slots; never revisit an earlier skipped scene; retain the first eligible canonical snapshot per remaining scene, and within that snapshot choose the designated goal by (distance, landmark id, landmark cell, graph hops diagnostic)",
+      "choice": "first combination for which all forty exact-mask predicates pass",
+      "combination_order": "lexicographic five-distinct-scene combinations from that ordered small-enclosed completion pool",
+      "failure": "if the cursor-restricted pool has fewer than five scenes or no combination passes, issue and terminally reuse one non-overwriting self-bound pre-outcome failure receipt; do not alter allocator, selector, quota, candidate bank, or state strata",
+      "fixed_rows": "the seven already feasible family shards plus the frozen small-enclosed general and safety choices",
+      "per_combination_operation": "construct the provisional exact 120 identity projection, run the unchanged canonical allocator once, and recompute all forty completion predicates against their assigned masks"
+    },
+    "phase_2_gate": "before the active manifest or any branch, every completion identity must bind its actual previous command, exact assigned mask, exact L_max, distance gap, and passing predicate",
+    "pre_identity_evidence": "retain the exact L_max and eligibility result for each of the twelve unchanged candidate rotations",
+    "pre_identity_fixture_is_not_an_assignment": true,
+    "small_family_is_resolved_last": true,
+    "unchanged_allocator": true
+  },
+  "census_reuse": {
+    "accepted_1284_scene_shards_overwritten": false,
+    "accepted_failed_receipt_preserved_byte_exact": true,
+    "actual_allocated_mask_check_required_before_manifest": true,
+    "actual_allocated_mask_check_status": "MANDATORY_DEFERRED_TO_JOINT_SEARCH_AND_PHASE2",
+    "general_and_safety_reused_unchanged": true,
+    "seven_previously_passing_completion_cells": "cached gap-zero evidence may prove provisional eligibility; selected identities still receive the exact-mask phase-2 check",
+    "small_enclosed_first_action": "recompute from 182 existing shards",
+    "small_enclosed_redrive_boundary": "redrive only small-enclosed scenes missing actual previous command or another required pre-outcome field",
+    "unrelated_family_redrive": false
+  },
+  "forbidden_selector_inputs": [
+    "simulator branch execution",
+    "collision outcomes",
+    "realised progress",
+    "realised completion",
+    "rendered future frames",
+    "model predictions"
+  ],
+  "freeze_policy": {
+    "no_state_replacement_from_completion_prevalence": true,
+    "once_branch_outcomes_exist_selector_revision_forbidden": true,
+    "this_is_final_permitted_pre_outcome_selector_amendment": true
+  },
+  "lineage": {
+    "authorizing_clean_failure_commit": "568a9511aa7c54e72052768c27eb356cf10debbe",
+    "complete_census_failure_report": {
+      "byte_count": 28618,
+      "failure_report_digest": "81637cdf3889dc0856ea97aee9a644f182855ef49c4e466eee3f8aed4134a0b8",
+      "path": "docs/lewm_go2_shared_utility_scorer_v1_2_preoutcome_selector_feasibility_failure_2026-08-12.json",
+      "raw_sha256": "db2e025fe71164943bb214a602dfdeb249d629de2420aa758bb97717c8974b49"
+    },
+    "frozen_failed_census_receipt": {
+      "byte_count": 1194515,
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_feasibility_receipt.json",
+      "raw_sha256": "28e852792b5de24b2d008c5bb3f95521da668927e555deb9eb3c508bb6b0e59f",
+      "scene_shards_expected": 1284,
+      "scene_shards_reconstructed": 1284,
+      "schema": "go2_scorer_fit_state_selector_feasibility_receipt_v1",
+      "sole_failed_cell": {
+        "eligible_distinct_scenes": 0,
+        "family": "small_enclosed_maze",
+        "required_distinct_scenes": 5,
+        "stratum": "completion_enriched"
+      },
+      "state_selector_feasibility_receipt_digest": "2310c3d1b138b605fda483b39cbd4775479cbcc502a4e3707e7a8670457f54d7",
+      "status": "FAIL_OUTCOME_FREE_SELECTOR_FEASIBILITY"
+    },
+    "frozen_failed_census_task_census": {
+      "byte_count": 1300740,
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_feasibility_task_census.json",
+      "raw_sha256": "7ff35ec9feb864b1e9d6ef138a67874e6cce23e447e3de00d12773ca2ee56811",
+      "scene_task_count": 1284,
+      "self_digest": "0ee5fb6d073e6e8db33b0f63ce9b70b8346ba12f29f729f06c06de5982fbe109"
+    },
+    "predecessor_selector_amendment_artifact": {
+      "byte_count": 10804,
+      "path": "docs/lewm_go2_shared_utility_scorer_v1_2_state_selector_amendment_v1_2026-08-11.json",
+      "raw_sha256": "907f23421cc0c4e22746b6fecc580bf4509b2cc904ef7f212800d2597795d663"
+    },
+    "predecessor_selector_amendment_digest": "69e11a3efe665c4591fa29748b2f13ad08938b92acde763bda10608f93768628",
+    "predecessor_successor_selection_digest": "8cf65cc016c28ad34f1e50246561e72ee9d0f9c1c253fe8e32a4203a35b73ebe",
+    "unchanged_candidate_allocation_amendment_digest": "4dde3562cdd9e503d6e264a5d4982a189a9f43d338c3d6b87ee20de352bc3cbc",
+    "unchanged_candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9"
+  },
+  "new_non_overwriting_receipts": {
+    "active_manifest_binding_keys": [
+      "state_selector_amendment_digest",
+      "state_selector_feasibility_receipt_digest",
+      "preserved_state_revalidation_receipt_digest"
+    ],
+    "feasibility": {
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/state_selector_reachability_feasibility_receipt_v2.json",
+      "schema": "go2_scorer_fit_state_selector_reachability_feasibility_receipt_v2",
+      "status": "PASS_OUTCOME_FREE_REACHABILITY_FEASIBILITY"
+    },
+    "preserved_phase_1": {
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/preserved_state_precontract_revalidation_reachability_v2.json",
+      "schema": "go2_scorer_fit_preserved_state_precontract_revalidation_reachability_v2"
+    },
+    "preserved_phase_2": {
+      "path": ".generated/go2_branch_corpus_v1_2/scorer_fit/preserved_state_revalidation_reachability_v2.json",
+      "schema": "go2_scorer_fit_preserved_state_revalidation_reachability_v2"
+    }
+  },
+  "preserved": {
+    "candidate_allocation_amendment": true,
+    "candidate_allocation_amendment_digest": "4dde3562cdd9e503d6e264a5d4982a189a9f43d338c3d6b87ee20de352bc3cbc",
+    "candidate_appearances_exactly_60": true,
+    "candidate_bank": true,
+    "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+    "completion_semantic_separation": {
+      "not_interchangeable": true,
+      "oracle_v1_2_label": "the snapshot-bound goal graph cell is reached at a branch tick at or before H4",
+      "r_complete_0_75m": "selector-only parameter in max(d0-r_complete,0)<=L_max",
+      "snapshot_production_goal_claim": "the collector's actual range-envelope, camera-FOV and line-of-sight gates populate its claimed-cell set"
+    },
+    "completion_semantic_source_bindings": {
+      "oracle_v1_2_completion_target": {
+        "byte_count": 13637,
+        "path": "lewm/oracle/go2_branch_oracle_v1_2.py",
+        "sha256": "6d7a6b20bcfb5da112ff10e95a7d3573ebf07884e7b4e58315a733254d6f4fc2",
+        "symbols": [
+          "COMPLETION_CONTRACT",
+          "branch_components"
+        ]
+      },
+      "production_task_completion_and_reset": {
+        "byte_count": 86066,
+        "path": "lewm_genesis/lewm_genesis/rollout.py",
+        "sha256": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a",
+        "symbols": [
+          "RolloutRunner._check_and_reset_completed_envs"
+        ]
+      },
+      "snapshot_production_designated_goal_claim": {
+        "byte_count": 51313,
+        "path": "lewm_genesis/lewm_genesis/collectors/route_teacher.py",
+        "sha256": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968",
+        "symbols": [
+          "RouteTeacherPolicy._evaluate_arrival_gates",
+          "RouteTeacherPolicy._landmark_visible",
+          "RouteTeacherPolicy.visited_landmark_cells"
+        ]
+      }
+    },
+    "family_split_and_stratum_allocation": true,
+    "fit_calibration_96_24": true,
+    "five_states_per_family_stratum": true,
+    "graph_hops_diagnostic_only": true,
+    "horizon_blocks": 4,
+    "horizon_s": 2.0,
+    "oracle_v1_2_completion_at_or_before_horizon": true,
+    "oracle_v1_2_progress_safety_completion": true,
+    "reachability_formula_r_complete_m": 0.75,
+    "render_preprocess_encoder": true,
+    "scorer_architecture_and_qualification": true,
+    "six_candidates_per_state": true,
+    "state_total_120": true
+  },
+  "schema": "go2_scorer_fit_state_selector_amendment_v2",
+  "single_replacement": {
+    "d0": "frozen continuous metric-geodesic distance at snapshot time",
+    "definition": "max(d0 - r_complete, 0) <= L_max",
+    "l_max": "maximum nominal translational path length among the exact six candidates allocated to this state over twenty post-slew ticks",
+    "l_max_calculation": {
+      "blocks": 4,
+      "branch_execution": false,
+      "candidate_path_length": "math.fsum(hypot(post_slew_vx, post_slew_vy) * 0.1 for the exact 20 ticks)",
+      "candidate_plans": "exact requested four-block plans in frozen bank",
+      "horizon_ticks": 20,
+      "previous_command": "actual snapshot-time previous applied (vx, vy, yaw)",
+      "realised_outcome": false,
+      "slew_limiter": "scripts.dev_action_slew_reconstruction_v1.reconstruct_block",
+      "slew_rates_per_tick": [
+        0.25,
+        0.25,
+        0.35
+      ],
+      "subset_aggregation": "maximum across the exact six unique candidates",
+      "tick_dt_s": 0.1,
+      "ticks_per_block": 5
+    },
+    "r_complete_m": 0.75,
+    "r_complete_semantic_boundary": "the unchanged 0.75 m selector parameter in this prospective snapshot reachability formula; not an oracle completion predicate and not the collector claim predicate",
+    "unchanged_requirements": {
+      "absolute_body_bearing_deg_max": 75.0,
+      "all_oracle_and_scorer_inputs_available": true,
+      "canonical_snapshot_boundary": true,
+      "finite_graph_reachability": true,
+      "graph_hops": "diagnostic only",
+      "snapshot_goal_claimed": false,
+      "snapshot_task_completed": false,
+      "snapshot_terminated": false,
+      "snapshot_truncated": false
+    }
+  },
+  "source_bindings": {
+    "candidate_allocation": {
+      "byte_count": 51923,
+      "path": "lewm/oracle/go2_candidate_allocation_v1_2.py",
+      "sha256": "9ebd494d979f73fe63863731740418e60ccd2d6d3f61d1f11171c879f598d0b7"
+    },
+    "platform_command_envelope": {
+      "byte_count": 4613,
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "slew_reconstruction": {
+      "byte_count": 13469,
+      "path": "scripts/dev_action_slew_reconstruction_v1.py",
+      "sha256": "17075cc10bdfc637a630da1b495f064156be9d481b6be631f50fd1e370b9203e"
+    }
+  },
+  "state_selector_amendment_digest": "8c1d9f5ff1430fda6d9d80512afdba3070c78301befa57604aafcad9cb5c880b",
+  "status": "AUTHORIZED_FINAL_PROSPECTIVE_PRE_OUTCOME_SELECTOR_AMENDMENT",
+  "superseded_start_distance_rule": {
+    "outcomes_existed_when_superseded": false,
+    "rule": "snapshot continuous geodesic distance d0 <= 0.75 m",
+    "scientific_defect": "a start-state radius is not the intended within-horizon physical reachability enrichment criterion",
+    "status": "SUPERSEDED_PRE_OUTCOME_START_RADIUS_NOT_HORIZON_REACHABILITY"
+  },
+  "version": "completion_horizon_reachability_v2"
+}

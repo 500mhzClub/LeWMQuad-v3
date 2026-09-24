@@ -1,0 +1,780 @@
+{
+  "training_samples": 3518,
+  "training_recordings": 138,
+  "sources": {
+    "family": 1122,
+    "short_pulse": 144,
+    "switch": 2252
+  },
+  "clusters": {
+    "cluster_01": 1834,
+    "cluster_00": 1684
+  },
+  "geometry_classes": {
+    "cluster_01_left_open": 284,
+    "cluster_00_left_open": 264,
+    "cluster_00_right_open": 272,
+    "cluster_01_right_open": 302,
+    "None": 2396
+  },
+  "training_motion_min": [
+    -0.00845968909561634,
+    -0.0175167303532362,
+    -0.23722171783447266
+  ],
+  "training_motion_max": [
+    0.10520011186599731,
+    0.013825015164911747,
+    0.2323116809129715
+  ],
+  "pilot_motion_min": [
+    -0.009712222034913166,
+    -0.008729348781735815,
+    -0.13923035832330144
+  ],
+  "pilot_motion_max": [
+    0.00590536229767822,
+    0.0006817781485515511,
+    0.2330575477253154
+  ],
+  "pilot_within_training_axis_ranges": 29,
+  "pilot_windows": 35,
+  "nearest_training_pairs": [
+    {
+      "pilot_frame": 12,
+      "pilot_motion": [
+        -0.00012403716190356932,
+        -0.00019913714637885918,
+        0.07076821627223116
+      ],
+      "training_sample_id": "pre_switch_train/switch_episode_022/frame_10",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 10,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -6.543886411236599e-05,
+        -0.00015554374840576202,
+        0.07044155895709991
+      ],
+      "normalized_motion_distance": 0.010060804952711163,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0010.png"
+    },
+    {
+      "pilot_frame": 16,
+      "pilot_motion": [
+        -0.0012900568507720797,
+        -0.0073744321628865595,
+        0.23120463062103197
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_01",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 14,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.0012899244902655482,
+        -0.007536741439253092,
+        0.23062413930892944
+      ],
+      "normalized_motion_distance": 0.03630170190203439,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0014.png"
+    },
+    {
+      "pilot_frame": 20,
+      "pilot_motion": [
+        -0.007432326736065682,
+        -0.0038214765408683795,
+        0.2257829820325122
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_008/offset_18",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 31,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.0064550479874014854,
+        -0.003815404372289777,
+        0.22664152085781097
+      ],
+      "normalized_motion_distance": 0.027537926577300358,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_008/rgb_0031.png"
+    },
+    {
+      "pilot_frame": 24,
+      "pilot_motion": [
+        -0.0053267305623120225,
+        -0.001124579182299231,
+        0.2304883091172364
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_12",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 25,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.004991170018911362,
+        -0.001156151876784861,
+        0.22871136665344238
+      ],
+      "normalized_motion_distance": 0.016458010885198666,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0025.png"
+    },
+    {
+      "pilot_frame": 28,
+      "pilot_motion": [
+        -0.0031038349965071435,
+        -0.002687312002922467,
+        0.15592200465448203
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_000/offset_27",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 40,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.005370961967855692,
+        -0.002651046495884657,
+        0.15792937576770782
+      ],
+      "normalized_motion_distance": 0.06433548280474305,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_000/rgb_0040.png"
+    },
+    {
+      "pilot_frame": 32,
+      "pilot_motion": [
+        0.002547173535498588,
+        -0.0067445575169748015,
+        0.06740312814620897
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_29",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 42,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        0.004164212848991156,
+        -0.0061983587220311165,
+        0.07168835401535034
+      ],
+      "normalized_motion_distance": 0.13241866113962056,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0042.png"
+    },
+    {
+      "pilot_frame": 36,
+      "pilot_motion": [
+        -0.008689684313606956,
+        -0.008729348781735815,
+        0.13551332916508463
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_27",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 40,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.0010941848158836365,
+        -0.007668936159461737,
+        0.15675929188728333
+      ],
+      "normalized_motion_distance": 0.3447679224837177,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0040.png"
+    },
+    {
+      "pilot_frame": 40,
+      "pilot_motion": [
+        -0.0005020197322455276,
+        -0.0048488024840354655,
+        0.05685004318418496
+      ],
+      "training_sample_id": "all_phase_train/family/family_episode_006/offset_29",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 32,
+      "cluster": "cluster_00",
+      "geometry": "cluster_00_left_open",
+      "training_motion": [
+        0.004795663990080357,
+        -0.005056840367615223,
+        0.06482727080583572
+      ],
+      "normalized_motion_distance": 0.16180587194146615,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0032.png"
+    },
+    {
+      "pilot_frame": 44,
+      "pilot_motion": [
+        -0.008397458825017117,
+        -0.006964267442919636,
+        0.20337045779354268
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_03",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 16,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004551964811980724,
+        -0.006926630157977343,
+        0.22979354858398438
+      ],
+      "normalized_motion_distance": 0.20343753213387145,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0016.png"
+    },
+    {
+      "pilot_frame": 48,
+      "pilot_motion": [
+        -0.0008531380607245806,
+        -0.001936298701575536,
+        0.22248405508123525
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_16",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 29,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.001843204372562468,
+        -0.0020811345893889666,
+        0.22527526319026947
+      ],
+      "normalized_motion_distance": 0.04601565233847162,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0029.png"
+    },
+    {
+      "pilot_frame": 52,
+      "pilot_motion": [
+        -0.002198451197186038,
+        -0.0037707298409966872,
+        0.22892730751847437
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_059/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 20,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.00210270076058805,
+        -0.003789482405409217,
+        0.22580577433109283
+      ],
+      "normalized_motion_distance": 0.021080113345621994,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_059/rgb_0020.png"
+    },
+    {
+      "pilot_frame": 56,
+      "pilot_motion": [
+        -0.0034713982982099724,
+        -0.002957252546708404,
+        0.2291940110257078
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_008/offset_13",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 26,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004110801499336958,
+        -0.0029573708306998014,
+        0.23125703632831573
+      ],
+      "normalized_motion_distance": 0.022219326917503786,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_008/rgb_0026.png"
+    },
+    {
+      "pilot_frame": 60,
+      "pilot_motion": [
+        -0.007127003982863336,
+        -0.0034736055613032585,
+        0.23096621438373166
+      ],
+      "training_sample_id": "all_phase_train/family/family_episode_006/offset_10",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 13,
+      "cluster": "cluster_00",
+      "geometry": "cluster_00_left_open",
+      "training_motion": [
+        -0.004814367741346359,
+        -0.003478487255051732,
+        0.2289339005947113
+      ],
+      "normalized_motion_distance": 0.06509738584007826,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0013.png"
+    },
+    {
+      "pilot_frame": 64,
+      "pilot_motion": [
+        -0.007594079831329637,
+        -0.0014488295353459902,
+        0.23258807444203078
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_108/offset_17",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 30,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.007830480113625526,
+        -0.0012788043823093176,
+        0.23170620203018188
+      ],
+      "normalized_motion_distance": 0.038808191496174683,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_108/rgb_0030.png"
+    },
+    {
+      "pilot_frame": 68,
+      "pilot_motion": [
+        -0.006780436749457045,
+        -0.0024315333190104635,
+        0.22334772535143
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_13",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 26,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.00583611149340868,
+        -0.00233956309966743,
+        0.22342513501644135
+      ],
+      "normalized_motion_distance": 0.03309685365744651,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0026.png"
+    },
+    {
+      "pilot_frame": 72,
+      "pilot_motion": [
+        -0.004797452168238072,
+        -0.00276641132550338,
+        0.2293326997044578
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_008/offset_23",
+      "source": "switch",
+      "trial": "switch_episode_008",
+      "frame": 36,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004225076641887426,
+        -0.0026775014121085405,
+        0.22816582024097443
+      ],
+      "normalized_motion_distance": 0.026426618998773882,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_008/rgb_0036.png"
+    },
+    {
+      "pilot_frame": 76,
+      "pilot_motion": [
+        -0.003813375727878709,
+        -0.003309560568543075,
+        0.2222397297213088
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_17",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 30,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.003240925259888172,
+        -0.003210709895938635,
+        0.22165147960186005
+      ],
+      "normalized_motion_distance": 0.027331159323914393,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0030.png"
+    },
+    {
+      "pilot_frame": 80,
+      "pilot_motion": [
+        -0.0022368170019453123,
+        -0.004981172376842807,
+        0.2220688698161308
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_000/offset_18",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 31,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.0030786492861807346,
+        -0.005191759206354618,
+        0.22866570949554443
+      ],
+      "normalized_motion_distance": 0.06787884903435949,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_000/rgb_0031.png"
+    },
+    {
+      "pilot_frame": 84,
+      "pilot_motion": [
+        -0.003068214717660407,
+        -0.007864334895672303,
+        0.2282902403443918
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_022/offset_25",
+      "source": "switch",
+      "trial": "switch_episode_022",
+      "frame": 38,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.0020768672693520784,
+        -0.007630995474755764,
+        0.22629103064537048
+      ],
+      "normalized_motion_distance": 0.060096786107231466,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_022/rgb_0038.png"
+    },
+    {
+      "pilot_frame": 88,
+      "pilot_motion": [
+        -0.004083843248795117,
+        -0.004490765872992106,
+        0.23273096147945524
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_059/offset_20",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 33,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.004344422370195389,
+        -0.00466368580237031,
+        0.2312547117471695
+      ],
+      "normalized_motion_distance": 0.040307863486064376,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_059/rgb_0033.png"
+    },
+    {
+      "pilot_frame": 92,
+      "pilot_motion": [
+        -0.006132630651482291,
+        -0.005019001404790689,
+        0.22959676028617992
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_04",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 17,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004826439078897238,
+        -0.0050010960549116135,
+        0.22982598841190338
+      ],
+      "normalized_motion_distance": 0.03623254214058426,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0017.png"
+    },
+    {
+      "pilot_frame": 96,
+      "pilot_motion": [
+        -0.006545876392257402,
+        -0.002388415457110849,
+        0.2330575477253154
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_000/offset_25",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 38,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.006767649669200182,
+        -0.002448920626193285,
+        0.2314274162054062
+      ],
+      "normalized_motion_distance": 0.01824761544146144,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_000/rgb_0038.png"
+    },
+    {
+      "pilot_frame": 100,
+      "pilot_motion": [
+        -0.007929475409153182,
+        -0.00128730219141558,
+        0.2242639437046403
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_108/offset_17",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 30,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.007830480113625526,
+        -0.0012788043823093176,
+        0.23170620203018188
+      ],
+      "normalized_motion_distance": 0.04897441409833627,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_108/rgb_0030.png"
+    },
+    {
+      "pilot_frame": 104,
+      "pilot_motion": [
+        -0.005324603245442184,
+        -0.0016363173174046965,
+        0.2263526547474739
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_07",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 20,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.005405552219599485,
+        -0.0015728569123893976,
+        0.22621546685695648
+      ],
+      "normalized_motion_distance": 0.01431837564572663,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0020.png"
+    },
+    {
+      "pilot_frame": 108,
+      "pilot_motion": [
+        -0.004325167759438014,
+        -0.002236013515945164,
+        0.22340583658981705
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_12",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 25,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004553942941129208,
+        -0.002185248536989093,
+        0.22722424566745758
+      ],
+      "normalized_motion_distance": 0.02820805009303284,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0025.png"
+    },
+    {
+      "pilot_frame": 112,
+      "pilot_motion": [
+        -0.0011667659232733898,
+        -0.003913242832243658,
+        0.22052856279404676
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_059/offset_10",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 23,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.0021002560388296843,
+        -0.00392802944406867,
+        0.22043845057487488
+      ],
+      "normalized_motion_distance": 0.025930985908088077,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_059/rgb_0023.png"
+    },
+    {
+      "pilot_frame": 116,
+      "pilot_motion": [
+        -0.00219557863967486,
+        -0.005761924461091276,
+        0.22388445493705245
+      ],
+      "training_sample_id": "all_phase_train/family/family_episode_006/offset_21",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 24,
+      "cluster": "cluster_00",
+      "geometry": "cluster_00_left_open",
+      "training_motion": [
+        -0.0017427247948944569,
+        -0.005727844778448343,
+        0.22348235547542572
+      ],
+      "normalized_motion_distance": 0.014833929512417153,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0024.png"
+    },
+    {
+      "pilot_frame": 124,
+      "pilot_motion": [
+        0.005211295892122985,
+        -0.006149233883075769,
+        0.02681369087889318
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_30",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 43,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        0.005325373727828264,
+        -0.005922319833189249,
+        0.02678670361638069
+      ],
+      "normalized_motion_distance": 0.05056862807215252,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0043.png"
+    },
+    {
+      "pilot_frame": 128,
+      "pilot_motion": [
+        0.00590536229767822,
+        -0.0017158745195412146,
+        -0.059454377190699015
+      ],
+      "training_sample_id": "short_pulse/pulse_episode_006/frame_14",
+      "source": "short_pulse",
+      "trial": "pulse_episode_006",
+      "frame": 14,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        0.009760359302163124,
+        -0.0016195656498894095,
+        -0.036230724304914474
+      ],
+      "normalized_motion_distance": 0.18704069818343771,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_short_pulse_learning_v1_attempt_001/pulse_episode_006/rgb_0014.png"
+    },
+    {
+      "pilot_frame": 132,
+      "pilot_motion": [
+        0.0032295994381763256,
+        -0.005407612211951799,
+        -0.13923035832330144
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_016/offset_00",
+      "source": "switch",
+      "trial": "switch_episode_016",
+      "frame": 13,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        0.003531662980094552,
+        -0.0053899153135716915,
+        -0.12042109668254852
+      ],
+      "normalized_motion_distance": 0.12383414354631325,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_016/rgb_0013.png"
+    },
+    {
+      "pilot_frame": 136,
+      "pilot_motion": [
+        -0.009712222034913166,
+        3.0023961730558964e-05,
+        0.17930981914558755
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_059/offset_27",
+      "source": "switch",
+      "trial": "switch_episode_059",
+      "frame": 40,
+      "cluster": "cluster_00",
+      "geometry": null,
+      "training_motion": [
+        -0.0036975492257624865,
+        -0.0005589299253188074,
+        0.1629670113325119
+      ],
+      "normalized_motion_distance": 0.2369062987803732,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_059/rgb_0040.png"
+    },
+    {
+      "pilot_frame": 140,
+      "pilot_motion": [
+        -0.004703698659714848,
+        0.0006817781485515511,
+        0.22398261003244158
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_013/offset_08",
+      "source": "switch",
+      "trial": "switch_episode_013",
+      "frame": 21,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.004731327295303345,
+        -0.000377021380700171,
+        0.2261209934949875
+      ],
+      "normalized_motion_distance": 0.23591920252339585,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_013/rgb_0021.png"
+    },
+    {
+      "pilot_frame": 144,
+      "pilot_motion": [
+        -0.004678901868619621,
+        -0.0024934427033290268,
+        0.23299476302915823
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_000/offset_23",
+      "source": "switch",
+      "trial": "switch_episode_000",
+      "frame": 36,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.0052597676403820515,
+        -0.002492922591045499,
+        0.23042818903923035
+      ],
+      "normalized_motion_distance": 0.023237794762348083,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_000/rgb_0036.png"
+    },
+    {
+      "pilot_frame": 148,
+      "pilot_motion": [
+        -0.0068023703804362895,
+        -0.0034158650201143157,
+        0.2263487099093997
+      ],
+      "training_sample_id": "all_phase_train/family/family_episode_006/offset_10",
+      "source": "family",
+      "trial": "family_episode_006",
+      "frame": 13,
+      "cluster": "cluster_00",
+      "geometry": "cluster_00_left_open",
+      "training_motion": [
+        -0.004814367741346359,
+        -0.003478487255051732,
+        0.2289339005947113
+      ],
+      "normalized_motion_distance": 0.05900092258533393,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001/family_episode_006/rgb_0013.png"
+    },
+    {
+      "pilot_frame": 152,
+      "pilot_motion": [
+        -0.006231708138186878,
+        -0.0005766154753317667,
+        0.22796976089795595
+      ],
+      "training_sample_id": "all_phase_train/switch/switch_episode_108/offset_20",
+      "source": "switch",
+      "trial": "switch_episode_108",
+      "frame": 33,
+      "cluster": "cluster_01",
+      "geometry": null,
+      "training_motion": [
+        -0.006176792550832033,
+        -0.0007755319238640368,
+        0.2298731654882431
+      ],
+      "normalized_motion_distance": 0.045999210057962536,
+      "training_current_rgb": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_moving_action_switch_family_v1_attempt_001/switch_episode_108/rgb_0033.png"
+    }
+  ],
+  "scope": "Post hoc motion-label coverage diagnostic, not visual-domain coverage or a training intervention."
+}

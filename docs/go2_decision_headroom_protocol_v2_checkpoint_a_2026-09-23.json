@@ -1,0 +1,324 @@
+{
+  "schema": "decision_headroom_checkpoint_a_proposal.v2",
+  "status": "FROZEN_PROPOSAL_STOPPED_PENDING_EXPLICIT_APPROVAL",
+  "phase2_authorized": false,
+  "phase2_technically_qualified": false,
+  "protocol_sha256": "4c90624432cf690b161dd7936d2e5e67736a54b532b2c97cb58be5f629d47572",
+  "recheck_manifest_sha256": "ac8061a77319b6eb88035a9566d95740906a9d3652d365e7da615023d4a2586e",
+  "remaining_phase1": {
+    "authorised": false,
+    "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_remaining_v2_attempt_001",
+    "source_assignments": [
+      {
+        "layout": 0,
+        "controller": "action",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "command_history",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "reactive_feedback",
+        "snapshot_frame": 132
+      },
+      {
+        "layout": 2,
+        "controller": "action",
+        "snapshot_frame": 132
+      }
+    ],
+    "source_sim_s_each": 17.6,
+    "branches_per_state": 21,
+    "branch_order_per_state": [
+      "source_trace_0",
+      "hold_0",
+      "hold_1",
+      "hold_2",
+      "forward_0",
+      "forward_1",
+      "forward_2",
+      "left_arc_0",
+      "left_arc_1",
+      "left_arc_2",
+      "right_arc_0",
+      "right_arc_1",
+      "right_arc_2",
+      "left_turn_0",
+      "left_turn_1",
+      "left_turn_2",
+      "right_turn_0",
+      "right_turn_1",
+      "right_turn_2",
+      "source_trace_1",
+      "source_trace_2"
+    ],
+    "branch_attempt_cap": 84,
+    "total_sim_s_cap": 137.6,
+    "wall_s_cap": 3600,
+    "cpu_s_cap": 57600,
+    "ram_bytes_cap": 17179869184,
+    "vram_bytes_cap": 8589934592,
+    "retained_bytes_cap": 2147483648,
+    "peak_write_bytes_cap": 3221225472,
+    "successor_coverage_required": 6,
+    "previous_corrected_states_count": 2,
+    "repeat_reduction": false
+  },
+  "audit_proposal": {
+    "authorised": false,
+    "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_audit_v2_attempt_001",
+    "layout_count": 8,
+    "exposed_layout_indices": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "unexamined_layout_count": 4,
+    "new_layout_manifests_materialized": false,
+    "construction_seed": 2026092307,
+    "physics_seed_base": 2026102800,
+    "appearance_seed_base": 2026102900,
+    "source_classes": [
+      "command_history",
+      "reactive_feedback",
+      "action"
+    ],
+    "source_readout": "maze_view_old_data",
+    "source_window_s": 60,
+    "settling_s": 1.5,
+    "eligible_frame_range_inclusive": [
+      12,
+      592,
+      4
+    ],
+    "sampling_seed": 2026092309,
+    "representative_per_cell": 4,
+    "diagnostic_translation_per_cell": 1,
+    "diagnostic_turn_per_cell": 1,
+    "max_state_union": 144,
+    "reservoir_opportunities_cap": 3504,
+    "snapshot_packet_bytes_cap": 67108864,
+    "representative_inclusion_probability": "min(4,N)/N",
+    "diagnostic_inclusion_probability": "min(1,N_bin)/N_bin",
+    "source_repeats_each_state": 3,
+    "source_replays_before_candidates": 1,
+    "source_replays_after_candidates": 2,
+    "candidate_repeats_ordinary": 1,
+    "candidate_repeats_spotcheck": 3,
+    "spotcheck_rule": "First representative state by timestamp in every layout/source cell; fixed before branch outcomes",
+    "off_bank_reactive_repeats_ordinary": 1,
+    "off_bank_reactive_repeats_spotcheck": 3,
+    "max_branches": 1776,
+    "max_sim_s": 2896.8,
+    "wall_s_cap": 14400,
+    "cpu_s_cap": 230400,
+    "ram_bytes_cap": 25769803776,
+    "vram_bytes_cap": 8589934592,
+    "retained_bytes_cap": 17179869184,
+    "peak_write_bytes_cap": 21474836480,
+    "missing_coverage_not_replaced": true
+  },
+  "filesystem_reserves_bytes": {
+    "recovery": 12884901888,
+    "workspace": 4294967296
+  },
+  "numerical": {
+    "cost_equality_s": 1e-08,
+    "practical_near_tie_s": 0.1,
+    "usefulness_delta_s": 0.25,
+    "clearance_roundoff_m": 1e-09,
+    "maximum_qualification_repeat_cost_range_s": 0.025,
+    "bank_tape_component_tolerance": 1e-07,
+    "translation_direction_minimum_m": 1e-06
+  },
+  "reference": {
+    "original_parameters": {
+      "footprint_radius_m": 0.46,
+      "minimum_clearance_m": 0.005,
+      "geodesic_grid_resolution_m": 0.02,
+      "nominal_travel_speed_m_s": 0.2,
+      "nominal_turn_speed_rad_s": 0.45,
+      "linear_braking_acceleration_m_s2": 0.4,
+      "angular_braking_acceleration_rad_s2": 1.0,
+      "arrival_radius_m": 0.02,
+      "quiet_linear_speed_m_s": 0.05,
+      "quiet_angular_speed_rad_s": 0.05
+    },
+    "common_operating_centre_clearance_m": 0.48,
+    "actual_controller_margin_changed": false,
+    "physical_acceptability_not_controller_eligibility": true,
+    "articulated_and_between_sample_clearance_currently_qualified": false,
+    "continuous_cost_unchanged_by_near_ties": true
+  },
+  "rows": {
+    "ids": [
+      "R0",
+      "R1",
+      "R2",
+      "R2b",
+      "R3",
+      "R4",
+      "R4s",
+      "R5c",
+      "R5r"
+    ],
+    "both_matched_heads": true,
+    "r0_seed": 2026092308,
+    "suffix_derangement": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      0
+    ],
+    "candidate_order": [
+      "hold",
+      "forward",
+      "left_arc",
+      "right_arc",
+      "left_turn",
+      "right_turn"
+    ],
+    "r3_deferred": false,
+    "renderer_failure_does_not_authorize_fallback": true
+  },
+  "inference": {
+    "unit": "layout",
+    "strata_separate": [
+      "exposed",
+      "previously_unexamined"
+    ],
+    "primary": [
+      "G",
+      "H_scorer",
+      "H_motion",
+      "D_old",
+      "D_maze"
+    ],
+    "individual_primary_confidence": 0.99,
+    "method": "layout-level paired t interval; exploratory with 4 layouts/stratum",
+    "secondary_confidence": 0.95,
+    "coverage_minimum": 0.9,
+    "coverage_enforced_per_layout_source": true,
+    "harm_absolute_limit": 0.05,
+    "harm_paired_excess_limit": 0.01,
+    "zero_harm_not_zero_uncertainty": true
+  },
+  "source_bindings": {
+    "scripts/run_go2_decision_headroom_pilot_development.py": "803497e83d86f2c8d4a4c1db466906e508e97e631f4f7dd52404f6c037d11958",
+    "scripts/run_go2_decision_headroom_source_development.py": "4f2f9336d55b8838c88b60d725f57843bd204d72a0138d8ebbe90de530d43bb6",
+    "scripts/run_go2_decision_headroom_branches_development.py": "2ccf66a39842034ae0148a8a1e575b981333c5602f7153ff665a6ccb264c0d8a",
+    "scripts/qualify_go2_decision_headroom_reference_development.py": "bc61ec6f238edfdf54dbddbcbccab424019933f3178f8f2789956a83ed93c6a7",
+    "lewm/decision_headroom_packet_development.py": "529e3a9c734c439d55b2fba83bd0e28a66a64d9216f66aeb249a987427c546c7",
+    "lewm/decision_headroom_snapshot_development.py": "676e57c7dd8b41a6b5b229d62c8042255761a362bd665f7300c06de42394d54a",
+    "lewm/decision_headroom_reference_development.py": "b9f08da08704893aff9299a9b57ded142dd1831d4edd1289c46cefd5c6a6e81d",
+    "scripts/check_go2_decision_headroom_pilot_development.py": "a9d7543d7d9e3b6dad08ed2c0ce3b871e20e374008e6085213d045d2d173ebcb",
+    "scripts/time_go2_decision_headroom_components_development.py": "94e605e5a2b6674d01f9e970cf26bcd96e1fdaa6728287362566afc0f7718f05",
+    "scripts/read_go2_decision_headroom_pilot_development.py": "fbe01c9822ea58e70feb1b41c72f22f418e052e90eea7d70acd08126d2080799",
+    "scripts/run_go2_dense_horizon_navigation_development.py": "519fdc0b0f1e170bb93b0b98663d5984b404fce840df2f20738b97c3d443e37e",
+    "lewm/dense_horizon_navigation_development.py": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+    "lewm/dense_native_observation_development.py": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+    "scripts/paced_native_session_development.py": "223c65fea3efcc2870f9f470afc954ccb0ff28f3e2501d27f239b3c873321898",
+    "scripts/whole_task_physics_session_development.py": "0a118879d6e890f0b262902eafc90dd7a969128bac5ead43de226ba0b02f48bd",
+    "scripts/rgb_navigation_retention_development.py": "e4f9957bf240047048179f4a46c5ba25e8a0470f6b74fdf821d94fda43aaff99",
+    "lewm/dense_world_model_maze_layouts_development.py": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8",
+    "scripts/continue_go2_decision_headroom_prephysics_development.py": "f23b3c48f19cf0b3849e3ba316bb8cd1980c2e1d839162f206b9d5247be03f68",
+    "scripts/run_go2_decision_headroom_rgb_recheck_development.py": "fe397738ae12410a1560c3a81e40c3af9eef69fc253658723559fc8c6b7494eb",
+    "scripts/in_memory_paired_camera_session_development.py": "dd825899993b68cc98d43421730fd89ae92c07aeecbec48375150315b8aa021e",
+    "scripts/dev_frozen_dense_representation_encoders_v1.py": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2"
+  },
+  "model_and_input_bindings": {
+    "vjepa_checkpoint": {
+      "path": "/home/andrewknowles/.cache/vjepa2_1_vitl_dist_vitG_384.pt",
+      "bytes": 5151198524,
+      "sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6"
+    },
+    "gait_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt",
+      "bytes": 4547691,
+      "sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff"
+    },
+    "gait_config": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+      "bytes": 2409,
+      "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+    },
+    "state_0_requests.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/requests.json",
+      "sha256": "466f151f7e3e054108f87df68a82c124ca9e70b425130d7842e96a5aa3c6412c",
+      "bytes": 1127889
+    },
+    "state_0_native/physics_trace.npz": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/native/physics_trace.npz",
+      "sha256": "97f64102dc7c159451a041fc1be7015c26e79511b8780926b0ce448425c4193c",
+      "bytes": 1352007
+    },
+    "state_0_native/in_memory_camera_observations.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/native/in_memory_camera_observations.json",
+      "sha256": "d9082073e83e477828a491bfb5bae48808ac824d1b705e5ce66ee4cbd341865c",
+      "bytes": 381765
+    },
+    "state_0_specification.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/specification.json",
+      "sha256": "c431b9b3a3928b782f82b6a2f0b954bd62f6b29753ee6fccb490269f089da6b8",
+      "bytes": 12105
+    },
+    "state_1_requests.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/requests.json",
+      "sha256": "7a9f2129a24aab74396d1f0021c54f67bfa51e451e8a0b44074f6fc9751d5733",
+      "bytes": 1127769
+    },
+    "state_1_native/physics_trace.npz": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/native/physics_trace.npz",
+      "sha256": "d7ccdb3f762c07b31bb10da8ee8eb1eef1e19cb118e1992732d4d6f6dda81556",
+      "bytes": 1351687
+    },
+    "state_1_native/in_memory_camera_observations.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/native/in_memory_camera_observations.json",
+      "sha256": "26ae59e3914ac3904ac4b47f64b686398a9f00b4014449f374b9291ed5a02bbf",
+      "bytes": 381776
+    },
+    "state_1_specification.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/specification.json",
+      "sha256": "c431b9b3a3928b782f82b6a2f0b954bd62f6b29753ee6fccb490269f089da6b8",
+      "bytes": 12105
+    }
+  },
+  "qualified_recheck_branch_timing": {
+    "median_s": 0.5634367610036861,
+    "maximum_s": 1.2030031400063308,
+    "total_s": 25.330466477040318
+  },
+  "outstanding_before_phase2": [
+    "Complete missing source/layout corrected-path qualification",
+    "Qualify original source inputs and articulated/between-sample clearance, or submit explicitly limited alternative",
+    "Materialize and bind the four new same-family layout manifests before any Phase 2 source collection",
+    "Complete and bind audit/reference-mask adapter, verify against frozen analytical cases",
+    "Submit identified complete package for explicit Phase 2 approval"
+  ],
+  "evidence_sha256": {
+    "docs/go2_decision_headroom_rgb_recheck_result_v2_2026-09-23.md": "c0f14aab9306b78a80ac5f2fc02cb950e6c5157467a92ebc158c4dea74f844c1",
+    "docs/go2_decision_headroom_rgb_recheck_result_v2_2026-09-23.json": "ac820a407b1ea82defb80db949995bbd63831913f4a1e40b62395bb77619c3a7",
+    "docs/go2_renderer_provenance_readonly_2026-09-23.md": "f12ef9c554746c274ae0388f9113c6444203635716d2b72916c75d7a4491b319",
+    "docs/go2_renderer_provenance_readonly_2026-09-23.json": "13c6c81a905f4bfb649cf52719e2729c77b34ab3b98532c6ec6bffd6e9059837",
+    "docs/go2_stage_a_holds_exploratory_2026-09-23.md": "947424ea078cdde3a37fc5d47057b9258dd09103f95a10c0a903553e3f453893",
+    "docs/go2_stage_a_holds_exploratory_2026-09-23.json": "29df89640974a30ca7679974e435c6c1e4212dfe0a31631b93477022a55e5fd0",
+    "docs/go2_decision_headroom_clearance_boundary_cases_v2_2026-09-23.json": "343129c77efaca6f68da4111072f14b91d182813defb857758e4c8a39b435e65",
+    "docs/go2_decision_headroom_clearance_boundary_result_v2_2026-09-23.json": "8206245a0f47eda5e396295bb673428f876d8fd907276f1f6c8e6570c761f961"
+  },
+  "amendment_tooling_sha256": {
+    "scripts/analyse_go2_stage_a_holds_readonly_development.py": "7862e4099f9415b38c06369497629d1ad98e81485910a2afd565cf53ff5530c0",
+    "scripts/check_go2_decision_headroom_boundaries_development.py": "b0495e7459037f092abe08b21469bb0cf0ec280bc6b51e63b6fab670ed0d1c3f",
+    "lewm/memory_forecast_clearance_development.py": "3bf94dd8bb69f3bc312a03252ecb2f0e45b4596fbf728189193a4ca949633cca",
+    "lewm/clearance_turn_recovery_development.py": "7906735616b98d755cf93b27854e902c3fb26830f13313290590f5dcf386e9d0",
+    "lewm/planned_stopping_projection_development.py": "ef4f136f799d279cdbf93b3db29affa4d2968566891060fa1f6e6c6b3f10fe95",
+    "lewm/paced_multirate_controller_development.py": "710c103dce529a30cf1f993ea271950f7e04d96bd0b5a55f3aa6d5213ac8f757",
+    "lewm/hold_relative_clearance_recovery_development.py": "154984396da44bbd05751369b54775a3dda19c49d3a6eaabe3befa43039e6400",
+    "lewm/hold_relative_heading_recovery_development.py": "8bfa928e99a78b1b242a83056ad389311f2795f5967e1b62cd3b51a6af446c89"
+  }
+}

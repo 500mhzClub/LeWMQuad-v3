@@ -1,0 +1,259 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_source_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_QUALIFICATION_SOURCE_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent source-only review of the fresh flat Genesis/CPU V1 two-scene qualification plan builder, exact plan, preregistration, harness, focused tests, and the two directly reused reviewed helper seams.",
+    "qualification_cli_invoked_by_review": false,
+    "genesis_initialization_executed_by_review": false,
+    "gpu_or_graphics_preflight_executed_by_review": false,
+    "qualification_runtime_payload_opened": false,
+    "scientific_plan_or_harness_reviewed": false,
+    "sealed_held_out_or_production_material_opened": false
+  },
+  "source_bindings": {
+    "cpu_flat_plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_plan.py",
+      "sha256": "a2be9e81edabb201aae98681ff6b04264dad9e62f753ebff5743d060be1ec71a",
+      "byte_count": 19737
+    },
+    "cpu_flat_qualification_harness": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1.py",
+      "sha256": "d66ed881de1cb660ae0e05e356a25dcd43e7d3faf487c792d49be389c51140fa",
+      "byte_count": 71494
+    },
+    "cpu_flat_plan_builder_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_build_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_plan.py",
+      "sha256": "573ef63b7eb74a18f1905c6225cd5dbdba42f963371f84c5bd1fc357144c1396",
+      "byte_count": 3407
+    },
+    "cpu_flat_qualification_harness_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1.py",
+      "sha256": "782ddb22809aa83bf6031ae3dca1ef55d9bc3e60881e44eef375963d27f609d9",
+      "byte_count": 12271
+    },
+    "cpu_flat_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_preregistration_2026-08-05.md",
+      "sha256": "95d494f4487d028014a59066400d2707be6328411f79b3de781fac8bb7a0a00f",
+      "byte_count": 10038
+    },
+    "cpu_flat_qualification_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification_exact_plan_2026-08-05.json",
+      "sha256": "397c1932f69bcbf29239fd6b86188f177222f9e350e97775cbe2968e97e868a9",
+      "byte_count": 350749
+    },
+    "reviewed_flat_runtime_clone_dependency": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1.py",
+      "sha256": "cd49a3a8d87fcca13b67ecf1e4a293306856f1b60ebf90013971b4e5814cdb9f",
+      "byte_count": 51386
+    },
+    "reviewed_cpu_initializer_dependency": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_cpu_backend_v1.py",
+      "sha256": "c1cd446350b5d1d8b6f3862905decac6728c3be3cc4cbc832e1f053b9ee9cece",
+      "byte_count": 9729
+    },
+    "frozen_cpu_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_source_review_2026-08-04.json",
+      "sha256": "1262934840b6b1077fb53d99ff7c4ca74e717ebe893e75e898aa19d56b8fc82c",
+      "byte_count": 78392
+    },
+    "consumed_cpu_v1_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_cpu_backend_v1_qualification_terminal_review_2026-08-04.json",
+      "sha256": "9b0c31c05b4fb6064c67116a456d34a6f7e49cfe85ec55ed081599acb18502f0",
+      "byte_count": 20536
+    },
+    "flat_rocm_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification_source_review_2026-08-05.json",
+      "sha256": "91ce59e88f464e38470fde85731c8b04043752d57fd6de24bdb48b155c8ea84f",
+      "byte_count": 8837
+    },
+    "flat_rocm_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_flat_development_v1_qualification_terminal_review_2026-08-05.json",
+      "sha256": "dffcc637258d5b17b1239b603b72e9a376d421a9783c2b89e1e8691db11dc206",
+      "byte_count": 8519
+    }
+  },
+  "resolved_blocking_findings": [
+    {
+      "finding": "The first harness draft inherited unrelated ambient environment keys into workers and only sanitized accelerator selectors.",
+      "risk": "The executed CPU environment would not have been the exact preregistered nine-key map and could have carried uncontrolled runtime inputs.",
+      "resolution": "The parent now passes only the exact nine-key plan mapping. The worker removes only CPython's deterministic LC_CTYPE=C.UTF-8 coercion before requiring exact dictionary equality.",
+      "closed": true
+    },
+    {
+      "finding": "The first worker-argv draft repeated the historical Python-invocation validator after the one-shot root had been reserved.",
+      "risk": "Historical static validation would have crossed the preregistered pre-reservation boundary.",
+      "resolution": "Historical interpreter validation remains exclusively in the parent pre-reservation path. Worker argv construction now performs only a local exact-path and bound-target equality check.",
+      "closed": true
+    },
+    {
+      "finding": "The first qualification-contract draft labeled the CPU runtime as Genesis 0.4.6, which is the retired ROCm runtime rather than the bound CPU interpreter.",
+      "risk": "Reservation and result metadata would have asserted a false runtime identity.",
+      "resolution": "The contract, runtime-result gate, qualification result, and minimal decision consistently require Genesis 0.3.14, matching the exact bound CPU environment.",
+      "closed": true
+    },
+    {
+      "finding": "The first result-validation draft rehashed scene, state, render-receipt, and mesh JSON but did not reopen the 48 referenced PNGs or prove the exact stored nine-lane action layout.",
+      "risk": "A qualification could have claimed complete render and 36-lane closure without revalidating its leaf artifacts and stored synchronization evidence.",
+      "resolution": "The final harness rehashes and decodes all 48 unique in-root PNGs, verifies their pixel identities, requires exact state receipt and nonauthorization fields, proves nine equal prebranch lane hashes and zero component deltas, requires candidate lanes/actions 0 through 8, and proves exact state-receipt coverage of the render-frame set.",
+      "closed": true
+    }
+  ],
+  "independent_verification": {
+    "plan_and_custody": {
+      "recursive_differences_from_frozen_cpu_qualification_plan": [
+        "attempt_id",
+        "output_root",
+        "successor_contract"
+      ],
+      "all_data_scene_state_history_action_horizon_render_model_seed_gate_and_access_order_fields_unchanged": true,
+      "exact_plan_rehashed_and_validated_under_bound_interpreter": true,
+      "exact_plan_scene_count": 64,
+      "exact_plan_state_count": 256,
+      "branch_mechanism": "parallel_lockstep_envs_no_restore",
+      "exact_environment_key_count": 9,
+      "physics_backend": "cpu",
+      "policy_device": "cpu",
+      "python_invocation_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "reviewed_plan_path_strings_reference_protected_material": false,
+      "historical_authority_reservation_runtime_cache_receipt_rgb_or_partial_output_reuse_authorized": false,
+      "qualification_plan_builder_has_scientific_plan_emission_path": false
+    },
+    "pre_reservation_boundary": {
+      "exact_plan_hash_and_byte_count_checked": true,
+      "plan_builder_exact_delta_validator_completed": true,
+      "all_bound_plan_inputs_rehashed": true,
+      "textured_v03_parity_prerequisites_validated": true,
+      "all_64_bound_scenes_validated": true,
+      "exact_python_invocation_validated": true,
+      "preregistration_binding_validated": true,
+      "historical_pilot_environment_and_graphics_objects_identity_and_content_unchanged": true,
+      "qualification_and_deferred_science_roots_checked_absent": true,
+      "historical_static_validation_after_reservation": false
+    },
+    "source_ast": {
+      "configured_adapter_context_calls": 0,
+      "imported_project_module_attribute_writes": 0,
+      "shared_pilot_backend_or_environment_mutations": 0,
+      "setattr_calls": 0,
+      "delattr_calls": 0,
+      "mock_patch_calls_in_runtime_harness": 0
+    },
+    "worker_and_runtime": {
+      "probe_scene_indices_in_order": [
+        12,
+        0
+      ],
+      "exact_two_fresh_worker_process_groups": true,
+      "exact_child_environment_is_nine_key_plan_mapping": true,
+      "worker_python_locale_exception": "Only CPython's deterministic LC_CTYPE=C.UTF-8 coercion is accepted after exec; the Popen environment remains the exact nine-key plan mapping.",
+      "states_per_worker": 4,
+      "lanes_per_state": 9,
+      "branches_per_worker": 36,
+      "plan_first_seed_cpu_initialization_checked": true,
+      "policy_checkpoint_config_device_and_exact_observation_row_deduplication_unchanged": true,
+      "history_action_tapes_cadence_and_physics_decimation_unchanged": true,
+      "renderer_function_globals_cloned_not_mutated": true,
+      "worker_local_zero_contact_rollout_configuration_checked": true,
+      "historical_cpu_or_rocm_adapter_context_entered": false
+    },
+    "diagnostic_and_receipt_closure": {
+      "pilot_diagnostic_error_payload_persisted_in_worker_failure_receipt": true,
+      "worker_failure_read_only_after_release_barrier": true,
+      "worker_failure_payload_and_binding_propagated_to_parent_failure_terminal": true,
+      "scene_result_rehashed_after_release": true,
+      "four_ordered_state_receipts_rehashed_and_semantically_checked": true,
+      "render_receipt_rehashed_and_semantically_checked": true,
+      "all_48_png_bindings_rehashed_decoded_and_pixel_hash_checked": true,
+      "all_48_frame_paths_and_identities_unique": true,
+      "state_context_and_candidate_receipts_exactly_cover_render_frame_set": true,
+      "nine_lane_prebranch_hash_equality_required": true,
+      "all_sync_component_exact_flags_and_zero_deltas_required": true,
+      "candidate_lane_offsets_and_action_ids_exactly_zero_through_eight": true,
+      "scene_local_mesh_binding_closure_revalidated": true,
+      "nonfinite_counts_render_depth_rgb_and_stored_byte_gates_retained": true
+    },
+    "process_resource_and_timing_gates": {
+      "worker_watchdog_seconds": 300.0,
+      "selected_device_vram_ceiling_bytes": 16977405952,
+      "selected_device_vram_sample_interval_seconds": 0.02,
+      "matching_prelaunch_vram_baseline_used_for_each_release_barrier": true,
+      "release_barrier_runs_after_every_worker_including_final": true,
+      "release_barrier_precedes_failure_or_scene_result_open": true,
+      "leaked_process_group_rejected": true,
+      "kernel_journal_gate_brackets_graphics_preflight_and_workers": true,
+      "new_amdgpu_timeout_reset_wedge_or_hsa_kfd_exception_rejected": true,
+      "timing_gate_formula": "64 * max(worker_elapsed_seconds) + 900 <= 7200",
+      "timing_gate_precedes_pass_result": true
+    },
+    "authorization_and_terminal_order": {
+      "reservation_root_creation_consumes_attempt": true,
+      "runtime_or_graphics_contact_occurs_only_after_reservation": true,
+      "qualification_result_is_rich_and_non_authorizing": true,
+      "qualification_terminal_is_non_authorizing": true,
+      "minimal_pass_decision_written_after_result_and_terminal": true,
+      "minimal_pass_decision_is_last_file_emitted": true,
+      "only_exact_pass_decision_may_release_separately_reviewed_science_plan": true,
+      "failure_terminal_preserves_json_safe_diagnostics_when_available": true,
+      "failure_never_writes_authorizing_decision": true,
+      "qualification_payload_scientific_reuse_forbidden": true,
+      "retry_resume_refill_overwrite_repair_or_adaptive_batching_forbidden": true
+    },
+    "focused_tests": {
+      "interpreter": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_render_vulkan/bin/python",
+      "pytest_plugin_autoload_disabled": true,
+      "plan_builder_tests_passed": 5,
+      "qualification_harness_tests_passed": 7,
+      "total_passed": 12,
+      "failed": 0,
+      "wall_seconds": 22.43,
+      "genesis_executed": false
+    }
+  },
+  "freshness_at_review": {
+    "qualification_attempt_root_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1_qualification/attempt_v1",
+    "qualification_attempt_root_absent": true,
+    "deferred_scientific_attempt_root_path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v1/attempt_v1",
+    "deferred_scientific_attempt_root_absent": true,
+    "successor_scientific_exact_plan_absent": true
+  },
+  "accepted_non_blocking_findings": [
+    {
+      "finding": "The harness inserts three fixed repository package roots into its process-local sys.path.",
+      "disposition": "ACCEPTED_DETERMINISTIC_IMPORT_BOOTSTRAP",
+      "basis": "This mutates only the standard-library sys.path list, not an imported project module or any backend/environment contract. The roots are fixed from the harness path."
+    },
+    {
+      "finding": "The harness directly calls the previously reviewed flat runtime-clone helper and CPU plan-first initializer rather than duplicating them.",
+      "disposition": "ACCEPTED_EXACT_REVIEWED_HELPER_REUSE",
+      "basis": "Both exact dependency files are SHA-256 and byte-count bound in this review. Neither configured adapter context is entered, and no imported project attribute is written."
+    }
+  ],
+  "permission_audit": {
+    "authority_source": "The user's instruction recorded in the bound preregistration; this review only clears the independent source gate.",
+    "authorizes_exactly_one_fresh_qualification_invocation": true,
+    "authorizes_cpu_physics_graphics_preflight_and_two_preregistered_scene_probes": true,
+    "authorizes_qualification_output_as_scientific_or_training_data": false,
+    "authorizes_scientific_plan_creation_or_execution": false,
+    "authorizes_retry_resume_refill_overwrite_repair_or_partial_reuse": false,
+    "authorizes_backend_navigation_planning_world_model_or_generalization_claim": false
+  },
+  "unresolved_runtime_evidence": {
+    "qualification_has_not_run": true,
+    "cpu_genesis_exact_lane_equality_result_unknown": true,
+    "vulkan_egl_r9700_render_result_unknown": true,
+    "two_scene_receipt_and_png_closure_result_unknown": true,
+    "timing_vram_release_and_kernel_gate_results_unknown": true
+  },
+  "decision": {
+    "source_review_passed": true,
+    "all_discovered_blockers_closed": true,
+    "exactly_one_fresh_qualification_source_gate_passed": true,
+    "qualification_execution_authority_created_by_this_review": false,
+    "qualification_execution_eligible_under_the_preregistered_user_authorization": true,
+    "scientific_plan_release_authorized": false,
+    "scientific_execution_authorized": false,
+    "retry_resume_refill_overwrite_repair_or_partial_reuse_authorized": false
+  }
+}

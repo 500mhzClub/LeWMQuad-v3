@@ -1,0 +1,379 @@
+{
+  "status": "PASS",
+  "baseline_commit": "e30ced94",
+  "baseline_sha256": "7ce2c75c99e0f0e3400ea1a46c27d2741b6cc2b2eae4c78a2d02f4b11f6c687e",
+  "protocol_sha256": "e7735ae9d98e6210d9e17f8301b5d6817826ce0b2a87d1971e5488cfa68fe190",
+  "differences": [
+    {
+      "path": [
+        "authority"
+      ],
+      "before": "User decisions on B1\u2013B3: native discrete truth, quantity-specific unresolved handling, active objectives/filter audit, full mission sampling, frozen execution submission",
+      "after": "User approval of e30ced94 as V4.1 with listed amendments; exact text and this JSON SHA-256 are bound in the approval record"
+    },
+    {
+      "path": [
+        "continuous_regret"
+      ],
+      "before": null,
+      "after": {
+        "primary": "unzeroed continuous cost differences",
+        "near_tie": "0.10 s applies only to set membership, including top-1 agreement; no zeroing, clipping or rounding of continuous regret"
+      }
+    },
+    {
+      "path": [
+        "entrypoint"
+      ],
+      "before": "scripts/run_go2_headroom_v4_development.py --approval <explicit-approval-record.json>",
+      "after": "scripts/run_go2_headroom_v41_development.py --approval docs/go2_decision_headroom_v41_approval_2026-09-23.json"
+    },
+    {
+      "path": [
+        "execution_caps",
+        "blinding"
+      ],
+      "before": "Six-state implementation checks only before approval; no retained pilot comparative result. Phase 2 requires explicit approval.",
+      "after": "V4 six-state implementation checks only before approval; comparative scoring approved for this frozen V4.1 identity only."
+    },
+    {
+      "path": [
+        "execution_caps",
+        "compute_caps",
+        "aggregate_cpu_seconds"
+      ],
+      "before": 2764800,
+      "after": 4147200
+    },
+    {
+      "path": [
+        "execution_caps",
+        "compute_caps",
+        "comparative_selections_or_rankings"
+      ],
+      "before": "Only after explicit Phase 2 approval",
+      "after": "Explicit Phase 2 V4.1 approval recorded with exact configuration SHA-256"
+    },
+    {
+      "path": [
+        "execution_caps",
+        "compute_caps",
+        "execution_wall_seconds"
+      ],
+      "before": 172800,
+      "after": 259200
+    },
+    {
+      "path": [
+        "execution_caps",
+        "phase"
+      ],
+      "before": "Frozen proposal; Phase 2 not authorized",
+      "after": "Explicitly approved Phase 2 V4.1"
+    },
+    {
+      "path": [
+        "execution_caps",
+        "phase2_approved"
+      ],
+      "before": false,
+      "after": true
+    },
+    {
+      "path": [
+        "execution_order"
+      ],
+      "before": null,
+      "after": [
+        0,
+        4,
+        1,
+        5,
+        2,
+        6,
+        3,
+        7
+      ]
+    },
+    {
+      "path": [
+        "filter_primary",
+        "descriptive"
+      ],
+      "before": null,
+      "after": "All per-source levels and admitted-but-unsafe rates: 95% intervals"
+    },
+    {
+      "path": [
+        "filter_primary",
+        "paired_contrast_rows"
+      ],
+      "before": null,
+      "after": [
+        "R4/old_data",
+        "R4/maze_data",
+        "R5c"
+      ]
+    },
+    {
+      "path": [
+        "filter_primary",
+        "pairing"
+      ],
+      "before": null,
+      "after": "excluded-safe uses identical resolved safe candidates in the same states; complete exclusion uses states with both event labels determined; inverse-inclusion weights identical on both sides; equal source-cell weights within layout"
+    },
+    {
+      "path": [
+        "filter_primary",
+        "primary_definition"
+      ],
+      "before": null,
+      "after": "six paired state-matched layout-level differences from R2 plus the two R2 levels"
+    },
+    {
+      "path": [
+        "filter_primary",
+        "quantities"
+      ],
+      "before": [
+        "excluded_safe/safe",
+        "admitted_unsafe/admitted_resolved",
+        "all_movement_excluded_and_any_safe/determinate_states"
+      ],
+      "after": [
+        "excluded_safe/safe",
+        "all_movement_excluded_and_any_safe/determinate_states"
+      ]
+    },
+    {
+      "path": [
+        "filter_primary",
+        "reference_motion"
+      ],
+      "before": null,
+      "after": "R2"
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "lewm/decision_headroom_v41_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "19fbdf48a261870748b23a7ab1bbc40349b5d8cf29a43c2dd18632780bbf61b6",
+        "bytes": 7482
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/check_go2_headroom_historical_rerender_v41_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "1606ba3003ad5dd6d7c14b81cbb6c13595899831154965805630def5d92abdaa",
+        "bytes": 8300
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/check_go2_headroom_v41_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "12b85691eecec4fd43fb289c3af5a31e14eb0fb25d7c05a394fdcc3445d54ffc",
+        "bytes": 5718
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/read_go2_headroom_v41_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "e3dc19a6e7ee29675b873ad3dc792133fb6c9df15a4429037e3db18cf4bbcff9",
+        "bytes": 13475
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v41_branches_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "8a4859a347d48e6e5a09a2450e9ba92bbf23bf376e03e1f685f0a8e842aa9ca4",
+        "bytes": 15471
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v41_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "a9a869e83fdc8ad6a98911e8a0b037f083862fa12c994427a771b02925e13878",
+        "bytes": 5398
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v41_source_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "96a4353d71224ece3900f6928cfe3bccca2ddfcd83b06010cab696f012302e4a",
+        "bytes": 13693
+      }
+    },
+    {
+      "path": [
+        "historical_rerender_authorized"
+      ],
+      "before": false,
+      "after": true
+    },
+    {
+      "path": [
+        "historical_rerender_execution"
+      ],
+      "before": null,
+      "after": {
+        "entrypoint": "scripts/check_go2_headroom_historical_rerender_v41_development.py",
+        "order": "separate owner before Phase 2 launch",
+        "outcome_gates_launch": false,
+        "caps": "unchanged historical_rerender_proposal",
+        "missing_inputs": "unresolved; no new rendering adapter, trajectory regeneration, retries or substitutions",
+        "populations": {
+          "factorial_predictor_ancestor": "training rows of retained factorial_manifest.json; current and first future RGB",
+          "native_predictor_training": "retained current horizon predictor samples.json; current and assigned horizon RGB",
+          "full_heading_readout_training": "retained full-heading collection training samples.json",
+          "maze_view_readout_training": "retained maze-view collection training samples.json"
+        },
+        "hash_priority": "SHA256(str(seed)+\"/\"+population+\"/\"+example_id); lexical priority and ID; four per population before image inspection"
+      }
+    },
+    {
+      "path": [
+        "historical_rerender_proposal",
+        "authorized"
+      ],
+      "before": false,
+      "after": true
+    },
+    {
+      "path": [
+        "inference",
+        "primary_confidence"
+      ],
+      "before": 0.9970588235294118,
+      "after": 0.9961538461538462
+    },
+    {
+      "path": [
+        "inference",
+        "primary_family_size"
+      ],
+      "before": 17,
+      "after": 13
+    },
+    {
+      "path": [
+        "localisation_covariate"
+      ],
+      "before": null,
+      "after": {
+        "evaluator_only": true,
+        "frames": "believed observed-map pose transformed via captured map_from_initial and the unchanged first-source-camera physical anchor; compared with native true decision pose",
+        "quantities": [
+          "horizontal_error_m",
+          "translation_error_m",
+          "yaw_error_rad",
+          "rotation_error_rad"
+        ],
+        "position_bins_m": [
+          0.02,
+          0.1
+        ],
+        "absolute_yaw_bins_degrees": [
+          5,
+          15
+        ],
+        "justification": "20-mm operating/grid scale and 100-mm larger drift; 5/15-degree fixed heading bins, not chosen from audit outcomes",
+        "unavailable": "explicit unresolved stratum; excludes only this covariate stratification",
+        "analysis": "Descriptive regret and filter results at 95% intervals; no scorer, reference target or candidate input correction"
+      }
+    },
+    {
+      "path": [
+        "memo_rules"
+      ],
+      "before": null,
+      "after": {
+        "tau_rate_difference": 0.1,
+        "condition_A": "A head's complete-exclusion-despite-safety difference from R2 has a lower bound above tau, and R5c's difference does not. Report: learned motion pathway causes false safety exclusions.",
+        "condition_B": "Either the R2 complete-exclusion-despite-safety level, counting only states whose binding rule is memory clearance or stopping projection, has a lower bound above tau; or R5c's difference from R2 also exceeds tau. Report: motion-dependent gate is over-conservative independent of prediction quality.",
+        "both": "Single recommendation addresses B first",
+        "neither": "Use the unchanged handoff regret decision table",
+        "inconclusive": "Inconclusive regret supports neither stopping nor continuing",
+        "missing_R5c_interval": "A unresolved; missing evidence is not an observed lower bound that fails to exceed tau",
+        "binding_attribution": "Original determinate-state denominator. Positive R2 event counts for B(i) only if every known-safe movement is bound by memory clearance or stopping projection; any unresolved candidate safety makes this attribution unresolved; observation-only binding is not motion-gate binding.",
+        "binding_interval": "Same layout estimator and 1-0.05/13 confidence for the predeclared B(i) restriction of the R2 level; report separately from unrestricted primary level. The 13-quantity family concerns the primary panel, not a blanket simultaneous guarantee over every diagnostic.",
+        "coverage": "V4 quantity-specific coverage applies; report each exposure stratum without selecting a favourable scope"
+      }
+    },
+    {
+      "path": [
+        "phase2_authorized"
+      ],
+      "before": false,
+      "after": true
+    },
+    {
+      "path": [
+        "schema"
+      ],
+      "before": "go2_decision_headroom_protocol.v4",
+      "after": "go2_decision_headroom_protocol.v4.1"
+    },
+    {
+      "path": [
+        "secondary_reference"
+      ],
+      "before": null,
+      "after": {
+        "label": "secondary inflation-escape reference",
+        "primary_unchanged": true,
+        "eligibility": "only hard-physically-safe complete branches; operating margin remains separately required for regret",
+        "extension": "For physically safe endpoints inside 0.46-m inflation, nearest inflation-free grid cell reachable through non-inflated free space; add the path length to primary geodesic distance from that cell",
+        "nearest": "shortest path distance on existing 20-mm eight-neighbour grid; lexicographic cell tie break; no search over target cost",
+        "point_free_path": "zero-radius obstacle geometry; conservative cell/segment occupancy; no diagonal corner cutting; reference convention, not articulated safety evidence",
+        "entry": "existing primary free-cell definition, including unchanged 5-mm clearance and half-cell-diagonal allowance",
+        "heading": "unchanged primary heading at entry cell; all physical cost weights, arrival and braking components unchanged",
+        "missing": "If nearest entry has no qualified target path, unresolved; never choose a different entry to obtain a favourable cost",
+        "clearance_strata": [
+          "inside_046m_inflation",
+          "outside_inflation_below_5mm",
+          "reference_free"
+        ],
+        "physical_strata": "Cross each with articulated hard/operating safe, unsafe, unresolved; report candidate cost and reference-regret coverage under both references",
+        "repeat": "Same predetermined spot-check states and 0.025-s cost range; no additional branches"
+      }
+    },
+    {
+      "path": [
+        "status"
+      ],
+      "before": "FROZEN_AWAITING_EXPLICIT_PHASE2_APPROVAL",
+      "after": "FROZEN_EXPLICIT_PHASE2_APPROVAL"
+    }
+  ],
+  "models_controllers_layouts_original_bindings_unchanged": true,
+  "other_caps_unchanged": true,
+  "unlisted_differences": []
+}

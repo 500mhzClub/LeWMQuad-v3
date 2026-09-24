@@ -1,0 +1,35 @@
+{
+  "schema": "decision_headroom_reference_fixture_diagnosis.v1",
+  "status": "PREPHYSICS_SANITY_FAILURE",
+  "reference_result": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/reference_sanity_v1/result.json",
+  "reference_result_sha256": "13ff24031ab0a82541272cb0593bd01d4b3057f2cc6da11ede94715af1779a19",
+  "cases": 24,
+  "expected_optimal_sets_correct": 24,
+  "expected_exclusions_correct": 22,
+  "geodesic_requirements_correct": 24,
+  "failures": [
+    {
+      "case_id": "wall_ahead_2",
+      "expected_forward_unacceptable": true,
+      "measured_forward_acceptable": true,
+      "forward_sampled_clearance_m": 0.010000000000000009,
+      "forward_sweep_lower_bound_m": 0.009718334720000017,
+      "required_clearance_m": 0.005,
+      "diagnosis": "The prewritten unsafe-forward expectation contradicts the fixture geometry: wall distance minus half thickness minus 0.10 m translation minus 0.46 m radius leaves 0.01/0.02 m, above 0.005 m. All expected optimal sets passed. Do not change evaluator safety margin to force these labels."
+    },
+    {
+      "case_id": "wall_ahead_3",
+      "expected_forward_unacceptable": true,
+      "measured_forward_acceptable": true,
+      "forward_sampled_clearance_m": 0.020000000000000018,
+      "forward_sweep_lower_bound_m": 0.019718334720000025,
+      "required_clearance_m": 0.005,
+      "diagnosis": "The prewritten unsafe-forward expectation contradicts the fixture geometry: wall distance minus half thickness minus 0.10 m translation minus 0.46 m radius leaves 0.01/0.02 m, above 0.005 m. All expected optimal sets passed. Do not change evaluator safety margin to force these labels."
+    }
+  ],
+  "physics_attempts": 0,
+  "source_rollouts": 0,
+  "comparative_selections": 0,
+  "reference_cost_changed": false,
+  "fixture_changed": false
+}

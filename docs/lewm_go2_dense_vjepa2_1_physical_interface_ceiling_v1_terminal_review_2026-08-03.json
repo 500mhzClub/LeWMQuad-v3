@@ -1,0 +1,165 @@
+{
+  "schema": "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_terminal_review_v1",
+  "status": "PASS_FAIL_CLOSED_INFRASTRUCTURE_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": {
+    "identity": "/root/vjepa_ceiling_failure_audit",
+    "independence_basis": "I authored neither the preregistration, ceiling evaluator, runner, focused tests, source review, execution authority, nor runtime attempt. I inspected the exact committed source and tests and the development-public attempt JSON control outputs, including the evaluation-cache receipt, but did not deserialize or inspect either tensor file, the checkpoint, any RGB artifact, any state receipt, or any protected, held-out, or sealed material. The root auditor supplied the two binary-file SHA-256 values after opaque read-only hashing without deserialization."
+  },
+  "protected_material_opened": false,
+  "citable_as_scientific_evidence": false,
+  "bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_preregistration_2026-08-03.md",
+      "sha256": "ef5c687d509929169280a456618e92e92f2a072a646bc292be3d16850f801ad0",
+      "byte_count": 20816
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_source_review_2026-08-03.json",
+      "sha256": "af215f591633c433748d37ffb7095958dffc3340808342e05ac2e7bccda1f6a4",
+      "byte_count": 12632
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_execution_authority_2026-08-03.json",
+      "sha256": "8a5fe232292f5477e4c130544538407b6b796c3bc60a617347a76df39d4e6bbf",
+      "byte_count": 983701
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/reservation.json",
+      "sha256": "cd1b0c3169b6a19acbe0606344508c3d7b3c2ed4049a84a4c82e7ab51e729bf0",
+      "byte_count": 583
+    },
+    "eval_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/vjepa2_1_eval.pt",
+      "sha256": "2fad21fc79090c4c3e09da87b4d287f37dc2038f9537b335f68804b2bb0da719",
+      "byte_count": 604096233
+    },
+    "eval_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/vjepa2_1_eval.json",
+      "sha256": "269768e062d475f8f1639a6ab11006b72da74b309d5625074e0ce7fc716674c1",
+      "byte_count": 7449
+    },
+    "ceiling_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/ceiling_checkpoint.pt",
+      "sha256": "5d51cf7b60f16fdd58d232db8be8ca3209a695355c11063330465c618bbdf117",
+      "byte_count": 282063
+    },
+    "evaluation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/evaluation.json",
+      "sha256": "836b7d33a07517df63bf97b01f992788929c1cd12be1b9e8ad5049c4c1ab0496",
+      "byte_count": 892754
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/terminal.json",
+      "sha256": "b8c04572ba67baccbd81d54bf9039398c490a451e70b7c83d1cc03f07565ebf7",
+      "byte_count": 1801
+    }
+  },
+  "binding_provenance": {
+    "json_and_markdown_bindings": "Independently SHA-256 checked by this terminal reviewer.",
+    "eval_cache_and_checkpoint_bindings": "Supplied by the root auditor from opaque read-only SHA-256 and byte-count checks; neither binary was deserialized or inspected by this terminal reviewer.",
+    "binary_payloads_deserialized_by_terminal_review": false
+  },
+  "commit_lineage": {
+    "preregistration_commit": "a6c2427d0a07c1287ecf76c8a62508d392f855e7",
+    "reviewed_source_commit": "4d04f9b711ade2cf6ab3544ceba75ccf43466240",
+    "source_review_commit": "a644b3de8a54372b5604c7392ed4f7801ec0ff6d",
+    "execution_authority_commit": "3956f20e9bdc5dee515ceadff25f7a912931d311"
+  },
+  "attempt_contract": {
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1",
+    "attempt_consumed": true,
+    "reservation_consumes_attempt": true,
+    "exact_regular_file_inventory": [
+      "reservation.json",
+      "vjepa2_1_eval.pt",
+      "vjepa2_1_eval.json",
+      "ceiling_checkpoint.pt",
+      "evaluation.json",
+      "terminal.json"
+    ],
+    "missing_required_success_inventory": [
+      "replay.json",
+      "result.json"
+    ],
+    "unexpected_files": [],
+    "all_present_inventory_members_regular_and_not_symlinks": true,
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "result_binding": null,
+    "deterministic_replay_passed": false,
+    "terminal_access_counts": null,
+    "authorizes_retry_or_resume": false,
+    "authorizes_model_training": false,
+    "authorizes_downstream_successor_execution": false
+  },
+  "failure_audit": {
+    "classification": "DETERMINISTIC_REPLAY_REPORTING_INFRASTRUCTURE_FAILURE",
+    "error_type": "DenseVJEPACeilingRunnerError",
+    "failing_stage": "fresh replay reproduction comparison",
+    "immediate_exception": "ValueError: invalid literal for int() with base 10: 'NOT_APPLICABLE'",
+    "exact_cause": "The reviewed runner's _selected_actions_v1 helper coerces every group_results selected_action_id through int(). The registered random_expected arm legitimately stores the non-action sentinel NOT_APPLICABLE, so the helper raises before it can compare the primary and replay selected-action trees.",
+    "execution_point": "The child replay had recomputed its checkpoint and evaluation from the two caches and had loaded the primary comparison references, but failed inside _reproduction_v1 before writing replay.json. The parent therefore could not validate replay, write result.json, or terminalize exact access counts.",
+    "scientific_computation_changed_by_defect": false,
+    "scientific_contract_changed_by_defect": false,
+    "reporting_and_replay_validation_completed": false,
+    "source_review_gap": "The focused reproduction test used only an integer-valued candidate arm and did not include the registered random_expected sentinel arm. The source review consequently accepted a replay path that had not been exercised against the complete real evaluation arm inventory."
+  },
+  "scientific_decision": {
+    "decision": "NO_SCIENTIFIC_DECISION",
+    "primary_evaluation_citable": false,
+    "checkpoint_citable": false,
+    "eval_cache_citable": false,
+    "provisional_metrics_reported_by_this_review": false,
+    "reason": "The preregistered tenth gate requires an exact fresh-process replay. No replay artifact or result artifact exists, the terminal explicitly marks deterministic replay false and scientific citability false, and exact access counts were not terminalized. Partial evaluation content cannot be promoted, quoted as a result, or used to close or qualify the frozen V-JEPA interface route."
+  },
+  "permission_audit": {
+    "any_original_attempt_permission_remaining": false,
+    "replay_only_invocation_authorized": false,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "replacement_attempt_authorized_by_original_preregistration_or_authority": false,
+    "partial_runtime_artifact_reuse_authorized": false,
+    "basis": "The root was reserved with consumes_attempt true. The frozen preregistration states that an infrastructure failure grants no retry or replacement authority, the execution authority sets retry, resume, and replacement_attempt false, and the failure terminal authorizes no retry or resume. Filesystem or system permission does not expand this scientific authority."
+  },
+  "science_identical_recovery": {
+    "required": true,
+    "currently_authorized": false,
+    "form": "NEW_INTEGRITY_REPLACEMENT_ATTEMPT",
+    "minimal_source_correction": "Make selected-action replay comparison type-preserving so integer action identifiers and the registered NOT_APPLICABLE sentinel are compared exactly without coercion.",
+    "required_regression": "Exercise _reproduction_v1 with the complete registered arm shape, including random_expected group_results containing selected_action_id NOT_APPLICABLE, and require exact reproduction plus drift detection.",
+    "scientific_fields_that_must_remain_identical": [
+      "representation and preprocessing",
+      "train and evaluation role plans",
+      "scientific input bindings",
+      "PCA construction",
+      "readout architecture",
+      "optimizer, seeds, schedule, and step counts",
+      "arms and controls",
+      "metrics and bootstrap",
+      "all ten gates and terminal precedence"
+    ],
+    "required_new_governance": [
+      "a committed integrity-replacement preregistration that binds this failed terminal and freezes the source-only correction",
+      "a new committed source revision and complete independent source review",
+      "a new post-review execution authority binding the new preregistration, reviewed commit, full source and input closures, runtime and hardware, and a distinct absent attempt root",
+      "one full fresh extraction, fit, evaluation, fresh-process replay, result, terminal, and independent terminal audit"
+    ],
+    "partial_attempt_artifacts_as_scientific_inputs": false,
+    "full_fresh_execution_required": true,
+    "result_dependent_changes_permitted": false,
+    "recommended_distinct_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1",
+    "claim_boundary": "The replacement may recover only the preregistered ceiling decision. It may not relax a gate, tune from the uncitable evaluation, authorize predictor training, establish navigation usefulness, or create any downstream execution authority."
+  },
+  "checks": {
+    "preregistration_source_review_authority_and_terminal_bindings_exact": true,
+    "attempt_exact_six_regular_file_inventory": true,
+    "required_replay_and_result_artifacts_absent": true,
+    "failure_terminal_result_binding_null": true,
+    "failure_terminal_replay_false_and_access_counts_null": true,
+    "source_stack_and_registered_arm_shape_explain_exception_exactly": true,
+    "no_provisional_metric_or_scientific_verdict_admitted": true,
+    "original_attempt_consumed_with_no_retry_resume_or_reuse_authority": true,
+    "new_preregistration_review_authority_and_root_required": true,
+    "no_tensor_checkpoint_rgb_state_receipt_or_protected_payload_deserialized": true
+  }
+}

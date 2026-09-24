@@ -1,0 +1,1468 @@
+{
+  "authority_granted_by_this_document": false,
+  "bindings": {
+    "candidate_panel": {
+      "byte_count": 80206,
+      "file_sha256": "78a58e1eb5338bf0ffa1ace6d639b9b5789f654cec10e8956324825acbf7e49b",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/candidate_panel.json"
+    },
+    "consumed_inventory": [
+      {
+        "byte_count": 80206,
+        "file_sha256": "78a58e1eb5338bf0ffa1ace6d639b9b5789f654cec10e8956324825acbf7e49b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/candidate_panel.json",
+        "relative_path": "candidate_panel.json"
+      },
+      {
+        "byte_count": 218833,
+        "file_sha256": "2cd61b8152ebddf324ee565864f6673dbbe4849782c44b0234ddefd6364ff26c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/generation_receipt.json",
+        "relative_path": "generation_receipt.json"
+      },
+      {
+        "byte_count": 48448,
+        "file_sha256": "ac1b27a87466ae2b399056c3823c7fb5edeff3a83e17f391dbb7867155f3ffc4",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/parity_result.json",
+        "relative_path": "parity_result.json"
+      },
+      {
+        "byte_count": 1559,
+        "file_sha256": "529cc68183b1b09f98b19c84cfbeff45a6c772b8aa90b98e58cd1705a9f7ba2a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/reservation.json",
+        "relative_path": "reservation.json"
+      },
+      {
+        "byte_count": 44449,
+        "file_sha256": "db9a3fc6c12ee4ede3b65db99425eac594e5f454141f72577d5cec25bb04aff1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/candidate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28529,
+        "file_sha256": "b632b5b9ae53130a9663bd090b95800328ae6309a1ffa920398b9ce80c2b27ab",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 44449,
+        "file_sha256": "db9a3fc6c12ee4ede3b65db99425eac594e5f454141f72577d5cec25bb04aff1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28531,
+        "file_sha256": "4e7b1f2f7cd577d61dd8d0d285845af410de6a9a4794f0490c688fa4fd640b64",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 44695,
+        "file_sha256": "3b0350700744b843cbcd2d950baffda0e6fa015074573f4645f70c0c61172eb1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/candidate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28511,
+        "file_sha256": "de2706036b1a32dfc171fb5185eb776f7a82a34a54f7799d0d9147c5b1ce23b0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 44695,
+        "file_sha256": "3b0350700744b843cbcd2d950baffda0e6fa015074573f4645f70c0c61172eb1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28511,
+        "file_sha256": "19452ad08d6c326c6a5ee410238dde50c7290b2d2faaf49f589c3f23f1278a2c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 45379,
+        "file_sha256": "b2d8affe597f1c781253e459501d0de2c279d28e5a56241d5ff24b4e416ca014",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/candidate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "a82c336e41a90d24b4a31c3aa1ad26c6318a450f61b069bdfb976c425c7fe709",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 45379,
+        "file_sha256": "b2d8affe597f1c781253e459501d0de2c279d28e5a56241d5ff24b4e416ca014",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28522,
+        "file_sha256": "ae180403cd9d3434c6280bd82060343d1f508855b1df71e781605da8779b45e8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 51370,
+        "file_sha256": "e100be329ff67e6e411e761beef38126e536b3f6247aecbdbcd94753e32f80b6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/candidate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28513,
+        "file_sha256": "cda439305add4fd6272c83337864c37311928e95250968a5e3d1cf0eda36539c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 51370,
+        "file_sha256": "e100be329ff67e6e411e761beef38126e536b3f6247aecbdbcd94753e32f80b6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28512,
+        "file_sha256": "d22463adb37fbfc662a97e193027e5c9648192e43a44753c6ab3f40c25b8e0ab",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 22318,
+        "file_sha256": "1aa1301c352f135dabbf8bcd375aca82322725523dbae8fe6fb008e1f01b5a79",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/scene_result.json",
+        "relative_path": "scenes/00_large_enclosed_maze_d89fe04e6f92/scene_result.json"
+      },
+      {
+        "byte_count": 34531,
+        "file_sha256": "a589bac669c5b9aa85d0684e426846759fd01f2a0602d11b25fd42056b7d50a0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/candidate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "785e3e23d6cc4cddcd4189a8a7ca7c4cbb3dc9ddc16c80e6e45a6fcdc26379df",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 34531,
+        "file_sha256": "a589bac669c5b9aa85d0684e426846759fd01f2a0602d11b25fd42056b7d50a0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28073,
+        "file_sha256": "141ac195293bd2bfc6884aa934c782ca62c7dad7684d1c22b0dd74f3fffbfe42",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 34651,
+        "file_sha256": "14de28cca4c07781a4facc5d98271b166efdecf2bac5562c602fddf9eb849b85",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/candidate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28067,
+        "file_sha256": "6d064df25543ecac13f278189980a863f2b57b66a4aab3ac2cea734f247fe37c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 34651,
+        "file_sha256": "14de28cca4c07781a4facc5d98271b166efdecf2bac5562c602fddf9eb849b85",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28067,
+        "file_sha256": "a345a86f8ecf1f6e4c194ebf6b60623481576ccab059d5314fe1f4c7c0e470c5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 35309,
+        "file_sha256": "2c8cedb909f257889733348d2ee8ef1c74fcfd3b9beea9e4db52a012491dd41f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/candidate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28076,
+        "file_sha256": "41369a988e3ca4a6b1b1adfdea31cd08bf51be206f280a485a04a92080c988f0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 35309,
+        "file_sha256": "2c8cedb909f257889733348d2ee8ef1c74fcfd3b9beea9e4db52a012491dd41f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28076,
+        "file_sha256": "aecad68eabef88f373ff658d1d0194bac019b42f7d232cb8f068770d91d99562",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 27984,
+        "file_sha256": "a7e5f2dad69c38ccdd71b1792b34a026da54627613f64160a51de62a279c778f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/candidate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "2be4c5f78ceb421f3abbdb902b718ec8fdfc14c70e967f1e0afa3830682ae1f5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 27984,
+        "file_sha256": "a7e5f2dad69c38ccdd71b1792b34a026da54627613f64160a51de62a279c778f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "39edd3e7c6ef9b12fa5146b6d5384546c609e5ef9374df1559c666e7dfcd0248",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 20412,
+        "file_sha256": "1908d9cb06b5628aaa678893fb77cfde5be81f8a9ed471da558a305bdc164330",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/scene_result.json",
+        "relative_path": "scenes/01_local_composite_motifs_e4c8cb32406a/scene_result.json"
+      },
+      {
+        "byte_count": 30010,
+        "file_sha256": "b5968094587a33473e23ee9ec2c59dfcbb6d63bc85e261912ba6045a392c6546",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/candidate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28491,
+        "file_sha256": "07f8e642591c521282fd4acd061af1c389fb436cb37330f80e82ccac6d0dbb5c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 30010,
+        "file_sha256": "b5968094587a33473e23ee9ec2c59dfcbb6d63bc85e261912ba6045a392c6546",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28493,
+        "file_sha256": "196faba1f0b3c47fbcb50d462c3d8ce430a8be56a5ba0fd15f4350bdbce07e52",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 24155,
+        "file_sha256": "0ac8792bfd0f92e19e1cf1f86c243c68868c55dd45509172bf2ca8de2025af29",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/candidate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28499,
+        "file_sha256": "6df4caccd13a618f371ac439b10c85fb7ead30ebb9c3309206130bf626119316",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 24155,
+        "file_sha256": "0ac8792bfd0f92e19e1cf1f86c243c68868c55dd45509172bf2ca8de2025af29",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28501,
+        "file_sha256": "136598f67aa8f895fcf2be6e60e65343963882ea7242feafe98a0ff5e96abc6e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 29308,
+        "file_sha256": "2f8b10f8e0104829ebfd6ecf16fb4fb54bea21988e44f6110d553cfb621e9c59",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/candidate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28508,
+        "file_sha256": "e8e8b4099a9b913ba10ff86999753ec6ff3dfa62ed2c112339d5171f7fd25ab9",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 29308,
+        "file_sha256": "2f8b10f8e0104829ebfd6ecf16fb4fb54bea21988e44f6110d553cfb621e9c59",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28508,
+        "file_sha256": "82ccca6932d42f2b3dfcb6aae502b474371bb3e1bc3e7abe6197bf76901aec58",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 31797,
+        "file_sha256": "78b9ebfb004773f99b1dd0bfeca83662567342b81de2e1391aa38f86df88c5c2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/candidate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28502,
+        "file_sha256": "b33690a54c80b5d7b00faefc495b0cd33cf77c9a0a0b08163949ba9a627bbd78",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 31797,
+        "file_sha256": "78b9ebfb004773f99b1dd0bfeca83662567342b81de2e1391aa38f86df88c5c2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28502,
+        "file_sha256": "9ee3db7dfc134b8957b389e5b57fa88cc8c98bce87e22cbf0688d680c49fcf87",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 22192,
+        "file_sha256": "fda54a2b80bffd72aebac11c3d54d245dd5024597f4aa04cc5ad297b79ec2222",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/scene_result.json",
+        "relative_path": "scenes/02_loop_alias_stress_a1e349c54526/scene_result.json"
+      },
+      {
+        "byte_count": 27659,
+        "file_sha256": "ad6d84a7dec7de9df0c0afddb026497dfc5aeb3df2699eeb240c45dba8d516a5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/candidate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28535,
+        "file_sha256": "070fc1d9f626919747ddeb01b42e3b9bfe45a4bddf4ec4489cf138d1637d2fc7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 27659,
+        "file_sha256": "ad6d84a7dec7de9df0c0afddb026497dfc5aeb3df2699eeb240c45dba8d516a5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28537,
+        "file_sha256": "67997f1316afb4dfb79b42975a587c16f4a3b2aa3aa3c8b9cbc06c23262ddc5f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 21087,
+        "file_sha256": "d8152ea3f3f6cb45b9bb28b287285ea6142b42615190f7a8500b654693c3a2ed",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/candidate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28528,
+        "file_sha256": "c8ddcfb64f1f6cf605103d720666fde6d18b052921f6a2bf3caaf1f09f4c9f4b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 21087,
+        "file_sha256": "d8152ea3f3f6cb45b9bb28b287285ea6142b42615190f7a8500b654693c3a2ed",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28528,
+        "file_sha256": "b806e5079cd89be4a1131bad2c40d060735a381850d4f19338be7785339333af",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 32332,
+        "file_sha256": "fb6213e6e2dcacdb056be8fb8812d62bc3023caa1dbf7e8c663658435ae0ad60",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/candidate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28539,
+        "file_sha256": "504fe370991569bb9f2349581e51c06434e1e8f4afc0a5372829f416ea4dfd5a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 32332,
+        "file_sha256": "fb6213e6e2dcacdb056be8fb8812d62bc3023caa1dbf7e8c663658435ae0ad60",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28540,
+        "file_sha256": "6a20561862df610ea6b35afc6c94ecc0f9e6c90178db6137a59b34b60f962193",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 37345,
+        "file_sha256": "b5b50531cf8dbc2ec34b6c6631111d7a63ad4d81d02d96119d1075489ece400b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/candidate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28533,
+        "file_sha256": "57932281b7a7dba83b55bc0fe5a9cf96863dc85ca07760b8b918a2fcd9232a38",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 37345,
+        "file_sha256": "b5b50531cf8dbc2ec34b6c6631111d7a63ad4d81d02d96119d1075489ece400b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28534,
+        "file_sha256": "b8a7a79f04f1a03dc78357a5f62153dc2456511e7526c338e6ba837db0eaa9e5",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 22384,
+        "file_sha256": "fbddbc0e9f233c7eb09e24ae9cd55652d2de73bd5926086595998de75a9cc597",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/scene_result.json",
+        "relative_path": "scenes/03_medium_enclosed_maze_28d6e25abe62/scene_result.json"
+      },
+      {
+        "byte_count": 29153,
+        "file_sha256": "7f8e2d5071f07b5fbd9be2390f1a47c94cf03096e9c20dc9fba742702bf7c5d8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/candidate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28754,
+        "file_sha256": "cb2de2e9964e36b290b8c904531dcac46530ef10ef6d09b845bc9f6894c6426b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 29153,
+        "file_sha256": "7f8e2d5071f07b5fbd9be2390f1a47c94cf03096e9c20dc9fba742702bf7c5d8",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28756,
+        "file_sha256": "8e2b174a869d352186a594e928871525c44e7de9bb178171aa0db25b3396e8e7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28811,
+        "file_sha256": "e83b660a86a04bcac6e659ebd8de79aa161e38877cd12d38b803e41b5df1fa51",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/candidate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28764,
+        "file_sha256": "956b14264819a028e3a892ae6cfadbd35e81b48a042bdfa02610823778e5cbe6",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28811,
+        "file_sha256": "e83b660a86a04bcac6e659ebd8de79aa161e38877cd12d38b803e41b5df1fa51",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28764,
+        "file_sha256": "4471be4b11ab7e376aa0fbbcfd4a15350f52c7e4abb0cd63e6c3027c8387d0bd",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28771,
+        "file_sha256": "b3050767deb626bde25db23559e1064f93ee559721c46b8655f06c429e7f2e4e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/candidate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28768,
+        "file_sha256": "3434de2c661a86418b52b1871ff4b3c1e410465022a0f6fa27f4334b1d5d358f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28771,
+        "file_sha256": "b3050767deb626bde25db23559e1064f93ee559721c46b8655f06c429e7f2e4e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28767,
+        "file_sha256": "b34e1b492b6e03dac5fe0e6931835c1fc2335190177c070d5abb3516cd30c1e3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28073,
+        "file_sha256": "075851593af4271c5f99120bc1925ac897e2b3eb1d9f07d1c253fd69a9169aef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/candidate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28757,
+        "file_sha256": "0805c8e2926e8e6225430a28b05b9e46f88545c581dc58032456d33e160ba104",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28073,
+        "file_sha256": "075851593af4271c5f99120bc1925ac897e2b3eb1d9f07d1c253fd69a9169aef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28757,
+        "file_sha256": "f6b776a9cbe5d82445e9de6906a375e91543568ce1920ed799a396ec741ea14d",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 23354,
+        "file_sha256": "c1d09557c9c898373b96a9428807925423e73fb9b4120572b0dc42788d6195d3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/scene_result.json",
+        "relative_path": "scenes/04_open_obstacle_field_03fdc12540a1/scene_result.json"
+      },
+      {
+        "byte_count": 30742,
+        "file_sha256": "0cf7e7ebcac5cd65bf80991a513f43bc1d399e9d10b38c4b2ed9597952d967aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/candidate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28035,
+        "file_sha256": "182c200b48efa1abcab7d70389fe6d2b61a196b4c6b8c27a7dbd32e09aa75356",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 30742,
+        "file_sha256": "0cf7e7ebcac5cd65bf80991a513f43bc1d399e9d10b38c4b2ed9597952d967aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28037,
+        "file_sha256": "49db6f6479edc94ebf98f83405dc17146ed7a9683c320ee75784298b42c0f894",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 27640,
+        "file_sha256": "e895788532e86eb40854e2ea034d549fea2cf26a6cb48a14604dba9626dd7744",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/candidate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28046,
+        "file_sha256": "2eb44523ba31e4c5e6bf14659fa87e2b54d5d3000b81717a94a5b378eeeb6376",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 27640,
+        "file_sha256": "e895788532e86eb40854e2ea034d549fea2cf26a6cb48a14604dba9626dd7744",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28045,
+        "file_sha256": "9147ecb6171921e36346670b5d42a84b930a81144de0ec4252347f1146cbdddf",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28395,
+        "file_sha256": "a87b13950d715a20848f8b9f3aa3b8d0dce1cc7853b7298267e69801d4101913",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/candidate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28050,
+        "file_sha256": "456733fbe441400a86c92af890e8fc8f032fc08293b2cc9a2fcf9b11861551ea",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28395,
+        "file_sha256": "a87b13950d715a20848f8b9f3aa3b8d0dce1cc7853b7298267e69801d4101913",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28051,
+        "file_sha256": "08a3197cefe29db304e2988a88328d4ca8a0340ad168291f79fccbf1239a1b7c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28647,
+        "file_sha256": "7dfad15660cfe65cef6d1bfe03029c711224035b20b5402f286c9ead91ef1532",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/candidate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28048,
+        "file_sha256": "8c81b7bc5783fe1924a40f86816c37bc7a95086b33f41526d9b3564613333566",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28647,
+        "file_sha256": "7dfad15660cfe65cef6d1bfe03029c711224035b20b5402f286c9ead91ef1532",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28047,
+        "file_sha256": "16d0f7b02b1f15657493a7ef2749dc4031b0299b85e33f86c36852fe46a15271",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 20268,
+        "file_sha256": "2df7e485bd2c3a2dd34603ade292e5ef6fbe6640d501f5ba377990be00b7550f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/scene_result.json",
+        "relative_path": "scenes/05_rough_local_dynamics_a30b352ecd55/scene_result.json"
+      },
+      {
+        "byte_count": 49574,
+        "file_sha256": "92c3acce604a376a9e898df1baea664fb390d4030af79e32c5f5e59e0e2969db",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/candidate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28521,
+        "file_sha256": "8290fe93b9dd4816e25d65c47ac004e3548e79bdc8090b5f346046438c02f81e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 49574,
+        "file_sha256": "92c3acce604a376a9e898df1baea664fb390d4030af79e32c5f5e59e0e2969db",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "83c8c8d402d81d1859d217ece15265a0af66791d8e6e2ddfa5ee2c256aaf5ba4",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 45707,
+        "file_sha256": "defdcff5d03dd32f6fc24fe98236f7e834e01218de02724b058e28ac0996e84f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/candidate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28526,
+        "file_sha256": "98c605790801430a1c541b634d8aab059b2569df95af671c93deddbbe5ab1177",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 45707,
+        "file_sha256": "defdcff5d03dd32f6fc24fe98236f7e834e01218de02724b058e28ac0996e84f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28526,
+        "file_sha256": "0658c0da8c1e0be219fbc1bc466152e41cee2fa35d129dec56b4c3795f5a9614",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 42489,
+        "file_sha256": "6eea8b9f19bdf2a658f967ff9d73bc0bb3354d5ce1a30dbfb9b65be32d84e349",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/candidate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "8aafc0cf3884d0a82cc793ce757997cffcaefe1233b396f53c2cbe42ad172fab",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 42489,
+        "file_sha256": "6eea8b9f19bdf2a658f967ff9d73bc0bb3354d5ce1a30dbfb9b65be32d84e349",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28516,
+        "file_sha256": "382ca2d878c20df82359093736e10d1165910500b2de2a650ef6eddc10ba0cef",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 45693,
+        "file_sha256": "8c33faf344214e92c562ec796d9af13f7e2bafc48ad19180e541340ba26695d7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/candidate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28536,
+        "file_sha256": "3a9d33ded006a343fc6607b74230efba64b7bcd922d6e3570498c8f7a77d9062",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 45693,
+        "file_sha256": "8c33faf344214e92c562ec796d9af13f7e2bafc48ad19180e541340ba26695d7",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28536,
+        "file_sha256": "13b585b857ca7e9383b6c331654415f0ba47d9cbeaaf953820af226c4c4d5bd4",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 22327,
+        "file_sha256": "b2ba5b5be777f782913c6039121af4c9a311c16254c88d34b436898fa8e9e67f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/scene_result.json",
+        "relative_path": "scenes/06_small_enclosed_maze_9488f560cc2c/scene_result.json"
+      },
+      {
+        "byte_count": 46199,
+        "file_sha256": "61fbc8696c2f57a1ae12d20b7df6bea6033d6e1bf8ec1519754e8f6b3c42238f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/candidate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/candidate.png"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "91b2a36367a7658a4ba8cafc446b3dc8c53b93a0248061d8093da20d11865977",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/candidate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 46199,
+        "file_sha256": "61fbc8696c2f57a1ae12d20b7df6bea6033d6e1bf8ec1519754e8f6b3c42238f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/duplicate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/duplicate.png"
+      },
+      {
+        "byte_count": 28524,
+        "file_sha256": "6c924786f70d2f479fd9c8f12e142ef78a7d85b2eda6e632a832d69b664d1b35",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/duplicate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 38042,
+        "file_sha256": "647021da2481ded54e755dbdb5326ff5ab8422ad7f5821649133432a3de782ff",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/candidate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/candidate.png"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "a233b608a8016338c10e21c5293817f1735a02a5ae12fe8887def0568601e8ba",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/candidate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 38042,
+        "file_sha256": "647021da2481ded54e755dbdb5326ff5ab8422ad7f5821649133432a3de782ff",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/duplicate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/duplicate.png"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "ee193d6338ba9cb594dc7ba9e25db63e2fbd8431e3a57e350f19aeb5ba00cf0a",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/duplicate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 42339,
+        "file_sha256": "426f5c4f48cbfe7743be405c1e2d12edb21ec51abcb3b06d491ead79ce076186",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/candidate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/candidate.png"
+      },
+      {
+        "byte_count": 28520,
+        "file_sha256": "c00f597f1a0eb49a8bd09dfb06b80a14d09d6f65c50468e3514307f5ea791272",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/candidate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 42339,
+        "file_sha256": "426f5c4f48cbfe7743be405c1e2d12edb21ec51abcb3b06d491ead79ce076186",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/duplicate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/duplicate.png"
+      },
+      {
+        "byte_count": 28519,
+        "file_sha256": "e10256cf1590da45c6318823808744f7925d9330ac33245df4b8dba3f194d7aa",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/duplicate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 34819,
+        "file_sha256": "4ef2365efd22655a77f06a26801b7bb62a52a4f5e055de0f78e69b9229dfb946",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/candidate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/candidate.png"
+      },
+      {
+        "byte_count": 28530,
+        "file_sha256": "30d620cb62f8dd9c926ecfea7aef7eb35bd6227cdcbe6d62d5c3838593ac012c",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/candidate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 34819,
+        "file_sha256": "4ef2365efd22655a77f06a26801b7bb62a52a4f5e055de0f78e69b9229dfb946",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/duplicate.png",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/duplicate.png"
+      },
+      {
+        "byte_count": 28530,
+        "file_sha256": "319da346bbd6949ebdb4d108483b17ebce2e8e379e8220649fdc4efe64e52531",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/duplicate_receipt.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 22343,
+        "file_sha256": "dbc8ea3b0b1f8ccfb9ef90e130bb3a181481c9318a65c465abbd4040165cc42b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/scene_result.json",
+        "relative_path": "scenes/07_visual_sensor_stress_52f045048932/scene_result.json"
+      },
+      {
+        "byte_count": 1544,
+        "file_sha256": "8863ff6e8b504cd23df18ec82b31adafe698544fbf54d113ad805594b7486b08",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/terminal_failure.json",
+        "relative_path": "terminal_failure.json"
+      }
+    ],
+    "evaluator_source": {
+      "byte_count": 30488,
+      "file_sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py"
+    },
+    "frozen_predecessor": {
+      "byte_count": 52282877,
+      "file_sha256": "f5aac23cf275d73b92ce5609a583dea89f6686a624d4889d9762740535aab873",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1/attempt_v1/snapshots/update_1000.pt"
+    },
+    "generation_receipt": {
+      "byte_count": 218833,
+      "file_sha256": "2cd61b8152ebddf324ee565864f6673dbbe4849782c44b0234ddefd6364ff26c",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/generation_receipt.json"
+    },
+    "parity_result": {
+      "byte_count": 48448,
+      "file_sha256": "ac1b27a87466ae2b399056c3823c7fb5edeff3a83e17f391dbb7867155f3ffc4",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/parity_result.json"
+    },
+    "progression_analysis": {
+      "byte_count": 32958,
+      "file_sha256": "45c876c2c0156f4788cc9862060a0025db892ceb16692a28e6041c3245b2e19c",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/analysis.json"
+    },
+    "progression_snapshots": [
+      {
+        "arm": "masked_plain",
+        "byte_count": 3635605,
+        "file_sha256": "bd29611aa8f79d56862def953d2b1092c00fe8ed5f2d5045eaf12807e2f7f72e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/masked_plain_update_000700.pt",
+        "seed": 2026080201
+      },
+      {
+        "arm": "masked_delta",
+        "byte_count": 4441797,
+        "file_sha256": "6819ce586955b46060dabafdbad23164e47398b114076bb520d47a6f7586f539",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/masked_delta_update_000700.pt",
+        "seed": 2026080201
+      },
+      {
+        "arm": "full_plain",
+        "byte_count": 3635585,
+        "file_sha256": "77c483524a3f98c117e634ae5ec216374060b1a0e52dd0f9e169880395fbcbdc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/full_plain_update_000700.pt",
+        "seed": 2026080201
+      },
+      {
+        "arm": "full_delta",
+        "byte_count": 4441747,
+        "file_sha256": "51fc438604e82df4b65067708909d5695bf0da692920ccab0b96795256eeadcc",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080201/full_delta_update_000700.pt",
+        "seed": 2026080201
+      },
+      {
+        "arm": "masked_plain",
+        "byte_count": 3635605,
+        "file_sha256": "135a2cc95b8aaa1ec4fc40eb856e482622758bcd79ade863e60e8c784b482225",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/masked_plain_update_000700.pt",
+        "seed": 2026080202
+      },
+      {
+        "arm": "masked_delta",
+        "byte_count": 4441797,
+        "file_sha256": "88940e0e4a2c60718cff472a40c75860b0425d9adafe99f5a3cc58a95702aa01",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/masked_delta_update_000700.pt",
+        "seed": 2026080202
+      },
+      {
+        "arm": "full_plain",
+        "byte_count": 3635585,
+        "file_sha256": "15bca79abe7e87d42e54d386fade67a2f6758f361144b0969d0c874bd72d3a95",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/full_plain_update_000700.pt",
+        "seed": 2026080202
+      },
+      {
+        "arm": "full_delta",
+        "byte_count": 4441747,
+        "file_sha256": "43b411668a4327c369edae0dd092b14f6f962240b420666b9f080658de9b7498",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080202/full_delta_update_000700.pt",
+        "seed": 2026080202
+      },
+      {
+        "arm": "masked_plain",
+        "byte_count": 3635605,
+        "file_sha256": "7de1e6403069e4c371f9eda0eab40336baa331f334f5feac06f7ce09da4cdea1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/masked_plain_update_000700.pt",
+        "seed": 2026080203
+      },
+      {
+        "arm": "masked_delta",
+        "byte_count": 4441797,
+        "file_sha256": "cd6f41a3ec1e17e0bb8d04be3d574614823d50b12adb6d78332b1b8269f54e1e",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/masked_delta_update_000700.pt",
+        "seed": 2026080203
+      },
+      {
+        "arm": "full_plain",
+        "byte_count": 3635585,
+        "file_sha256": "c005f84fabcb89e9047750c802e71b7ae9ae2c8d77d5cb5d28ca5f03dbf105ce",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/full_plain_update_000700.pt",
+        "seed": 2026080203
+      },
+      {
+        "arm": "full_delta",
+        "byte_count": 4441747,
+        "file_sha256": "fae4d3474a4a9d1e3914d193d13dd4e0ab196fe30430c1ba81f2d1968a09bd51",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_progression_v1/comparison_20260802_v1/seed_2026080203/full_delta_update_000700.pt",
+        "seed": 2026080203
+      }
+    ],
+    "render_receipts": [
+      {
+        "byte_count": 28529,
+        "file_sha256": "b632b5b9ae53130a9663bd090b95800328ae6309a1ffa920398b9ce80c2b27ab",
+        "pair_index": 0,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28531,
+        "file_sha256": "4e7b1f2f7cd577d61dd8d0d285845af410de6a9a4794f0490c688fa4fd640b64",
+        "pair_index": 0,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28511,
+        "file_sha256": "de2706036b1a32dfc171fb5185eb776f7a82a34a54f7799d0d9147c5b1ce23b0",
+        "pair_index": 1,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28511,
+        "file_sha256": "19452ad08d6c326c6a5ee410238dde50c7290b2d2faaf49f589c3f23f1278a2c",
+        "pair_index": 1,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "a82c336e41a90d24b4a31c3aa1ad26c6318a450f61b069bdfb976c425c7fe709",
+        "pair_index": 2,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28522,
+        "file_sha256": "ae180403cd9d3434c6280bd82060343d1f508855b1df71e781605da8779b45e8",
+        "pair_index": 2,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28513,
+        "file_sha256": "cda439305add4fd6272c83337864c37311928e95250968a5e3d1cf0eda36539c",
+        "pair_index": 3,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28512,
+        "file_sha256": "d22463adb37fbfc662a97e193027e5c9648192e43a44753c6ab3f40c25b8e0ab",
+        "pair_index": 3,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "785e3e23d6cc4cddcd4189a8a7ca7c4cbb3dc9ddc16c80e6e45a6fcdc26379df",
+        "pair_index": 4,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28073,
+        "file_sha256": "141ac195293bd2bfc6884aa934c782ca62c7dad7684d1c22b0dd74f3fffbfe42",
+        "pair_index": 4,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28067,
+        "file_sha256": "6d064df25543ecac13f278189980a863f2b57b66a4aab3ac2cea734f247fe37c",
+        "pair_index": 5,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28067,
+        "file_sha256": "a345a86f8ecf1f6e4c194ebf6b60623481576ccab059d5314fe1f4c7c0e470c5",
+        "pair_index": 5,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28076,
+        "file_sha256": "41369a988e3ca4a6b1b1adfdea31cd08bf51be206f280a485a04a92080c988f0",
+        "pair_index": 6,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28076,
+        "file_sha256": "aecad68eabef88f373ff658d1d0194bac019b42f7d232cb8f068770d91d99562",
+        "pair_index": 6,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "2be4c5f78ceb421f3abbdb902b718ec8fdfc14c70e967f1e0afa3830682ae1f5",
+        "pair_index": 7,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28071,
+        "file_sha256": "39edd3e7c6ef9b12fa5146b6d5384546c609e5ef9374df1559c666e7dfcd0248",
+        "pair_index": 7,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28491,
+        "file_sha256": "07f8e642591c521282fd4acd061af1c389fb436cb37330f80e82ccac6d0dbb5c",
+        "pair_index": 8,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28493,
+        "file_sha256": "196faba1f0b3c47fbcb50d462c3d8ce430a8be56a5ba0fd15f4350bdbce07e52",
+        "pair_index": 8,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28499,
+        "file_sha256": "6df4caccd13a618f371ac439b10c85fb7ead30ebb9c3309206130bf626119316",
+        "pair_index": 9,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28501,
+        "file_sha256": "136598f67aa8f895fcf2be6e60e65343963882ea7242feafe98a0ff5e96abc6e",
+        "pair_index": 9,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28508,
+        "file_sha256": "e8e8b4099a9b913ba10ff86999753ec6ff3dfa62ed2c112339d5171f7fd25ab9",
+        "pair_index": 10,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28508,
+        "file_sha256": "82ccca6932d42f2b3dfcb6aae502b474371bb3e1bc3e7abe6197bf76901aec58",
+        "pair_index": 10,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28502,
+        "file_sha256": "b33690a54c80b5d7b00faefc495b0cd33cf77c9a0a0b08163949ba9a627bbd78",
+        "pair_index": 11,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28502,
+        "file_sha256": "9ee3db7dfc134b8957b389e5b57fa88cc8c98bce87e22cbf0688d680c49fcf87",
+        "pair_index": 11,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28535,
+        "file_sha256": "070fc1d9f626919747ddeb01b42e3b9bfe45a4bddf4ec4489cf138d1637d2fc7",
+        "pair_index": 12,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28537,
+        "file_sha256": "67997f1316afb4dfb79b42975a587c16f4a3b2aa3aa3c8b9cbc06c23262ddc5f",
+        "pair_index": 12,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28528,
+        "file_sha256": "c8ddcfb64f1f6cf605103d720666fde6d18b052921f6a2bf3caaf1f09f4c9f4b",
+        "pair_index": 13,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28528,
+        "file_sha256": "b806e5079cd89be4a1131bad2c40d060735a381850d4f19338be7785339333af",
+        "pair_index": 13,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28539,
+        "file_sha256": "504fe370991569bb9f2349581e51c06434e1e8f4afc0a5372829f416ea4dfd5a",
+        "pair_index": 14,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28540,
+        "file_sha256": "6a20561862df610ea6b35afc6c94ecc0f9e6c90178db6137a59b34b60f962193",
+        "pair_index": 14,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28533,
+        "file_sha256": "57932281b7a7dba83b55bc0fe5a9cf96863dc85ca07760b8b918a2fcd9232a38",
+        "pair_index": 15,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28534,
+        "file_sha256": "b8a7a79f04f1a03dc78357a5f62153dc2456511e7526c338e6ba837db0eaa9e5",
+        "pair_index": 15,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28754,
+        "file_sha256": "cb2de2e9964e36b290b8c904531dcac46530ef10ef6d09b845bc9f6894c6426b",
+        "pair_index": 16,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28756,
+        "file_sha256": "8e2b174a869d352186a594e928871525c44e7de9bb178171aa0db25b3396e8e7",
+        "pair_index": 16,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28764,
+        "file_sha256": "956b14264819a028e3a892ae6cfadbd35e81b48a042bdfa02610823778e5cbe6",
+        "pair_index": 17,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28764,
+        "file_sha256": "4471be4b11ab7e376aa0fbbcfd4a15350f52c7e4abb0cd63e6c3027c8387d0bd",
+        "pair_index": 17,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28768,
+        "file_sha256": "3434de2c661a86418b52b1871ff4b3c1e410465022a0f6fa27f4334b1d5d358f",
+        "pair_index": 18,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28767,
+        "file_sha256": "b34e1b492b6e03dac5fe0e6931835c1fc2335190177c070d5abb3516cd30c1e3",
+        "pair_index": 18,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28757,
+        "file_sha256": "0805c8e2926e8e6225430a28b05b9e46f88545c581dc58032456d33e160ba104",
+        "pair_index": 19,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28757,
+        "file_sha256": "f6b776a9cbe5d82445e9de6906a375e91543568ce1920ed799a396ec741ea14d",
+        "pair_index": 19,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28035,
+        "file_sha256": "182c200b48efa1abcab7d70389fe6d2b61a196b4c6b8c27a7dbd32e09aa75356",
+        "pair_index": 20,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28037,
+        "file_sha256": "49db6f6479edc94ebf98f83405dc17146ed7a9683c320ee75784298b42c0f894",
+        "pair_index": 20,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28046,
+        "file_sha256": "2eb44523ba31e4c5e6bf14659fa87e2b54d5d3000b81717a94a5b378eeeb6376",
+        "pair_index": 21,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28045,
+        "file_sha256": "9147ecb6171921e36346670b5d42a84b930a81144de0ec4252347f1146cbdddf",
+        "pair_index": 21,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28050,
+        "file_sha256": "456733fbe441400a86c92af890e8fc8f032fc08293b2cc9a2fcf9b11861551ea",
+        "pair_index": 22,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28051,
+        "file_sha256": "08a3197cefe29db304e2988a88328d4ca8a0340ad168291f79fccbf1239a1b7c",
+        "pair_index": 22,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28048,
+        "file_sha256": "8c81b7bc5783fe1924a40f86816c37bc7a95086b33f41526d9b3564613333566",
+        "pair_index": 23,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28047,
+        "file_sha256": "16d0f7b02b1f15657493a7ef2749dc4031b0299b85e33f86c36852fe46a15271",
+        "pair_index": 23,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28521,
+        "file_sha256": "8290fe93b9dd4816e25d65c47ac004e3548e79bdc8090b5f346046438c02f81e",
+        "pair_index": 24,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "83c8c8d402d81d1859d217ece15265a0af66791d8e6e2ddfa5ee2c256aaf5ba4",
+        "pair_index": 24,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28526,
+        "file_sha256": "98c605790801430a1c541b634d8aab059b2569df95af671c93deddbbe5ab1177",
+        "pair_index": 25,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28526,
+        "file_sha256": "0658c0da8c1e0be219fbc1bc466152e41cee2fa35d129dec56b4c3795f5a9614",
+        "pair_index": 25,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "8aafc0cf3884d0a82cc793ce757997cffcaefe1233b396f53c2cbe42ad172fab",
+        "pair_index": 26,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28516,
+        "file_sha256": "382ca2d878c20df82359093736e10d1165910500b2de2a650ef6eddc10ba0cef",
+        "pair_index": 26,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28536,
+        "file_sha256": "3a9d33ded006a343fc6607b74230efba64b7bcd922d6e3570498c8f7a77d9062",
+        "pair_index": 27,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28536,
+        "file_sha256": "13b585b857ca7e9383b6c331654415f0ba47d9cbeaaf953820af226c4c4d5bd4",
+        "pair_index": 27,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/rows/pose_03/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28523,
+        "file_sha256": "91b2a36367a7658a4ba8cafc446b3dc8c53b93a0248061d8093da20d11865977",
+        "pair_index": 28,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28524,
+        "file_sha256": "6c924786f70d2f479fd9c8f12e142ef78a7d85b2eda6e632a832d69b664d1b35",
+        "pair_index": 28,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_00/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "a233b608a8016338c10e21c5293817f1735a02a5ae12fe8887def0568601e8ba",
+        "pair_index": 29,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28515,
+        "file_sha256": "ee193d6338ba9cb594dc7ba9e25db63e2fbd8431e3a57e350f19aeb5ba00cf0a",
+        "pair_index": 29,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_01/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28520,
+        "file_sha256": "c00f597f1a0eb49a8bd09dfb06b80a14d09d6f65c50468e3514307f5ea791272",
+        "pair_index": 30,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28519,
+        "file_sha256": "e10256cf1590da45c6318823808744f7925d9330ac33245df4b8dba3f194d7aa",
+        "pair_index": 30,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_02/duplicate_receipt.json"
+      },
+      {
+        "byte_count": 28530,
+        "file_sha256": "30d620cb62f8dd9c926ecfea7aef7eb35bd6227cdcbe6d62d5c3838593ac012c",
+        "pair_index": 31,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/candidate_receipt.json"
+      },
+      {
+        "byte_count": 28530,
+        "file_sha256": "319da346bbd6949ebdb4d108483b17ebce2e8e379e8220649fdc4efe64e52531",
+        "pair_index": 31,
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/rows/pose_03/duplicate_receipt.json"
+      }
+    ],
+    "reservation": {
+      "byte_count": 1559,
+      "file_sha256": "529cc68183b1b09f98b19c84cfbeff45a6c772b8aa90b98e58cd1705a9f7ba2a",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/reservation.json"
+    },
+    "scene_results": [
+      {
+        "byte_count": 22318,
+        "file_sha256": "1aa1301c352f135dabbf8bcd375aca82322725523dbae8fe6fb008e1f01b5a79",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/00_large_enclosed_maze_d89fe04e6f92/scene_result.json"
+      },
+      {
+        "byte_count": 20412,
+        "file_sha256": "1908d9cb06b5628aaa678893fb77cfde5be81f8a9ed471da558a305bdc164330",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/01_local_composite_motifs_e4c8cb32406a/scene_result.json"
+      },
+      {
+        "byte_count": 22192,
+        "file_sha256": "fda54a2b80bffd72aebac11c3d54d245dd5024597f4aa04cc5ad297b79ec2222",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/02_loop_alias_stress_a1e349c54526/scene_result.json"
+      },
+      {
+        "byte_count": 22384,
+        "file_sha256": "fbddbc0e9f233c7eb09e24ae9cd55652d2de73bd5926086595998de75a9cc597",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/03_medium_enclosed_maze_28d6e25abe62/scene_result.json"
+      },
+      {
+        "byte_count": 23354,
+        "file_sha256": "c1d09557c9c898373b96a9428807925423e73fb9b4120572b0dc42788d6195d3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/04_open_obstacle_field_03fdc12540a1/scene_result.json"
+      },
+      {
+        "byte_count": 20268,
+        "file_sha256": "2df7e485bd2c3a2dd34603ade292e5ef6fbe6640d501f5ba377990be00b7550f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/05_rough_local_dynamics_a30b352ecd55/scene_result.json"
+      },
+      {
+        "byte_count": 22327,
+        "file_sha256": "b2ba5b5be777f782913c6039121af4c9a311c16254c88d34b436898fa8e9e67f",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/06_small_enclosed_maze_9488f560cc2c/scene_result.json"
+      },
+      {
+        "byte_count": 22343,
+        "file_sha256": "dbc8ea3b0b1f8ccfb9ef90e130bb3a181481c9318a65c465abbd4040165cc42b",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/scenes/07_visual_sensor_stress_52f045048932/scene_result.json"
+      }
+    ],
+    "source_panel": {
+      "byte_count": 72547,
+      "file_sha256": "ec7e076ff5387537b4b765a56f3eba467a21d8ec1325d8f5f823fe4e76d5e4d8",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_source_panel_v1_2026-08-02.json"
+    },
+    "terminal_failure": {
+      "byte_count": 1544,
+      "file_sha256": "8863ff6e8b504cd23df18ec82b31adafe698544fbf54d113ad805594b7486b08",
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-visual-domain-parity-v1/terminal_failure.json"
+    }
+  },
+  "development_only": true,
+  "immutable_exact_parity_failure": {
+    "preserved": true,
+    "reference_candidate_exact_match_count": 24,
+    "required_reference_candidate_exact_match_count": 32,
+    "status": "FAIL_EXACT_TEXTURED_V03_IMPLEMENTATION_EQUIVALENCE"
+  },
+  "measurements": {
+    "consumed_inventory_file_count": 141,
+    "consumed_inventory_sha256": "98b38a1b618cce00049250c87c985a51d3a78649bef67cbcca917d2128fe4bcb",
+    "consumed_inventory_total_byte_count": 4600321,
+    "frozen_predecessor_descriptor_retrieval": {
+      "descriptor_dimension": 1536,
+      "maximum_paired_descriptor_distance": 0.0014817728354341111,
+      "minimum_nearest_nonself_descriptor_distance": 0.044272437148743495,
+      "paired_nearest_neighbour_retrieval_count": 32,
+      "worst_paired_to_nearest_nonself_descriptor_distance_ratio": 0.00952340163959825
+    },
+    "pixels": {
+      "candidate_duplicate_exact_match_count": 32,
+      "candidate_frame_count": 32,
+      "duplicate_frame_count": 32,
+      "families": [
+        "large_enclosed_maze",
+        "local_composite_motifs",
+        "loop_alias_stress",
+        "medium_enclosed_maze",
+        "open_obstacle_field",
+        "rough_local_dynamics",
+        "small_enclosed_maze",
+        "visual_sensor_stress"
+      ],
+      "maximum_reference_candidate_normalized_l1": 0.000835672810790983,
+      "minimum_reference_candidate_rgb_ssim": 0.999873849744854,
+      "poses_per_scene": 4,
+      "reference_candidate_exact_match_count": 24,
+      "reference_frame_count": 32,
+      "scene_count": 8
+    },
+    "progression_snapshot_rehash_count": 12
+  },
+  "protected_material_opened": false,
+  "schema": "lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_v1",
+  "scientific_claim_granted_by_this_document": false,
+  "scope_limit": "Bound task-input adequacy only; the exact parity FAIL remains immutable. No generalization, planning, promotion, retry, resume, render, or execution claim.",
+  "status": "PASS_TASK_RELEVANT_INPUT_ADEQUACY_DEVELOPMENT_ONLY",
+  "threshold_origin": "Post-hoc engineering thresholds selected after the exact parity failure and fixed before calibration or bounded-branch use.",
+  "thresholds": {
+    "maximum_reference_candidate_normalized_l1": 0.00392156862745098,
+    "maximum_worst_paired_to_nearest_nonself_descriptor_distance_ratio": 0.1,
+    "minimum_reference_candidate_rgb_ssim": 0.99,
+    "required_candidate_duplicate_exact_match_count": 32,
+    "required_consumed_inventory_file_count": 141,
+    "required_paired_nearest_neighbour_retrieval_count": 32,
+    "required_progression_snapshot_rehash_count": 12
+  }
+}

@@ -1,0 +1,119 @@
+{
+  "schema": "lewm_go2_matched_branch_successor_screen_terminal_review_v1",
+  "status": "PASS_WITH_MINOR_NON_DECISION_RELEVANT_REPORTING_DEVIATION",
+  "review_date": "2026-08-03",
+  "citable_as_scientific_evidence": false,
+  "protected_material_opened": false,
+  "evaluation_rgb_opened": false,
+  "authority_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_execution_authority_2026-08-03.json",
+    "sha256": "2f293e69669ccc16a8f728a7267a243f207c25be6a6e40a5b2799648df20b591",
+    "byte_count": 5065
+  },
+  "result_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/result.json",
+    "sha256": "a6caf2ed1950781815925ccc76b4dbbf40b0f331f4b14a5e60befc88f3aae605",
+    "byte_count": 21377
+  },
+  "terminal_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/terminal.json",
+    "sha256": "bf3bf322c2f3db877be405ebf5ca1daf9dd1a5ffd667b769d44cccab22ede758",
+    "byte_count": 510
+  },
+  "frozen_source_commit": "ed067902e326485409c1a3a6a823903f4dc89f50",
+  "authority_commit": "4a70e8da130331d7d163858dba8ffa9e584e63f7",
+  "checks": {
+    "authority_preregistration_and_source_bindings_match": true,
+    "input_bundle_bindings_match": true,
+    "train_eval_roles_are_disjoint": true,
+    "train_artifact_count_is_1536": true,
+    "evaluation_rgb_open_count_is_zero": true,
+    "feature_cache_bindings_and_payloads_match": true,
+    "feature_values_are_finite_and_unit_normalized": true,
+    "checkpoint_bindings_and_state_dicts_match": true,
+    "all_terminal_metrics_reproduce_exactly": true,
+    "gate_arithmetic_recomputes_exactly": true,
+    "runtime_projection_recomputes_exactly": true,
+    "terminal_stop_decision_is_correct": true
+  },
+  "gate_thresholds": {
+    "maximum_error_to_persistence_ratio": 0.8,
+    "minimum_branch_retrieval_accuracy": 0.5,
+    "minimum_action_intervention_margin_exclusive": 0.0
+  },
+  "terminal_metrics": {
+    "dense_vjepa2_1": {
+      "error_to_persistence_ratio": 0.9164363539053353,
+      "branch_retrieval_accuracy": 0.2803819444444444,
+      "action_intervention_margin": 0.028666746492187187,
+      "engineering_eligible": false
+    },
+    "dense_dinov2": {
+      "error_to_persistence_ratio": 0.9666892593579309,
+      "branch_retrieval_accuracy": 0.2048611111111111,
+      "action_intervention_margin": 0.04603223171499038,
+      "engineering_eligible": false
+    },
+    "state_space_vjepa2_1": {
+      "error_to_persistence_ratio": 0.8784056001640114,
+      "branch_retrieval_accuracy": 0.1484375,
+      "action_intervention_margin": 0.014827583502564176,
+      "engineering_eligible": false
+    },
+    "rssm_vjepa2_1": {
+      "error_to_persistence_ratio": 0.8263411634372715,
+      "branch_retrieval_accuracy": 0.13541666666666666,
+      "action_intervention_margin": 0.010579309736688934,
+      "engineering_eligible": false
+    }
+  },
+  "runtime_projection": {
+    "gpu_hours": 0.8221523566843502,
+    "maximum_gpu_hours": 24.0,
+    "runtime_gate_passed": true
+  },
+  "terminal_decision": {
+    "collection_justified": false,
+    "next_route": "STOP_BEFORE_FRESH_MATCHED_BRANCH_COLLECTION",
+    "reason": "All four arms miss both capacity gates; throughput and memory are not blockers."
+  },
+  "late_progress_400_to_800": {
+    "dense_vjepa2_1": {
+      "error_ratio_change": -0.1162467130757589,
+      "retrieval_change": 0.09809027777777776,
+      "intervention_margin_change": 0.017397619576917145
+    },
+    "dense_dinov2": {
+      "error_ratio_change": -0.0814255348353849,
+      "retrieval_change": 0.03472222222222221,
+      "intervention_margin_change": 0.011386532750394585
+    },
+    "state_space_vjepa2_1": {
+      "error_ratio_change": -0.03843301870112581,
+      "retrieval_change": 0.017361111111111105,
+      "intervention_margin_change": 0.007866892653207
+    },
+    "rssm_vjepa2_1": {
+      "error_ratio_change": -0.06332407774716631,
+      "retrieval_change": 0.0234375,
+      "intervention_margin_change": 0.007032734031478561
+    }
+  },
+  "minor_deviations": [
+    {
+      "item": "The preregistration requested start and end loss, but update-zero traces contain metrics without an objective value.",
+      "impact": "No gate uses start loss; end loss is present, saved terminal metrics reproduce exactly, and the omission cannot change the stop decision.",
+      "rerun_required": false
+    }
+  ],
+  "bounded_successor_recommendation": {
+    "justified": true,
+    "scope": "One dense_vjepa2_1-only no-new-data horizon diagnostic",
+    "maximum_updates": 3200,
+    "futility_check_update": 1600,
+    "authorizes_collection": false,
+    "authorizes_evaluation_rgb": false,
+    "rationale": "Dense V-JEPA alone showed enough late progress to leave its training-set capacity unresolved; optimistic projections make repeating the other three arms non-information-changing."
+  },
+  "findings": []
+}

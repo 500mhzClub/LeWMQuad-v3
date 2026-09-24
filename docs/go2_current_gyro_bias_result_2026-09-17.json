@@ -1,0 +1,256 @@
+{
+  "status": "complete",
+  "assignments": [
+    {
+      "assignment": 1,
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "condition": "nominal",
+      "bias_rad_s": 0.0,
+      "recorded_frames": 2243,
+      "accepted_frames": 2243,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 224.2,
+      "wall_seconds": 242.98617776995525,
+      "accuracy": {
+        "exactly_matching_original_poses": 2243,
+        "maximum_position_error_mm": 6.787919895444823,
+        "maximum_xy_error_mm": 6.751074121140055,
+        "maximum_orientation_error_deg": 0.06000640956401508,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "09e086069764aa8dd3e86c4e46aeb5bab93f15470c37adfdddb2ddf9383436fc"
+    },
+    {
+      "assignment": 2,
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "condition": "nominal",
+      "bias_rad_s": 0.0,
+      "recorded_frames": 1543,
+      "accepted_frames": 1543,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 154.2,
+      "wall_seconds": 165.46516913897358,
+      "accuracy": {
+        "exactly_matching_original_poses": 1543,
+        "maximum_position_error_mm": 8.141207465449673,
+        "maximum_xy_error_mm": 8.141206096121877,
+        "maximum_orientation_error_deg": 0.06114622042033832,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "a71954367edfc1b27c0934838c2f01ced4c2730fcfe55fdf6a1e0be81debd964"
+    },
+    {
+      "assignment": 3,
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "condition": "yaw_positive",
+      "bias_rad_s": 0.001,
+      "recorded_frames": 2243,
+      "accepted_frames": 2243,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 224.2,
+      "wall_seconds": 243.70153626683168,
+      "accuracy": {
+        "exactly_matching_original_poses": 1,
+        "maximum_position_error_mm": 413.6633813534539,
+        "maximum_xy_error_mm": 413.5956536120128,
+        "maximum_orientation_error_deg": 12.832512101848524,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "656561b6bd921d5c095cfe4acd56128ff818f6283c2eee6ed36922cde12ceb76"
+    },
+    {
+      "assignment": 4,
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "condition": "yaw_positive",
+      "bias_rad_s": 0.001,
+      "recorded_frames": 1543,
+      "accepted_frames": 1543,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 154.2,
+      "wall_seconds": 165.5864628860727,
+      "accuracy": {
+        "exactly_matching_original_poses": 1,
+        "maximum_position_error_mm": 279.3453166898599,
+        "maximum_xy_error_mm": 279.3216331301593,
+        "maximum_orientation_error_deg": 8.822732075669,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "59364bf5de91085d5f7e266c8bb1fdf52eb47238f48d218ad021682b18b906f8"
+    },
+    {
+      "assignment": 5,
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "condition": "yaw_negative",
+      "bias_rad_s": -0.001,
+      "recorded_frames": 2243,
+      "accepted_frames": 2243,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 224.2,
+      "wall_seconds": 244.34547641384415,
+      "accuracy": {
+        "exactly_matching_original_poses": 1,
+        "maximum_position_error_mm": 388.9607186038202,
+        "maximum_xy_error_mm": 388.82993731450006,
+        "maximum_orientation_error_deg": 12.822801471601105,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "75bfd7605997de741316151b0eaa2911fa449ddaf1f222ed51b6c1556ef9c2de"
+    },
+    {
+      "assignment": 6,
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "condition": "yaw_negative",
+      "bias_rad_s": -0.001,
+      "recorded_frames": 1543,
+      "accepted_frames": 1543,
+      "complete_recording_accepted": true,
+      "failure": null,
+      "accepted_sensor_seconds": 154.2,
+      "wall_seconds": 165.8641724109184,
+      "accuracy": {
+        "exactly_matching_original_poses": 1,
+        "maximum_position_error_mm": 290.92687609042844,
+        "maximum_xy_error_mm": 290.9149354463051,
+        "maximum_orientation_error_deg": 8.819250912568606,
+        "native_state_loaded_only_after_predictions_saved": true
+      },
+      "depth_digests_verified": true,
+      "raw_tracker_only": true,
+      "downstream_floor_registration_or_navigation_reexecuted": false,
+      "synthetic_bias_not_hardware_calibration": true,
+      "source_sha256": {
+        "scripts/replay_go2_current_gyro_bias_development.py": "74a2c3bf08304dbb5d07bf284d41a33001bfb4ef3f238e364f3f45bc061caa9c",
+        "lewm/finite_rgbd_error_members_development.py": "269af0079aaeeafd1a39505e509fcc16f7ac422d445db9315bb2ed72459d1421",
+        "lewm/sparse_corner_completion_development.py": "be8942f2a46451a03205724648cbd4d8226982a7f1b7bdcda9904fdff6983f95",
+        "lewm/sparse_corner_completion_runtime_development.py": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "lewm/cadenced_view_revisit_tracking_development.py": "d051fa4696be954e73b47bcbc3c2c50b13aacc1ed6503b6be8d5b494367716ec",
+        "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+        "scripts/live_depth_noise_session_development.py": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "scripts/in_memory_public_replay_development.py": "7c7dff19e846c53af717a14a214f0e9fa0e19c3b09b63a9d9319d004af478a70",
+        "scripts/run_go2_sparse_corner_completion_development.py": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484"
+      },
+      "prediction_sha256": "b91c2bad6ad49ef26e543ed5e46dd07c74209b1df8962687893cd12447510150"
+    }
+  ],
+  "common_prefix_comparisons": [
+    {
+      "root": "go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "common_frames": 2243,
+      "errors": {
+        "nominal": {
+          "maximum_xy_error_mm": 6.751074121140055,
+          "maximum_orientation_error_deg": 0.06000640956401508
+        },
+        "yaw_positive": {
+          "maximum_xy_error_mm": 413.5956536120128,
+          "maximum_orientation_error_deg": 12.832512101848524
+        },
+        "yaw_negative": {
+          "maximum_xy_error_mm": 388.82993731450006,
+          "maximum_orientation_error_deg": 12.822801471601105
+        }
+      }
+    },
+    {
+      "root": "go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "common_frames": 1543,
+      "errors": {
+        "nominal": {
+          "maximum_xy_error_mm": 8.141206096121877,
+          "maximum_orientation_error_deg": 0.06114622042033832
+        },
+        "yaw_positive": {
+          "maximum_xy_error_mm": 279.3216331301593,
+          "maximum_orientation_error_deg": 8.822732075669
+        },
+        "yaw_negative": {
+          "maximum_xy_error_mm": 290.9149354463051,
+          "maximum_orientation_error_deg": 8.819250912568606
+        }
+      }
+    }
+  ],
+  "native_navigation_reexecuted": false,
+  "hardware_calibrated": false,
+  "outcome": "Full assigned population retained; accepted-prefix accuracy and tracking survival are distinct outcomes."
+}

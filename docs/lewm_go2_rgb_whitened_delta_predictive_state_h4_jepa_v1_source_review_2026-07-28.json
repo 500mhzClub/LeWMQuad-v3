@@ -1,0 +1,147 @@
+{
+  "schema": "lewm_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1_source_review_v1",
+  "status": "PASS_SOURCE_SCIENCE_CLOSURE_AND_CUSTODY_RESOLVED_FINDINGS",
+  "frozen_source_commit": {
+    "commit": "bc889a3fb6f7cf29ea6b2b2c6b45ddd4b4d83a12",
+    "parent": "05bba5f8c56a35fe22ef99b014700087925334c6",
+    "author": "500mhzClub",
+    "committed_at": "2026-07-28T03:01:11+01:00",
+    "subject": "add whitened-delta predictive-state H4 JEPA probe"
+  },
+  "review_scope": {
+    "reviewers": [
+      "/root/wdps_source_review",
+      "/root/trajectory_test_plan"
+    ],
+    "frozen_source_and_synthetic_evidence_only": true,
+    "generated_index_rgb_checkpoint_runtime_receipt_or_tensor_access_count": 0,
+    "heldout_sealed_navigation_or_protected_access_count": 0,
+    "predecessor_checkpoint_trace_or_tensor_access_count": 0
+  },
+  "resolved_findings": [
+    {
+      "finding": "uncentered state means could inflate raw target energy and create a false pass",
+      "resolution": "added the registered 25-weight predicted/target mean penalty, maximum-absolute-mean and mean-energy-fraction receipts, eligibility bounds of 0.25, and a high-DC rejection test"
+    },
+    {
+      "finding": "the initial target value projection was too small to reach the registered variance floor inside 1000 updates",
+      "resolution": "used orthonormal bias-free value rows and a fixed sqrt(256) spatial-averaging compensation; exact zero preservation remains algebraic and is tested"
+    },
+    {
+      "finding": "fixed-teacher receipts incorrectly described the teacher as history-only",
+      "resolution": "all science and artifact wording now records the fixed N320 module as the target-and-history teacher"
+    },
+    {
+      "finding": "the wrapper model source identity became stale after the corrections",
+      "resolution": "the wrapper now binds model SHA-256 2d69d0bb0a31e2e95ffb29723a0bc559c425b10b381708a8cf985e36d19e1b5d and 18567 bytes; the complete focused suite passes"
+    }
+  ],
+  "remaining_findings": [],
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1_preregistration_2026-07-28.md",
+      "file_sha256": "a5b6f2802f2853c40da476269354087a11b8638f6e7b3366e313bdd34410e555",
+      "byte_count": 9482
+    },
+    {
+      "path": "lewm/models/go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "2d69d0bb0a31e2e95ffb29723a0bc559c425b10b381708a8cf985e36d19e1b5d",
+      "byte_count": 18567
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "b9fd666349f3099c849acae6ccdf317d665504850885e1548cb8531d7d3669ae",
+      "byte_count": 8933
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "c8a45910cadccd152d15a72fb4ce982d770296e0f03d6b2d99c91157d82822f5",
+      "byte_count": 10524
+    },
+    {
+      "path": "scripts/run_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "00ccb04b0541a597b4a9b73e55c4c9cf6daa40d1ea07728a058afe2473397746",
+      "byte_count": 38611
+    }
+  ],
+  "runtime_source_closure": [
+    {
+      "path": "scripts/run_go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "00ccb04b0541a597b4a9b73e55c4c9cf6daa40d1ea07728a058afe2473397746",
+      "byte_count": 38611
+    },
+    {
+      "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+      "file_sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc",
+      "byte_count": 70301
+    },
+    {
+      "path": "lewm/models/go2_rgb_whitened_delta_predictive_state_h4_jepa_v1.py",
+      "file_sha256": "2d69d0bb0a31e2e95ffb29723a0bc559c425b10b381708a8cf985e36d19e1b5d",
+      "byte_count": 18567
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "file_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "byte_count": 23712
+    },
+    {
+      "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+      "file_sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55",
+      "byte_count": 21166
+    },
+    {
+      "path": "lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    }
+  ],
+  "scientific_checks": {
+    "genuine_joint_perception_only_jepa": true,
+    "online_encoder_history_action_predictor_and_target_pool_share_one_backward": true,
+    "fixed_target_and_history_teacher_frozen_outside_optimizer_zero_ema": true,
+    "future_rgb_absent_from_online_path": true,
+    "target_pool_shared_across_horizons_and_has_no_action_history_or_horizon_input": true,
+    "target_pool_exactly_zero_preserving": true,
+    "variance_mean_and_covariance_computed_per_horizon_across_batch_only": true,
+    "controls_absent_from_training_loss": true,
+    "scene_metrics_use_ratio_of_summed_numerators_and_denominators": true,
+    "selection_requires_noncollapsed_bounded_zero_mean_state": true,
+    "schedule": {
+      "seed": 20260727,
+      "batch_size": 16,
+      "updates": 1000,
+      "presentations": 16000,
+      "observation_updates": [0, 250, 500, 750, 1000],
+      "retry_or_resume": false
+    }
+  },
+  "verification": {
+    "focused_source_suite": "15_passed_in_4.00_seconds",
+    "focused_plus_predecessor_regression_suite": "51_passed_in_4.12_seconds",
+    "python_compile": "PASS",
+    "git_diff_check": "PASS",
+    "b16_production_shape_synthetic_gpu_smoke": {
+      "runtime": "torch_2.9.1+rocm6.4_hip_6.4.43484-123eb5128",
+      "device": "AMD Radeon AI PRO R9700",
+      "target_shape": [16, 4, 8],
+      "target_std_min": 0.3589545488357544,
+      "target_std_max": 0.7368647456169128,
+      "target_rms": 0.5408183336257935,
+      "exact_persistence_max_abs": 0.0,
+      "teacher_gradient_tensor_count": 0,
+      "trainable_gradient_tensor_count": 154,
+      "total_loss": 22.601709365844727,
+      "forward_backward_seconds": 0.48170898301759735,
+      "peak_allocated_gib": 2.2484025955200195,
+      "peak_reserved_gib": 2.48046875,
+      "presentations_optimizer_steps_or_artifact_writes": 0
+    }
+  },
+  "authority": {
+    "source_review_complete": true,
+    "execution_training_gpu_or_rgb_authorized_by_this_receipt": false,
+    "checkpoint_or_tensor_access_authorized": false,
+    "navigation_heldout_sealed_promotion_or_deployment_authorized": false
+  }
+}

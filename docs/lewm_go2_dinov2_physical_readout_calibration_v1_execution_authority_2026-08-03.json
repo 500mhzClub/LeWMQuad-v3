@@ -1,0 +1,135 @@
+{
+  "schema": "lewm_go2_dinov2_physical_readout_calibration_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_EXACT_EVAL_RGB_CALIBRATION_ATTEMPT",
+  "citable_as_scientific_evidence": false,
+  "authorizes_collection": false,
+  "authorizes_eval_rgb_access": true,
+  "authorizes_model_training": false,
+  "authorizes_retry_or_resume": false,
+  "authorizes_train_rgb_access": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_preregistration_2026-08-03.md",
+    "sha256": "ff6e42042792ffc66c51ac9e6fd31d9da194cb22c5526edfd1ce3cfe22db55ee",
+    "byte_count": 10285
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_source_review_2026-08-03.json",
+    "sha256": "2e0305154674da1f39a621d4ac90e58652721403dde7e0cb1d782b8f79944174",
+    "byte_count": 6927
+  },
+  "source_bindings": {
+    "action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "counterfactual_benchmark_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "calibration_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "calibration_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "6bed825d428c1b0faa44eb159bb86af70e309f14efc87d1c9d7b165fa723ccb5",
+      "byte_count": 17058
+    },
+    "predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "90ff45cf5afecc442e075fa96b8957d7646cf181ccb644365711be8c23a397f7",
+      "byte_count": 36333
+    },
+    "runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "00e24b9d6b5782622be1f83d0e4ee233a859d9048d67e4ad7b49eb1d32fa5d23",
+      "byte_count": 13313
+    },
+    "screen_data": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    }
+  },
+  "input_bindings": {
+    "posthoc_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json",
+      "sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+      "byte_count": 11964
+    },
+    "posthoc_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json",
+      "sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+      "byte_count": 1250
+    },
+    "posthoc_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json",
+      "sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+      "byte_count": 2844
+    },
+    "train_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.pt",
+      "sha256": "164f1fef8c859976c93f7fc978e938c6c8f7f9963cf92bb154f51b23d158b34b",
+      "byte_count": 302107682
+    },
+    "train_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.json",
+      "sha256": "e94ec5d188811c44d4cc870e76d1888aa6f30ee6d423557ee9f3e2918a700994",
+      "byte_count": 1770
+    }
+  },
+  "encoder_source": {
+    "repo_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "repo_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "checkpoint_binding": {
+      "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+      "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+      "byte_count": 88283115
+    }
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v1",
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.14.0.dev20260726+rocm7.1",
+    "hip": "7.1.52802",
+    "numpy": "1.26.4",
+    "pillow": "10.2.0"
+  },
+  "config": {
+    "eval_artifact_count": 1536,
+    "eval_batch_size": 32,
+    "eval_state_count": 128,
+    "feature_shape": [
+      1536,
+      256,
+      384
+    ],
+    "replay_count": 1,
+    "train_artifact_count": 1536,
+    "train_state_count": 128
+  },
+  "git_commit": "5ebff4a4488e7b4369f153769390390cd650e945"
+}

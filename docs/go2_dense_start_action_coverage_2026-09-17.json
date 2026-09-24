@@ -1,0 +1,2349 @@
+{
+  "status": "COMPLETE",
+  "samples_sha256": "5db33da1035058a726d7e7d9ddd7a89542b4a7034271463e9f621794ff805061",
+  "normalization_sha256": "9380b4c6d9b59099e43bba9898e1417c273f88075d1ed122401cbb3272e18f94",
+  "total_samples": 3518,
+  "quiet_history_samples": 594,
+  "quiet_to_moving": 70,
+  "quiet_to_hold": 524,
+  "actions": [
+    {
+      "action": "hold",
+      "applied_tape": [
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0
+        ]
+      ],
+      "count": 524,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 175
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090941,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090941,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090941,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090941,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 175
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 29
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/family/family_episode_013/offset_07",
+        "all_phase_train/family/family_episode_013/offset_08",
+        "all_phase_train/family/family_episode_013/offset_09",
+        "all_phase_train/family/family_episode_013/offset_10",
+        "all_phase_train/family/family_episode_013/offset_11",
+        "all_phase_train/family/family_episode_013/offset_12",
+        "all_phase_train/family/family_episode_013/offset_13",
+        "all_phase_train/family/family_episode_013/offset_14",
+        "all_phase_train/family/family_episode_013/offset_15",
+        "all_phase_train/family/family_episode_013/offset_16",
+        "all_phase_train/family/family_episode_013/offset_17",
+        "all_phase_train/family/family_episode_013/offset_18",
+        "all_phase_train/family/family_episode_013/offset_19",
+        "all_phase_train/family/family_episode_013/offset_20",
+        "all_phase_train/family/family_episode_013/offset_21",
+        "all_phase_train/family/family_episode_013/offset_22",
+        "all_phase_train/family/family_episode_013/offset_23",
+        "all_phase_train/family/family_episode_013/offset_24",
+        "all_phase_train/family/family_episode_013/offset_25",
+        "all_phase_train/family/family_episode_013/offset_26",
+        "all_phase_train/family/family_episode_013/offset_27",
+        "all_phase_train/family/family_episode_013/offset_28",
+        "all_phase_train/family/family_episode_013/offset_29",
+        "all_phase_train/family/family_episode_013/offset_30",
+        "all_phase_train/family/family_episode_013/offset_31",
+        "all_phase_train/family/family_episode_013/offset_32",
+        "all_phase_train/family/family_episode_013/offset_33",
+        "all_phase_train/family/family_episode_013/offset_34",
+        "all_phase_train/family/family_episode_013/offset_35",
+        "all_phase_train/family/family_episode_018/offset_07",
+        "all_phase_train/family/family_episode_018/offset_08",
+        "all_phase_train/family/family_episode_018/offset_09",
+        "all_phase_train/family/family_episode_018/offset_10",
+        "all_phase_train/family/family_episode_018/offset_11",
+        "all_phase_train/family/family_episode_018/offset_12",
+        "all_phase_train/family/family_episode_018/offset_13",
+        "all_phase_train/family/family_episode_018/offset_14",
+        "all_phase_train/family/family_episode_018/offset_15",
+        "all_phase_train/family/family_episode_018/offset_16",
+        "all_phase_train/family/family_episode_018/offset_17",
+        "all_phase_train/family/family_episode_018/offset_18",
+        "all_phase_train/family/family_episode_018/offset_19",
+        "all_phase_train/family/family_episode_018/offset_20",
+        "all_phase_train/family/family_episode_018/offset_21",
+        "all_phase_train/family/family_episode_018/offset_22",
+        "all_phase_train/family/family_episode_018/offset_23",
+        "all_phase_train/family/family_episode_018/offset_24",
+        "all_phase_train/family/family_episode_018/offset_25",
+        "all_phase_train/family/family_episode_018/offset_26",
+        "all_phase_train/family/family_episode_018/offset_27",
+        "all_phase_train/family/family_episode_018/offset_28",
+        "all_phase_train/family/family_episode_018/offset_29",
+        "all_phase_train/family/family_episode_018/offset_30",
+        "all_phase_train/family/family_episode_018/offset_31",
+        "all_phase_train/family/family_episode_018/offset_32",
+        "all_phase_train/family/family_episode_018/offset_33",
+        "all_phase_train/family/family_episode_018/offset_34",
+        "all_phase_train/family/family_episode_018/offset_35",
+        "all_phase_train/family/family_episode_033/offset_07",
+        "all_phase_train/family/family_episode_033/offset_08",
+        "all_phase_train/family/family_episode_033/offset_09",
+        "all_phase_train/family/family_episode_033/offset_10",
+        "all_phase_train/family/family_episode_033/offset_11",
+        "all_phase_train/family/family_episode_033/offset_12",
+        "all_phase_train/family/family_episode_033/offset_13",
+        "all_phase_train/family/family_episode_033/offset_14",
+        "all_phase_train/family/family_episode_033/offset_15",
+        "all_phase_train/family/family_episode_033/offset_16",
+        "all_phase_train/family/family_episode_033/offset_17",
+        "all_phase_train/family/family_episode_033/offset_18",
+        "all_phase_train/family/family_episode_033/offset_19",
+        "all_phase_train/family/family_episode_033/offset_20",
+        "all_phase_train/family/family_episode_033/offset_21",
+        "all_phase_train/family/family_episode_033/offset_22",
+        "all_phase_train/family/family_episode_033/offset_23",
+        "all_phase_train/family/family_episode_033/offset_24",
+        "all_phase_train/family/family_episode_033/offset_25",
+        "all_phase_train/family/family_episode_033/offset_26",
+        "all_phase_train/family/family_episode_033/offset_27",
+        "all_phase_train/family/family_episode_033/offset_28",
+        "all_phase_train/family/family_episode_033/offset_29",
+        "all_phase_train/family/family_episode_033/offset_30",
+        "all_phase_train/family/family_episode_033/offset_31",
+        "all_phase_train/family/family_episode_033/offset_32",
+        "all_phase_train/family/family_episode_033/offset_33",
+        "all_phase_train/family/family_episode_033/offset_34",
+        "all_phase_train/family/family_episode_033/offset_35",
+        "all_phase_train/family/family_episode_050/offset_07",
+        "all_phase_train/family/family_episode_050/offset_08",
+        "all_phase_train/family/family_episode_050/offset_09",
+        "all_phase_train/family/family_episode_050/offset_10",
+        "all_phase_train/family/family_episode_050/offset_11",
+        "all_phase_train/family/family_episode_050/offset_12",
+        "all_phase_train/family/family_episode_050/offset_13",
+        "all_phase_train/family/family_episode_050/offset_14",
+        "all_phase_train/family/family_episode_050/offset_15",
+        "all_phase_train/family/family_episode_050/offset_16",
+        "all_phase_train/family/family_episode_050/offset_17",
+        "all_phase_train/family/family_episode_050/offset_18",
+        "all_phase_train/family/family_episode_050/offset_19",
+        "all_phase_train/family/family_episode_050/offset_20",
+        "all_phase_train/family/family_episode_050/offset_21",
+        "all_phase_train/family/family_episode_050/offset_22",
+        "all_phase_train/family/family_episode_050/offset_23",
+        "all_phase_train/family/family_episode_050/offset_24",
+        "all_phase_train/family/family_episode_050/offset_25",
+        "all_phase_train/family/family_episode_050/offset_26",
+        "all_phase_train/family/family_episode_050/offset_27",
+        "all_phase_train/family/family_episode_050/offset_28",
+        "all_phase_train/family/family_episode_050/offset_29",
+        "all_phase_train/family/family_episode_050/offset_30",
+        "all_phase_train/family/family_episode_050/offset_31",
+        "all_phase_train/family/family_episode_050/offset_32",
+        "all_phase_train/family/family_episode_050/offset_33",
+        "all_phase_train/family/family_episode_050/offset_34",
+        "all_phase_train/family/family_episode_050/offset_35",
+        "all_phase_train/family/family_episode_061/offset_07",
+        "all_phase_train/family/family_episode_061/offset_08",
+        "all_phase_train/family/family_episode_061/offset_09",
+        "all_phase_train/family/family_episode_061/offset_10",
+        "all_phase_train/family/family_episode_061/offset_11",
+        "all_phase_train/family/family_episode_061/offset_12",
+        "all_phase_train/family/family_episode_061/offset_13",
+        "all_phase_train/family/family_episode_061/offset_14",
+        "all_phase_train/family/family_episode_061/offset_15",
+        "all_phase_train/family/family_episode_061/offset_16",
+        "all_phase_train/family/family_episode_061/offset_17",
+        "all_phase_train/family/family_episode_061/offset_18",
+        "all_phase_train/family/family_episode_061/offset_19",
+        "all_phase_train/family/family_episode_061/offset_20",
+        "all_phase_train/family/family_episode_061/offset_21",
+        "all_phase_train/family/family_episode_061/offset_22",
+        "all_phase_train/family/family_episode_061/offset_23",
+        "all_phase_train/family/family_episode_061/offset_24",
+        "all_phase_train/family/family_episode_061/offset_25",
+        "all_phase_train/family/family_episode_061/offset_26",
+        "all_phase_train/family/family_episode_061/offset_27",
+        "all_phase_train/family/family_episode_061/offset_28",
+        "all_phase_train/family/family_episode_061/offset_29",
+        "all_phase_train/family/family_episode_061/offset_30",
+        "all_phase_train/family/family_episode_061/offset_31",
+        "all_phase_train/family/family_episode_061/offset_32",
+        "all_phase_train/family/family_episode_061/offset_33",
+        "all_phase_train/family/family_episode_061/offset_34",
+        "all_phase_train/family/family_episode_061/offset_35",
+        "all_phase_train/family/family_episode_078/offset_07",
+        "all_phase_train/family/family_episode_078/offset_08",
+        "all_phase_train/family/family_episode_078/offset_09",
+        "all_phase_train/family/family_episode_078/offset_10",
+        "all_phase_train/family/family_episode_078/offset_11",
+        "all_phase_train/family/family_episode_078/offset_12",
+        "all_phase_train/family/family_episode_078/offset_13",
+        "all_phase_train/family/family_episode_078/offset_14",
+        "all_phase_train/family/family_episode_078/offset_15",
+        "all_phase_train/family/family_episode_078/offset_16",
+        "all_phase_train/family/family_episode_078/offset_17",
+        "all_phase_train/family/family_episode_078/offset_18",
+        "all_phase_train/family/family_episode_078/offset_19",
+        "all_phase_train/family/family_episode_078/offset_20",
+        "all_phase_train/family/family_episode_078/offset_21",
+        "all_phase_train/family/family_episode_078/offset_22",
+        "all_phase_train/family/family_episode_078/offset_23",
+        "all_phase_train/family/family_episode_078/offset_24",
+        "all_phase_train/family/family_episode_078/offset_25",
+        "all_phase_train/family/family_episode_078/offset_26",
+        "all_phase_train/family/family_episode_078/offset_27",
+        "all_phase_train/family/family_episode_078/offset_28",
+        "all_phase_train/family/family_episode_078/offset_29",
+        "all_phase_train/family/family_episode_078/offset_30",
+        "all_phase_train/family/family_episode_078/offset_31",
+        "all_phase_train/family/family_episode_078/offset_32",
+        "all_phase_train/family/family_episode_078/offset_33",
+        "all_phase_train/family/family_episode_078/offset_34",
+        "all_phase_train/family/family_episode_078/offset_35",
+        "all_phase_train/family/family_episode_083/offset_07",
+        "all_phase_train/family/family_episode_083/offset_08",
+        "all_phase_train/family/family_episode_083/offset_09",
+        "all_phase_train/family/family_episode_083/offset_10",
+        "all_phase_train/family/family_episode_083/offset_11",
+        "all_phase_train/family/family_episode_083/offset_12",
+        "all_phase_train/family/family_episode_083/offset_13",
+        "all_phase_train/family/family_episode_083/offset_14",
+        "all_phase_train/family/family_episode_083/offset_15",
+        "all_phase_train/family/family_episode_083/offset_16",
+        "all_phase_train/family/family_episode_083/offset_17",
+        "all_phase_train/family/family_episode_083/offset_18",
+        "all_phase_train/family/family_episode_083/offset_19",
+        "all_phase_train/family/family_episode_083/offset_20",
+        "all_phase_train/family/family_episode_083/offset_21",
+        "all_phase_train/family/family_episode_083/offset_22",
+        "all_phase_train/family/family_episode_083/offset_23",
+        "all_phase_train/family/family_episode_083/offset_24",
+        "all_phase_train/family/family_episode_083/offset_25",
+        "all_phase_train/family/family_episode_083/offset_26",
+        "all_phase_train/family/family_episode_083/offset_27",
+        "all_phase_train/family/family_episode_083/offset_28",
+        "all_phase_train/family/family_episode_083/offset_29",
+        "all_phase_train/family/family_episode_083/offset_30",
+        "all_phase_train/family/family_episode_083/offset_31",
+        "all_phase_train/family/family_episode_083/offset_32",
+        "all_phase_train/family/family_episode_083/offset_33",
+        "all_phase_train/family/family_episode_083/offset_34",
+        "all_phase_train/family/family_episode_083/offset_35",
+        "all_phase_train/family/family_episode_090/offset_07",
+        "all_phase_train/family/family_episode_090/offset_08",
+        "all_phase_train/family/family_episode_090/offset_09",
+        "all_phase_train/family/family_episode_090/offset_10",
+        "all_phase_train/family/family_episode_090/offset_11",
+        "all_phase_train/family/family_episode_090/offset_12",
+        "all_phase_train/family/family_episode_090/offset_13",
+        "all_phase_train/family/family_episode_090/offset_14",
+        "all_phase_train/family/family_episode_090/offset_15",
+        "all_phase_train/family/family_episode_090/offset_16",
+        "all_phase_train/family/family_episode_090/offset_17",
+        "all_phase_train/family/family_episode_090/offset_18",
+        "all_phase_train/family/family_episode_090/offset_19",
+        "all_phase_train/family/family_episode_090/offset_20",
+        "all_phase_train/family/family_episode_090/offset_21",
+        "all_phase_train/family/family_episode_090/offset_22",
+        "all_phase_train/family/family_episode_090/offset_23",
+        "all_phase_train/family/family_episode_090/offset_24",
+        "all_phase_train/family/family_episode_090/offset_25",
+        "all_phase_train/family/family_episode_090/offset_26",
+        "all_phase_train/family/family_episode_090/offset_27",
+        "all_phase_train/family/family_episode_090/offset_28",
+        "all_phase_train/family/family_episode_090/offset_29",
+        "all_phase_train/family/family_episode_090/offset_30",
+        "all_phase_train/family/family_episode_090/offset_31",
+        "all_phase_train/family/family_episode_090/offset_32",
+        "all_phase_train/family/family_episode_090/offset_33",
+        "all_phase_train/family/family_episode_090/offset_34",
+        "all_phase_train/family/family_episode_090/offset_35",
+        "short_pulse/pulse_episode_006/frame_10",
+        "short_pulse/pulse_episode_006/frame_11",
+        "short_pulse/pulse_episode_013/frame_10",
+        "short_pulse/pulse_episode_013/frame_11",
+        "short_pulse/pulse_episode_018/frame_10",
+        "short_pulse/pulse_episode_018/frame_11",
+        "short_pulse/pulse_episode_023/frame_10",
+        "short_pulse/pulse_episode_023/frame_11",
+        "short_pulse/pulse_episode_025/frame_10",
+        "short_pulse/pulse_episode_025/frame_11",
+        "short_pulse/pulse_episode_026/frame_10",
+        "short_pulse/pulse_episode_026/frame_11",
+        "pre_switch_train/switch_episode_002/frame_10",
+        "pre_switch_train/switch_episode_002/frame_11",
+        "pre_switch_train/switch_episode_002/frame_12",
+        "all_phase_train/switch/switch_episode_002/offset_00",
+        "all_phase_train/switch/switch_episode_002/offset_01",
+        "all_phase_train/switch/switch_episode_002/offset_02",
+        "all_phase_train/switch/switch_episode_002/offset_03",
+        "all_phase_train/switch/switch_episode_002/offset_04",
+        "all_phase_train/switch/switch_episode_002/offset_05",
+        "all_phase_train/switch/switch_episode_002/offset_06",
+        "all_phase_train/switch/switch_episode_002/offset_07",
+        "all_phase_train/switch/switch_episode_002/offset_08",
+        "all_phase_train/switch/switch_episode_002/offset_09",
+        "all_phase_train/switch/switch_episode_002/offset_10",
+        "all_phase_train/switch/switch_episode_002/offset_11",
+        "all_phase_train/switch/switch_episode_002/offset_12",
+        "all_phase_train/switch/switch_episode_002/offset_13",
+        "all_phase_train/switch/switch_episode_002/offset_14",
+        "all_phase_train/switch/switch_episode_002/offset_15",
+        "all_phase_train/switch/switch_episode_002/offset_16",
+        "all_phase_train/switch/switch_episode_002/offset_17",
+        "all_phase_train/switch/switch_episode_002/offset_18",
+        "all_phase_train/switch/switch_episode_002/offset_19",
+        "all_phase_train/switch/switch_episode_002/offset_20",
+        "all_phase_train/switch/switch_episode_002/offset_21",
+        "all_phase_train/switch/switch_episode_002/offset_22",
+        "all_phase_train/switch/switch_episode_002/offset_23",
+        "all_phase_train/switch/switch_episode_002/offset_24",
+        "all_phase_train/switch/switch_episode_002/offset_25",
+        "all_phase_train/switch/switch_episode_002/offset_26",
+        "all_phase_train/switch/switch_episode_002/offset_27",
+        "all_phase_train/switch/switch_episode_002/offset_28",
+        "all_phase_train/switch/switch_episode_002/offset_29",
+        "all_phase_train/switch/switch_episode_002/offset_30",
+        "all_phase_train/switch/switch_episode_002/offset_31",
+        "all_phase_train/switch/switch_episode_002/offset_32",
+        "all_phase_train/switch/switch_episode_002/offset_33",
+        "all_phase_train/switch/switch_episode_002/offset_34",
+        "all_phase_train/switch/switch_episode_002/offset_35",
+        "all_phase_train/switch/switch_episode_015/offset_16",
+        "all_phase_train/switch/switch_episode_015/offset_17",
+        "all_phase_train/switch/switch_episode_015/offset_18",
+        "all_phase_train/switch/switch_episode_015/offset_19",
+        "all_phase_train/switch/switch_episode_015/offset_20",
+        "all_phase_train/switch/switch_episode_015/offset_21",
+        "all_phase_train/switch/switch_episode_015/offset_22",
+        "all_phase_train/switch/switch_episode_015/offset_23",
+        "all_phase_train/switch/switch_episode_015/offset_24",
+        "all_phase_train/switch/switch_episode_015/offset_25",
+        "all_phase_train/switch/switch_episode_015/offset_26",
+        "all_phase_train/switch/switch_episode_015/offset_27",
+        "all_phase_train/switch/switch_episode_015/offset_28",
+        "all_phase_train/switch/switch_episode_015/offset_29",
+        "all_phase_train/switch/switch_episode_015/offset_30",
+        "all_phase_train/switch/switch_episode_015/offset_31",
+        "all_phase_train/switch/switch_episode_015/offset_32",
+        "all_phase_train/switch/switch_episode_015/offset_33",
+        "all_phase_train/switch/switch_episode_015/offset_34",
+        "all_phase_train/switch/switch_episode_015/offset_35",
+        "all_phase_train/switch/switch_episode_021/offset_16",
+        "all_phase_train/switch/switch_episode_021/offset_17",
+        "all_phase_train/switch/switch_episode_021/offset_18",
+        "all_phase_train/switch/switch_episode_021/offset_19",
+        "all_phase_train/switch/switch_episode_021/offset_20",
+        "all_phase_train/switch/switch_episode_021/offset_21",
+        "all_phase_train/switch/switch_episode_021/offset_22",
+        "all_phase_train/switch/switch_episode_021/offset_23",
+        "all_phase_train/switch/switch_episode_021/offset_24",
+        "all_phase_train/switch/switch_episode_021/offset_25",
+        "all_phase_train/switch/switch_episode_021/offset_26",
+        "all_phase_train/switch/switch_episode_021/offset_27",
+        "all_phase_train/switch/switch_episode_021/offset_28",
+        "all_phase_train/switch/switch_episode_021/offset_29",
+        "all_phase_train/switch/switch_episode_021/offset_30",
+        "all_phase_train/switch/switch_episode_021/offset_31",
+        "all_phase_train/switch/switch_episode_021/offset_32",
+        "all_phase_train/switch/switch_episode_021/offset_33",
+        "all_phase_train/switch/switch_episode_021/offset_34",
+        "all_phase_train/switch/switch_episode_021/offset_35",
+        "all_phase_train/switch/switch_episode_041/offset_16",
+        "all_phase_train/switch/switch_episode_041/offset_17",
+        "all_phase_train/switch/switch_episode_041/offset_18",
+        "all_phase_train/switch/switch_episode_041/offset_19",
+        "all_phase_train/switch/switch_episode_041/offset_20",
+        "all_phase_train/switch/switch_episode_041/offset_21",
+        "all_phase_train/switch/switch_episode_041/offset_22",
+        "all_phase_train/switch/switch_episode_041/offset_23",
+        "all_phase_train/switch/switch_episode_041/offset_24",
+        "all_phase_train/switch/switch_episode_041/offset_25",
+        "all_phase_train/switch/switch_episode_041/offset_26",
+        "all_phase_train/switch/switch_episode_041/offset_27",
+        "all_phase_train/switch/switch_episode_041/offset_28",
+        "all_phase_train/switch/switch_episode_041/offset_29",
+        "all_phase_train/switch/switch_episode_041/offset_30",
+        "all_phase_train/switch/switch_episode_041/offset_31",
+        "all_phase_train/switch/switch_episode_041/offset_32",
+        "all_phase_train/switch/switch_episode_041/offset_33",
+        "all_phase_train/switch/switch_episode_041/offset_34",
+        "all_phase_train/switch/switch_episode_041/offset_35",
+        "pre_switch_train/switch_episode_050/frame_10",
+        "pre_switch_train/switch_episode_050/frame_11",
+        "pre_switch_train/switch_episode_050/frame_12",
+        "all_phase_train/switch/switch_episode_050/offset_00",
+        "all_phase_train/switch/switch_episode_050/offset_01",
+        "all_phase_train/switch/switch_episode_050/offset_02",
+        "all_phase_train/switch/switch_episode_050/offset_03",
+        "all_phase_train/switch/switch_episode_050/offset_04",
+        "all_phase_train/switch/switch_episode_050/offset_05",
+        "all_phase_train/switch/switch_episode_050/offset_06",
+        "all_phase_train/switch/switch_episode_050/offset_07",
+        "all_phase_train/switch/switch_episode_050/offset_08",
+        "all_phase_train/switch/switch_episode_050/offset_09",
+        "all_phase_train/switch/switch_episode_050/offset_10",
+        "all_phase_train/switch/switch_episode_050/offset_11",
+        "all_phase_train/switch/switch_episode_050/offset_12",
+        "all_phase_train/switch/switch_episode_050/offset_13",
+        "all_phase_train/switch/switch_episode_050/offset_14",
+        "all_phase_train/switch/switch_episode_050/offset_15",
+        "all_phase_train/switch/switch_episode_050/offset_16",
+        "all_phase_train/switch/switch_episode_050/offset_17",
+        "all_phase_train/switch/switch_episode_050/offset_18",
+        "all_phase_train/switch/switch_episode_050/offset_19",
+        "all_phase_train/switch/switch_episode_050/offset_20",
+        "all_phase_train/switch/switch_episode_050/offset_21",
+        "all_phase_train/switch/switch_episode_050/offset_22",
+        "all_phase_train/switch/switch_episode_050/offset_23",
+        "all_phase_train/switch/switch_episode_050/offset_24",
+        "all_phase_train/switch/switch_episode_050/offset_25",
+        "all_phase_train/switch/switch_episode_050/offset_26",
+        "all_phase_train/switch/switch_episode_050/offset_27",
+        "all_phase_train/switch/switch_episode_050/offset_28",
+        "all_phase_train/switch/switch_episode_050/offset_29",
+        "all_phase_train/switch/switch_episode_050/offset_30",
+        "all_phase_train/switch/switch_episode_050/offset_31",
+        "all_phase_train/switch/switch_episode_050/offset_32",
+        "all_phase_train/switch/switch_episode_050/offset_33",
+        "all_phase_train/switch/switch_episode_050/offset_34",
+        "all_phase_train/switch/switch_episode_050/offset_35",
+        "all_phase_train/switch/switch_episode_062/offset_15",
+        "all_phase_train/switch/switch_episode_062/offset_16",
+        "all_phase_train/switch/switch_episode_062/offset_17",
+        "all_phase_train/switch/switch_episode_062/offset_18",
+        "all_phase_train/switch/switch_episode_062/offset_19",
+        "all_phase_train/switch/switch_episode_062/offset_20",
+        "all_phase_train/switch/switch_episode_062/offset_21",
+        "all_phase_train/switch/switch_episode_062/offset_22",
+        "all_phase_train/switch/switch_episode_062/offset_23",
+        "all_phase_train/switch/switch_episode_062/offset_24",
+        "all_phase_train/switch/switch_episode_062/offset_25",
+        "all_phase_train/switch/switch_episode_062/offset_26",
+        "all_phase_train/switch/switch_episode_062/offset_27",
+        "all_phase_train/switch/switch_episode_062/offset_28",
+        "all_phase_train/switch/switch_episode_062/offset_29",
+        "all_phase_train/switch/switch_episode_062/offset_30",
+        "all_phase_train/switch/switch_episode_062/offset_31",
+        "all_phase_train/switch/switch_episode_062/offset_32",
+        "all_phase_train/switch/switch_episode_062/offset_33",
+        "all_phase_train/switch/switch_episode_062/offset_34",
+        "all_phase_train/switch/switch_episode_062/offset_35",
+        "all_phase_train/switch/switch_episode_066/offset_16",
+        "all_phase_train/switch/switch_episode_066/offset_17",
+        "all_phase_train/switch/switch_episode_066/offset_18",
+        "all_phase_train/switch/switch_episode_066/offset_19",
+        "all_phase_train/switch/switch_episode_066/offset_20",
+        "all_phase_train/switch/switch_episode_066/offset_21",
+        "all_phase_train/switch/switch_episode_066/offset_22",
+        "all_phase_train/switch/switch_episode_066/offset_23",
+        "all_phase_train/switch/switch_episode_066/offset_24",
+        "all_phase_train/switch/switch_episode_066/offset_25",
+        "all_phase_train/switch/switch_episode_066/offset_26",
+        "all_phase_train/switch/switch_episode_066/offset_27",
+        "all_phase_train/switch/switch_episode_066/offset_28",
+        "all_phase_train/switch/switch_episode_066/offset_29",
+        "all_phase_train/switch/switch_episode_066/offset_30",
+        "all_phase_train/switch/switch_episode_066/offset_31",
+        "all_phase_train/switch/switch_episode_066/offset_32",
+        "all_phase_train/switch/switch_episode_066/offset_33",
+        "all_phase_train/switch/switch_episode_066/offset_34",
+        "all_phase_train/switch/switch_episode_066/offset_35",
+        "all_phase_train/switch/switch_episode_067/offset_15",
+        "all_phase_train/switch/switch_episode_067/offset_16",
+        "all_phase_train/switch/switch_episode_067/offset_17",
+        "all_phase_train/switch/switch_episode_067/offset_18",
+        "all_phase_train/switch/switch_episode_067/offset_19",
+        "all_phase_train/switch/switch_episode_067/offset_20",
+        "all_phase_train/switch/switch_episode_067/offset_21",
+        "all_phase_train/switch/switch_episode_067/offset_22",
+        "all_phase_train/switch/switch_episode_067/offset_23",
+        "all_phase_train/switch/switch_episode_067/offset_24",
+        "all_phase_train/switch/switch_episode_067/offset_25",
+        "all_phase_train/switch/switch_episode_067/offset_26",
+        "all_phase_train/switch/switch_episode_067/offset_27",
+        "all_phase_train/switch/switch_episode_067/offset_28",
+        "all_phase_train/switch/switch_episode_067/offset_29",
+        "all_phase_train/switch/switch_episode_067/offset_30",
+        "all_phase_train/switch/switch_episode_067/offset_31",
+        "all_phase_train/switch/switch_episode_067/offset_32",
+        "all_phase_train/switch/switch_episode_067/offset_33",
+        "all_phase_train/switch/switch_episode_067/offset_34",
+        "all_phase_train/switch/switch_episode_067/offset_35",
+        "all_phase_train/switch/switch_episode_081/offset_16",
+        "all_phase_train/switch/switch_episode_081/offset_17",
+        "all_phase_train/switch/switch_episode_081/offset_18",
+        "all_phase_train/switch/switch_episode_081/offset_19",
+        "all_phase_train/switch/switch_episode_081/offset_20",
+        "all_phase_train/switch/switch_episode_081/offset_21",
+        "all_phase_train/switch/switch_episode_081/offset_22",
+        "all_phase_train/switch/switch_episode_081/offset_23",
+        "all_phase_train/switch/switch_episode_081/offset_24",
+        "all_phase_train/switch/switch_episode_081/offset_25",
+        "all_phase_train/switch/switch_episode_081/offset_26",
+        "all_phase_train/switch/switch_episode_081/offset_27",
+        "all_phase_train/switch/switch_episode_081/offset_28",
+        "all_phase_train/switch/switch_episode_081/offset_29",
+        "all_phase_train/switch/switch_episode_081/offset_30",
+        "all_phase_train/switch/switch_episode_081/offset_31",
+        "all_phase_train/switch/switch_episode_081/offset_32",
+        "all_phase_train/switch/switch_episode_081/offset_33",
+        "all_phase_train/switch/switch_episode_081/offset_34",
+        "all_phase_train/switch/switch_episode_081/offset_35",
+        "all_phase_train/switch/switch_episode_097/offset_16",
+        "all_phase_train/switch/switch_episode_097/offset_17",
+        "all_phase_train/switch/switch_episode_097/offset_18",
+        "all_phase_train/switch/switch_episode_097/offset_19",
+        "all_phase_train/switch/switch_episode_097/offset_20",
+        "all_phase_train/switch/switch_episode_097/offset_21",
+        "all_phase_train/switch/switch_episode_097/offset_22",
+        "all_phase_train/switch/switch_episode_097/offset_23",
+        "all_phase_train/switch/switch_episode_097/offset_24",
+        "all_phase_train/switch/switch_episode_097/offset_25",
+        "all_phase_train/switch/switch_episode_097/offset_26",
+        "all_phase_train/switch/switch_episode_097/offset_27",
+        "all_phase_train/switch/switch_episode_097/offset_28",
+        "all_phase_train/switch/switch_episode_097/offset_29",
+        "all_phase_train/switch/switch_episode_097/offset_30",
+        "all_phase_train/switch/switch_episode_097/offset_31",
+        "all_phase_train/switch/switch_episode_097/offset_32",
+        "all_phase_train/switch/switch_episode_097/offset_33",
+        "all_phase_train/switch/switch_episode_097/offset_34",
+        "all_phase_train/switch/switch_episode_097/offset_35",
+        "all_phase_train/switch/switch_episode_110/offset_16",
+        "all_phase_train/switch/switch_episode_110/offset_17",
+        "all_phase_train/switch/switch_episode_110/offset_18",
+        "all_phase_train/switch/switch_episode_110/offset_19",
+        "all_phase_train/switch/switch_episode_110/offset_20",
+        "all_phase_train/switch/switch_episode_110/offset_21",
+        "all_phase_train/switch/switch_episode_110/offset_22",
+        "all_phase_train/switch/switch_episode_110/offset_23",
+        "all_phase_train/switch/switch_episode_110/offset_24",
+        "all_phase_train/switch/switch_episode_110/offset_25",
+        "all_phase_train/switch/switch_episode_110/offset_26",
+        "all_phase_train/switch/switch_episode_110/offset_27",
+        "all_phase_train/switch/switch_episode_110/offset_28",
+        "all_phase_train/switch/switch_episode_110/offset_29",
+        "all_phase_train/switch/switch_episode_110/offset_30",
+        "all_phase_train/switch/switch_episode_110/offset_31",
+        "all_phase_train/switch/switch_episode_110/offset_32",
+        "all_phase_train/switch/switch_episode_110/offset_33",
+        "all_phase_train/switch/switch_episode_110/offset_34",
+        "all_phase_train/switch/switch_episode_110/offset_35",
+        "all_phase_train/switch/switch_episode_143/offset_16",
+        "all_phase_train/switch/switch_episode_143/offset_17",
+        "all_phase_train/switch/switch_episode_143/offset_18",
+        "all_phase_train/switch/switch_episode_143/offset_19",
+        "all_phase_train/switch/switch_episode_143/offset_20",
+        "all_phase_train/switch/switch_episode_143/offset_21",
+        "all_phase_train/switch/switch_episode_143/offset_22",
+        "all_phase_train/switch/switch_episode_143/offset_23",
+        "all_phase_train/switch/switch_episode_143/offset_24",
+        "all_phase_train/switch/switch_episode_143/offset_25",
+        "all_phase_train/switch/switch_episode_143/offset_26",
+        "all_phase_train/switch/switch_episode_143/offset_27",
+        "all_phase_train/switch/switch_episode_143/offset_28",
+        "all_phase_train/switch/switch_episode_143/offset_29",
+        "all_phase_train/switch/switch_episode_143/offset_30",
+        "all_phase_train/switch/switch_episode_143/offset_31",
+        "all_phase_train/switch/switch_episode_143/offset_32",
+        "all_phase_train/switch/switch_episode_143/offset_33",
+        "all_phase_train/switch/switch_episode_143/offset_34",
+        "all_phase_train/switch/switch_episode_143/offset_35"
+      ]
+    },
+    {
+      "action": "forward",
+      "applied_tape": [
+        [
+          0.20000000298023224,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.0
+        ],
+        [
+          0.20000000298023224,
+          0.0
+        ]
+      ],
+      "count": 2,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/switch/switch_episode_007/offset_00",
+        "all_phase_train/switch/switch_episode_077/offset_00"
+      ]
+    },
+    {
+      "action": "left_arc",
+      "applied_tape": [
+        [
+          0.1599999964237213,
+          0.3499999940395355
+        ],
+        [
+          0.1599999964237213,
+          0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          0.44999998807907104
+        ]
+      ],
+      "count": 2,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/switch/switch_episode_063/offset_00",
+        "all_phase_train/switch/switch_episode_137/offset_00"
+      ]
+    },
+    {
+      "action": "right_arc",
+      "applied_tape": [
+        [
+          0.1599999964237213,
+          -0.3499999940395355
+        ],
+        [
+          0.1599999964237213,
+          -0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          -0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          -0.44999998807907104
+        ],
+        [
+          0.1599999964237213,
+          -0.44999998807907104
+        ]
+      ],
+      "count": 2,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/switch/switch_episode_055/offset_00",
+        "all_phase_train/switch/switch_episode_109/offset_00"
+      ]
+    },
+    {
+      "action": "left_turn",
+      "applied_tape": [
+        [
+          0.0,
+          0.3499999940395355
+        ],
+        [
+          0.0,
+          0.44999998807907104
+        ],
+        [
+          0.0,
+          0.44999998807907104
+        ],
+        [
+          0.0,
+          0.44999998807907104
+        ],
+        [
+          0.0,
+          0.44999998807907104
+        ]
+      ],
+      "count": 2,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/switch/switch_episode_022/offset_00",
+        "all_phase_train/switch/switch_episode_025/offset_00"
+      ]
+    },
+    {
+      "action": "right_turn",
+      "applied_tape": [
+        [
+          0.0,
+          -0.3499999940395355
+        ],
+        [
+          0.0,
+          -0.44999998807907104
+        ],
+        [
+          0.0,
+          -0.44999998807907104
+        ],
+        [
+          0.0,
+          -0.44999998807907104
+        ],
+        [
+          0.0,
+          -0.44999998807907104
+        ]
+      ],
+      "count": 2,
+      "environments": [
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.69,
+                    -0.45,
+                    0.34
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    0.94,
+                    0.68
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        },
+        {
+          "specification": {
+            "appearance_seed": 2026090940,
+            "geometry": {
+              "spawn_se2_world": [
+                0.0,
+                0.0,
+                0.0
+              ],
+              "wall_boxes": [
+                {
+                  "centre_xyz": [
+                    0.63,
+                    -0.45,
+                    0.38
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    1.02,
+                    0.76
+                  ],
+                  "wall_id": "front_partial_panel",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    -1.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "rear",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    2.5,
+                    0.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    0.08,
+                    4.0,
+                    1.4
+                  ],
+                  "wall_id": "far",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "left",
+                  "yaw_rad": 0.0
+                },
+                {
+                  "centre_xyz": [
+                    0.5,
+                    -2.0,
+                    0.7
+                  ],
+                  "material_id": "NEUTRAL_WALL",
+                  "size_xyz": [
+                    4.0,
+                    0.08,
+                    1.4
+                  ],
+                  "wall_id": "right",
+                  "yaw_rad": 0.0
+                }
+              ]
+            }
+          },
+          "count": 1
+        }
+      ],
+      "sample_ids": [
+        "all_phase_train/switch/switch_episode_074/offset_00",
+        "all_phase_train/switch/switch_episode_117/offset_00"
+      ]
+    }
+  ],
+  "interpretation": "Exact applied-tape coverage after all-zero past commands; does not establish equal visual/body-state coverage or causality of navigation errors.",
+  "training_only": true,
+  "new_training": false,
+  "new_navigation": false
+}

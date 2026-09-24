@@ -1,0 +1,302 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_terminal_failure_and_posthoc_admissibility_audit_v1",
+  "status": "PASS_FAILURE_CLASSIFIED_POSTHOC_DERIVATION_ONLY_ADMISSIBLE",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "citable_as_scientific_evidence": false,
+  "reviewer": {
+    "identity": "/root/task_relevance_integration_audit",
+    "independence_basis": "independent read-only validation of the immutable terminal, physics result, physics checker report, frozen plan, frozen authority, posthoc preregistration, direct joiner/checker/consumer seams, and attempt-root output absence"
+  },
+  "reviewed_at": "2026-08-02T19:47:17+01:00",
+  "scope": {
+    "attempt_id": "lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1",
+    "review_mode": "read_only_failure_and_admissibility_audit",
+    "protected_material_opened": false,
+    "runtime_payloads_opened": false,
+    "checkpoints_opened": false,
+    "rgb_leaves_opened_by_this_audit": false
+  },
+  "artifact_bindings": {
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/terminal_supervision.json",
+      "file_sha256": "f7d2796139645892d22ad6bb99d26caffc2b5c3dcac2a655b1883b299d22bff4",
+      "byte_count": 12949
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_result.json",
+      "file_sha256": "25caf0a5d4c69e99559a663aa4cae96fb23ef191ccf34486804c3f2243553314",
+      "byte_count": 183320
+    },
+    "physics_receipt_check": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_receipt_check.json",
+      "file_sha256": "faeb50293bc684e35b6d725b027983ad0110e739db2d7b1aca1926e89a547dc6",
+      "byte_count": 892
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_exact_plan_2026-08-02.json",
+      "file_sha256": "8fe34054bb9ae709b6a8ecfea5fdae55c742d1b2e22af3c289d27a77f11c66ef",
+      "byte_count": 343973
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_execution_authority_2026-08-02.json",
+      "file_sha256": "e369ae9cb97f6990dcffa3236cb3da4ccd7398395bd8c86ea655ff7270e7fce0",
+      "byte_count": 273159
+    },
+    "posthoc_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_preregistration_2026-08-02.json",
+      "file_sha256": "ee2cbd54459760c23107e961f9ae4c860a5cfccfeb3cdb332a5449394031fdbf",
+      "byte_count": 6320
+    }
+  },
+  "terminal_failure_classification": {
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "terminal_failure": "CalibrationSupervisionError: supervised command exited with status 1",
+    "original_terminal_remains_failure": true,
+    "original_terminal_may_not_be_rewritten_or_reclassified_as_success": true,
+    "collector_exit_code": 0,
+    "physics_checker_exit_code": 0,
+    "persisted_phase_receipt_count": 3,
+    "persisted_phases": [
+      "graphics_preflight_pass",
+      "collector_exit_zero",
+      "physics_checker_exit_zero"
+    ],
+    "physics_status": "PHYSICS_COMPLETE",
+    "physics_failure": null,
+    "physics_validated": false,
+    "physics_validated_interpretation": "the producer physics receipt intentionally remains pre-join and cannot self-promote",
+    "physics_checker_status": "PASS",
+    "physics_checker_phase": "physics_collection",
+    "physics_checker_can_freeze_pilot_contract": false,
+    "joined_manifest_binding": null,
+    "joined_receipt_check_binding": null,
+    "scientific_verdict_emitted": false,
+    "retry_or_resume_authorized": false,
+    "refill_or_screening_authorized": false
+  },
+  "checked_counts": {
+    "physics_expected": {
+      "actions": 9,
+      "candidate_branches": 2304,
+      "context_frames": 768,
+      "roles": {
+        "eval": 128,
+        "train": 128
+      },
+      "scenes": 32,
+      "sentinel_branches": 0,
+      "states": 256,
+      "target_frames": 2304,
+      "total_branches": 2304
+    },
+    "physics_observed": {
+      "actions": 9,
+      "candidate_branches": 2304,
+      "context_frames": 768,
+      "roles": {
+        "eval": 128,
+        "train": 128
+      },
+      "scenes": 32,
+      "sentinel_branches": 0,
+      "states": 256,
+      "target_frames": 2304,
+      "total_branches": 2304
+    },
+    "physics_checker": {
+      "actions": 9,
+      "candidate_branches": 2304,
+      "context_frames": 768,
+      "roles": {
+        "eval": 128,
+        "train": 128
+      },
+      "scenes": 32,
+      "sentinel_branches": 0,
+      "states": 256,
+      "target_frames": 2304,
+      "total_branches": 2304
+    },
+    "expected_equals_observed_equals_checker": true,
+    "stored_rgb_frames_derived_from_context_plus_target": 3072
+  },
+  "checked_caps": {
+    "authority_caps_equal_physics_caps": true,
+    "cap_contract": {
+      "auxiliary_depth_render_calls": 3072,
+      "candidate_branch_simulated_seconds": 1152.0,
+      "candidate_branches": 2304,
+      "native_render_calls": 3072,
+      "policy_steps_per_lane": 75,
+      "rgb_render_calls": 3072,
+      "scenes": 32,
+      "selected_device_vram_byte_ceiling": 16977405952,
+      "sentinel_branches": 0,
+      "states": 256,
+      "stored_rgb_byte_ceiling": 536870912,
+      "stored_rgb_frames": 3072,
+      "total_branches": 2304,
+      "total_lane_physics_steps": 1728000,
+      "total_lane_policy_steps": 172800,
+      "total_lane_simulated_seconds_including_common_prefix": 3456.0,
+      "wall_seconds": 7200.0
+    },
+    "observed_resource_measurements": {
+      "collection_wall_seconds": 1825.799466143013,
+      "terminal_wall_elapsed_seconds": 1892.718683652929,
+      "terminal_wall_ceiling_seconds": 7200.0,
+      "selected_device_vram_baseline_used_bytes": 631336960,
+      "selected_device_vram_peak_used_bytes": 15191449600,
+      "selected_device_vram_peak_delta_above_baseline_bytes": 14560112640,
+      "selected_device_vram_ceiling_bytes": 16977405952,
+      "selected_device_vram_total_bytes": 34208743424,
+      "vram_sample_count": 93195,
+      "vram_sample_interval_seconds": 0.02,
+      "vram_read_errors": 0
+    },
+    "checks": {
+      "terminal_wall_within_ceiling": true,
+      "active_vram_enforcement_enabled": true,
+      "active_vram_peak_within_ceiling": true,
+      "collector_started": true,
+      "collector_exit_zero": true,
+      "collector_not_terminated_by_cap": true,
+      "collector_termination_reason_absent": true,
+      "stored_rgb_frame_count_equals_cap_contract": true,
+      "native_rgb_and_auxiliary_depth_call_counts_equal_cap_contract": true,
+      "physics_checker_accepted_complete_cap_and_count_contract": true
+    },
+    "measurement_limitation": "selected-device VRAM is a global device measurement and can include concurrent processes"
+  },
+  "missing_join_outputs": {
+    "terminal_joined_manifest_binding_is_null": true,
+    "terminal_joined_receipt_check_binding_is_null": true,
+    "manifest_json": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/manifest.json",
+      "exists": false
+    },
+    "joined_receipt_check_json": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/joined_receipt_check.json",
+      "exists": false
+    },
+    "joined_receipts_v1": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/joined_receipts_v1",
+      "exists": false
+    },
+    "no_partial_join_output_observed": true
+  },
+  "source_seam_bindings": {
+    "joiner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/join_go2_world_model_counterfactual_pilot_v1.py",
+      "file_sha256": "8b5b2bf9e456a858a82ed33852809a6b5fd5220911f2afbd925d7cbcc7b7f15e",
+      "byte_count": 28344
+    },
+    "checker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_counterfactual_pilot_v1.py",
+      "file_sha256": "18771d7b5c90e0a30f8c8331dd419da80aa4c7addba6acb265df2e5b96df81e7",
+      "byte_count": 143612
+    },
+    "consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "file_sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    }
+  },
+  "failure_seams": [
+    {
+      "id": "joiner_output_root_schema_mismatch",
+      "classification": "deterministic_post_collection_join_failure",
+      "evidence": {
+        "physics_result_exact_schema_has_output_root": false,
+        "validated_collection_document_is_the_physics_result_document": true,
+        "joiner_expression": "Path(collection[\"document\"][\"output_root\"]).resolve(strict=True)",
+        "joiner_function": "join_pilot",
+        "joiner_source_line": 605
+      },
+      "effect": "the joiner raises KeyError before creating joined_receipts_v1 or manifest.json",
+      "scientific_scope": "no observation, action, executed tape, physical label, RGB receipt, model, checkpoint, threshold, or evaluation gate was changed or selected by this failure"
+    },
+    {
+      "id": "joined_checker_textured_lineage_exact_key_mismatch",
+      "classification": "deterministic_joined_receipt_checker_schema_failure",
+      "lineage_fields_emitted_by_joiner_and_required_by_consumer_but_omitted_from_checker_exact_key_set": [
+        "calibration_collection_receipt_binding",
+        "render_profile",
+        "visual_domain_parity_result_binding",
+        "visual_domain_parity_terminal_binding",
+        "visual_domain_parity_review_binding"
+      ],
+      "joiner_function": "join_pilot",
+      "checker_function": "_validate_canonical_joined_manifest",
+      "consumer_function": "load_bound_pilot_v1",
+      "effect": "fixing only the output_root dereference would still leave the frozen joined checker unable to accept the textured-v03 manifest emitted by the frozen joiner",
+      "required_resolution": "use an explicit source-reviewed posthoc split-root schema and checker rather than claiming the frozen in-attempt join/check path succeeded"
+    }
+  ],
+  "admissibility_conclusion": {
+    "existing_generation_authority_allows_posthoc_join": false,
+    "existing_generation_authority_allows_retry_resume_refill_or_overwrite": false,
+    "existing_failed_terminal_is_eligible_for_pass_frozen_bounded_pilot_review": false,
+    "immutable_physics_corpus_is_directly_citable_scientific_evidence": false,
+    "immutable_physics_corpus_is_admissible_as_input_to_a_separately_authorized_metadata_only_split_root_derivation": true,
+    "admissible_route": "one new source-reviewed and separately authorized metadata-only split-root derivation into one fresh absent output root",
+    "source_attempt_root_must_remain_byte_identical": true,
+    "source_rgb_may_be_read_only_for_complete_decoded_pixel_reverification": true,
+    "source_rgb_may_be_copied_rewritten_refilled_screened_or_regenerated": false,
+    "derivation_may_write_only_deterministic_metadata_and_its_own_check_and_terminal_receipts": true,
+    "original_failed_terminal_must_remain_the_authoritative_terminal_for_the_consumed_generation_attempt": true,
+    "posthoc_derivation_may_not_represent_or_replace_the_original_terminal_as_success": true,
+    "posthoc_outputs_require_independent_terminal_review_before_any_evaluation": true,
+    "evaluation_requires_an_explicit_posthoc_admission_gate_and_fresh_evaluation_authority": true
+  },
+  "required_split_root_contract": {
+    "source_receipt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1",
+    "derived_output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1",
+    "derived_output_root_must_be_absent_before_authorized_execution": true,
+    "source_root_access": "read_only_exact_bound_receipts_and_rgb_for_validation",
+    "derived_root_writes": "manifest_role_indices_rgb_receipt_index_check_and_terminal_metadata_only",
+    "join_semantics": "recompute_all_rows_and_dense_ranks_with_the_frozen_pure_build_joined_documents_v1_logic",
+    "coverage": "all_256_states_all_2304_branches_all_3072_rgb_receipts_no_selection_or_exclusion",
+    "independent_review_required": true,
+    "does_not_authorize": [
+      "collector_execution",
+      "physics_execution",
+      "rendering_or_rerendering",
+      "rgb_writes_or_copies",
+      "checkpoint_or_model_open",
+      "training",
+      "threshold_model_panel_or_gate_adaptation",
+      "retry_resume_refill_overwrite_or_source_mutation",
+      "held_out_or_sealed_access",
+      "scientific_verdict",
+      "promotion_or_deployment"
+    ]
+  },
+  "audit_checks": {
+    "all_required_artifact_bindings_rehashed": true,
+    "terminal_binding_matches_execution_output": true,
+    "physics_binding_matches_terminal": true,
+    "physics_check_binding_matches_terminal": true,
+    "plan_binding_matches_terminal_and_physics": true,
+    "authority_binding_matches_terminal_and_physics": true,
+    "physics_expected_observed_and_checker_counts_match": true,
+    "authority_and_physics_caps_match": true,
+    "wall_and_active_vram_measurements_within_caps": true,
+    "missing_join_outputs_checked_without_mutation": true,
+    "output_root_seam_confirmed_from_bound_source": true,
+    "joined_checker_lineage_seam_confirmed_from_bound_source": true,
+    "posthoc_preregistration_is_non_authorizing_and_non_claiming": true,
+    "original_attempt_immutability_required": true,
+    "no_generation_or_evaluation_authority_granted": true
+  },
+  "remaining_findings": [],
+  "limitations": [
+    "this audit does not convert the physics-only receipt into a joined pilot",
+    "this audit does not replace or amend the consumed failed terminal",
+    "this audit does not itself verify RGB leaf bytes or decoded pixels",
+    "this audit does not authorize the posthoc derivation or the 12-model evaluation panel",
+    "no scientific usefulness conclusion is available until an authorized derivation, independent review, and separately gated evaluation complete"
+  ]
+}

@@ -1,0 +1,359 @@
+{
+  "status": "COMPLETE",
+  "groups": [
+    {
+      "case": 0,
+      "actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_goal_cost": [
+        2.7530506009250235,
+        16.038188938661804,
+        22.116884517713476,
+        16.1147376250248,
+        10.742088954646297,
+        6.996066902893448
+      ],
+      "physical_best": "hold",
+      "models": {
+        "action": {
+          "raw_mse": {
+            "costs": [
+              0.4398495554924011,
+              0.34297460317611694,
+              0.5246042609214783,
+              0.47213149070739746,
+              0.5078858137130737,
+              0.5387740135192871
+            ],
+            "chosen_actions": [
+              "forward"
+            ],
+            "expected_physical_cost": 16.038188938661804,
+            "physical_regret": 13.28513833773678
+          },
+          "learned_metric": {
+            "costs": [
+              6.384782791137695,
+              12.470850944519043,
+              18.7220458984375,
+              6.028885841369629,
+              12.487037658691406,
+              9.365255355834961
+            ],
+            "chosen_actions": [
+              "right_arc"
+            ],
+            "expected_physical_cost": 16.1147376250248,
+            "physical_regret": 13.361687024099778
+          }
+        },
+        "no_future_action": {
+          "raw_mse": {
+            "costs": [
+              0.35580354928970337,
+              0.35580354928970337,
+              0.35580354928970337,
+              0.35580354928970337,
+              0.35580354928970337,
+              0.35580354928970337
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 12.460169589977474,
+            "physical_regret": 9.70711898905245
+          },
+          "learned_metric": {
+            "costs": [
+              10.700261116027832,
+              10.700261116027832,
+              10.700261116027832,
+              10.700261116027832,
+              10.700261116027832,
+              10.700261116027832
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 12.460169589977474,
+            "physical_regret": 9.70711898905245
+          }
+        },
+        "persistence": {
+          "raw_mse": {
+            "costs": [
+              0.43445050716400146,
+              0.43445050716400146,
+              0.43445050716400146,
+              0.43445050716400146,
+              0.43445050716400146,
+              0.43445050716400146
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 12.460169589977474,
+            "physical_regret": 9.70711898905245
+          },
+          "learned_metric": {
+            "costs": [
+              1.088392972946167,
+              1.088392972946167,
+              1.088392972946167,
+              1.088392972946167,
+              1.088392972946167,
+              1.088392972946167
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 12.460169589977474,
+            "physical_regret": 9.70711898905245
+          }
+        },
+        "observed_future_oracle": {
+          "raw_mse": {
+            "costs": [
+              0.45386645197868347,
+              0.45201659202575684,
+              0.6702303886413574,
+              0.6038578748703003,
+              0.6540173292160034,
+              0.6337934136390686
+            ],
+            "chosen_actions": [
+              "forward"
+            ],
+            "expected_physical_cost": 16.038188938661804,
+            "physical_regret": 13.28513833773678
+          },
+          "learned_metric": {
+            "costs": [
+              2.861506223678589,
+              9.098631858825684,
+              19.81592559814453,
+              5.889486789703369,
+              11.174033164978027,
+              3.8538432121276855
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "expected_physical_cost": 2.7530506009250235,
+            "physical_regret": 0.0
+          }
+        }
+      }
+    },
+    {
+      "case": 3,
+      "actions": [
+        "hold",
+        "forward",
+        "left_arc",
+        "right_arc",
+        "left_turn",
+        "right_turn"
+      ],
+      "physical_goal_cost": [
+        1.1860934099982645,
+        8.565326763040717,
+        11.871530341447983,
+        10.934879634821254,
+        6.9382666909916315,
+        5.036200405952207
+      ],
+      "physical_best": "hold",
+      "models": {
+        "action": {
+          "raw_mse": {
+            "costs": [
+              0.37229403853416443,
+              0.33439773321151733,
+              0.5236433148384094,
+              0.47378286719322205,
+              0.5349229574203491,
+              0.5426144003868103
+            ],
+            "chosen_actions": [
+              "forward"
+            ],
+            "expected_physical_cost": 8.565326763040717,
+            "physical_regret": 7.379233353042453
+          },
+          "learned_metric": {
+            "costs": [
+              8.277023315429688,
+              16.026832580566406,
+              15.799461364746094,
+              11.431331634521484,
+              10.93869400024414,
+              10.468414306640625
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "expected_physical_cost": 1.1860934099982645,
+            "physical_regret": 0.0
+          }
+        },
+        "no_future_action": {
+          "raw_mse": {
+            "costs": [
+              0.3512287735939026,
+              0.3512287735939026,
+              0.3512287735939026,
+              0.3512287735939026,
+              0.3512287735939026,
+              0.3512287735939026
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 7.42204954104201,
+            "physical_regret": 6.2359561310437455
+          },
+          "learned_metric": {
+            "costs": [
+              5.6777801513671875,
+              5.6777801513671875,
+              5.6777801513671875,
+              5.6777801513671875,
+              5.6777801513671875,
+              5.6777801513671875
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 7.42204954104201,
+            "physical_regret": 6.2359561310437455
+          }
+        },
+        "persistence": {
+          "raw_mse": {
+            "costs": [
+              0.4510352313518524,
+              0.4510352313518524,
+              0.4510352313518524,
+              0.4510352313518524,
+              0.4510352313518524,
+              0.4510352313518524
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 7.42204954104201,
+            "physical_regret": 6.2359561310437455
+          },
+          "learned_metric": {
+            "costs": [
+              2.071462631225586,
+              2.071462631225586,
+              2.071462631225586,
+              2.071462631225586,
+              2.071462631225586,
+              2.071462631225586
+            ],
+            "chosen_actions": [
+              "hold",
+              "forward",
+              "left_arc",
+              "right_arc",
+              "left_turn",
+              "right_turn"
+            ],
+            "expected_physical_cost": 7.42204954104201,
+            "physical_regret": 6.2359561310437455
+          }
+        },
+        "observed_future_oracle": {
+          "raw_mse": {
+            "costs": [
+              0.4637905955314636,
+              0.3824703097343445,
+              0.6453971266746521,
+              0.6048713326454163,
+              0.6357768774032593,
+              0.653356671333313
+            ],
+            "chosen_actions": [
+              "forward"
+            ],
+            "expected_physical_cost": 8.565326763040717,
+            "physical_regret": 7.379233353042453
+          },
+          "learned_metric": {
+            "costs": [
+              2.6029605865478516,
+              5.349900245666504,
+              9.589324951171875,
+              2.9218709468841553,
+              5.582535266876221,
+              4.744117736816406
+            ],
+            "chosen_actions": [
+              "hold"
+            ],
+            "expected_physical_cost": 1.1860934099982645,
+            "physical_regret": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 8.927766899112612,
+  "goal_metric_fit_sha256": "ac3b8a6b7a9b839613cbd092a758b9bbdfda543974bd5584ee401c3b0e18f2a8",
+  "diagnostic_sha256": "6f6ee19f555e7d897a641148a1085d7a80e5894b5c7cdd42c3ec863a0fa810f9",
+  "source_sha256": "7cb445e18aa0585a4b63adc6c4bfa2e435d352ea5c2a5303fcff0218e38c8068",
+  "fit_used_observed_training_pairs_only": true,
+  "original_live_action_forecast_costs_reproduced": true,
+  "original_oracle_costs_reproduced": true,
+  "new_navigation": false,
+  "transfer_geometries_previously_exposed": true,
+  "limitations": [
+    "two post-hoc near-goal states; no independent navigation success",
+    "metric trained on observed features; predicted features can have a distribution mismatch",
+    "additional physical supervision; no isolated JEPA-training benefit"
+  ]
+}

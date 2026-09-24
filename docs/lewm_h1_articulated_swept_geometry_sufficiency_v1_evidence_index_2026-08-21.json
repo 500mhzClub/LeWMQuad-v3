@@ -1,0 +1,24 @@
+{
+  "classification": "FULL_ARTICULATED_GEOMETRY_CONTACT_PROXY_NO_GO",
+  "experiment": "H1_ARTICULATED_SWEPT_GEOMETRY_SUFFICIENCY_V1",
+  "fixture": {
+    "path": ".generated/h1_articulated_swept_geometry_sufficiency_v1/fixture.json",
+    "sha256": "a923bf47be4fcad2b89ab0e2bfd71d65863dc479d72d74be4d593fc8effdabe9"
+  },
+  "geometry_index": {
+    "content_digest": "17d2d57f3db85621ab10777c861b855e54660637472ce7e0eafb3daed9d690df",
+    "path": ".generated/h1_articulated_swept_geometry_sufficiency_v1/articulated_geometry_index.json",
+    "sha256": "ecfa4459b6124c392eba39e8b7733a419c82fdad9fe4c5a9943db3bac082f044"
+  },
+  "learned_checkpoint_executed": false,
+  "row_level_evidence": {
+    "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/h1_articulated_swept_geometry_sufficiency_v1/row_level_evidence_v1.npz",
+    "sha256": "827263fa58aaf782daddcca9c935173f46a0b4c44a672549cbc2daf8b4a7eea5"
+  },
+  "scientific_result": {
+    "content_digest": "9e67609745affafd7470b789f7a6890dff970200c0348b79fa71231f8fdddb85",
+    "path": ".generated/h1_articulated_swept_geometry_sufficiency_v1/result.json",
+    "sha256": "f1751e24db1625e184795af75eec95d72cd42b12698f98e0371d965dc787c8ea"
+  },
+  "source_commit": "ea361860afbbd814fd7110a5b8ea504ff83293b9"
+}

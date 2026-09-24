@@ -1,0 +1,77 @@
+{
+  "schema": "lewm_go2_world_model_counterfactual_calibration_terminal_failure_result_v2",
+  "status": "PASS_CONSUMED_TERMINAL_FAILURE_AUDIT_NO_RETRY_NO_RESUME",
+  "date": "2026-08-02",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "attempt": {
+    "attempt_id": "lewm-go2-wm-counterfactual-calibration-v2",
+    "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v2",
+    "attempt_consumed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "refill_authorized": false,
+    "overwrite_authorized": false,
+    "artifact_reuse_for_successor_authorized": false
+  },
+  "bindings": {
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v2/terminal_supervision.json",
+      "file_sha256": "292f6eafb2085110442c8a742315c3dd48f7add85c2ca5d40b497baded9c5cc1",
+      "byte_count": 3766
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v2/physics_result.json",
+      "file_sha256": "f00e8f7977eff5aa9e8394fbe9a276ba15cd36f857bf50e61b886f02b2a9fe6d",
+      "byte_count": 26094
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_counterfactual_calibration_execution_authority_v2_2026-08-02.json",
+      "file_sha256": "1512ceb28a0240ca218b978555762a70e41f904ae94c408511556ed75826fcf7",
+      "byte_count": 24220
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_counterfactual_calibration_exact_plan_v2_2026-08-02.json",
+      "file_sha256": "41ecf46d4b1a3a0a6e835af746a10af52cc8557ab8edc5b3c0080538ab27d6cc",
+      "byte_count": 28596
+    }
+  },
+  "terminal_evidence": {
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "physics_result_status": "FAILED",
+    "failure_type": "PilotContractError",
+    "failure_message": "candidate sequential render responses collapsed for calibration-local-0",
+    "completed_scenes": 1,
+    "completed_states": 2,
+    "expected_scenes": 8,
+    "expected_states": 16,
+    "retry_or_resume_authorized_by_terminal": false
+  },
+  "root_cause": {
+    "classification": "calibration_sensor_contract_out_of_training_visual_domain",
+    "observed_failed_scene_rgb_unique_count": 1,
+    "observed_failed_scene_rgb_frame_count": 26,
+    "observed_rgb_pixel_value": [40, 41, 45],
+    "legacy_calibration_native_resolution": [640, 480],
+    "legacy_calibration_stored_resolution": [224, 224],
+    "historical_training_native_resolution": [224, 224],
+    "historical_training_renderer_sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+    "interpretation": "The failed collection used a solid-material, safety-adjusted, 640x480-then-resized sensor path rather than the historical textured-v03 224x224 training renderer. The collapse is therefore not evidence that exact-v03 counterfactual branch RGB is unidentifiable."
+  },
+  "successor_boundary": {
+    "v2_retry_authorized": false,
+    "v2_resume_authorized": false,
+    "v2_refill_authorized": false,
+    "v2_root_or_artifact_reuse_authorized": false,
+    "fresh_textured_v03_successor_authorized_by_this_result": false,
+    "maximum_fresh_textured_v03_successors_recommended": 1,
+    "required_preconditions": [
+      "independent source review",
+      "exact historical textured-v03 pixel-parity qualification",
+      "fresh attempt root",
+      "new one-shot execution authority",
+      "candidate-response equivalence measured rather than rejected",
+      "stop without a fourth calibration attempt if no identifiable state is observed"
+    ]
+  }
+}

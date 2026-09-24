@@ -1,0 +1,778 @@
+{
+  "status": "COMPLETE",
+  "runs": [
+    {
+      "run": 1,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "total": {
+        "windows": 96,
+        "models": {
+          "action": {
+            "mse": 0.4834450275326769,
+            "mse_over_persistence": 0.7720979908892784
+          },
+          "no_future_action": {
+            "mse": 0.5504850475117564,
+            "mse_over_persistence": 0.8791659340620435
+          },
+          "unchanged_rollout": {
+            "mse": 0.7341326555858055,
+            "mse_over_persistence": 1.1724649466700714
+          },
+          "persistence": {
+            "mse": 0.6261446516339978,
+            "mse_over_persistence": 1.0
+          }
+        }
+      },
+      "by_action": {
+        "hold": {
+          "windows": 4,
+          "models": {
+            "action": {
+              "mse": 0.5018117651343346,
+              "mse_over_persistence": 0.8934297137778779
+            },
+            "no_future_action": {
+              "mse": 0.5962457954883575,
+              "mse_over_persistence": 1.061560823034554
+            },
+            "unchanged_rollout": {
+              "mse": 0.6820605993270874,
+              "mse_over_persistence": 1.2143461918889824
+            },
+            "persistence": {
+              "mse": 0.5616689901798964,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "forward": {
+          "windows": 33,
+          "models": {
+            "action": {
+              "mse": 0.4932861129442851,
+              "mse_over_persistence": 1.0339749363067283
+            },
+            "no_future_action": {
+              "mse": 0.5500694567506964,
+              "mse_over_persistence": 1.1529982632458924
+            },
+            "unchanged_rollout": {
+              "mse": 0.7558862801754114,
+              "mse_over_persistence": 1.584410036874028
+            },
+            "persistence": {
+              "mse": 0.47707743739539926,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_arc": {
+          "windows": 9,
+          "models": {
+            "action": {
+              "mse": 0.45720408691300285,
+              "mse_over_persistence": 0.6679904798966769
+            },
+            "no_future_action": {
+              "mse": 0.49645647406578064,
+              "mse_over_persistence": 0.7253395318448136
+            },
+            "unchanged_rollout": {
+              "mse": 0.7619193527433608,
+              "mse_over_persistence": 1.1131896862908999
+            },
+            "persistence": {
+              "mse": 0.6844470103581747,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_arc": {
+          "windows": 16,
+          "models": {
+            "action": {
+              "mse": 0.4766869340091944,
+              "mse_over_persistence": 0.659760678784302
+            },
+            "no_future_action": {
+              "mse": 0.5464494228363037,
+              "mse_over_persistence": 0.7563157628415633
+            },
+            "unchanged_rollout": {
+              "mse": 0.7515588589012623,
+              "mse_over_persistence": 1.0401983933662597
+            },
+            "persistence": {
+              "mse": 0.722514919936657,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_turn": {
+          "windows": 21,
+          "models": {
+            "action": {
+              "mse": 0.4901449949968429,
+              "mse_over_persistence": 0.6967684293843965
+            },
+            "no_future_action": {
+              "mse": 0.5566480784189134,
+              "mse_over_persistence": 0.7913062691220317
+            },
+            "unchanged_rollout": {
+              "mse": 0.6947020746412731,
+              "mse_over_persistence": 0.9875577194070899
+            },
+            "persistence": {
+              "mse": 0.703454654841196,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_turn": {
+          "windows": 13,
+          "models": {
+            "action": {
+              "mse": 0.4684739410877228,
+              "mse_over_persistence": 0.6326227186261243
+            },
+            "no_future_action": {
+              "mse": 0.56987543289478,
+              "mse_over_persistence": 0.7695543209918432
+            },
+            "unchanged_rollout": {
+              "mse": 0.7179450621971717,
+              "mse_over_persistence": 0.9695061288079818
+            },
+            "persistence": {
+              "mse": 0.740526584478525,
+              "mse_over_persistence": 1.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": 2,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_02_current_pair_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "total": {
+        "windows": 96,
+        "models": {
+          "action": {
+            "mse": 0.4855505532274644,
+            "mse_over_persistence": 1.133157703051287
+          },
+          "no_future_action": {
+            "mse": 0.5430919987459978,
+            "mse_over_persistence": 1.267445537347063
+          },
+          "unchanged_rollout": {
+            "mse": 0.749503394899269,
+            "mse_over_persistence": 1.7491598758313551
+          },
+          "persistence": {
+            "mse": 0.42849336144475575,
+            "mse_over_persistence": 1.0
+          }
+        }
+      },
+      "by_action": {
+        "hold": {
+          "windows": 43,
+          "models": {
+            "action": {
+              "mse": 0.4915279586647832,
+              "mse_over_persistence": 3.863795568225447
+            },
+            "no_future_action": {
+              "mse": 0.531051262866619,
+              "mse_over_persistence": 4.17447976212463
+            },
+            "unchanged_rollout": {
+              "mse": 0.7718314958173175,
+              "mse_over_persistence": 6.067201387804669
+            },
+            "persistence": {
+              "mse": 0.12721375910955113,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "forward": {
+          "windows": 11,
+          "models": {
+            "action": {
+              "mse": 0.47215783866969024,
+              "mse_over_persistence": 0.9006158339351896
+            },
+            "no_future_action": {
+              "mse": 0.5326048596338793,
+              "mse_over_persistence": 1.0159152947001426
+            },
+            "unchanged_rollout": {
+              "mse": 0.783276920968836,
+              "mse_over_persistence": 1.4940588498288982
+            },
+            "persistence": {
+              "mse": 0.524261089888486,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_arc": {
+          "windows": 11,
+          "models": {
+            "action": {
+              "mse": 0.4869926192543723,
+              "mse_over_persistence": 0.7415524649687641
+            },
+            "no_future_action": {
+              "mse": 0.5418495075269179,
+              "mse_over_persistence": 0.825084040419139
+            },
+            "unchanged_rollout": {
+              "mse": 0.7522987669164484,
+              "mse_over_persistence": 1.1455389320971632
+            },
+            "persistence": {
+              "mse": 0.6567203836007551,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_arc": {
+          "windows": 6,
+          "models": {
+            "action": {
+              "mse": 0.4654648005962372,
+              "mse_over_persistence": 0.6524785091470428
+            },
+            "no_future_action": {
+              "mse": 0.5519426117340723,
+              "mse_over_persistence": 0.7737012379403623
+            },
+            "unchanged_rollout": {
+              "mse": 0.7744361658891042,
+              "mse_over_persistence": 1.0855878990239578
+            },
+            "persistence": {
+              "mse": 0.7133795122305552,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_turn": {
+          "windows": 16,
+          "models": {
+            "action": {
+              "mse": 0.47494580037891865,
+              "mse_over_persistence": 0.6667584678613593
+            },
+            "no_future_action": {
+              "mse": 0.5605574939399958,
+              "mse_over_persistence": 0.7869454904316376
+            },
+            "unchanged_rollout": {
+              "mse": 0.6807103250175714,
+              "mse_over_persistence": 0.9556235111543682
+            },
+            "persistence": {
+              "mse": 0.7123206127434969,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_turn": {
+          "windows": 9,
+          "models": {
+            "action": {
+              "mse": 0.5038415822717879,
+              "mse_over_persistence": 0.6480770326561092
+            },
+            "no_future_action": {
+              "mse": 0.5780059960153368,
+              "mse_over_persistence": 0.7434725991968474
+            },
+            "unchanged_rollout": {
+              "mse": 0.7038063142034743,
+              "mse_over_persistence": 0.9052859544005939
+            },
+            "persistence": {
+              "mse": 0.7774408857027689,
+              "mse_over_persistence": 1.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": 3,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_03_current_pair_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "total": {
+        "windows": 96,
+        "models": {
+          "action": {
+            "mse": 0.4964466368158658,
+            "mse_over_persistence": 0.7796447312058306
+          },
+          "no_future_action": {
+            "mse": 0.5618291199207306,
+            "mse_over_persistence": 0.8823246663400652
+          },
+          "unchanged_rollout": {
+            "mse": 0.7134813625986377,
+            "mse_over_persistence": 1.120486964583677
+          },
+          "persistence": {
+            "mse": 0.6367600741020093,
+            "mse_over_persistence": 1.0
+          }
+        }
+      },
+      "by_action": {
+        "hold": {
+          "windows": 8,
+          "models": {
+            "action": {
+              "mse": 0.5214188508689404,
+              "mse_over_persistence": 1.1908479679821216
+            },
+            "no_future_action": {
+              "mse": 0.5531936176121235,
+              "mse_over_persistence": 1.2634171057226677
+            },
+            "unchanged_rollout": {
+              "mse": 0.6008280329406261,
+              "mse_over_persistence": 1.3722074699479572
+            },
+            "persistence": {
+              "mse": 0.43785509560257196,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "forward": {
+          "windows": 22,
+          "models": {
+            "action": {
+              "mse": 0.48811688206412573,
+              "mse_over_persistence": 1.0094058514302748
+            },
+            "no_future_action": {
+              "mse": 0.5312140299515291,
+              "mse_over_persistence": 1.0985289997088992
+            },
+            "unchanged_rollout": {
+              "mse": 0.7534664381634105,
+              "mse_over_persistence": 1.5581379368037453
+            },
+            "persistence": {
+              "mse": 0.48356850851665845,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_arc": {
+          "windows": 11,
+          "models": {
+            "action": {
+              "mse": 0.46866999431089923,
+              "mse_over_persistence": 0.6519870774533338
+            },
+            "no_future_action": {
+              "mse": 0.5488206717101011,
+              "mse_over_persistence": 0.7634881476045092
+            },
+            "unchanged_rollout": {
+              "mse": 0.7654238559982993,
+              "mse_over_persistence": 1.064814195368229
+            },
+            "persistence": {
+              "mse": 0.7188332568515431,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_arc": {
+          "windows": 9,
+          "models": {
+            "action": {
+              "mse": 0.4908812940120697,
+              "mse_over_persistence": 0.7019707405557752
+            },
+            "no_future_action": {
+              "mse": 0.5539901587698195,
+              "mse_over_persistence": 0.7922177657939027
+            },
+            "unchanged_rollout": {
+              "mse": 0.7909721069865756,
+              "mse_over_persistence": 1.1311070160409826
+            },
+            "persistence": {
+              "mse": 0.6992902490827773,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_turn": {
+          "windows": 26,
+          "models": {
+            "action": {
+              "mse": 0.5006144298956945,
+              "mse_over_persistence": 0.7079808813886533
+            },
+            "no_future_action": {
+              "mse": 0.5786147656349035,
+              "mse_over_persistence": 0.8182908188324504
+            },
+            "unchanged_rollout": {
+              "mse": 0.6921634410436337,
+              "mse_over_persistence": 0.9788740671282228
+            },
+            "persistence": {
+              "mse": 0.7071016224531027,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_turn": {
+          "windows": 20,
+          "models": {
+            "action": {
+              "mse": 0.5079839080572128,
+              "mse_over_persistence": 0.7054254856587834
+            },
+            "no_future_action": {
+              "mse": 0.5878207594156265,
+              "mse_over_persistence": 0.8162930717175017
+            },
+            "unchanged_rollout": {
+              "mse": 0.6788332030177117,
+              "mse_over_persistence": 0.9426799438421253
+            },
+            "persistence": {
+              "mse": 0.7201099455356598,
+              "mse_over_persistence": 1.0
+            }
+          }
+        }
+      }
+    },
+    {
+      "run": 4,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "total": {
+        "windows": 96,
+        "models": {
+          "action": {
+            "mse": 0.4818922330935796,
+            "mse_over_persistence": 0.7281974739667636
+          },
+          "no_future_action": {
+            "mse": 0.5504321136201421,
+            "mse_over_persistence": 0.8317695268820351
+          },
+          "unchanged_rollout": {
+            "mse": 0.7393737311164538,
+            "mse_over_persistence": 1.1172831731691923
+          },
+          "persistence": {
+            "mse": 0.6617603745156279,
+            "mse_over_persistence": 1.0
+          }
+        }
+      },
+      "by_action": {
+        "hold": {
+          "windows": 4,
+          "models": {
+            "action": {
+              "mse": 0.5022459179162979,
+              "mse_over_persistence": 0.9222211217987851
+            },
+            "no_future_action": {
+              "mse": 0.5252854228019714,
+              "mse_over_persistence": 0.9645261307264943
+            },
+            "unchanged_rollout": {
+              "mse": 0.6758307367563248,
+              "mse_over_persistence": 1.240956587130267
+            },
+            "persistence": {
+              "mse": 0.5446046572178602,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "forward": {
+          "windows": 25,
+          "models": {
+            "action": {
+              "mse": 0.4891649341583252,
+              "mse_over_persistence": 0.8707140934010468
+            },
+            "no_future_action": {
+              "mse": 0.545163391828537,
+              "mse_over_persistence": 0.9703914065062292
+            },
+            "unchanged_rollout": {
+              "mse": 0.7748260235786438,
+              "mse_over_persistence": 1.3791911307474387
+            },
+            "persistence": {
+              "mse": 0.561797423362732,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_arc": {
+          "windows": 21,
+          "models": {
+            "action": {
+              "mse": 0.48740770135607037,
+              "mse_over_persistence": 0.6920290322159587
+            },
+            "no_future_action": {
+              "mse": 0.5483213521185375,
+              "mse_over_persistence": 0.77851518060592
+            },
+            "unchanged_rollout": {
+              "mse": 0.7611965792519706,
+              "mse_over_persistence": 1.0807587377061434
+            },
+            "persistence": {
+              "mse": 0.7043168402853466,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_arc": {
+          "windows": 12,
+          "models": {
+            "action": {
+              "mse": 0.4646814862887065,
+              "mse_over_persistence": 0.663393378922405
+            },
+            "no_future_action": {
+              "mse": 0.5480992620189985,
+              "mse_over_persistence": 0.7824831247736693
+            },
+            "unchanged_rollout": {
+              "mse": 0.7678785820802053,
+              "mse_over_persistence": 1.096246745780268
+            },
+            "persistence": {
+              "mse": 0.7004614472389221,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "left_turn": {
+          "windows": 23,
+          "models": {
+            "action": {
+              "mse": 0.4863367845182833,
+              "mse_over_persistence": 0.6810321237282023
+            },
+            "no_future_action": {
+              "mse": 0.5633801856766576,
+              "mse_over_persistence": 0.7889183309417942
+            },
+            "unchanged_rollout": {
+              "mse": 0.703670613143755,
+              "mse_over_persistence": 0.9853712639669803
+            },
+            "persistence": {
+              "mse": 0.7141172458296237,
+              "mse_over_persistence": 1.0
+            }
+          }
+        },
+        "right_turn": {
+          "windows": 11,
+          "models": {
+            "action": {
+              "mse": 0.45691470395434985,
+              "mse_over_persistence": 0.6540302650349307
+            },
+            "no_future_action": {
+              "mse": 0.5510520555756309,
+              "mse_over_persistence": 0.7887789971236755
+            },
+            "unchanged_rollout": {
+              "mse": 0.6838008544661782,
+              "mse_over_persistence": 0.9787963709793607
+            },
+            "persistence": {
+              "mse": 0.698614006692713,
+              "mse_over_persistence": 1.0
+            }
+          }
+        }
+      }
+    }
+  ],
+  "total": {
+    "windows": 384,
+    "models": {
+      "action": {
+        "mse": 0.48683361266739666,
+        "mse_over_persistence": 0.827540721276269
+      },
+      "no_future_action": {
+        "mse": 0.5514595699496567,
+        "mse_over_persistence": 0.9373947040559433
+      },
+      "unchanged_rollout": {
+        "mse": 0.7341227860500416,
+        "mse_over_persistence": 1.2478934980363587
+      },
+      "persistence": {
+        "mse": 0.5882896154240976,
+        "mse_over_persistence": 1.0
+      }
+    }
+  },
+  "by_action": {
+    "hold": {
+      "windows": 59,
+      "models": {
+        "action": {
+          "mse": 0.4970048095210124,
+          "mse_over_persistence": 2.18861067447909
+        },
+        "no_future_action": {
+          "mse": 0.5380826799546258,
+          "mse_over_persistence": 2.369501209125062
+        },
+        "unchanged_rollout": {
+          "mse": 0.7360498970848018,
+          "mse_over_persistence": 3.2412697640925465
+        },
+        "persistence": {
+          "mse": 0.22708689823936104,
+          "mse_over_persistence": 1.0
+        }
+      }
+    },
+    "forward": {
+      "windows": 91,
+      "models": {
+        "action": {
+          "mse": 0.4883502495812846,
+          "mse_over_persistence": 0.9620296486312269
+        },
+        "no_future_action": {
+          "mse": 0.5420520767405793,
+          "mse_over_persistence": 1.0678200110958866
+        },
+        "unchanged_rollout": {
+          "mse": 0.7638154462143615,
+          "mse_over_persistence": 1.504684611036322
+        },
+        "persistence": {
+          "mse": 0.5076249471896297,
+          "mse_over_persistence": 1.0
+        }
+      }
+    },
+    "left_arc": {
+      "windows": 52,
+      "models": {
+        "action": {
+          "mse": 0.47812860115216327,
+          "mse_over_persistence": 0.6890651283408281
+        },
+        "no_future_action": {
+          "mse": 0.5380813198593947,
+          "mse_over_persistence": 0.7754672546951825
+        },
+        "unchanged_rollout": {
+          "mse": 0.7603336767508433,
+          "mse_over_persistence": 1.0957709312717678
+        },
+        "persistence": {
+          "mse": 0.693880130465214,
+          "mse_over_persistence": 1.0
+        }
+      }
+    },
+    "right_arc": {
+      "windows": 43,
+      "models": {
+        "action": {
+          "mse": 0.474741609983666,
+          "mse_over_persistence": 0.6684385359585929
+        },
+        "no_future_action": {
+          "mse": 0.5492546281149221,
+          "mse_over_persistence": 0.7733532341903882
+        },
+        "unchanged_rollout": {
+          "mse": 0.7675546671068946,
+          "mse_over_persistence": 1.0807207692765128
+        },
+        "persistence": {
+          "mse": 0.710224776767021,
+          "mse_over_persistence": 1.0
+        }
+      }
+    },
+    "left_turn": {
+      "windows": 86,
+      "models": {
+        "action": {
+          "mse": 0.48946394095587176,
+          "mse_over_persistence": 0.6903013759786559
+        },
+        "no_future_action": {
+          "mse": 0.5658169503128806,
+          "mse_over_persistence": 0.797983644291055
+        },
+        "unchanged_rollout": {
+          "mse": 0.693730027176613,
+          "mse_over_persistence": 0.9783821692411467
+        },
+        "persistence": {
+          "mse": 0.7090583301560823,
+          "mse_over_persistence": 1.0
+        }
+      }
+    },
+    "right_turn": {
+      "windows": 53,
+      "models": {
+        "action": {
+          "mse": 0.4869901014948791,
+          "mse_over_persistence": 0.6667518542497682
+        },
+        "no_future_action": {
+          "mse": 0.5741211771965027,
+          "mse_over_persistence": 0.7860454622892437
+        },
+        "unchanged_rollout": {
+          "mse": 0.6936984169033339,
+          "mse_over_persistence": 0.9497620266626513
+        },
+        "persistence": {
+          "mse": 0.7303918217712978,
+          "mse_over_persistence": 1.0
+        }
+      }
+    }
+  },
+  "plan_sha256": "2fc983a75900fa3053b2afdb31eb95d42b70cb46b56496ec724b12acf989269d",
+  "fit_sha256": "44c2a6e8f4a094c9b89ccf4293d83115da3e666bf781c4d0e2c602d2a9709bfd",
+  "encoded_frames": 1536,
+  "wall_s": 463.4210150190629,
+  "new_navigation": false,
+  "no_dense_cache_retained": true,
+  "physical_outcomes_not_scored": true,
+  "limitations": [
+    "384 systematically sampled dependent windows in four exposed recordings",
+    "one training seed; both failed returns included",
+    "executed-action feature prediction, not counterfactual ranking or navigation improvement"
+  ]
+}

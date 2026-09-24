@@ -1,0 +1,19 @@
+{
+  "approved": true,
+  "user_instruction": "do it",
+  "instruction_context": "Approval of the reviewed consolidation of 27,210 byte-identical training-artifact copies to reclaim 6.72 GiB while retaining every original path and byte through immutable hard links.",
+  "inventory_result_sha256": "732b0a95a98d598843e1d56f85612093b3d78e3e1ed145f4e27d24f2ceb6d577",
+  "proposal_sha256": "0a0b273b47b4d0df3b0ce76104b0cb348574e339b6dfa0ee235ab3e15a890bb7",
+  "source_sha256": {
+    "scripts/consolidate_go2_training_artifact_duplicates_v1.py": "86f7074fedf1725458f7519187936afdea14dd2a76d7443e9a9480daf01e00d5",
+    "lewm/tests/test_training_artifact_hardlink_consolidation_development.py": "db65976d9924f42946d920582e5fb1f270dd6794f65f2af99e743a80a976e56b",
+    "docs/go2_training_artifact_hardlink_consolidation_v1_2026-09-09.md": "3f4126ad5e45a75d54b7ea0aa84ef20bd54ea603c6156520990a6c6ca1178d2e"
+  },
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_training_artifact_hardlink_consolidation_v1_attempt_001",
+  "approved_duplicate_paths": 27210,
+  "original_paths_and_contents_retained": true,
+  "shared_artifacts_remain_immutable": true,
+  "pip_cache_cleanup_included": false,
+  "gsd_cache_cleanup_included": false,
+  "unlisted_artifact_mutations_included": false
+}

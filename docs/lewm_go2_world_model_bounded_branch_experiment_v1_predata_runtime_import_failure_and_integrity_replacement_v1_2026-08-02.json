@@ -1,0 +1,81 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_predata_runtime_import_failure_and_integrity_replacement_v1",
+  "status": "PREREGISTERED_ONE_SCIENCE_IDENTICAL_INTEGRITY_REPLACEMENT",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "authorizes_retry_or_resume_of_consumed_attempt": false,
+  "consumed_attempt": {
+    "attempt_id": "lewm-go2-wm-bounded-branch-experiment-v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-v1",
+    "terminal_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-v1/terminal_supervision.json",
+      "file_sha256": "eaff368f9c1a022b2a2afb72e45df07d4dd0eef2cea25b4987d44196c40167d6",
+      "byte_count": 10551
+    },
+    "physics_result_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-v1/physics_result.json",
+      "file_sha256": "0c7a3160c2b0018c306309ed99db219f255427e9a1bde244e9c7c114cb2a32cb",
+      "byte_count": 37880
+    },
+    "authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_execution_authority_v2_2026-08-02.json",
+      "file_sha256": "c073be50acfeac120b7c9d212ce3bda32ac3db87a8abdd055c9e8f1611e9aee9",
+      "byte_count": 273041
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_experiment_v1_exact_plan_2026-08-02.json",
+      "file_sha256": "3d1e23b22eec4f4190543bf6bbfe39f7f3e9d1fc877691c95b0e715381058521",
+      "byte_count": 343929
+    }
+  },
+  "terminal_facts": {
+    "status": "CONSUMED_TERMINAL_FAILURE",
+    "failure_type": "KeyError",
+    "failure_message": "'available_textures'",
+    "cause": "The authorized bounded wrapper called kernel._runtime_imports() without textured_v03=True, so the first physical microbatch completed before the historical textured-v03 renderer dependency map was requested and found incomplete.",
+    "observed_candidate_branches": 0,
+    "observed_states": 0,
+    "observed_scenes": 0,
+    "observed_context_frames": 0,
+    "observed_target_frames": 0,
+    "state_receipt_bindings": 0,
+    "render_receipt_bindings": 0,
+    "scene_metrics": 0,
+    "persisted_rgb_files": 0,
+    "root_file_inventory": [
+      "authorized_plan.json",
+      "physics_result.json",
+      "reservation.json",
+      "terminal_supervision.json"
+    ],
+    "physical_computation_limitation": "One four-state, 36-lane physical microbatch ran transiently before the renderer dependency lookup failed; no state receipt, scene metric, branch result, or RGB leaf was persisted or used to alter the successor design.",
+    "vram_peak_used_bytes": 2406887424,
+    "vram_authority_ceiling_bytes": 16977405952
+  },
+  "replacement_contract": {
+    "maximum_integrity_replacements": 1,
+    "requires_new_attempt_id": true,
+    "requires_new_absent_root": true,
+    "old_root_must_remain_immutable": true,
+    "retry": false,
+    "resume": false,
+    "refill": false,
+    "overwrite": false,
+    "screening": false,
+    "scientific_design_changes": false,
+    "required_unchanged_design": [
+      "32 deterministic scenes",
+      "256 states",
+      "2304 candidate branches",
+      "fixed nine-action catalog and histories",
+      "fixed train/eval roles and exclusions",
+      "fixed 12-checkpoint model panel",
+      "fixed evaluation gates and controls",
+      "fixed resource ceilings"
+    ],
+    "only_permitted_source_correction": "Call kernel._runtime_imports(textured_v03=True) in the authorized bounded collector and add a regression that observes the true mode.",
+    "independent_source_review_required": true,
+    "explicit_new_authority_required": true
+  },
+  "protected_material_opened": false
+}

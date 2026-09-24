@@ -1,0 +1,11866 @@
+#!/usr/bin/env python3
+"""Execute PLAN_AWARE_MONOTONE_JEPA_COST_V1 under a split-open barrier.
+
+The experiment is development-only and non-claim-bearing.  It trains two
+small route-ordering residuals over the already frozen 48-state local-waypoint
+panel.  No simulator, renderer, encoder, or predictor is entered in Stage A.
+Only fit outcome shards are opened before both final-epoch route-ranker
+checkpoints and the evaluation contract are durably published.
+
+Stage B is conditional on the prospectively frozen true-future gate.  If it is
+entered, the existing R1/RR payloads are reused and P1/PR are materialised from
+the frozen predictors without training.  Stage C is conditional on the frozen
+proprioceptive-contribution gate.  Nothing in this file implements navigation.
+"""
+from __future__ import annotations
+
+import argparse
+import copy
+import faulthandler
+import gzip
+import hashlib
+import importlib
+import json
+import math
+import os
+from pathlib import Path
+import re
+import resource
+import signal
+import shutil
+import stat
+import subprocess
+import sys
+import time
+import traceback
+from typing import Any, Iterable, Mapping, Sequence
+
+import numpy as np
+
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from lewm.safety import jepa_local_waypoint_planning_cost_metrics_v1 as OLD_METRICS  # noqa: E402
+from lewm.safety import plan_aware_monotone_jepa_cost_metrics_v1 as METRICS  # noqa: E402
+from lewm.safety import plan_aware_monotone_jepa_cost_v1 as MODEL  # noqa: E402
+from lewm.safety import plan_aware_monotone_jepa_cost_v1_contract as CONTRACT  # noqa: E402
+
+
+class QualificationError(RuntimeError):
+    """Fail-closed qualification error."""
+
+
+SOURCE_COMMIT = "1d799eb24d8171cb6d90bc0d0e375d9e1b0cc4f0"
+REQUIRED_ANCESTOR = "b29eae1929725a4cc26a35d95662b545daee4553"
+PREDECESSOR_ROOT = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    "jepa_local_waypoint_planning_cost_qualification_v1"
+)
+V1_ROOT = ROOT / ".generated/safe_local_waypoint_purpose_built_v1"
+V2_ROOT = ROOT / ".generated/safe_local_waypoint_route_intent_v2"
+DENSE_ROOT = ROOT / ".generated/dense_temporal_true_future_safety_observability_v1"
+STATE_MANIFEST = V1_ROOT / "state_manifest.json"
+SPLIT_PATH = V1_ROOT / "split.json"
+BRANCH_LEDGER = V1_ROOT / "branch_labels.jsonl"
+ROUTE_LABELS = V2_ROOT / "route_intent_labels.jsonl"
+TARGET_LATENT_INDEX = V2_ROOT / "target_latent_index.json"
+CONTEXT_INDEX = PREDECESSOR_ROOT / "materialization/context_reconstruction_index.json"
+FANOUT_INDEX = PREDECESSOR_ROOT / "materialization/oracle_admissibility_fanout_index.json"
+GOAL_INDEX = PREDECESSOR_ROOT / "goal_views/index.json"
+LATENT_INDEX = PREDECESSOR_ROOT / "latents/tensor_index.json"
+PREDECESSOR_METRICS = PREDECESSOR_ROOT / "aggregates/metrics.json"
+PREDECESSOR_RESULT = PREDECESSOR_ROOT / "result.json"
+PREDECESSOR_PERSISTENCE = PREDECESSOR_ROOT / "receipts/persistence.json"
+
+FIT, CALIBRATION, HELDOUT = "fit", "calibration", "heldout"
+SPLIT_ROLES = (FIT, CALIBRATION, HELDOUT)
+STATE_COUNT = 48
+CANDIDATE_COUNT = 12
+HORIZONS = (1, 2, 3)
+TENSOR_SHAPE = (768, 1024)
+TENSOR_DTYPE = np.dtype(np.float16)
+MACRO_TO_PRIMITIVE = (3, 2, 1, 7, 8, 5, 6, 5, 6, 2, 4, 0)
+ROUTE_LINE_STATE = re.compile(rb'"state_id"\s*:\s*"([^"]+)"')
+ROUTE_LINE_CANDIDATE = re.compile(rb'"candidate_index"\s*:\s*([0-9]+)')
+EVALUATOR_SCRIPT = Path(__file__).absolute()
+EVALUATOR_INTERPRETER = Path(sys.executable).absolute()
+FORENSIC_INTERPRETER = Path("/home/andrewknowles/TinyQuadJEPA/bin/python")
+PREEXECUTION_DIAGNOSTIC_WRAPPER_SCRIPT = (
+    ROOT
+    / "scripts/run_plan_aware_monotone_jepa_cost_v1_preexecution_diagnostic_child.py"
+).absolute()
+CONDITIONAL_HELPER_SCRIPT = (
+    ROOT / "scripts/materialize_plan_aware_proprio_predictor_substitution_v1.py"
+).absolute()
+CONDITIONAL_CPU_INTERPRETER = (
+    ROOT / ".generated/venvs/genesis_render_vulkan/bin/python"
+).absolute()
+CONDITIONAL_GPU_INTERPRETER = Path(
+    "/home/andrewknowles/TinyQuadJEPA/bin/python"
+).absolute()
+SCIENTIFIC_EVALUATOR_SUBCOMMAND = "execute-scientific"
+TERMINAL_FINALIZER_SUBCOMMAND = "finalize-correction-2"
+LAUNCHER_SUBCOMMAND = "execute"
+POST_FINALIZER_CHECK_SUBCOMMAND = "check"
+PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND = "freeze-preexecution-forensic"
+PREEXECUTION_DIAGNOSTIC_SUBCOMMAND = "diagnose-preexecution"
+PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND = "diagnose-preexecution-child"
+PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND = (
+    "diagnose-preexecution-synthetic-child"
+)
+PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND = (
+    "freeze-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND = (
+    "diagnose-preexecution-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND = (
+    "diagnose-preexecution-correction-1-child"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND = (
+    "finalize-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND = (
+    "check-preexecution-forensic-correction-1"
+)
+PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT = Path(
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/"
+    "plan_aware_monotone_jepa_cost_v1_preexecution_diagnostic_correction_1"
+)
+CONDITIONAL_HELPER_SUBCOMMANDS = frozenset(
+    {"run-stage-b", "context-state", "predict-source", "run-stage-c"}
+)
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1 << 22), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def canonical_json_bytes(value: Any) -> bytes:
+    """Return the contract-equivalent canonical UTF-8 JSON payload.
+
+    Self-digests cover these bytes exactly: sorted compact JSON, no ASCII
+    escaping, no NaN/Infinity, and no trailing newline.  Persisted JSON and
+    JSONL retain their historical single-newline framing through
+    :func:`canonical_bytes` below.
+    """
+
+    return CONTRACT.canonical_json_bytes(value)
+
+
+def canonical_bytes(value: Any) -> bytes:
+    """Return canonical JSON followed by exactly one newline."""
+
+    return canonical_json_bytes(value) + b"\n"
+
+
+def _forensic_contract() -> Any:
+    """Load the separate technical-forensic authority only on diagnostic paths."""
+
+    return importlib.import_module(
+        "lewm.safety.plan_aware_monotone_jepa_cost_v1_forensic_contract"
+    )
+
+
+def _forensic_correction_1_contract() -> Any:
+    """Load only the additive correction authority on correction CLI paths."""
+
+    return importlib.import_module(
+        "lewm.safety."
+        "plan_aware_monotone_jepa_cost_v1_forensic_correction_1_contract"
+    )
+
+
+def content_digest(value: Mapping[str, Any]) -> str:
+    core = copy.deepcopy(dict(value))
+    core.pop("content_digest", None)
+    return CONTRACT.canonical_json_sha256(core)
+
+
+def attach_digest(value: Mapping[str, Any]) -> dict[str, Any]:
+    output = copy.deepcopy(dict(value))
+    output["content_digest"] = content_digest(output)
+    return output
+
+
+def atomic_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    with temporary.open("wb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def atomic_json(path: Path, value: Mapping[str, Any]) -> None:
+    atomic_bytes(path, canonical_bytes(value))
+
+
+def exclusive_json(path: Path, value: Mapping[str, Any]) -> None:
+    """Create one immutable external witness, rejecting every stale path."""
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = canonical_bytes(value)
+    with path.open("xb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def atomic_jsonl_gz(path: Path, rows: Iterable[Mapping[str, Any]]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    with temporary.open("wb") as raw:
+        with gzip.GzipFile(filename="", fileobj=raw, mode="wb", mtime=0) as zipped:
+            for row in rows:
+                zipped.write(canonical_bytes(row))
+        raw.flush()
+        os.fsync(raw.fileno())
+    os.replace(temporary, path)
+
+
+def load_json(path: Path) -> dict[str, Any]:
+    with path.open("r", encoding="utf-8") as handle:
+        value = json.load(handle)
+    if not isinstance(value, dict):
+        raise QualificationError(f"JSON object required: {path}")
+    return value
+
+
+def numeric_state_key(state_id: str) -> tuple[str, int]:
+    prefix, separator, suffix = state_id.rpartition("-")
+    if not separator or not suffix.isdigit():
+        raise QualificationError(f"invalid state identity: {state_id!r}")
+    return prefix, int(suffix)
+
+
+def binding(path: Path, *, relative_to: Path | None = None) -> dict[str, Any]:
+    reference = path
+    if relative_to is not None:
+        try:
+            reference = path.relative_to(relative_to)
+        except ValueError:
+            reference = path
+    return {
+        "path": str(reference),
+        "sha256": sha256_file(path),
+        "bytes": path.stat().st_size,
+    }
+
+
+def verify_binding(path: Path, expected_sha256: str, *, label: str) -> None:
+    if not path.is_file():
+        raise QualificationError(f"{label} is missing: {path}")
+    observed = sha256_file(path)
+    if observed != expected_sha256:
+        raise QualificationError(
+            f"{label} SHA drift: {observed} != {expected_sha256}"
+        )
+
+
+def verify_exact_file_record(
+    path: Path, record: Mapping[str, Any], *, label: str
+) -> None:
+    verify_binding(path, str(record["sha256"]), label=label)
+    if path.stat().st_size != int(record["bytes"]):
+        raise QualificationError(f"{label} byte-size drift")
+
+
+def git_output(*args: str) -> str:
+    return subprocess.check_output(
+        ["git", *args], cwd=ROOT, text=True, stderr=subprocess.STDOUT
+    ).strip()
+
+
+def verify_source_authority(*, runtime_commit: str | None = None) -> str:
+    head = git_output("rev-parse", "HEAD")
+    expected = SOURCE_COMMIT if runtime_commit is None else runtime_commit
+    if head != expected:
+        raise QualificationError(f"source HEAD {head} != expected {expected}")
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", REQUIRED_ANCESTOR, head],
+        cwd=ROOT,
+        check=False,
+    ).returncode:
+        raise QualificationError("protected-contact requirements result is not an ancestor")
+    if git_output("status", "--porcelain"):
+        raise QualificationError("scientific execution requires a clean worktree")
+    return head
+
+
+def split_ids() -> dict[str, list[str]]:
+    split = load_json(SPLIT_PATH)
+    output = {role: [str(value) for value in split[role]] for role in SPLIT_ROLES}
+    if {role: len(output[role]) for role in SPLIT_ROLES} != {
+        FIT: 32,
+        CALIBRATION: 8,
+        HELDOUT: 8,
+    }:
+        raise QualificationError("frozen split cardinality drift")
+    flat = [state for role in SPLIT_ROLES for state in output[role]]
+    if len(set(flat)) != STATE_COUNT:
+        raise QualificationError("frozen split identities are not disjoint and complete")
+    return output
+
+
+def route_line_index() -> dict[tuple[str, int], dict[str, Any]]:
+    """Byte-index the mixed route ledger without parsing scientific fields."""
+
+    output: dict[tuple[str, int], dict[str, Any]] = {}
+    with ROUTE_LABELS.open("rb") as handle:
+        while True:
+            offset = handle.tell()
+            line = handle.readline()
+            if not line:
+                break
+            state_match = ROUTE_LINE_STATE.search(line)
+            candidate_match = ROUTE_LINE_CANDIDATE.search(line)
+            if state_match is None or candidate_match is None:
+                raise QualificationError("route ledger identity cannot be byte-indexed")
+            state_id = state_match.group(1).decode("utf-8")
+            candidate = int(candidate_match.group(1))
+            key = (state_id, candidate)
+            if key in output:
+                raise QualificationError(f"duplicate route identity {key}")
+            output[key] = {
+                "offset": offset,
+                "bytes": len(line),
+                "sha256": hashlib.sha256(line).hexdigest(),
+            }
+    if len(output) != STATE_COUNT * CANDIDATE_COUNT:
+        raise QualificationError("route byte index cardinality drift")
+    return output
+
+
+def read_route_state(
+    state_id: str,
+    line_index: Mapping[tuple[str, int], Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Parse exactly one already-authorised state's twelve route rows."""
+
+    rows: list[dict[str, Any]] = []
+    with ROUTE_LABELS.open("rb") as handle:
+        for candidate in range(CANDIDATE_COUNT):
+            record = line_index[(state_id, candidate)]
+            handle.seek(int(record["offset"]))
+            line = handle.read(int(record["bytes"]))
+            if hashlib.sha256(line).hexdigest() != record["sha256"]:
+                raise QualificationError(f"route row bytes drift: {state_id}:{candidate}")
+            row = json.loads(line)
+            if (
+                str(row.get("state_id")) != state_id
+                or int(row.get("candidate_index", -1)) != candidate
+            ):
+                raise QualificationError("route row identity drift after authorised open")
+            rows.append(row)
+    return rows
+
+
+def role_one_hot(role: str) -> list[float]:
+    roles = ("translational", "alignment", "hold_abstain")
+    if role not in roles:
+        raise QualificationError(f"unknown route role {role!r}")
+    return [float(role == value) for value in roles]
+
+
+def _index_by_state(path: Path) -> dict[str, dict[str, Any]]:
+    payload = load_json(path)
+    rows = payload.get("records")
+    if not isinstance(rows, list) or len(rows) != STATE_COUNT:
+        raise QualificationError(f"state index cardinality drift: {path}")
+    output = {str(row["state_id"]): dict(row) for row in rows}
+    if len(output) != STATE_COUNT:
+        raise QualificationError(f"state index duplicate identity: {path}")
+    return output
+
+
+def tensor_index() -> dict[tuple[str, str, int | None, int | None], dict[str, Any]]:
+    payload = load_json(LATENT_INDEX)
+    rows = payload.get("records")
+    if not isinstance(rows, list) or len(rows) != 5424:
+        raise QualificationError("predecessor latent index cardinality drift")
+    output: dict[tuple[str, str, int | None, int | None], dict[str, Any]] = {}
+    for row in rows:
+        key = (
+            str(row["kind"]),
+            str(row["state_id"]),
+            row["candidate_index_or_null"],
+            row["horizon_or_null"],
+        )
+        if key in output:
+            raise QualificationError(f"duplicate latent tensor identity {key}")
+        output[key] = dict(row)
+    return output
+
+
+def _validate_true_future_index_reconciliation(
+    target_index_value: Mapping[str, Any],
+    tensor_index_value: Mapping[str, Any],
+    *,
+    expected_index_sha256: str,
+    expected_count: int = 1_728,
+) -> None:
+    entries = target_index_value.get("entries")
+    records = tensor_index_value.get("records")
+    if not isinstance(entries, list) or len(entries) != expected_count:
+        raise QualificationError("frozen true-future target-index cardinality drift")
+    if not isinstance(records, list):
+        raise QualificationError("predecessor tensor-index records are absent")
+    target_by_identity = {
+        (
+            str(row["state_id"]),
+            int(row["candidate_index"]),
+            int(row["horizon"]),
+        ): row
+        for row in entries
+    }
+    true_records = [row for row in records if row.get("kind") == "TRUE_FUTURE"]
+    if len(target_by_identity) != expected_count or len(true_records) != expected_count:
+        raise QualificationError("true-future identity cardinality drift")
+    seen: set[tuple[str, int, int]] = set()
+    for record in true_records:
+        identity = (
+            str(record["state_id"]),
+            int(record["candidate_index_or_null"]),
+            int(record["horizon_or_null"]),
+        )
+        if identity in seen or identity not in target_by_identity:
+            raise QualificationError(f"true-future identity drift: {identity}")
+        seen.add(identity)
+        target = target_by_identity[identity]
+        external = record.get("external_existing_artifact")
+        if not isinstance(external, Mapping) or (
+            record.get("shape") != target.get("shape")
+            or record.get("dtype") != target.get("dtype")
+            or record.get("sha256") != target.get("sha256")
+            or external.get("path") != target.get("latent_path")
+            or external.get("sha256") != target.get("sha256")
+            or external.get("index_sha256") != expected_index_sha256
+            or external.get("array_equality") is not True
+        ):
+            raise QualificationError(f"true-future metadata reconciliation drift: {identity}")
+    if seen != set(target_by_identity):
+        raise QualificationError("true-future reconciliation is incomplete")
+
+
+def resolve_predecessor_artifact(reference: str) -> Path:
+    path = Path(reference)
+    return path if path.is_absolute() else PREDECESSOR_ROOT / path
+
+
+def load_tensor(row: Mapping[str, Any]) -> np.ndarray:
+    path = resolve_predecessor_artifact(str(row["path"]))
+    if not path.is_file() or path.stat().st_size != int(row["bytes"]):
+        raise QualificationError(f"tensor path/byte drift: {path}")
+    if sha256_file(path) != row["sha256"]:
+        raise QualificationError(f"tensor SHA drift: {path}")
+    value = np.load(path, allow_pickle=False)
+    if value.shape != TENSOR_SHAPE or value.dtype != TENSOR_DTYPE:
+        raise QualificationError(f"tensor shape/dtype drift: {path}")
+    if not np.isfinite(value).all():
+        raise QualificationError(f"tensor contains non-finite values: {path}")
+    return value
+
+
+def _fanout_path(state_id: str) -> Path:
+    return (
+        PREDECESSOR_ROOT
+        / "materialization/states"
+        / state_id
+        / "oracle_contact_fanout.npz"
+    )
+
+
+def load_oracle_population(state_id: str) -> list[dict[str, Any]]:
+    path = _fanout_path(state_id)
+    if not path.is_file():
+        raise QualificationError(f"oracle fanout shard missing: {state_id}")
+    with np.load(path, allow_pickle=False) as archive:
+        current = np.asarray(archive["current_contact_bitset"], dtype=np.bool_)
+        successor = np.asarray(archive["successor_contact_bitset"], dtype=np.bool_)
+    if current.shape != (9, 250) or successor.shape != (9, 9, 250):
+        raise QualificationError(f"oracle fanout shape drift: {state_id}")
+    output = []
+    for candidate, primitive in enumerate(MACRO_TO_PRIMITIVE):
+        immediate = bool(np.any(current[primitive]))
+        safe_count = int(np.sum(~np.any(successor[primitive], axis=1)))
+        output.append(
+            {
+                "candidate_index": candidate,
+                "immediate_contact_h1": immediate,
+                "successor_safe_action_count": safe_count,
+                "successor_viable": safe_count > 0,
+                "oracle_viability_admissible": (not immediate and safe_count > 0),
+            }
+        )
+    return output
+
+
+def dense_state(state_id: str) -> dict[str, Any]:
+    path = DENSE_ROOT / "dense_replay" / f"{state_id}.json"
+    value = load_json(path)
+    if (
+        value.get("schema") != "dense_route_intent_true_future_state_v1"
+        or value.get("status") != "PASS"
+        or str(value.get("state_id")) != state_id
+        or len(value.get("branches", [])) != CANDIDATE_COUNT
+    ):
+        raise QualificationError(f"dense replay state drift: {state_id}")
+    return value
+
+
+def state_manifest_map() -> dict[str, dict[str, Any]]:
+    value = load_json(STATE_MANIFEST)
+    rows = value.get("state_candidates")
+    if not isinstance(rows, list) or len(rows) != STATE_COUNT:
+        raise QualificationError("state manifest cardinality drift")
+    output = {str(row["state_id"]): dict(row) for row in rows}
+    if len(output) != STATE_COUNT:
+        raise QualificationError("state manifest duplicate identities")
+    return output
+
+
+def build_state_rows(
+    state_id: str,
+    *,
+    expected_role: str,
+    line_index: Mapping[tuple[str, int], Mapping[str, Any]],
+    contexts: Mapping[str, Mapping[str, Any]],
+    goals: Mapping[str, Mapping[str, Any]],
+    route_roles: Mapping[str, str],
+) -> list[dict[str, Any]]:
+    """Open and construct exactly one authorised state's scalar rows."""
+
+    route_rows = read_route_state(state_id, line_index)
+    try:
+        role = str(route_roles[state_id])
+    except KeyError as exc:
+        raise QualificationError(f"frozen route-role authority lacks {state_id}") from exc
+    if role not in ("translational", "alignment", "hold_abstain"):
+        raise QualificationError(f"frozen route-role authority is invalid: {state_id}")
+    oracle = load_oracle_population(state_id)
+    dense = dense_state(state_id)
+    dense_by = {int(row["candidate_index"]): row for row in dense["branches"]}
+    if set(dense_by) != set(range(CANDIDATE_COUNT)):
+        raise QualificationError(f"dense candidate identities drift: {state_id}")
+    context = contexts[state_id]
+    if context.get("role") != expected_role:
+        raise QualificationError(f"context split role drift: {state_id}")
+    goal = goals[state_id]["goal_body_dx_dy_sin_dyaw_cos_dyaw"]
+    dx, dy, sin_heading, cos_heading = [float(value) for value in goal]
+    heading = math.atan2(sin_heading, cos_heading)
+    waypoint = [
+        dx,
+        dy,
+        math.hypot(dx, dy),
+        heading,
+        sin_heading,
+        cos_heading,
+    ]
+    role_vector = role_one_hot(role)
+    raw_control = np.asarray(context["control_history_raw_3x5x2"], np.float64)
+    if raw_control.shape != (3, 5, 2) or not np.isfinite(raw_control).all():
+        raise QualificationError(f"control history shape drift: {state_id}")
+    previous_active = raw_control[-1, -1]
+    previous_full = [float(previous_active[0]), 0.0, float(previous_active[1])]
+    nominal: list[dict[str, Any]] = []
+    for candidate in range(CANDIDATE_COUNT):
+        applied = np.asarray(
+            context["applied_action_blocks_raw_3x5x3_by_candidate"][candidate],
+            np.float64,
+        )
+        outcome = OLD_METRICS.kinematic_nominal_outcome(
+            applied,
+            waypoint[:2],
+            route_heading_rad=heading,
+        )
+        nominal.append({"candidate_index": candidate, **outcome})
+    rank_cost = OLD_METRICS.kinematic_rank_costs(nominal)
+    output: list[dict[str, Any]] = []
+    for candidate in range(CANDIDATE_COUNT):
+        route = route_rows[candidate]["horizons"]["3"]
+        oracle_row = oracle[candidate]
+        requested = np.asarray(
+            context["requested_action_blocks_raw_3x5x3_by_candidate"][candidate],
+            np.float64,
+        )
+        applied = np.asarray(
+            context["applied_action_blocks_raw_3x5x3_by_candidate"][candidate],
+            np.float64,
+        )
+        active_plan = np.asarray(
+            context["action_blocks_raw_3x10_by_candidate"][candidate], np.float64
+        )
+        if requested.shape != (3, 5, 3) or applied.shape != (3, 5, 3):
+            raise QualificationError(f"full action tape shape drift: {state_id}:{candidate}")
+        if active_plan.shape != (3, 10):
+            raise QualificationError(f"predictor action plan shape drift: {state_id}:{candidate}")
+        kin = nominal[candidate]
+        anchor = -float(rank_cost[candidate])
+        kin_features = [
+            float(kin["x_m"]),
+            float(kin["y_m"]),
+            float(kin["yaw_rad"]),
+            float(kin["nominal_p_d"]),
+            float(kin["nominal_p_theta"]),
+            anchor,
+        ]
+        base_features = np.asarray(
+            [
+                *waypoint,
+                *role_vector,
+                *requested.reshape(-1).tolist(),
+                *applied.reshape(-1).tolist(),
+                *previous_full,
+                *raw_control.reshape(-1).tolist(),
+                *kin_features,
+            ],
+            np.float32,
+        )
+        query_features = np.asarray(
+            [
+                *waypoint,
+                *role_vector,
+                *active_plan.reshape(-1).tolist(),
+                float(previous_active[0]),
+                float(previous_active[1]),
+                *raw_control.reshape(-1).tolist(),
+            ],
+            np.float32,
+        )
+        if base_features.shape != (138,) or query_features.shape != (71,):
+            raise QualificationError("feature vector dimension drift")
+        ticks = dense_by[candidate]["ticks"]
+        if len(ticks) != 15:
+            raise QualificationError(f"dense tick count drift: {state_id}:{candidate}")
+        contacts = [bool(ticks[index]["cumulative_contact"]) for index in (4, 9, 14)]
+        output.append(
+            {
+                "state_id": state_id,
+                "family": str(context["family"]),
+                "split": expected_role,
+                "route_intent_role": role,
+                "candidate_index": candidate,
+                "waypoint_features": waypoint,
+                "requested_action_blocks": requested.astype(float).tolist(),
+                "applied_action_blocks": applied.astype(float).tolist(),
+                "predictor_candidate_action_plan_3x10": active_plan.astype(
+                    float
+                ).tolist(),
+                "previous_applied_command": previous_full,
+                "control_history": raw_control.astype(float).tolist(),
+                "kinematic_features": kin_features,
+                "kinematic_anchor": anchor,
+                "base_features": base_features,
+                "query_features": query_features,
+                "p_d": float(route["p_d"]),
+                "p_theta": float(route["p_theta_rad"]),
+                "completed": bool(route["completed"]),
+                "stuck": bool(ticks[14]["cumulative_stuck"]),
+                "descriptive_contact_h1": contacts[0],
+                "descriptive_contact_h2": contacts[1],
+                "descriptive_contact_h3": contacts[2],
+                **oracle_row,
+            }
+        )
+    return output
+
+
+def authorised_dataset(
+    role: str,
+    *,
+    ids: Mapping[str, Sequence[str]],
+    line_index: Mapping[tuple[str, int], Mapping[str, Any]],
+    contexts: Mapping[str, Mapping[str, Any]],
+    goals: Mapping[str, Mapping[str, Any]],
+    route_roles: Mapping[str, str],
+) -> dict[str, list[dict[str, Any]]]:
+    if role not in SPLIT_ROLES:
+        raise QualificationError(f"unknown split role {role!r}")
+    return {
+        state_id: build_state_rows(
+            state_id,
+            expected_role=role,
+            line_index=line_index,
+            contexts=contexts,
+            goals=goals,
+            route_roles=route_roles,
+        )
+        for state_id in sorted(ids[role], key=numeric_state_key)
+    }
+
+
+def route_utility(rows: Sequence[Mapping[str, Any]]) -> np.ndarray:
+    return OLD_METRICS.margin_borda_utility(rows)
+
+
+def admissible_positions(rows: Sequence[Mapping[str, Any]]) -> list[int]:
+    return [
+        index
+        for index, row in enumerate(rows)
+        if bool(row["oracle_viability_admissible"])
+    ]
+
+
+def state_training_payload(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    positions = admissible_positions(rows)
+    subset = [rows[index] for index in positions]
+    try:
+        optimization_status = CONTRACT.fit_state_optimization_status(len(positions))
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    utility = (
+        route_utility(subset).astype(np.float32)
+        if subset
+        else np.empty((0,), dtype=np.float32)
+    )
+    pairwise_targets = np.zeros((len(subset), len(subset)), dtype=np.float32)
+    for left in range(len(subset)):
+        for right in range(left + 1, len(subset)):
+            preference = CONTRACT.margin_borda_pairwise_target(
+                float(utility[left]), float(utility[right])
+            )
+            pairwise_targets[left, right] = float(preference)
+            pairwise_targets[right, left] = float(-preference)
+    if not np.array_equal(pairwise_targets, -pairwise_targets.T):
+        raise QualificationError(
+            "conditioned margin-Borda pairwise target matrix is not antisymmetric"
+        )
+    payload: dict[str, Any] = {
+        "positions": positions,
+        "utility": utility,
+        "pairwise_targets": pairwise_targets,
+        "optimization_status": optimization_status,
+        "contributes_optimizer_step": optimization_status == "CONTRIBUTING",
+    }
+    if optimization_status == "CONTRIBUTING":
+        payload.update(
+            {
+                "base_features": np.stack(
+                    [rows[index]["base_features"] for index in positions]
+                ),
+                "query_features": np.stack(
+                    [rows[index]["query_features"] for index in positions]
+                ),
+                "anchors": np.asarray(
+                    [rows[index]["kinematic_anchor"] for index in positions],
+                    np.float32,
+                ),
+            }
+        )
+    return payload
+
+
+def _fit_optimization_summary(
+    fit: Mapping[str, Sequence[Mapping[str, Any]]],
+) -> dict[str, Any]:
+    by_status: dict[str, list[str]] = {
+        "CONTRIBUTING": [],
+        "SKIPPED_ZERO_ADMISSIBLE": [],
+        "SKIPPED_SINGLETON_ADMISSIBLE": [],
+    }
+    total_ids: list[str] = []
+    for state_id in sorted(fit, key=numeric_state_key):
+        count = len(admissible_positions(fit[state_id]))
+        try:
+            status = CONTRACT.fit_state_optimization_status(count)
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        if status not in by_status:
+            raise QualificationError(f"unknown fit optimization status {status!r}")
+        by_status[status].append(state_id)
+        total_ids.append(state_id)
+    summary = {
+        "fit_states_total": len(fit),
+        "fit_state_ids_total": total_ids,
+        "fit_states_contributing": len(by_status["CONTRIBUTING"]),
+        "fit_state_ids_contributing": by_status["CONTRIBUTING"],
+        "fit_states_skipped_zero_admissible": len(
+            by_status["SKIPPED_ZERO_ADMISSIBLE"]
+        ),
+        "fit_state_ids_skipped_zero_admissible": by_status[
+            "SKIPPED_ZERO_ADMISSIBLE"
+        ],
+        "fit_states_skipped_singleton_admissible": len(
+            by_status["SKIPPED_SINGLETON_ADMISSIBLE"]
+        ),
+        "fit_state_ids_skipped_singleton_admissible": by_status[
+            "SKIPPED_SINGLETON_ADMISSIBLE"
+        ],
+        "epoch_average_denominator": len(by_status["CONTRIBUTING"]),
+    }
+    _validate_fit_optimization_summary(summary, expected_total=len(fit))
+    return summary
+
+
+def _validate_fit_optimization_summary(
+    summary: Mapping[str, Any], *, expected_total: int | None = None
+) -> None:
+    required = set(CONTRACT.FIT_OPTIMIZATION_RECEIPT_FIELDS)
+    if set(summary) != required:
+        raise QualificationError("fit optimization summary schema drift")
+    total = int(summary["fit_states_total"])
+    if expected_total is not None and total != expected_total:
+        raise QualificationError("fit optimization total-state drift")
+    groups = (
+        ("fit_states_contributing", "fit_state_ids_contributing"),
+        (
+            "fit_states_skipped_zero_admissible",
+            "fit_state_ids_skipped_zero_admissible",
+        ),
+        (
+            "fit_states_skipped_singleton_admissible",
+            "fit_state_ids_skipped_singleton_admissible",
+        ),
+    )
+    all_ids: list[str] = []
+    for count_key, ids_key in groups:
+        ids = list(summary[ids_key])
+        if int(summary[count_key]) != len(ids) or ids != sorted(
+            ids, key=numeric_state_key
+        ):
+            raise QualificationError(f"fit optimization {ids_key} drift")
+        all_ids.extend(ids)
+    total_ids = list(summary["fit_state_ids_total"])
+    if (
+        len(total_ids) != total
+        or total_ids != sorted(total_ids, key=numeric_state_key)
+        or len(set(all_ids)) != len(all_ids)
+        or set(all_ids) != set(total_ids)
+        or sum(int(summary[count_key]) for count_key, _ in groups) != total
+        or int(summary["epoch_average_denominator"])
+        != int(summary["fit_states_contributing"])
+    ):
+        raise QualificationError("fit optimization partition/denominator drift")
+
+
+def _validate_training_history(
+    history: Any, fit_optimization: Mapping[str, Any]
+) -> None:
+    if not isinstance(history, list) or len(history) != CONTRACT.TRAINING["epochs"]:
+        raise QualificationError("training history epoch cardinality drift")
+    required = {
+        "epoch",
+        "optimizer_steps",
+        "fit_states_total",
+        "fit_states_contributing",
+        "fit_states_skipped_zero_admissible",
+        "fit_states_skipped_singleton_admissible",
+        "epoch_average_denominator",
+        "loss",
+        "pair",
+        "list",
+        "residual",
+    }
+    for expected_epoch, row in enumerate(history, 1):
+        if (
+            not isinstance(row, Mapping)
+            or set(row) != required
+            or row["epoch"] != expected_epoch
+            or row["optimizer_steps"]
+            != fit_optimization["fit_states_contributing"]
+            or row["fit_states_total"] != fit_optimization["fit_states_total"]
+            or row["fit_states_contributing"]
+            != fit_optimization["fit_states_contributing"]
+            or row["fit_states_skipped_zero_admissible"]
+            != fit_optimization["fit_states_skipped_zero_admissible"]
+            or row["fit_states_skipped_singleton_admissible"]
+            != fit_optimization["fit_states_skipped_singleton_admissible"]
+            or row["epoch_average_denominator"]
+            != fit_optimization["epoch_average_denominator"]
+            or any(
+                not math.isfinite(float(row[key]))
+                for key in ("loss", "pair", "list", "residual")
+            )
+        ):
+            raise QualificationError(
+                f"training history state-accounting drift at epoch {expected_epoch}"
+            )
+
+
+def _latent_kind(source: str) -> str:
+    try:
+        return {
+            "TRUE": "TRUE_FUTURE",
+            "R1": "ONE_STEP_PREDICTED",
+            "RR": "TWO_STEP_PREDICTED",
+            "P1": "P1_PROPRIO_ONE_STEP",
+            "PR": "PR_PROPRIO_ROLLOUT",
+            "PR_VISUAL_CONTEXT_DERANGED": "PR_VISUAL_CONTEXT_DERANGED",
+            "PR_PROPRIO_HISTORY_DERANGED": "PR_PROPRIO_HISTORY_DERANGED",
+            "PR_CONTROL_HISTORY_DERANGED": "PR_CONTROL_HISTORY_DERANGED",
+        }[source]
+    except KeyError as exc:
+        raise QualificationError(f"unknown latent source {source!r}") from exc
+
+
+def _latent_binding_fields(record: Mapping[str, Any]) -> dict[str, Any]:
+    required = ("path", "sha256", "bytes")
+    if any(key not in record for key in required):
+        raise QualificationError("latent artifact binding is incomplete")
+    output = {key: copy.deepcopy(record[key]) for key in required}
+    if "array_index" in record:
+        output["array_index"] = copy.deepcopy(record["array_index"])
+    return output
+
+
+def _candidate_latent_bindings(
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    *,
+    state_id: str,
+    candidate: int,
+    source: str,
+    deranged_candidate: int | None = None,
+) -> dict[str, Any]:
+    kind = _latent_kind(source)
+    current = _latent_binding_fields(
+        tensor_rows[("CURRENT", state_id, None, None)]
+    )
+    futures = {
+        f"H{horizon}": _latent_binding_fields(
+            tensor_rows[(kind, state_id, candidate, horizon)]
+        )
+        for horizon in HORIZONS
+    }
+    output: dict[str, Any] = {
+        "current": current,
+        "candidate_future": futures,
+    }
+    if deranged_candidate is not None:
+        output["deranged_candidate_future"] = {
+            f"H{horizon}": _latent_binding_fields(
+                tensor_rows[(kind, state_id, deranged_candidate, horizon)]
+            )
+            for horizon in HORIZONS
+        }
+    return output
+
+
+def _tensor_rows_for_state(
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    state_id: str,
+    positions: Sequence[int],
+    *,
+    source: str,
+    logical_output_root: Path | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    current = load_tensor(tensor_rows[("CURRENT", state_id, None, None)])
+    kind = _latent_kind(source)
+
+    first = tensor_rows[(kind, state_id, int(positions[0]), HORIZONS[0])]
+    if "array_index" in first:
+        if logical_output_root is None:
+            raise QualificationError("logical Stage-B tensor lacks its output root")
+        from scripts import materialize_plan_aware_proprio_predictor_substitution_v1 as stage_b_impl
+
+        path = stage_b_impl.resolve_artifact(str(first["path"]), logical_output_root)
+        try:
+            stage_b_impl.verify_file_binding(path, first, f"{state_id}:{kind}")
+        except stage_b_impl.MaterialisationError as exc:
+            raise QualificationError(str(exc)) from exc
+        state_tensor = np.load(path, mmap_mode="r", allow_pickle=False)
+        if (
+            state_tensor.shape != stage_b_impl.PREDICTION_STATE_SHAPE
+            or state_tensor.dtype != np.float16
+        ):
+            raise QualificationError(f"Stage-B state tensor drift: {state_id}:{kind}")
+        for candidate in range(CANDIDATE_COUNT):
+            for horizon_index, horizon in enumerate(HORIZONS):
+                record = tensor_rows[(kind, state_id, candidate, horizon)]
+                if (
+                    record.get("path") != first.get("path")
+                    or record.get("sha256") != first.get("sha256")
+                    or record.get("bytes") != first.get("bytes")
+                    or record.get("array_index") != [candidate, horizon_index]
+                ):
+                    raise QualificationError(
+                        f"logical Stage-B index drift: {state_id}:{candidate}:h{horizon}"
+                    )
+        futures = np.asarray(state_tensor[np.asarray(positions)]).copy()
+    else:
+        futures = np.stack(
+            [
+                np.stack(
+                    [
+                        load_tensor(tensor_rows[(kind, state_id, candidate, horizon)])
+                        for horizon in HORIZONS
+                    ],
+                    axis=0,
+                )
+                for candidate in positions
+            ],
+            axis=0,
+        )
+    if current.shape != TENSOR_SHAPE or futures.shape != (
+        len(positions),
+        3,
+        *TENSOR_SHAPE,
+    ):
+        raise QualificationError(f"latent trajectory tensor shape drift: {state_id}:{source}")
+    return current, futures
+
+
+def deterministic_epoch_order(state_ids: Sequence[str], epoch: int) -> list[str]:
+    prefix = f"{CONTRACT.ROUTE_COST_SEED}:epoch:{epoch}:".encode("utf-8")
+    return sorted(
+        state_ids,
+        key=lambda state: (hashlib.sha256(prefix + state.encode()).digest(), state),
+    )
+
+
+def _parameter_digest(model: Any) -> str:
+    import torch
+
+    digest = hashlib.sha256()
+    for name, parameter in sorted(model.state_dict().items()):
+        value = parameter.detach().cpu().contiguous()
+        digest.update(name.encode("utf-8"))
+        digest.update(str(value.dtype).encode("ascii"))
+        digest.update(str(tuple(value.shape)).encode("ascii"))
+        digest.update(value.numpy().tobytes())
+    return digest.hexdigest()
+
+
+def _atomic_torch_save(path: Path, value: Mapping[str, Any]) -> None:
+    import torch
+
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f".{path.name}.tmp-{os.getpid()}")
+    torch.save(dict(value), temporary)
+    with temporary.open("rb") as handle:
+        os.fsync(handle.fileno())
+    os.replace(temporary, path)
+
+
+def run_training_smoke(
+    fit: Mapping[str, Sequence[Mapping[str, Any]]],
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    *,
+    ids: Mapping[str, Sequence[str]],
+    output_root: Path,
+) -> dict[str, Any]:
+    """Run the registered fit-only implementation smoke before full training."""
+
+    import torch
+
+    if set(fit) != set(ids[FIT]) or set(fit) & (
+        set(ids[CALIBRATION]) | set(ids[HELDOUT])
+    ):
+        raise QualificationError("training smoke split exclusion failed")
+    optimization = _fit_optimization_summary(fit)
+    contributing_ids = optimization["fit_state_ids_contributing"]
+    if not contributing_ids:
+        raise QualificationError("training smoke has no optimizer-contributing fit state")
+    state_id = contributing_ids[0]
+    rows = list(fit[state_id])
+    waypoint_identities = {
+        tuple(float(value) for value in row["waypoint_features"]) for row in rows
+    }
+    if len(waypoint_identities) != 1:
+        raise QualificationError("state candidates do not share one waypoint")
+    payload = state_training_payload(rows)
+    current_np, future_np = _tensor_rows_for_state(
+        tensor_rows, state_id, payload["positions"], source="TRUE"
+    )
+    # The readout consumes the exact row-major flattening of the 24x32 token
+    # grid.  It intentionally adds no invented spatial reordering.
+    sentinel = np.arange(768).reshape(24, 32)
+    if not np.array_equal(sentinel.reshape(-1), np.arange(768)):
+        raise QualificationError("24x32 spatial token order drift")
+    device = torch.device("cuda:0")
+    no_latent, latent = MODEL.build_matched_rankers(CONTRACT.ROUTE_COST_SEED)
+    MODEL.assert_matched_initialisation(no_latent, latent)
+    no_latent.to(device)
+    latent.to(device)
+    # Smoke copies receive deterministic non-zero readout weights solely to
+    # establish input sensitivity before scientific training.  They are never
+    # persisted as experiment checkpoints.
+    with torch.no_grad():
+        no_latent.base_residual.layers[-1].weight.fill_(0.01)
+        latent.base_residual.layers[-1].weight.fill_(0.01)
+        latent.latent_residual_mlp[-1].weight.fill_(0.01)
+    base = torch.from_numpy(payload["base_features"]).to(device)
+    query = torch.from_numpy(payload["query_features"]).to(device)
+    anchors = torch.from_numpy(payload["anchors"]).to(device)
+    utility = torch.from_numpy(payload["utility"]).to(device)
+    pairwise_targets = torch.from_numpy(payload["pairwise_targets"]).to(device)
+    current = torch.from_numpy(current_np.astype(np.float32)).to(device)
+    future = torch.from_numpy(future_np.astype(np.float32)).to(device)
+    first_no = no_latent(base, anchors)
+    first_components = latent.score_components(base, query, anchors, current, future)
+    repeated = latent.score_components(base, query, anchors, current, future)
+    deterministic = torch.equal(first_components.score, repeated.score)
+    changed_base = base.clone()
+    changed_query = query.clone()
+    changed_base[0, 9] += 0.25
+    changed_query[0, 9] += 0.25
+    action_score = latent.score_components(
+        changed_base, changed_query, anchors, current, future
+    ).score
+    action_sensitive = not torch.equal(first_components.score, action_score)
+    changed_future = future.clone()
+    changed_future[0, 0, 0, 0] += 1.0
+    changed_latent = latent.score_components(
+        base, query, anchors, current, changed_future
+    ).score
+    latent_sensitive = not torch.equal(first_components.score, changed_latent)
+    no_latent_invariant = torch.equal(first_no, no_latent(base, anchors))
+    zero_branch_exact = torch.equal(
+        first_components.kinematic_plus_base_score,
+        anchors + latent.base_residual(base),
+    )
+    losses = MODEL.route_only_loss(
+        scores=first_components.score.unsqueeze(0),
+        route_utilities=utility.unsqueeze(0),
+        kinematic_anchor=anchors.unsqueeze(0),
+        pairwise_targets=pairwise_targets.unsqueeze(0),
+    )
+    losses.total.backward()
+    finite_loss_gradient = bool(torch.isfinite(losses.total)) and all(
+        parameter.grad is None or bool(torch.isfinite(parameter.grad).all())
+        for parameter in latent.parameters()
+    )
+    smoke_path = output_root / "staging/smoke_checkpoint.pt"
+    _atomic_torch_save(
+        smoke_path,
+        {"state_dict": latent.state_dict(), "schema": "plan_aware_smoke_checkpoint_v1"},
+    )
+    reloaded = MODEL.build_matched_rankers(CONTRACT.ROUTE_COST_SEED)[1]
+    checkpoint = torch.load(smoke_path, map_location="cpu", weights_only=False)
+    reloaded.load_state_dict(checkpoint["state_dict"], strict=True)
+    reload_exact = _parameter_digest(reloaded) == _parameter_digest(latent)
+    smoke_path.unlink()
+    checks = {
+        "fit_only_split_exclusion": True,
+        "no_calibration_or_heldout_rows_opened": True,
+        "candidate_waypoint_invariant": True,
+        "spatial_24x32_row_major_order_preserved": True,
+        "action_change_alters_latent_condition_score": action_sensitive,
+        "latent_change_alters_latent_condition_score": latent_sensitive,
+        "latent_change_cannot_enter_no_latent_condition": no_latent_invariant,
+        "latent_branch_zero_exact_kinematic_plus_base": zero_branch_exact,
+        "finite_loss_and_gradients": finite_loss_gradient,
+        "checkpoint_save_reload_exact": reload_exact,
+        "deterministic_repeated_inference": deterministic,
+        "model_forward_inputs_exclude_outcome_fields": True,
+    }
+    if not all(checks.values()):
+        raise QualificationError(f"training smoke failed: {checks}")
+    receipt = attach_digest(
+        {
+            "schema": "plan_aware_monotone_jepa_training_smoke_v1",
+            "state_id": state_id,
+            "candidate_count": len(payload["positions"]),
+            "fit_optimization": optimization,
+            "checks": checks,
+            "calibration_rows_opened": 0,
+            "heldout_rows_opened": 0,
+            "scientific_hyperparameters_changed": False,
+            "pass": True,
+        }
+    )
+    atomic_json(output_root / "receipts/training_smoke.json", receipt)
+    return receipt
+
+
+def train_rankers(
+    fit: Mapping[str, Sequence[Mapping[str, Any]]],
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    *,
+    output_root: Path,
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    """Train exactly the two frozen final-epoch route residuals."""
+
+    import torch
+
+    if not torch.cuda.is_available():
+        raise QualificationError("route-ranker training requires frozen GPU availability")
+    device = torch.device("cuda:0")
+    torch.manual_seed(CONTRACT.ROUTE_COST_SEED)
+    np.random.seed(CONTRACT.ROUTE_COST_SEED % (2**32))
+    os.environ.update(CONTRACT.NUMERICAL_THREAD_ENV)
+    torch.set_num_threads(1)
+    no_latent, latent = MODEL.build_matched_rankers(CONTRACT.ROUTE_COST_SEED)
+    MODEL.assert_matched_initialisation(no_latent, latent)
+    counts = {
+        "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": MODEL.parameter_count(no_latent),
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL": MODEL.parameter_count(latent),
+    }
+    if counts["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"] >= 250_000 or counts[
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL"
+    ] >= 500_000:
+        raise QualificationError("route-ranker parameter budget exceeded")
+    initial = {
+        "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": _parameter_digest(no_latent),
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL": _parameter_digest(latent),
+        "shared_base_initialisation": MODEL.shared_base_digest(no_latent),
+    }
+    if initial["shared_base_initialisation"] != MODEL.shared_base_digest(latent):
+        raise QualificationError("matched base initialisation drift")
+    training_payloads = {
+        state_id: state_training_payload(rows) for state_id, rows in fit.items()
+    }
+    fit_optimization = _fit_optimization_summary(fit)
+    contributing_state_ids = list(fit_optimization["fit_state_ids_contributing"])
+    if not contributing_state_ids:
+        raise QualificationError("fit split has no optimizer-contributing state")
+    if any(
+        training_payloads[state_id]["optimization_status"] != "CONTRIBUTING"
+        for state_id in contributing_state_ids
+    ):
+        raise QualificationError("fit optimization summary/payload drift")
+    # Hash and open every authorised fit tensor exactly once.  Re-reading the
+    # roughly two-gigabyte TRUE trajectory set for each of sixty epochs would
+    # change no science and would add avoidable I/O pressure.
+    training_latents = {
+        state_id: _tensor_rows_for_state(
+            tensor_rows,
+            state_id,
+            payload["positions"],
+            source="TRUE",
+        )
+        for state_id in contributing_state_ids
+        for payload in (training_payloads[state_id],)
+    }
+    histories: dict[str, list[dict[str, float]]] = {}
+    checkpoints: dict[str, Any] = {}
+    specifications = (
+        ("KINEMATIC_PLUS_NO_LATENT_RESIDUAL", no_latent, False),
+        ("KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL", latent, True),
+    )
+    for condition, model, use_latent in specifications:
+        model.to(device=device, dtype=torch.float32).train()
+        optimizer = torch.optim.AdamW(
+            model.parameters(),
+            lr=CONTRACT.TRAINING["learning_rate"],
+            weight_decay=CONTRACT.TRAINING["weight_decay"],
+        )
+        history: list[dict[str, float]] = []
+        for epoch in range(1, CONTRACT.TRAINING["epochs"] + 1):
+            totals = {"loss": 0.0, "pair": 0.0, "list": 0.0, "residual": 0.0}
+            steps = 0
+            for state_id in deterministic_epoch_order(contributing_state_ids, epoch):
+                payload = training_payloads[state_id]
+                base = torch.from_numpy(payload["base_features"]).to(device)
+                query = torch.from_numpy(payload["query_features"]).to(device)
+                anchors = torch.from_numpy(payload["anchors"]).to(device)
+                utility = torch.from_numpy(payload["utility"]).to(device)
+                pairwise_targets = torch.from_numpy(
+                    payload["pairwise_targets"]
+                ).to(device)
+                optimizer.zero_grad(set_to_none=True)
+                if use_latent:
+                    current_np, future_np = training_latents[state_id]
+                    current = torch.from_numpy(current_np.astype(np.float32)).to(device)
+                    future = torch.from_numpy(future_np.astype(np.float32)).to(device)
+                    scored = model(base, query, anchors, current, future)
+                else:
+                    scored = model(base, anchors)
+                losses = MODEL.route_only_loss(
+                    scores=scored.unsqueeze(0),
+                    route_utilities=utility.unsqueeze(0),
+                    kinematic_anchor=anchors.unsqueeze(0),
+                    pairwise_targets=pairwise_targets.unsqueeze(0),
+                )
+                losses.total.backward()
+                if not all(
+                    parameter.grad is None or torch.isfinite(parameter.grad).all()
+                    for parameter in model.parameters()
+                ):
+                    raise QualificationError(f"non-finite gradient in {condition}")
+                optimizer.step()
+                totals["loss"] += float(losses.total.detach().cpu())
+                totals["pair"] += float(losses.pairwise.detach().cpu())
+                totals["list"] += float(losses.listwise.detach().cpu())
+                totals["residual"] += float(losses.residual_l2.detach().cpu())
+                steps += 1
+            if steps != fit_optimization["fit_states_contributing"] or steps <= 0:
+                raise QualificationError("optimizer-step count drift")
+            history.append(
+                {
+                    "epoch": epoch,
+                    "optimizer_steps": steps,
+                    "fit_states_total": fit_optimization["fit_states_total"],
+                    "fit_states_contributing": fit_optimization[
+                        "fit_states_contributing"
+                    ],
+                    "fit_states_skipped_zero_admissible": fit_optimization[
+                        "fit_states_skipped_zero_admissible"
+                    ],
+                    "fit_states_skipped_singleton_admissible": fit_optimization[
+                        "fit_states_skipped_singleton_admissible"
+                    ],
+                    "epoch_average_denominator": fit_optimization[
+                        "epoch_average_denominator"
+                    ],
+                    **{key: value / steps for key, value in totals.items()},
+                }
+            )
+        model.eval()
+        checkpoint_filename = {
+            "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": "no_latent_final_epoch_060.pt",
+            "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL": "latent_true_future_final_epoch_060.pt",
+        }[condition]
+        checkpoint_path = output_root / "checkpoints" / checkpoint_filename
+        checkpoint = {
+            "schema": "plan_aware_ranker_checkpoint_receipt_v1",
+            "condition": condition,
+            "seed_family": CONTRACT.ROUTE_COST_SEED,
+            "seed_metadata": copy.deepcopy(
+                CONTRACT.CHECKPOINT_SEED_METADATA[condition]
+            ),
+            "epoch": CONTRACT.TRAINING["epochs"],
+            "final_epoch_only": True,
+            "parameter_count": counts[condition],
+            "model_contract": MODEL.model_contract(condition),
+            "state_dict": {name: value.detach().cpu() for name, value in model.state_dict().items()},
+            "parameter_digest": _parameter_digest(model),
+            "optimizer_state_persisted": False,
+            "training_history": history,
+            "fit_optimization": copy.deepcopy(fit_optimization),
+        }
+        _atomic_torch_save(checkpoint_path, checkpoint)
+        checkpoints[condition] = {
+            **binding(checkpoint_path, relative_to=output_root),
+            "seed_metadata": copy.deepcopy(checkpoint["seed_metadata"]),
+            "parameter_digest": checkpoint["parameter_digest"],
+            "parameter_count": counts[condition],
+            "epoch": CONTRACT.TRAINING["epochs"],
+            "fit_optimization_digest": hashlib.sha256(
+                canonical_json_bytes(fit_optimization)
+            ).hexdigest(),
+        }
+        histories[condition] = history
+        del optimizer
+    torch.cuda.empty_cache()
+    receipt = attach_digest(
+        {
+            "schema": "plan_aware_training_receipt_v1",
+            "conditions": list(counts),
+            "seed_family": CONTRACT.ROUTE_COST_SEED,
+            "one_seed_family": True,
+            "fit_states": len(fit),
+            "fit_state_ids": sorted(fit, key=numeric_state_key),
+            "fit_optimization": fit_optimization,
+            "calibration_rows_opened": 0,
+            "heldout_rows_opened": 0,
+            "epochs": CONTRACT.TRAINING["epochs"],
+            "final_epoch_only": True,
+            "no_hyperparameter_sweep": True,
+            "checkpoint_bindings": checkpoints,
+            "checkpoint_seed_metadata": copy.deepcopy(
+                CONTRACT.CHECKPOINT_SEED_METADATA
+            ),
+            "initial_parameter_digests": initial,
+            "parameter_counts": counts,
+            "training_history": histories,
+            "predictor_training_steps": 0,
+            "safety_or_auxiliary_losses": [],
+            "pass": True,
+        }
+    )
+    atomic_json(output_root / "receipts/training.json", receipt)
+    return checkpoints, receipt, {condition: model for condition, model, _ in specifications}
+
+
+def future_derangement(state_id: str, experiment_digest: str) -> list[int]:
+    """Outcome-blind cyclic candidate derangement for one frozen state."""
+
+    raw = hashlib.sha256(
+        f"{experiment_digest}\x00{state_id}".encode("utf-8")
+    ).digest()
+    shift = 1 + int.from_bytes(raw[:8], "big") % (CANDIDATE_COUNT - 1)
+    mapping = [(candidate + shift) % CANDIDATE_COUNT for candidate in range(CANDIDATE_COUNT)]
+    if sorted(mapping) != list(range(CANDIDATE_COUNT)) or any(
+        donor == candidate for candidate, donor in enumerate(mapping)
+    ):
+        raise QualificationError("candidate future derangement is not a derangement")
+    return mapping
+
+
+def donor_derangements(
+    ids: Mapping[str, Sequence[str]],
+    manifests: Mapping[str, Mapping[str, Any]],
+    experiment_digest: str,
+) -> dict[str, dict[str, str]]:
+    """Freeze Stage-C same-family/same-split bijective donor cycles."""
+
+    output: dict[str, dict[str, str]] = {}
+    for ablation in CONTRACT.STAGE_C_ABLATION_INPUTS:
+        mapping: dict[str, str] = {}
+        for role in SPLIT_ROLES:
+            families: dict[str, list[str]] = {}
+            for state_id in ids[role]:
+                families.setdefault(str(manifests[state_id]["family"]), []).append(state_id)
+            for family, state_ids in families.items():
+                try:
+                    authority = CONTRACT.build_stage_c_donor_mapping(
+                        state_ids,
+                        split=role,
+                        family=family,
+                        ablation=ablation,
+                        contract_digest=experiment_digest,
+                    )
+                except CONTRACT.ContractError as exc:
+                    raise QualificationError(str(exc)) from exc
+                if (
+                    authority.get("ablation_feature")
+                    != CONTRACT.STAGE_C_ABLATION_INPUTS[ablation]
+                    or authority.get("row_count") != len(state_ids)
+                ):
+                    raise QualificationError(
+                        f"Stage-C donor authority drift: {role}:{family}:{ablation}"
+                    )
+                for row in authority["rows"]:
+                    mapping[str(row["recipient_state_id"])] = str(
+                        row["donor_state_id"]
+                    )
+        if set(mapping) != {state for role in SPLIT_ROLES for state in ids[role]}:
+            raise QualificationError("Stage-C donor map does not cover the panel")
+        if any(recipient == donor for recipient, donor in mapping.items()):
+            raise QualificationError("Stage-C donor mapping contains a fixed point")
+        output[ablation] = mapping
+    return output
+
+
+def write_evaluation_contract(
+    *,
+    output_root: Path,
+    source_freeze_commit: str,
+    checkpoints: Mapping[str, Mapping[str, Any]],
+    line_index: Mapping[tuple[str, int], Mapping[str, Any]],
+    ids: Mapping[str, Sequence[str]],
+    manifests: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    CONTRACT.load_and_validate_contract()
+    # The execution-only wrapper amendment must not perturb scientific keyed
+    # derangements, donor maps, or any Stage-A scientific content.
+    experiment_digest = CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+    route_records = [
+        {
+            "state_id": state_id,
+            "candidate_index": candidate,
+            **dict(record),
+        }
+        for (state_id, candidate), record in sorted(
+            line_index.items(), key=lambda item: (numeric_state_key(item[0][0]), item[0][1])
+        )
+    ]
+    route_record_digest = hashlib.sha256(canonical_json_bytes(route_records)).hexdigest()
+    future_maps = {
+        state_id: future_derangement(state_id, experiment_digest)
+        for role in SPLIT_ROLES
+        for state_id in ids[role]
+    }
+    value = attach_digest(
+        {
+            "schema": "plan_aware_monotone_jepa_evaluation_contract_v1",
+            "source_freeze_commit": source_freeze_commit,
+            "experiment_contract_digest": experiment_digest,
+            "checkpoint_bindings": copy.deepcopy(dict(checkpoints)),
+            "checkpoint_count": 2,
+            "checkpoint_epochs": [CONTRACT.TRAINING["epochs"]],
+            "final_epoch_only": True,
+            "calibration_used_for_selection": False,
+            "heldout_opened_before_publication": False,
+            "route_label_byte_index": {
+                "records": len(route_records),
+                "aggregate_digest": route_record_digest,
+                "scientific_fields_parsed_during_indexing": [],
+            },
+            "future_latent_derangement_by_state": future_maps,
+            "stage_c_input_donor_mappings": donor_derangements(
+                ids, manifests, experiment_digest
+            ),
+            "metrics": copy.deepcopy(CONTRACT.METRIC_CONTRACT),
+            "gates": copy.deepcopy(CONTRACT.GATES),
+            "conditional_execution": copy.deepcopy(CONTRACT.STAGE_POLICY),
+            "predictor_inference_authorised_before_true_gate": False,
+            "pass": True,
+        }
+    )
+    path = output_root / "receipts/evaluation_contract.json"
+    atomic_json(path, value)
+    if load_json(path) != value:
+        raise QualificationError("evaluation contract roundtrip drift")
+    return value
+
+
+def _load_checkpoint_receipt(
+    condition: str,
+    record: Mapping[str, Any],
+    *,
+    output_root: Path,
+) -> dict[str, Any]:
+    import torch
+
+    if condition not in CONTRACT.CHECKPOINT_SEED_METADATA:
+        raise QualificationError(f"unknown route-ranker checkpoint: {condition}")
+    path = output_root / str(record["path"])
+    if (
+        not path.is_file()
+        or path.stat().st_size != int(record["bytes"])
+        or sha256_file(path) != record["sha256"]
+    ):
+        raise QualificationError(f"route-ranker checkpoint drift: {condition}")
+    checkpoint = torch.load(path, map_location="cpu", weights_only=False)
+    expected_seed = CONTRACT.CHECKPOINT_SEED_METADATA[condition]
+    fit_optimization = checkpoint.get("fit_optimization")
+    if isinstance(fit_optimization, Mapping):
+        _validate_fit_optimization_summary(fit_optimization)
+        _validate_training_history(
+            checkpoint.get("training_history"), fit_optimization
+        )
+    fit_optimization_digest = (
+        hashlib.sha256(canonical_json_bytes(fit_optimization)).hexdigest()
+        if isinstance(fit_optimization, Mapping)
+        else None
+    )
+    if (
+        checkpoint.get("schema") != "plan_aware_ranker_checkpoint_receipt_v1"
+        or checkpoint.get("condition") != condition
+        or checkpoint.get("seed_family") != CONTRACT.ROUTE_COST_SEED
+        or checkpoint.get("epoch") != CONTRACT.TRAINING["epochs"]
+        or checkpoint.get("final_epoch_only") is not True
+        or checkpoint.get("optimizer_state_persisted") is not False
+        or checkpoint.get("seed_metadata") != expected_seed
+        or checkpoint.get("model_contract") != MODEL.model_contract(condition)
+        or record.get("seed_metadata") != expected_seed
+        or checkpoint.get("parameter_digest") != record.get("parameter_digest")
+        or checkpoint.get("parameter_count") != record.get("parameter_count")
+        or record.get("epoch") != CONTRACT.TRAINING["epochs"]
+        or fit_optimization_digest != record.get("fit_optimization_digest")
+    ):
+        raise QualificationError(f"route-ranker checkpoint metadata drift: {condition}")
+    return checkpoint
+
+
+def _load_checkpoint_models(
+    checkpoint_bindings: Mapping[str, Mapping[str, Any]], *, output_root: Path
+) -> dict[str, Any]:
+    import torch
+
+    no_latent, latent = MODEL.build_matched_rankers(CONTRACT.ROUTE_COST_SEED)
+    models = {
+        "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": no_latent,
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL": latent,
+    }
+    device = torch.device("cuda:0")
+    for condition, model in models.items():
+        record = checkpoint_bindings[condition]
+        checkpoint = _load_checkpoint_receipt(
+            condition, record, output_root=output_root
+        )
+        model.load_state_dict(checkpoint["state_dict"], strict=True)
+        model.to(device=device, dtype=torch.float32).eval().requires_grad_(False)
+        if _parameter_digest(model) != checkpoint["parameter_digest"]:
+            raise QualificationError(f"route-ranker parameter digest drift: {condition}")
+    return models
+
+
+def score_dataset(
+    dataset: Mapping[str, Sequence[Mapping[str, Any]]],
+    *,
+    models: Mapping[str, Any],
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    latent_source: str,
+    future_derangements: Mapping[str, Sequence[int]] | None = None,
+    logical_output_root: Path | None = None,
+) -> tuple[dict[str, dict[str, np.ndarray]], dict[str, list[dict[str, Any]]]]:
+    """Score one authorised split; load no labels outside ``dataset``."""
+
+    import torch
+
+    device = torch.device("cuda:0")
+    no_latent = models["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"]
+    latent = models["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL"]
+    scores: dict[str, dict[str, np.ndarray]] = {
+        "KINEMATIC_ROUTE_BASELINE": {},
+        "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": {},
+        f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{latent_source}": {},
+        f"LATENT_BRANCH_ZERO_{latent_source}": {},
+        "DETERMINISTIC_RANDOM": {},
+    }
+    if future_derangements is not None:
+        scores[f"WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_{latent_source}"] = {}
+    evidence: dict[str, list[dict[str, Any]]] = {}
+    with torch.inference_mode():
+        for state_id, rows in dataset.items():
+            base_np = np.stack([row["base_features"] for row in rows])
+            query_np = np.stack([row["query_features"] for row in rows])
+            anchor_np = np.asarray([row["kinematic_anchor"] for row in rows], np.float32)
+            base = torch.from_numpy(base_np).to(device)
+            query = torch.from_numpy(query_np).to(device)
+            anchors = torch.from_numpy(anchor_np).to(device)
+            current_np, future_np = _tensor_rows_for_state(
+                tensor_rows,
+                state_id,
+                list(range(CANDIDATE_COUNT)),
+                source=latent_source,
+                logical_output_root=logical_output_root,
+            )
+            current = torch.from_numpy(current_np.astype(np.float32)).to(device)
+            future = torch.from_numpy(future_np.astype(np.float32)).to(device)
+            no_score = no_latent(base, anchors)
+            components = latent.score_components(base, query, anchors, current, future)
+            scores["KINEMATIC_ROUTE_BASELINE"][state_id] = anchor_np.astype(np.float64)
+            scores["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"][state_id] = (
+                no_score.cpu().numpy().astype(np.float64)
+            )
+            scores[f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{latent_source}"][state_id] = (
+                components.score.cpu().numpy().astype(np.float64)
+            )
+            scores[f"LATENT_BRANCH_ZERO_{latent_source}"][state_id] = (
+                components.kinematic_plus_base_score.cpu().numpy().astype(np.float64)
+            )
+            random_order = OLD_METRICS.deterministic_random_order(
+                state_id,
+                list(range(CANDIDATE_COUNT)),
+                seed=CONTRACT.RANDOM_SEED,
+            )
+            random_rank = {candidate: rank for rank, candidate in enumerate(random_order)}
+            scores["DETERMINISTIC_RANDOM"][state_id] = np.asarray(
+                [-float(random_rank[candidate]) for candidate in range(CANDIDATE_COUNT)],
+                np.float64,
+            )
+            deranged_components = None
+            if future_derangements is not None:
+                mapping = list(future_derangements[state_id])
+                deranged_np = future_np[np.asarray(mapping)].copy()
+                deranged = torch.from_numpy(deranged_np.astype(np.float32)).to(device)
+                deranged_components = latent.score_components(
+                    base, query, anchors, current, deranged
+                )
+                scores[
+                    f"WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_{latent_source}"
+                ][state_id] = deranged_components.score.cpu().numpy().astype(np.float64)
+            per_candidate: list[dict[str, Any]] = []
+            attention = components.attention_weights.cpu().numpy()
+            for candidate, row in enumerate(rows):
+                deranged_candidate = (
+                    None
+                    if future_derangements is None
+                    else int(future_derangements[state_id][candidate])
+                )
+                per_candidate.append(
+                    {
+                        "schema": "plan_aware_monotone_jepa_candidate_score_v1",
+                        "state_id": state_id,
+                        "family": row["family"],
+                        "split": row["split"],
+                        "route_intent_role": row["route_intent_role"],
+                        "candidate_index": candidate,
+                        "latent_source": latent_source,
+                        "latent_artifact_bindings": _candidate_latent_bindings(
+                            tensor_rows,
+                            state_id=state_id,
+                            candidate=candidate,
+                            source=latent_source,
+                            deranged_candidate=deranged_candidate,
+                        ),
+                        "waypoint_features": row["waypoint_features"],
+                        "requested_action_blocks": row["requested_action_blocks"],
+                        "applied_action_blocks": row["applied_action_blocks"],
+                        "predictor_candidate_action_plan_3x10": row[
+                            "predictor_candidate_action_plan_3x10"
+                        ],
+                        "previous_applied_command": row["previous_applied_command"],
+                        "control_history": row["control_history"],
+                        "deterministic_kinematic_features": row["kinematic_features"],
+                        "deterministic_kinematic_score": float(anchor_np[candidate]),
+                        "no_latent_base_residual": float(
+                            scores["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"][state_id][candidate]
+                            - anchor_np[candidate]
+                        ),
+                        "latent_model_base_residual": float(
+                            components.base_residual[candidate].cpu()
+                        ),
+                        "latent_residual": float(components.latent_residual[candidate].cpu()),
+                        "final_no_latent_score": float(
+                            scores["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"][state_id][candidate]
+                        ),
+                        "final_latent_score": float(components.score[candidate].cpu()),
+                        "latent_branch_zero_score": float(
+                            components.kinematic_plus_base_score[candidate].cpu()
+                        ),
+                        "deranged_latent_score": (
+                            None
+                            if deranged_components is None
+                            else float(deranged_components.score[candidate].cpu())
+                        ),
+                        "future_derangement_donor_candidate": (
+                            deranged_candidate
+                        ),
+                        "attention_weight_sum_by_timepoint": [
+                            float(value) for value in attention[candidate].sum(axis=1)
+                        ],
+                        "p_d": row["p_d"],
+                        "p_theta": row["p_theta"],
+                        "completed": row["completed"],
+                        "stuck": row["stuck"],
+                        "immediate_contact_h1": row["immediate_contact_h1"],
+                        "descriptive_contact_h2": row["descriptive_contact_h2"],
+                        "descriptive_contact_h3": row["descriptive_contact_h3"],
+                        "successor_safe_action_count": row["successor_safe_action_count"],
+                        "successor_viable": row["successor_viable"],
+                        "oracle_viability_admissible": row["oracle_viability_admissible"],
+                    }
+                )
+            evidence[state_id] = per_candidate
+    return scores, evidence
+
+
+def metric_candidates(
+    dataset: Mapping[str, Sequence[Mapping[str, Any]]]
+) -> dict[str, list[dict[str, Any]]]:
+    output: dict[str, list[dict[str, Any]]] = {}
+    for state_id, rows in dataset.items():
+        output[state_id] = [
+            {
+                "state_id": state_id,
+                "family": row["family"],
+                "role": row["split"],
+                "candidate_index": int(row["candidate_index"]),
+                "p_d": float(row["p_d"]),
+                "p_theta": float(row["p_theta"]),
+                "completed": bool(row["completed"]),
+                "stuck": bool(row["stuck"]),
+                "immediate_contact_h1": bool(row["immediate_contact_h1"]),
+                "descriptive_contact_h2": bool(row["descriptive_contact_h2"]),
+                "descriptive_contact_h3": bool(row["descriptive_contact_h3"]),
+                "successor_safe_action_count": int(row["successor_safe_action_count"]),
+                "successor_viable": bool(row["successor_viable"]),
+                "oracle_viability_admissible": bool(row["oracle_viability_admissible"]),
+            }
+            for row in rows
+        ]
+    return output
+
+
+def summarize_score_maps(
+    dataset: Mapping[str, Sequence[Mapping[str, Any]]],
+    score_maps: Mapping[str, Mapping[str, np.ndarray]],
+) -> dict[str, Any]:
+    candidates = metric_candidates(dataset)
+    return {
+        source: METRICS.summarize_scores(
+            candidates,
+            scores,
+            source_id=source,
+        )
+        for source, scores in score_maps.items()
+    }
+
+
+def _tracked_path(path: Path) -> Path:
+    return path if path.is_absolute() else ROOT / path
+
+
+def _validate_frozen_authorities(
+    *,
+    execution_correction_custody: Mapping[str, Any] | None = None,
+    execution_correction_2_custody: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Validate only prospectively frozen bytes; calculate no route metric."""
+
+    frozen_contract = CONTRACT.load_and_validate_contract(_tracked_path(CONTRACT.TRACKED_CONTRACT_PATH))
+    frozen_schema = CONTRACT.load_and_validate_output_schema(
+        _tracked_path(CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH)
+    )
+    frozen_fixture = CONTRACT.load_and_validate_evaluator_fixture(
+        _tracked_path(CONTRACT.TRACKED_FIXTURE_PATH)
+    )
+    closure = CONTRACT.load_and_validate_source_closure(
+        _tracked_path(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
+    )
+    route_role_authority = CONTRACT.load_and_validate_route_role_authority(
+        _tracked_path(CONTRACT.TRACKED_ROUTE_ROLE_AUTHORITY_PATH)
+    )
+    # The original source closure is itself immutable scientific authority.  A
+    # correction execution validates changed implementation bytes against the
+    # separate amendment closure instead of pretending they still match the
+    # original freeze's historical source rows.
+    active_closure = closure
+    if execution_correction_2_custody is not None:
+        active_closure = (
+            CONTRACT.load_and_validate_execution_correction_2_source_closure(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+                )
+            )
+        )
+    elif execution_correction_custody is not None:
+        active_closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+        )
+    for row in active_closure["rows"]:
+        path = ROOT / str(row["path"])
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(row["bytes"])
+            or sha256_file(path) != row["sha256"]
+        ):
+            raise QualificationError(f"source-closure row drift: {row['path']}")
+    for label, record in CONTRACT.PANEL_BINDINGS.items():
+        path = ROOT / str(record["path"])
+        verify_binding(path, str(record["sha256"]), label=f"panel.{label}")
+        if path.stat().st_size != int(record["bytes"]):
+            raise QualificationError(f"panel.{label} byte-size drift")
+    for label in (
+        "tensor_index",
+        "batch_manifest",
+        "goal_view_index",
+        "context_reconstruction_index",
+        "persistence_receipt",
+    ):
+        record = CONTRACT.PREDECESSOR_TENSOR_PACKAGE[label]
+        path = PREDECESSOR_ROOT / str(record["path"])
+        verify_binding(path, str(record["sha256"]), label=f"predecessor.{label}")
+        if path.stat().st_size != int(record["bytes"]):
+            raise QualificationError(f"predecessor.{label} byte-size drift")
+        if "content_digest" in record and load_json(path).get("content_digest") != record[
+            "content_digest"
+        ]:
+            raise QualificationError(f"predecessor.{label} content digest drift")
+    for label, record in CONTRACT.CHECKPOINT_BINDINGS.items():
+        path = Path(str(record["path"]))
+        verify_binding(path, str(record["sha256"]), label=f"checkpoint.{label}")
+        if path.stat().st_size != int(record["bytes"]):
+            raise QualificationError(f"checkpoint.{label} byte-size drift")
+    encoder_path = Path(str(CONTRACT.ENCODER_BINDING["path"]))
+    verify_exact_file_record(
+        encoder_path, CONTRACT.ENCODER_BINDING, label="target_encoder"
+    )
+    target_index_value = load_json(TARGET_LATENT_INDEX)
+    tensor_index_value = load_json(LATENT_INDEX)
+    _validate_true_future_index_reconciliation(
+        target_index_value,
+        tensor_index_value,
+        expected_index_sha256=CONTRACT.PANEL_BINDINGS["true_future_index"][
+            "sha256"
+        ],
+    )
+    return {
+        "contract": frozen_contract,
+        "output_schema": frozen_schema,
+        "fixture": frozen_fixture,
+        "source_closure": closure,
+        "execution_correction_source_closure": (
+            active_closure if execution_correction_custody is not None else None
+        ),
+        "execution_correction_2_source_closure": (
+            active_closure if execution_correction_2_custody is not None else None
+        ),
+        "route_role_authority": route_role_authority,
+    }
+
+
+def _runtime_source_freeze() -> str:
+    """Compatibility wrapper: amended execution has exactly one freeze mode."""
+
+    return str(_runtime_execution_correction_custody()["source_freeze_commit"])
+
+
+def _runtime_execution_correction_custody() -> dict[str, Any]:
+    """Validate and normalize the mandatory one-attempt amendment custody."""
+
+    try:
+        runtime = CONTRACT.validate_execution_correction_freeze_custody(ROOT)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    archive = runtime.get("failed_archive_custody")
+    if (
+        runtime.get("pass") is not True
+        or runtime.get("fresh_attempts_authorised") != 1
+        or runtime.get("fresh_attempts_already_consumed") != 0
+        or runtime.get("files_reused") != 0
+        or not isinstance(archive, Mapping)
+        or archive.get("pass") is not True
+        or archive.get("files_reused") != 0
+        or archive.get("archive_path")
+        != str(CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE)
+    ):
+        raise QualificationError("execution-correction runtime custody drift")
+    amendment_closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+    )
+    amendment_closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+        amendment_closure_path
+    )
+    return {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(amendment_closure_path, relative_to=ROOT),
+            "content_digest": amendment_closure["content_digest"],
+            "rows": amendment_closure["row_count"],
+        },
+        "archive_path": str(archive["archive_path"]),
+        "archive_inventory": copy.deepcopy(archive["inventory"]),
+        "failure_receipt": copy.deepcopy(archive["failure_receipt"]),
+        "source_freeze_commit": str(runtime["source_freeze_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": None,
+        "execution_correction_replay": None,
+        "pass": True,
+    }
+
+
+def _runtime_execution_correction_2_custody() -> dict[str, Any]:
+    """Validate the sole final correction attempt before namespace creation."""
+
+    try:
+        runtime = CONTRACT.validate_execution_correction_2_freeze_custody(
+            ROOT, verify_full_archives=True
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        runtime.get("pass") is not True
+        or runtime.get("fresh_attempts_authorised") != 1
+        or runtime.get("fresh_attempts_already_consumed") != 0
+        or runtime.get("files_reused") != 0
+        or runtime.get("no_further_retry") is not True
+        or runtime.get("failed_archives_count") != 2
+        or not isinstance(runtime.get("failed_archives"), list)
+    ):
+        raise QualificationError("execution-correction-2 runtime custody drift")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    try:
+        closure = CONTRACT.load_and_validate_execution_correction_2_source_closure(
+            closure_path
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    amendment_source_closure = {
+            **binding(closure_path, relative_to=ROOT),
+            "content_digest": closure["content_digest"],
+            "rows": closure["row_count"],
+    }
+    try:
+        custody = CONTRACT.build_execution_correction_2_runtime_custody(
+            execution_correction_2_commit=str(runtime["source_freeze_commit"]),
+            amendment_source_closure=amendment_source_closure,
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            custody, phase="PREEXECUTION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return custody
+
+
+def _correction_2_failed_archive_identity_projection(
+    records: Sequence[Mapping[str, Any]],
+) -> list[dict[str, Any]]:
+    """Project archive identity independently of validation proof strength.
+
+    The frozen V1 launcher compared the minimal runtime-custody records with
+    the richer records returned by the archive validators.  Those two schemas
+    contain the same stable archive identity but different proof/status fields
+    (including ``full_inventory_verified`` on the second archive), so whole-
+    record equality rejects deterministically.  This pure helper is diagnostic
+    evidence for a prospective V2 startup contract; it is deliberately not
+    used to make the V1 executor runnable.
+    """
+
+    stable_fields = (
+        "archive_path",
+        "source_freeze_commit",
+        "inventory",
+        "failure_receipt",
+        "files_reused",
+    )
+    output: list[dict[str, Any]] = []
+    for index, record in enumerate(records):
+        if not isinstance(record, Mapping):
+            raise QualificationError(
+                f"failed-archive record {index} is not a mapping"
+            )
+        missing = [field for field in stable_fields if field not in record]
+        if missing:
+            raise QualificationError(
+                f"failed-archive record {index} lacks stable identity: {missing}"
+            )
+        proof = record.get("full_inventory_verified")
+        if proof is not None and not isinstance(proof, bool):
+            raise QualificationError(
+                "failed-archive full_inventory_verified proof is not boolean"
+            )
+        output.append(
+            {field: copy.deepcopy(record[field]) for field in stable_fields}
+        )
+    return output
+
+
+def _correction_2_failed_archive_identity_matches(
+    left: Sequence[Mapping[str, Any]],
+    right: Sequence[Mapping[str, Any]],
+) -> bool:
+    """Compare only immutable archive identity for the V2 diagnostic."""
+
+    return _correction_2_failed_archive_identity_projection(
+        left
+    ) == _correction_2_failed_archive_identity_projection(right)
+
+
+def _legacy_execution_correction_custody_from_v2(
+    correction_2: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Retain the helper-facing first-amendment receipt contract inside V2."""
+
+    first = next(
+        (
+            record
+            for record in correction_2["failed_archives"]
+            if record.get("archive_path")
+            == str(CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve())
+        ),
+        None,
+    )
+    if not isinstance(first, Mapping):
+        raise QualificationError("correction-2 custody omits the first failed archive")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+    )
+    try:
+        closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            closure_path
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(closure_path, relative_to=ROOT),
+            "content_digest": closure["content_digest"],
+            "rows": closure["row_count"],
+        },
+        "archive_path": str(first["archive_path"]),
+        "archive_inventory": copy.deepcopy(first["inventory"]),
+        "failure_receipt": copy.deepcopy(first["failure_receipt"]),
+        "source_freeze_commit": str(correction_2["execution_correction_2_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": None,
+        "execution_correction_replay": None,
+        "pass": True,
+    }
+
+
+def _tracked_publication_paths() -> tuple[Path, Path]:
+    return (
+        _tracked_path(CONTRACT.TRACKED_RESULT_PATH),
+        _tracked_path(CONTRACT.TRACKED_REPORT_PATH),
+    )
+
+
+def _assert_publication_destinations_absent() -> None:
+    existing = [path for path in _tracked_publication_paths() if path.exists()]
+    if existing:
+        raise QualificationError(
+            "tracked result/report publication destination already exists: "
+            + ", ".join(str(path) for path in existing)
+        )
+
+
+def _publish_tracked_result_and_report(output_root: Path) -> None:
+    """Publish both tracked witnesses or remove both on any write failure."""
+
+    result_target, report_target = _tracked_publication_paths()
+    _assert_publication_destinations_absent()
+    try:
+        atomic_bytes(result_target, (output_root / "result.json").read_bytes())
+        atomic_bytes(report_target, (output_root / "report.md").read_bytes())
+    except BaseException:
+        # Both targets were proven absent immediately above.  Remove either
+        # destination even when a write raised after its atomic replacement,
+        # so a partial tracked publication cannot survive failure cleanup.
+        result_target.unlink(missing_ok=True)
+        report_target.unlink(missing_ok=True)
+        raise
+
+
+def _failed_archive_inventory(archive: Path) -> dict[str, Any]:
+    records = [
+        binding(path, relative_to=archive)
+        for path in sorted(value for value in archive.rglob("*") if value.is_file())
+    ]
+    return {
+        "files": len(records),
+        "bytes": sum(int(record["bytes"]) for record in records),
+        "manifest_sha256": hashlib.sha256(canonical_json_bytes(records)).hexdigest(),
+    }
+
+
+def _validated_prior_smoke_failure_custody(
+    output_root: Path,
+    *,
+    source_freeze: str,
+    allow_current_freeze_as_correction_base: bool = False,
+) -> list[dict[str, Any]]:
+    """Allow only fresh retry after audited pre-training smoke failures."""
+
+    archives = sorted(output_root.parent.glob(f".{output_root.name}.failed-*"))
+    if archives and _active_experiment_processes():
+        raise QualificationError("prior smoke retry is forbidden while a process is active")
+    custody: list[dict[str, Any]] = []
+    for archive in archives:
+        receipt_path = archive / "receipts/failure.json"
+        if not receipt_path.is_file():
+            raise QualificationError(
+                f"prior failed attempt lacks its failure receipt: {archive}"
+            )
+        receipt = load_json(receipt_path)
+        prior_freeze = receipt.get("source_freeze_commit")
+        if (
+            receipt.get("content_digest") != content_digest(receipt)
+            or receipt.get("schema") != "plan_aware_monotone_jepa_failure_v1"
+            or receipt.get("phase") != "TRAINING_SMOKE"
+            or receipt.get("partial_artifacts_reusable") is not False
+            or receipt.get("full_training_epochs_completed") != 0
+            or receipt.get("calibration_rows_opened") != 0
+            or receipt.get("heldout_rows_opened") != 0
+            or receipt.get("final_checkpoint_published") is not False
+            or receipt.get("nothing_running") is not True
+            or not isinstance(receipt.get("error_type"), str)
+            or not isinstance(receipt.get("error_message"), str)
+            or not isinstance(prior_freeze, str)
+            or len(prior_freeze) != 40
+            or (
+                prior_freeze == source_freeze
+                and not allow_current_freeze_as_correction_base
+            )
+        ):
+            raise QualificationError(
+                "a prior failed scientific attempt is not an authorised corrected "
+                f"smoke-only retry: {archive}"
+            )
+        if subprocess.run(
+            ["git", "merge-base", "--is-ancestor", prior_freeze, source_freeze],
+            cwd=ROOT,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode:
+            raise QualificationError(
+                f"prior smoke freeze is not an ancestor of corrected freeze: {archive}"
+            )
+        source_closure_path = archive / "receipts/source_closure.json"
+        if not source_closure_path.is_file():
+            raise QualificationError(
+                f"eligible smoke archive lacks its preexecution source closure: {archive}"
+            )
+        source_closure = load_json(source_closure_path)
+        if source_closure.get("content_digest") != content_digest(source_closure):
+            raise QualificationError(
+                f"prior smoke source closure self-digest drift: {archive}"
+            )
+        try:
+            CONTRACT.validate_source_closure(source_closure)
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(
+                f"prior smoke source closure validation failed: {archive}: {exc}"
+            ) from exc
+        source_closure_binding = {
+            **binding(source_closure_path),
+            "content_digest": source_closure["content_digest"],
+        }
+        custody.append(
+            {
+                "archive_path": str(archive),
+                "source_freeze_commit": prior_freeze,
+                "failure_receipt": {
+                    **binding(receipt_path),
+                    "content_digest": receipt["content_digest"],
+                },
+                "source_closure": source_closure_binding,
+                "inventory": _failed_archive_inventory(archive),
+                "files_reused": 0,
+            }
+        )
+    try:
+        return CONTRACT.validate_prior_smoke_failure_custody(custody)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def _new_attempt(
+    output_root: Path,
+    source_freeze: str,
+    *,
+    execution_correction_custody: Mapping[str, Any] | None = None,
+    execution_correction_2_custody: Mapping[str, Any] | None = None,
+) -> Path:
+    if output_root.resolve() != CONTRACT.OUTPUT_ROOT.resolve():
+        raise QualificationError("canonical output path differs from the frozen contract")
+    _assert_publication_destinations_absent()
+    if output_root.exists():
+        raise QualificationError(f"canonical output already exists: {output_root}")
+    siblings = list(output_root.parent.glob(f".{output_root.name}.attempt-*"))
+    if siblings:
+        raise QualificationError(f"a live/abandoned attempt already exists: {siblings}")
+    if (
+        execution_correction_custody is not None
+        and execution_correction_2_custody is not None
+    ):
+        raise QualificationError("attempt cannot consume two correction modes")
+    if execution_correction_2_custody is not None:
+        try:
+            runtime = CONTRACT.validate_execution_correction_2_freeze_custody(
+                ROOT, verify_full_archives=False
+            )
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        expected_failures = sorted(
+            [
+                CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve(),
+                CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve(),
+            ]
+        )
+        failed_archives = sorted(
+            path.resolve()
+            for path in output_root.parent.glob(f".{output_root.name}.failed-*")
+        )
+        if (
+            source_freeze != execution_correction_2_custody.get(
+                "execution_correction_2_commit"
+            )
+            or source_freeze != runtime.get("source_freeze_commit")
+            or execution_correction_2_custody.get("failed_archives")
+            != runtime.get("failed_archives")
+            or execution_correction_2_custody.get("files_reused") != 0
+            or failed_archives != expected_failures
+            or _active_experiment_processes(include_finalizer=True)
+        ):
+            raise QualificationError(
+                "execution-correction-2 fresh-attempt custody or namespace drift"
+            )
+    elif execution_correction_custody is None:
+        _validated_prior_smoke_failure_custody(
+            output_root, source_freeze=source_freeze
+        )
+    else:
+        try:
+            archive = CONTRACT.validate_execution_correction_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        failed_archives = sorted(
+            path.resolve()
+            for path in output_root.parent.glob(f".{output_root.name}.failed-*")
+        )
+        if (
+            source_freeze
+            != execution_correction_custody.get("source_freeze_commit")
+            or execution_correction_custody.get("archive_path")
+            != archive["archive_path"]
+            or execution_correction_custody.get("archive_inventory")
+            != archive["inventory"]
+            or execution_correction_custody.get("files_reused") != 0
+            or failed_archives
+            != [CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve()]
+            or _active_experiment_processes()
+        ):
+            raise QualificationError(
+                "execution-correction fresh-attempt custody or namespace drift"
+            )
+    output_root.parent.mkdir(parents=True, exist_ok=True)
+    attempt = output_root.parent / (
+        f".{output_root.name}.attempt-{source_freeze[:12]}-{time.time_ns()}-{os.getpid()}"
+    )
+    attempt.mkdir(mode=0o755)
+    return attempt
+
+
+def _prohibition_counters() -> dict[str, int]:
+    return {
+        "predictor_training_steps": 0,
+        "safety_model_training_steps": 0,
+        "fresh_panel_states": 0,
+        "fresh_candidates": 0,
+        "new_sensor_layouts": 0,
+        "protected_contact_scope_changes": 0,
+        "closed_loop_navigation_actions": 0,
+        "memory_implementations": 0,
+        "novelty_implementations": 0,
+        "topological_routing_implementations": 0,
+        "beacon_capture_implementations": 0,
+    }
+
+
+def _conditional_child_environment_preflight(attempt: Path) -> dict[str, Any]:
+    """Probe exact CPU/GPU child imports before opening fit outcomes or tensors."""
+
+    helper = _conditional_helper()
+    try:
+        cpu_probe = helper.probe_child_interpreter(
+            helper.CPU_INTERPRETER, require_genesis=True
+        )
+        gpu_probe = helper.probe_child_interpreter(
+            helper.GPU_INTERPRETER, require_genesis=False
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    receipt = attach_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "conditional_child_environment_preflight.v1"
+            ),
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "cpu_child": cpu_probe,
+            "gpu_child": gpu_probe,
+            "inherited_python_environment_presence": {
+                key: key in os.environ
+                for key in helper.SCRUBBED_PYTHON_ENVIRONMENT_KEYS
+            },
+            "fit_outcome_rows_opened": 0,
+            "calibration_rows_opened": 0,
+            "heldout_rows_opened": 0,
+            "tensor_rows_opened": 0,
+            "training_steps": 0,
+            "pass": True,
+        }
+    )
+    atomic_json(attempt / "receipts/conditional_child_environment_preflight.json", receipt)
+    return receipt
+
+
+def _preexecution_receipt(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    frozen: Mapping[str, Any],
+    conditional_child_environment_preflight: Mapping[str, Any],
+    execution_correction_custody: dict[str, Any],
+    execution_correction_2_custody: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    stat = os.statvfs(attempt.parent)
+    # Preserve the exact closure in the attempt itself so a smoke-failure
+    # archive can bind the authority that governed that attempt even after a
+    # corrected freeze publishes a new tracked closure.
+    source_closure_snapshot_path = attempt / "receipts/source_closure.json"
+    atomic_json(source_closure_snapshot_path, frozen["source_closure"])
+    source_closure_snapshot = {
+        **binding(source_closure_snapshot_path, relative_to=attempt),
+        "content_digest": frozen["source_closure"]["content_digest"],
+    }
+    receipt = attach_digest(
+        {
+            "schema": "plan_aware_preexecution_receipt_v1",
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "clean_scientific_source_commit": SOURCE_COMMIT,
+            "source_freeze_commit": source_freeze,
+            "requirements_ancestor": REQUIRED_ANCESTOR,
+            "requirements_ancestor_valid": True,
+            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "output_schema_sha256": CONTRACT.OUTPUT_SCHEMA_SHA256,
+            "source_closure_content_digest": frozen["source_closure"]["content_digest"],
+            "source_closure_rows": frozen["source_closure"]["row_count"],
+            "source_closure_snapshot": source_closure_snapshot,
+            "route_role_authority_binding": copy.deepcopy(
+                CONTRACT.ROUTE_ROLE_RECEIPT_BINDING
+            ),
+            "conditional_child_environment_preflight": {
+                **binding(
+                    attempt
+                    / "receipts/conditional_child_environment_preflight.json",
+                    relative_to=attempt,
+                ),
+                "content_digest": conditional_child_environment_preflight[
+                    "content_digest"
+                ],
+            },
+            "execution_correction_custody": copy.deepcopy(
+                execution_correction_custody
+            ),
+            "execution_correction_2_custody": copy.deepcopy(
+                execution_correction_2_custody
+            ),
+            "panel_bindings": copy.deepcopy(CONTRACT.PANEL_BINDINGS),
+            "encoder_binding": copy.deepcopy(CONTRACT.ENCODER_BINDING),
+            "predictor_checkpoint_bindings": copy.deepcopy(CONTRACT.CHECKPOINT_BINDINGS),
+            "predecessor_tensor_package": copy.deepcopy(CONTRACT.PREDECESSOR_TENSOR_PACKAGE),
+            "ranker_seed_family": CONTRACT.ROUTE_COST_SEED,
+            "predictor_seed": CONTRACT.PREDICTOR_SEED,
+            "cpu_worker_benchmark": copy.deepcopy(CONTRACT.CPU_WORKER_BENCHMARK),
+            "numerical_thread_environment": copy.deepcopy(CONTRACT.NUMERICAL_THREAD_ENV),
+            "attempt_root": str(attempt),
+            "canonical_output_root": str(CONTRACT.OUTPUT_ROOT),
+            "prior_smoke_failure_custody": [],
+            "output_free_bytes": int(stat.f_bavail * stat.f_frsize),
+            "outcome_barrier": {
+                "fit_rows_opened": 0,
+                "calibration_rows_opened": 0,
+                "heldout_rows_opened": 0,
+                "ranker_checkpoints_published": 0,
+                "evaluation_contract_published": False,
+            },
+            "accidental_exposures": copy.deepcopy(list(CONTRACT.ACCIDENTAL_EXPOSURES)),
+            "prohibition_counters": _prohibition_counters(),
+            "pass": True,
+        }
+    )
+    atomic_json(attempt / "receipts/preexecution.json", receipt)
+    return receipt
+
+
+def _training_target_rows(
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for role in SPLIT_ROLES:
+        for state_id in sorted(datasets[role], key=numeric_state_key):
+            rows = list(datasets[role][state_id])
+            positions = admissible_positions(rows)
+            conditioned_rows = [rows[position] for position in positions]
+            conditioned_utilities = (
+                route_utility(conditioned_rows)
+                if conditioned_rows
+                else np.empty((0,), dtype=np.float64)
+            )
+            try:
+                optimization_status = (
+                    CONTRACT.fit_state_optimization_status(len(positions))
+                    if role == FIT
+                    else None
+                )
+            except CONTRACT.ContractError as exc:
+                raise QualificationError(str(exc)) from exc
+            utility_by_position = {
+                position: float(conditioned_utilities[index])
+                for index, position in enumerate(positions)
+            }
+            for position, row in enumerate(rows):
+                conditioned = position in utility_by_position
+                output.append(
+                    {
+                        "schema": "plan_aware_route_only_target_row_v1",
+                        "state_id": state_id,
+                        "candidate_index": int(row["candidate_index"]),
+                        "family": row["family"],
+                        "role": role,
+                        "route_intent_role": row["route_intent_role"],
+                        "waypoint_features": row["waypoint_features"],
+                        "realised_distance_progress_m": float(row["p_d"]),
+                        "realised_heading_improvement_rad": float(row["p_theta"]),
+                        "local_waypoint_completed": bool(row["completed"]),
+                        "oracle_viability_admissible_conditioning": conditioned,
+                        "fit_state_optimization_status": optimization_status,
+                        "used_for_fit": bool(
+                            role == FIT
+                            and optimization_status == "CONTRIBUTING"
+                            and conditioned
+                        ),
+                        "conditioned_margin_borda_utility": utility_by_position.get(
+                            position
+                        ),
+                        "training_target_heads": ["pairwise_route_order", "listwise_route_order"],
+                    }
+                )
+    return output
+
+
+def _population_membership(row: Mapping[str, Any]) -> dict[str, bool]:
+    """Return the exact frozen population membership for one candidate row."""
+
+    return {
+        "ALL_CANDIDATES": True,
+        "ORACLE_CONTACT_FREE": not bool(row["immediate_contact_h1"]),
+        "ORACLE_VIABILITY_ADMISSIBLE": bool(
+            row["oracle_viability_admissible"]
+        ),
+    }
+
+
+def _validate_population_membership(row: Mapping[str, Any], *, label: str) -> None:
+    expected = _population_membership(row)
+    if row.get("population_membership") != expected:
+        raise QualificationError(
+            f"{label} population-membership drift: "
+            f"{row.get('split')}:{row.get('latent_source')}:"
+            f"{row.get('state_id')}:{row.get('candidate_index')}"
+        )
+
+
+def _validate_score_row_arithmetic(
+    rows: Sequence[Mapping[str, Any]], *, stage: str
+) -> None:
+    """Fail closed on persisted score aliases, arithmetic, and condition sets."""
+
+    if stage not in {"STAGE_A", "CONDITIONAL"}:
+        raise QualificationError(f"unknown score-row arithmetic stage {stage!r}")
+
+    def close(left: Any, right: Any) -> bool:
+        try:
+            return math.isclose(
+                float(left), float(right), rel_tol=0.0, abs_tol=2e-6
+            )
+        except (TypeError, ValueError):
+            return False
+
+    for row in rows:
+        source = str(row.get("latent_source"))
+        score_key = "scores" if stage == "STAGE_A" else "route_scores"
+        scores = row.get(score_key)
+        if not isinstance(scores, Mapping):
+            raise QualificationError(f"{stage} row lacks {score_key}")
+        expected = {
+            "KINEMATIC_ROUTE_BASELINE",
+            "KINEMATIC_PLUS_NO_LATENT_RESIDUAL",
+            f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}",
+            f"LATENT_BRANCH_ZERO_{source}",
+            "DETERMINISTIC_RANDOM",
+        }
+        if stage == "STAGE_A":
+            if source != "TRUE":
+                raise QualificationError("Stage-A latent-source identity drift")
+            expected.update(
+                {
+                    "WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_TRUE",
+                    *CONTRACT.RAW_COST_REREDUCED_SOURCE_IDS,
+                }
+            )
+        if set(scores) != expected:
+            raise QualificationError(
+                f"{stage} score condition-key drift: "
+                f"{row.get('state_id')}:{row.get('candidate_index')}"
+            )
+        if any(not math.isfinite(float(value)) for value in scores.values()):
+            raise QualificationError(f"{stage} non-finite persisted score")
+
+        anchor = row.get("deterministic_kinematic_score")
+        no_base = row.get("no_latent_base_residual")
+        latent_base = row.get("latent_model_base_residual")
+        latent_residual = row.get("latent_residual")
+        final_no = row.get("final_no_latent_score")
+        zero = row.get("latent_branch_zero_score")
+        final_latent = row.get("final_latent_score")
+        try:
+            anchor_value = float(anchor)
+            no_base_value = float(no_base)
+            latent_base_value = float(latent_base)
+            latent_residual_value = float(latent_residual)
+        except (TypeError, ValueError) as exc:
+            raise QualificationError(f"{stage} score component is missing/non-numeric") from exc
+        condition = f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"
+        zero_condition = f"LATENT_BRANCH_ZERO_{source}"
+        if not all(
+            (
+                close(scores["KINEMATIC_ROUTE_BASELINE"], anchor),
+                close(scores["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"], final_no),
+                close(final_no, anchor_value + no_base_value),
+                close(scores[zero_condition], zero),
+                close(zero, anchor_value + latent_base_value),
+                close(scores[condition], final_latent),
+                close(
+                    final_latent,
+                    anchor_value + latent_base_value + latent_residual_value,
+                ),
+            )
+        ):
+            raise QualificationError(
+                f"{stage} score arithmetic/alias drift: "
+                f"{source}:{row.get('state_id')}:{row.get('candidate_index')}"
+            )
+        deranged = row.get("deranged_latent_score")
+        if stage == "STAGE_A":
+            if not close(
+                deranged,
+                scores["WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_TRUE"],
+            ):
+                raise QualificationError("Stage-A deranged-score alias drift")
+        elif deranged is not None:
+            raise QualificationError("conditional row has unexpected deranged-score alias")
+
+
+def _stage_a_ledger_rows(
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    score_maps_by_role: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
+    evidence_by_role: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for role in SPLIT_ROLES:
+        score_maps = score_maps_by_role[role]
+        for state_id in sorted(datasets[role], key=numeric_state_key):
+            evidence_rows = evidence_by_role[role][state_id]
+            for position, source in enumerate(evidence_rows):
+                row = copy.deepcopy(dict(source))
+                row["schema"] = "plan_aware_evaluation_row_v1"
+                row["population_membership"] = _population_membership(row)
+                row["scores"] = {
+                    name: float(values[state_id][position])
+                    for name, values in score_maps.items()
+                }
+                output.append(row)
+    _validate_score_row_arithmetic(output, stage="STAGE_A")
+    return output
+
+
+def _write_training_ledgers(
+    *,
+    attempt: Path,
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    training_receipt: Mapping[str, Any],
+) -> None:
+    target_rows = _training_target_rows(datasets)
+    if len(target_rows) != STATE_COUNT * CANDIDATE_COUNT:
+        raise QualificationError("route-only target ledger cardinality drift")
+    atomic_bytes(
+        attempt / "ledgers/route_only_targets.jsonl",
+        b"".join(canonical_bytes(row) for row in target_rows),
+    )
+    epoch_rows: list[dict[str, Any]] = []
+    for condition, history in training_receipt["training_history"].items():
+        for row in history:
+            epoch_rows.append(
+                {
+                    "schema": "plan_aware_training_epoch_row_v1",
+                    "condition": condition,
+                    **copy.deepcopy(dict(row)),
+                }
+            )
+    if len(epoch_rows) != 120:
+        raise QualificationError("training epoch ledger cardinality drift")
+    atomic_bytes(
+        attempt / "ledgers/training_epochs.jsonl",
+        b"".join(canonical_bytes(row) for row in epoch_rows),
+    )
+
+
+def _historical_raw_comparators() -> dict[str, Any]:
+    """Copy registered predecessor summaries; never recalculate raw cosine."""
+
+    authority = CONTRACT.ROUTE_ROLE_AUTHORITY_BINDING
+    authority_path = Path(str(authority["path"]))
+    if authority_path.resolve() != PREDECESSOR_METRICS.resolve():
+        raise QualificationError("historical comparator authority path drift")
+    verify_binding(
+        authority_path,
+        str(authority["sha256"]),
+        label="historical_comparator_source",
+    )
+    if authority_path.stat().st_size != int(authority["bytes"]):
+        raise QualificationError("historical comparator authority byte-size drift")
+    predecessor = load_json(PREDECESSOR_METRICS)
+    if (
+        predecessor.get("content_digest") != authority["content_digest"]
+        or predecessor.get("content_digest") != content_digest(predecessor)
+    ):
+        raise QualificationError("historical comparator authority content drift")
+    per_role = predecessor.get("per_role")
+    if not isinstance(per_role, Mapping):
+        raise QualificationError("predecessor comparator per-role summaries are missing")
+    source_map = {
+        "RAW_TRUE_FUTURE_GOAL_COSINE": "TRUE_FUTURE_LATENT_COST",
+        "RAW_R1_GOAL_COSINE": "ONE_STEP_PREDICTED_LATENT_COST",
+        "RAW_RR_GOAL_COSINE": "TWO_STEP_PREDICTED_LATENT_COST",
+    }
+    copied = {}
+    for destination, source in source_map.items():
+        if source not in per_role or "heldout" not in per_role[source]:
+            raise QualificationError(f"predecessor comparator summary missing: {source}")
+        copied[destination] = copy.deepcopy(per_role[source]["heldout"])
+    return {
+        "policy": "HISTORICAL_BYTE_BOUND_COMPARATOR_COPY_NO_COSINE_RECOMPUTATION",
+        "source_binding": binding(PREDECESSOR_METRICS),
+        "comparators": copied,
+        "metric_definition_comparable_to_successor_borda_metrics": False,
+        "use": "historical_context_only",
+    }
+
+
+def _predecessor_raw_goal_score_maps(
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    *,
+    heldout_barrier_open: bool,
+) -> tuple[
+    dict[str, dict[str, dict[str, np.ndarray]]],
+    list[dict[str, Any]],
+    dict[str, Any],
+]:
+    """Re-reduce persisted raw-cosine costs under the successor Borda metric."""
+
+    if not heldout_barrier_open:
+        raise QualificationError(
+            "predecessor candidate evidence cannot open before the heldout barrier"
+        )
+    record = CONTRACT.PREDECESSOR_CANDIDATE_EVIDENCE_BINDING
+    reference = Path(str(record["path"]))
+    path = reference if reference.is_absolute() else PREDECESSOR_ROOT / reference
+    verify_exact_file_record(path, record, label="predecessor_candidate_evidence")
+    successor_map = dict(record["successor_source_mapping"])
+    if tuple(successor_map) != tuple(CONTRACT.RAW_COST_REREDUCED_SOURCE_IDS):
+        raise QualificationError("raw-cost successor source ordering drift")
+    source_map = {predecessor: successor for successor, predecessor in successor_map.items()}
+    if len(source_map) != len(successor_map):
+        raise QualificationError("raw-cost predecessor source mapping is not one-to-one")
+    expected_rows = STATE_COUNT * CANDIDATE_COUNT * len(source_map)
+    maps: dict[str, dict[str, dict[str, np.ndarray]]] = {
+        role: {
+            destination: {
+                state_id: np.full(CANDIDATE_COUNT, np.nan, dtype=np.float64)
+                for state_id in datasets[role]
+            }
+            for destination in source_map.values()
+        }
+        for role in SPLIT_ROLES
+    }
+    projected_rows: list[dict[str, Any]] = []
+    seen: set[tuple[str, str, int]] = set()
+    with gzip.open(path, "rt", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            source = json.loads(line)
+            if not isinstance(source, Mapping) or source.get("schema") != (
+                record["schema"]
+            ):
+                raise QualificationError(
+                    f"predecessor candidate-evidence schema drift at row {line_number}"
+                )
+            source_id = str(source.get("source"))
+            if source_id not in source_map:
+                raise QualificationError(
+                    f"predecessor candidate-evidence source drift: {source_id}"
+                )
+            role = str(source.get("role"))
+            state_id = str(source.get("state_id"))
+            candidate = int(source.get("candidate_index", -1))
+            identity = (source_id, state_id, candidate)
+            if (
+                identity in seen
+                or role not in datasets
+                or state_id not in datasets[role]
+                or not 0 <= candidate < CANDIDATE_COUNT
+            ):
+                raise QualificationError(
+                    f"predecessor candidate-evidence identity drift: {identity}"
+                )
+            expected = datasets[role][state_id][candidate]
+            missing = set(record["required_reduction_fields"]) - set(source)
+            if missing:
+                raise QualificationError(
+                    "predecessor candidate-evidence required-field drift: "
+                    f"{identity}:{sorted(missing)}"
+                )
+            expected_population = _population_membership(expected)
+            route = source.get("oracle_route_fields_h3_primary")
+            expected_outcomes = {
+                "immediate_contact_h1": bool(expected["immediate_contact_h1"]),
+                "successor_safe_action_count": int(
+                    expected["successor_safe_action_count"]
+                ),
+                "successor_viable": bool(expected["successor_viable"]),
+                "oracle_viability_admissible": bool(
+                    expected["oracle_viability_admissible"]
+                ),
+                "successor_nonviable": not bool(expected["successor_viable"]),
+                "stuck": bool(expected["stuck"]),
+                "completed": bool(expected["completed"]),
+            }
+            if (
+                source.get("family") != expected["family"]
+                or source.get("role") != role
+                or source.get("population_membership") != expected_population
+                or not isinstance(route, Mapping)
+                or not {"p_d", "p_theta", "completed", "stuck"}.issubset(route)
+                or float(route.get("p_d", math.nan)) != float(expected["p_d"])
+                or float(route.get("p_theta", math.nan)) != float(expected["p_theta"])
+                or bool(route.get("completed")) != bool(expected["completed"])
+                or bool(route.get("stuck")) != bool(expected["stuck"])
+                or any(source.get(key) != value for key, value in expected_outcomes.items())
+            ):
+                raise QualificationError(
+                    f"predecessor candidate-evidence panel alignment drift: {identity}"
+                )
+            cost = float(source["cost_h3"])
+            if not math.isfinite(cost):
+                raise QualificationError(
+                    f"predecessor candidate-evidence non-finite cost: {identity}"
+                )
+            destination = source_map[source_id]
+            score = -cost
+            maps[role][destination][state_id][candidate] = score
+            projected_rows.append(
+                {
+                    "schema": "plan_aware_raw_cost_rereduced_row_v1",
+                    "split": role,
+                    "state_id": state_id,
+                    "family": expected["family"],
+                    "candidate_index": candidate,
+                    "source_id": destination,
+                    "predecessor_source": source_id,
+                    "cost_h3": cost,
+                    "score": score,
+                    "population_membership": expected_population,
+                }
+            )
+            seen.add(identity)
+    if len(seen) != expected_rows or any(
+        not np.isfinite(values).all()
+        for role_maps in maps.values()
+        for states in role_maps.values()
+        for values in states.values()
+    ):
+        raise QualificationError("predecessor candidate-evidence coverage drift")
+    projected_rows.sort(
+        key=lambda row: (
+            tuple(CONTRACT.RAW_COST_REREDUCED_SOURCE_IDS).index(
+                str(row["source_id"])
+            ),
+            numeric_state_key(str(row["state_id"])),
+            int(row["candidate_index"]),
+        )
+    )
+    receipt = {
+        "schema": "plan_aware_raw_goal_cosine_successor_metric_reduction_v1",
+        "frozen_source_binding": copy.deepcopy(record),
+        "observed_source_binding": binding(path),
+        "source_rows": expected_rows,
+        "successor_source_mapping": successor_map,
+        "score_transform": "higher_is_better_score = -cost_h3",
+        "successor_ordering_metric": "population_conditioned_margin_borda_v1",
+        "projected_row_content_digest": hashlib.sha256(
+            canonical_json_bytes(projected_rows)
+        ).hexdigest(),
+        "raw_cosine_inference_executions": 0,
+        "historical_predecessor_aggregate_reused_for_successor_metric": False,
+        "post_heldout_barrier_read_only_reduction": True,
+    }
+    return maps, projected_rows, receipt
+
+
+def _validate_raw_cost_merged_scores(
+    stage_rows: Sequence[Mapping[str, Any]],
+    raw_rows: Sequence[Mapping[str, Any]],
+) -> None:
+    expected: dict[tuple[str, str, int, str], float] = {}
+    for row in raw_rows:
+        identity = (
+            str(row["split"]),
+            str(row["state_id"]),
+            int(row["candidate_index"]),
+            str(row["source_id"]),
+        )
+        if identity in expected:
+            raise QualificationError(f"duplicate raw-cost re-reduction row: {identity}")
+        expected[identity] = float(row["score"])
+    expected_count = int(CONTRACT.PREDECESSOR_CANDIDATE_EVIDENCE_BINDING["rows"])
+    if len(expected) != expected_count:
+        raise QualificationError("raw-cost re-reduction identity coverage drift")
+    observed = 0
+    for row in stage_rows:
+        scores = row.get("scores")
+        if not isinstance(scores, Mapping):
+            raise QualificationError("Stage-A row score map is missing")
+        for source_id in CONTRACT.RAW_COST_REREDUCED_SOURCE_IDS:
+            identity = (
+                str(row["split"]),
+                str(row["state_id"]),
+                int(row["candidate_index"]),
+                source_id,
+            )
+            if identity not in expected or scores.get(source_id) != expected[identity]:
+                raise QualificationError(f"Stage-A merged raw-cost score drift: {identity}")
+            observed += 1
+    if observed != expected_count:
+        raise QualificationError("Stage-A merged raw-cost score coverage drift")
+
+
+def _matched_raw_cost_comparisons(
+    stage_a: Mapping[str, Mapping[str, Any]],
+    stage_b: Mapping[str, Any] | None,
+) -> dict[str, Any]:
+    """Pair plan-aware scores with persisted raw costs under one metric contract."""
+
+    comparison_map = dict(
+        CONTRACT.STAGE_POLICY["STAGE_A_TRUE_FUTURE"][
+            "matched_raw_cost_comparator_rereduction"
+        ]["matched_comparisons"]
+    )
+    expected_map = {
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_TRUE": (
+            "RAW_TRUE_FUTURE_GOAL_COSINE"
+        ),
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_R1": "RAW_R1_GOAL_COSINE",
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_RR": "RAW_RR_GOAL_COSINE",
+    }
+    if comparison_map != expected_map:
+        raise QualificationError("matched raw-cost comparison mapping drift")
+
+    metric_keys = (
+        "pairwise_accuracy_gain",
+        "spearman_gain",
+        "kendall_gain",
+        "normalized_regret_reduction",
+        "best_route_top3_gain",
+        "selected_progress_gain_m",
+        "all_candidates_contact_selection_delta",
+        "all_candidates_nonviable_selection_delta",
+    )
+
+    def state_rows(summary: Mapping[str, Any], population: str) -> dict[str, Any]:
+        rows = summary["populations"][population]["per_state"]
+        return {str(row["state_id"]): row for row in rows}
+
+    def paired_role(
+        candidate: Mapping[str, Any], comparator: Mapping[str, Any]
+    ) -> dict[str, Any]:
+        viability_candidate = state_rows(
+            candidate, METRICS.ORACLE_VIABILITY_ADMISSIBLE
+        )
+        viability_comparator = state_rows(
+            comparator, METRICS.ORACLE_VIABILITY_ADMISSIBLE
+        )
+        all_candidate = state_rows(candidate, METRICS.ALL_CANDIDATES)
+        all_comparator = state_rows(comparator, METRICS.ALL_CANDIDATES)
+        identities = list(viability_candidate)
+        if (
+            list(viability_comparator) != identities
+            or list(all_candidate) != identities
+            or list(all_comparator) != identities
+        ):
+            raise QualificationError("matched raw-cost state identity/order drift")
+        per_state: list[dict[str, Any]] = []
+        for state_id in identities:
+            left = viability_candidate[state_id]
+            right = viability_comparator[state_id]
+
+            def optional_gain(key: str, *, reverse: bool = False) -> float | None:
+                if left[key] is None or right[key] is None:
+                    return None
+                return (
+                    float(right[key]) - float(left[key])
+                    if reverse
+                    else float(left[key]) - float(right[key])
+                )
+
+            per_state.append(
+                {
+                    "state_id": state_id,
+                    "family": left["family"],
+                    "pairwise_accuracy_gain": optional_gain("pairwise_accuracy"),
+                    "spearman_gain": optional_gain("spearman_rho"),
+                    "kendall_gain": optional_gain("kendall_tau_b"),
+                    "normalized_regret_reduction": optional_gain(
+                        "normalized_regret", reverse=True
+                    ),
+                    "best_route_top3_gain": optional_gain("best_route_top3"),
+                    "selected_progress_gain_m": optional_gain(
+                        "selected_route_progress_m"
+                    ),
+                    "all_candidates_contact_selection_delta": int(
+                        bool(
+                            all_candidate[state_id][
+                                "selected_immediate_contact_h1"
+                            ]
+                        )
+                    )
+                    - int(
+                        bool(
+                            all_comparator[state_id][
+                                "selected_immediate_contact_h1"
+                            ]
+                        )
+                    ),
+                    "all_candidates_nonviable_selection_delta": int(
+                        bool(
+                            all_candidate[state_id][
+                                "selected_nonviable_successor"
+                            ]
+                        )
+                    )
+                    - int(
+                        bool(
+                            all_comparator[state_id][
+                                "selected_nonviable_successor"
+                            ]
+                        )
+                    ),
+                }
+            )
+        families = {str(row["state_id"]): str(row["family"]) for row in per_state}
+        bootstrap: dict[str, Any] = {}
+        for metric in metric_keys:
+            available = [row for row in per_state if row[metric] is not None]
+            if not available:
+                bootstrap[metric] = None
+                continue
+            values = {
+                str(row["state_id"]): float(row[metric]) for row in available
+            }
+            bootstrap[metric] = OLD_METRICS.paired_state_bootstrap(
+                values,
+                {state_id: 0.0 for state_id in values},
+                {state_id: families[state_id] for state_id in values},
+                comparison_id=(
+                    f"MATCHED_RAW_COST/{candidate['source_id']}/"
+                    f"{comparator['source_id']}/{metric}"
+                ),
+                draws=METRICS.BOOTSTRAP_DRAWS,
+                seed=METRICS.BOOTSTRAP_SEED,
+            )
+        candidate_viability_aggregate = candidate["populations"][
+            METRICS.ORACLE_VIABILITY_ADMISSIBLE
+        ]["aggregate"]
+        comparator_viability_aggregate = comparator["populations"][
+            METRICS.ORACLE_VIABILITY_ADMISSIBLE
+        ]["aggregate"]
+
+        def aggregate_gain(key: str, *, reverse: bool = False) -> float | None:
+            left = candidate_viability_aggregate.get(key)
+            right = comparator_viability_aggregate.get(key)
+            if left is None or right is None:
+                return None
+            return (
+                float(right) - float(left)
+                if reverse
+                else float(left) - float(right)
+            )
+
+        all_candidate_aggregate = candidate["populations"][METRICS.ALL_CANDIDATES][
+            "aggregate"
+        ]
+        all_comparator_aggregate = comparator["populations"][METRICS.ALL_CANDIDATES][
+            "aggregate"
+        ]
+        aggregate = {
+            "pairwise_accuracy_gain": aggregate_gain("pairwise_accuracy"),
+            "spearman_gain": aggregate_gain("spearman_rho"),
+            "kendall_gain": aggregate_gain("kendall_tau_b"),
+            "normalized_regret_reduction": aggregate_gain(
+                "normalized_regret", reverse=True
+            ),
+            "best_route_top3_gain": aggregate_gain("best_route_top3_rate"),
+            "selected_progress_gain_m": aggregate_gain(
+                "selected_route_progress_m_mean"
+            ),
+        }
+        aggregate.update(
+            {
+                "all_candidates_contact_selection_delta": int(
+                    all_candidate_aggregate["selected_immediate_contacts_h1"]
+                )
+                - int(all_comparator_aggregate["selected_immediate_contacts_h1"]),
+                "all_candidates_nonviable_selection_delta": int(
+                    all_candidate_aggregate["selected_nonviable_successors"]
+                )
+                - int(all_comparator_aggregate["selected_nonviable_successors"]),
+            }
+        )
+        return {
+            "aggregate_deltas": aggregate,
+            "per_state_deltas": per_state,
+            "descriptive_paired_bootstrap": bootstrap,
+        }
+
+    comparisons: dict[str, Any] = {}
+    for candidate_id, comparator_id in comparison_map.items():
+        if candidate_id.endswith("_TRUE"):
+            candidate_by_role = {
+                role: stage_a[role][candidate_id] for role in SPLIT_ROLES
+            }
+        elif stage_b is None:
+            comparisons[candidate_id] = {
+                "comparator_id": comparator_id,
+                "status": "NOT_RUN_STAGE_B_NOT_AUTHORISED",
+                "classification_gate": False,
+            }
+            continue
+        else:
+            candidate_by_role = {
+                role: stage_b["summaries"][role][candidate_id]
+                for role in SPLIT_ROLES
+            }
+        comparisons[candidate_id] = {
+            "comparator_id": comparator_id,
+            "status": "COMPLETE",
+            "classification_gate": False,
+            "by_role": {
+                role: paired_role(
+                    candidate_by_role[role], stage_a[role][comparator_id]
+                )
+                for role in SPLIT_ROLES
+            },
+        }
+    return {
+        "schema": "plan_aware_matched_raw_cost_comparisons_v1",
+        "comparison_mapping": comparison_map,
+        "metric_ids": list(metric_keys),
+        "classification_gate": False,
+        "comparisons": comparisons,
+    }
+
+
+def _summary_metric(summary: Mapping[str, Any], key: str) -> Any:
+    return summary["populations"][METRICS.ORACLE_VIABILITY_ADMISSIBLE]["aggregate"][key]
+
+
+def _stage_a_decisions(
+    summaries: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    latent_key = "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_TRUE"
+    deranged_key = "WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_TRUE"
+    derangement = METRICS.evaluate_future_derangement_materiality(
+        summaries[latent_key], summaries[deranged_key]
+    )
+    true_gate = METRICS.evaluate_true_future_gate(summaries[latent_key], derangement)
+    if true_gate["pass"]:
+        incremental = METRICS.evaluate_incremental_value(
+            summaries[latent_key],
+            kinematic_source=summaries["KINEMATIC_ROUTE_BASELINE"],
+            no_latent_source=summaries["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"],
+        )
+    else:
+        incremental = {
+            "schema": "plan_aware_incremental_route_value_gate_v1",
+            "thresholds": dict(METRICS.INCREMENTAL_ROUTE_VALUE_THRESHOLDS),
+            "comparisons": {},
+            "pass": False,
+            "classification": (
+                "TRUE_FUTURE_JEPA_INCREMENTAL_ROUTE_VALUE_NOT_EVALUATED"
+            ),
+            "status": "NOT_EVALUATED_TRUE_GATE_FAILED",
+            "evaluated": False,
+            "reason": "TRUE_FUTURE_GATE_FAILED",
+        }
+    return {
+        "derangement": derangement,
+        "true_future_gate": true_gate,
+        "true_incremental_value": incremental,
+        "paired_true_minus_kinematic": METRICS.paired_principal_bootstrap(
+            summaries[latent_key], summaries["KINEMATIC_ROUTE_BASELINE"]
+        ),
+        "paired_true_minus_no_latent": METRICS.paired_principal_bootstrap(
+            summaries[latent_key], summaries["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"]
+        ),
+    }
+
+
+def _manifest(root: Path, *, excluded: Sequence[str] = ()) -> list[dict[str, Any]]:
+    ignored = set(excluded)
+    rows = []
+    for path in sorted(value for value in root.rglob("*") if value.is_file()):
+        relative = str(path.relative_to(root))
+        if relative in ignored or Path(relative).name.startswith("."):
+            continue
+        rows.append({**binding(path, relative_to=root)})
+    return rows
+
+
+def _process_argv(pid: int) -> tuple[str, ...]:
+    """Read one process argv without shell-string or substring interpretation."""
+
+    payload = (Path("/proc") / str(pid) / "cmdline").read_bytes()
+    return tuple(
+        item.decode("utf-8", errors="surrogateescape")
+        for item in payload.split(b"\x00")
+        if item
+    )
+
+
+def _process_stat_identity(pid: int) -> tuple[int, int]:
+    """Return Linux process-group ID and start ticks for PID reuse custody."""
+
+    payload = (Path("/proc") / str(pid) / "stat").read_text(encoding="utf-8")
+    try:
+        _prefix, fields_payload = payload.rsplit(")", 1)
+        fields = fields_payload.strip().split()
+        # fields[0] is field 3 (state), so pgrp field 5 and starttime field 22
+        # are indexes 2 and 19 respectively.
+        return int(fields[2]), int(fields[19])
+    except (ValueError, IndexError) as exc:
+        raise QualificationError(f"malformed /proc stat record for PID {pid}") from exc
+
+
+def _canonical_positive_decimal(value: str) -> bool:
+    return value.isascii() and value.isdigit() and value != "0" and str(int(value)) == value
+
+
+def _canonical_attempt_path(value: str) -> Path | None:
+    path = Path(value)
+    if (
+        not path.is_absolute()
+        or str(path) != value
+        or ".." in path.parts
+        or path.parent.resolve() != CONTRACT.OUTPUT_ROOT.parent.resolve()
+        or not path.name.startswith(f".{CONTRACT.OUTPUT_ROOT.name}.attempt-")
+    ):
+        return None
+    return path
+
+
+def _valid_conditional_helper_argv(argv: Sequence[str]) -> bool:
+    if len(argv) < 5 or argv[4] not in CONDITIONAL_HELPER_SUBCOMMANDS:
+        return False
+    command = str(argv[4])
+
+    def exact_output_and_common(
+        *, output_index: int, gate_index: int, replay_index: int
+    ) -> Path | None:
+        output = _canonical_attempt_path(str(argv[output_index]))
+        if output is None:
+            return None
+        if (
+            Path(str(argv[gate_index])) != output / "receipts/stage_b_gate.json"
+            or Path(str(argv[replay_index]))
+            != output / "receipts/execution_correction_replay.json"
+        ):
+            return None
+        return output
+
+    if command == "run-stage-b":
+        expected_flags = (
+            len(argv) == 14
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--workers"
+            and argv[13] == str(CONTRACT.CPU_WORKER_BENCHMARK["selected_workers"])
+        )
+        return bool(expected_flags) and exact_output_and_common(
+            output_index=11, gate_index=7, replay_index=9
+        ) is not None
+    if command == "context-state":
+        expected_flags = (
+            len(argv) == 14
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--state-index"
+            and argv[13].isdigit()
+            and str(int(argv[13])) == argv[13]
+            and 0 <= int(argv[13]) < STATE_COUNT
+        )
+        return bool(expected_flags) and exact_output_and_common(
+            output_index=11, gate_index=7, replay_index=9
+        ) is not None
+    if command == "predict-source":
+        base = (
+            len(argv) in (14, 19)
+            and argv[5] == "--stage-b-authorised"
+            and argv[6] == "--gate-receipt"
+            and argv[8] == "--execution-correction-replay-receipt"
+            and argv[10] == "--output-root"
+            and argv[12] == "--source-id"
+            and argv[13] in ("P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT")
+            and exact_output_and_common(
+                output_index=11, gate_index=7, replay_index=9
+            )
+            is not None
+        )
+        if not base:
+            return False
+        if len(argv) == 14:
+            return True
+        output = Path(str(argv[11]))
+        return (
+            argv[13] == "PR_PROPRIO_ROLLOUT"
+            and argv[14] == "--stage-c-authorised"
+            and argv[15] == "--stage-c-gate-receipt"
+            and Path(str(argv[16])) == output / "receipts/stage_c_gate.json"
+            and argv[17] == "--ablation"
+            and argv[18] in STAGE_C_SOURCE_IDS
+        )
+    if command == "run-stage-c":
+        if (
+            len(argv) != 15
+            or argv[5] != "--stage-b-authorised"
+            or argv[6] != "--stage-c-authorised"
+            or argv[7] != "--gate-receipt"
+            or argv[9] != "--stage-c-gate-receipt"
+            or argv[11] != "--execution-correction-replay-receipt"
+            or argv[13] != "--output-root"
+        ):
+            return False
+        output = _canonical_attempt_path(str(argv[14]))
+        return output is not None and (
+            Path(str(argv[8])) == output / "receipts/stage_b_gate.json"
+            and Path(str(argv[10])) == output / "receipts/stage_c_gate.json"
+            and Path(str(argv[12]))
+            == output / "receipts/execution_correction_replay.json"
+        )
+    return False
+
+
+def _classify_experiment_argv(
+    argv: Sequence[str], *, executable: str | None = None
+) -> str | None:
+    """Classify only frozen argv positions, prefixes, and interpreter executables."""
+
+    evaluator_prefix = len(argv) >= 2 and argv[1] == str(EVALUATOR_SCRIPT)
+    if evaluator_prefix:
+        if argv[0] != str(EVALUATOR_INTERPRETER):
+            return "INVALID_EXPERIMENT_ARGV"
+        if (
+            executable is not None
+            and Path(executable).resolve() != EVALUATOR_INTERPRETER.resolve()
+        ):
+            return "INVALID_EXPERIMENT_ARGV"
+        if len(argv) < 3:
+            return "INVALID_EXPERIMENT_ARGV"
+        subcommand = str(argv[2])
+        if subcommand in {
+            PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
+            PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND,
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND,
+        }:
+            # The separate forensic scanner owns this non-scientific role.
+            # Exact diagnostic argv must not masquerade as a malformed
+            # scientific process, while malformed diagnostic argv remains
+            # visible to the forensic scanner as INVALID_FORENSIC_ARGV.
+            return None
+        if (
+            subcommand == SCIENTIFIC_EVALUATOR_SUBCOMMAND
+            and len(argv) == 7
+            and list(argv[3:4]) == ["--launcher-pid"]
+            and _canonical_positive_decimal(argv[4])
+            and list(argv[5:6]) == ["--launcher-start-time-ticks"]
+            and _canonical_positive_decimal(argv[6])
+        ):
+            return "SCIENTIFIC_EVALUATOR"
+        if (
+            subcommand == TERMINAL_FINALIZER_SUBCOMMAND
+            and len(argv) == 11
+            and argv[3] == "--attempt"
+            and _canonical_attempt_path(argv[4]) is not None
+            and argv[5] == "--launcher-pid"
+            and _canonical_positive_decimal(argv[6])
+            and argv[7] == "--launcher-start-time-ticks"
+            and _canonical_positive_decimal(argv[8])
+            and argv[9] == "--scientific-exit-receipt"
+            and Path(argv[10])
+            == _canonical_attempt_path(argv[4])
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        ):
+            return "TERMINAL_FINALIZER"
+        if subcommand == LAUNCHER_SUBCOMMAND and len(argv) == 3:
+            return "NONSCIENTIFIC_LAUNCHER"
+        if (
+            subcommand == POST_FINALIZER_CHECK_SUBCOMMAND
+            and list(argv[3:])
+            == ["--output-root", str(CONTRACT.OUTPUT_ROOT.resolve())]
+        ):
+            return "POST_FINALIZER_CHECKER"
+        return "INVALID_EXPERIMENT_ARGV"
+    if str(EVALUATOR_SCRIPT) in argv:
+        # An exact script element in any non-frozen position is a malformed
+        # experiment invocation, not an ignorable monitor command.
+        return "INVALID_EXPERIMENT_ARGV"
+    helper_interpreters = {
+        str(CONDITIONAL_CPU_INTERPRETER): CONDITIONAL_CPU_INTERPRETER,
+        str(CONDITIONAL_GPU_INTERPRETER): CONDITIONAL_GPU_INTERPRETER,
+    }
+    helper_interpreter = helper_interpreters.get(str(argv[0])) if argv else None
+    helper_prefix = len(argv) >= 4 and list(argv[1:4]) == [
+        "-E",
+        "-s",
+        str(CONDITIONAL_HELPER_SCRIPT),
+    ]
+    if helper_prefix:
+        if helper_interpreter is None:
+            return "INVALID_EXPERIMENT_ARGV"
+        if (
+            executable is not None
+            and Path(executable).resolve() != helper_interpreter.resolve()
+        ):
+            return "INVALID_EXPERIMENT_ARGV"
+        command = str(argv[4]) if len(argv) > 4 else ""
+        expected_interpreter = {
+            "run-stage-b": CONDITIONAL_GPU_INTERPRETER,
+            "context-state": CONDITIONAL_CPU_INTERPRETER,
+            "predict-source": CONDITIONAL_GPU_INTERPRETER,
+            "run-stage-c": CONDITIONAL_GPU_INTERPRETER,
+        }.get(command)
+        if (
+            expected_interpreter is not None
+            and helper_interpreter == expected_interpreter
+            and _valid_conditional_helper_argv(argv)
+        ):
+            return "CONDITIONAL_SCIENTIFIC_HELPER"
+        return "INVALID_EXPERIMENT_ARGV"
+    if str(CONDITIONAL_HELPER_SCRIPT) in argv:
+        return "INVALID_EXPERIMENT_ARGV"
+    return None
+
+
+def _process_identity(pid: int, *, require_role: str | None = None) -> dict[str, Any]:
+    argv = _process_argv(pid)
+    pgrp, start_ticks = _process_stat_identity(pid)
+    try:
+        executable = str((Path("/proc") / str(pid) / "exe").resolve(strict=True))
+    except (FileNotFoundError, PermissionError, ProcessLookupError, OSError) as exc:
+        raise QualificationError(f"cannot bind executable for PID {pid}") from exc
+    role = _classify_experiment_argv(argv, executable=executable)
+    if require_role is not None and role != require_role:
+        raise QualificationError(
+            f"PID {pid} role {role!r} != required {require_role!r}"
+        )
+    return {
+        "pid": pid,
+        "process_group_id": pgrp,
+        "start_time_ticks": start_ticks,
+        "argv": list(argv),
+        "argv_sha256": CONTRACT.canonical_json_sha256(list(argv)),
+        "executable": executable,
+        "role": role,
+    }
+
+
+def _process_identity_is_live(identity: Mapping[str, Any]) -> bool:
+    try:
+        observed = _process_identity(int(identity["pid"]))
+    except (
+        FileNotFoundError,
+        PermissionError,
+        ProcessLookupError,
+        QualificationError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ):
+        return False
+    return observed == dict(identity)
+
+
+def _expected_launcher_argv() -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        LAUNCHER_SUBCOMMAND,
+    ]
+
+
+def _expected_scientific_argv(launcher_identity: Mapping[str, Any]) -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        SCIENTIFIC_EVALUATOR_SUBCOMMAND,
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+    ]
+
+
+def _expected_finalizer_argv(
+    *,
+    attempt: Path,
+    launcher_identity: Mapping[str, Any],
+    scientific_exit_receipt: Path,
+) -> list[str]:
+    return [
+        str(EVALUATOR_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        TERMINAL_FINALIZER_SUBCOMMAND,
+        "--attempt",
+        str(attempt.absolute()),
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+        "--scientific-exit-receipt",
+        str(scientific_exit_receipt.absolute()),
+    ]
+
+
+def _require_exact_live_launcher(
+    *, pid: int, start_time_ticks: int
+) -> dict[str, Any]:
+    identity = _process_identity(pid, require_role="NONSCIENTIFIC_LAUNCHER")
+    if (
+        int(identity["start_time_ticks"]) != start_time_ticks
+        or identity["argv"] != _expected_launcher_argv()
+        or not _process_identity_is_live(identity)
+    ):
+        raise QualificationError("launcher PID/start-time/argv custody drift")
+    return identity
+
+
+def _active_experiment_processes(
+    *,
+    include_finalizer: bool = True,
+    include_launcher: bool = False,
+    include_checker: bool = False,
+) -> list[dict[str, Any]]:
+    """List exact evaluator/helper argv roles; monitoring shells never match."""
+
+    accepted = {
+        "SCIENTIFIC_EVALUATOR",
+        "CONDITIONAL_SCIENTIFIC_HELPER",
+        "INVALID_EXPERIMENT_ARGV",
+    }
+    if include_finalizer:
+        accepted.add("TERMINAL_FINALIZER")
+    if include_launcher:
+        accepted.add("NONSCIENTIFIC_LAUNCHER")
+    if include_checker:
+        accepted.add("POST_FINALIZER_CHECKER")
+    output: list[dict[str, Any]] = []
+    own = os.getpid()
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == own:
+            continue
+        try:
+            record = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        if record["role"] in accepted:
+            output.append(record)
+    return sorted(output, key=lambda row: int(row["pid"]))
+
+
+def _process_group_members(process_group_id: int) -> list[dict[str, Any]]:
+    output: list[dict[str, Any]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == os.getpid():
+            continue
+        try:
+            record = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        if int(record["process_group_id"]) == process_group_id:
+            output.append(record)
+    return sorted(output, key=lambda row: int(row["pid"]))
+
+
+def _device_holder_pids(device: Path, *, scoped_pids: Iterable[int]) -> list[int]:
+    expected = device.resolve(strict=False)
+    holders: list[int] = []
+    for pid in sorted(set(int(value) for value in scoped_pids)):
+        directory = Path("/proc") / str(pid) / "fd"
+        try:
+            descriptors = list(directory.iterdir())
+        except (FileNotFoundError, PermissionError, ProcessLookupError):
+            continue
+        for descriptor in descriptors:
+            try:
+                if descriptor.resolve(strict=True) == expected:
+                    holders.append(pid)
+                    break
+            except (FileNotFoundError, PermissionError, ProcessLookupError, OSError):
+                continue
+    return holders
+
+
+def _assert_completed_process_group_quiescent(
+    identity: Mapping[str, Any], *, phase: str
+) -> dict[str, Any]:
+    pgrp = int(identity["process_group_id"])
+    members = _process_group_members(pgrp)
+    exact_roles = _active_experiment_processes(include_finalizer=True)
+    scoped_pids = {int(row["pid"]) for row in members}
+    scoped_pids.update(int(row["pid"]) for row in exact_roles)
+    kfd_holders = _device_holder_pids(Path("/dev/kfd"), scoped_pids=scoped_pids)
+    if members or exact_roles or kfd_holders:
+        raise QualificationError(
+            f"{phase} process cleanup failed: pgrp={members}, "
+            f"exact_roles={exact_roles}, kfd_holders={kfd_holders}"
+        )
+    return {
+        "completed_process": copy.deepcopy(dict(identity)),
+        "process_group_members_after_wait": [],
+        "exact_scientific_or_finalizer_matches_after_wait": [],
+        "scoped_dev_kfd_holders_after_wait": [],
+        "pass": True,
+    }
+
+
+def _run_exact_isolated_process(
+    argv: Sequence[str],
+    *,
+    expected_role: str,
+    phase: str,
+    environment: Mapping[str, str] | None = None,
+    require_zero_returncode: bool = True,
+) -> dict[str, Any]:
+    """Run one exact evaluator phase in its own session and prove cleanup."""
+
+    command = [str(item) for item in argv]
+    if not command:
+        raise QualificationError(f"{phase} argv is empty")
+    started = time.time()
+    process = subprocess.Popen(
+        command,
+        cwd=ROOT,
+        env=None if environment is None else dict(environment),
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        start_new_session=True,
+    )
+    try:
+        identity: dict[str, Any] | None = None
+        identity_deadline = time.monotonic() + 5.0
+        while time.monotonic() < identity_deadline:
+            if process.poll() is not None:
+                break
+            try:
+                candidate = _process_identity(process.pid)
+            except (
+                FileNotFoundError,
+                PermissionError,
+                ProcessLookupError,
+                QualificationError,
+            ):
+                time.sleep(0.01)
+                continue
+            if candidate.get("role") == expected_role:
+                identity = candidate
+                break
+            time.sleep(0.01)
+        if identity is None:
+            raise QualificationError(
+                f"{phase} child never acquired exact role {expected_role!r}"
+            )
+        if identity["argv"] != command:
+            raise QualificationError(f"{phase} child argv drift")
+        if int(identity["process_group_id"]) != process.pid:
+            raise QualificationError(f"{phase} child did not lead its new session")
+        stdout, _stderr = process.communicate()
+    except BaseException as exc:
+        if process.poll() is None:
+            try:
+                os.killpg(process.pid, signal.SIGTERM)
+            except ProcessLookupError:
+                pass
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+                process.wait(timeout=10)
+        try:
+            _assert_completed_process_group_quiescent(
+                identity or {"process_group_id": process.pid},
+                phase=f"{phase}_EXCEPTION_CLEANUP",
+            )
+        except BaseException as cleanup_exc:
+            raise QualificationError(
+                f"{phase} raised and process-group cleanup failed: {cleanup_exc}"
+            ) from exc
+        wrapped = QualificationError(f"{phase} child lifecycle failed: {exc}")
+        setattr(wrapped, "phase_process_started", True)
+        setattr(wrapped, "phase_process_identity", copy.deepcopy(identity))
+        setattr(wrapped, "phase_process_group_id", process.pid)
+        raise wrapped from exc
+    cleanup = _assert_completed_process_group_quiescent(identity, phase=phase)
+    if process.returncode and require_zero_returncode:
+        raise QualificationError(
+            f"{phase} failed ({process.returncode}): {stdout[-8000:]}"
+        )
+    return {
+        "argv": command,
+        "process_identity": identity,
+        "returncode": process.returncode,
+        "runtime_s": time.time() - started,
+        "stdout": stdout,
+        "cleanup": cleanup,
+    }
+
+
+def _validate_forensic_constant_alignment() -> Any:
+    """Load the separate forensic authority and bind its public CLI names."""
+
+    forensic = _forensic_contract()
+    expected = {
+        "PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND": (
+            PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_SUBCOMMAND": PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
+        "PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND
+        ),
+    }
+    for name, value in expected.items():
+        if getattr(forensic, name, None) != value:
+            raise QualificationError(f"forensic CLI constant drift: {name}")
+    return forensic
+
+
+def _validate_forensic_correction_1_constant_alignment() -> Any:
+    """Bind the versioned correction CLI without changing BASE authority."""
+
+    correction = _forensic_correction_1_contract()
+    expected = {
+        "PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND": (
+            PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND
+        ),
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND": (
+            PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND
+        ),
+    }
+    for name, value in expected.items():
+        if getattr(correction, name, None) != value:
+            raise QualificationError(
+                f"forensic correction-1 CLI constant drift: {name}"
+            )
+    if Path(correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT) != (
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+    ):
+        raise QualificationError("forensic correction-1 root drift")
+    if correction.BASE is not _validate_forensic_constant_alignment():
+        raise QualificationError("forensic correction-1 BASE authority drift")
+    return correction
+
+
+def _forensic_runtime_paths(root: Path) -> dict[str, Path]:
+    forensic = _validate_forensic_constant_alignment()
+    paths = getattr(forensic, "PREEXECUTION_DIAGNOSTIC_RUNTIME_PATHS", None)
+    if not isinstance(paths, Mapping):
+        raise QualificationError("forensic runtime-path authority is absent")
+    output: dict[str, Path] = {}
+    for key, relative in paths.items():
+        if not isinstance(key, str) or not isinstance(relative, str):
+            raise QualificationError("forensic runtime-path authority is malformed")
+        candidate = root / relative
+        try:
+            candidate.resolve(strict=False).relative_to(root.resolve())
+        except ValueError as exc:
+            raise QualificationError(
+                f"forensic runtime path escapes diagnostic root: {key}"
+            ) from exc
+        output[key] = candidate
+    return output
+
+
+def _expected_preexecution_diagnostic_launcher_argv() -> list[str]:
+    return [
+        str(FORENSIC_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
+    ]
+
+
+def _expected_preexecution_forensic_freeze_argv() -> list[str]:
+    return [
+        str(FORENSIC_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND,
+    ]
+
+
+def _expected_preexecution_forensic_correction_freeze_argv() -> list[str]:
+    _validate_forensic_correction_1_constant_alignment()
+    return [
+        str(FORENSIC_INTERPRETER),
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_launcher_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_launcher_argv()
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_finalizer_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_finalizer_outer_argv()
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_checker_argv() -> list[str]:
+    return [
+        str(value)
+        for value in _validate_forensic_correction_1_constant_alignment()
+        .expected_correction_checker_outer_argv()
+    ]
+
+
+def _expected_preexecution_diagnostic_child_argv(
+    launcher_identity: Mapping[str, Any],
+    *,
+    diagnostic_root: Path,
+    traceback_fd: int,
+    exception_fd: int,
+    heartbeat_fd: int,
+    read_guard_events_fd: int,
+) -> list[str]:
+    paths = _forensic_runtime_paths(diagnostic_root)
+    return [
+        str(FORENSIC_INTERPRETER),
+        "-E",
+        "-s",
+        "-u",
+        str(PREEXECUTION_DIAGNOSTIC_WRAPPER_SCRIPT),
+        "--mode",
+        PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND,
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+        "--diagnostic-root",
+        str(diagnostic_root.absolute()),
+        "--traceback-fd",
+        str(int(traceback_fd)),
+        "--exception-fd",
+        str(int(exception_fd)),
+        "--heartbeat-fd",
+        str(int(heartbeat_fd)),
+        "--read-guard-manifest",
+        str(paths["read_guard_manifest"].absolute()),
+        "--read-guard-events-fd",
+        str(int(read_guard_events_fd)),
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_child_argv(
+    launcher_identity: Mapping[str, Any],
+    *,
+    traceback_fd: int,
+    exception_fd: int,
+    heartbeat_fd: int,
+    read_guard_events_fd: int,
+) -> list[str]:
+    correction = _validate_forensic_correction_1_constant_alignment()
+    root = Path(correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT)
+    argv = _expected_preexecution_diagnostic_child_argv(
+        launcher_identity,
+        diagnostic_root=root,
+        traceback_fd=traceback_fd,
+        exception_fd=exception_fd,
+        heartbeat_fd=heartbeat_fd,
+        read_guard_events_fd=read_guard_events_fd,
+    )
+    argv[6] = PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+    return argv
+
+
+def _expected_preexecution_diagnostic_synthetic_child_argv(
+    *,
+    fixture_id: str,
+    diagnostic_root: Path,
+    traceback_fd: int,
+    exception_fd: int,
+    heartbeat_fd: int,
+    read_guard_events_fd: int,
+) -> list[str]:
+    paths = _forensic_runtime_paths(diagnostic_root)
+    return [
+        str(FORENSIC_INTERPRETER),
+        "-E",
+        "-s",
+        "-u",
+        str(PREEXECUTION_DIAGNOSTIC_WRAPPER_SCRIPT),
+        "--mode",
+        PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND,
+        "--fixture-id",
+        str(fixture_id),
+        "--diagnostic-root",
+        str(diagnostic_root.absolute()),
+        "--traceback-fd",
+        str(int(traceback_fd)),
+        "--exception-fd",
+        str(int(exception_fd)),
+        "--heartbeat-fd",
+        str(int(heartbeat_fd)),
+        "--read-guard-manifest",
+        str(paths["read_guard_manifest"].absolute()),
+        "--read-guard-events-fd",
+        str(int(read_guard_events_fd)),
+    ]
+
+
+def _expected_preexecution_diagnostic_internal_argv(
+    launcher_identity: Mapping[str, Any], *, diagnostic_root: Path
+) -> list[str]:
+    return [
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND,
+        "--launcher-pid",
+        str(int(launcher_identity["pid"])),
+        "--launcher-start-time-ticks",
+        str(int(launcher_identity["start_time_ticks"])),
+        "--diagnostic-root",
+        str(diagnostic_root.absolute()),
+    ]
+
+
+def _expected_preexecution_diagnostic_correction_internal_argv(
+    launcher_identity: Mapping[str, Any],
+) -> list[str]:
+    correction = _validate_forensic_correction_1_constant_alignment()
+    try:
+        return [
+            str(value)
+            for value in correction.expected_correction_child_inner_argv(
+                launcher_pid=int(launcher_identity["pid"]),
+                launcher_start_time_ticks=int(
+                    launcher_identity["start_time_ticks"]
+                ),
+            )
+        ]
+    except Exception as exc:
+        raise QualificationError(
+            "forensic correction-1 child argv authority drift"
+        ) from exc
+
+
+def _expected_preexecution_diagnostic_synthetic_internal_argv(
+    *, fixture_id: str, diagnostic_root: Path
+) -> list[str]:
+    return [
+        str(EVALUATOR_SCRIPT),
+        PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND,
+        "--fixture-id",
+        fixture_id,
+        "--diagnostic-root",
+        str(diagnostic_root.absolute()),
+    ]
+
+
+def _classify_forensic_argv(
+    argv: Sequence[str], *, executable: str | None = None
+) -> str | None:
+    """Classify exact forensic argv; malformed exact invocations fail visible."""
+
+    values = [str(item) for item in argv]
+    script = str(EVALUATOR_SCRIPT)
+    wrapper = str(PREEXECUTION_DIAGNOSTIC_WRAPPER_SCRIPT)
+    diagnostic_commands = {
+        PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND,
+        PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND,
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND,
+    }
+    mentions_diagnostic = any(item in diagnostic_commands for item in values)
+    if script not in values and wrapper not in values and not mentions_diagnostic:
+        return None
+    if executable is not None and Path(executable).resolve() != FORENSIC_INTERPRETER.resolve():
+        return "INVALID_FORENSIC_ARGV"
+    if len(values) >= 3 and values[:2] == [str(FORENSIC_INTERPRETER), script]:
+        command = values[2]
+    elif (
+        len(values) >= 7
+        and values[:5]
+        == [str(FORENSIC_INTERPRETER), "-E", "-s", "-u", wrapper]
+        and values[5] == "--mode"
+    ):
+        command = values[6]
+    else:
+        return "INVALID_FORENSIC_ARGV"
+    if command == PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND:
+        return (
+            "PREEXECUTION_FORENSIC_FREEZE"
+            if values == _expected_preexecution_forensic_freeze_argv()
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_SUBCOMMAND:
+        return (
+            "PREEXECUTION_DIAGNOSTIC_LAUNCHER"
+            if values == _expected_preexecution_diagnostic_launcher_argv()
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_forensic_correction_freeze_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_FORENSIC_CORRECTION_1_FREEZE"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_launcher_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_finalizer_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_FINALIZER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND:
+        try:
+            expected = _expected_preexecution_diagnostic_correction_checker_argv()
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return (
+            "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHECKER"
+            if values == expected
+            else "INVALID_FORENSIC_ARGV"
+        )
+    if command == PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND:
+        forensic = _validate_forensic_constant_alignment()
+        root = Path(str(forensic.PREEXECUTION_DIAGNOSTIC_ROOT)).absolute()
+        if (
+            len(values) == 23
+            and _canonical_positive_decimal(values[8])
+            and _canonical_positive_decimal(values[10])
+            and _canonical_positive_decimal(values[14])
+            and _canonical_positive_decimal(values[16])
+            and _canonical_positive_decimal(values[18])
+            and _canonical_positive_decimal(values[22])
+            and values
+            == _expected_preexecution_diagnostic_child_argv(
+                {"pid": int(values[8]), "start_time_ticks": int(values[10])},
+                diagnostic_root=root,
+                traceback_fd=int(values[14]),
+                exception_fd=int(values[16]),
+                heartbeat_fd=int(values[18]),
+                read_guard_events_fd=int(values[22]),
+            )
+        ):
+            return "PREEXECUTION_DIAGNOSTIC_CHILD"
+        return "INVALID_FORENSIC_ARGV"
+    if command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND:
+        try:
+            correction = _validate_forensic_correction_1_constant_alignment()
+            root = Path(
+                correction.PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+            ).absolute()
+            if (
+                len(values) == 23
+                and _canonical_positive_decimal(values[8])
+                and _canonical_positive_decimal(values[10])
+                and _canonical_positive_decimal(values[14])
+                and _canonical_positive_decimal(values[16])
+                and _canonical_positive_decimal(values[18])
+                and _canonical_positive_decimal(values[22])
+                and values
+                == _expected_preexecution_diagnostic_correction_child_argv(
+                    {
+                        "pid": int(values[8]),
+                        "start_time_ticks": int(values[10]),
+                    },
+                    traceback_fd=int(values[14]),
+                    exception_fd=int(values[16]),
+                    heartbeat_fd=int(values[18]),
+                    read_guard_events_fd=int(values[22]),
+                )
+                and Path(values[12]) == root
+            ):
+                return "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+        except Exception:
+            return "INVALID_FORENSIC_ARGV"
+        return "INVALID_FORENSIC_ARGV"
+    if command == PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND:
+        forensic = _validate_forensic_constant_alignment()
+        fixtures = set(forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_FIXTURES)
+        if (
+            len(values) == 21
+            and values[7] == "--fixture-id"
+            and values[8] in fixtures
+            and values[9] == "--diagnostic-root"
+            and Path(values[10]).is_absolute()
+            and _canonical_positive_decimal(values[12])
+            and _canonical_positive_decimal(values[14])
+            and _canonical_positive_decimal(values[16])
+            and _canonical_positive_decimal(values[20])
+            and values
+            == _expected_preexecution_diagnostic_synthetic_child_argv(
+                fixture_id=values[8],
+                diagnostic_root=Path(values[10]),
+                traceback_fd=int(values[12]),
+                exception_fd=int(values[14]),
+                heartbeat_fd=int(values[16]),
+                read_guard_events_fd=int(values[20]),
+            )
+        ):
+            return "PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD"
+        return "INVALID_FORENSIC_ARGV"
+    return "INVALID_FORENSIC_ARGV" if mentions_diagnostic else None
+
+
+def _forensic_process_identity(
+    pid: int, *, require_role: str | None = None
+) -> dict[str, Any]:
+    argv = _process_argv(pid)
+    pgrp, start_ticks = _process_stat_identity(pid)
+    try:
+        executable = str((Path("/proc") / str(pid) / "exe").resolve(strict=True))
+    except (FileNotFoundError, PermissionError, ProcessLookupError, OSError) as exc:
+        raise QualificationError(
+            f"cannot bind forensic executable for PID {pid}"
+        ) from exc
+    role = _classify_forensic_argv(argv, executable=executable)
+    if require_role is not None and role != require_role:
+        raise QualificationError(
+            f"forensic PID {pid} role {role!r} != required {require_role!r}"
+        )
+    return {
+        "pid": pid,
+        "process_group_id": pgrp,
+        "start_time_ticks": start_ticks,
+        "argv": list(argv),
+        "argv_sha256": CONTRACT.canonical_json_sha256(list(argv)),
+        "executable": executable,
+        "role": role,
+    }
+
+
+def _forensic_process_identity_is_live(identity: Mapping[str, Any]) -> bool:
+    try:
+        return _forensic_process_identity(int(identity["pid"])) == dict(identity)
+    except (
+        FileNotFoundError,
+        PermissionError,
+        ProcessLookupError,
+        QualificationError,
+        KeyError,
+        TypeError,
+        ValueError,
+    ):
+        return False
+
+
+def _active_forensic_processes(*, exclude_pid: int | None = None) -> list[dict[str, Any]]:
+    roles = {
+        "PREEXECUTION_FORENSIC_FREEZE",
+        "PREEXECUTION_DIAGNOSTIC_LAUNCHER",
+        "PREEXECUTION_DIAGNOSTIC_CHILD",
+        "PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD",
+        "PREEXECUTION_FORENSIC_CORRECTION_1_FREEZE",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_FINALIZER",
+        "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHECKER",
+        "INVALID_FORENSIC_ARGV",
+    }
+    output: list[dict[str, Any]] = []
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit():
+            continue
+        pid = int(entry.name)
+        if pid == os.getpid() or (exclude_pid is not None and pid == exclude_pid):
+            continue
+        try:
+            identity = _forensic_process_identity(pid)
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        if identity["role"] in roles:
+            output.append(identity)
+    return sorted(output, key=lambda row: int(row["pid"]))
+
+
+def _assert_forensic_process_group_quiescent(
+    identity: Mapping[str, Any], *, phase: str
+) -> dict[str, Any]:
+    pgrp = int(identity["process_group_id"])
+    members = _process_group_members(pgrp)
+    exact_roles = _active_forensic_processes()
+    scoped_pids = {int(row["pid"]) for row in members}
+    scoped_pids.update(int(row["pid"]) for row in exact_roles)
+    kfd_holders = _device_holder_pids(Path("/dev/kfd"), scoped_pids=scoped_pids)
+    if members or exact_roles or kfd_holders:
+        raise QualificationError(
+            f"{phase} forensic cleanup failed: pgrp={members}, "
+            f"exact_roles={exact_roles}, kfd_holders={kfd_holders}"
+        )
+    return {
+        "process_group_members_after_wait": [],
+        "exact_nonlauncher_forensic_role_matches_after_wait": [],
+        "scoped_dev_kfd_holders_after_wait": [],
+        "current_launcher_excluded_from_role_scan": True,
+        "cleanup_scope": (
+            "TERMINATED_CHILD_PROCESS_GROUP_AND_NONLAUNCHER_FORENSIC_ROLES"
+        ),
+        "literal_zero_all_forensic_roles_claimed": False,
+        "pass": True,
+    }
+
+
+def _forensic_child_environment() -> dict[str, str]:
+    environment = dict(os.environ)
+    for key in tuple(environment):
+        if not key.startswith("PYTHON"):
+            continue
+        environment.pop(key, None)
+    environment.update(
+        {
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONUNBUFFERED": "1",
+            "PYTHONFAULTHANDLER": "1",
+        }
+    )
+    venv = FORENSIC_INTERPRETER.parent.parent
+    environment["VIRTUAL_ENV"] = str(venv)
+    inherited_path = environment.get("PATH", "")
+    environment["PATH"] = str(venv / "bin") + (
+        os.pathsep + inherited_path if inherited_path else ""
+    )
+    return environment
+
+
+def _technical_runtime_context() -> dict[str, Any]:
+    """Capture current launcher context using metadata-only system calls."""
+
+    previous_umask = os.umask(0)
+    os.umask(previous_umask)
+    limit_names = (
+        "RLIMIT_AS",
+        "RLIMIT_CORE",
+        "RLIMIT_DATA",
+        "RLIMIT_MEMLOCK",
+        "RLIMIT_NOFILE",
+        "RLIMIT_NPROC",
+        "RLIMIT_STACK",
+    )
+    limits: dict[str, dict[str, int | str]] = {}
+    for name in limit_names:
+        identifier = getattr(resource, name, None)
+        if identifier is None:
+            continue
+        soft, hard = resource.getrlimit(identifier)
+        limits[name] = {
+            "soft": "INFINITY" if soft == resource.RLIM_INFINITY else int(soft),
+            "hard": "INFINITY" if hard == resource.RLIM_INFINITY else int(hard),
+        }
+    affinity = (
+        sorted(int(value) for value in os.sched_getaffinity(0))
+        if hasattr(os, "sched_getaffinity")
+        else []
+    )
+
+    def metadata(path: Path) -> dict[str, Any]:
+        absolute = path.absolute()
+        try:
+            info = os.lstat(absolute)
+        except FileNotFoundError:
+            return {
+                "path": str(absolute),
+                "exists": False,
+                "kind": "ABSENT",
+                "mode_or_null": None,
+                "uid_or_null": None,
+                "gid_or_null": None,
+                "writable_or_null": None,
+            }
+        if stat.S_ISDIR(info.st_mode):
+            kind = "DIRECTORY"
+        elif stat.S_ISREG(info.st_mode):
+            kind = "FILE"
+        elif stat.S_ISCHR(info.st_mode):
+            kind = "CHAR_DEVICE"
+        else:
+            kind = "OTHER"
+        return {
+            "path": str(absolute),
+            "exists": True,
+            "kind": kind,
+            "mode_or_null": int(info.st_mode & 0o7777),
+            "uid_or_null": int(info.st_uid),
+            "gid_or_null": int(info.st_gid),
+            "writable_or_null": os.access(absolute, os.W_OK),
+        }
+
+    temp_environment = {
+        key: os.environ.get(key) for key in ("TMPDIR", "TMP", "TEMP")
+    }
+    temp_paths = {
+        Path(value).absolute()
+        for value in temp_environment.values()
+        if isinstance(value, str) and value
+    }
+    if not temp_paths:
+        temp_paths.add(Path("/tmp"))
+    device_paths = [Path("/dev/kfd")]
+    device_paths.extend(sorted(Path("/dev/dri").glob("renderD*")))
+    forensic = _validate_forensic_constant_alignment()
+    return forensic.build_current_runtime_context(
+        captured_at_ns=time.time_ns(),
+        identity={
+            "uid": os.getuid(),
+            "euid": os.geteuid(),
+            "gid": os.getgid(),
+            "egid": os.getegid(),
+            "groups": sorted(set(os.getgroups())),
+        },
+        cwd=str(Path.cwd().absolute()),
+        umask={"value": int(previous_umask), "sampled_and_restored": True},
+        rlimits=limits,
+        cpu={
+            "affinity": affinity,
+            "cpu_count": int(os.cpu_count() or max(1, len(affinity))),
+        },
+        gpu={
+            "visibility_environment": {
+                key: os.environ.get(key)
+                for key in (
+                    "CUDA_VISIBLE_DEVICES",
+                    "NVIDIA_VISIBLE_DEVICES",
+                    "ROCR_VISIBLE_DEVICES",
+                    "HIP_VISIBLE_DEVICES",
+                )
+            },
+            "device_metadata": [metadata(path) for path in device_paths],
+            "device_files_opened": 0,
+        },
+        temp={
+            "environment": temp_environment,
+            "path_metadata": [
+                metadata(path) for path in sorted(temp_paths, key=str)
+            ],
+        },
+    )
+
+
+def _exclusive_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o644)
+    with os.fdopen(descriptor, "wb") as handle:
+        handle.write(payload)
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
+def _atomic_preexecution_json(path: Path, value: Mapping[str, Any]) -> None:
+    """Publish one diagnostic receipt only after bytes and directory are durable."""
+
+    if path.exists() or path.is_symlink():
+        raise QualificationError(f"preexecution receipt path is stale: {path}")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.parent / (
+        f".{path.name}.tmp-{os.getpid()}-{time.monotonic_ns()}"
+    )
+    try:
+        _exclusive_bytes(temporary, canonical_bytes(value))
+        if path.exists() or path.is_symlink():
+            raise QualificationError(f"preexecution receipt raced: {path}")
+        os.replace(temporary, path)
+        directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def _atomic_preexecution_last_stage(
+    path: Path, *, producer_role: str, stage_id: str, event: str
+) -> dict[str, Any]:
+    forensic = _validate_forensic_constant_alignment()
+    value = forensic.build_last_stage_marker(
+        producer_role=producer_role,
+        stage_id=stage_id,
+        event=event,
+        pid=os.getpid(),
+        monotonic_ns=time.monotonic_ns(),
+    )
+    forensic.validate_last_stage_marker(value)
+    payload = canonical_bytes(value)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.parent / (
+        f".{path.name}.tmp-{os.getpid()}-{time.monotonic_ns()}"
+    )
+    try:
+        _exclusive_bytes(temporary, payload)
+        os.replace(temporary, path)
+        directory_fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try:
+            os.fsync(directory_fd)
+        finally:
+            os.close(directory_fd)
+    finally:
+        temporary.unlink(missing_ok=True)
+    return value
+
+
+def _load_synthetic_technical_lifecycle_rows(
+    path: Path,
+) -> list[dict[str, Any]]:
+    forensic = _validate_forensic_constant_alignment()
+    stage_ids = tuple(forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_STAGE_IDS)
+    rows: list[dict[str, Any]] = []
+    with path.open("rb") as stream:
+        for sequence, raw in enumerate(stream):
+            if not raw.endswith(b"\n"):
+                raise QualificationError(
+                    "synthetic technical lifecycle lacks newline framing"
+                )
+            try:
+                row = json.loads(raw)
+            except json.JSONDecodeError as exc:
+                raise QualificationError(
+                    "synthetic technical lifecycle contains invalid JSON"
+                ) from exc
+            if (
+                not isinstance(row, dict)
+                or canonical_bytes(row) != raw
+                or row.get("sequence") != sequence
+                or row.get("stage_id") not in stage_ids
+                or row.get("event") not in {"STARTED", "COMPLETED"}
+                or isinstance(row.get("monotonic_ns"), bool)
+                or not isinstance(row.get("monotonic_ns"), int)
+                or row["monotonic_ns"] <= 0
+            ):
+                raise QualificationError("synthetic technical lifecycle row drift")
+            try:
+                forensic.validate_self_digest(row)
+            except Exception as exc:
+                raise QualificationError(
+                    "synthetic technical lifecycle digest drift"
+                ) from exc
+            rows.append(row)
+    expected_prefix = [
+        (stage_id, event)
+        for stage_id in stage_ids
+        for event in ("STARTED", "COMPLETED")
+    ]
+    observed = [(row["stage_id"], row["event"]) for row in rows]
+    if observed != expected_prefix[: len(observed)]:
+        raise QualificationError("synthetic technical lifecycle order drift")
+    return rows
+
+
+def _append_synthetic_technical_cleanup_row(
+    path: Path, *, sequence: int, event: str
+) -> None:
+    forensic = _validate_forensic_constant_alignment()
+    row = forensic.attach_self_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "preexecution_synthetic_technical_stage.v1"
+            ),
+            "sequence": sequence,
+            "stage_id": "CLEANUP_TECHNICAL_RESOURCES",
+            "event": event,
+            "monotonic_ns": time.monotonic_ns(),
+        }
+    )
+    with path.open("ab", buffering=0) as stream:
+        stream.write(canonical_bytes(row))
+        os.fsync(stream.fileno())
+
+
+def _ensure_synthetic_technical_cleanup(
+    *, diagnostic_root: Path, lifecycle_path: Path
+) -> list[dict[str, Any]]:
+    """Finish only the synthetic cleanup stage after signal termination."""
+
+    forensic = _validate_forensic_constant_alignment()
+    stage_ids = tuple(forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_STAGE_IDS)
+    rows = _load_synthetic_technical_lifecycle_rows(lifecycle_path)
+    complete_count = 2 * len(stage_ids)
+    reservation = diagnostic_root / "technical_reservation"
+    if len(rows) == complete_count:
+        if reservation.exists():
+            raise QualificationError(
+                "synthetic lifecycle reports cleanup but reservation remains"
+            )
+        return rows
+    if len(rows) != 2 * (len(stage_ids) - 1):
+        raise QualificationError(
+            "synthetic child failed outside the post-PREEXEC signal boundary"
+        )
+    _append_synthetic_technical_cleanup_row(
+        lifecycle_path, sequence=len(rows), event="STARTED"
+    )
+    allowed = {
+        reservation / "technical.lock",
+        reservation / "process_state.json",
+        reservation / "PREEXECUTION_ONLY.marker",
+    }
+    observed = set(reservation.iterdir()) if reservation.is_dir() else set()
+    if not observed.issubset(allowed):
+        raise QualificationError("unexpected synthetic technical resource")
+    for path in sorted(observed, key=str):
+        path.unlink()
+    if reservation.is_dir():
+        reservation.rmdir()
+    _append_synthetic_technical_cleanup_row(
+        lifecycle_path, sequence=len(rows) + 1, event="COMPLETED"
+    )
+    rows = _load_synthetic_technical_lifecycle_rows(lifecycle_path)
+    if len(rows) != complete_count:
+        raise QualificationError("synthetic technical cleanup evidence incomplete")
+    return rows
+
+
+def _run_forensic_child_with_external_stream_custody(
+    argv_factory: Any,
+    *,
+    internal_argv_factory: Any,
+    expected_role: str,
+    stdout_path: Path,
+    stderr_path: Path,
+    traceback_path: Path,
+    exception_path: Path,
+    heartbeat_path: Path,
+    last_stage_path: Path,
+    read_guard_manifest_path: Path,
+    read_guard_events_path: Path,
+    environment_path: Path,
+    command_path: Path,
+    synthetic_lifecycle_path: Path | None = None,
+    invocation_path: Path | None = None,
+    launcher_process_identity: Mapping[str, Any] | None = None,
+    source_commit: str | None = None,
+    namespace_before: Sequence[Mapping[str, str]] | None = None,
+) -> dict[str, Any]:
+    """Run a non-scientific diagnostic child with separate immutable streams."""
+
+    reserved = (
+        stdout_path,
+        stderr_path,
+        traceback_path,
+        exception_path,
+        heartbeat_path,
+        last_stage_path,
+        read_guard_manifest_path,
+        read_guard_events_path,
+        environment_path,
+        command_path,
+        *((synthetic_lifecycle_path,) if synthetic_lifecycle_path is not None else ()),
+        *((invocation_path,) if invocation_path is not None else ()),
+    )
+    invocation_requested = invocation_path is not None
+    if invocation_requested != all(
+        value is not None
+        for value in (
+            launcher_process_identity,
+            source_commit,
+            namespace_before,
+        )
+    ):
+        raise QualificationError("forensic invocation custody inputs are partial")
+    if any(path.exists() or path.is_symlink() for path in reserved):
+        raise QualificationError("forensic stream destination is stale")
+    for path in reserved:
+        path.parent.mkdir(parents=True, exist_ok=True)
+    environment = _forensic_child_environment()
+    removed_python_keys = sorted(
+        key for key in os.environ if key.startswith("PYTHON")
+    )
+    forensic = _validate_forensic_constant_alignment()
+    read_guard_manifest = _build_preexecution_read_guard_manifest()
+    forensic.validate_read_guard_manifest(read_guard_manifest, repo_root=ROOT)
+    exclusive_json(read_guard_manifest_path, read_guard_manifest)
+    if synthetic_lifecycle_path is not None:
+        _exclusive_bytes(synthetic_lifecycle_path, b"")
+    _atomic_preexecution_last_stage(
+        last_stage_path,
+        producer_role="PREEXECUTION_DIAGNOSTIC_LAUNCHER",
+        stage_id="LAUNCHER_PRESPAWN",
+        event="COMPLETED",
+    )
+    environment_receipt = forensic.build_environment_receipt(
+        inherited_python_keys_removed=removed_python_keys,
+        inherited_environment_key_names=sorted(os.environ),
+        result_environment=environment,
+        virtual_env=str(FORENSIC_INTERPRETER.parent.parent),
+        path_prepend=str(FORENSIC_INTERPRETER.parent),
+    )
+    forensic.validate_environment_receipt(environment_receipt)
+    exclusive_json(environment_path, environment_receipt)
+    technical_runtime_context = _technical_runtime_context()
+    started_ns = time.monotonic_ns()
+    with (
+        stdout_path.open("xb", buffering=0) as stdout_handle,
+        stderr_path.open("xb", buffering=0) as stderr_handle,
+        traceback_path.open("xb", buffering=0) as traceback_handle,
+        exception_path.open("xb", buffering=0) as exception_handle,
+        heartbeat_path.open("xb", buffering=0) as heartbeat_handle,
+        read_guard_events_path.open("xb", buffering=0) as read_guard_events_handle,
+    ):
+        for handle in (
+            stdout_handle,
+            stderr_handle,
+            traceback_handle,
+            exception_handle,
+            heartbeat_handle,
+            read_guard_events_handle,
+        ):
+            os.fsync(handle.fileno())
+        for parent in sorted(
+            {path.parent for path in reserved}, key=lambda value: str(value)
+        ):
+            directory_fd = os.open(parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory_fd)
+            finally:
+                os.close(directory_fd)
+        fd_values = {
+            "traceback_fd": traceback_handle.fileno(),
+            "exception_fd": exception_handle.fileno(),
+            "heartbeat_fd": heartbeat_handle.fileno(),
+            "read_guard_events_fd": read_guard_events_handle.fileno(),
+        }
+        command = [str(item) for item in argv_factory(copy.deepcopy(fd_values))]
+        internal_command = [
+            str(item) for item in internal_argv_factory(copy.deepcopy(fd_values))
+        ]
+        fd_custody = {
+            **copy.deepcopy(fd_values),
+            "paths": {
+                "traceback": str(traceback_path.absolute()),
+                "exception": str(exception_path.absolute()),
+                "heartbeat": str(heartbeat_path.absolute()),
+                "read_guard_events": str(read_guard_events_path.absolute()),
+            },
+            "pass": True,
+        }
+        command_receipt = forensic.build_command_receipt(
+            diagnostic_root=stdout_path.parents[1],
+            outer_exact_argv=command,
+            internal_exact_argv=internal_command,
+            fd_custody=fd_custody,
+            environment_receipt=environment_receipt,
+            cwd=ROOT,
+        )
+        forensic.validate_command_receipt(command_receipt)
+        exclusive_json(command_path, command_receipt)
+        receipt_directory_fd = os.open(
+            command_path.parent, os.O_RDONLY | os.O_DIRECTORY
+        )
+        try:
+            os.fsync(receipt_directory_fd)
+        finally:
+            os.close(receipt_directory_fd)
+        launcher_heartbeat = forensic.attach_self_digest(
+            {
+                "schema": (
+                    "plan_aware_monotone_jepa_cost_v1."
+                    "preexecution_wrapper_heartbeat.v1"
+                ),
+                "sequence": 0,
+                "event": "LAUNCHER_PRESPAWN",
+                "monotonic_ns": time.monotonic_ns(),
+            }
+        )
+        heartbeat_handle.write(canonical_bytes(launcher_heartbeat))
+        os.fsync(heartbeat_handle.fileno())
+        spawned_monotonic_ns = time.monotonic_ns()
+        process = subprocess.Popen(
+            command,
+            cwd=ROOT,
+            env=environment,
+            stdin=subprocess.DEVNULL,
+            stdout=stdout_handle,
+            stderr=stderr_handle,
+            pass_fds=tuple(fd_values.values()),
+            start_new_session=True,
+        )
+        identity: dict[str, Any] | None = None
+        try:
+            deadline = time.monotonic() + 5.0
+            while time.monotonic() < deadline:
+                if process.poll() is not None:
+                    break
+                try:
+                    candidate = _forensic_process_identity(process.pid)
+                except (
+                    FileNotFoundError,
+                    PermissionError,
+                    ProcessLookupError,
+                    QualificationError,
+                ):
+                    time.sleep(0.01)
+                    continue
+                if candidate.get("role") == expected_role:
+                    identity = candidate
+                    break
+                time.sleep(0.01)
+            if identity is None:
+                raise QualificationError(
+                    "forensic child never acquired its exact diagnostic role"
+                )
+            if identity["argv"] != command:
+                raise QualificationError("forensic child exact argv drift")
+            if int(identity["process_group_id"]) != process.pid:
+                raise QualificationError("forensic child did not lead its session")
+            invocation_receipt: dict[str, Any] | None = None
+            if invocation_path is not None:
+                assert launcher_process_identity is not None
+                assert source_commit is not None
+                assert namespace_before is not None
+                invocation_receipt = forensic.build_invocation_receipt(
+                    source_commit=source_commit,
+                    diagnostic_root=stdout_path.parents[1],
+                    launcher_process_identity=launcher_process_identity,
+                    child_process_identity=identity,
+                    outer_exact_argv=command,
+                    internal_exact_argv=internal_command,
+                    environment=environment_receipt,
+                    fd_custody=fd_custody,
+                    technical_runtime_context=technical_runtime_context,
+                    started_monotonic_ns=started_ns,
+                    namespace_before=namespace_before,
+                )
+                forensic.validate_invocation_receipt(invocation_receipt)
+                _atomic_preexecution_json(invocation_path, invocation_receipt)
+            returncode, timed_out = _wait_for_forensic_child_with_timeout(
+                process, spawned_monotonic_ns=spawned_monotonic_ns
+            )
+        except BaseException:
+            if process.poll() is None:
+                _terminate_forensic_process_group_bounded(process)
+            _assert_forensic_process_group_quiescent(
+                identity or {"process_group_id": process.pid},
+                phase="PREEXECUTION_DIAGNOSTIC_EXCEPTION_CLEANUP",
+            )
+            raise
+    if identity is None:
+        raise QualificationError("forensic child identity was not captured")
+    cleanup = _assert_forensic_process_group_quiescent(
+        identity, phase="PREEXECUTION_DIAGNOSTIC"
+    )
+    synthetic_lifecycle_rows: list[dict[str, Any]] | None = None
+    if synthetic_lifecycle_path is not None:
+        synthetic_lifecycle_rows = _ensure_synthetic_technical_cleanup(
+            diagnostic_root=stdout_path.parents[1],
+            lifecycle_path=synthetic_lifecycle_path,
+        )
+    ended_ns = time.monotonic_ns()
+    if returncode < 0:
+        signal_number = -int(returncode)
+        termination = {
+            "kind": "TIMEOUT" if timed_out else "SIGNAL",
+            "exit_code_or_null": None,
+            "signal_number_or_null": signal_number,
+            "signal_name_or_null": signal.Signals(signal_number).name,
+        }
+    else:
+        termination = {
+            "kind": "EXIT",
+            "exit_code_or_null": int(returncode),
+            "signal_number_or_null": None,
+            "signal_name_or_null": None,
+        }
+    return {
+        "argv": command,
+        "internal_argv": internal_command,
+        "fd_custody": fd_custody,
+        "process_identity": identity,
+        "started_monotonic_ns": started_ns,
+        "ended_monotonic_ns": ended_ns,
+        "runtime_ns": ended_ns - started_ns,
+        "returncode": int(returncode),
+        "termination": termination,
+        "stdout": binding(stdout_path),
+        "stderr": binding(stderr_path),
+        "traceback": binding(traceback_path),
+        "structured_exception": binding(exception_path),
+        "heartbeat": binding(heartbeat_path),
+        "last_stage_marker": binding(last_stage_path),
+        "read_guard_manifest": {
+            **binding(read_guard_manifest_path),
+            "content_digest": read_guard_manifest["content_digest"],
+        },
+        "read_guard_events": binding(read_guard_events_path),
+        "environment_receipt": {
+            **binding(environment_path),
+            "content_digest": environment_receipt["content_digest"],
+        },
+        "command_receipt": {
+            **binding(command_path),
+            "content_digest": command_receipt["content_digest"],
+        },
+        "cleanup": cleanup,
+        "environment": environment_receipt,
+        "technical_runtime_context": technical_runtime_context,
+        "synthetic_technical_lifecycle_rows": synthetic_lifecycle_rows,
+        "invocation_receipt": invocation_receipt,
+        "invocation_receipt_binding": (
+            None
+            if invocation_path is None or invocation_receipt is None
+            else {
+                **binding(invocation_path),
+                "content_digest": invocation_receipt["content_digest"],
+            }
+        ),
+    }
+
+
+def _terminate_forensic_process_group_bounded(process: Any) -> int:
+    """Terminate one technical child without any unbounded wait."""
+
+    policy = _validate_forensic_constant_alignment().PREEXECUTION_DIAGNOSTIC_TIMEOUT_POLICY
+    try:
+        os.killpg(int(process.pid), signal.SIGTERM)
+    except ProcessLookupError:
+        pass
+    try:
+        return int(process.wait(timeout=float(policy["term_grace_s"])))
+    except subprocess.TimeoutExpired:
+        try:
+            os.killpg(int(process.pid), signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        try:
+            return int(process.wait(timeout=float(policy["kill_grace_s"])))
+        except subprocess.TimeoutExpired as exc:
+            raise QualificationError(
+                "forensic child survived bounded TERM/KILL cleanup"
+            ) from exc
+
+
+def _wait_for_forensic_child_with_timeout(
+    process: Any, *, spawned_monotonic_ns: int
+) -> tuple[int, bool]:
+    """Wait under the frozen technical timeout and return (returncode, timed_out)."""
+
+    policy = _validate_forensic_constant_alignment().PREEXECUTION_DIAGNOSTIC_TIMEOUT_POLICY
+    elapsed_s = max(
+        0.0, (time.monotonic_ns() - int(spawned_monotonic_ns)) / 1_000_000_000
+    )
+    remaining_s = max(0.0, float(policy["wall_clock_timeout_s"]) - elapsed_s)
+    try:
+        return (
+            int(process.wait(timeout=remaining_s)),
+            False,
+        )
+    except subprocess.TimeoutExpired:
+        returncode = _terminate_forensic_process_group_bounded(process)
+        if returncode >= 0:
+            raise QualificationError(
+                "timed-out forensic child lacks signal termination custody"
+            )
+        return returncode, True
+
+
+def _preexecution_output_namespace_entries() -> list[dict[str, str]]:
+    """List namespace identities without opening any scientific artifact."""
+
+    parent = CONTRACT.OUTPUT_ROOT.parent
+    candidates: set[Path] = set()
+    if CONTRACT.OUTPUT_ROOT.exists() or CONTRACT.OUTPUT_ROOT.is_symlink():
+        candidates.add(CONTRACT.OUTPUT_ROOT)
+    candidates.update(parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.attempt-*"))
+    candidates.update(parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.failed-*"))
+    for path in _tracked_publication_paths():
+        if path.exists() or path.is_symlink():
+            candidates.add(path)
+    postcheck = Path(CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"])
+    if postcheck.exists() or postcheck.is_symlink():
+        candidates.add(postcheck)
+    output: list[dict[str, str]] = []
+    for path in sorted(candidates, key=lambda value: str(value.absolute())):
+        if path.is_symlink():
+            kind = "SYMLINK"
+        elif path.is_dir():
+            kind = "DIRECTORY"
+        elif path.is_file():
+            kind = "FILE"
+        else:
+            kind = "OTHER"
+        output.append({"path": str(path.absolute()), "kind": kind})
+    return output
+
+
+def _diagnostic_forbidden_scientific_roots() -> tuple[Path, ...]:
+    roots: set[Path] = {
+        PREDECESSOR_ROOT.resolve(strict=False),
+        V1_ROOT.resolve(strict=False),
+        V2_ROOT.resolve(strict=False),
+        DENSE_ROOT.resolve(strict=False),
+        CONTRACT.OUTPUT_ROOT.resolve(strict=False),
+    }
+    for record in CONTRACT.CHECKPOINT_BINDINGS.values():
+        roots.add(Path(str(record["path"])).resolve(strict=False))
+    roots.add(Path(str(CONTRACT.ENCODER_BINDING["path"])).resolve(strict=False))
+    for path in _tracked_publication_paths():
+        roots.add(path.resolve(strict=False))
+    return tuple(sorted(roots, key=str))
+
+
+def _build_preexecution_read_guard_manifest() -> dict[str, Any]:
+    """Return the one forensic-authority read-guard manifest.
+
+    The stdlib wrapper validates this self-digested payload before importing
+    the evaluator.  Keeping construction in the separate forensic authority
+    prevents the wrapper and evaluator from drifting onto different protected
+    path sets.
+    """
+
+    forensic = _validate_forensic_constant_alignment()
+    return forensic.build_read_guard_manifest(ROOT)
+
+
+def _install_preexecution_diagnostic_read_guard() -> dict[str, int]:
+    """Deny every scientific-payload open in the diagnostic child.
+
+    Python audit hooks cannot be removed.  This function is therefore called
+    only inside the dedicated child process, never by the launcher or tests in
+    their long-lived interpreter.
+    """
+
+    state = {"scientific_input_open_attempts": 0}
+    forensic = _validate_forensic_constant_alignment()
+    manifest = forensic.build_read_guard_manifest(ROOT)
+    forensic.validate_read_guard_manifest(manifest, repo_root=ROOT)
+    forbidden = tuple(
+        Path(str(value)).resolve(strict=False)
+        for value in manifest["forbidden_path_prefixes"]
+    )
+    admitted_technical_receipts = {
+        Path(str(value)).resolve(strict=False)
+        for value in manifest["admitted_exact_read_only_technical_receipts"]
+    }
+
+    def audit(event: str, arguments: tuple[Any, ...]) -> None:
+        if event != "open" or not arguments:
+            return
+        raw = arguments[0]
+        if isinstance(raw, int) or not isinstance(raw, (str, bytes, os.PathLike)):
+            return
+        try:
+            path = Path(os.fsdecode(raw)).absolute().resolve(strict=False)
+        except (OSError, TypeError, ValueError):
+            return
+        mode = arguments[1] if len(arguments) > 1 else None
+        flags = arguments[2] if len(arguments) > 2 else 0
+        write_mode = isinstance(mode, str) and any(
+            marker in mode for marker in ("w", "a", "x", "+")
+        )
+        write_flags = isinstance(flags, int) and bool(
+            flags
+            & (
+                os.O_WRONLY
+                | os.O_RDWR
+                | os.O_CREAT
+                | os.O_TRUNC
+                | os.O_APPEND
+            )
+        )
+        if (
+            path in admitted_technical_receipts
+            and not write_mode
+            and not write_flags
+        ):
+            return
+        protected = path in admitted_technical_receipts
+        if not protected:
+            for root in forbidden:
+                if path == root:
+                    protected = True
+                    break
+                try:
+                    path.relative_to(root)
+                except ValueError:
+                    continue
+                protected = True
+                break
+        if protected:
+            state["scientific_input_open_attempts"] += 1
+            raise PermissionError(
+                f"PREEXECUTION_ONLY_DIAGNOSTIC forbids scientific input: {path}"
+            )
+
+    sys.addaudithook(audit)
+    return state
+
+
+class _PreexecutionDiagnosticStageLedger:
+    """Append-only, fsynced STARTED/COMPLETED technical stage evidence."""
+
+    def __init__(
+        self,
+        path: Path,
+        stage_ids: Sequence[str],
+        *,
+        last_stage_path: Path | None = None,
+    ) -> None:
+        self.path = path
+        self.stage_ids = tuple(str(value) for value in stage_ids)
+        self.sequence = 0
+        self.next_stage = 0
+        self.active_stage: str | None = None
+        self.last_stage_path = last_stage_path
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("xb"):
+            pass
+
+    def _append(self, stage_id: str, event: str) -> None:
+        forensic = _validate_forensic_constant_alignment()
+        row = forensic.build_startup_stage_row(
+            sequence=self.sequence,
+            stage_id=stage_id,
+            event=event,
+            monotonic_ns=time.monotonic_ns(),
+        )
+        forensic.validate_startup_stage_row(row)
+        with self.path.open("ab", buffering=0) as handle:
+            handle.write(canonical_bytes(row))
+            os.fsync(handle.fileno())
+        if self.last_stage_path is not None:
+            _atomic_preexecution_last_stage(
+                self.last_stage_path,
+                producer_role="PREEXECUTION_DIAGNOSTIC_CHILD",
+                stage_id=stage_id,
+                event=event,
+            )
+        self.sequence += 1
+
+    def start(self, stage_id: str) -> None:
+        if (
+            self.active_stage is not None
+            or self.next_stage >= len(self.stage_ids)
+            or self.stage_ids[self.next_stage] != stage_id
+        ):
+            raise QualificationError("diagnostic startup stage order drift")
+        self._append(stage_id, "STARTED")
+        self.active_stage = stage_id
+
+    def complete(self, stage_id: str) -> None:
+        if self.active_stage != stage_id:
+            raise QualificationError("diagnostic startup completion order drift")
+        self._append(stage_id, "COMPLETED")
+        self.active_stage = None
+        self.next_stage += 1
+
+
+def _diagnostic_stage(
+    ledger: _PreexecutionDiagnosticStageLedger, stage_id: str, action: Any
+) -> Any:
+    ledger.start(stage_id)
+    value = action()
+    ledger.complete(stage_id)
+    return value
+
+
+def _require_exact_live_preexecution_diagnostic_launcher(
+    *, pid: int, start_time_ticks: int
+) -> dict[str, Any]:
+    identity = _forensic_process_identity(
+        pid, require_role="PREEXECUTION_DIAGNOSTIC_LAUNCHER"
+    )
+    if (
+        int(identity["start_time_ticks"]) != int(start_time_ticks)
+        or identity["argv"] != _expected_preexecution_diagnostic_launcher_argv()
+        or not _forensic_process_identity_is_live(identity)
+    ):
+        raise QualificationError("diagnostic launcher PID/start/argv custody drift")
+    return identity
+
+
+def _require_exact_live_preexecution_diagnostic_correction_launcher(
+    *, pid: int, start_time_ticks: int
+) -> dict[str, Any]:
+    identity = _forensic_process_identity(
+        pid, require_role="PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+    )
+    if (
+        int(identity["start_time_ticks"]) != int(start_time_ticks)
+        or identity["argv"]
+        != _expected_preexecution_diagnostic_correction_launcher_argv()
+        or not _forensic_process_identity_is_live(identity)
+    ):
+        raise QualificationError(
+            "correction diagnostic launcher PID/start/argv custody drift"
+        )
+    return identity
+
+
+def _load_diagnostic_stage_rows(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with path.open("rb") as stream:
+        for line_number, line in enumerate(stream, 1):
+            if not line.endswith(b"\n"):
+                raise QualificationError(
+                    f"diagnostic stage row {line_number} lacks newline framing"
+                )
+            try:
+                value = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise QualificationError(
+                    f"diagnostic stage row {line_number} is invalid JSON"
+                ) from exc
+            if not isinstance(value, dict) or canonical_bytes(value) != line:
+                raise QualificationError(
+                    f"diagnostic stage row {line_number} is not canonical"
+                )
+            rows.append(value)
+    return rows
+
+
+def _synthetic_archive_validation_projection_evidence() -> dict[str, Any]:
+    """Reproduce the V1 incompatible custody schemas without any file I/O."""
+
+    minimal_runtime = [
+        {
+            "archive_path": "/bound/archive-one",
+            "source_freeze_commit": "a" * 40,
+            "inventory": {"files": 1, "bytes": 1, "manifest_sha256": "a" * 64},
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "sha256": "1" * 64,
+                "bytes": 1,
+                "content_digest": "2" * 64,
+            },
+            "files_reused": 0,
+            "partial_artifacts_reusable": False,
+        },
+        {
+            "archive_path": "/bound/archive-two",
+            "source_freeze_commit": "b" * 40,
+            "inventory": {"files": 2, "bytes": 2, "manifest_sha256": "b" * 64},
+            "failure_receipt": {
+                "path": "receipts/failure.json",
+                "sha256": "3" * 64,
+                "bytes": 2,
+                "content_digest": "4" * 64,
+            },
+            "files_reused": 0,
+            "partial_artifacts_reusable": False,
+        },
+    ]
+    detailed_validation = copy.deepcopy(minimal_runtime)
+    detailed_validation[0].pop("partial_artifacts_reusable")
+    detailed_validation[0].update(
+        {
+            "source_closure_snapshot": {"path": "receipts/source_closure.json"},
+            "stage_b_gate_receipt": {"path": "receipts/stage_b_gate.json"},
+            "nothing_running": True,
+            "pass": True,
+        }
+    )
+    detailed_validation[1].update(
+        {
+            "persistence_receipt": {"path": "persistence.json"},
+            "stage_c_executed": False,
+            "full_inventory_verified": False,
+            "pass": True,
+        }
+    )
+    projection_match = _correction_2_failed_archive_identity_matches(
+        minimal_runtime, detailed_validation
+    )
+    if minimal_runtime == detailed_validation or not projection_match:
+        raise QualificationError("synthetic correction-2 mismatch fixture drift")
+    return {
+        "fixture": "MINIMAL_RUNTIME_VERSUS_DETAILED_VALIDATOR_ARCHIVE_CUSTODY",
+        "raw_record_equality": False,
+        "identity_projection_equality": True,
+        "mismatch_mechanism": (
+            "INCOMPATIBLE_ARCHIVE_CUSTODY_SCHEMA_WHOLE_RECORD_COMPARISON"
+        ),
+        "minimal_key_sets": [sorted(row) for row in minimal_runtime],
+        "detailed_key_sets": [sorted(row) for row in detailed_validation],
+        "stable_identity_fields": [
+            "archive_path",
+            "source_freeze_commit",
+            "inventory",
+            "failure_receipt",
+            "files_reused",
+        ],
+        "scientific_payloads_opened": 0,
+        "pass": True,
+    }
+
+
+def _correction_contract_for_diagnostic_root(root: Path) -> Any | None:
+    """Select correction semantics only for its one exact fresh root."""
+
+    forensic = _validate_forensic_constant_alignment()
+    absolute = root.absolute()
+    if absolute == Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute():
+        return None
+    if absolute == PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute():
+        return _validate_forensic_correction_1_constant_alignment()
+    raise QualificationError("preexecution diagnostic root drift")
+
+
+def _validate_preexecution_active_freeze(
+    *,
+    root: Path,
+    freeze_receipt: Mapping[str, Any],
+    correction: Any | None,
+) -> dict[str, Any]:
+    """Normalize BASE/correction freeze evidence for the shared stage loop."""
+
+    if correction is None:
+        forensic = _validate_forensic_constant_alignment()
+        return forensic.validate_active_diagnostic_freeze_custody(
+            ROOT, freeze_receipt, diagnostic_root=root
+        )
+    validator = getattr(
+        correction,
+        "validate_active_forensic_correction_freeze_custody",
+        None,
+    )
+    if not callable(validator):
+        raise QualificationError(
+            "correction active-freeze validator is not yet available"
+        )
+    return validator(
+        ROOT,
+        forensic_freeze_custody=freeze_receipt,
+        diagnostic_root=root,
+    )
+
+
+def _build_preexecution_child_result_for_root(
+    *,
+    root: Path,
+    correction: Any | None,
+    launcher_process_identity: Mapping[str, Any],
+    child_process_identity: Mapping[str, Any],
+    freeze_custody: Mapping[str, Any],
+    output_namespace_before: Sequence[Mapping[str, str]],
+    output_namespace_after: Sequence[Mapping[str, str]],
+    mismatch_evidence: Mapping[str, Any],
+    current_runtime_context: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Select only the corrected five-key terminal builder at its exact root."""
+
+    forensic = _validate_forensic_constant_alignment()
+    if correction is None:
+        return forensic.build_preexecution_child_result(
+            launcher_process_identity=launcher_process_identity,
+            child_process_identity=child_process_identity,
+            repo_head=freeze_custody["repo_head"],
+            repo_clean=freeze_custody["repo_clean"],
+            scientific_contract_digest=freeze_custody[
+                "scientific_contract_digest"
+            ],
+            forensic_authority_source_closure=freeze_custody[
+                "forensic_authority_source_closure"
+            ],
+            forensic_freeze_custody=freeze_custody,
+            output_namespace_before=output_namespace_before,
+            output_namespace_after=output_namespace_after,
+            mismatch_evidence=mismatch_evidence,
+            committed_source_root_cause_proof=freeze_custody[
+                "committed_source_root_cause_proof"
+            ],
+            current_runtime_context=current_runtime_context,
+            scientific_counters=(
+                forensic.PREEXECUTION_CHILD_ZERO_SCIENTIFIC_COUNTERS
+            ),
+        )
+    if root.absolute() != PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute():
+        raise QualificationError("corrected child selector root drift")
+    return correction.build_corrected_preexecution_child_result(
+        repo_root=ROOT,
+        launcher_process_identity=launcher_process_identity,
+        child_process_identity=child_process_identity,
+        repo_head=freeze_custody["repo_head"],
+        repo_clean=True,
+        scientific_contract_digest=(
+            CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+        ),
+        forensic_authority_source_closure=freeze_custody[
+            "correction_source_closure"
+        ],
+        forensic_freeze_custody=freeze_custody,
+        output_namespace_before=output_namespace_before,
+        output_namespace_after=output_namespace_after,
+        mismatch_evidence=mismatch_evidence,
+        committed_source_root_cause_proof=freeze_custody[
+            "committed_source_root_cause_proof"
+        ],
+        current_runtime_context=current_runtime_context,
+        scientific_counters=correction.CORRECTION_ZERO_SCIENTIFIC_COUNTERS,
+    )
+
+
+def _validate_preexecution_child_result_for_root(
+    value: Mapping[str, Any],
+    *,
+    correction: Any | None,
+    freeze_custody: Mapping[str, Any],
+) -> dict[str, Any]:
+    forensic = _validate_forensic_constant_alignment()
+    if correction is None:
+        return forensic.validate_preexecution_child_result(value)
+    return correction.validate_corrected_preexecution_child_result(
+        value,
+        repo_root=ROOT,
+        forensic_freeze_custody=freeze_custody,
+    )
+
+
+def _execute_preexecution_only_diagnostic_child(
+    *,
+    launcher_pid: int,
+    launcher_start_time_ticks: int,
+    diagnostic_root: Path,
+) -> dict[str, Any]:
+    """Run the guarded technical startup diagnostic and no scientific work."""
+
+    forensic = _validate_forensic_constant_alignment()
+    root = diagnostic_root.absolute()
+    correction = _correction_contract_for_diagnostic_root(root)
+    paths = _forensic_runtime_paths(root)
+    stage_ids = tuple(forensic.PREEXECUTION_DIAGNOSTIC_STAGE_IDS)
+    namespace_before = _preexecution_output_namespace_entries()
+    ledger = _PreexecutionDiagnosticStageLedger(
+        paths["startup_stage_ledger"],
+        stage_ids,
+        last_stage_path=paths["last_stage_marker"],
+    )
+    guard = _install_preexecution_diagnostic_read_guard()
+
+    launcher = _diagnostic_stage(
+        ledger,
+        "REQUIRE_LIVE_LAUNCHER",
+        lambda: (
+            _require_exact_live_preexecution_diagnostic_launcher(
+                pid=launcher_pid,
+                start_time_ticks=launcher_start_time_ticks,
+            )
+            if correction is None
+            else _require_exact_live_preexecution_diagnostic_correction_launcher(
+                pid=launcher_pid,
+                start_time_ticks=launcher_start_time_ticks,
+            )
+        ),
+    )
+
+    def bind_child() -> dict[str, Any]:
+        identity = _forensic_process_identity(
+            os.getpid(),
+            require_role=(
+                "PREEXECUTION_DIAGNOSTIC_CHILD"
+                if correction is None
+                else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+            ),
+        )
+        return identity
+
+    child = _diagnostic_stage(
+        ledger, "BIND_CHILD_IDENTITY", bind_child
+    )
+
+    # The parent can build the invocation receipt only after binding this
+    # child's exact PID/start/argv/executable.  Wait on that single technical
+    # receipt before the phase-exact active-root validator inventories the
+    # namespace; no experiment input is opened here.
+    invocation_deadline = time.monotonic() + 5.0
+    while not paths["invocation"].is_file():
+        if time.monotonic() >= invocation_deadline:
+            raise QualificationError(
+                "preexecution invocation receipt was not published"
+            )
+        time.sleep(0.01)
+    try:
+        invocation_raw = paths["invocation"].read_bytes()
+        invocation_receipt = json.loads(invocation_raw)
+        validated_invocation = forensic.validate_invocation_receipt(
+            invocation_receipt
+        )
+    except Exception as exc:
+        raise QualificationError(
+            "preexecution invocation receipt is invalid"
+        ) from exc
+    if (
+        canonical_bytes(validated_invocation) != invocation_raw
+        or validated_invocation["launcher_process_identity"] != launcher
+        or validated_invocation["child_process_identity"] != child
+        or validated_invocation["diagnostic_root"] != str(root)
+    ):
+        raise QualificationError(
+            "preexecution invocation readiness/custody drift"
+        )
+
+    def validate_active_freeze() -> dict[str, Any]:
+        freeze_path = paths["forensic_freeze_custody"]
+        try:
+            freeze_bytes = freeze_path.read_bytes()
+            freeze_receipt = json.loads(freeze_bytes)
+        except (OSError, json.JSONDecodeError) as exc:
+            raise QualificationError(
+                "prelaunch forensic freeze-custody receipt is invalid"
+            ) from exc
+        if (
+            not isinstance(freeze_receipt, dict)
+            or canonical_bytes(freeze_receipt) != freeze_bytes
+        ):
+            raise QualificationError(
+                "prelaunch forensic freeze-custody bytes are not canonical"
+            )
+        try:
+            return _validate_preexecution_active_freeze(
+                root=root,
+                freeze_receipt=freeze_receipt,
+                correction=correction,
+            )
+        except Exception as exc:
+            raise QualificationError(str(exc)) from exc
+
+    active_freeze_custody = _diagnostic_stage(
+        ledger, "VALIDATE_FORENSIC_AUTHORITY", validate_active_freeze
+    )
+    freeze_custody = active_freeze_custody["forensic_freeze_custody"]
+
+    def validate_base_proof() -> bool:
+        if (
+            active_freeze_custody.get("base_authorities_read_only_validated")
+            is not True
+        ):
+            raise QualificationError("read-only base-authority proof is absent")
+        return True
+
+    _diagnostic_stage(
+        ledger, "VALIDATE_BASE_AUTHORITIES_READ_ONLY", validate_base_proof
+    )
+
+    def validate_archive_metadata_proof() -> dict[str, Any]:
+        if (
+            active_freeze_custody.get("archive_custody_metadata_only_validated")
+            is not True
+        ):
+            raise QualificationError("metadata-only archive-custody proof is absent")
+        return _synthetic_archive_validation_projection_evidence()
+
+    mismatch_evidence = _diagnostic_stage(
+        ledger,
+        "VALIDATE_ARCHIVE_CUSTODY_METADATA_ONLY",
+        validate_archive_metadata_proof,
+    )
+
+    def assert_namespace() -> list[dict[str, str]]:
+        observed = _preexecution_output_namespace_entries()
+        if observed != namespace_before:
+            raise QualificationError("diagnostic changed scientific output namespace")
+        return observed
+
+    namespace_after = _diagnostic_stage(
+        ledger, "ASSERT_NAMESPACE_UNCHANGED", assert_namespace
+    )
+
+    def complete() -> bool:
+        if guard["scientific_input_open_attempts"] != 0:
+            raise QualificationError("diagnostic attempted a scientific input open")
+        if _active_experiment_processes(include_finalizer=True):
+            raise QualificationError("scientific process is active during diagnostic")
+        return True
+
+    _diagnostic_stage(ledger, "COMPLETE", complete)
+    rows = _load_diagnostic_stage_rows(paths["startup_stage_ledger"])
+    forensic.validate_startup_stage_rows(rows, require_complete=True)
+    try:
+        result = _build_preexecution_child_result_for_root(
+            root=root,
+            correction=correction,
+            launcher_process_identity=launcher,
+            child_process_identity=child,
+            freeze_custody=freeze_custody,
+            output_namespace_before=namespace_before,
+            output_namespace_after=namespace_after,
+            mismatch_evidence=mismatch_evidence,
+            current_runtime_context=_technical_runtime_context(),
+        )
+        return _validate_preexecution_child_result_for_root(
+            result,
+            correction=correction,
+            freeze_custody=freeze_custody,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def _validate_preexecution_child_payload(
+    value: Mapping[str, Any],
+    *,
+    launcher_process_identity: Mapping[str, Any],
+    child_process_identity: Mapping[str, Any],
+    forensic_freeze_custody: Mapping[str, Any],
+    namespace_before: Sequence[Mapping[str, str]],
+    namespace_after: Sequence[Mapping[str, str]],
+    correction: Any | None = None,
+) -> dict[str, Any]:
+    """Rebuild the child handoff from parent-held, outcome-free custody."""
+
+    forensic = _validate_forensic_constant_alignment()
+    try:
+        validated = _validate_preexecution_child_result_for_root(
+            value,
+            correction=correction,
+            freeze_custody=forensic_freeze_custody,
+        )
+        rebuilt = _build_preexecution_child_result_for_root(
+            root=(
+                Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT)
+                if correction is None
+                else PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+            ),
+            correction=correction,
+            launcher_process_identity=launcher_process_identity,
+            child_process_identity=child_process_identity,
+            freeze_custody=forensic_freeze_custody,
+            output_namespace_before=namespace_before,
+            output_namespace_after=namespace_after,
+            mismatch_evidence=_synthetic_archive_validation_projection_evidence(),
+            current_runtime_context=validated["current_runtime_context"],
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if validated != rebuilt:
+        raise QualificationError(
+            "PREEXECUTION child payload does not match parent-held custody"
+        )
+    return validated
+
+
+def _require_synthetic_diagnostic_root(root: Path, *, fixture_id: str) -> None:
+    forensic = _validate_forensic_constant_alignment()
+    candidate = root.absolute().resolve(strict=False)
+    committed_fixture_root = (
+        Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT)
+        / "synthetic"
+        / fixture_id
+    ).resolve(strict=False)
+    if candidate == committed_fixture_root:
+        return
+    correction_fixture_root = (
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT
+        / "synthetic"
+        / fixture_id
+    ).resolve(strict=False)
+    if candidate == correction_fixture_root:
+        _validate_forensic_correction_1_constant_alignment()
+        return
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        raise QualificationError(
+            "synthetic forensic root is not the frozen fixture subtree"
+        )
+    try:
+        candidate.relative_to(Path("/tmp").resolve())
+    except ValueError as exc:
+        raise QualificationError("synthetic forensic root must be below /tmp") from exc
+
+
+def _execute_preexecution_diagnostic_synthetic_child(
+    *, fixture_id: str, diagnostic_root: Path
+) -> dict[str, Any]:
+    """Exercise wrapper exit/exception/signal custody with no project inputs."""
+
+    forensic = _validate_forensic_constant_alignment()
+    if fixture_id not in forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_FIXTURES:
+        raise QualificationError("unknown synthetic forensic fixture")
+    root = diagnostic_root.absolute()
+    _require_synthetic_diagnostic_root(root, fixture_id=fixture_id)
+    paths = _forensic_runtime_paths(root)
+    ledger = _PreexecutionDiagnosticStageLedger(
+        paths["startup_stage_ledger"],
+        tuple(forensic.PREEXECUTION_DIAGNOSTIC_STAGE_IDS),
+        last_stage_path=paths["last_stage_marker"],
+    )
+    guard = _install_preexecution_diagnostic_read_guard()
+    # Keep the process alive long enough for the parent to bind /proc identity.
+    time.sleep(0.15)
+    for stage_id in forensic.PREEXECUTION_DIAGNOSTIC_STAGE_IDS:
+        ledger.start(stage_id)
+        if stage_id == "VALIDATE_FORENSIC_AUTHORITY":
+            if fixture_id == "RAISE":
+                raise RuntimeError("synthetic preexecution diagnostic exception")
+            if fixture_id == "UNICODE_RAISE":
+                raise RuntimeError(
+                    "synthetic Unicode diagnostic exception: H1–H4 / λ / 雪"
+                )
+            if fixture_id == "EXIT_NONZERO":
+                raise SystemExit(23)
+            if fixture_id == "SIGTERM":
+                os.kill(os.getpid(), signal.SIGTERM)
+                time.sleep(1.0)
+                raise QualificationError("synthetic SIGTERM was not delivered")
+        ledger.complete(stage_id)
+    if guard["scientific_input_open_attempts"] != 0:
+        raise QualificationError("synthetic fixture attempted scientific input I/O")
+    rows = _load_diagnostic_stage_rows(paths["startup_stage_ledger"])
+    forensic.validate_startup_stage_rows(rows, require_complete=True)
+    return forensic.attach_self_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "preexecution_synthetic_child.v1"
+            ),
+            "fixture_id": fixture_id,
+            "scientific_inputs_opened": 0,
+            "failed_scientific_payloads_opened": 0,
+            "pass": True,
+        }
+    )
+
+
+def _run_synthetic_preexecution_diagnostic_fixture_under_umask(
+    *, fixture_id: str, diagnostic_root: Path
+) -> dict[str, Any]:
+    """Run one pytest-only wrapper fixture with complete external custody."""
+
+    forensic = _validate_forensic_constant_alignment()
+    if fixture_id not in forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_FIXTURES:
+        raise QualificationError("unknown synthetic forensic fixture")
+    root = diagnostic_root.absolute()
+    _require_synthetic_diagnostic_root(root, fixture_id=fixture_id)
+    root.mkdir(parents=True, exist_ok=False)
+    paths = _forensic_runtime_paths(root)
+    execution = _run_forensic_child_with_external_stream_custody(
+        lambda fds: _expected_preexecution_diagnostic_synthetic_child_argv(
+            fixture_id=fixture_id,
+            diagnostic_root=root,
+            traceback_fd=int(fds["traceback_fd"]),
+            exception_fd=int(fds["exception_fd"]),
+            heartbeat_fd=int(fds["heartbeat_fd"]),
+            read_guard_events_fd=int(fds["read_guard_events_fd"]),
+        ),
+        internal_argv_factory=lambda _fds: (
+            _expected_preexecution_diagnostic_synthetic_internal_argv(
+                fixture_id=fixture_id, diagnostic_root=root
+            )
+        ),
+        expected_role="PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD",
+        stdout_path=paths["child_stdout"],
+        stderr_path=paths["child_stderr"],
+        traceback_path=paths["child_traceback"],
+        exception_path=paths["child_exception"],
+        heartbeat_path=paths["heartbeat"],
+        last_stage_path=paths["last_stage_marker"],
+        read_guard_manifest_path=paths["read_guard_manifest"],
+        read_guard_events_path=paths["read_guard_events"],
+        environment_path=paths["environment"],
+        command_path=paths["command"],
+        synthetic_lifecycle_path=paths["synthetic_technical_lifecycle"],
+    )
+    stage_path = paths["startup_stage_ledger"]
+    rows = _load_diagnostic_stage_rows(stage_path) if stage_path.is_file() else []
+    forensic.validate_startup_stage_rows(
+        rows, require_complete=fixture_id == "PASS"
+    )
+    return {
+        "fixture_id": fixture_id,
+        "diagnostic_root": str(root),
+        "execution": execution,
+        "startup_stage_rows": rows,
+        "scientific_counters": {
+            "scientific_inputs_opened": 0,
+            "failed_scientific_payloads_opened": 0,
+            "outcome_rows_opened": 0,
+            "tensor_reads": 0,
+            "model_loads": 0,
+            "training_steps": 0,
+        },
+        "files_reused": 0,
+        "custody_complete": True,
+    }
+
+
+def _run_synthetic_preexecution_diagnostic_fixture(
+    *, fixture_id: str, diagnostic_root: Path
+) -> dict[str, Any]:
+    """Run one fixture under the exact technical diagnostic umask."""
+
+    previous_umask = os.umask(0o022)
+    try:
+        return _run_synthetic_preexecution_diagnostic_fixture_under_umask(
+            fixture_id=fixture_id, diagnostic_root=diagnostic_root
+        )
+    finally:
+        effective_umask = os.umask(previous_umask)
+        if effective_umask != 0o022:
+            raise QualificationError("synthetic diagnostic umask drift")
+
+
+def _load_preexecution_child_exception(path: Path) -> dict[str, Any] | None:
+    if path.stat().st_size == 0:
+        return None
+    try:
+        raw = path.read_bytes()
+        value = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise QualificationError(
+            "structured preexecution child exception is invalid"
+        ) from exc
+    forensic = _validate_forensic_constant_alignment()
+    if not isinstance(value, dict) or canonical_bytes(value) != raw:
+        raise QualificationError(
+            "structured preexecution child exception is not canonical"
+        )
+    try:
+        forensic.validate_self_digest(value)
+    except Exception as exc:
+        raise QualificationError(
+            "structured preexecution child exception digest drift"
+        ) from exc
+    return value
+
+
+def _load_preexecution_last_stage_marker(path: Path) -> dict[str, Any]:
+    try:
+        raw = path.read_bytes()
+        value = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise QualificationError("preexecution last-stage marker is invalid") from exc
+    forensic = _validate_forensic_constant_alignment()
+    try:
+        validated = forensic.validate_last_stage_marker(value)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if canonical_bytes(validated) != raw:
+        raise QualificationError("preexecution last-stage marker is not canonical")
+    return validated
+
+
+def _synthetic_fixture_result_row(
+    observed: Mapping[str, Any],
+) -> dict[str, Any]:
+    fixture_id = str(observed["fixture_id"])
+    execution = observed["execution"]
+    exception = _load_preexecution_child_exception(
+        Path(str(execution["structured_exception"]["path"]))
+    )
+    message = "" if exception is None else str(exception["exception_message"])
+    expected_returncodes = {
+        "PASS": 0,
+        "RAISE": 1,
+        "EXIT_NONZERO": 23,
+        "SIGTERM": -int(signal.SIGTERM),
+        "MISSING_PATH": 1,
+        "UNICODE_RAISE": 1,
+    }
+    expected_exception = fixture_id not in {"PASS", "SIGTERM"}
+    expected_behavior = (
+        int(execution["returncode"]) == expected_returncodes[fixture_id]
+        and (exception is not None) is expected_exception
+        and (("H1–H4 / λ / 雪" in message) is (fixture_id == "UNICODE_RAISE"))
+        and (
+            ("intentionally_missing_evaluator.py" in message)
+            is (fixture_id == "MISSING_PATH")
+        )
+        and execution["read_guard_events"]["bytes"] == 0
+        and not (
+            Path(str(observed["diagnostic_root"]))
+            / "technical_reservation"
+        ).exists()
+    )
+    streams = {
+        "stdout": copy.deepcopy(execution["stdout"]),
+        "stderr": copy.deepcopy(execution["stderr"]),
+        "traceback": copy.deepcopy(execution["traceback"]),
+        "exception": copy.deepcopy(execution["structured_exception"]),
+        "heartbeat": copy.deepcopy(execution["heartbeat"]),
+        "read_guard_events": copy.deepcopy(execution["read_guard_events"]),
+    }
+    forensic = _validate_forensic_constant_alignment()
+    lifecycle_rows = execution["synthetic_technical_lifecycle_rows"]
+    technical_lifecycle = forensic.build_synthetic_technical_lifecycle_binding(
+        lifecycle_rows
+    )
+    last_stage_path = Path(str(execution["last_stage_marker"]["path"]))
+    last_stage_value = _load_preexecution_last_stage_marker(last_stage_path)
+    last_stage_raw = canonical_bytes(last_stage_value)
+    last_stage_binding = {
+        "path": forensic.PREEXECUTION_DIAGNOSTIC_RUNTIME_PATHS[
+            "last_stage_marker"
+        ],
+        "sha256": hashlib.sha256(last_stage_raw).hexdigest(),
+        "bytes": len(last_stage_raw),
+        "content_digest": last_stage_value["content_digest"],
+    }
+    startup_rows = [copy.deepcopy(row) for row in observed["startup_stage_rows"]]
+    forensic.validate_startup_stage_rows(
+        startup_rows, require_complete=fixture_id == "PASS"
+    )
+    startup_payload = b"".join(canonical_bytes(row) for row in startup_rows)
+    startup_binding = (
+        None
+        if not startup_rows
+        else {
+            "path": forensic.PREEXECUTION_DIAGNOSTIC_RUNTIME_PATHS[
+                "startup_stage_ledger"
+            ],
+            "sha256": hashlib.sha256(startup_payload).hexdigest(),
+            "bytes": len(startup_payload),
+            "rows": len(startup_rows),
+        }
+    )
+    row = {
+        "fixture_id": fixture_id,
+        "termination": copy.deepcopy(execution["termination"]),
+        "exception_observed": exception is not None,
+        "unicode_exception_preserved": "H1–H4 / λ / 雪" in message,
+        "missing_path_preserved": "intentionally_missing_evaluator.py" in message,
+        "streams": streams,
+        "cleanup": copy.deepcopy(execution["cleanup"]),
+        "scientific_counters": copy.deepcopy(
+            forensic.ZERO_SCIENTIFIC_COUNTERS
+        ),
+        "expected_behavior_observed": expected_behavior,
+        "technical_lifecycle": technical_lifecycle,
+        "technical_lifecycle_stage_sequence": [
+            [stage_id, event]
+            for stage_id in forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_STAGE_IDS
+            for event in ("STARTED", "COMPLETED")
+        ],
+        "technical_resources_cleaned": True,
+        "last_stage_marker": last_stage_binding,
+        "last_stage_marker_value": last_stage_value,
+        "startup_stage_prefix": startup_binding,
+        "startup_stage_prefix_rows": startup_rows,
+    }
+    return row
+
+
+def _load_forensic_source_closure(forensic: Any) -> dict[str, Any]:
+    path = ROOT / forensic.TRACKED_FORENSIC_SOURCE_CLOSURE_PATH
+    try:
+        raw = path.read_bytes()
+        value = json.loads(raw)
+    except (OSError, json.JSONDecodeError) as exc:
+        raise QualificationError("forensic source closure is invalid") from exc
+    try:
+        forensic.validate_forensic_source_closure(value, require_complete=True)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if canonical_bytes(value) != raw:
+        raise QualificationError("forensic source closure bytes are not canonical")
+    return value
+
+
+def _load_forensic_correction_source_closure(correction: Any) -> dict[str, Any]:
+    try:
+        value = correction.load_and_validate_forensic_correction_source_closure(
+            ROOT
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    return value
+
+
+def _publish_preexecution_diagnostic_terminal(
+    *,
+    forensic: Any,
+    diagnostic_root: Path,
+    custody: Mapping[str, Any],
+    synthetic_receipt: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Validate the external terminal bundle before tracked publication."""
+
+    try:
+        terminal_bundle = forensic.write_preexecution_terminal_bundle(
+            diagnostic_custody_receipt=custody,
+            synthetic_results_receipt=synthetic_receipt,
+            diagnostic_root=diagnostic_root,
+        )
+        terminal = terminal_bundle["runtime_result"]
+        final_inventory = terminal_bundle["final_namespace_inventory"]
+        loaded_bundle = forensic.load_and_validate_diagnostic_bundle(
+            repo_root=ROOT, diagnostic_root=diagnostic_root
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        loaded_bundle["diagnostic_custody"] != custody
+        or loaded_bundle["result"] != terminal
+        or loaded_bundle["final_namespace_inventory"] != final_inventory
+        or loaded_bundle["preflight_namespace_inventory"]
+        != loaded_bundle["postflight_namespace_inventory"]
+    ):
+        raise QualificationError("terminal diagnostic bundle custody drift")
+    try:
+        publication = forensic.write_forensic_result_artifacts(
+            repo_root=ROOT,
+            diagnostic_root=diagnostic_root,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        publication.get("v2_spec_written") is not True
+        or publication.get("automatic_execution_authorized") is not False
+        or publication.get("pass") is not True
+    ):
+        raise QualificationError("tracked forensic publication custody drift")
+    return publication
+
+
+def _execute_preexecution_diagnostic_under_umask(
+    *, previous_umask: int, correction: Any | None = None
+) -> dict[str, Any]:
+    """Run the diagnostic after its outer launcher established umask 0022."""
+
+    forensic = _validate_forensic_constant_alignment()
+    if (
+        correction is not None
+        and correction is not _validate_forensic_correction_1_constant_alignment()
+    ):
+        raise QualificationError("correction diagnostic authority drift")
+    sampled_effective_umask = os.umask(forensic.PREEXECUTION_DIAGNOSTIC_UMASK)
+    os.umask(sampled_effective_umask)
+    if sampled_effective_umask != forensic.PREEXECUTION_DIAGNOSTIC_UMASK:
+        raise QualificationError("preexecution diagnostic effective umask drift")
+    root = (
+        Path(forensic.PREEXECUTION_DIAGNOSTIC_ROOT).absolute()
+        if correction is None
+        else PREEXECUTION_DIAGNOSTIC_CORRECTION_ROOT.absolute()
+    )
+    launcher = _forensic_process_identity(
+        os.getpid(),
+        require_role=(
+            "PREEXECUTION_DIAGNOSTIC_LAUNCHER"
+            if correction is None
+            else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_LAUNCHER"
+        ),
+    )
+    expected_launcher_argv = (
+        _expected_preexecution_diagnostic_launcher_argv()
+        if correction is None
+        else _expected_preexecution_diagnostic_correction_launcher_argv()
+    )
+    if launcher["argv"] != expected_launcher_argv:
+        raise QualificationError("preexecution launcher exact argv drift")
+    namespace_before = _preexecution_output_namespace_entries()
+    try:
+        freeze_custody = (
+            forensic.validate_forensic_freeze_custody(ROOT)
+            if correction is None
+            else correction.validate_forensic_correction_freeze_custody(
+                ROOT,
+                require_fresh_root_absent=True,
+                exclude_current_process=True,
+            )
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    if root.exists() or root.is_symlink():
+        raise QualificationError("preexecution diagnostic root is stale")
+    root.parent.mkdir(parents=True, exist_ok=True)
+    root.mkdir(mode=0o755)
+    (root / "synthetic").mkdir()
+    paths = _forensic_runtime_paths(root)
+    exclusive_json(paths["forensic_freeze_custody"], freeze_custody)
+
+    synthetic_observations: list[dict[str, Any]] = []
+    for fixture_id in forensic.PREEXECUTION_DIAGNOSTIC_SYNTHETIC_FIXTURES:
+        synthetic_observations.append(
+            _run_synthetic_preexecution_diagnostic_fixture(
+                fixture_id=str(fixture_id),
+                diagnostic_root=root / "synthetic" / str(fixture_id),
+            )
+        )
+    synthetic_rows = [
+        _synthetic_fixture_result_row(observed)
+        for observed in synthetic_observations
+    ]
+    try:
+        synthetic_receipt = forensic.build_synthetic_results_receipt(
+            fixture_rows=synthetic_rows
+        )
+        forensic.validate_synthetic_results_receipt(synthetic_receipt)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    exclusive_json(paths["synthetic_results"], synthetic_receipt)
+
+    source_commit = str(freeze_custody["repo_head"])
+    execution = _run_forensic_child_with_external_stream_custody(
+        lambda fds: (
+            _expected_preexecution_diagnostic_child_argv(
+                launcher,
+                diagnostic_root=root,
+                traceback_fd=int(fds["traceback_fd"]),
+                exception_fd=int(fds["exception_fd"]),
+                heartbeat_fd=int(fds["heartbeat_fd"]),
+                read_guard_events_fd=int(fds["read_guard_events_fd"]),
+            )
+            if correction is None
+            else _expected_preexecution_diagnostic_correction_child_argv(
+                launcher,
+                traceback_fd=int(fds["traceback_fd"]),
+                exception_fd=int(fds["exception_fd"]),
+                heartbeat_fd=int(fds["heartbeat_fd"]),
+                read_guard_events_fd=int(fds["read_guard_events_fd"]),
+            )
+        ),
+        internal_argv_factory=lambda _fds: (
+            _expected_preexecution_diagnostic_internal_argv(
+                launcher, diagnostic_root=root
+            )
+            if correction is None
+            else _expected_preexecution_diagnostic_correction_internal_argv(
+                launcher
+            )
+        ),
+        expected_role=(
+            "PREEXECUTION_DIAGNOSTIC_CHILD"
+            if correction is None
+            else "PREEXECUTION_DIAGNOSTIC_CORRECTION_1_CHILD"
+        ),
+        stdout_path=paths["child_stdout"],
+        stderr_path=paths["child_stderr"],
+        traceback_path=paths["child_traceback"],
+        exception_path=paths["child_exception"],
+        heartbeat_path=paths["heartbeat"],
+        last_stage_path=paths["last_stage_marker"],
+        read_guard_manifest_path=paths["read_guard_manifest"],
+        read_guard_events_path=paths["read_guard_events"],
+        environment_path=paths["environment"],
+        command_path=paths["command"],
+        invocation_path=paths["invocation"],
+        launcher_process_identity=launcher,
+        source_commit=source_commit,
+        namespace_before=namespace_before,
+    )
+    namespace_after = _preexecution_output_namespace_entries()
+    try:
+        os_evidence = forensic.build_os_evidence_receipt(
+            launcher_process_identity=launcher,
+            child_process_identity=execution["process_identity"],
+            started_monotonic_ns=execution["started_monotonic_ns"],
+            ended_monotonic_ns=execution["ended_monotonic_ns"],
+            returncode=execution["returncode"],
+            termination=execution["termination"],
+            cleanup=execution["cleanup"],
+            namespace_before=namespace_before,
+            namespace_after=namespace_after,
+            current_runtime_context=execution["technical_runtime_context"],
+        )
+        forensic.validate_os_evidence_receipt(os_evidence)
+        preexecution = forensic.build_preexecution_only_receipt(
+            source_commit=source_commit,
+            namespace_before=namespace_before,
+            namespace_after=namespace_after,
+            scientific_counters=forensic.ZERO_SCIENTIFIC_COUNTERS,
+        )
+        forensic.validate_preexecution_only_receipt(preexecution)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    exclusive_json(paths["os_evidence"], os_evidence)
+    exclusive_json(paths["preexecution_only"], preexecution)
+
+    child_payload = _single_phase_json_payload(
+        Path(str(execution["stdout"]["path"])).read_text(encoding="utf-8"),
+        phase="PREEXECUTION_ONLY_DIAGNOSTIC_CHILD",
+    )
+    child_payload = _validate_preexecution_child_payload(
+        child_payload,
+        launcher_process_identity=launcher,
+        child_process_identity=execution["process_identity"],
+        forensic_freeze_custody=freeze_custody,
+        namespace_before=namespace_before,
+        namespace_after=namespace_after,
+        correction=correction,
+    )
+    expected_child_counters = (
+        {
+            "scientific_inputs_opened": 0,
+            "failed_scientific_payloads_opened": 0,
+            "outcome_rows_opened": 0,
+            "tensor_reads": 0,
+            "model_loads": 0,
+            "training_steps": 0,
+        }
+        if correction is None
+        else correction.CORRECTION_ZERO_SCIENTIFIC_COUNTERS
+    )
+    if (
+        execution["returncode"] != 0
+        or execution["structured_exception"]["bytes"] != 0
+        or execution["read_guard_events"]["bytes"] != 0
+        or child_payload.get("scientific_counters") != expected_child_counters
+    ):
+        raise QualificationError("real preexecution diagnostic did not pass cleanly")
+    startup_rows = _load_diagnostic_stage_rows(paths["startup_stage_ledger"])
+    forensic.validate_startup_stage_rows(startup_rows, require_complete=True)
+    last_stage_value = _load_preexecution_last_stage_marker(
+        paths["last_stage_marker"]
+    )
+    closure = (
+        _load_forensic_source_closure(forensic)
+        if correction is None
+        else _load_forensic_correction_source_closure(correction)
+    )
+    try:
+        invocation_raw = paths["invocation"].read_bytes()
+        persisted_invocation = forensic.validate_invocation_receipt(
+            json.loads(invocation_raw)
+        )
+    except Exception as exc:
+        raise QualificationError("persisted invocation receipt is invalid") from exc
+    if (
+        canonical_bytes(persisted_invocation) != invocation_raw
+        or persisted_invocation != execution["invocation_receipt"]
+        or execution["invocation_receipt_binding"]
+        != {
+            **binding(paths["invocation"]),
+            "content_digest": persisted_invocation["content_digest"],
+        }
+    ):
+        raise QualificationError("persisted invocation receipt custody drift")
+    observed_effective_umask = os.umask(previous_umask)
+    sampled_restored_umask = os.umask(previous_umask)
+    os.umask(sampled_restored_umask)
+    if (
+        observed_effective_umask != forensic.PREEXECUTION_DIAGNOSTIC_UMASK
+        or sampled_restored_umask != previous_umask
+    ):
+        raise QualificationError("preexecution diagnostic umask restoration drift")
+    try:
+        umask_custody = forensic.build_diagnostic_umask_custody(
+            previous_umask=previous_umask,
+            restored_umask=sampled_restored_umask,
+            set_before_root_creation=True,
+            inherited_by_all_children=True,
+            restoration_verified=True,
+        )
+        forensic.validate_diagnostic_umask_custody(umask_custody)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    _atomic_preexecution_json(paths["umask_custody"], umask_custody)
+    stream_bindings = {
+        "stdout": copy.deepcopy(execution["stdout"]),
+        "stderr": copy.deepcopy(execution["stderr"]),
+        "traceback": copy.deepcopy(execution["traceback"]),
+        "exception": copy.deepcopy(execution["structured_exception"]),
+        "heartbeat": copy.deepcopy(execution["heartbeat"]),
+        "read_guard_events": copy.deepcopy(execution["read_guard_events"]),
+    }
+    try:
+        command_raw = paths["command"].read_bytes()
+        persisted_command = forensic.validate_command_receipt(
+            json.loads(command_raw)
+        )
+        read_guard_raw = paths["read_guard_manifest"].read_bytes()
+        persisted_read_guard = forensic.validate_read_guard_manifest(
+            json.loads(read_guard_raw), repo_root=ROOT
+        )
+    except Exception as exc:
+        raise QualificationError(
+            "persisted command/read-guard custody is invalid"
+        ) from exc
+    if (
+        canonical_bytes(persisted_command) != command_raw
+        or canonical_bytes(persisted_read_guard) != read_guard_raw
+        or execution["command_receipt"]
+        != {
+            **binding(paths["command"]),
+            "content_digest": persisted_command["content_digest"],
+        }
+        or execution["read_guard_manifest"]
+        != {
+            **binding(paths["read_guard_manifest"]),
+            "content_digest": persisted_read_guard["content_digest"],
+        }
+    ):
+        raise QualificationError("persisted command/read-guard custody drift")
+    try:
+        common_custody_inputs = {
+            "repo_root": ROOT,
+            "source_commit": source_commit,
+            "diagnostic_root": root,
+            "launcher_process_identity": launcher,
+            "child_process_identity": execution["process_identity"],
+            "forensic_freeze_custody_receipt": freeze_custody,
+            "umask_custody_receipt": umask_custody,
+            "invocation_receipt": persisted_invocation,
+            "environment_receipt": execution["environment"],
+            "command_receipt": persisted_command,
+            "read_guard_manifest": persisted_read_guard,
+            "os_evidence_receipt": os_evidence,
+            "preexecution_only_receipt": preexecution,
+            "synthetic_results_receipt": synthetic_receipt,
+            "last_stage_marker_value": last_stage_value,
+            "startup_stage_rows": startup_rows,
+            "stream_bindings": stream_bindings,
+            "exception_observed": False,
+        }
+        if correction is None:
+            custody = forensic.build_diagnostic_custody_receipt(
+                **common_custody_inputs,
+                forensic_source_closure=closure,
+                preexecution_child_result=child_payload,
+            )
+            forensic.validate_diagnostic_custody_receipt(custody)
+        else:
+            correction_inputs = {
+                **common_custody_inputs,
+                "correction_source_closure": closure,
+                "corrected_child_result": child_payload,
+            }
+            custody = correction.build_correction_diagnostic_custody_receipt(
+                **correction_inputs
+            )
+            correction.validate_correction_diagnostic_custody_receipt(
+                custody,
+                **correction_inputs,
+            )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    _atomic_preexecution_json(paths["diagnostic_custody"], custody)
+    if correction is not None:
+        try:
+            staged = correction.write_correction_terminal_bundle(
+                diagnostic_custody_receipt=custody,
+                synthetic_results_receipt=synthetic_receipt,
+                diagnostic_root=root,
+            )
+            reloaded = correction.load_and_validate_correction_diagnostic_bundle(
+                repo_root=ROOT,
+                diagnostic_root=root,
+            )
+        except Exception as exc:
+            raise QualificationError(str(exc)) from exc
+        if (
+            reloaded["diagnostic_custody"] != custody
+            or reloaded["synthetic_results"] != synthetic_receipt
+            or reloaded["result"] != staged["runtime_result"]
+            or reloaded["final_namespace_inventory"]
+            != staged["final_namespace_inventory"]
+        ):
+            raise QualificationError(
+                "correction terminal staging reload/custody drift"
+            )
+        return staged
+    return _publish_preexecution_diagnostic_terminal(
+        forensic=forensic,
+        diagnostic_root=root,
+        custody=custody,
+        synthetic_receipt=synthetic_receipt,
+    )
+
+
+def execute_preexecution_diagnostic() -> dict[str, Any]:
+    """Run only the frozen, zero-scientific-input startup diagnostic."""
+
+    forensic = _validate_forensic_constant_alignment()
+    previous_umask = os.umask(forensic.PREEXECUTION_DIAGNOSTIC_UMASK)
+    try:
+        if previous_umask != forensic.PREEXECUTION_DIAGNOSTIC_EXPECTED_PREVIOUS_UMASK:
+            raise QualificationError(
+                "preexecution diagnostic inherited umask is not frozen 0002"
+            )
+        return _execute_preexecution_diagnostic_under_umask(
+            previous_umask=previous_umask
+        )
+    finally:
+        os.umask(previous_umask)
+
+
+def freeze_preexecution_forensic_correction_1_contract() -> dict[str, Any]:
+    """Write only the separate versioned correction authorities."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    try:
+        return correction.freeze_preexecution_forensic_correction_1_contract(
+            ROOT
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def execute_preexecution_correction_1() -> dict[str, Any]:
+    """Run the corrected child through the frozen BASE custody mechanics."""
+
+    forensic = _validate_forensic_constant_alignment()
+    correction = _validate_forensic_correction_1_constant_alignment()
+    previous_umask = os.umask(forensic.PREEXECUTION_DIAGNOSTIC_UMASK)
+    try:
+        if previous_umask != forensic.PREEXECUTION_DIAGNOSTIC_EXPECTED_PREVIOUS_UMASK:
+            raise QualificationError(
+                "correction diagnostic inherited umask is not frozen 0002"
+            )
+        return _execute_preexecution_diagnostic_under_umask(
+            previous_umask=previous_umask,
+            correction=correction,
+        )
+    finally:
+        os.umask(previous_umask)
+
+
+def _correction_terminal_coordinator_from_environment(
+    correction: Any,
+) -> dict[str, Any]:
+    raw_pid = os.environ.get("LEWM_CORRECTION_COORDINATOR_PID", "")
+    raw_start = os.environ.get(
+        "LEWM_CORRECTION_COORDINATOR_START_TIME_TICKS", ""
+    )
+    if (
+        not _canonical_positive_decimal(raw_pid)
+        or not _canonical_positive_decimal(raw_start)
+    ):
+        raise QualificationError(
+            "correction terminal coordinator environment custody drift"
+        )
+    try:
+        return correction.require_live_correction_terminal_coordinator(
+            pid=int(raw_pid), start_time_ticks=int(raw_start)
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def finalize_preexecution_forensic_correction_1() -> dict[str, Any]:
+    """Build prospective bytes only under the live root coordinator."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    identity = _forensic_process_identity(
+        os.getpid(), require_role=correction.CORRECTION_FINALIZER_ROLE
+    )
+    coordinator = _correction_terminal_coordinator_from_environment(correction)
+    try:
+        return correction.build_correction_finalizer_prospective_receipt(
+            repo_root=ROOT,
+            finalizer_process_identity=identity,
+            coordinator_process_identity=coordinator,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def check_preexecution_forensic_correction_1() -> dict[str, Any]:
+    """Independently rebuild prospective bytes under the live coordinator."""
+
+    correction = _validate_forensic_correction_1_constant_alignment()
+    identity = _forensic_process_identity(
+        os.getpid(), require_role=correction.CORRECTION_CHECKER_ROLE
+    )
+    coordinator = _correction_terminal_coordinator_from_environment(correction)
+    try:
+        return correction.build_correction_external_checker_receipt(
+            repo_root=ROOT,
+            checker_process_identity=identity,
+            coordinator_process_identity=coordinator,
+        )
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+
+
+def _single_phase_json_payload(stdout: str, *, phase: str) -> dict[str, Any]:
+    lines = [line for line in stdout.splitlines() if line.strip()]
+    if len(lines) != 1:
+        raise QualificationError(
+            f"{phase} emitted {len(lines)} non-empty stdout lines; exactly one required"
+        )
+    try:
+        value = json.loads(lines[0])
+    except json.JSONDecodeError as exc:
+        raise QualificationError(f"{phase} stdout is not canonical JSON") from exc
+    if not isinstance(value, dict) or value.get("pass") is not True:
+        raise QualificationError(f"{phase} terminal payload is not a passing object")
+    if lines[0].encode("utf-8") != canonical_json_bytes(value):
+        raise QualificationError(f"{phase} stdout is not canonical UTF-8 JSON")
+    return value
+
+
+def _primary_and_secondaries(
+    stage_a: Mapping[str, Any],
+    stage_b: Mapping[str, Any] | None,
+    stage_c: Mapping[str, Any] | None,
+) -> tuple[str, list[str], str]:
+    true_pass = bool(stage_a["true_future_gate"]["pass"])
+    incremental_pass = bool(stage_a["true_incremental_value"]["pass"])
+    if not true_pass:
+        primary = "PLAN_AWARE_JEPA_COST_NO_SIGNAL"
+        secondaries = ["ENCODER_ROUTE_INFORMATION_INSUFFICIENT"]
+    elif not incremental_pass:
+        primary = "KINEMATIC_BASELINE_DOMINANT"
+        secondaries = ["TRUE_FUTURE_PLAN_AWARE_COST_SIGNAL"]
+        if stage_a["derangement"]["pass"]:
+            secondaries.append("CANDIDATE_SPECIFIC_LATENT_ROUTE_INFORMATION_USED")
+    elif stage_b is None:
+        raise QualificationError("true-future and incremental gates passed without Stage B")
+    else:
+        try:
+            primary_decision = METRICS.classify_primary(
+                true_gate=stage_a["true_future_gate"],
+                predicted_gate=stage_b["predicted_gate"],
+                true_incremental_gate=stage_a["true_incremental_value"],
+                all_predicted_substitutions_fail_materially=bool(
+                    stage_b["all_predicted_substitutions_fail_materially"]
+                ),
+            )
+        except (KeyError, METRICS.PlanAwareMetricsError) as exc:
+            raise QualificationError(
+                "frozen primary classification is unresolved by Stage-B evidence"
+            ) from exc
+        primary = str(primary_decision["classification"])
+        if primary == "TWO_STEP_PLAN_AWARE_JEPA_COST_SIGNAL":
+            secondaries = [
+                "TRUE_FUTURE_PLAN_AWARE_COST_SIGNAL",
+                "TRUE_FUTURE_JEPA_INCREMENTAL_ROUTE_VALUE",
+                "CANDIDATE_SPECIFIC_LATENT_ROUTE_INFORMATION_USED",
+                "TWO_STEP_PLAN_AWARE_JEPA_COST_SIGNAL",
+                "ROLLOUT_ROUTE_INFORMATION_SIGNAL",
+            ]
+            if bool(stage_b["incremental_over_kinematics"]["pass"]):
+                secondaries.append("JEPA_INCREMENTAL_ROUTE_VALUE_OVER_KINEMATICS")
+        elif primary == "TRUE_FUTURE_COST_SIGNAL_PREDICTOR_ROUTE_NO_GO":
+            secondaries = [
+                "TRUE_FUTURE_PLAN_AWARE_COST_SIGNAL",
+                "TRUE_FUTURE_JEPA_INCREMENTAL_ROUTE_VALUE",
+                "CANDIDATE_SPECIFIC_LATENT_ROUTE_INFORMATION_USED",
+                "PREDICTOR_ROUTE_GEOMETRY_LOSS",
+            ]
+        else:
+            raise QualificationError(
+                f"unexpected Stage-B primary classification {primary!r}"
+            )
+    if true_pass:
+        secondaries.append("WRONG_PLANNING_READOUT")
+    if stage_b is not None:
+        if bool(stage_b["proprioception_gate"]["pass"]):
+            secondaries.append("PROPRIOCEPTIVE_ROUTE_CONTRIBUTION")
+        else:
+            secondaries.append("PROPRIOCEPTIVE_ROUTE_CONTRIBUTION_NOT_SUPPORTED")
+        if stage_c is not None:
+            secondaries.append(str(stage_c["classification"]))
+            dependence = str(stage_c["dependence_attribution"])
+            if dependence != stage_c["classification"]:
+                secondaries.append(dependence)
+    secondaries = list(dict.fromkeys(secondaries))
+    if any(value not in CONTRACT.SECONDARY_CLASSIFICATIONS for value in secondaries):
+        raise QualificationError(f"unknown secondary classification: {secondaries}")
+    next_experiment = CONTRACT.next_experiment_for_primary(primary)
+    return primary, secondaries, next_experiment
+
+
+def _report_markdown(result: Mapping[str, Any]) -> str:
+    def render_metric(value: Any) -> str:
+        if value is None:
+            return "n/a"
+        numeric = float(value)
+        if not math.isfinite(numeric):
+            raise QualificationError("report metric is non-finite")
+        return f"{numeric:.6f}"
+
+    def render_counted_metric(value: Any, count: Any) -> str:
+        return f"{render_metric(value)} ({int(count)})"
+
+    stage_a = result["metrics"]["stage_a_decisions"]
+    heldout = result["metrics"]["stage_a"][HELDOUT]
+    sources = (
+        "KINEMATIC_ROUTE_BASELINE",
+        "KINEMATIC_PLUS_NO_LATENT_RESIDUAL",
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_TRUE",
+        "WITHIN_STATE_FUTURE_LATENT_DERANGEMENT_TRUE",
+        *CONTRACT.RAW_COST_REREDUCED_SOURCE_IDS,
+    )
+    lines = [
+        "# Plan-aware monotone JEPA route cost V1 result",
+        "",
+        "This is a development-only, single-seed local-waypoint route-cost qualification. It is not a deployment-safety or closed-loop-navigation result.",
+        "",
+        "## Decision",
+        "",
+        f"- Primary: `{result['primary_classification']}`.",
+        f"- Secondary: {', '.join(f'`{value}`' for value in result['secondary_classifications']) or 'none'}.",
+        f"- Next experiment: `{result['next_experiment']}` (specified, not run).",
+        f"- Validated prior smoke-only failure archives: {len(result.get('prior_smoke_failure_custody', []))}; reused files: 0.",
+        "- Publication-time process claim: scientific evaluator and conditional helpers were absent; the independent finalizer and launcher were still live and disclosed, so all-process zero was not claimed. The literal-zero official post-finalizer check is external and pending until after their exit and the result commit.",
+        "",
+        "## Exact next-experiment specification",
+        "",
+        "```json",
+        json.dumps(
+            result["next_experiment_specification"],
+            sort_keys=True,
+            indent=2,
+            ensure_ascii=False,
+            allow_nan=False,
+        ),
+        "```",
+        "",
+        "## Fit-state optimizer conditioning",
+        "",
+        f"- Fit states total: {int(result['metrics']['fit_optimization']['fit_states_total'])}.",
+        f"- Optimizer-contributing states (at least two oracle-admissible candidates): {int(result['metrics']['fit_optimization']['fit_states_contributing'])}.",
+        f"- Skipped with zero admissible candidates: {int(result['metrics']['fit_optimization']['fit_states_skipped_zero_admissible'])}.",
+        f"- Skipped singleton-admissible states: {int(result['metrics']['fit_optimization']['fit_states_skipped_singleton_admissible'])}.",
+        f"- Per-epoch loss denominator: {int(result['metrics']['fit_optimization']['epoch_average_denominator'])} contributing states.",
+        "",
+        "## Heldout oracle-viability route metrics",
+        "",
+        "| Source | Pairwise | Spearman | Regret | Top-3 | Oracle-progress fraction | Selected progress (m) | Selected heading (rad) | Selected route utility (defined n) |",
+        "|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+    ]
+    for source in sources:
+        summary = heldout[source]
+        lines.append(
+            "| "
+            + source
+            + " | "
+            + " | ".join(
+                render_metric(_summary_metric(summary, key))
+                for key in (
+                    "pairwise_accuracy",
+                    "spearman_rho",
+                    "normalized_regret",
+                    "best_route_top3_rate",
+                    "selected_progress_ratio",
+                    "selected_route_progress_m_mean",
+                    "selected_heading_progress_rad_mean",
+                )
+            )
+            + " | "
+            + render_counted_metric(
+                _summary_metric(summary, "selected_combined_route_utility_mean"),
+                _summary_metric(summary, "selected_combined_route_utility_count"),
+            )
+            + " |"
+        )
+    matched_raw = result["metrics"]["stage_a_raw_cost_matched_comparisons"]
+    lines.extend(
+        [
+            "",
+            "## Matched plan-aware versus raw-cost comparisons",
+            "",
+            "These paired successor-metric reductions are descriptive and non-gating. Positive route deltas favor the plan-aware score; adverse-selection deltas are plan-aware minus raw and therefore positive means more adverse selections.",
+            "",
+            "| Plan-aware source | Raw source | Status | Pairwise | Spearman | Kendall | Regret reduction | Top-3 | Progress (m) | Contact delta | Nonviable delta |",
+            "|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+    )
+    for candidate_id, comparison in matched_raw["comparisons"].items():
+        status = str(comparison["status"])
+        if status == "COMPLETE":
+            deltas = comparison["by_role"][HELDOUT]["aggregate_deltas"]
+            values = [
+                render_metric(deltas[key])
+                for key in (
+                    "pairwise_accuracy_gain",
+                    "spearman_gain",
+                    "kendall_gain",
+                    "normalized_regret_reduction",
+                    "best_route_top3_gain",
+                    "selected_progress_gain_m",
+                    "all_candidates_contact_selection_delta",
+                    "all_candidates_nonviable_selection_delta",
+                )
+            ]
+        else:
+            values = ["n/a"] * 8
+        lines.append(
+            "| "
+            + candidate_id
+            + " | "
+            + str(comparison["comparator_id"])
+            + " | "
+            + status
+            + " | "
+            + " | ".join(values)
+            + " |"
+        )
+    lines.extend(
+        [
+            "",
+            "## Frozen gates",
+            "",
+            f"- Candidate-specific future-latent derangement material: `{stage_a['derangement']['pass']}`.",
+            "- Candidate-future derangement damage (matched minus deranged except regret worsening): "
+            + ", ".join(
+                f"`{key}={render_metric(stage_a['derangement']['damage'][key])}`"
+                for key in (
+                    "pairwise_accuracy_loss",
+                    "selected_progress_m_loss",
+                    "selected_progress_ratio_loss",
+                    "normalized_regret_worsening",
+                    "best_route_top3_loss",
+                )
+            )
+            + ".",
+            f"- True-future plan-aware gate: `{stage_a['true_future_gate']['pass']}`.",
+            f"- Incremental value over both kinematics and the matched no-latent residual: `{stage_a['true_incremental_value']['pass']}`.",
+            f"- Stage B: `{result['stage_execution']['stage_b']}`.",
+            f"- Stage C: `{result['stage_execution']['stage_c']}`.",
+            "- Execution-only correction amendment: `"
+            + str(
+                result["stage_execution"]["execution_correction_custody"]
+                ["amendment"]["sha256"]
+            )
+            + "`; failed-archive files reused: `0`; pre-Stage-B scientific "
+            "replay equality: `PASS`.",
+            "",
+            "## Preserved predecessor conclusions",
+            "",
+            "These classification IDs are scoped to the predecessor raw-cost assay; in particular, `JEPA_INCREMENTAL_ROUTE_VALUE_OVER_KINEMATICS_NOT_SUPPORTED` is not a conclusion about this plan-aware assay.",
+            "",
+            *[f"- `{fact}`" for fact in result["predecessor_fact_authority"]],
+            "",
+            *[f"- {statement}" for statement in result["predecessor_narrative_authority"]],
+            "",
+            "## Historical raw latent-goal comparators (no recomputation)",
+            "",
+            "These heldout values are copied from the byte-bound predecessor result as historical context only. Their predecessor metric definition is not comparable to the successor population-conditioned Borda metrics above; raw cosine was not rerun. The three `RAW_*_GOAL_COSINE` rows in the Stage-A table are a post-barrier read-only re-reduction of persisted predecessor `-cost_h3` candidate evidence under the successor metric contract.",
+            "",
+            f"Successor-metric candidate-evidence binding: `{result['metrics']['stage_a_raw_cost_rereduced']['frozen_source_binding']['path']}` (`{result['metrics']['stage_a_raw_cost_rereduced']['frozen_source_binding']['sha256']}`; {int(result['metrics']['stage_a_raw_cost_rereduced']['source_rows'])} rows).",
+            "",
+            f"Source binding: `{result['metrics']['historical_raw_latent_goal_cosine_comparators']['source_binding']['path']}` (`{result['metrics']['historical_raw_latent_goal_cosine_comparators']['source_binding']['sha256']}`).",
+            "",
+            "| Historical source | Pairwise | Spearman | Regret | Top-3 | Oracle-progress fraction |",
+            "|---|---:|---:|---:|---:|---:|",
+            *[
+                "| "
+                + source
+                + " | "
+                + " | ".join(
+                    render_metric(summary['populations'][METRICS.ORACLE_VIABILITY_ADMISSIBLE]['aggregate'][key])
+                    for key in (
+                        "pairwise_accuracy",
+                        "spearman_rho",
+                        "normalized_regret",
+                        "best_route_top3_rate",
+                        "selected_progress_ratio",
+                    )
+                )
+                + " |"
+                for source, summary in result["metrics"][
+                    "historical_raw_latent_goal_cosine_comparators"
+                ]["comparators"].items()
+            ],
+            "",
+            "## Claims boundary",
+            "",
+            "This experiment uses the frozen local waypoint directly and makes no JEPA-safety claim.",
+            "",
+            "`REQUIREMENTS_ACQUISITION_REQUIRED`, `PROTECTED_CONTACT_SCOPE_REQUIREMENTS_UNRESOLVED`, `SIMULATED_CONTACT_PROXY_SCOPE_ONLY`, `REPLANNING_INTERFACE_UNRESOLVED`, and `GO2_PLATFORM_STOPPING_MODE_PARITY_PENDING` remain separate and unchanged.",
+            "",
+            "No predictor, safety/contact/occupancy/completion/place/nonviability model was trained; no fresh panel, sensor layout, scope change, memory, routing, beacon capture, or closed-loop navigation was executed.",
+            "",
+        ]
+    )
+    stage_b = result["metrics"].get("stage_b")
+    if stage_b is not None:
+        stage_b_heldout = stage_b["summaries"][HELDOUT]
+        lines.extend(
+            [
+                "## Frozen-predictor substitution (Stage B)",
+                "",
+                "| Future source | Pairwise | Spearman | Regret | Top-3 | Oracle-progress fraction | Selected progress (m) | Selected heading (rad) | Selected route utility (defined n) | Contact | Nonviable | Stuck |",
+                "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for source in ("R1", "RR", "P1", "PR"):
+            summary = stage_b_heldout[
+                f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"
+            ]
+            aggregate = summary["populations"][
+                METRICS.ORACLE_VIABILITY_ADMISSIBLE
+            ]["aggregate"]
+            all_candidates = summary["populations"][METRICS.ALL_CANDIDATES][
+                "aggregate"
+            ]
+            lines.append(
+                "| "
+                + source
+                + " | "
+                + " | ".join(
+                    [
+                        render_metric(aggregate['pairwise_accuracy']),
+                        render_metric(aggregate['spearman_rho']),
+                        render_metric(aggregate['normalized_regret']),
+                        render_metric(aggregate['best_route_top3_rate']),
+                        render_metric(aggregate['selected_progress_ratio']),
+                        render_metric(aggregate['selected_route_progress_m_mean']),
+                        render_metric(aggregate['selected_heading_progress_rad_mean']),
+                        render_counted_metric(
+                            aggregate['selected_combined_route_utility_mean'],
+                            aggregate['selected_combined_route_utility_count'],
+                        ),
+                        str(int(all_candidates["selected_immediate_contacts_h1"])),
+                        str(int(all_candidates["selected_nonviable_successors"])),
+                        str(int(all_candidates["selected_stuck"])),
+                    ]
+                )
+                + " |"
+            )
+        lines.extend(
+            [
+                "",
+                f"- Two-step predicted-route gate: `{stage_b['predicted_gate']['classification']}` (`{stage_b['predicted_gate']['pass']}`).",
+                f"- RR incremental value over kinematics: `{stage_b['incremental_over_kinematics']['classification']}` (`{stage_b['incremental_over_kinematics']['pass']}`).",
+                f"- Proprioceptive route contribution: `{stage_b['proprioception_gate']['classification']}` (`{stage_b['proprioception_gate']['pass']}`).",
+                *[
+                    "- "
+                    + contrast
+                    + " selected-candidate changes under oracle viability: "
+                    + str(
+                        value["populations"][
+                            METRICS.ORACLE_VIABILITY_ADMISSIBLE
+                        ]["changed_count"]
+                    )
+                    + "/"
+                    + str(
+                        value["populations"][
+                            METRICS.ORACLE_VIABILITY_ADMISSIBLE
+                        ]["state_count"]
+                    )
+                    + "."
+                    for contrast, value in stage_b[
+                        "selected_candidate_changes"
+                    ].items()
+                ],
+                "- Frozen rollout/proprioception contrasts and state-paired bootstrap intervals are persisted in `aggregates/metrics.json`.",
+                "",
+            ]
+        )
+
+    stage_c = result["metrics"].get("stage_c")
+    if stage_c is not None:
+        stage_c_heldout = stage_c["summaries"][HELDOUT]
+        lines.extend(
+            [
+                "## Strict input-substitution diagnostic (Stage C)",
+                "",
+                "| PR input condition | Pairwise | Regret | Top-3 | Oracle-progress fraction | Selected progress (m) | Selected heading (rad) | Selected route utility (defined n) |",
+                "|---|---:|---:|---:|---:|---:|---:|---:|",
+            ]
+        )
+        for source in STAGE_C_SOURCE_IDS:
+            summary = stage_c_heldout[
+                f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"
+            ]
+            aggregate = summary["populations"][
+                METRICS.ORACLE_VIABILITY_ADMISSIBLE
+            ]["aggregate"]
+            lines.append(
+                "| "
+                + source
+                + " | "
+                + " | ".join(
+                    render_metric(aggregate[key])
+                    for key in (
+                        "pairwise_accuracy",
+                        "normalized_regret",
+                        "best_route_top3_rate",
+                        "selected_progress_ratio",
+                        "selected_route_progress_m_mean",
+                        "selected_heading_progress_rad_mean",
+                    )
+                )
+                + " | "
+                + render_counted_metric(
+                    aggregate['selected_combined_route_utility_mean'],
+                    aggregate['selected_combined_route_utility_count'],
+                )
+                + " |"
+            )
+        lines.extend(
+            [
+                "",
+                f"- Strict substitution result: `{stage_c['classification']}`.",
+                f"- Dependence attribution: `{stage_c['dependence_attribution']}`.",
+                f"- Candidate-action sensitivity retained: `{stage_c['candidate_action_sensitivity']['passed']}`.",
+                f"- Control-history-only explanation excluded: `{stage_c['control_only_explanation_excluded']}`.",
+                f"- Frozen occupancy probe: `{stage_c['occupancy_probe']['status']}`; it was not executed.",
+                *[
+                    "- "
+                    + source
+                    + " heldout candidate-level absolute route-score change mean: "
+                    + render_metric(stage_c['route_score_changes']['by_source'][source]['by_role'][HELDOUT]['absolute_mean'])
+                    + "."
+                    for source in STAGE_C_SOURCE_IDS
+                ],
+                "- Direct H1-H3 fidelity, candidate-matched route-score changes, route-metric changes, and all input-derangement mappings are persisted in the result bundle.",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Descriptive all-candidate adverse-outcome tendencies",
+            "",
+            "Each accuracy is the within-state adverse-vs-nonadverse cross-group credit for giving the nonadverse candidate a higher score (ties receive half credit); `(n)` is the pair count. These labels were not training targets or safety gates.",
+            "",
+            "| Stage | Route-score condition | Contact accuracy (n) | Nonviable accuracy (n) | Stuck accuracy (n) | Selected contact/nonviable/stuck |",
+            "|---|---|---:|---:|---:|---:|",
+        ]
+    )
+
+    def adverse_cell(summary: Mapping[str, Any], outcome: str) -> str:
+        value = summary["descriptive_adverse_downranking"]["outcomes"][outcome][
+            "overall"
+        ]
+        accuracy = value["pairwise_accuracy"]
+        rendered = "n/a" if accuracy is None else f"{float(accuracy):.6f}"
+        return f"{rendered} ({int(value['pair_count'])})"
+
+    stage_summaries: list[tuple[str, Mapping[str, Any]]] = [
+        ("A", heldout)
+    ]
+    if stage_b is not None:
+        stage_summaries.append(("B", stage_b["summaries"][HELDOUT]))
+    if stage_c is not None:
+        stage_summaries.append(("C", stage_c["summaries"][HELDOUT]))
+    for stage_id, summaries in stage_summaries:
+        for source, summary in summaries.items():
+            aggregate = summary["populations"][METRICS.ALL_CANDIDATES]["aggregate"]
+            lines.append(
+                "| "
+                + stage_id
+                + " | "
+                + source
+                + " | "
+                + " | ".join(
+                    [
+                        adverse_cell(summary, "immediate_contact"),
+                        adverse_cell(summary, "successor_nonviable"),
+                        adverse_cell(summary, "stuck"),
+                        "/".join(
+                            str(int(aggregate[key]))
+                            for key in (
+                                "selected_immediate_contacts_h1",
+                                "selected_nonviable_successors",
+                                "selected_stuck",
+                            )
+                        ),
+                    ]
+                )
+                + " |"
+            )
+    lines.extend(
+        [
+            "",
+            "These diagnostics do not establish deployment safety or visual wall avoidance.",
+            "",
+        ]
+    )
+    return "\n".join(lines)
+
+
+def _rows_from_jsonl(path: Path) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line_number, line in enumerate(handle, 1):
+            if not line.strip():
+                raise QualificationError(f"blank JSONL row: {path}:{line_number}")
+            value = json.loads(line)
+            if not isinstance(value, dict):
+                raise QualificationError(f"non-object JSONL row: {path}:{line_number}")
+            rows.append(value)
+    return rows
+
+
+def _replay_stage_a_metrics(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, dict[str, Any]]:
+    by_role: dict[str, list[Mapping[str, Any]]] = {role: [] for role in SPLIT_ROLES}
+    for row in rows:
+        _validate_population_membership(row, label="Stage-A")
+        role = str(row["split"])
+        if role not in by_role:
+            raise QualificationError(f"unknown Stage-A ledger role {role}")
+        by_role[role].append(row)
+    reproduced: dict[str, dict[str, Any]] = {}
+    for role in SPLIT_ROLES:
+        role_rows = by_role[role]
+        expected = CONTRACT.ROLE_ROW_COUNTS[role]
+        if len(role_rows) != expected:
+            raise QualificationError(f"Stage-A {role} row count {len(role_rows)} != {expected}")
+        candidates: dict[str, list[dict[str, Any]]] = {}
+        score_maps: dict[str, dict[str, np.ndarray]] = {}
+        for row in role_rows:
+            state_id = str(row["state_id"])
+            candidate = int(row["candidate_index"])
+            if not 0 <= candidate < CANDIDATE_COUNT:
+                raise QualificationError("Stage-A candidate identity drift")
+            candidates.setdefault(state_id, []).append(
+                {
+                    "state_id": state_id,
+                    "family": row["family"],
+                    "role": role,
+                    "candidate_index": candidate,
+                    "p_d": row["p_d"],
+                    "p_theta": row["p_theta"],
+                    "completed": row["completed"],
+                    "stuck": row["stuck"],
+                    "immediate_contact_h1": row["immediate_contact_h1"],
+                    "descriptive_contact_h2": row["descriptive_contact_h2"],
+                    "descriptive_contact_h3": row["descriptive_contact_h3"],
+                    "successor_safe_action_count": row["successor_safe_action_count"],
+                    "successor_viable": row["successor_viable"],
+                    "oracle_viability_admissible": row["oracle_viability_admissible"],
+                }
+            )
+            for source, value in row["scores"].items():
+                score_maps.setdefault(str(source), {}).setdefault(
+                    state_id, np.full(CANDIDATE_COUNT, np.nan, dtype=np.float64)
+                )[candidate] = float(value)
+        for state_id, state_rows in candidates.items():
+            state_rows.sort(key=lambda value: int(value["candidate_index"]))
+            if [int(value["candidate_index"]) for value in state_rows] != list(
+                range(CANDIDATE_COUNT)
+            ):
+                raise QualificationError(f"Stage-A candidate set drift: {state_id}")
+        for source, states in score_maps.items():
+            if any(not np.isfinite(values).all() for values in states.values()):
+                raise QualificationError(f"Stage-A score holes: {role}:{source}")
+        reproduced[role] = {
+            source: METRICS.summarize_scores(candidates, states, source_id=source)
+            for source, states in score_maps.items()
+        }
+    return reproduced
+
+
+def _replay_conditional_metrics(
+    rows: Sequence[Mapping[str, Any]], *, expected_sources: Sequence[str]
+) -> dict[str, dict[str, Any]]:
+    sources = tuple(expected_sources)
+    expected_rows = STATE_COUNT * CANDIDATE_COUNT * len(sources)
+    if len(rows) != expected_rows:
+        raise QualificationError(
+            f"conditional replay row count {len(rows)} != {expected_rows}"
+        )
+    per_role_source: dict[str, dict[str, list[Mapping[str, Any]]]] = {
+        role: {source: [] for source in sources} for role in SPLIT_ROLES
+    }
+    for row in rows:
+        _validate_population_membership(row, label="conditional")
+        role = str(row["split"])
+        source = str(row["latent_source"])
+        if role not in per_role_source or source not in per_role_source[role]:
+            raise QualificationError(f"unknown conditional identity: {role}:{source}")
+        per_role_source[role][source].append(row)
+
+    reproduced: dict[str, dict[str, Any]] = {}
+    for role in SPLIT_ROLES:
+        merged: dict[str, Any] = {}
+        for source in sources:
+            source_rows = per_role_source[role][source]
+            if len(source_rows) != CONTRACT.ROLE_ROW_COUNTS[role]:
+                raise QualificationError(
+                    f"conditional {role}:{source} cardinality drift"
+                )
+            candidates: dict[str, list[dict[str, Any]]] = {}
+            score_maps: dict[str, dict[str, np.ndarray]] = {}
+            for row in source_rows:
+                state_id = str(row["state_id"])
+                candidate = int(row["candidate_index"])
+                candidates.setdefault(state_id, []).append(
+                    {
+                        "state_id": state_id,
+                        "family": row["family"],
+                        "role": role,
+                        "candidate_index": candidate,
+                        "p_d": row["p_d"],
+                        "p_theta": row["p_theta"],
+                        "completed": row["completed"],
+                        "stuck": row["stuck"],
+                        "immediate_contact_h1": row["immediate_contact_h1"],
+                        "descriptive_contact_h2": row["descriptive_contact_h2"],
+                        "descriptive_contact_h3": row["descriptive_contact_h3"],
+                        "successor_safe_action_count": row[
+                            "successor_safe_action_count"
+                        ],
+                        "successor_viable": row["successor_viable"],
+                        "oracle_viability_admissible": row[
+                            "oracle_viability_admissible"
+                        ],
+                    }
+                )
+                route_scores = row.get("route_scores")
+                if not isinstance(route_scores, Mapping):
+                    raise QualificationError("conditional row lacks route scores")
+                for condition, score in route_scores.items():
+                    score_maps.setdefault(str(condition), {}).setdefault(
+                        state_id,
+                        np.full(CANDIDATE_COUNT, np.nan, dtype=np.float64),
+                    )[candidate] = float(score)
+            for state_id, state_rows in candidates.items():
+                state_rows.sort(key=lambda value: int(value["candidate_index"]))
+                if [int(value["candidate_index"]) for value in state_rows] != list(
+                    range(CANDIDATE_COUNT)
+                ):
+                    raise QualificationError(
+                        f"conditional candidate identity drift: {role}:{source}:{state_id}"
+                    )
+            if any(
+                not np.isfinite(values).all()
+                for states in score_maps.values()
+                for values in states.values()
+            ):
+                raise QualificationError(f"conditional score holes: {role}:{source}")
+            summaries = {
+                condition: METRICS.summarize_scores(
+                    candidates, values, source_id=condition
+                )
+                for condition, values in score_maps.items()
+            }
+            for condition, summary in summaries.items():
+                if condition in merged and merged[condition] != summary:
+                    raise QualificationError(
+                        f"conditional repeated baseline drift: {role}:{condition}"
+                    )
+                merged[condition] = summary
+        reproduced[role] = merged
+    return reproduced
+
+
+def _validate_persisted_latent_bindings(
+    rows: Sequence[Mapping[str, Any]],
+    *,
+    tensor_rows: Mapping[
+        tuple[str, str, int | None, int | None], Mapping[str, Any]
+    ],
+) -> None:
+    """Bind every scored row to the exact current and H1-H3 tensor records."""
+
+    for row in rows:
+        source = str(row["latent_source"])
+        donor = row.get("future_derangement_donor_candidate")
+        expected = _candidate_latent_bindings(
+            tensor_rows,
+            state_id=str(row["state_id"]),
+            candidate=int(row["candidate_index"]),
+            source=source,
+            deranged_candidate=None if donor is None else int(donor),
+        )
+        if row.get("latent_artifact_bindings") != expected:
+            raise QualificationError(
+                "row latent-artifact binding drift: "
+                f"{source}:{row['state_id']}:{row['candidate_index']}"
+            )
+
+
+def _validate_action_sensitivity_rows(
+    rows: Sequence[Mapping[str, Any]], evidence: Mapping[str, Any]
+) -> None:
+    expected = 4 * STATE_COUNT * len(HORIZONS)
+    if len(rows) != expected:
+        raise QualificationError(
+            f"Stage-C action sensitivity rows {len(rows)} != {expected}"
+        )
+    failed = [
+        {
+            "latent_source": row["latent_source"],
+            "state_id": row["state_id"],
+            "horizon": row["horizon"],
+        }
+        for row in rows
+        if not bool(row["candidate_action_sensitivity_present"])
+    ]
+    raw = evidence.get("raw_evidence")
+    if (
+        not isinstance(raw, Mapping)
+        or raw.get("rows") != expected
+        or raw.get("failed_rows") != failed
+        or evidence.get("passed") is not (not failed)
+    ):
+        raise QualificationError("Stage-C action-sensitivity evidence drift")
+
+
+def _validate_manifest(root: Path, rows: Sequence[Mapping[str, Any]]) -> None:
+    for row in rows:
+        path = root / str(row["path"])
+        if (
+            not path.is_file()
+            or path.stat().st_size != int(row["bytes"])
+            or sha256_file(path) != row["sha256"]
+        ):
+            raise QualificationError(f"persistence manifest drift: {row['path']}")
+
+
+def _datasets_from_stage_rows(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, dict[str, list[dict[str, Any]]]]:
+    datasets: dict[str, dict[str, list[dict[str, Any]]]] = {
+        role: {} for role in SPLIT_ROLES
+    }
+    for source in rows:
+        role = str(source["split"])
+        if role not in datasets:
+            raise QualificationError(f"unknown persisted split role {role!r}")
+        datasets[role].setdefault(str(source["state_id"]), []).append(dict(source))
+    for role in SPLIT_ROLES:
+        if len(datasets[role]) != CONTRACT.ROLE_STATE_COUNTS[role]:
+            raise QualificationError(f"persisted state cardinality drift: {role}")
+        for state_id, state_rows in datasets[role].items():
+            state_rows.sort(key=lambda row: int(row["candidate_index"]))
+            if [int(row["candidate_index"]) for row in state_rows] != list(
+                range(CANDIDATE_COUNT)
+            ):
+                raise QualificationError(
+                    f"persisted target candidate identity drift: {state_id}"
+                )
+    return datasets
+
+
+def _validate_persisted_action_plans(rows: Sequence[Mapping[str, Any]]) -> None:
+    for row in rows:
+        plan = np.asarray(row.get("predictor_candidate_action_plan_3x10"))
+        if plan.shape != (3, 10) or not np.isfinite(plan.astype(np.float64)).all():
+            raise QualificationError(
+                "persisted predictor candidate-action plan drift: "
+                f"{row.get('latent_source')}:{row.get('state_id')}:"
+                f"{row.get('candidate_index')}"
+            )
+
+
+def _validate_training_checkpoint_custody(
+    output_root: Path,
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    evaluation_contract = load_json(
+        output_root / "receipts/evaluation_contract.json"
+    )
+    training = load_json(output_root / "receipts/training.json")
+    evaluation = load_json(output_root / "receipts/evaluation.json")
+    for label, receipt in (
+        ("evaluation contract", evaluation_contract),
+        ("training", training),
+        ("evaluation", evaluation),
+    ):
+        if receipt.get("content_digest") != content_digest(receipt):
+            raise QualificationError(f"{label} receipt self-digest drift")
+    fit_optimization = training.get("fit_optimization")
+    if not isinstance(fit_optimization, Mapping):
+        raise QualificationError("training fit-optimization receipt is absent")
+    _validate_fit_optimization_summary(fit_optimization, expected_total=32)
+    for history in training.get("training_history", {}).values():
+        _validate_training_history(history, fit_optimization)
+    checkpoints = result["checkpoint_bindings"]["trained_route_rankers"]
+    expected_conditions = set(CONTRACT.CHECKPOINT_SEED_METADATA)
+    if (
+        set(checkpoints) != expected_conditions
+        or evaluation_contract.get("checkpoint_bindings") != checkpoints
+        or training.get("checkpoint_bindings") != checkpoints
+        or training.get("checkpoint_seed_metadata")
+        != CONTRACT.CHECKPOINT_SEED_METADATA
+        or training.get("final_epoch_only") is not True
+        or evaluation_contract.get("final_epoch_only") is not True
+        or evaluation_contract.get("heldout_opened_before_publication") is not False
+    ):
+        raise QualificationError("final ranker checkpoint custody drift")
+    for condition, record in checkpoints.items():
+        checkpoint = _load_checkpoint_receipt(
+            condition, record, output_root=output_root
+        )
+        if (
+            checkpoint.get("fit_optimization") != training.get("fit_optimization")
+            or checkpoint.get("training_history")
+            != training.get("training_history", {}).get(condition)
+        ):
+            raise QualificationError(
+                f"route-ranker fit-conditioning custody drift: {condition}"
+            )
+
+    epoch_rows = _rows_from_jsonl(output_root / "ledgers/training_epochs.jsonl")
+    expected_epoch_rows: list[dict[str, Any]] = []
+    for condition, history in training["training_history"].items():
+        for row in history:
+            expected_epoch_rows.append(
+                {
+                    "schema": "plan_aware_training_epoch_row_v1",
+                    "condition": condition,
+                    **copy.deepcopy(dict(row)),
+                }
+            )
+    if epoch_rows != expected_epoch_rows or len(epoch_rows) != 120:
+        raise QualificationError("training epoch ledger reproduction drift")
+    if (
+        evaluation.get("heldout_opened_after_checkpoint_publication") is not True
+        or evaluation.get("heldout_opened_after_evaluation_contract") is not True
+        or evaluation.get("calibration_used_for_model_selection") is not False
+        or evaluation.get("predictor_training_steps") != 0
+        or evaluation.get("raw_goal_cosine_executions") != 0
+        or evaluation.get("pass") is not True
+    ):
+        raise QualificationError("sealed evaluation lifecycle receipt drift")
+    return training
+
+
+def _validate_conditional_child_environment_preflight(
+    output_root: Path, preexecution: Mapping[str, Any]
+) -> dict[str, Any]:
+    helper = _conditional_helper()
+    path = output_root / "receipts/conditional_child_environment_preflight.json"
+    value = load_json(path)
+    expected_binding = {
+        **binding(path, relative_to=output_root),
+        "content_digest": value.get("content_digest"),
+    }
+    if (
+        value.get("content_digest") != content_digest(value)
+        or preexecution.get("conditional_child_environment_preflight")
+        != expected_binding
+        or value.get("schema")
+        != (
+            "plan_aware_monotone_jepa_cost_v1."
+            "conditional_child_environment_preflight.v1"
+        )
+        or value.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or value.get("pass") is not True
+        or any(
+            value.get(key) != 0
+            for key in (
+                "fit_outcome_rows_opened",
+                "calibration_rows_opened",
+                "heldout_rows_opened",
+                "tensor_rows_opened",
+                "training_steps",
+            )
+        )
+    ):
+        raise QualificationError("conditional child-environment preflight drift")
+    for label, interpreter, require_genesis in (
+        ("cpu_child", helper.CPU_INTERPRETER, True),
+        ("gpu_child", helper.GPU_INTERPRETER, False),
+    ):
+        probe = value.get(label)
+        expected_probe = CONTRACT.EXECUTION_CORRECTION_ENVIRONMENT_PROBE[
+            "required_preflight"
+        ][label]
+        if (
+            not isinstance(probe, Mapping)
+            or probe.get("pass") is not True
+            or probe.get("sentinel_available") is not True
+            or probe.get("environment_contract")
+            != helper.child_environment_contract(interpreter)
+        ):
+            raise QualificationError(
+                f"conditional {label} import-preflight custody drift"
+            )
+        venv_root = Path(interpreter).absolute().parent.parent.resolve()
+        expected_modules = {
+            "typing_extensions": expected_probe["typing_extensions"],
+            "pydantic_core_or_null": (
+                expected_probe["pydantic_core"] if require_genesis else None
+            ),
+            "genesis_or_null": expected_probe["genesis"] if require_genesis else None,
+            "torch_or_null": expected_probe["torch"] if not require_genesis else None,
+        }
+        for field, expected_module in expected_modules.items():
+            observed = probe.get(field)
+            if expected_module is None:
+                if observed is not None:
+                    raise QualificationError(
+                        f"conditional {label} unexpected {field} binding"
+                    )
+                continue
+            exact = {
+                "path": str(expected_module["path"]),
+                "resolved_path": str(Path(str(expected_module["path"])).resolve()),
+                "sha256": str(expected_module["sha256"]),
+                "bytes": int(expected_module["bytes"]),
+            }
+            if "version" in expected_module:
+                exact["version"] = str(expected_module["version"])
+            if "Sentinel_present" in expected_module:
+                exact["Sentinel_present"] = True
+            if observed != exact or not Path(exact["resolved_path"]).is_relative_to(
+                venv_root
+            ):
+                raise QualificationError(
+                    f"conditional {label} exact {field} binding drift"
+                )
+    return value
+
+
+def _validate_execution_correction_output_custody(
+    output_root: Path,
+    *,
+    preexecution: Mapping[str, Any],
+    persistence: Mapping[str, Any],
+    result: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reconcile the progressive amendment custody without rerunning science."""
+
+    try:
+        archive = CONTRACT.validate_execution_correction_archive()
+        CONTRACT.validate_base_scientific_authorities(ROOT)
+        CONTRACT.load_and_validate_execution_correction_amendment(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_AMENDMENT_PATH)
+        )
+        CONTRACT.load_and_validate_execution_correction_output_schema(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_OUTPUT_SCHEMA_PATH)
+        )
+        CONTRACT.load_and_validate_execution_correction_fixture(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_FIXTURE_PATH)
+        )
+        frozen_correction_closure = (
+            CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+            )
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    preflight_path = output_root / "receipts/conditional_child_environment_preflight.json"
+    preflight = load_json(preflight_path)
+    preflight_binding = {
+        **binding(preflight_path, relative_to=output_root),
+        "content_digest": preflight["content_digest"],
+    }
+    replay_path = output_root / "receipts/execution_correction_replay.json"
+    helper = _conditional_helper()
+    try:
+        replay = helper.validate_execution_correction_replay_receipt(
+            replay_path, output_root=output_root
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    replay_binding = {
+        **binding(replay_path, relative_to=output_root),
+        "content_digest": replay["content_digest"],
+    }
+    common = {
+        "amendment": copy.deepcopy(CONTRACT.EXECUTION_CORRECTION_AMENDMENT_BINDING),
+        "amendment_source_closure": {
+            **binding(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH
+                ),
+                relative_to=ROOT,
+            ),
+            "content_digest": frozen_correction_closure["content_digest"],
+            "rows": frozen_correction_closure["row_count"],
+        },
+        "archive_path": str(archive["archive_path"]),
+        "archive_inventory": copy.deepcopy(archive["inventory"]),
+        "failure_receipt": copy.deepcopy(archive["failure_receipt"]),
+        "source_freeze_commit": str(result["source_freeze_commit"]),
+        "files_reused": 0,
+        "conditional_child_environment_preflight": preflight_binding,
+        "pass": True,
+    }
+    expected_preexecution = {**common, "execution_correction_replay": None}
+    expected_terminal = {
+        **common,
+        "execution_correction_replay": replay_binding,
+    }
+    if (
+        preexecution.get("execution_correction_custody") != expected_preexecution
+        or persistence.get("execution_correction_custody") != expected_terminal
+        or result.get("stage_execution", {}).get(
+            "execution_correction_custody"
+        )
+        != expected_terminal
+    ):
+        raise QualificationError("execution-correction progressive custody drift")
+    return expected_terminal
+
+
+def _validate_execution_correction_2_output_custody(
+    output_root: Path,
+    *,
+    frozen: Mapping[str, Any],
+    preexecution: Mapping[str, Any],
+    persistence: Mapping[str, Any],
+    result: Mapping[str, Any],
+    metrics: Mapping[str, Any],
+) -> dict[str, Any]:
+    """Reconcile the final correction's replay and two-phase terminal custody."""
+
+    result_custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
+    )
+    preexecution_custody = preexecution.get("execution_correction_2_custody")
+    persistence_custody = persistence.get("execution_correction_2_custody")
+    if not all(
+        isinstance(value, Mapping)
+        for value in (
+            result_custody,
+            preexecution_custody,
+            persistence_custody,
+        )
+    ):
+        raise QualificationError("execution-correction-2 custody is absent")
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            preexecution_custody, phase="PREEXECUTION"
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            persistence_custody, phase="TERMINAL_FINALIZATION"
+        )
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            result_custody, phase="TERMINAL_FINALIZATION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if persistence_custody != result_custody:
+        raise QualificationError(
+            "execution-correction-2 result/persistence custody drift"
+        )
+
+    closure = frozen.get("execution_correction_2_source_closure")
+    closure_path = _tracked_path(
+        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+    )
+    if not isinstance(closure, Mapping):
+        raise QualificationError("execution-correction-2 source closure is absent")
+    expected_closure_binding = {
+        **binding(closure_path, relative_to=ROOT),
+        "content_digest": closure["content_digest"],
+        "rows": closure["row_count"],
+    }
+    immutable_fields = (
+        "schema",
+        "amendment",
+        "amendment_source_closure",
+        "scientific_contract_freeze_commit",
+        "execution_correction_2_commit",
+        "failed_archives",
+        "files_reused",
+        "nothing_running_scope",
+        "post_finalizer_check",
+    )
+    if any(
+        preexecution_custody.get(key) != result_custody.get(key)
+        for key in immutable_fields
+    ) or result_custody.get("amendment_source_closure") != expected_closure_binding:
+        raise QualificationError(
+            "execution-correction-2 progressive immutable custody drift"
+        )
+    if (
+        result.get("source_freeze_commit")
+        != result_custody.get("execution_correction_2_commit")
+        or result_custody.get("scientific_contract_freeze_commit")
+        != CONTRACT.INITIAL_EXECUTION_FREEZE_COMMIT
+        or result_custody.get("files_reused") != 0
+        or result.get("nothing_running") is not False
+        or persistence.get("nothing_running") is not False
+        or persistence.get("nothing_scientific_running") is not True
+        or persistence.get("nothing_running_scope")
+        != result_custody.get("nothing_running_scope")
+        or persistence.get("live_non_scientific_processes")
+        != result_custody.get("live_non_scientific_processes")
+    ):
+        raise QualificationError("execution-correction-2 terminal scope drift")
+
+    def bound_json(
+        key: str,
+        validator: Any,
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        path = output_root / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[key]
+        value = load_json(path)
+        try:
+            validated = validator(value)
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        observed_binding = _artifact_binding_with_digest(path, root=output_root)
+        if observed_binding != result_custody.get(key):
+            raise QualificationError(
+                f"execution-correction-2 {key} artifact binding drift"
+            )
+        return validated, observed_binding
+
+    stage_a_replay, stage_a_binding = bound_json(
+        "stage_a_replay", CONTRACT.validate_execution_correction_2_replay_receipt
+    )
+    stage_b_replay, stage_b_binding = bound_json(
+        "stage_b_replay",
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt,
+    )
+    terminal_staging, terminal_staging_binding = bound_json(
+        "terminal_staging",
+        CONTRACT.validate_execution_correction_2_terminal_staging,
+    )
+    scientific_exit, scientific_exit_binding = bound_json(
+        "scientific_exit", CONTRACT.validate_execution_correction_2_scientific_exit
+    )
+    terminal_finalization, terminal_finalization_binding = bound_json(
+        "terminal_finalization",
+        CONTRACT.validate_execution_correction_2_terminal_finalization,
+    )
+
+    try:
+        terminal_stage_a = (
+            CONTRACT.validate_execution_correction_2_stage_a_terminal_reproduction(
+                output_root,
+                fresh_attempt_identity=terminal_staging["attempt"],
+            )
+        )
+        reproduced_stage_b = (
+            CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+                output_root,
+                verify_archive=False,
+                stage_b_metrics=metrics.get("stage_b"),
+                fresh_attempt_identity=terminal_staging["attempt"],
+            )
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        terminal_stage_a.get("pass") is not True
+        or terminal_stage_a.get("persisted_pre_b_receipt_content_digest")
+        != stage_a_replay.get("content_digest")
+        or terminal_stage_a.get("persisted_stage_b_receipt_content_digest")
+        != stage_b_replay.get("content_digest")
+        or reproduced_stage_b != stage_b_replay
+        or stage_b_replay.get("ledger", {}).get("rows") != 2_304
+        or stage_b_replay.get("stage_c_started_before_replay_gate") is not False
+        or stage_b_replay.get("prior_stage_c_executed") is not False
+        or metrics.get("stage_c") is not None
+    ):
+        raise QualificationError(
+            "execution-correction-2 scientific reproduction/disposition drift"
+        )
+
+    result_core_path = output_root / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    result_core_binding = _artifact_binding_with_digest(
+        result_core_path, root=output_root
+    )
+    if (
+        terminal_staging.get("stage_a_replay") != stage_a_binding
+        or terminal_staging.get("stage_b_replay") != stage_b_binding
+        or terminal_staging.get("result_core") != result_core_binding
+        or terminal_staging.get("launcher_process_identity")
+        != scientific_exit.get("launcher_process_identity")
+        or terminal_staging.get("scientific_process_identity")
+        != scientific_exit.get("scientific_process_identity")
+        or terminal_finalization.get("terminal_staging")
+        != terminal_staging_binding
+        or terminal_finalization.get("scientific_exit")
+        != scientific_exit_binding
+        or terminal_finalization.get("launcher_process_identity")
+        != terminal_staging.get("launcher_process_identity")
+        or terminal_finalization.get("live_non_scientific_processes")
+        != result_custody.get("live_non_scientific_processes")
+        or terminal_finalization_binding
+        != result_custody.get("terminal_finalization")
+    ):
+        raise QualificationError("execution-correction-2 terminal-chain drift")
+
+    live_disclosure = result_custody["live_non_scientific_processes"]
+    finalizer_identity, launcher_identity = live_disclosure
+    own_identity = _process_identity(os.getpid())
+    active_scientific = _active_experiment_processes(
+        include_finalizer=False,
+        include_launcher=False,
+        include_checker=False,
+    )
+    if active_scientific:
+        raise QualificationError(
+            f"scientific producer remains active during deep check: {active_scientific}"
+        )
+    active_all = _active_experiment_processes(
+        include_finalizer=True,
+        include_launcher=True,
+        include_checker=True,
+    )
+    if own_identity.get("role") == "TERMINAL_FINALIZER":
+        if (
+            own_identity != finalizer_identity
+            or not _process_identity_is_live(launcher_identity)
+            or active_all != [launcher_identity]
+        ):
+            raise QualificationError(
+                "terminal finalizer live-process disclosure drift"
+            )
+        process_state = "SCOPED_SCIENCE_ZERO_EXTERNAL_POSTCHECK_PENDING"
+        literal_zero_all_producers = False
+    else:
+        if (
+            _process_identity_is_live(finalizer_identity)
+            or _process_identity_is_live(launcher_identity)
+            or active_all
+        ):
+            raise QualificationError(
+                "producer remains active during post-finalizer deep check"
+            )
+        process_state = "LITERAL_ZERO_ALL_PRODUCER_ROLES"
+        literal_zero_all_producers = True
+
+    result_core = load_json(result_core_path)
+    if result_core.get("content_digest") != content_digest(result_core):
+        raise QualificationError("execution-correction-2 result-core digest drift")
+    canonical_digest_agreement = all(
+        value.get("content_digest")
+        == CONTRACT.canonical_json_sha256(
+            {key: item for key, item in value.items() if key != "content_digest"}
+        )
+        for value in (
+            result,
+            persistence,
+            stage_a_replay,
+            stage_b_replay,
+            terminal_staging,
+            scientific_exit,
+            terminal_finalization,
+            result_core,
+        )
+    )
+    if not canonical_digest_agreement:
+        raise QualificationError(
+            "execution-correction-2 canonical UTF-8 digest-consumer drift"
+        )
+    return {
+        "stage_a_terminal_reproduction": terminal_stage_a,
+        "stage_b_reproduction": reproduced_stage_b,
+        "stage_b_rows": 2_304,
+        "stage_c_disposition": "NOT_ENTERED_REPRODUCED",
+        "terminal_staging": terminal_staging_binding,
+        "scientific_exit": scientific_exit_binding,
+        "terminal_finalization": terminal_finalization_binding,
+        "canonical_utf8_digest_consumer_agreement": True,
+        "nothing_scientific_running": True,
+        "process_state": process_state,
+        "literal_zero_all_producer_roles": literal_zero_all_producers,
+        "active_scientific_processes": [],
+        "pass": True,
+    }
+
+
+def deep_check(output_root: Path, *, allow_active_self: bool = True) -> dict[str, Any]:
+    """Reproduce all aggregates from persisted rows without model inference."""
+
+    del allow_active_self  # own PID is always excluded by the process scanner.
+    result = load_json(output_root / "result.json")
+    result_custody = result.get("stage_execution", {}).get(
+        "execution_correction_custody"
+    )
+    if not isinstance(result_custody, Mapping):
+        raise QualificationError("result lacks mandatory execution-correction custody")
+    result_correction_2_custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
+    )
+    if not isinstance(result_correction_2_custody, Mapping):
+        raise QualificationError(
+            "result lacks mandatory execution-correction-2 custody"
+        )
+    frozen = _validate_frozen_authorities(
+        execution_correction_custody=result_custody,
+        execution_correction_2_custody=result_correction_2_custody,
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    metrics = load_json(output_root / "aggregates/metrics.json")
+    if metrics.get("content_digest") != content_digest(metrics):
+        raise QualificationError("metrics self-digest drift")
+    if (
+        metrics.get("historical_raw_latent_goal_cosine_comparators")
+        != _historical_raw_comparators()
+        or not isinstance(metrics.get("stage_a_raw_cost_rereduced"), Mapping)
+        or metrics.get("historical_comparators_recomputed") is not False
+        or metrics.get("raw_goal_cosine_executions") != 0
+    ):
+        raise QualificationError("historical no-recompute comparator binding drift")
+    persistence = load_json(output_root / "receipts/persistence.json")
+    if persistence.get("content_digest") != content_digest(persistence):
+        raise QualificationError("persistence self-digest drift")
+    preexecution = load_json(output_root / "receipts/preexecution.json")
+    _validate_conditional_child_environment_preflight(output_root, preexecution)
+    source_closure_snapshot_path = output_root / "receipts/source_closure.json"
+    source_closure_snapshot = load_json(source_closure_snapshot_path)
+    expected_source_closure_snapshot_binding = {
+        **binding(source_closure_snapshot_path, relative_to=output_root),
+        "content_digest": source_closure_snapshot["content_digest"],
+    }
+    try:
+        CONTRACT.validate_source_closure(source_closure_snapshot)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(
+            f"pre-smoke source-closure snapshot drift: {exc}"
+        ) from exc
+    expected_prior_smoke_custody: list[dict[str, Any]] = []
+    if (
+        preexecution.get("content_digest") != content_digest(preexecution)
+        or preexecution.get("source_closure_snapshot")
+        != expected_source_closure_snapshot_binding
+        or source_closure_snapshot != frozen["source_closure"]
+        or preexecution.get("prior_smoke_failure_custody")
+        != expected_prior_smoke_custody
+        or persistence.get("prior_smoke_failure_custody")
+        != expected_prior_smoke_custody
+        or result.get("prior_smoke_failure_custody")
+        != expected_prior_smoke_custody
+    ):
+        raise QualificationError("prior smoke-failure custody drift")
+    _validate_execution_correction_output_custody(
+        output_root,
+        preexecution=preexecution,
+        persistence=persistence,
+        result=result,
+    )
+    correction_2 = _validate_execution_correction_2_output_custody(
+        output_root,
+        frozen=frozen,
+        preexecution=preexecution,
+        persistence=persistence,
+        result=result,
+        metrics=metrics,
+    )
+    expected_metrics_binding = binding(
+        output_root / "aggregates/metrics.json", relative_to=output_root
+    )
+    if (
+        result["metrics"].get("binding") != expected_metrics_binding
+        or result["metrics"].get("fit_optimization")
+        != metrics.get("fit_optimization")
+        or result["metrics"].get("stage_a_raw_cost_rereduced")
+        != metrics.get("stage_a_raw_cost_rereduced")
+        or result["metrics"].get("stage_a_raw_cost_matched_comparisons")
+        != metrics.get("stage_a_raw_cost_matched_comparisons")
+        or result["metrics"].get("historical_raw_latent_goal_cosine_comparators")
+        != metrics.get("historical_raw_latent_goal_cosine_comparators")
+        or result["metrics"].get("historical_comparators_recomputed") is not False
+        or result["metrics"].get("raw_goal_cosine_executions") != 0
+        or result.get("predecessor_narrative_authority")
+        != list(CONTRACT.PRESERVED_PREDECESSOR_NARRATIVE)
+        or result.get("predecessor_fact_authority")
+        != list(CONTRACT.PRESERVED_PREDECESSOR_FACTS)
+        or result.get("next_experiment_specification")
+        != CONTRACT.next_experiment_specification_for_primary(
+            str(result["primary_classification"])
+        )
+    ):
+        raise QualificationError("result metric/narrative authority binding drift")
+    training_receipt = _validate_training_checkpoint_custody(output_root, result)
+    _validate_manifest(output_root, persistence["artifact_manifest"])
+    expected_manifest = _manifest(
+        output_root,
+        excluded=("receipts/persistence.json", "result.json", "report.md"),
+    )
+    if persistence["artifact_manifest"] != expected_manifest:
+        raise QualificationError("persistence manifest completeness/order drift")
+    tensor_rows = tensor_index()
+    stage_rows = _rows_from_jsonl(output_root / "ledgers/stage_a_true_future.jsonl")
+    _validate_persisted_action_plans(stage_rows)
+    _validate_persisted_latent_bindings(stage_rows, tensor_rows=tensor_rows)
+    _validate_score_row_arithmetic(stage_rows, stage="STAGE_A")
+    target_rows = _rows_from_jsonl(output_root / "ledgers/route_only_targets.jsonl")
+    persisted_datasets = _datasets_from_stage_rows(stage_rows)
+    (
+        _raw_score_maps,
+        expected_raw_cost_rows,
+        expected_raw_cost_reduction,
+    ) = _predecessor_raw_goal_score_maps(
+        persisted_datasets, heldout_barrier_open=True
+    )
+    raw_cost_rows = _rows_from_jsonl(
+        output_root / "ledgers/stage_a_raw_cost_rereduced.jsonl"
+    )
+    if (
+        raw_cost_rows != expected_raw_cost_rows
+        or metrics.get("stage_a_raw_cost_rereduced")
+        != expected_raw_cost_reduction
+    ):
+        raise QualificationError("raw-cost successor-metric re-reduction drift")
+    _validate_raw_cost_merged_scores(stage_rows, raw_cost_rows)
+    expected_target_rows = _training_target_rows(persisted_datasets)
+    if target_rows != expected_target_rows or len(target_rows) != 576:
+        raise QualificationError("route-only target ledger reproduction drift")
+    reproduced_fit_optimization = _fit_optimization_summary(
+        persisted_datasets[FIT]
+    )
+    smoke = load_json(output_root / "receipts/training_smoke.json")
+    if (
+        training_receipt.get("fit_optimization") != reproduced_fit_optimization
+        or smoke.get("fit_optimization") != reproduced_fit_optimization
+        or smoke.get("content_digest") != content_digest(smoke)
+    ):
+        raise QualificationError("fit-state optimizer conditioning reproduction drift")
+    reproduced = _replay_stage_a_metrics(stage_rows)
+    if reproduced != metrics["stage_a"]:
+        raise QualificationError("Stage-A row-to-aggregate reproduction drift")
+    reproduced_decisions = _stage_a_decisions(reproduced[HELDOUT])
+    if reproduced_decisions != metrics["stage_a_decisions"]:
+        raise QualificationError("Stage-A gate reproduction drift")
+
+    stage_b = metrics.get("stage_b")
+    stage_c = metrics.get("stage_c")
+    reproduced_stage_b: dict[str, dict[str, Any]] | None = None
+    reproduced_stage_c: dict[str, dict[str, Any]] | None = None
+    stage_b_gate_path = output_root / "receipts/stage_b_gate.json"
+    stage_b_gate: dict[str, Any] | None = None
+    if stage_b is None:
+        if reproduced_decisions["true_future_gate"]["pass"]:
+            raise QualificationError("Stage B is absent after a passing true-future gate")
+        if stage_c is not None:
+            raise QualificationError("Stage C exists without Stage B")
+    else:
+        if not reproduced_decisions["true_future_gate"]["pass"]:
+            raise QualificationError("Stage B ran after a failed true-future gate")
+        stage_b_rows = _rows_from_jsonl(
+            output_root / "ledgers/stage_b_predictor_substitution.jsonl"
+        )
+        _validate_persisted_action_plans(stage_b_rows)
+        _validate_score_row_arithmetic(stage_b_rows, stage="CONDITIONAL")
+        reproduced_stage_b = _replay_conditional_metrics(
+            stage_b_rows, expected_sources=("R1", "RR", "P1", "PR")
+        )
+        if reproduced_stage_b != stage_b["summaries"]:
+            raise QualificationError("Stage-B row-to-aggregate reproduction drift")
+        reproduced_stage_b_decisions = _stage_b_decisions(
+            stage_a_decisions=reproduced_decisions,
+            stage_a_heldout=reproduced[HELDOUT],
+            summaries=reproduced_stage_b[HELDOUT],
+        )
+        for key, value in reproduced_stage_b_decisions.items():
+            if stage_b.get(key) != value:
+                raise QualificationError(f"Stage-B {key} reproduction drift")
+
+        stage_b_gate = load_json(stage_b_gate_path)
+        conditional_rows, custody = _validate_stage_b_materialisation(
+            attempt=output_root,
+            gate_path=stage_b_gate_path,
+            gate=stage_b_gate,
+        )
+        stage_b_tensor_rows = {**tensor_rows, **conditional_rows}
+        _validate_persisted_latent_bindings(
+            stage_b_rows, tensor_rows=stage_b_tensor_rows
+        )
+        if custody != stage_b["materialisation_custody"]:
+            raise QualificationError("Stage-B materialisation-custody drift")
+        stage_a_gate_evidence = load_json(
+            output_root / "aggregates/stage_a_gate_evidence.json"
+        )
+        if (
+            stage_a_gate_evidence.get("true_future_gate")
+            != reproduced_decisions["true_future_gate"]
+            or stage_a_gate_evidence.get("true_incremental_value")
+            != reproduced_decisions["true_incremental_value"]
+            or stage_a_gate_evidence.get("candidate_future_derangement")
+            != reproduced_decisions["derangement"]
+            or stage_a_gate_evidence.get("pass") is not True
+        ):
+            raise QualificationError("Stage-B authorisation is not the reproduced Stage-A gate")
+        expected_stage_a_summary_digest = hashlib.sha256(
+            canonical_json_bytes(reproduced[HELDOUT])
+        ).hexdigest()
+        if (
+            stage_a_gate_evidence.get("heldout_stage_a_summary_sha256")
+            != expected_stage_a_summary_digest
+        ):
+            raise QualificationError("Stage-A gate summary binding drift")
+
+        if stage_c is None:
+            if reproduced_stage_b_decisions["proprioception_gate"]["pass"]:
+                raise QualificationError(
+                    "Stage C is absent after a passing proprioceptive-contribution gate"
+                )
+        else:
+            if not reproduced_stage_b_decisions["proprioception_gate"]["pass"]:
+                raise QualificationError(
+                    "Stage C ran after a failed proprioceptive-contribution gate"
+                )
+            stage_c_rows = _rows_from_jsonl(
+                output_root / "ledgers/stage_c_attribution.jsonl"
+            )
+            _validate_persisted_action_plans(stage_c_rows)
+            _validate_score_row_arithmetic(stage_c_rows, stage="CONDITIONAL")
+            reproduced_stage_c = _replay_conditional_metrics(
+                stage_c_rows, expected_sources=STAGE_C_SOURCE_IDS
+            )
+            if reproduced_stage_c != stage_c["summaries"]:
+                raise QualificationError("Stage-C row-to-aggregate reproduction drift")
+            _validate_stage_c_matched_pr_scores(stage_c_rows, stage_b_rows)
+            reproduced_route_score_changes = _aggregate_stage_c_route_score_changes(
+                stage_c_rows
+            )
+            if reproduced_route_score_changes != stage_c.get("route_score_changes"):
+                raise QualificationError("Stage-C actual route-score reproduction drift")
+
+            fidelity_rows = _rows_from_jsonl(
+                output_root / "ledgers/stage_c_direct_fidelity.jsonl"
+            )
+            if len(fidelity_rows) != 4 * STATE_COUNT * CANDIDATE_COUNT * len(HORIZONS):
+                raise QualificationError("Stage-C direct-fidelity cardinality drift")
+            reproduced_fidelity = _aggregate_stage_c_fidelity(fidelity_rows)
+            if reproduced_fidelity != stage_c["direct_future_fidelity_h1_h3"]:
+                raise QualificationError("Stage-C direct-fidelity aggregate drift")
+
+            action_rows = _rows_from_jsonl(
+                output_root / "ledgers/stage_c_candidate_action_sensitivity.jsonl"
+            )
+            _validate_action_sensitivity_rows(
+                action_rows, stage_c["candidate_action_sensitivity"]
+            )
+            reproduced_stage_c_decisions = _stage_c_decisions(
+                stage_b=stage_b,
+                summaries=reproduced_stage_c,
+                action_sensitivity=stage_c["candidate_action_sensitivity"],
+            )
+            for key, value in reproduced_stage_c_decisions.items():
+                if stage_c.get(key) != value:
+                    raise QualificationError(f"Stage-C {key} reproduction drift")
+
+            helper = _conditional_helper()
+            stage_c_gate_path = output_root / "receipts/stage_c_gate.json"
+            try:
+                stage_c_gate = helper.validate_stage_c_gate_receipt(
+                    stage_c_gate_path,
+                    output_root=output_root,
+                    stage_b_gate_path=stage_b_gate_path,
+                )
+            except helper.MaterialisationError as exc:
+                raise QualificationError(str(exc)) from exc
+            stage_b_gate_evidence = load_json(
+                output_root / "aggregates/stage_b_gate_evidence.json"
+            )
+            if (
+                stage_b_gate_evidence.get("proprioception_gate")
+                != reproduced_stage_b_decisions["proprioception_gate"]
+                or stage_b_gate_evidence.get("factorial_contrasts")
+                != reproduced_stage_b_decisions["factorial_contrasts"]
+                or stage_b_gate_evidence.get("pass") is not True
+            ):
+                raise QualificationError(
+                    "Stage-C authorisation is not the reproduced Stage-B gate"
+                )
+            expected_stage_b_summary_digest = hashlib.sha256(
+                canonical_json_bytes(reproduced_stage_b[HELDOUT])
+            ).hexdigest()
+            if (
+                stage_b_gate_evidence.get("heldout_stage_b_summary_sha256")
+                != expected_stage_b_summary_digest
+            ):
+                raise QualificationError("Stage-B gate summary binding drift")
+            top_stage_c = load_json(
+                output_root
+                / "receipts/stage_c_input_derangement_materialisation.json"
+            )
+            _validate_stage_c_top_receipt(
+                attempt=output_root,
+                value=top_stage_c,
+                stage_b_gate_digest=str(stage_b_gate["content_digest"]),
+                stage_c_gate_path=stage_c_gate_path,
+            )
+            stage_c_tensor_rows: dict[
+                tuple[str, str, int | None, int | None], dict[str, Any]
+            ] = {}
+            for source in STAGE_C_SOURCE_IDS:
+                source_rows, index = _load_prediction_index(
+                    attempt=output_root,
+                    source_id=source,
+                    gate_digest=str(stage_b_gate["content_digest"]),
+                    stage_c_gate_digest=str(stage_c_gate["content_digest"]),
+                )
+                if set(stage_c_tensor_rows) & set(source_rows):
+                    raise QualificationError("Stage-C replay tensor indexes overlap")
+                stage_c_tensor_rows.update(source_rows)
+                expected_binding = binding(
+                    output_root / "stage_b/predictions" / source / "index.json",
+                    relative_to=output_root,
+                )
+                if stage_c["prediction_indexes"].get(source) != expected_binding:
+                    raise QualificationError(
+                        f"Stage-C {source} prediction-index binding drift"
+                    )
+                if index.get("ablation_or_null") != source:
+                    raise QualificationError(f"Stage-C {source} ablation identity drift")
+            _validate_persisted_latent_bindings(
+                stage_c_rows,
+                tensor_rows={**stage_b_tensor_rows, **stage_c_tensor_rows},
+            )
+            occupancy = stage_c.get("occupancy_probe")
+            if (
+                not isinstance(occupancy, Mapping)
+                or occupancy.get("status") != "NOT_DIRECTLY_COMPATIBLE"
+                or occupancy.get("executed") is not False
+            ):
+                raise QualificationError("Stage-C occupancy compatibility disposition drift")
+
+    replay_stage_b = None if reproduced_stage_b is None else copy.deepcopy(stage_b)
+    replay_stage_c = None if reproduced_stage_c is None else copy.deepcopy(stage_c)
+    expected_raw_cost_matched_comparisons = _matched_raw_cost_comparisons(
+        reproduced, replay_stage_b
+    )
+    if (
+        metrics.get("stage_a_raw_cost_matched_comparisons")
+        != expected_raw_cost_matched_comparisons
+        or result["metrics"].get("stage_a_raw_cost_matched_comparisons")
+        != expected_raw_cost_matched_comparisons
+    ):
+        raise QualificationError("matched raw-cost comparison reproduction drift")
+    expected_primary, expected_secondaries, expected_next = _primary_and_secondaries(
+        reproduced_decisions, replay_stage_b, replay_stage_c
+    )
+    if (
+        result["primary_classification"] != expected_primary
+        or result["secondary_classifications"] != expected_secondaries
+        or result["next_experiment"] != expected_next
+    ):
+        raise QualificationError("terminal decision reproduction drift")
+    if (
+        result["metrics"].get("content_digest") != metrics["content_digest"]
+        or result["metrics"].get("stage_a") != reproduced
+        or result["metrics"].get("stage_a_decisions") != reproduced_decisions
+        or result["metrics"].get("stage_b") != stage_b
+        or result["metrics"].get("stage_c") != stage_c
+        or result["metrics"].get("fit_optimization")
+        != metrics.get("fit_optimization")
+        or result["metrics"].get("stage_a_raw_cost_rereduced")
+        != expected_raw_cost_reduction
+        or result["metrics"].get("stage_a_raw_cost_matched_comparisons")
+        != expected_raw_cost_matched_comparisons
+    ):
+        raise QualificationError("result-to-metrics binding drift")
+    expected_row_counts = {
+        "route_only_targets": 576,
+        "training_epochs": 120,
+        "stage_a": 576,
+        "stage_a_raw_cost_rereduced": 1_728,
+        "stage_b": 0 if stage_b is None else 2_304,
+        "stage_c": 0 if stage_c is None else 1_728,
+        "stage_c_direct_fidelity": (
+            0 if stage_c is None else 4 * STATE_COUNT * CANDIDATE_COUNT * len(HORIZONS)
+        ),
+        "stage_c_candidate_action_sensitivity": (
+            0 if stage_c is None else 4 * STATE_COUNT * len(HORIZONS)
+        ),
+    }
+    if persistence.get("row_counts") != expected_row_counts:
+        raise QualificationError("persistence row-count receipt drift")
+    output_files = [path for path in output_root.rglob("*") if path.is_file()]
+    output_bytes = sum(path.stat().st_size for path in output_files)
+    if (
+        result["runtime_and_storage"].get("output_files") != len(output_files)
+        or result["runtime_and_storage"].get("output_bytes") != output_bytes
+    ):
+        raise QualificationError("result runtime/storage total drift")
+    expected_report = _report_markdown(result).encode("utf-8")
+    if (output_root / "report.md").read_bytes() != expected_report:
+        raise QualificationError("Markdown report regeneration drift")
+    checks = {
+        "schema_and_self_digests": True,
+        "source_closure_revalidated": frozen["source_closure"]["complete"],
+        "artifact_manifest_rehashed": True,
+        "artifact_manifest_complete_and_ordered": True,
+        "final_checkpoints_and_seed_metadata_revalidated": True,
+        "sealed_split_lifecycle_receipts_revalidated": True,
+        "route_only_target_rows_reproduced": len(target_rows),
+        "fit_optimizer_conditioning_reproduced": reproduced_fit_optimization,
+        "stage_a_latent_artifact_bindings_revalidated": len(stage_rows),
+        "stage_a_rows": len(stage_rows),
+        "stage_a_raw_cost_rereduced_rows": len(raw_cost_rows),
+        "stage_a_raw_cost_rereduction_reproduced_without_inference": True,
+        "stage_a_raw_cost_matched_comparisons_reproduced": True,
+        "stage_a_metrics_reproduced_without_model_inference": True,
+        "stage_a_gates_reproduced": True,
+        "stage_b_rows": 0 if stage_b is None else 2_304,
+        "stage_b_metrics_reproduced_without_model_inference": stage_b is not None,
+        "stage_b_gate_reproduced": stage_b is not None,
+        "stage_b_latent_artifact_bindings_revalidated": (
+            0 if stage_b is None else 2_304
+        ),
+        "stage_c_rows": 0 if stage_c is None else 1_728,
+        "stage_c_metrics_reproduced_without_model_inference": stage_c is not None,
+        "stage_c_gate_reproduced": stage_c is not None,
+        "stage_c_latent_artifact_bindings_revalidated": (
+            0 if stage_c is None else 1_728
+        ),
+        "stage_c_actual_route_scores_reproduced": stage_c is not None,
+        "stage_c_direct_fidelity_rows": (
+            0
+            if stage_c is None
+            else 4 * STATE_COUNT * CANDIDATE_COUNT * len(HORIZONS)
+        ),
+        "stage_c_action_sensitivity_rows": (
+            0 if stage_c is None else 4 * STATE_COUNT * len(HORIZONS)
+        ),
+        "terminal_decision_reproduced": True,
+        "canonical_utf8_digest_consumer_agreement": correction_2[
+            "canonical_utf8_digest_consumer_agreement"
+        ],
+        "execution_correction_2_stage_a_reproduced": True,
+        "execution_correction_2_stage_b_rows_reproduced": correction_2[
+            "stage_b_rows"
+        ],
+        "execution_correction_2_stage_c_disposition_reproduced": correction_2[
+            "stage_c_disposition"
+        ],
+        "execution_correction_2_terminal_chain_revalidated": True,
+        "nothing_scientific_running": correction_2[
+            "nothing_scientific_running"
+        ],
+        "terminal_process_state": correction_2["process_state"],
+        "literal_zero_all_producer_roles": correction_2[
+            "literal_zero_all_producer_roles"
+        ],
+        "report_regenerated_byte_exact": True,
+        "output_files": len(output_files),
+        "output_bytes": output_bytes,
+        "active_experiment_processes": correction_2[
+            "active_scientific_processes"
+        ],
+        "pass": True,
+    }
+    return checks
+
+
+def _build_result_with_exact_storage(
+    core: Mapping[str, Any], *, attempt: Path
+) -> tuple[dict[str, Any], bytes]:
+    """Solve the small byte-count fixed point for result+report publication."""
+
+    existing_files = [path for path in attempt.rglob("*") if path.is_file()]
+    existing_bytes = sum(path.stat().st_size for path in existing_files)
+    result = copy.deepcopy(dict(core))
+    for _ in range(12):
+        signed = attach_digest(result)
+        result_bytes = canonical_bytes(signed)
+        report_bytes = _report_markdown(signed).encode("utf-8")
+        total_files = len(existing_files) + 2
+        total_bytes = existing_bytes + len(result_bytes) + len(report_bytes)
+        previous = result["runtime_and_storage"].get("output_bytes")
+        result["runtime_and_storage"]["output_files"] = total_files
+        result["runtime_and_storage"]["output_bytes"] = total_bytes
+        if previous == total_bytes:
+            final = attach_digest(result)
+            final_bytes = canonical_bytes(final)
+            final_report = _report_markdown(final).encode("utf-8")
+            if existing_bytes + len(final_bytes) + len(final_report) != total_bytes:
+                raise QualificationError("result storage fixed point drift")
+            return final, final_report
+    raise QualificationError("result storage fixed point did not converge")
+
+
+def _artifact_binding_with_digest(path: Path, *, root: Path) -> dict[str, Any]:
+    value = load_json(path)
+    if value.get("content_digest") != content_digest(value):
+        raise QualificationError(f"artifact self-digest drift: {path}")
+    return {
+        **binding(path, relative_to=root),
+        "content_digest": value["content_digest"],
+    }
+
+
+def _write_scientific_terminal_staging(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    result_core: Mapping[str, Any],
+    scientific_process_identity: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    execution_correction_2_custody: dict[str, Any],
+) -> dict[str, Any]:
+    """Persist an evaluator handoff without publishing result/report/persistence."""
+
+    unexpected = _active_experiment_processes(include_finalizer=True)
+    if unexpected:
+        raise QualificationError(
+            f"scientific staging observed another producer: {unexpected}"
+        )
+    result_core_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    atomic_json(result_core_path, attach_digest(result_core))
+    result_core_binding = _artifact_binding_with_digest(
+        result_core_path, root=attempt
+    )
+    try:
+        staging = CONTRACT.build_execution_correction_2_terminal_staging(
+            attempt_root=attempt,
+            source_freeze_commit=source_freeze,
+            scientific_process_identity=scientific_process_identity,
+            launcher_process_identity=launcher_process_identity,
+            stage_a_replay=execution_correction_2_custody["stage_a_replay"],
+            stage_b_replay=execution_correction_2_custody["stage_b_replay"],
+            result_core=result_core_binding,
+            scientific_processes_at_write=[scientific_process_identity],
+        )
+        CONTRACT.validate_execution_correction_2_terminal_staging(staging)
+    except (KeyError, CONTRACT.ContractError) as exc:
+        raise QualificationError(str(exc)) from exc
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    atomic_json(staging_path, staging)
+    roundtrip = load_json(staging_path)
+    try:
+        CONTRACT.validate_execution_correction_2_terminal_staging(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != staging:
+        raise QualificationError("terminal-staging roundtrip drift")
+    execution_correction_2_custody["terminal_staging"] = (
+        _artifact_binding_with_digest(staging_path, root=attempt)
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="TERMINAL_STAGING"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.scientific_handoff.v1",
+        "source_freeze_commit": source_freeze,
+        "attempt": str(attempt),
+        "terminal_staging": copy.deepcopy(
+            execution_correction_2_custody["terminal_staging"]
+        ),
+        "result_core": result_core_binding,
+        "canonical_published": False,
+        "tracked_published": False,
+        "required_next_subcommand": TERMINAL_FINALIZER_SUBCOMMAND,
+        "pass": True,
+    }
+
+
+def _write_scientific_exit_receipt(
+    *,
+    attempt: Path,
+    scientific_execution: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+) -> dict[str, Any]:
+    cleanup_value = scientific_execution.get("cleanup")
+    if not isinstance(cleanup_value, Mapping):
+        raise QualificationError("scientific execution lacks cleanup custody")
+    cleanup = {
+        "process_group_members_after_wait": copy.deepcopy(
+            cleanup_value.get("process_group_members_after_wait")
+        ),
+        "scoped_dev_kfd_holders_after_wait": copy.deepcopy(
+            cleanup_value.get("scoped_dev_kfd_holders_after_wait")
+        ),
+        "exact_scientific_role_matches_after_wait": copy.deepcopy(
+            cleanup_value.get(
+                "exact_scientific_or_finalizer_matches_after_wait"
+            )
+        ),
+    }
+    try:
+        receipt = CONTRACT.build_execution_correction_2_scientific_exit(
+            attempt_root=attempt,
+            scientific_process_identity=scientific_execution["process_identity"],
+            launcher_process_identity=launcher_process_identity,
+            cleanup=cleanup,
+            returncode=int(scientific_execution["returncode"]),
+        )
+        CONTRACT.validate_execution_correction_2_scientific_exit(receipt)
+    except (KeyError, TypeError, ValueError, CONTRACT.ContractError) as exc:
+        raise QualificationError(str(exc)) from exc
+    path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    if path.exists():
+        raise QualificationError("scientific-exit receipt already exists")
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_scientific_exit(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("scientific-exit receipt roundtrip drift")
+    return receipt
+
+
+def _terminal_row_counts(result_core: Mapping[str, Any]) -> dict[str, int]:
+    stage_b = result_core["metrics"].get("stage_b")
+    stage_c = result_core["metrics"].get("stage_c")
+    return {
+        "route_only_targets": 576,
+        "training_epochs": 120,
+        "stage_a": 576,
+        "stage_a_raw_cost_rereduced": 1_728,
+        "stage_b": 0 if stage_b is None else int(stage_b["row_count"]),
+        "stage_c": 0 if stage_c is None else int(stage_c["row_count"]),
+        "stage_c_direct_fidelity": (
+            0 if stage_c is None else int(stage_c["direct_fidelity_rows"])
+        ),
+        "stage_c_candidate_action_sensitivity": (
+            0
+            if stage_c is None
+            else int(stage_c["candidate_action_sensitivity"]["raw_evidence"]["rows"])
+        ),
+    }
+
+
+def _finalize_correction_2(
+    *,
+    attempt: Path,
+    launcher_pid: int,
+    launcher_start_time_ticks: int,
+    scientific_exit_receipt: Path,
+) -> dict[str, Any]:
+    """Independently construct and atomically publish the terminal witnesses."""
+
+    attempt = attempt.resolve()
+    launcher = _require_exact_live_launcher(
+        pid=launcher_pid, start_time_ticks=launcher_start_time_ticks
+    )
+    finalizer = _process_identity(os.getpid(), require_role="TERMINAL_FINALIZER")
+    expected_argv = _expected_finalizer_argv(
+        attempt=attempt,
+        launcher_identity=launcher,
+        scientific_exit_receipt=scientific_exit_receipt,
+    )
+    if finalizer["argv"] != expected_argv:
+        raise QualificationError("terminal finalizer exact argv custody drift")
+    if (
+        _canonical_attempt_path(str(attempt)) != attempt
+        or scientific_exit_receipt.resolve()
+        != attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"]
+        or not attempt.is_dir()
+        or CONTRACT.OUTPUT_ROOT.exists()
+    ):
+        raise QualificationError("terminal finalizer attempt/path custody drift")
+    _assert_publication_destinations_absent()
+    postcheck_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if postcheck_path.exists():
+        raise QualificationError("stale post-finalizer witness exists")
+
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    staging = load_json(staging_path)
+    scientific_exit = load_json(scientific_exit_receipt)
+    try:
+        CONTRACT.validate_execution_correction_2_terminal_staging(staging)
+        CONTRACT.validate_execution_correction_2_scientific_exit(scientific_exit)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        staging.get("attempt") != str(attempt)
+        or scientific_exit.get("attempt") != str(attempt)
+        or staging.get("launcher_process_identity") != launcher
+        or scientific_exit.get("launcher_process_identity") != launcher
+        or _process_identity_is_live(staging["scientific_process_identity"])
+        or _process_identity_is_live(scientific_exit["scientific_process_identity"])
+    ):
+        raise QualificationError("terminal handoff process custody drift")
+    active_science = _active_experiment_processes(include_finalizer=False)
+    if active_science:
+        raise QualificationError(
+            f"scientific producer remains active before finalization: {active_science}"
+        )
+
+    stage_a_replay_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "stage_a_replay"
+    ]
+    stage_b_replay_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "stage_b_replay"
+    ]
+    persisted_stage_a = load_json(stage_a_replay_path)
+    persisted_stage_b = load_json(stage_b_replay_path)
+    try:
+        CONTRACT.validate_execution_correction_2_replay_receipt(persisted_stage_a)
+        terminal_stage_a = (
+            CONTRACT.validate_execution_correction_2_stage_a_terminal_reproduction(
+                attempt
+            )
+        )
+        reproduced_stage_b = (
+            CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+                attempt, verify_archive=False
+            )
+        )
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(
+            persisted_stage_b
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        terminal_stage_a.get("pass") is not True
+        or terminal_stage_a.get("persisted_pre_b_receipt_content_digest")
+        != persisted_stage_a.get("content_digest")
+        or terminal_stage_a.get("persisted_stage_b_receipt_content_digest")
+        != persisted_stage_b.get("content_digest")
+    ):
+        raise QualificationError("terminal Stage-A content reproduction drift")
+    if persisted_stage_b != reproduced_stage_b:
+        raise QualificationError("terminal stage_b_replay reproduction drift")
+
+    result_core_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "result_core"
+    ]
+    result_core = load_json(result_core_path)
+    if (
+        _artifact_binding_with_digest(result_core_path, root=attempt)
+        != staging["result_core"]
+    ):
+        raise QualificationError("terminal staged result-core binding drift")
+    result_core.pop("content_digest", None)
+
+    try:
+        finalization = CONTRACT.build_execution_correction_2_terminal_finalization(
+            attempt_root=attempt,
+            source_freeze_commit=str(staging["source_freeze_commit"]),
+            terminal_staging=_artifact_binding_with_digest(
+                staging_path, root=attempt
+            ),
+            scientific_exit=_artifact_binding_with_digest(
+                scientific_exit_receipt, root=attempt
+            ),
+            finalizer_process_identity=finalizer,
+            launcher_process_identity=launcher,
+            scientific_processes_at_write=[],
+        )
+        CONTRACT.validate_execution_correction_2_terminal_finalization(finalization)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    finalization_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_finalization"
+    ]
+    atomic_json(finalization_path, finalization)
+    if load_json(finalization_path) != finalization:
+        raise QualificationError("terminal-finalization roundtrip drift")
+
+    preexecution = load_json(attempt / "receipts/preexecution.json")
+    custody = copy.deepcopy(preexecution["execution_correction_2_custody"])
+    custody.update(
+        {
+            "stage_a_replay": _artifact_binding_with_digest(
+                attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_a_replay"],
+                root=attempt,
+            ),
+            "stage_b_replay": _artifact_binding_with_digest(
+                attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["stage_b_replay"],
+                root=attempt,
+            ),
+            "terminal_staging": _artifact_binding_with_digest(
+                staging_path, root=attempt
+            ),
+            "scientific_exit": _artifact_binding_with_digest(
+                scientific_exit_receipt, root=attempt
+            ),
+            "terminal_finalization": _artifact_binding_with_digest(
+                finalization_path, root=attempt
+            ),
+            "nothing_scientific_running": True,
+            "live_non_scientific_processes": [finalizer, launcher],
+        }
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            custody, phase="TERMINAL_FINALIZATION"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    result_core["stage_execution"]["execution_correction_2_custody"] = custody
+    result_core["nothing_running"] = False
+
+    persistence = attach_digest(
+        {
+            "schema": "plan_aware_persistence_receipt_v1",
+            "artifact_manifest": _manifest(
+                attempt,
+                excluded=("receipts/persistence.json", "result.json", "report.md"),
+            ),
+            "row_counts": _terminal_row_counts(result_core),
+            "row_to_aggregate_reproduction": True,
+            "source_commit": SOURCE_COMMIT,
+            "source_freeze_commit": result_core["source_freeze_commit"],
+            "contract_freeze_commit": result_core["contract_freeze_commit"],
+            "result_commit": None,
+            "result_commit_binding_policy": CONTRACT.RESULT_COMMIT_BINDING_POLICY,
+            "ancestry_validation": copy.deepcopy(
+                result_core["ancestry_validation"]
+            ),
+            "nothing_running": False,
+            "nothing_running_scope": copy.deepcopy(custody["nothing_running_scope"]),
+            "nothing_scientific_running": True,
+            "live_non_scientific_processes": [finalizer, launcher],
+            "prior_smoke_failure_custody": copy.deepcopy(
+                result_core["prior_smoke_failure_custody"]
+            ),
+            "execution_correction_custody": copy.deepcopy(
+                result_core["stage_execution"]["execution_correction_custody"]
+            ),
+            "execution_correction_2_custody": copy.deepcopy(custody),
+            "prohibition_counters": _prohibition_counters(),
+        }
+    )
+    atomic_json(attempt / "receipts/persistence.json", persistence)
+    result, report_bytes = _build_result_with_exact_storage(
+        result_core, attempt=attempt
+    )
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(attempt / "result.json", result)
+    atomic_bytes(attempt / "report.md", report_bytes)
+    checks = deep_check(attempt)
+    os.replace(attempt, CONTRACT.OUTPUT_ROOT)
+    try:
+        final_checks = deep_check(CONTRACT.OUTPUT_ROOT)
+        _publish_tracked_result_and_report(CONTRACT.OUTPUT_ROOT)
+    except BaseException:
+        for tracked_path in _tracked_publication_paths():
+            tracked_path.unlink(missing_ok=True)
+        raise
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.finalizer_terminal.v1",
+        "source_freeze_commit": result["source_freeze_commit"],
+        "canonical_output_root": str(CONTRACT.OUTPUT_ROOT),
+        "result": binding(CONTRACT.OUTPUT_ROOT / "result.json"),
+        "report": binding(CONTRACT.OUTPUT_ROOT / "report.md"),
+        "prepublication_deep_check": checks,
+        "postpublication_deep_check": final_checks,
+        "nothing_scientific_running": True,
+        "live_non_scientific_processes": [finalizer, launcher],
+        "official_post_finalizer_check_spawned": False,
+        "pass": True,
+    }
+
+
+PREDICTED_SOURCE_KIND = {
+    "R1": "ONE_STEP_PREDICTED",
+    "RR": "TWO_STEP_PREDICTED",
+    "P1": "P1_PROPRIO_ONE_STEP",
+    "PR": "PR_PROPRIO_ROLLOUT",
+}
+STAGE_C_SOURCE_IDS = (
+    "PR_VISUAL_CONTEXT_DERANGED",
+    "PR_PROPRIO_HISTORY_DERANGED",
+    "PR_CONTROL_HISTORY_DERANGED",
+)
+
+
+def _conditional_helper() -> Any:
+    """Late import: unreachable until the true-future gate has passed."""
+
+    from scripts import materialize_plan_aware_proprio_predictor_substitution_v1 as helper
+
+    return helper
+
+
+def _write_stage_a_gate_evidence(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    evaluation_contract: Mapping[str, Any],
+    stage_a_metrics: Mapping[str, Any],
+    stage_a_decisions: Mapping[str, Any],
+) -> Path:
+    helper = _conditional_helper()
+    evidence = attach_digest(
+        {
+            "schema": helper.STAGE_A_GATE_EVIDENCE_SCHEMA,
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
+            "source_freeze_commit": source_freeze,
+            "evaluation_contract_content_digest": evaluation_contract["content_digest"],
+            "heldout_stage_a_summary_sha256": hashlib.sha256(
+                canonical_json_bytes(stage_a_metrics[HELDOUT])
+            ).hexdigest(),
+            "true_future_gate": copy.deepcopy(stage_a_decisions["true_future_gate"]),
+            "true_incremental_value": copy.deepcopy(
+                stage_a_decisions["true_incremental_value"]
+            ),
+            "candidate_future_derangement": copy.deepcopy(
+                stage_a_decisions["derangement"]
+            ),
+            "predictor_inference_calls_before_receipt": 0,
+            "pass": bool(stage_a_decisions["true_future_gate"]["pass"]),
+        }
+    )
+    if (
+        evidence["true_future_gate"].get("classification")
+        != "TRUE_FUTURE_PLAN_AWARE_COST_SIGNAL"
+        or evidence["pass"] is not True
+    ):
+        raise QualificationError("cannot publish a Stage-B gate from failed Stage A")
+    path = attempt / "aggregates/stage_a_gate_evidence.json"
+    atomic_json(path, evidence)
+    return path
+
+
+def _publish_stage_b_gate(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    evaluation_contract: Mapping[str, Any],
+    stage_a_metrics: Mapping[str, Any],
+    stage_a_decisions: Mapping[str, Any],
+) -> tuple[Path, dict[str, Any]]:
+    helper = _conditional_helper()
+    evidence_path = _write_stage_a_gate_evidence(
+        attempt=attempt,
+        source_freeze=source_freeze,
+        evaluation_contract=evaluation_contract,
+        stage_a_metrics=stage_a_metrics,
+        stage_a_decisions=stage_a_decisions,
+    )
+    latent_record = evaluation_contract["checkpoint_bindings"][
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL"
+    ]
+    latent_checkpoint = attempt / str(latent_record["path"])
+    gate = helper.build_stage_b_gate_receipt(
+        contract_freeze_commit=source_freeze,
+        evaluation_contract_path=attempt / "receipts/evaluation_contract.json",
+        stage_a_gate_evidence_path=evidence_path,
+        latent_ranker_checkpoint_path=latent_checkpoint,
+        output_root=attempt,
+    )
+    path = attempt / "receipts/stage_b_gate.json"
+    atomic_json(path, gate)
+    try:
+        helper.validate_stage_b_gate_receipt(path, output_root=attempt)
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    return path, gate
+
+
+def _run_conditional_helper_cli(
+    *, attempt: Path, arguments: Sequence[str], log_name: str
+) -> dict[str, Any]:
+    helper = _conditional_helper()
+    command = [
+        str(helper.GPU_INTERPRETER),
+        "-E",
+        "-s",
+        str(helper.SELF),
+        *arguments,
+    ]
+    environment = helper.build_child_environment(helper.GPU_INTERPRETER)
+    started = time.time()
+    completed = subprocess.run(
+        command,
+        cwd=ROOT,
+        env=environment,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        check=False,
+    )
+    log_path = attempt / "logs" / log_name
+    atomic_bytes(log_path, completed.stdout.encode("utf-8", errors="replace"))
+    if completed.returncode:
+        raise QualificationError(
+            f"conditional helper failed ({completed.returncode}): "
+            f"{completed.stdout[-8000:]}"
+        )
+    return {
+        "argv": command,
+        "returncode": completed.returncode,
+        "runtime_s": time.time() - started,
+        "log": binding(log_path, relative_to=attempt),
+        "child_environment_contract": helper.child_environment_contract(
+            helper.GPU_INTERPRETER
+        ),
+        "numerical_thread_environment": copy.deepcopy(CONTRACT.NUMERICAL_THREAD_ENV),
+    }
+
+
+def _conditional_prediction_authorities(attempt: Path) -> dict[str, Any]:
+    """Rebuild outcome-blind input custody for conditional prediction indexes."""
+
+    ids = split_ids()
+    manifests = state_manifest_map()
+    contexts = _index_by_state(CONTEXT_INDEX)
+    state_order = sorted(
+        (state_id for role in SPLIT_ROLES for state_id in ids[role]),
+        key=numeric_state_key,
+    )
+    role_by_state = {
+        state_id: role for role in SPLIT_ROLES for state_id in ids[role]
+    }
+    if set(state_order) != set(manifests) or set(state_order) != set(contexts):
+        raise QualificationError("conditional input-authority state coverage drift")
+
+    context_index = load_json(attempt / "stage_b/proprio_context/index.json")
+    if context_index.get("content_digest") != content_digest(context_index):
+        raise QualificationError("proprio context index self-digest drift")
+    context_summaries = context_index.get("state_records")
+    if not isinstance(context_summaries, list) or [
+        str(row.get("state_id")) for row in context_summaries
+    ] != state_order:
+        raise QualificationError("proprio context index state order/coverage drift")
+    shard_by_state = {
+        str(row["state_id"]): copy.deepcopy(row["shard"])
+        for row in context_summaries
+    }
+
+    tensor_payload = load_json(LATENT_INDEX)
+    tensor_records = tensor_payload.get("records")
+    if not isinstance(tensor_records, list):
+        raise QualificationError("predecessor tensor records are missing")
+    tensor_by_key = {
+        (
+            str(row.get("kind")),
+            str(row.get("state_id")),
+            row.get("candidate_index_or_null"),
+            row.get("horizon_or_null"),
+        ): row
+        for row in tensor_records
+    }
+    visual_by_state: dict[str, list[dict[str, Any]]] = {}
+    for state_id in state_order:
+        visual: list[dict[str, Any]] = []
+        for slot in (-2, -1, 0):
+            record = tensor_by_key.get(("CONTEXT", state_id, None, slot))
+            if record is None:
+                raise QualificationError(
+                    f"conditional visual-context tensor missing: {state_id}:{slot}"
+                )
+            reference = Path(str(record["path"]))
+            path = reference if reference.is_absolute() else PREDECESSOR_ROOT / reference
+            visual.append(
+                {
+                    "slot": slot,
+                    "path": str(path),
+                    "sha256": str(record["sha256"]),
+                    "bytes": int(record["bytes"]),
+                }
+            )
+        visual_by_state[state_id] = visual
+
+    action_sha_by_state: dict[str, str] = {}
+    for state_id in state_order:
+        actions = np.asarray(
+            contexts[state_id]["action_blocks_raw_3x10_by_candidate"],
+            np.float32,
+        )
+        if actions.shape != (CANDIDATE_COUNT, 3, 10):
+            raise QualificationError(
+                f"conditional candidate-action authority drift: {state_id}"
+            )
+        action_sha_by_state[state_id] = hashlib.sha256(actions.tobytes()).hexdigest()
+
+    evaluation = load_json(attempt / "receipts/evaluation_contract.json")
+    if evaluation.get("content_digest") != content_digest(evaluation):
+        raise QualificationError("evaluation-contract self-digest drift")
+    experiment_digest = str(evaluation.get("experiment_contract_digest"))
+    expected_donors = donor_derangements(ids, manifests, experiment_digest)
+    if evaluation.get("stage_c_input_donor_mappings") != expected_donors:
+        raise QualificationError("Stage-C donor authority drift")
+    return {
+        "state_order": state_order,
+        "role_by_state": role_by_state,
+        "family_by_state": {
+            state_id: str(manifests[state_id]["family"])
+            for state_id in state_order
+        },
+        "shard_by_state": shard_by_state,
+        "visual_by_state": visual_by_state,
+        "action_sha_by_state": action_sha_by_state,
+        "stage_c_donors": expected_donors,
+    }
+
+
+def _load_prediction_index(
+    *,
+    attempt: Path,
+    source_id: str,
+    gate_digest: str,
+    stage_c_gate_digest: str | None = None,
+) -> tuple[dict[tuple[str, str, int | None, int | None], dict[str, Any]], dict[str, Any]]:
+    helper = _conditional_helper()
+    path = attempt / "stage_b/predictions" / source_id / "index.json"
+    value = load_json(path)
+    if value.get("content_digest") != content_digest(value):
+        raise QualificationError(f"{source_id} prediction-index self-digest drift")
+    stage_c = stage_c_gate_digest is not None
+    predictor_source_id = "PR_PROPRIO_ROLLOUT" if stage_c else source_id
+    expected_ablation = source_id if stage_c else None
+    expected_config = {
+        "cell": (
+            "proprio_one_step"
+            if predictor_source_id == "P1_PROPRIO_ONE_STEP"
+            else "proprio_rollout"
+        ),
+        "use_proprio": True,
+        "rollout": predictor_source_id == "PR_PROPRIO_ROLLOUT",
+        "width": 384,
+    }
+    if predictor_source_id not in (
+        "P1_PROPRIO_ONE_STEP",
+        "PR_PROPRIO_ROLLOUT",
+    ) or (stage_c and source_id not in STAGE_C_SOURCE_IDS):
+        raise QualificationError(f"unsupported conditional predictor source: {source_id}")
+    custody = value.get("predictor_custody")
+    future_proprioception = value.get("future_proprioception")
+    expected_slot_validity = {
+        "1": [True, True, True],
+        "2": [True, True, False],
+        "3": [True, False, False],
+    }
+    parameter_digest = (
+        None if not isinstance(custody, Mapping) else custody.get("parameter_digest_before")
+    )
+    if (
+        value.get("schema") != helper.PREDICTION_INDEX_SCHEMA
+        or value.get("status") != "PASS"
+        or value.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or value.get("source_id") != source_id
+        or value.get("predictor_source_id") != predictor_source_id
+        or value.get("ablation_or_null") != expected_ablation
+        or value.get("stage_b_gate_digest") != gate_digest
+        or value.get("stage_c_gate_digest_or_null") != stage_c_gate_digest
+        or value.get("complete") is not True
+        or value.get("states") != STATE_COUNT
+        or value.get("candidates_per_state") != CANDIDATE_COUNT
+        or value.get("horizons") != list(HORIZONS)
+        or value.get("prediction_shape_per_state")
+        != list(helper.PREDICTION_STATE_SHAPE)
+        or value.get("dtype") != "float16"
+        or value.get("logical_records_count") != STATE_COUNT * CANDIDATE_COUNT * 3
+        or value.get("route_outcomes_opened") is not False
+        or value.get("training_executed") is not False
+        or future_proprioception
+        != {
+            "values_available_to_predictor": False,
+            "masked_by_frozen_absence_mechanism": True,
+            "read_count": 0,
+        }
+        or not isinstance(custody, Mapping)
+        or custody.get("source_id") != predictor_source_id
+        or custody.get("checkpoint")
+        != CONTRACT.CHECKPOINT_BINDINGS[predictor_source_id]
+        or custody.get("model_config") != expected_config
+        or custody.get("strict_state_dict_load") is not True
+        or custody.get("eval_mode") is not True
+        or custody.get("requires_grad_all_false") is not True
+        or custody.get("parameter_state_unchanged") is not True
+        or custody.get("parameter_digest_before")
+        != custody.get("parameter_digest_after")
+        or not isinstance(parameter_digest, str)
+        or len(parameter_digest) != 64
+        or any(character not in "0123456789abcdef" for character in parameter_digest)
+        or custody.get("checkpoint_optimizer_state_deserialized_but_ignored")
+        is not True
+        or custody.get("optimizer_state_loaded_into_an_optimizer") is not False
+        or custody.get("optimizer_steps") != 0
+        or custody.get("state_batch_calls") != STATE_COUNT
+        or custody.get("model_forward_calls") != STATE_COUNT * len(HORIZONS)
+        or custody.get("future_proprioception_read_count") != 0
+        or custody.get("observed_slot_validity_by_horizon")
+        != expected_slot_validity
+    ):
+        raise QualificationError(f"{source_id} prediction-index contract drift")
+    authorities = _conditional_prediction_authorities(attempt)
+    state_order = authorities["state_order"]
+    expected_input_state_ids: dict[str, dict[str, str]] = {}
+    ablated_component = (
+        None
+        if not stage_c
+        else CONTRACT.STAGE_C_ABLATION_INPUTS[source_id][
+            "predictor_input_component"
+        ]
+    )
+    for state_id in state_order:
+        donors = {component: state_id for component in ("visual", "proprio", "control")}
+        if ablated_component is not None:
+            donors[ablated_component] = authorities["stage_c_donors"][source_id][
+                state_id
+            ]
+        expected_input_state_ids[state_id] = donors
+    records = value.get("logical_records")
+    if not isinstance(records, list) or len(records) != STATE_COUNT * CANDIDATE_COUNT * 3:
+        raise QualificationError(f"{source_id} logical prediction records are incomplete")
+    output: dict[tuple[str, str, int | None, int | None], dict[str, Any]] = {}
+    expected_logical_order = [
+        (state_id, candidate, horizon)
+        for state_id in state_order
+        for candidate in range(CANDIDATE_COUNT)
+        for horizon in HORIZONS
+    ]
+    observed_logical_order: list[tuple[str, int, int]] = []
+    state_tensor_by_state: dict[str, Mapping[str, Any]] = {}
+    expected_states = value.get("state_records")
+    if not isinstance(expected_states, list) or [
+        str(row.get("state_id")) for row in expected_states
+    ] != state_order:
+        raise QualificationError(f"{source_id} state tensor records are incomplete")
+    for row in expected_states:
+        state_id = str(row["state_id"])
+        donors = expected_input_state_ids[state_id]
+        record = row.get("prediction_state_tensor")
+        if (
+            row.get("family") != authorities["family_by_state"][state_id]
+            or row.get("split_role") != authorities["role_by_state"][state_id]
+            or row.get("source_id") != source_id
+            or row.get("predictor_source_id") != predictor_source_id
+            or row.get("ablation_or_null") != expected_ablation
+            or row.get("input_state_ids") != donors
+            or row.get("visual_context_bindings")
+            != authorities["visual_by_state"][donors["visual"]]
+            or row.get("proprio_shard_binding")
+            != authorities["shard_by_state"][donors["proprio"]]
+            or row.get("control_shard_binding")
+            != authorities["shard_by_state"][donors["control"]]
+            or row.get("candidate_action_sha256")
+            != authorities["action_sha_by_state"][state_id]
+            or not isinstance(record, Mapping)
+        ):
+            raise QualificationError(f"{source_id} state input-custody drift: {state_id}")
+        artifact = helper.resolve_artifact(str(record["path"]), attempt)
+        try:
+            helper.verify_file_binding(artifact, record, f"{source_id} state tensor")
+        except helper.MaterialisationError as exc:
+            raise QualificationError(str(exc)) from exc
+        state_tensor_by_state[state_id] = record
+
+    for row in records:
+        key = (
+            str(row["kind"]),
+            str(row["state_id"]),
+            int(row["candidate_index_or_null"]),
+            int(row["horizon_or_null"]),
+        )
+        if key in output:
+            raise QualificationError(f"duplicate conditional tensor identity: {key}")
+        state_id = str(row["state_id"])
+        candidate = int(row["candidate_index_or_null"])
+        horizon = int(row["horizon_or_null"])
+        observed_logical_order.append((state_id, candidate, horizon))
+        state_tensor = state_tensor_by_state.get(state_id)
+        if (
+            row.get("kind") != source_id
+            or row.get("input_state_ids") != expected_input_state_ids.get(state_id)
+            or state_tensor is None
+            or row.get("path") != state_tensor.get("path")
+            or row.get("sha256") != state_tensor.get("sha256")
+            or row.get("bytes") != state_tensor.get("bytes")
+            or row.get("array_index") != [candidate, horizon - 1]
+            or row.get("logical_shape") != list(TENSOR_SHAPE)
+            or row.get("logical_dtype") != "float16"
+        ):
+            raise QualificationError(f"{source_id} logical input-custody drift: {key}")
+        output[key] = dict(row)
+    if observed_logical_order != expected_logical_order:
+        raise QualificationError(f"{source_id} logical record order/coverage drift")
+    return output, value
+
+
+def _validate_proprio_context_receipts(
+    *,
+    attempt: Path,
+    gate_digest: str,
+    contexts: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    helper = _conditional_helper()
+    index_path = attempt / "stage_b/proprio_context/index.json"
+    index = load_json(index_path)
+    ids = split_ids()
+    manifests = state_manifest_map()
+    predecessor_contexts = _index_by_state(CONTEXT_INDEX)
+    state_order = sorted(
+        (state_id for role in SPLIT_ROLES for state_id in ids[role]),
+        key=numeric_state_key,
+    )
+    role_by_state = {
+        state_id: role for role in SPLIT_ROLES for state_id in ids[role]
+    }
+    summaries = index.get("state_records")
+    if (
+        index.get("content_digest") != content_digest(index)
+        or index.get("schema") != helper.CONTEXT_INDEX_SCHEMA
+        or index.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or index.get("stage_b_gate_digest") != gate_digest
+        or index.get("complete") is not True
+        or index.get("records") != STATE_COUNT
+        or index.get("shape_per_state") != list(helper.PROPRIO_SHAPE)
+        or index.get("dtype") != "float32"
+        or index.get("reconstruction_prefix_blocks") != STATE_COUNT * 40
+        or index.get("new_states") != 0
+        or index.get("new_candidates") != 0
+        or index.get("future_proprioception_read_count") != 0
+        or index.get("training_executed") is not False
+        or not isinstance(summaries, list)
+        or [str(row.get("state_id")) for row in summaries] != state_order
+        or set(contexts) != set(state_order)
+    ):
+        raise QualificationError("proprio context index semantic drift")
+    summary_by_state = {str(row["state_id"]): row for row in summaries}
+    for state_index, state_id in enumerate(state_order):
+        record = contexts[state_id]
+        predecessor = predecessor_contexts[state_id]
+        expected_snapshot = predecessor.get("replay_snapshot_digest")
+        if expected_snapshot is None:
+            expected_snapshot = predecessor.get("branch_snapshot_digest")
+        replay = record.get("replay")
+        history = record.get("observed_history")
+        sample_rows = history.get("sample_rows") if isinstance(history, Mapping) else None
+        if (
+            record.get("content_digest") != content_digest(record)
+            or record.get("schema") != helper.CONTEXT_STATE_SCHEMA
+            or record.get("status") != "PASS"
+            or record.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+            or record.get("stage_b_gate_digest") != gate_digest
+            or record.get("state_index") != state_index
+            or record.get("state_id") != state_id
+            or record.get("family") != str(manifests[state_id]["family"])
+            or record.get("split_role") != role_by_state[state_id]
+            or not isinstance(replay, Mapping)
+            or replay.get("mode") != "FROZEN_STATE_RECONSTRUCTION_REPLAY"
+            or replay.get("blocks") != 40
+            or replay.get("prefix_blocks_only") is not True
+            or replay.get("state_or_candidates_created") != 0
+            or replay.get("snapshot_digest") != expected_snapshot
+            or replay.get("predecessor_snapshot_digest") != expected_snapshot
+            or replay.get("snapshot_exact") is not True
+            or not isinstance(history, Mapping)
+            or history.get("shape") != list(helper.PROPRIO_SHAPE)
+            or history.get("dtype") != "float32"
+            or history.get("slots") != 3
+            or history.get("samples_per_slot") != 5
+            or history.get("channels") != 30
+            or history.get("future_slots_read") != 0
+            or history.get("future_proprioception_forbidden") is not True
+            or not isinstance(sample_rows, list)
+            or len(sample_rows) != 15
+            or any(
+                row.get("future_proprioception") is not False
+                or row.get("physics_observed") is not True
+                for row in sample_rows
+            )
+            or record.get("control_history_exact_predecessor_match") is not True
+            or record.get("training_executed") is not False
+            or record.get("route_outcomes_opened") is not False
+        ):
+            raise QualificationError(f"proprio context receipt semantic drift: {state_id}")
+        summary = summary_by_state[state_id]
+        if (
+            summary.get("family") != record["family"]
+            or summary.get("split_role") != record["split_role"]
+            or summary.get("shard") != record.get("shard")
+        ):
+            raise QualificationError(f"proprio context summary drift: {state_id}")
+        shard = helper.resolve_artifact(str(record["shard"]["path"]), attempt)
+        try:
+            helper.verify_file_binding(shard, record["shard"], f"{state_id} context shard")
+        except helper.MaterialisationError as exc:
+            raise QualificationError(str(exc)) from exc
+    return index
+
+
+def _validate_stage_b_materialisation(
+    *, attempt: Path, gate_path: Path, gate: Mapping[str, Any]
+) -> tuple[
+    dict[tuple[str, str, int | None, int | None], dict[str, Any]],
+    dict[str, Any],
+]:
+    helper = _conditional_helper()
+    try:
+        helper.validate_stage_b_gate_receipt(gate_path, output_root=attempt)
+        contexts = helper._load_context_index(attempt, str(gate["content_digest"]))
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    if len(contexts) != STATE_COUNT:
+        raise QualificationError("conditional proprio context is incomplete")
+    context_index = _validate_proprio_context_receipts(
+        attempt=attempt,
+        gate_digest=str(gate["content_digest"]),
+        contexts=contexts,
+    )
+    top_path = attempt / "receipts/stage_b_proprio_predictor_materialisation.json"
+    top = load_json(top_path)
+    expected_counts = {
+        "states_replayed": STATE_COUNT,
+        "prefix_blocks": STATE_COUNT * 40,
+        "candidate_actions_executed": 0,
+        "new_states": 0,
+        "new_candidates": 0,
+        "predictor_checkpoints_opened": 2,
+        "predictor_state_batch_calls": STATE_COUNT * 2,
+        "logical_predictions": STATE_COUNT * CANDIDATE_COUNT * len(HORIZONS) * 2,
+        "future_proprioception_reads": 0,
+        "route_outcome_reads": 0,
+    }
+    expected_gate_record = {
+        **binding(gate_path, relative_to=attempt),
+        "content_digest": gate["content_digest"],
+        "contract_freeze_commit": gate["contract_freeze_commit"],
+    }
+    replay_path = attempt / "receipts/execution_correction_replay.json"
+    try:
+        helper.validate_execution_correction_replay_receipt(
+            replay_path, output_root=attempt
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    expected_replay_binding = binding(replay_path, relative_to=attempt)
+    if (
+        top.get("content_digest") != content_digest(top)
+        or top.get("schema") != helper.MATERIALISATION_RECEIPT_SCHEMA
+        or top.get("status") != "PASS"
+        or top.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or top.get("stage_b_gate") != expected_gate_record
+        or top.get("execution_correction_replay") != expected_replay_binding
+        or top.get("counts") != expected_counts
+        or top.get("workers") != helper.FROZEN_WORKERS
+        or top.get("numerical_thread_environment")
+        != CONTRACT.NUMERICAL_THREAD_ENV
+        or top.get("training_executed") is not False
+        or top.get("fresh_panel_collected") is not False
+        or top.get("navigation_executed") is not False
+        or top.get("nothing_running_at_receipt_write") is not True
+        or top.get("stage_b_gate", {}).get("content_digest")
+        != gate["content_digest"]
+        or top.get("proprio_context_index")
+        != binding(
+            attempt / "stage_b/proprio_context/index.json", relative_to=attempt
+        )
+    ):
+        raise QualificationError("conditional predictor materialisation receipt drift")
+    combined: dict[
+        tuple[str, str, int | None, int | None], dict[str, Any]
+    ] = {}
+    indexes: dict[str, Any] = {}
+    for source_id in ("P1_PROPRIO_ONE_STEP", "PR_PROPRIO_ROLLOUT"):
+        rows, value = _load_prediction_index(
+            attempt=attempt, source_id=source_id, gate_digest=str(gate["content_digest"])
+        )
+        if set(combined) & set(rows):
+            raise QualificationError("conditional prediction indexes overlap")
+        combined.update(rows)
+        indexes[source_id] = {
+            "binding": binding(
+                attempt / "stage_b/predictions" / source_id / "index.json",
+                relative_to=attempt,
+            ),
+            "content_digest": value["content_digest"],
+        }
+        if top.get("prediction_indexes", {}).get(source_id) != indexes[source_id][
+            "binding"
+        ]:
+            raise QualificationError(
+                f"conditional top receipt prediction binding drift: {source_id}"
+            )
+    return combined, {
+        "gate": binding(gate_path, relative_to=attempt),
+        "gate_content_digest": gate["content_digest"],
+        "execution_correction_replay": expected_replay_binding,
+        "context_index": binding(
+            attempt / "stage_b/proprio_context/index.json", relative_to=attempt
+        ),
+        "context_index_content_digest": context_index["content_digest"],
+        "materialisation_receipt": binding(top_path, relative_to=attempt),
+        "prediction_indexes": indexes,
+    }
+
+
+def _validate_stage_c_top_receipt(
+    *,
+    attempt: Path,
+    value: Mapping[str, Any],
+    stage_b_gate_digest: str,
+    stage_c_gate_path: Path,
+) -> None:
+    expected_indexes = {
+        source: binding(
+            attempt / "stage_b/predictions" / source / "index.json",
+            relative_to=attempt,
+        )
+        for source in STAGE_C_SOURCE_IDS
+    }
+    replay_path = attempt / "receipts/execution_correction_replay.json"
+    expected_replay_binding = binding(replay_path, relative_to=attempt)
+    if (
+        value.get("content_digest") != content_digest(value)
+        or value.get("schema")
+        != "plan_aware_monotone_jepa_cost_v1.stage_c_materialisation.v1"
+        or value.get("status") != "PASS"
+        or value.get("experiment_id") != CONTRACT.EXPERIMENT_ID
+        or value.get("stage_b_gate_digest") != stage_b_gate_digest
+        or value.get("execution_correction_replay") != expected_replay_binding
+        or value.get("stage_c_gate")
+        != binding(stage_c_gate_path, relative_to=attempt)
+        or value.get("prediction_indexes") != expected_indexes
+        or value.get("checkpoint")
+        != CONTRACT.CHECKPOINT_BINDINGS["PR_PROPRIO_ROLLOUT"]
+        or value.get("training_executed") is not False
+        or value.get("outcome_informed_donor_selection") is not False
+        or value.get("nothing_running_at_receipt_write") is not True
+    ):
+        raise QualificationError("Stage-C helper receipt drift")
+
+
+def _merge_score_map(
+    destination: dict[str, dict[str, np.ndarray]],
+    source: Mapping[str, Mapping[str, np.ndarray]],
+) -> None:
+    for condition, state_values in source.items():
+        if condition not in destination:
+            destination[condition] = {
+                state: np.asarray(values, np.float64).copy()
+                for state, values in state_values.items()
+            }
+            continue
+        if list(destination[condition]) != list(state_values) or any(
+            not np.array_equal(destination[condition][state], state_values[state])
+            for state in destination[condition]
+        ):
+            raise QualificationError(f"shared conditional score drift: {condition}")
+
+
+def _score_conditional_sources(
+    *,
+    attempt: Path,
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    models: Mapping[str, Any],
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    sources: Sequence[str],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    score_maps_by_role: dict[str, Any] = {}
+    evidence_by_role: dict[str, Any] = {}
+    summaries_by_role: dict[str, Any] = {}
+    for role in SPLIT_ROLES:
+        merged: dict[str, dict[str, np.ndarray]] = {}
+        evidence: dict[str, Any] = {}
+        for source in sources:
+            source_maps, source_evidence = score_dataset(
+                datasets[role],
+                models=models,
+                tensor_rows=tensor_rows,
+                latent_source=source,
+                logical_output_root=attempt,
+            )
+            _merge_score_map(merged, source_maps)
+            evidence[source] = source_evidence
+        score_maps_by_role[role] = merged
+        evidence_by_role[role] = evidence
+        summaries_by_role[role] = summarize_score_maps(datasets[role], merged)
+    return score_maps_by_role, evidence_by_role, summaries_by_role
+
+
+def _conditional_ledger_rows(
+    *,
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    score_maps_by_role: Mapping[str, Mapping[str, Mapping[str, np.ndarray]]],
+    evidence_by_role: Mapping[str, Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]]],
+    sources: Sequence[str],
+    schema: str,
+    matched_route_scores_by_role: Mapping[
+        str, Mapping[str, Mapping[str, np.ndarray]]
+    ]
+    | None = None,
+    matched_condition: str | None = None,
+) -> list[dict[str, Any]]:
+    if (matched_route_scores_by_role is None) != (matched_condition is None):
+        raise QualificationError("matched route-score inputs must be supplied together")
+    rows: list[dict[str, Any]] = []
+    for role in SPLIT_ROLES:
+        maps = score_maps_by_role[role]
+        for source in sources:
+            source_evidence = evidence_by_role[role][source]
+            condition = f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"
+            zero_condition = f"LATENT_BRANCH_ZERO_{source}"
+            for state_id in sorted(datasets[role], key=numeric_state_key):
+                for candidate, evidence in enumerate(source_evidence[state_id]):
+                    row = {
+                        **copy.deepcopy(dict(evidence)),
+                        "schema": schema,
+                        "latent_source": source,
+                        "candidate_index": candidate,
+                        "population_membership": _population_membership(evidence),
+                        "route_scores": {
+                            "KINEMATIC_ROUTE_BASELINE": float(
+                                maps["KINEMATIC_ROUTE_BASELINE"][state_id][candidate]
+                            ),
+                            "KINEMATIC_PLUS_NO_LATENT_RESIDUAL": float(
+                                maps["KINEMATIC_PLUS_NO_LATENT_RESIDUAL"][state_id][candidate]
+                            ),
+                            condition: float(maps[condition][state_id][candidate]),
+                            zero_condition: float(
+                                maps[zero_condition][state_id][candidate]
+                            ),
+                            "DETERMINISTIC_RANDOM": float(
+                                maps["DETERMINISTIC_RANDOM"][state_id][candidate]
+                            ),
+                        },
+                    }
+                    if matched_route_scores_by_role is not None:
+                        assert matched_condition is not None
+                        matched_score = float(
+                            matched_route_scores_by_role[role][matched_condition][
+                                state_id
+                            ][candidate]
+                        )
+                        source_score = float(maps[condition][state_id][candidate])
+                        row["matched_pr_score"] = matched_score
+                        row["deranged_minus_matched_pr_score"] = (
+                            source_score - matched_score
+                        )
+                    rows.append(row)
+    expected = STATE_COUNT * CANDIDATE_COUNT * len(sources)
+    if len(rows) != expected:
+        raise QualificationError(f"conditional ledger has {len(rows)} rows, expected {expected}")
+    _validate_score_row_arithmetic(rows, stage="CONDITIONAL")
+    return rows
+
+
+def _aggregate_stage_c_route_score_changes(
+    rows: Sequence[Mapping[str, Any]],
+) -> dict[str, Any]:
+    """Reduce candidate-matched ranker score changes from persisted Stage-C rows."""
+
+    grouped: dict[str, dict[str, list[float]]] = {
+        source: {role: [] for role in SPLIT_ROLES} for source in STAGE_C_SOURCE_IDS
+    }
+    for row in rows:
+        source = str(row["latent_source"])
+        role = str(row["split"])
+        if source not in grouped or role not in grouped[source]:
+            raise QualificationError(f"unknown Stage-C route-score identity: {source}:{role}")
+        matched = float(row["matched_pr_score"])
+        condition = f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"
+        observed = float(row["route_scores"][condition])
+        delta = float(row["deranged_minus_matched_pr_score"])
+        if not math.isclose(observed - matched, delta, rel_tol=0.0, abs_tol=1e-12):
+            raise QualificationError(
+                f"Stage-C candidate route-score delta drift: {source}:{row['state_id']}:"
+                f"{row['candidate_index']}"
+            )
+        grouped[source][role].append(delta)
+
+    def summary(values: Sequence[float]) -> dict[str, Any]:
+        if not values:
+            raise QualificationError("Stage-C route-score change group is empty")
+        numeric = np.asarray(values, dtype=np.float64)
+        if not np.isfinite(numeric).all():
+            raise QualificationError("Stage-C route-score change is non-finite")
+        return {
+            "rows": len(values),
+            "signed_mean": float(np.mean(numeric)),
+            "signed_minimum": float(np.min(numeric)),
+            "signed_maximum": float(np.max(numeric)),
+            "absolute_mean": float(np.mean(np.abs(numeric))),
+            "absolute_maximum": float(np.max(np.abs(numeric))),
+            "nonzero_count": int(np.count_nonzero(numeric)),
+        }
+
+    return {
+        "schema": "plan_aware_stage_c_actual_route_score_changes_v1",
+        "definition": "deranged ranker score minus matched frozen PR ranker score",
+        "by_source": {
+            source: {
+                "all_roles": summary(
+                    [value for role in SPLIT_ROLES for value in grouped[source][role]]
+                ),
+                "by_role": {
+                    role: summary(grouped[source][role]) for role in SPLIT_ROLES
+                },
+            }
+            for source in STAGE_C_SOURCE_IDS
+        },
+    }
+
+
+def _validate_stage_c_matched_pr_scores(
+    stage_c_rows: Sequence[Mapping[str, Any]],
+    stage_b_rows: Sequence[Mapping[str, Any]],
+) -> None:
+    pr_condition = "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR"
+    expected: dict[tuple[str, str, int], float] = {}
+    for row in stage_b_rows:
+        if row.get("latent_source") != "PR":
+            continue
+        identity = (
+            str(row["split"]),
+            str(row["state_id"]),
+            int(row["candidate_index"]),
+        )
+        if identity in expected:
+            raise QualificationError(f"duplicate Stage-B PR score identity: {identity}")
+        expected[identity] = float(row["route_scores"][pr_condition])
+    if len(expected) != STATE_COUNT * CANDIDATE_COUNT:
+        raise QualificationError("Stage-B PR matched-score authority is incomplete")
+    counts = {identity: 0 for identity in expected}
+    for row in stage_c_rows:
+        identity = (
+            str(row["split"]),
+            str(row["state_id"]),
+            int(row["candidate_index"]),
+        )
+        if identity not in expected or not math.isclose(
+            float(row["matched_pr_score"]),
+            expected[identity],
+            rel_tol=0.0,
+            abs_tol=1e-12,
+        ):
+            raise QualificationError(f"Stage-C matched PR score drift: {identity}")
+        counts[identity] += 1
+    if any(count != len(STAGE_C_SOURCE_IDS) for count in counts.values()):
+        raise QualificationError("Stage-C matched PR score coverage drift")
+
+
+def _factorial_interaction_bootstrap(
+    *,
+    r1: Mapping[str, Any],
+    rr: Mapping[str, Any],
+    p1: Mapping[str, Any],
+    pr: Mapping[str, Any],
+) -> dict[str, Any]:
+    population = METRICS.ORACLE_VIABILITY_ADMISSIBLE
+
+    def states(summary: Mapping[str, Any]) -> dict[str, Mapping[str, Any]]:
+        rows = summary["populations"][population]["per_state"]
+        return {str(row["state_id"]): row for row in rows}
+
+    by_source = {name: states(value) for name, value in (("R1", r1), ("RR", rr), ("P1", p1), ("PR", pr))}
+    identities = list(by_source["R1"])
+    if any(list(value) != identities for value in by_source.values()):
+        raise QualificationError("factorial bootstrap state identity drift")
+    families = {state: str(by_source["R1"][state]["family"]) for state in identities}
+
+    def interaction(metric: str, *, lower_better: bool = False) -> dict[str, Any] | None:
+        eligible = [
+            state
+            for state in identities
+            if all(by_source[source][state][metric] is not None for source in by_source)
+        ]
+        if not eligible:
+            return None
+        values = {}
+        for state in eligible:
+            r1_v, rr_v = float(by_source["R1"][state][metric]), float(by_source["RR"][state][metric])
+            p1_v, pr_v = float(by_source["P1"][state][metric]), float(by_source["PR"][state][metric])
+            values[state] = (
+                (p1_v - pr_v) - (r1_v - rr_v)
+                if lower_better
+                else (pr_v - p1_v) - (rr_v - r1_v)
+            )
+        zeros = {state: 0.0 for state in eligible}
+        return OLD_METRICS.paired_state_bootstrap(
+            values,
+            zeros,
+            {state: families[state] for state in eligible},
+            comparison_id=f"J_BP_MINUS_BR/{population}/{metric}",
+            draws=METRICS.BOOTSTRAP_DRAWS,
+            seed=METRICS.BOOTSTRAP_SEED,
+        )
+
+    return {
+        "schema": "plan_aware_factorial_interaction_bootstrap_v1",
+        "population_id": population,
+        "draws": METRICS.BOOTSTRAP_DRAWS,
+        "seed": METRICS.BOOTSTRAP_SEED,
+        "pairwise_accuracy": interaction("pairwise_accuracy"),
+        "selected_progress_m": interaction("selected_route_progress_m"),
+        "normalized_regret_reduction": interaction(
+            "normalized_regret", lower_better=True
+        ),
+        "best_route_top3": interaction("best_route_top3"),
+    }
+
+
+def _selected_candidate_changes(
+    left: Mapping[str, Any],
+    right: Mapping[str, Any],
+    *,
+    contrast_id: str,
+) -> dict[str, Any]:
+    """Persist exact paired selections for every state and population."""
+
+    populations: dict[str, Any] = {}
+    for population_id in METRICS.POPULATION_IDS:
+        left_rows = left["populations"][population_id]["per_state"]
+        right_rows = right["populations"][population_id]["per_state"]
+        left_by_state = {str(row["state_id"]): row for row in left_rows}
+        right_by_state = {str(row["state_id"]): row for row in right_rows}
+        if list(left_by_state) != list(right_by_state):
+            raise QualificationError(
+                f"selected-candidate contrast identity drift: {contrast_id}:{population_id}"
+            )
+        paired_rows: list[dict[str, Any]] = []
+        for state_id in left_by_state:
+            left_row = left_by_state[state_id]
+            right_row = right_by_state[state_id]
+            if (
+                left_row["family"] != right_row["family"]
+                or left_row["role"] != right_row["role"]
+            ):
+                raise QualificationError(
+                    f"selected-candidate contrast metadata drift: {contrast_id}:{state_id}"
+                )
+            left_selected = left_row["selected_candidate_index"]
+            right_selected = right_row["selected_candidate_index"]
+            paired_rows.append(
+                {
+                    "state_id": state_id,
+                    "family": left_row["family"],
+                    "role": left_row["role"],
+                    "left_selected_candidate_index": left_selected,
+                    "right_selected_candidate_index": right_selected,
+                    "selected_candidate_changed": left_selected != right_selected,
+                }
+            )
+        changed = sum(
+            bool(row["selected_candidate_changed"]) for row in paired_rows
+        )
+        populations[population_id] = {
+            "states": paired_rows,
+            "state_count": len(paired_rows),
+            "changed_count": changed,
+            "changed_fraction": changed / len(paired_rows) if paired_rows else 0.0,
+        }
+    return {
+        "schema": "plan_aware_selected_candidate_change_contrast_v1",
+        "contrast_id": contrast_id,
+        "populations": populations,
+    }
+
+
+def _stage_b_decisions(
+    *, stage_a_decisions: Mapping[str, Any], stage_a_heldout: Mapping[str, Any], summaries: Mapping[str, Any]
+) -> dict[str, Any]:
+    r1 = summaries["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_R1"]
+    rr = summaries["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_RR"]
+    p1 = summaries["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_P1"]
+    pr = summaries["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR"]
+    true = stage_a_heldout["KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_TRUE"]
+    kinematic = summaries["KINEMATIC_ROUTE_BASELINE"]
+    true_aggregate = true["populations"][
+        METRICS.ORACLE_VIABILITY_ADMISSIBLE
+    ]["aggregate"]
+    true_progress = float(true_aggregate["selected_route_progress_m_sum"])
+
+    def nullable_float(value: Any) -> float | None:
+        return None if value is None else float(value)
+    source_summaries = {
+        "R1_RGB_ONE_STEP": r1,
+        "RR_RGB_ROLLOUT": rr,
+        "P1_PROPRIO_ONE_STEP": p1,
+        "PR_PROPRIO_ROLLOUT": pr,
+    }
+    absolute_metrics: dict[str, dict[str, Any]] = {}
+    absolute_passes: dict[str, bool] = {}
+    for source_id, summary in source_summaries.items():
+        population = summary["populations"][
+            METRICS.ORACLE_VIABILITY_ADMISSIBLE
+        ]
+        aggregate = population["aggregate"]
+        predicted_progress = nullable_float(
+            aggregate["selected_route_progress_m_sum"]
+        )
+        values = {
+            "pairwise_accuracy": nullable_float(aggregate["pairwise_accuracy"]),
+            "normalized_regret": nullable_float(aggregate["normalized_regret"]),
+            "best_route_top3": nullable_float(aggregate["best_route_top3_rate"]),
+            "selected_progress_fraction_of_oracle": nullable_float(
+                aggregate["selected_progress_ratio"]
+            ),
+            "selected_progress_fraction_of_true": (
+                None
+                if predicted_progress is None
+                else predicted_progress
+                / max(abs(true_progress), METRICS.NUMERIC_EPSILON)
+            ),
+            "no_family_complete_collapse": bool(
+                population["no_family_complete_collapse"]
+            ),
+        }
+        absolute_metrics[source_id] = values
+        absolute_passes[source_id] = (
+            CONTRACT.predicted_source_absolute_preservation_passes(values)
+        )
+    all_fail = CONTRACT.all_predicted_substitutions_fail_materially(
+        absolute_metrics
+    )
+    return {
+        "predicted_gate": METRICS.evaluate_predicted_gate(
+            true_gate=stage_a_decisions["true_future_gate"],
+            true_source=true,
+            one_step_source=r1,
+            rollout_source=rr,
+        ),
+        "incremental_over_kinematics": METRICS.evaluate_incremental_value(
+            rr, kinematic_source=kinematic
+        ),
+        "proprioception_gate": METRICS.evaluate_proprio_gate(
+            rgb_one_step=r1,
+            rgb_rollout=rr,
+            proprio_one_step=p1,
+            proprio_rollout=pr,
+        ),
+        "factorial_contrasts": METRICS.factorial_rollout_contrasts(
+            rgb_one_step=r1,
+            rgb_rollout=rr,
+            proprio_one_step=p1,
+            proprio_rollout=pr,
+        ),
+        "direct_proprioception_contrasts": {
+            "P1_minus_R1": METRICS.principal_metric_deltas(p1, r1),
+            "PR_minus_RR": METRICS.principal_metric_deltas(pr, rr),
+        },
+        "paired_bootstrap": {
+            "BR_RR_MINUS_R1": METRICS.paired_principal_bootstrap(rr, r1),
+            "BP_PR_MINUS_P1": METRICS.paired_principal_bootstrap(pr, p1),
+            "P1_MINUS_R1": METRICS.paired_principal_bootstrap(p1, r1),
+            "PR_MINUS_RR": METRICS.paired_principal_bootstrap(pr, rr),
+            "J_BP_MINUS_BR": _factorial_interaction_bootstrap(
+                r1=r1, rr=rr, p1=p1, pr=pr
+            ),
+        },
+        "selected_candidate_changes": {
+            "RR_vs_R1": _selected_candidate_changes(
+                rr, r1, contrast_id="RR_VS_R1"
+            ),
+            "PR_vs_P1": _selected_candidate_changes(
+                pr, p1, contrast_id="PR_VS_P1"
+            ),
+            "PR_vs_RR": _selected_candidate_changes(
+                pr, rr, contrast_id="PR_VS_RR"
+            ),
+        },
+        "predicted_source_absolute_preservation": {
+            "schema": "plan_aware_predicted_source_absolute_preservation_v1",
+            "thresholds": copy.deepcopy(
+                CONTRACT.PREDICTED_SOURCE_ABSOLUTE_PRESERVATION_GATE
+            ),
+            "per_source_metrics": absolute_metrics,
+            "per_source_pass": absolute_passes,
+            "all_predicted_substitutions_fail_materially": all_fail,
+        },
+        "all_predicted_substitutions_fail_materially": all_fail,
+    }
+
+
+def _publish_stage_c_gate(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    gate_path: Path,
+    evaluation_contract: Mapping[str, Any],
+    stage_b_decisions: Mapping[str, Any],
+    heldout_summaries: Mapping[str, Any],
+) -> tuple[Path, dict[str, Any]]:
+    helper = _conditional_helper()
+    evidence = attach_digest(
+        {
+            "schema": helper.STAGE_B_GATE_EVIDENCE_SCHEMA,
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "contract_sha256": CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256,
+            "source_freeze_commit": source_freeze,
+            "heldout_stage_b_summary_sha256": hashlib.sha256(
+                canonical_json_bytes(heldout_summaries)
+            ).hexdigest(),
+            "proprioception_gate": copy.deepcopy(
+                stage_b_decisions["proprioception_gate"]
+            ),
+            "factorial_contrasts": copy.deepcopy(
+                stage_b_decisions["factorial_contrasts"]
+            ),
+            "pass": bool(stage_b_decisions["proprioception_gate"]["pass"]),
+        }
+    )
+    if (
+        evidence["pass"] is not True
+        or evidence["proprioception_gate"].get("classification")
+        != "PROPRIOCEPTIVE_ROUTE_CONTRIBUTION"
+    ):
+        raise QualificationError("cannot publish Stage C before the proprioception gate")
+    evidence_path = attempt / "aggregates/stage_b_gate_evidence.json"
+    atomic_json(evidence_path, evidence)
+    value = helper.build_stage_c_gate_receipt(
+        contract_freeze_commit=source_freeze,
+        stage_b_gate_receipt_path=gate_path,
+        stage_b_metrics_path=evidence_path,
+        evaluation_contract_path=attempt / "receipts/evaluation_contract.json",
+        output_root=attempt,
+    )
+    path = attempt / "receipts/stage_c_gate.json"
+    atomic_json(path, value)
+    try:
+        helper.validate_stage_c_gate_receipt(
+            path, output_root=attempt, stage_b_gate_path=gate_path
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    return path, value
+
+
+def _load_state_prediction_array(
+    *, attempt: Path, index: Mapping[str, Any], state_id: str
+) -> np.ndarray:
+    helper = _conditional_helper()
+    records = {
+        str(row["state_id"]): row for row in index.get("state_records", ())
+    }
+    if state_id not in records or len(records) != STATE_COUNT:
+        raise QualificationError("prediction state-record identity drift")
+    binding_record = records[state_id]["prediction_state_tensor"]
+    path = helper.resolve_artifact(str(binding_record["path"]), attempt)
+    try:
+        helper.verify_file_binding(path, binding_record, f"{state_id} prediction tensor")
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    value = np.load(path, mmap_mode="r", allow_pickle=False)
+    if value.shape != helper.PREDICTION_STATE_SHAPE or value.dtype != np.float16:
+        raise QualificationError(f"{state_id} prediction state tensor drift")
+    return value
+
+
+def _normalise_true_tokens(value: np.ndarray) -> np.ndarray:
+    numeric = np.asarray(value, np.float32)
+    mean = numeric.mean(axis=-1, keepdims=True)
+    variance = ((numeric - mean) ** 2).mean(axis=-1, keepdims=True)
+    output = (numeric - mean) / np.sqrt(variance + 1e-5)
+    if not np.isfinite(output).all():
+        raise QualificationError("true-future LayerNorm produced non-finite values")
+    return output
+
+
+def _stage_c_fidelity_and_action_rows(
+    *,
+    attempt: Path,
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    predecessor_tensor_rows: Mapping[
+        tuple[str, str, int | None, int | None], Mapping[str, Any]
+    ],
+    prediction_indexes: Mapping[str, Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    state_meta = {
+        state_id: {
+            "family": str(rows[0]["family"]),
+            "split": role,
+        }
+        for role in SPLIT_ROLES
+        for state_id, rows in datasets[role].items()
+    }
+    fidelity: list[dict[str, Any]] = []
+    sensitivity: list[dict[str, Any]] = []
+    for source_id, index in prediction_indexes.items():
+        for state_id in sorted(state_meta, key=numeric_state_key):
+            predicted = _load_state_prediction_array(
+                attempt=attempt, index=index, state_id=state_id
+            )
+            for horizon_index, horizon in enumerate(HORIZONS):
+                candidate_hashes = [
+                    hashlib.sha256(
+                        np.asarray(predicted[candidate, horizon_index]).tobytes()
+                    ).hexdigest()
+                    for candidate in range(CANDIDATE_COUNT)
+                ]
+                distinct = len(set(candidate_hashes))
+                reference = np.asarray(predicted[0, horizon_index], np.float32)
+                max_abs = max(
+                    float(
+                        np.max(
+                            np.abs(
+                                np.asarray(predicted[candidate, horizon_index], np.float32)
+                                - reference
+                            )
+                        )
+                    )
+                    for candidate in range(1, CANDIDATE_COUNT)
+                )
+                sensitivity.append(
+                    {
+                        "schema": "plan_aware_candidate_action_sensitivity_row_v1",
+                        "latent_source": source_id,
+                        "state_id": state_id,
+                        "family": state_meta[state_id]["family"],
+                        "split": state_meta[state_id]["split"],
+                        "horizon": horizon,
+                        "candidate_count": CANDIDATE_COUNT,
+                        "distinct_candidate_prediction_tensors": distinct,
+                        "maximum_absolute_difference_from_candidate_zero": max_abs,
+                        "candidate_action_sensitivity_present": bool(
+                            distinct >= 2 and max_abs > 0.0
+                        ),
+                        "within_state_nonaction_inputs_candidate_invariant": True,
+                    }
+                )
+                for candidate in range(CANDIDATE_COUNT):
+                    true = load_tensor(
+                        predecessor_tensor_rows[
+                            ("TRUE_FUTURE", state_id, candidate, horizon)
+                        ]
+                    )
+                    target = _normalise_true_tokens(true)
+                    estimate = np.asarray(
+                        predicted[candidate, horizon_index], np.float32
+                    )
+                    numerator = np.sum(estimate * target, axis=-1)
+                    denominator = np.maximum(
+                        np.linalg.norm(estimate, axis=-1)
+                        * np.linalg.norm(target, axis=-1),
+                        1e-12,
+                    )
+                    cosine = numerator / denominator
+                    fidelity.append(
+                        {
+                            "schema": "plan_aware_stage_c_direct_fidelity_row_v1",
+                            "latent_source": source_id,
+                            "state_id": state_id,
+                            "family": state_meta[state_id]["family"],
+                            "split": state_meta[state_id]["split"],
+                            "candidate_index": candidate,
+                            "horizon": horizon,
+                            "token_cosine_mean": float(np.mean(cosine)),
+                            "token_l1_mean": float(np.mean(np.abs(estimate - target))),
+                            "tokens": TENSOR_SHAPE[0],
+                            "token_dimension": TENSOR_SHAPE[1],
+                        }
+                    )
+    expected_fidelity = len(prediction_indexes) * STATE_COUNT * CANDIDATE_COUNT * 3
+    expected_sensitivity = len(prediction_indexes) * STATE_COUNT * 3
+    if len(fidelity) != expected_fidelity or len(sensitivity) != expected_sensitivity:
+        raise QualificationError("Stage-C fidelity/action evidence cardinality drift")
+    return fidelity, sensitivity
+
+
+def _aggregate_stage_c_fidelity(rows: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+    grouped: dict[str, dict[str, list[Mapping[str, Any]]]] = {}
+    for row in rows:
+        grouped.setdefault(str(row["latent_source"]), {}).setdefault(
+            str(row["horizon"]), []
+        ).append(row)
+
+    def summary(values: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
+        return {
+            "rows": len(values),
+            "token_cosine_mean": float(
+                np.mean([float(row["token_cosine_mean"]) for row in values])
+            ),
+            "token_l1_mean": float(
+                np.mean([float(row["token_l1_mean"]) for row in values])
+            ),
+        }
+
+    return {
+        source: {
+            horizon: {
+                "aggregate": summary(values),
+                "per_family": {
+                    family: summary(
+                        [row for row in values if row["family"] == family]
+                    )
+                    for family in sorted({str(row["family"]) for row in values})
+                },
+                "per_split": {
+                    role: summary([row for row in values if row["split"] == role])
+                    for role in SPLIT_ROLES
+                },
+            }
+            for horizon, values in horizons.items()
+        }
+        for source, horizons in grouped.items()
+    }
+
+
+def _action_sensitivity_evidence(
+    *,
+    attempt: Path,
+    rows: Sequence[Mapping[str, Any]],
+    prediction_indexes: Mapping[str, Mapping[str, Any]],
+) -> dict[str, Any]:
+    path = attempt / "ledgers/stage_c_candidate_action_sensitivity.jsonl"
+    atomic_bytes(path, b"".join(canonical_bytes(row) for row in rows))
+    failed = [
+        {
+            "latent_source": row["latent_source"],
+            "state_id": row["state_id"],
+            "horizon": row["horizon"],
+        }
+        for row in rows
+        if not bool(row["candidate_action_sensitivity_present"])
+    ]
+    return {
+        "authority": (
+            "persisted within-state frozen-predictor output variation; visual, "
+            "proprioceptive and control context are candidate-invariant and only "
+            "the frozen candidate action plan varies"
+        ),
+        "raw_evidence": {
+            "ledger": binding(path, relative_to=attempt),
+            "rows": len(rows),
+            "failed_rows": failed,
+            "prediction_indexes": {
+                source: {
+                    "content_digest": index["content_digest"],
+                    "logical_records": index["logical_records_count"],
+                }
+                for source, index in prediction_indexes.items()
+            },
+        },
+        "passed": not failed,
+    }
+
+
+def _stage_c_decisions(
+    *,
+    stage_b: Mapping[str, Any],
+    summaries: Mapping[str, Any],
+    action_sensitivity: Mapping[str, Any],
+) -> dict[str, Any]:
+    heldout = summaries[HELDOUT]
+    matched = stage_b["summaries"][HELDOUT][
+        "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR"
+    ]
+    gate = METRICS.evaluate_substitution_gate(
+        proprio_contribution_gate=stage_b["proprioception_gate"],
+        matched_proprio_rollout=matched,
+        visual_deranged=heldout[
+            "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR_VISUAL_CONTEXT_DERANGED"
+        ],
+        proprio_deranged=heldout[
+            "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR_PROPRIO_HISTORY_DERANGED"
+        ],
+        control_deranged=heldout[
+            "KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR_CONTROL_HISTORY_DERANGED"
+        ],
+        candidate_action_sensitivity_evidence=action_sensitivity,
+    )
+    route_metric_changes = {
+        source: {
+            "principal_deltas_vs_PR": METRICS.principal_metric_deltas(
+                heldout[f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"], matched
+            ),
+            "paired_bootstrap_vs_PR": METRICS.paired_principal_bootstrap(
+                heldout[f"KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_{source}"], matched
+            ),
+        }
+        for source in STAGE_C_SOURCE_IDS
+    }
+    return {
+        "substitution_gate": gate,
+        "classification": gate["classification"],
+        "dependence_attribution": gate["dependence_attribution"],
+        "route_metric_changes": route_metric_changes,
+        "candidate_action_sensitivity": copy.deepcopy(dict(action_sensitivity)),
+        "control_only_explanation_excluded": gate["criteria"][
+            "not_explained_by_control_derangement_alone"
+        ],
+    }
+
+
+def _publish_execution_correction_replay_gate(
+    *, attempt: Path, execution_correction_custody: Mapping[str, Any]
+) -> dict[str, Any]:
+    """Prove equivalence before any conditional scientific/materialisation child.
+
+    The bound outcome-free CPU/GPU import probes ran before fit with every
+    scientific/opening counter at zero and are the sole prospective exception.
+    """
+
+    if not execution_correction_custody:
+        raise QualificationError("execution-correction replay lacks archive custody")
+    premature: list[str] = []
+    for directory in (attempt / "stage_b", attempt / "stage_c"):
+        if directory.exists():
+            premature.append(str(directory.relative_to(attempt)))
+    for directory, prefix in (
+        (attempt / "logs", "stage_b"),
+        (attempt / "logs", "stage_c"),
+        (attempt / "receipts", "stage_b_proprio"),
+        (attempt / "receipts", "stage_c_"),
+    ):
+        if directory.is_dir():
+            premature.extend(
+                str(path.relative_to(attempt))
+                for path in directory.iterdir()
+                if path.name.startswith(prefix)
+            )
+    if premature:
+        raise QualificationError(
+            "conditional artifacts exist before execution-correction replay gate: "
+            f"{sorted(premature)}"
+        )
+    try:
+        receipt = CONTRACT.validate_execution_correction_replay(attempt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if (
+        receipt.get("pass") is not True
+        or receipt.get("files_reused") != 0
+        or receipt.get("failed_archive")
+        != execution_correction_custody.get("archive_path")
+    ):
+        raise QualificationError("execution-correction replay receipt custody drift")
+    path = attempt / "receipts/execution_correction_replay.json"
+    atomic_json(path, receipt)
+    if load_json(path) != receipt:
+        raise QualificationError("execution-correction replay receipt roundtrip drift")
+    return receipt
+
+
+def _publish_execution_correction_2_stage_a_replay_gate(
+    *, attempt: Path, execution_correction_2_custody: dict[str, Any]
+) -> dict[str, Any]:
+    """Reproduce bound Stage-A evidence before any Stage-B/C child exists."""
+
+    if not execution_correction_2_custody:
+        raise QualificationError("correction-2 Stage-A replay lacks archive custody")
+    path = attempt / "receipts/execution_correction_2_replay.json"
+    if path.exists():
+        raise QualificationError("correction-2 Stage-A replay receipt already exists")
+    try:
+        receipt = CONTRACT.validate_execution_correction_2_replay(
+            attempt,
+            archive_root=CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+            # Runtime freeze custody already rehashed both complete archives.
+            verify_archive=False,
+        )
+        CONTRACT.validate_execution_correction_2_replay_receipt(receipt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_replay_receipt(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("correction-2 Stage-A replay roundtrip drift")
+    execution_correction_2_custody["stage_a_replay"] = {
+        **binding(path, relative_to=attempt),
+        "content_digest": receipt["content_digest"],
+    }
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="STAGE_A_REPLAY"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return receipt
+
+
+def _publish_execution_correction_2_stage_b_replay_gate(
+    *,
+    attempt: Path,
+    stage_b: Mapping[str, Any],
+    execution_correction_2_custody: dict[str, Any],
+) -> dict[str, Any]:
+    """Reproduce complete Stage B immediately before any Stage-C child."""
+
+    if not execution_correction_2_custody.get("stage_a_replay"):
+        raise QualificationError("correction-2 Stage B lacks its Stage-A replay gate")
+    path = attempt / "receipts/execution_correction_2_stage_b_replay.json"
+    if path.exists():
+        raise QualificationError("correction-2 Stage-B replay receipt already exists")
+    try:
+        receipt = CONTRACT.validate_execution_correction_2_stage_b_reproduction(
+            attempt,
+            archive_root=CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE,
+            stage_b_metrics=stage_b,
+            verify_archive=False,
+        )
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(receipt)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    atomic_json(path, receipt)
+    roundtrip = load_json(path)
+    try:
+        CONTRACT.validate_execution_correction_2_stage_b_replay_receipt(roundtrip)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        raise QualificationError("correction-2 Stage-B replay roundtrip drift")
+    execution_correction_2_custody["stage_b_replay"] = {
+        **binding(path, relative_to=attempt),
+        "content_digest": receipt["content_digest"],
+    }
+    try:
+        CONTRACT.validate_execution_correction_2_runtime_custody(
+            execution_correction_2_custody, phase="STAGE_B_REPLAY"
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    return receipt
+
+
+def _execute_conditional_stage_b(
+    *,
+    attempt: Path,
+    source_freeze: str,
+    datasets: Mapping[str, Mapping[str, Sequence[Mapping[str, Any]]]],
+    models: Mapping[str, Any],
+    tensor_rows: Mapping[tuple[str, str, int | None, int | None], Mapping[str, Any]],
+    evaluation_contract: Mapping[str, Any],
+    stage_a_metrics: Mapping[str, Any],
+    stage_a_decisions: Mapping[str, Any],
+    execution_correction_custody: dict[str, Any],
+    execution_correction_2_custody: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any] | None]:
+    """Late import prevents any P1/PR materialisation before the true gate."""
+
+    if not stage_a_decisions["true_future_gate"]["pass"]:
+        raise QualificationError("Stage B called before the true-future gate")
+    helper = _conditional_helper()
+    gate_path, gate = _publish_stage_b_gate(
+        attempt=attempt,
+        source_freeze=source_freeze,
+        evaluation_contract=evaluation_contract,
+        stage_a_metrics=stage_a_metrics,
+        stage_a_decisions=stage_a_decisions,
+    )
+    if not execution_correction_custody:
+        raise QualificationError(
+            "amended execution cannot enter Stage B without correction custody"
+        )
+    replay_receipt = _publish_execution_correction_replay_gate(
+        attempt=attempt,
+        execution_correction_custody=execution_correction_custody,
+    )
+    replay_receipt_path = attempt / "receipts/execution_correction_replay.json"
+    execution_correction_custody["execution_correction_replay"] = {
+        **binding(replay_receipt_path, relative_to=attempt),
+        "content_digest": replay_receipt["content_digest"],
+    }
+    _publish_execution_correction_2_stage_a_replay_gate(
+        attempt=attempt,
+        execution_correction_2_custody=execution_correction_2_custody,
+    )
+    execution = _run_conditional_helper_cli(
+        attempt=attempt,
+        arguments=(
+            "run-stage-b",
+            "--stage-b-authorised",
+            "--gate-receipt",
+            str(gate_path),
+            "--execution-correction-replay-receipt",
+            str(replay_receipt_path),
+            "--output-root",
+            str(attempt),
+            "--workers",
+            str(CONTRACT.CPU_WORKER_BENCHMARK["selected_workers"]),
+        ),
+        log_name="stage_b_proprio_predictor_materialisation.log",
+    )
+    conditional_rows, materialisation = _validate_stage_b_materialisation(
+        attempt=attempt, gate_path=gate_path, gate=gate
+    )
+    all_tensors = dict(tensor_rows)
+    if set(all_tensors) & set(conditional_rows):
+        raise QualificationError("P1/PR tensor identities overlap predecessor tensors")
+    all_tensors.update(conditional_rows)
+    sources = ("R1", "RR", "P1", "PR")
+    score_maps, evidence, summaries = _score_conditional_sources(
+        attempt=attempt,
+        datasets=datasets,
+        models=models,
+        tensor_rows=all_tensors,
+        sources=sources,
+    )
+    rows = _conditional_ledger_rows(
+        datasets=datasets,
+        score_maps_by_role=score_maps,
+        evidence_by_role=evidence,
+        sources=sources,
+        schema="plan_aware_evaluation_row_v1",
+    )
+    if len(rows) != 2_304:
+        raise QualificationError("Stage-B source-specific ledger must contain 2,304 rows")
+    stage_b_path = attempt / "ledgers/stage_b_predictor_substitution.jsonl"
+    atomic_bytes(stage_b_path, b"".join(canonical_bytes(row) for row in rows))
+    decisions = _stage_b_decisions(
+        stage_a_decisions=stage_a_decisions,
+        stage_a_heldout=stage_a_metrics[HELDOUT],
+        summaries=summaries[HELDOUT],
+    )
+    stage_b = {
+        "schema": "plan_aware_stage_b_predictor_substitution_v1",
+        "row_count": len(rows),
+        "source_specific_rows": True,
+        "sources": list(sources),
+        "summaries": summaries,
+        **decisions,
+        "gate_receipt": binding(gate_path, relative_to=attempt),
+        "gate_content_digest": gate["content_digest"],
+        "execution_correction_replay": {
+            **binding(replay_receipt_path, relative_to=attempt),
+            "content_digest": replay_receipt["content_digest"],
+        },
+        "helper_execution": execution,
+        "materialisation_custody": materialisation,
+        "ledger": binding(stage_b_path, relative_to=attempt),
+        "ranker_refit_or_recalibration": False,
+        "predictor_training_steps": 0,
+        "fresh_states_or_candidates": 0,
+    }
+    _publish_execution_correction_2_stage_b_replay_gate(
+        attempt=attempt,
+        stage_b=stage_b,
+        execution_correction_2_custody=execution_correction_2_custody,
+    )
+
+    if not decisions["proprioception_gate"]["pass"]:
+        return stage_b, None
+
+    stage_c_gate_path, stage_c_gate = _publish_stage_c_gate(
+        attempt=attempt,
+        source_freeze=source_freeze,
+        gate_path=gate_path,
+        evaluation_contract=evaluation_contract,
+        stage_b_decisions=decisions,
+        heldout_summaries=summaries[HELDOUT],
+    )
+    stage_c_execution = _run_conditional_helper_cli(
+        attempt=attempt,
+        arguments=(
+            "run-stage-c",
+            "--stage-b-authorised",
+            "--stage-c-authorised",
+            "--gate-receipt",
+            str(gate_path),
+            "--stage-c-gate-receipt",
+            str(stage_c_gate_path),
+            "--execution-correction-replay-receipt",
+            str(replay_receipt_path),
+            "--output-root",
+            str(attempt),
+        ),
+        log_name="stage_c_input_derangement_materialisation.log",
+    )
+    try:
+        helper.validate_stage_c_gate_receipt(
+            stage_c_gate_path, output_root=attempt, stage_b_gate_path=gate_path
+        )
+    except helper.MaterialisationError as exc:
+        raise QualificationError(str(exc)) from exc
+    top_stage_c_path = attempt / "receipts/stage_c_input_derangement_materialisation.json"
+    top_stage_c = load_json(top_stage_c_path)
+    _validate_stage_c_top_receipt(
+        attempt=attempt,
+        value=top_stage_c,
+        stage_b_gate_digest=str(gate["content_digest"]),
+        stage_c_gate_path=stage_c_gate_path,
+    )
+    stage_c_tensor_rows: dict[
+        tuple[str, str, int | None, int | None], dict[str, Any]
+    ] = {}
+    stage_c_indexes: dict[str, Any] = {}
+    for source in STAGE_C_SOURCE_IDS:
+        source_rows, source_index = _load_prediction_index(
+            attempt=attempt,
+            source_id=source,
+            gate_digest=str(gate["content_digest"]),
+            stage_c_gate_digest=str(stage_c_gate["content_digest"]),
+        )
+        if set(stage_c_tensor_rows) & set(source_rows):
+            raise QualificationError("Stage-C tensor indexes overlap")
+        stage_c_tensor_rows.update(source_rows)
+        stage_c_indexes[source] = source_index
+    all_stage_c_tensors = {**all_tensors, **stage_c_tensor_rows}
+    stage_c_maps, stage_c_evidence, stage_c_summaries = _score_conditional_sources(
+        attempt=attempt,
+        datasets=datasets,
+        models=models,
+        tensor_rows=all_stage_c_tensors,
+        sources=STAGE_C_SOURCE_IDS,
+    )
+    stage_c_rows = _conditional_ledger_rows(
+        datasets=datasets,
+        score_maps_by_role=stage_c_maps,
+        evidence_by_role=stage_c_evidence,
+        sources=STAGE_C_SOURCE_IDS,
+        schema="plan_aware_attribution_row_v1",
+        matched_route_scores_by_role=score_maps,
+        matched_condition="KINEMATIC_PLUS_JEPA_LATENT_RESIDUAL_PR",
+    )
+    if len(stage_c_rows) != 1_728:
+        raise QualificationError("Stage-C attribution ledger must contain 1,728 rows")
+    stage_c_path = attempt / "ledgers/stage_c_attribution.jsonl"
+    atomic_bytes(stage_c_path, b"".join(canonical_bytes(row) for row in stage_c_rows))
+
+    _pr_rows, pr_index = _load_prediction_index(
+        attempt=attempt,
+        source_id="PR_PROPRIO_ROLLOUT",
+        gate_digest=str(gate["content_digest"]),
+    )
+    fidelity_indexes = {"PR": pr_index, **stage_c_indexes}
+    fidelity_rows, action_rows = _stage_c_fidelity_and_action_rows(
+        attempt=attempt,
+        datasets=datasets,
+        predecessor_tensor_rows=tensor_rows,
+        prediction_indexes=fidelity_indexes,
+    )
+    fidelity_path = attempt / "ledgers/stage_c_direct_fidelity.jsonl"
+    atomic_bytes(fidelity_path, b"".join(canonical_bytes(row) for row in fidelity_rows))
+    fidelity = _aggregate_stage_c_fidelity(fidelity_rows)
+    action_sensitivity = _action_sensitivity_evidence(
+        attempt=attempt,
+        rows=action_rows,
+        prediction_indexes=fidelity_indexes,
+    )
+    stage_c_decisions = _stage_c_decisions(
+        stage_b=stage_b,
+        summaries=stage_c_summaries,
+        action_sensitivity=action_sensitivity,
+    )
+    actual_route_score_changes = _aggregate_stage_c_route_score_changes(stage_c_rows)
+    stage_c = {
+        "schema": "plan_aware_stage_c_attribution_v1",
+        "row_count": len(stage_c_rows),
+        "sources": list(STAGE_C_SOURCE_IDS),
+        "summaries": stage_c_summaries,
+        **stage_c_decisions,
+        "route_score_changes": actual_route_score_changes,
+        "direct_future_fidelity_h1_h3": fidelity,
+        "direct_fidelity_rows": len(fidelity_rows),
+        "direct_fidelity_ledger": binding(fidelity_path, relative_to=attempt),
+        "occupancy_probe": {
+            "status": "NOT_DIRECTLY_COMPATIBLE",
+            "executed": False,
+            "reason": (
+                "the frozen contract contains no occupancy-probe checkpoint, input "
+                "normalisation, or 48-state compatibility binding; the legacy probe "
+                "cannot be silently transferred to this panel"
+            ),
+        },
+        "gate_receipt": binding(stage_c_gate_path, relative_to=attempt),
+        "gate_content_digest": stage_c_gate["content_digest"],
+        "helper_execution": stage_c_execution,
+        "helper_materialisation_receipt": binding(
+            top_stage_c_path, relative_to=attempt
+        ),
+        "prediction_indexes": {
+            source: binding(
+                attempt / "stage_b/predictions" / source / "index.json",
+                relative_to=attempt,
+            )
+            for source in STAGE_C_SOURCE_IDS
+        },
+        "ledger": binding(stage_c_path, relative_to=attempt),
+        "ranker_refit_or_recalibration": False,
+        "predictor_training_steps": 0,
+    }
+    return stage_b, stage_c
+
+
+def execute_scientific(
+    *, launcher_pid: int, launcher_start_time_ticks: int
+) -> dict[str, Any]:
+    started = time.time()
+    launcher_process_identity = _require_exact_live_launcher(
+        pid=launcher_pid, start_time_ticks=launcher_start_time_ticks
+    )
+    scientific_process_identity = _process_identity(
+        os.getpid(), require_role="SCIENTIFIC_EVALUATOR"
+    )
+    if scientific_process_identity["argv"] != _expected_scientific_argv(
+        launcher_process_identity
+    ):
+        raise QualificationError("scientific evaluator exact argv custody drift")
+    execution_correction_2_custody = _runtime_execution_correction_2_custody()
+    execution_correction_custody = _legacy_execution_correction_custody_from_v2(
+        execution_correction_2_custody
+    )
+    source_freeze = str(
+        execution_correction_2_custody["execution_correction_2_commit"]
+    )
+    frozen = _validate_frozen_authorities(
+        execution_correction_2_custody=execution_correction_2_custody
+    )
+    attempt = _new_attempt(
+        CONTRACT.OUTPUT_ROOT,
+        source_freeze,
+        execution_correction_2_custody=execution_correction_2_custody,
+    )
+    publication_happened = False
+    tracked_publication_happened = False
+    phase = "PREEXECUTION"
+    lifecycle_counters = {
+        "full_training_epochs_completed": 0,
+        "calibration_rows_opened": 0,
+        "heldout_rows_opened": 0,
+        "final_checkpoint_published": False,
+    }
+    try:
+        child_environment_preflight = _conditional_child_environment_preflight(
+            attempt
+        )
+        execution_correction_custody[
+            "conditional_child_environment_preflight"
+        ] = {
+            **binding(
+                attempt / "receipts/conditional_child_environment_preflight.json",
+                relative_to=attempt,
+            ),
+            "content_digest": child_environment_preflight["content_digest"],
+        }
+        preexecution = _preexecution_receipt(
+            attempt=attempt,
+            source_freeze=source_freeze,
+            frozen=frozen,
+            conditional_child_environment_preflight=(
+                child_environment_preflight
+            ),
+            execution_correction_custody=execution_correction_custody,
+            execution_correction_2_custody=execution_correction_2_custody,
+        )
+        ids = split_ids()
+        line_index = route_line_index()
+        contexts = _index_by_state(CONTEXT_INDEX)
+        goals = _index_by_state(GOAL_INDEX)
+        manifests = state_manifest_map()
+        tensors = tensor_index()
+        route_roles = {
+            str(row["state_id"]): str(row["route_role"])
+            for row in frozen["route_role_authority"]["records"]
+        }
+
+        # Stage-A fit barrier: only these 32 route/outcome shards are opened.
+        phase = "STAGE_A_FIT_OPEN"
+        fit = authorised_dataset(
+            FIT,
+            ids=ids,
+            line_index=line_index,
+            contexts=contexts,
+            goals=goals,
+            route_roles=route_roles,
+        )
+        fit_opened_at = time.time()
+        phase = "TRAINING_SMOKE"
+        smoke = run_training_smoke(fit, tensors, ids=ids, output_root=attempt)
+        phase = "ROUTE_RANKER_TRAINING"
+        checkpoints, training_receipt, models = train_rankers(
+            fit, tensors, output_root=attempt
+        )
+        lifecycle_counters["full_training_epochs_completed"] = int(
+            CONTRACT.TRAINING["epochs"]
+        )
+        lifecycle_counters["final_checkpoint_published"] = True
+        phase = "EVALUATION_CONTRACT_PUBLICATION"
+        evaluation_contract = write_evaluation_contract(
+            output_root=attempt,
+            source_freeze_commit=source_freeze,
+            checkpoints=checkpoints,
+            line_index=line_index,
+            ids=ids,
+            manifests=manifests,
+        )
+
+        # Calibration opens only after both final checkpoints. It is reporting
+        # only: no weights, thresholds, epochs, or hyperparameters can change.
+        phase = "CALIBRATION_OPEN"
+        calibration = authorised_dataset(
+            CALIBRATION,
+            ids=ids,
+            line_index=line_index,
+            contexts=contexts,
+            goals=goals,
+            route_roles=route_roles,
+        )
+        calibration_opened_at = time.time()
+        lifecycle_counters["calibration_rows_opened"] = CONTRACT.ROLE_ROW_COUNTS[
+            CALIBRATION
+        ]
+
+        # Heldout opens last, only after the evaluation contract is durable.
+        phase = "HELDOUT_OPEN"
+        heldout = authorised_dataset(
+            HELDOUT,
+            ids=ids,
+            line_index=line_index,
+            contexts=contexts,
+            goals=goals,
+            route_roles=route_roles,
+        )
+        heldout_opened_at = time.time()
+        lifecycle_counters["heldout_rows_opened"] = CONTRACT.ROLE_ROW_COUNTS[
+            HELDOUT
+        ]
+        datasets = {FIT: fit, CALIBRATION: calibration, HELDOUT: heldout}
+        phase = "PREDECESSOR_RAW_COST_READ_ONLY_REDUCTION"
+        (
+            raw_score_maps_by_role,
+            raw_cost_rows,
+            raw_cost_reduction,
+        ) = _predecessor_raw_goal_score_maps(
+            datasets, heldout_barrier_open=True
+        )
+        score_maps_by_role: dict[str, Any] = {}
+        evidence_by_role: dict[str, Any] = {}
+        summaries_by_role: dict[str, Any] = {}
+        future_maps = evaluation_contract["future_latent_derangement_by_state"]
+        phase = "STAGE_A_EVALUATION"
+        for role in SPLIT_ROLES:
+            score_maps, evidence = score_dataset(
+                datasets[role],
+                models=models,
+                tensor_rows=tensors,
+                latent_source="TRUE",
+                future_derangements={state: future_maps[state] for state in datasets[role]},
+            )
+            _merge_score_map(score_maps, raw_score_maps_by_role[role])
+            score_maps_by_role[role] = score_maps
+            evidence_by_role[role] = evidence
+            summaries_by_role[role] = summarize_score_maps(datasets[role], score_maps)
+        stage_a_rows = _stage_a_ledger_rows(
+            datasets, score_maps_by_role, evidence_by_role
+        )
+        if len(stage_a_rows) != STATE_COUNT * CANDIDATE_COUNT:
+            raise QualificationError("Stage-A ledger cardinality drift")
+        atomic_bytes(
+            attempt / "ledgers/stage_a_true_future.jsonl",
+            b"".join(canonical_bytes(row) for row in stage_a_rows),
+        )
+        if len(raw_cost_rows) != int(
+            CONTRACT.PREDECESSOR_CANDIDATE_EVIDENCE_BINDING["rows"]
+        ):
+            raise QualificationError("raw-cost re-reduction ledger cardinality drift")
+        atomic_bytes(
+            attempt / "ledgers/stage_a_raw_cost_rereduced.jsonl",
+            b"".join(canonical_bytes(row) for row in raw_cost_rows),
+        )
+        _write_training_ledgers(
+            attempt=attempt, datasets=datasets, training_receipt=training_receipt
+        )
+        stage_a_decisions = _stage_a_decisions(summaries_by_role[HELDOUT])
+        stage_b: dict[str, Any] | None = None
+        stage_c: dict[str, Any] | None = None
+        if stage_a_decisions["true_future_gate"]["pass"]:
+            phase = "CONDITIONAL_STAGE_B_AND_C"
+            stage_b, stage_c = _execute_conditional_stage_b(
+                attempt=attempt,
+                source_freeze=source_freeze,
+                datasets=datasets,
+                models=models,
+                tensor_rows=tensors,
+                evaluation_contract=evaluation_contract,
+                stage_a_metrics=summaries_by_role,
+                stage_a_decisions=stage_a_decisions,
+                execution_correction_custody=execution_correction_custody,
+                execution_correction_2_custody=execution_correction_2_custody,
+            )
+        else:
+            raise QualificationError(
+                "execution-correction replay diverged before the bound Stage-B gate"
+            )
+        raw_cost_matched_comparisons = _matched_raw_cost_comparisons(
+            summaries_by_role, stage_b
+        )
+        phase = "TERMINAL_AGGREGATION"
+        primary, secondaries, next_experiment = _primary_and_secondaries(
+            stage_a_decisions, stage_b, stage_c
+        )
+        historical = _historical_raw_comparators()
+        metrics = attach_digest(
+            {
+                "schema": "plan_aware_monotone_jepa_cost_metrics_v1",
+                "experiment_id": CONTRACT.EXPERIMENT_ID,
+                "source_freeze_commit": source_freeze,
+                "contract_sha256": CONTRACT.CONTRACT_SHA256,
+                "stage_a": summaries_by_role,
+                "stage_a_decisions": stage_a_decisions,
+                "stage_b": stage_b,
+                "stage_c": stage_c,
+                "fit_optimization": training_receipt["fit_optimization"],
+                "stage_a_raw_cost_rereduced": raw_cost_reduction,
+                "stage_a_raw_cost_matched_comparisons": (
+                    raw_cost_matched_comparisons
+                ),
+                "historical_raw_latent_goal_cosine_comparators": historical,
+                "historical_comparators_recomputed": False,
+                "raw_goal_cosine_executions": 0,
+            }
+        )
+        atomic_json(attempt / "aggregates/metrics.json", metrics)
+
+        evaluation_receipt = attach_digest(
+            {
+                "schema": "plan_aware_evaluation_receipt_v1",
+                "source_freeze_commit": source_freeze,
+                "stage_a_rows": len(stage_a_rows),
+                "stage_a_raw_cost_rereduced_rows": len(raw_cost_rows),
+                "stage_a_roles": copy.deepcopy(CONTRACT.ROLE_ROW_COUNTS),
+                "heldout_opened_after_checkpoint_publication": heldout_opened_at
+                >= calibration_opened_at
+                >= fit_opened_at,
+                "heldout_opened_after_evaluation_contract": True,
+                "calibration_used_for_model_selection": False,
+                "stage_b_executed": stage_b is not None,
+                "stage_c_executed": stage_c is not None,
+                "predictor_training_steps": 0,
+                "raw_goal_cosine_executions": 0,
+                "primary_classification": primary,
+                "pass": True,
+            }
+        )
+        atomic_json(attempt / "receipts/evaluation.json", evaluation_receipt)
+
+        phase = "TERMINAL_STAGING"
+        runtime = {
+            "total_s": time.time() - started,
+            "training_and_evaluation_s": time.time() - fit_opened_at,
+            "output_files": 0,
+            "output_bytes": 0,
+            "cpu_workers": CONTRACT.CPU_WORKER_BENCHMARK["selected_workers"],
+            "ranker_seed_families": 1,
+        }
+        result_core = {
+            "schema": "plan_aware_monotone_jepa_cost_v1.result.v1",
+            "experiment_id": CONTRACT.EXPERIMENT_ID,
+            "source_commit": SOURCE_COMMIT,
+            "source_freeze_commit": source_freeze,
+            "contract_freeze_commit": source_freeze,
+            "result_commit": None,
+            "result_commit_binding_policy": CONTRACT.RESULT_COMMIT_BINDING_POLICY,
+            "ancestry_validation": {
+                "requirements_ancestor_to_source": True,
+                "source_to_contract_freeze": True,
+                "result_commit_pending": True,
+            },
+            "contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "output_schema_sha256": CONTRACT.OUTPUT_SCHEMA_SHA256,
+            "panel_bindings": copy.deepcopy(CONTRACT.PANEL_BINDINGS),
+            "checkpoint_bindings": {
+                "target_encoder": copy.deepcopy(CONTRACT.ENCODER_BINDING),
+                "frozen_predictors": copy.deepcopy(CONTRACT.CHECKPOINT_BINDINGS),
+                "trained_route_rankers": checkpoints,
+            },
+            "stage_execution": {
+                "stage_a": "PASS_COMPLETE",
+                "stage_b": "PASS_COMPLETE" if stage_b is not None else "NOT_RUN_TRUE_GATE_FAILED",
+                "stage_c": (
+                    "PASS_COMPLETE"
+                    if stage_c is not None
+                    else "NOT_RUN_NO_PROPRIOCEPTIVE_CONTRIBUTION"
+                    if stage_b is not None
+                    else "NOT_RUN_STAGE_B_NOT_AUTHORISED"
+                ),
+                "execution_correction_custody": copy.deepcopy(
+                    execution_correction_custody
+                ),
+            },
+            "metrics": {
+                "binding": binding(attempt / "aggregates/metrics.json", relative_to=attempt),
+                "content_digest": metrics["content_digest"],
+                "stage_a_decisions": stage_a_decisions,
+                "stage_a": summaries_by_role,
+                "stage_b": stage_b,
+                "stage_c": stage_c,
+                "fit_optimization": training_receipt["fit_optimization"],
+                "stage_a_raw_cost_rereduced": raw_cost_reduction,
+                "stage_a_raw_cost_matched_comparisons": (
+                    raw_cost_matched_comparisons
+                ),
+                "historical_raw_latent_goal_cosine_comparators": historical,
+                "historical_comparators_recomputed": False,
+                "raw_goal_cosine_executions": 0,
+            },
+            "primary_classification": primary,
+            "secondary_classifications": secondaries,
+            "next_experiment": next_experiment,
+            "next_experiment_specification": (
+                CONTRACT.next_experiment_specification_for_primary(primary)
+            ),
+            "requirements_workstream": {
+                "classifications": list(CONTRACT.PRESERVED_REQUIREMENTS_CLASSIFICATIONS),
+                "status": "REQUIREMENTS_ACQUISITION_REQUIRED",
+                "changed_by_this_experiment": False,
+            },
+            "predecessor_narrative_authority": list(
+                CONTRACT.PRESERVED_PREDECESSOR_NARRATIVE
+            ),
+            "predecessor_fact_authority": list(
+                CONTRACT.PRESERVED_PREDECESSOR_FACTS
+            ),
+            "prior_smoke_failure_custody": copy.deepcopy(
+                preexecution["prior_smoke_failure_custody"]
+            ),
+            "prohibition_counters": _prohibition_counters(),
+            "runtime_and_storage": runtime,
+            # This is a staged core, not the terminal result.  The independent
+            # finalizer records scoped producer quiescence and constructs the
+            # final self-digested result only after this evaluator exits.
+            "nothing_running": False,
+        }
+        handoff = _write_scientific_terminal_staging(
+            attempt=attempt,
+            source_freeze=source_freeze,
+            result_core=result_core,
+            scientific_process_identity=scientific_process_identity,
+            launcher_process_identity=launcher_process_identity,
+            execution_correction_2_custody=execution_correction_2_custody,
+        )
+        phase = "SCIENTIFIC_HANDOFF_COMPLETE"
+        return handoff
+    except BaseException as exc:
+        if tracked_publication_happened:
+            for tracked_path in _tracked_publication_paths():
+                tracked_path.unlink(missing_ok=True)
+        candidate = CONTRACT.OUTPUT_ROOT if publication_happened else attempt
+        if candidate.exists():
+            failed = candidate.parent / (
+                f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+            )
+            os.replace(candidate, failed)
+            failure = attach_digest(
+                {
+                    "schema": "plan_aware_monotone_jepa_failure_v1",
+                    "source_freeze_commit": source_freeze,
+                    "phase": phase,
+                    "error_type": type(exc).__name__,
+                    "error_message": str(exc),
+                    "partial_artifacts_reusable": False,
+                    **copy.deepcopy(lifecycle_counters),
+                    "nothing_running": False,
+                    "scientific_process_identity": copy.deepcopy(
+                        scientific_process_identity
+                    ),
+                    "launcher_process_identity": copy.deepcopy(
+                        launcher_process_identity
+                    ),
+                    "terminal_cleanup_pending": True,
+                    "prohibition_counters": _prohibition_counters(),
+                }
+            )
+            atomic_json(failed / "receipts/failure.json", failure)
+        raise
+
+
+def _attempt_namespace_entries() -> tuple[set[Path], set[Path]]:
+    parent = CONTRACT.OUTPUT_ROOT.parent
+    attempts = {
+        path.resolve()
+        for path in parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.attempt-*")
+    }
+    failures = {
+        path.resolve()
+        for path in parent.glob(f".{CONTRACT.OUTPUT_ROOT.name}.failed-*")
+    }
+    return attempts, failures
+
+
+def _archive_terminal_launcher_failure(
+    *,
+    before_attempts: set[Path],
+    before_failures: set[Path],
+    phase: str,
+    execution: Mapping[str, Any],
+    launcher_process_identity: Mapping[str, Any],
+    attempt_hint: Path | None = None,
+) -> Path:
+    """Close the sole final attempt truthfully after child cleanup.
+
+    This is terminal audit custody, not a retry path.  It never reads a
+    scientific row, metric, tensor, or model artifact.
+    """
+
+    after_attempts, after_failures = _attempt_namespace_entries()
+    new_failures = sorted(after_failures - before_failures)
+    candidate: Path | None = None
+    if len(new_failures) == 1:
+        candidate = new_failures[0]
+    else:
+        fresh_attempts = sorted(after_attempts - before_attempts)
+        if attempt_hint is not None and attempt_hint.resolve() in after_attempts:
+            candidate = attempt_hint.resolve()
+        elif CONTRACT.OUTPUT_ROOT.exists():
+            candidate = CONTRACT.OUTPUT_ROOT.resolve()
+        elif len(fresh_attempts) == 1:
+            candidate = fresh_attempts[0]
+    if candidate is None:
+        candidate = (
+            CONTRACT.OUTPUT_ROOT.parent
+            / f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        ).resolve()
+        candidate.mkdir(parents=False, exist_ok=False)
+    if not candidate.exists():
+        raise QualificationError("terminal failure namespace disappeared")
+    if candidate not in new_failures and not candidate.name.startswith(
+        f".{CONTRACT.OUTPUT_ROOT.name}.failed-"
+    ):
+        failed = candidate.parent / (
+            f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        )
+        os.replace(candidate, failed)
+        candidate = failed.resolve()
+    failure_path = candidate / "receipts/failure.json"
+    if not failure_path.exists():
+        science_complete = (
+            candidate
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"]
+        ).is_file()
+        atomic_json(
+            failure_path,
+            attach_digest(
+                {
+                    "schema": "plan_aware_monotone_jepa_failure_v1",
+                    "source_freeze_commit": git_output("rev-parse", "HEAD"),
+                    "phase": phase,
+                    "error_type": "TerminalChildProcessError",
+                    "error_message": (
+                        f"{phase} child exited with return code "
+                        f"{int(execution['returncode'])}"
+                    ),
+                    "partial_artifacts_reusable": False,
+                    "full_training_epochs_completed": (
+                        int(CONTRACT.TRAINING["epochs"]) if science_complete else 0
+                    ),
+                    "calibration_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[CALIBRATION])
+                        if science_complete
+                        else 0
+                    ),
+                    "heldout_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[HELDOUT])
+                        if science_complete
+                        else 0
+                    ),
+                    "final_checkpoint_published": science_complete,
+                    "nothing_running": False,
+                    "terminal_cleanup_pending": False,
+                    "no_further_retry": True,
+                    "prohibition_counters": _prohibition_counters(),
+                }
+            ),
+        )
+    receipt_path = candidate / "receipts/terminal_failure_finalization.json"
+    if receipt_path.exists():
+        raise QualificationError("terminal failure-finalization receipt already exists")
+    receipt = attach_digest(
+        {
+            "schema": (
+                "plan_aware_monotone_jepa_cost_v1."
+                "terminal_failure_finalization.v1"
+            ),
+            "phase": phase,
+            "failed_archive": str(candidate),
+            "failed_child_process_identity": copy.deepcopy(
+                execution["process_identity"]
+            ),
+            "launcher_process_identity": copy.deepcopy(
+                launcher_process_identity
+            ),
+            "child_returncode": int(execution["returncode"]),
+            "child_cleanup": copy.deepcopy(execution["cleanup"]),
+            "nothing_scientific_running": True,
+            "launcher_live_at_write": True,
+            "all_process_zero_claimed": False,
+            "partial_artifacts_reusable": False,
+            "files_reused": 0,
+            "automatic_retry": False,
+            "no_further_retry": True,
+            "pass": True,
+        }
+    )
+    exclusive_json(receipt_path, receipt)
+    return candidate
+
+
+def _execute_launcher_lifecycle() -> dict[str, Any]:
+    """Launch science and finalization as exact isolated child processes."""
+
+    launcher = _process_identity(
+        os.getpid(), require_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    if launcher["argv"] != _expected_launcher_argv():
+        raise QualificationError("launcher exact argv custody drift")
+    # Fail closed before starting the sole authorised fresh scientific attempt.
+    _runtime_execution_correction_2_custody()
+    _assert_publication_destinations_absent()
+    postcheck_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if postcheck_path.exists():
+        raise QualificationError("stale post-finalizer witness exists")
+    before_attempts, before_failures = _attempt_namespace_entries()
+    scientific = _run_exact_isolated_process(
+        _expected_scientific_argv(launcher),
+        expected_role="SCIENTIFIC_EVALUATOR",
+        phase="SCIENTIFIC_EVALUATOR",
+        require_zero_returncode=False,
+    )
+    if int(scientific["returncode"]) != 0:
+        archive = _archive_terminal_launcher_failure(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            phase="SCIENTIFIC_EVALUATOR",
+            execution=scientific,
+            launcher_process_identity=launcher,
+        )
+        raise QualificationError(
+            "sole final scientific evaluator failed; no retry authorised; "
+            f"failure archived at {archive}"
+        )
+    handoff = _single_phase_json_payload(
+        str(scientific["stdout"]), phase="SCIENTIFIC_EVALUATOR"
+    )
+    attempt = _canonical_attempt_path(str(handoff.get("attempt", "")))
+    if attempt is None or not attempt.is_dir():
+        raise QualificationError("scientific handoff attempt path drift")
+    staging_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "terminal_staging"
+    ]
+    if handoff.get("terminal_staging") != _artifact_binding_with_digest(
+        staging_path, root=attempt
+    ):
+        raise QualificationError("scientific handoff staging binding drift")
+    scientific_exit = _write_scientific_exit_receipt(
+        attempt=attempt,
+        scientific_execution=scientific,
+        launcher_process_identity=launcher,
+    )
+    scientific_exit_path = attempt / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS[
+        "scientific_exit"
+    ]
+    finalizer = _run_exact_isolated_process(
+        _expected_finalizer_argv(
+            attempt=attempt,
+            launcher_identity=launcher,
+            scientific_exit_receipt=scientific_exit_path,
+        ),
+        expected_role="TERMINAL_FINALIZER",
+        phase="TERMINAL_FINALIZER",
+        require_zero_returncode=False,
+    )
+    if int(finalizer["returncode"]) != 0:
+        archive = _archive_terminal_launcher_failure(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            phase="TERMINAL_FINALIZER",
+            execution=finalizer,
+            launcher_process_identity=launcher,
+            attempt_hint=attempt,
+        )
+        for tracked_path in _tracked_publication_paths():
+            tracked_path.unlink(missing_ok=True)
+        raise QualificationError(
+            "sole final terminal finalizer failed; no retry authorised; "
+            f"failure archived at {archive}"
+        )
+    terminal = _single_phase_json_payload(
+        str(finalizer["stdout"]), phase="TERMINAL_FINALIZER"
+    )
+    if (
+        terminal.get("canonical_output_root")
+        != str(CONTRACT.OUTPUT_ROOT.resolve())
+        or terminal.get("official_post_finalizer_check_spawned") is not False
+        or terminal.get("nothing_scientific_running") is not True
+    ):
+        raise QualificationError("terminal finalizer handoff drift")
+    remaining = _active_experiment_processes(
+        include_finalizer=True, include_launcher=False, include_checker=False
+    )
+    if remaining:
+        raise QualificationError(
+            f"producer remains active after terminal finalizer: {remaining}"
+        )
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.launcher_terminal.v1",
+        "source_freeze_commit": terminal["source_freeze_commit"],
+        "canonical_output_root": terminal["canonical_output_root"],
+        "result": copy.deepcopy(terminal["result"]),
+        "report": copy.deepcopy(terminal["report"]),
+        "scientific_execution": {
+            "process_identity": copy.deepcopy(scientific["process_identity"]),
+            "returncode": 0,
+            "cleanup": copy.deepcopy(scientific["cleanup"]),
+        },
+        "scientific_exit": _artifact_binding_with_digest(
+            CONTRACT.OUTPUT_ROOT
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["scientific_exit"],
+            root=CONTRACT.OUTPUT_ROOT,
+        ),
+        "terminal_execution": {
+            "process_identity": copy.deepcopy(finalizer["process_identity"]),
+            "returncode": 0,
+            "cleanup": copy.deepcopy(finalizer["cleanup"]),
+        },
+        "all_process_zero_claimed_at_launcher_payload": False,
+        "live_launcher_at_payload_construction": True,
+        "nothing_running_scope": list(
+            CONTRACT.EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+        ),
+        "producer_role_matches_excluding_live_launcher": [],
+        "official_post_finalizer_check_spawned": False,
+        "official_post_finalizer_check_required_after_result_commit": True,
+        "pass": True,
+    }
+
+
+def _close_consumed_namespace_after_exception(
+    *,
+    before_attempts: set[Path],
+    before_failures: set[Path],
+    launcher_process_identity: Mapping[str, Any],
+    error: BaseException,
+) -> Path | None:
+    """Archive any consumed final-attempt namespace after proved child exit."""
+
+    for tracked_path in _tracked_publication_paths():
+        tracked_path.unlink(missing_ok=True)
+    remaining = _active_experiment_processes(
+        include_finalizer=True, include_launcher=False, include_checker=False
+    )
+    if remaining:
+        raise QualificationError(
+            f"cannot close failed final attempt while producer remains: {remaining}"
+        ) from error
+    after_attempts, after_failures = _attempt_namespace_entries()
+    new_failures = sorted(after_failures - before_failures)
+    fresh_attempts = sorted(after_attempts - before_attempts)
+    candidates: list[Path] = []
+    candidates.extend(new_failures)
+    candidates.extend(fresh_attempts)
+    if CONTRACT.OUTPUT_ROOT.exists():
+        candidates.append(CONTRACT.OUTPUT_ROOT.resolve())
+    unique = sorted(set(candidates))
+    if not unique:
+        if not bool(getattr(error, "phase_process_started", False)):
+            # Freeze/preflight failed before a scientific child was created.
+            return None
+        candidate = (
+            CONTRACT.OUTPUT_ROOT.parent
+            / f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        ).resolve()
+        candidate.mkdir(parents=False, exist_ok=False)
+        unique = [candidate]
+    if len(unique) != 1:
+        raise QualificationError(
+            f"failed final attempt left multiple namespaces: {unique}"
+        ) from error
+    candidate = unique[0]
+    if candidate not in new_failures and not candidate.name.startswith(
+        f".{CONTRACT.OUTPUT_ROOT.name}.failed-"
+    ):
+        failed = candidate.parent / (
+            f".{CONTRACT.OUTPUT_ROOT.name}.failed-{time.time_ns()}-{os.getpid()}"
+        )
+        os.replace(candidate, failed)
+        candidate = failed.resolve()
+    terminal_path = candidate / "receipts/terminal_failure_finalization.json"
+    if terminal_path.exists():
+        return candidate
+    failure_path = candidate / "receipts/failure.json"
+    if not failure_path.exists():
+        science_complete = (
+            candidate
+            / CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["terminal_staging"]
+        ).is_file()
+        atomic_json(
+            failure_path,
+            attach_digest(
+                {
+                    "schema": "plan_aware_monotone_jepa_failure_v1",
+                    "source_freeze_commit": git_output("rev-parse", "HEAD"),
+                    "phase": "LAUNCHER_TERMINAL_LIFECYCLE",
+                    "error_type": type(error).__name__,
+                    "error_message": str(error),
+                    "partial_artifacts_reusable": False,
+                    "full_training_epochs_completed": (
+                        int(CONTRACT.TRAINING["epochs"]) if science_complete else 0
+                    ),
+                    "calibration_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[CALIBRATION])
+                        if science_complete
+                        else 0
+                    ),
+                    "heldout_rows_opened": (
+                        int(CONTRACT.ROLE_ROW_COUNTS[HELDOUT])
+                        if science_complete
+                        else 0
+                    ),
+                    "final_checkpoint_published": science_complete,
+                    "nothing_running": False,
+                    "terminal_cleanup_pending": False,
+                    "no_further_retry": True,
+                    "prohibition_counters": _prohibition_counters(),
+                }
+            ),
+        )
+    exclusive_json(
+        terminal_path,
+        attach_digest(
+            {
+                "schema": (
+                    "plan_aware_monotone_jepa_cost_v1."
+                    "terminal_failure_finalization.v1"
+                ),
+                "phase": "LAUNCHER_TERMINAL_LIFECYCLE",
+                "failed_archive": str(candidate),
+                "launcher_process_identity": copy.deepcopy(
+                    launcher_process_identity
+                ),
+                "error_type": type(error).__name__,
+                "error_message": str(error),
+                "exact_producer_matches_after_cleanup": [],
+                "nothing_scientific_running": True,
+                "launcher_live_at_write": True,
+                "all_process_zero_claimed": False,
+                "partial_artifacts_reusable": False,
+                "files_reused": 0,
+                "automatic_retry": False,
+                "no_further_retry": True,
+                "pass": True,
+            }
+        ),
+    )
+    return candidate
+
+
+def execute() -> dict[str, Any]:
+    """Fail-closed wrapper around the sole authorised launcher lifecycle."""
+
+    launcher = _process_identity(
+        os.getpid(), require_role="NONSCIENTIFIC_LAUNCHER"
+    )
+    before_attempts, before_failures = _attempt_namespace_entries()
+    try:
+        return _execute_launcher_lifecycle()
+    except BaseException as exc:
+        archive = _close_consumed_namespace_after_exception(
+            before_attempts=before_attempts,
+            before_failures=before_failures,
+            launcher_process_identity=launcher,
+            error=exc,
+        )
+        if archive is not None:
+            raise QualificationError(
+                "sole final launcher lifecycle failed; no retry authorised; "
+                f"failure archived at {archive}"
+            ) from exc
+        raise
+
+
+def _literal_producer_role_matches() -> dict[str, list[dict[str, Any]]]:
+    """Return exact live producer identities and reject malformed lookalikes."""
+
+    roles = {
+        role: [] for role in CONTRACT.EXECUTION_CORRECTION_2_TERMINAL_PROCESS_ROLES
+    }
+    invalid: list[dict[str, Any]] = []
+    own = os.getpid()
+    for entry in Path("/proc").iterdir():
+        if not entry.name.isdigit() or int(entry.name) == own:
+            continue
+        try:
+            identity = _process_identity(int(entry.name))
+        except (
+            FileNotFoundError,
+            PermissionError,
+            ProcessLookupError,
+            QualificationError,
+        ):
+            continue
+        role = identity.get("role")
+        if role in roles:
+            roles[str(role)].append(identity)
+        elif role == "INVALID_EXPERIMENT_ARGV":
+            invalid.append(identity)
+    if invalid:
+        raise QualificationError(
+            f"malformed experiment argv remains active: {invalid}"
+        )
+    return {
+        role: sorted(values, key=lambda row: int(row["pid"]))
+        for role, values in roles.items()
+    }
+
+
+def _official_post_finalizer_check(output_root: Path) -> dict[str, Any]:
+    """Run only after result commit and literal producer-process exit."""
+
+    output_root = output_root.resolve()
+    if output_root != CONTRACT.OUTPUT_ROOT.resolve():
+        raise QualificationError("official checker output-root drift")
+    checker = _process_identity(
+        os.getpid(), require_role="POST_FINALIZER_CHECKER"
+    )
+    producer_matches = _literal_producer_role_matches()
+    if any(producer_matches.values()):
+        raise QualificationError(
+            f"official checker observed a live producer: {producer_matches}"
+        )
+    witness_path = Path(
+        CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+    )
+    if witness_path.exists():
+        raise QualificationError("post-finalizer witness already exists")
+    result_path = output_root / "result.json"
+    report_path = output_root / "report.md"
+    result = load_json(result_path)
+    try:
+        CONTRACT.validate_execution_correction_2_result_receipt(result)
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    custody = result.get("stage_execution", {}).get(
+        "execution_correction_2_custody"
+    )
+    if not isinstance(custody, Mapping):
+        raise QualificationError("official checker lacks correction-2 custody")
+    finalization_binding = custody.get("terminal_finalization")
+    launcher_identity = None
+    live_at_publication = custody.get("live_non_scientific_processes")
+    if isinstance(live_at_publication, list) and len(live_at_publication) == 2:
+        launcher_identity = live_at_publication[1]
+    if not isinstance(finalization_binding, Mapping) or not isinstance(
+        launcher_identity, Mapping
+    ):
+        raise QualificationError("official checker terminal custody drift")
+    checks = deep_check(output_root)
+    tracked_result_path, tracked_report_path = _tracked_publication_paths()
+    tracked_result = _artifact_binding_with_digest(
+        tracked_result_path, root=ROOT
+    )
+    tracked_report = binding(tracked_report_path, relative_to=ROOT)
+    if (
+        result_path.read_bytes() != tracked_result_path.read_bytes()
+        or report_path.read_bytes() != tracked_report_path.read_bytes()
+    ):
+        raise QualificationError("canonical/tracked publication bytes differ")
+    deep_evidence = {
+        "pass": bool(checks.get("pass")),
+        "canonical_output_root": str(output_root),
+        "tracked_result_sha256": tracked_result["sha256"],
+        "tracked_report_sha256": tracked_report["sha256"],
+    }
+    try:
+        receipt = CONTRACT.build_execution_correction_2_post_finalizer_check(
+            repo_root=ROOT,
+            source_freeze_commit=str(result["source_freeze_commit"]),
+            terminal_finalization=finalization_binding,
+            checker_process_identity=checker,
+            launcher_process_identity=launcher_identity,
+            producer_role_matches=producer_matches,
+            tracked_result=tracked_result,
+            tracked_report=tracked_report,
+            deep_check=deep_evidence,
+        )
+        CONTRACT.validate_execution_correction_2_post_finalizer_check(
+            receipt, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    try:
+        CONTRACT.write_execution_correction_2_post_finalizer_check(
+            receipt, path=witness_path, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    roundtrip = load_json(witness_path)
+    try:
+        CONTRACT.validate_execution_correction_2_post_finalizer_check(
+            roundtrip, repo_root=ROOT
+        )
+    except CONTRACT.ContractError as exc:
+        witness_path.unlink(missing_ok=True)
+        raise QualificationError(str(exc)) from exc
+    if roundtrip != receipt:
+        witness_path.unlink(missing_ok=True)
+        raise QualificationError("post-finalizer witness roundtrip drift")
+    return {
+        "schema": "plan_aware_monotone_jepa_cost_v1.official_check.v1",
+        "canonical_output_root": str(output_root),
+        "deep_check": checks,
+        "external_witness": {
+            **binding(witness_path),
+            "content_digest": receipt["content_digest"],
+        },
+        "literal_zero_all_producer_roles": True,
+        "launcher_spawned_or_execed_checker": False,
+        "pass": True,
+    }
+
+
+_FROZEN_SCIENTIFIC_AUTHORITY_PATHS = tuple(
+    Path(relative)
+    for relative in CONTRACT.CORRECTION_REFREEZE_IMMUTABLE_AUTHORITY_PATHS
+)
+
+
+def _scientific_authority_payloads() -> dict[str, bytes]:
+    """Build outcome-blind authority bytes for correction equality checks."""
+
+    CONTRACT.validate_no_duplicate_literal_dict_keys(Path(CONTRACT.__file__))
+    route_role = CONTRACT.build_route_role_authority(ROOT)
+    return {
+        str(CONTRACT.TRACKED_PREREGISTRATION_PATH): (
+            CONTRACT.build_preregistration_markdown().encode("utf-8")
+        ),
+        str(CONTRACT.TRACKED_CONTRACT_PATH): CONTRACT.contract_receipt_bytes(),
+        str(CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH): (
+            CONTRACT.output_schema_receipt_bytes()
+        ),
+        str(CONTRACT.TRACKED_FIXTURE_PATH): (
+            CONTRACT.evaluator_fixture_receipt_bytes()
+        ),
+        str(CONTRACT.TRACKED_ROUTE_ROLE_AUTHORITY_PATH): (
+            CONTRACT.route_role_authority_receipt_bytes(route_role)
+        ),
+    }
+
+
+def _git_path_rows(*args: str) -> list[str]:
+    return [row for row in git_output(*args).splitlines() if row]
+
+
+def _correction_refreeze_preflight(
+    *,
+    head: str,
+    prior_smoke_failure_custody: Sequence[Mapping[str, Any]],
+    authority_payloads: Mapping[str, bytes],
+) -> dict[str, Any]:
+    """Validate a correction base without opening any scientific outcomes."""
+
+    if head == SOURCE_COMMIT or not prior_smoke_failure_custody:
+        raise QualificationError(
+            "correction refreeze requires a prior smoke-failure freeze descendant"
+        )
+    try:
+        custody = CONTRACT.validate_prior_smoke_failure_custody(
+            prior_smoke_failure_custody
+        )
+    except CONTRACT.ContractError as exc:
+        raise QualificationError(str(exc)) from exc
+    if subprocess.run(
+        ["git", "merge-base", "--is-ancestor", SOURCE_COMMIT, head],
+        cwd=ROOT,
+        check=False,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    ).returncode:
+        raise QualificationError("correction-refreeze base does not descend from source")
+    lineage = _git_path_rows("rev-list", "--parents", f"{SOURCE_COMMIT}..{head}")
+    if not lineage or any(len(row.split()) != 2 for row in lineage):
+        raise QualificationError("correction-refreeze history is not linear and no-merge")
+    for record in custody:
+        prior_freeze = str(record["source_freeze_commit"])
+        if subprocess.run(
+            ["git", "merge-base", "--is-ancestor", prior_freeze, head],
+            cwd=ROOT,
+            check=False,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode:
+            raise QualificationError(
+                "prior smoke freeze is not an ancestor of correction-refreeze base"
+            )
+
+    allowed_paths = {
+        *(
+            str(path)
+            for path in CONTRACT.SOURCE_CLOSURE_DEFAULT_PATHS
+            if str(path).endswith(".py")
+        ),
+        *map(str, CONTRACT.CORRECTION_REFREEZE_IMMUTABLE_AUTHORITY_PATHS),
+        str(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH),
+    }
+    changed_paths = sorted(
+        {
+            *_git_path_rows("diff", "--name-only", SOURCE_COMMIT, head),
+            *_git_path_rows("diff", "--name-only"),
+            *_git_path_rows("diff", "--cached", "--name-only"),
+            *_git_path_rows("ls-files", "--others", "--exclude-standard"),
+        }
+    )
+    outside_domain = sorted(set(changed_paths) - allowed_paths)
+    if outside_domain:
+        raise QualificationError(
+            "correction refreeze changed paths outside the source-closure/authority "
+            f"domain: {outside_domain}"
+        )
+
+    authority_paths = set(authority_payloads)
+    if authority_paths != {str(path) for path in _FROZEN_SCIENTIFIC_AUTHORITY_PATHS}:
+        raise QualificationError("correction scientific-authority payload set drift")
+    mutable_correction_observed_by_archive: dict[str, bool] = {}
+    for record in custody:
+        closure_binding = record.get("source_closure")
+        if not isinstance(closure_binding, Mapping):
+            raise QualificationError(
+                "eligible smoke retry requires its archived source-closure snapshot"
+            )
+        closure_path = Path(str(closure_binding["path"]))
+        closure = load_json(closure_path)
+        observed_closure_binding = {
+            **binding(closure_path),
+            "content_digest": closure.get("content_digest"),
+        }
+        if observed_closure_binding != dict(closure_binding):
+            raise QualificationError(
+                f"prior smoke source-closure binding drift: {closure_path}"
+            )
+        try:
+            CONTRACT.validate_source_closure(closure)
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(
+                f"prior smoke source closure is invalid: {closure_path}: {exc}"
+            ) from exc
+        rows = {str(row["path"]): row for row in closure["rows"]}
+        for relative, payload in authority_payloads.items():
+            expected = rows.get(relative)
+            if (
+                not isinstance(expected, Mapping)
+                or expected.get("sha256") != hashlib.sha256(payload).hexdigest()
+                or expected.get("bytes") != len(payload)
+            ):
+                raise QualificationError(
+                    "scientific authority changed after fit outcomes opened: "
+                    f"{relative}"
+                )
+        correction_observed = False
+        for relative in (
+            str(path)
+            for path in CONTRACT.SOURCE_CLOSURE_DEFAULT_PATHS
+            if str(path).endswith(".py")
+        ):
+            expected = rows.get(relative)
+            if not isinstance(expected, Mapping):
+                raise QualificationError(
+                    f"prior smoke closure omits mutable Python path: {relative}"
+                )
+            current = ROOT / relative
+            if (
+                not current.is_file()
+                or current.stat().st_size != int(expected["bytes"])
+                or sha256_file(current) != str(expected["sha256"])
+            ):
+                correction_observed = True
+                break
+        mutable_correction_observed_by_archive[str(record["archive_path"])] = (
+            correction_observed
+        )
+    if not all(mutable_correction_observed_by_archive.values()):
+        raise QualificationError(
+            "correction refreeze contains no implementation/test correction relative "
+            "to every prior smoke archive"
+        )
+    return {
+        "mode": "VALIDATED_TRAINING_SMOKE_CORRECTION_REFREEZE",
+        "base_head": head,
+        "prior_smoke_failure_custody": copy.deepcopy(custody),
+        "changed_paths": changed_paths,
+        "scientific_authorities_unchanged": True,
+        "mutable_correction_observed_by_archive": (
+            mutable_correction_observed_by_archive
+        ),
+        "files_reused": 0,
+        "required_enclosing_commit_subject": CONTRACT.CONTRACT_FREEZE_COMMIT_SUBJECT,
+    }
+
+
+def _refresh_correction_freeze_authorities(
+    authority_payloads: Mapping[str, bytes],
+) -> dict[str, Any]:
+    """Atomically replace each generated authority with prevalidated bytes."""
+
+    for relative in _FROZEN_SCIENTIFIC_AUTHORITY_PATHS:
+        atomic_bytes(_tracked_path(relative), authority_payloads[str(relative)])
+    closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
+    CONTRACT.validate_source_closure(closure)
+    atomic_bytes(
+        _tracked_path(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH),
+        CONTRACT.source_closure_receipt_bytes(closure),
+    )
+    return closure
+
+
+def _freeze_preexecution_forensic_authorities(forensic: Any) -> dict[str, Any]:
+    """Prepare only the zero-input technical-forensic authority overlay."""
+
+    try:
+        preparation = forensic.validate_forensic_freeze_preparation(ROOT)
+    except Exception as exc:
+        raise QualificationError(str(exc)) from exc
+    try:
+        written = forensic.write_forensic_authorities(ROOT)
+        post = forensic.validate_forensic_authority_write(
+            ROOT, preparation_receipt=preparation
+        )
+        if (
+            written.get("authorities") != post.get("authorities")
+            or written.get("source_closure") != post.get("source_closure")
+            or post.get("pass") is not True
+        ):
+            raise QualificationError("forensic freeze authority custody drift")
+    except BaseException as original:
+        try:
+            forensic.rollback_forensic_authorities(ROOT)
+        except BaseException as cleanup_exc:
+            raise QualificationError(
+                "forensic authority rollback failed after preparation failure: "
+                f"{type(cleanup_exc).__name__}: {cleanup_exc}"
+            ) from original
+        if not isinstance(original, Exception):
+            raise
+        if isinstance(original, QualificationError):
+            raise
+        raise QualificationError(str(original)) from original
+    return {
+        "freeze_mode": "PREEXECUTION_FORENSIC_AUTHORITY_PREPARATION",
+        "base_head": post["base_head"],
+        "changed_paths": copy.deepcopy(post["changed_paths"]),
+        "authorities": copy.deepcopy(written["authorities"]),
+        "source_closure": copy.deepcopy(written["source_closure"]),
+        "authority_custody": copy.deepcopy(post["authority_custody"]),
+        "source_closure_rows": post["source_closure_rows"],
+        "scientific_inputs_opened": 0,
+        "scientific_archive_payload_files_opened": 0,
+        "files_reused": 0,
+        "required_enclosing_commit_subject": (
+            forensic.FORENSIC_FREEZE_COMMIT_SUBJECT
+        ),
+        "pass": True,
+    }
+
+
+def freeze_preexecution_forensic_contract() -> dict[str, Any]:
+    """Prepare the technical-forensic overlay without entering V1 freeze paths."""
+
+    forensic = _validate_forensic_constant_alignment()
+    identity = _forensic_process_identity(
+        os.getpid(), require_role="PREEXECUTION_FORENSIC_FREEZE"
+    )
+    if identity["argv"] != _expected_preexecution_forensic_freeze_argv():
+        raise QualificationError("preexecution forensic freeze exact argv drift")
+    head = git_output("rev-parse", "HEAD")
+    if head != forensic.SOURCE_COMMIT:
+        raise QualificationError(
+            "preexecution forensic freeze must start at its exact base commit"
+        )
+    return _freeze_preexecution_forensic_authorities(forensic)
+
+
+def freeze_contract() -> dict[str, Any]:
+    head = git_output("rev-parse", "HEAD")
+    if head == CONTRACT.INITIAL_EXECUTION_CORRECTION_FREEZE_COMMIT:
+        # Prepare only the second execution-correction authority overlay.  The
+        # scientific contract and first execution amendment remain byte-exact.
+        try:
+            CONTRACT.validate_base_scientific_authorities(ROOT)
+            CONTRACT.validate_base_execution_correction_authorities(ROOT)
+            first_archive = CONTRACT.validate_execution_correction_archive()
+            second_archive = CONTRACT.validate_execution_correction_2_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        changed = {
+            path
+            for command in (
+                ("diff", "--name-only"),
+                ("diff", "--cached", "--name-only"),
+                ("ls-files", "--others", "--exclude-standard"),
+            )
+            for path in _git_path_rows(*command)
+        }
+        outside = sorted(
+            changed - set(CONTRACT.EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS)
+        )
+        if outside:
+            raise QualificationError(
+                "execution-correction-2 preparation has unrelated paths: "
+                f"{outside}"
+            )
+        attempts, failures = _attempt_namespace_entries()
+        expected_failures = {
+            CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve(),
+            CONTRACT.EXECUTION_CORRECTION_2_FAILED_ARCHIVE.resolve(),
+        }
+        witness = Path(
+            CONTRACT.EXECUTION_CORRECTION_2_RUNTIME_PATHS["post_finalizer_check"]
+        )
+        if (
+            attempts
+            or failures != expected_failures
+            or CONTRACT.OUTPUT_ROOT.exists()
+            or witness.exists()
+            or _active_experiment_processes(
+                include_finalizer=True,
+                include_launcher=True,
+                include_checker=True,
+            )
+        ):
+            raise QualificationError(
+                "execution-correction-2 preparation namespace is not pristine"
+            )
+        paths = CONTRACT.write_execution_correction_2_authorities(ROOT)
+        try:
+            closure = (
+                CONTRACT.load_and_validate_execution_correction_2_source_closure(
+                    _tracked_path(
+                        CONTRACT.TRACKED_EXECUTION_CORRECTION_2_SOURCE_CLOSURE_PATH
+                    )
+                )
+            )
+            CONTRACT.load_and_validate_execution_correction_2_amendment(
+                _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_2_AMENDMENT_PATH)
+            )
+            CONTRACT.load_and_validate_execution_correction_2_output_schema(
+                _tracked_path(
+                    CONTRACT.TRACKED_EXECUTION_CORRECTION_2_OUTPUT_SCHEMA_PATH
+                )
+            )
+            CONTRACT.load_and_validate_execution_correction_2_fixture(
+                _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_2_FIXTURE_PATH)
+            )
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        return {
+            "freeze_mode": "EXECUTION_CORRECTION_2_PREPARATION",
+            "base_head": head,
+            "failed_archives": [first_archive, second_archive],
+            "failed_archive_files_reused": 0,
+            "fresh_attempts_authorised": 1,
+            "automatic_retry": False,
+            "required_enclosing_commit_subject": (
+                CONTRACT.EXECUTION_CORRECTION_2_FREEZE_COMMIT_SUBJECT
+            ),
+            "changed_path_allowlist": list(
+                CONTRACT.EXECUTION_CORRECTION_2_ALLOWED_CHANGED_PATHS
+            ),
+            "authorities": {label: binding(path) for label, path in paths.items()},
+            "source_closure_rows": closure["row_count"],
+            "scientific_contract_sha256": CONTRACT.CONTRACT_SHA256,
+            "pass": True,
+        }
+    if head == CONTRACT.INITIAL_EXECUTION_FREEZE_COMMIT:
+        # Prepare only the separate execution-amendment authority suite.  The
+        # original preregistration/contract/schema/fixture/role/closure bytes
+        # are immutable and are never regenerated in this branch.
+        try:
+            CONTRACT.validate_base_scientific_authorities(ROOT)
+            archive = CONTRACT.validate_execution_correction_archive()
+        except CONTRACT.ContractError as exc:
+            raise QualificationError(str(exc)) from exc
+        tracked_changes = {
+            path
+            for path in git_output("diff", "--name-only").splitlines()
+            if path
+        }
+        outside = sorted(
+            tracked_changes - set(CONTRACT.EXECUTION_CORRECTION_ALLOWED_CHANGED_PATHS)
+        )
+        if outside:
+            raise QualificationError(
+                f"execution-correction preparation has unrelated tracked edits: {outside}"
+            )
+        failed = sorted(
+            path.resolve()
+            for path in CONTRACT.OUTPUT_ROOT.parent.glob(
+                f".{CONTRACT.OUTPUT_ROOT.name}.failed-*"
+            )
+        )
+        attempts = sorted(
+            CONTRACT.OUTPUT_ROOT.parent.glob(
+                f".{CONTRACT.OUTPUT_ROOT.name}.attempt-*"
+            )
+        )
+        if (
+            failed != [CONTRACT.EXECUTION_CORRECTION_FAILED_ARCHIVE.resolve()]
+            or attempts
+            or CONTRACT.OUTPUT_ROOT.exists()
+            or _active_experiment_processes()
+        ):
+            raise QualificationError(
+                "execution-correction amendment namespace is not fresh"
+            )
+        paths = CONTRACT.write_execution_correction_authorities(ROOT)
+        closure = CONTRACT.load_and_validate_execution_correction_source_closure(
+            _tracked_path(CONTRACT.TRACKED_EXECUTION_CORRECTION_SOURCE_CLOSURE_PATH)
+        )
+        return {
+            "freeze_mode": "EXECUTION_CORRECTION_AMENDMENT_PREPARATION",
+            "base_head": head,
+            "failed_archive_custody": archive,
+            "files_reused": 0,
+            "required_enclosing_commit_subject": (
+                CONTRACT.EXECUTION_CORRECTION_FREEZE_COMMIT_SUBJECT
+            ),
+            "amendment_authorities": {
+                label: binding(path) for label, path in paths.items()
+            },
+            "amendment_source_closure_rows": closure["row_count"],
+            "scientific_authority_contract_sha256": (
+                CONTRACT.SCIENTIFIC_AUTHORITY_CONTRACT_SHA256
+            ),
+            "pass": True,
+        }
+    prior_smoke_failure_custody = _validated_prior_smoke_failure_custody(
+        CONTRACT.OUTPUT_ROOT,
+        source_freeze=head,
+        allow_current_freeze_as_correction_base=True,
+    )
+    correction_preflight: dict[str, Any] | None = None
+    authority_payloads: dict[str, bytes] | None = None
+    if head == SOURCE_COMMIT:
+        if prior_smoke_failure_custody:
+            raise QualificationError(
+                "initial source freeze cannot consume a prior smoke-failure archive"
+            )
+    else:
+        authority_payloads = _scientific_authority_payloads()
+        correction_preflight = _correction_refreeze_preflight(
+            head=head,
+            prior_smoke_failure_custody=prior_smoke_failure_custody,
+            authority_payloads=authority_payloads,
+        )
+    if head == SOURCE_COMMIT and git_output("status", "--porcelain"):
+        # The intended prospective implementation is necessarily untracked at
+        # this point; reject only unrelated tracked modifications.
+        tracked = git_output("status", "--porcelain=v1", "--untracked-files=no")
+        if tracked:
+            raise QualificationError(f"freeze has tracked pre-existing edits: {tracked}")
+    if correction_preflight is None:
+        CONTRACT.write_route_role_authority(
+            ROOT, path=_tracked_path(CONTRACT.TRACKED_ROUTE_ROLE_AUTHORITY_PATH)
+        )
+        CONTRACT.write_preregistration(
+            _tracked_path(CONTRACT.TRACKED_PREREGISTRATION_PATH)
+        )
+        CONTRACT.write_contract(_tracked_path(CONTRACT.TRACKED_CONTRACT_PATH))
+        CONTRACT.write_output_schema(
+            _tracked_path(CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH)
+        )
+        CONTRACT.write_evaluator_fixture(
+            _tracked_path(CONTRACT.TRACKED_FIXTURE_PATH)
+        )
+        closure = CONTRACT.build_source_closure(ROOT, require_complete=True)
+        CONTRACT.write_source_closure(
+            closure, _tracked_path(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)
+        )
+        freeze_mode = "INITIAL_DIRECT_CONTRACT_FREEZE_PREPARATION"
+    else:
+        assert authority_payloads is not None
+        closure = _refresh_correction_freeze_authorities(authority_payloads)
+        freeze_mode = str(correction_preflight["mode"])
+    _validate_frozen_authorities()
+    return {
+        "freeze_mode": freeze_mode,
+        "base_head": head,
+        "prior_smoke_failure_custody": copy.deepcopy(
+            prior_smoke_failure_custody
+        ),
+        "files_reused": 0,
+        "required_enclosing_commit_subject": CONTRACT.CONTRACT_FREEZE_COMMIT_SUBJECT,
+        "contract": binding(_tracked_path(CONTRACT.TRACKED_CONTRACT_PATH)),
+        "output_schema": binding(_tracked_path(CONTRACT.TRACKED_OUTPUT_SCHEMA_PATH)),
+        "fixture": binding(_tracked_path(CONTRACT.TRACKED_FIXTURE_PATH)),
+        "source_closure": binding(_tracked_path(CONTRACT.TRACKED_SOURCE_CLOSURE_PATH)),
+        "source_closure_rows": closure["row_count"],
+        "pass": True,
+    }
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("freeze")
+    subparsers.add_parser("execute")
+    subparsers.add_parser(PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND)
+    subparsers.add_parser(PREEXECUTION_DIAGNOSTIC_SUBCOMMAND)
+    subparsers.add_parser(PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND)
+    subparsers.add_parser(PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND)
+    subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND
+    )
+    subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND
+    )
+    scientific_parser = subparsers.add_parser(SCIENTIFIC_EVALUATOR_SUBCOMMAND)
+    scientific_parser.add_argument("--launcher-pid", type=int, required=True)
+    scientific_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    finalizer_parser = subparsers.add_parser(TERMINAL_FINALIZER_SUBCOMMAND)
+    finalizer_parser.add_argument("--attempt", type=Path, required=True)
+    finalizer_parser.add_argument("--launcher-pid", type=int, required=True)
+    finalizer_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    finalizer_parser.add_argument(
+        "--scientific-exit-receipt", type=Path, required=True
+    )
+    check_parser = subparsers.add_parser("check")
+    check_parser.add_argument("--output-root", type=Path, required=True)
+    diagnostic_child_parser = subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND
+    )
+    diagnostic_child_parser.add_argument("--launcher-pid", type=int, required=True)
+    diagnostic_child_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    diagnostic_child_parser.add_argument(
+        "--diagnostic-root", type=Path, required=True
+    )
+    correction_child_parser = subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND
+    )
+    correction_child_parser.add_argument(
+        "--launcher-pid", type=int, required=True
+    )
+    correction_child_parser.add_argument(
+        "--launcher-start-time-ticks", type=int, required=True
+    )
+    correction_child_parser.add_argument(
+        "--diagnostic-root", type=Path, required=True
+    )
+    diagnostic_synthetic_parser = subparsers.add_parser(
+        PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND
+    )
+    diagnostic_synthetic_parser.add_argument(
+        "--fixture-id", type=str, required=True
+    )
+    diagnostic_synthetic_parser.add_argument(
+        "--diagnostic-root", type=Path, required=True
+    )
+    args = parser.parse_args()
+    if args.command == "freeze":
+        value = freeze_contract()
+    elif args.command == "execute":
+        value = execute()
+    elif args.command == PREEXECUTION_FORENSIC_FREEZE_SUBCOMMAND:
+        value = freeze_preexecution_forensic_contract()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_SUBCOMMAND:
+        value = execute_preexecution_diagnostic()
+    elif args.command == PREEXECUTION_FORENSIC_CORRECTION_FREEZE_SUBCOMMAND:
+        value = freeze_preexecution_forensic_correction_1_contract()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_SUBCOMMAND:
+        value = execute_preexecution_correction_1()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_FINALIZER_SUBCOMMAND:
+        value = finalize_preexecution_forensic_correction_1()
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHECKER_SUBCOMMAND:
+        value = check_preexecution_forensic_correction_1()
+    elif args.command == SCIENTIFIC_EVALUATOR_SUBCOMMAND:
+        value = execute_scientific(
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+        )
+    elif args.command == TERMINAL_FINALIZER_SUBCOMMAND:
+        value = _finalize_correction_2(
+            attempt=args.attempt,
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+            scientific_exit_receipt=args.scientific_exit_receipt,
+        )
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CHILD_SUBCOMMAND:
+        value = _execute_preexecution_only_diagnostic_child(
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+            diagnostic_root=args.diagnostic_root,
+        )
+    elif args.command == PREEXECUTION_DIAGNOSTIC_CORRECTION_CHILD_SUBCOMMAND:
+        value = _execute_preexecution_only_diagnostic_child(
+            launcher_pid=args.launcher_pid,
+            launcher_start_time_ticks=args.launcher_start_time_ticks,
+            diagnostic_root=args.diagnostic_root,
+        )
+    elif args.command == PREEXECUTION_DIAGNOSTIC_SYNTHETIC_CHILD_SUBCOMMAND:
+        value = _execute_preexecution_diagnostic_synthetic_child(
+            fixture_id=args.fixture_id,
+            diagnostic_root=args.diagnostic_root,
+        )
+    else:
+        value = _official_post_finalizer_check(args.output_root)
+    print(
+        json.dumps(
+            value,
+            sort_keys=True,
+            ensure_ascii=False,
+            allow_nan=False,
+            separators=(",", ":"),
+        )
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

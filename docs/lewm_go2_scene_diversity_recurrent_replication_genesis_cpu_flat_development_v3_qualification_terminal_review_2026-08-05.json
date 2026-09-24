@@ -1,0 +1,263 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_terminal_review_v1",
+  "review_date": "2026-08-05",
+  "status": "PASS_INDEPENDENT_QUALIFICATION_TERMINAL_REVIEW",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent terminal and leaf-closure review of the consumed flat Genesis/CPU V3 two-scene qualification PASS.",
+    "sealed_held_out_or_production_material_opened": false,
+    "qualification_payload_used_as_scientific_or_training_data": false,
+    "genesis_gpu_or_model_execution_performed_by_review": false,
+    "qualification_output_opened_only_for_terminal_integrity_review": true
+  },
+  "bindings": {
+    "qualification_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/qualification_result.json",
+      "sha256": "fdd238760b18658b867846fde30102576964f9ece4307417de12ac4fcc80f40d",
+      "byte_count": 9179
+    },
+    "qualification_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/terminal.json",
+      "sha256": "18df9336a4b118843db77940b6a4086d0ee1d708cf94984c6418935510de32d0",
+      "byte_count": 711
+    },
+    "qualification_decision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/qualification_decision.json",
+      "sha256": "6eac9ff6458092d6284011934c865b45519cbd2ff14c0b2da3a515bbf4a6a299",
+      "byte_count": 1789
+    },
+    "qualification_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/collection/reservation.json",
+      "sha256": "0dedd050b449f798d43d0e3b00ebb534c76a1991a60ac2994e70ab2eff0ab166",
+      "byte_count": 2884
+    },
+    "scene_12_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/collection/scene_results/012.json",
+      "sha256": "fde0f3d5e7baf3ad3f8bc5b876333652523338fb021c1a22a76d79a231e615a7",
+      "byte_count": 8019
+    },
+    "scene_0_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/collection/scene_results/000.json",
+      "sha256": "ed47db939c68d8866b32c08283ae39b132ca31b3da7fa4d5ef8dc137f25c4f90",
+      "byte_count": 7995
+    },
+    "independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_source_review_2026-08-05.json",
+      "sha256": "e5d1e57b047f9a763e3197db1a45729e8a156f0fa6a8d2e421d2371e6d8fe991",
+      "byte_count": 14314
+    },
+    "qualification_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification_exact_plan_2026-08-05.json",
+      "sha256": "6a055839ab9bb6fe45b9cb5864e8f3c87e75f468dd7e9c26e8c950e4a6fedb78",
+      "byte_count": 355206
+    },
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_preregistration_2026-08-05.md",
+      "sha256": "c2c894d8bef28fdc641fa9be0706b4becea1e1311cdeb9687d01b2eda3aafe7b",
+      "byte_count": 9020
+    }
+  },
+  "attempt_identity": {
+    "attempt_id": "go2-scene-diversity-recurrent-replication-genesis-cpu-flat-development-v3-qualification",
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1",
+    "reservation_status": "RESERVED_FLAT_CPU_TWO_PROBE_QUALIFICATION_CONSUMED",
+    "root_creation_consumed_attempt": true,
+    "probe_order": [
+      12,
+      0
+    ],
+    "backend": "cpu",
+    "backend_api": "gs.cpu",
+    "render_backend": "vulkan_egl_r9700",
+    "genesis_version": "0.3.14",
+    "branch_mechanism": "parallel_lockstep_envs_no_restore"
+  },
+  "terminal_chain": {
+    "result_status": "PASS_GENESIS_CPU_FLAT_DEVELOPMENT_V3_QUALIFICATION",
+    "terminal_status": "PASS_QUALIFICATION_GATES_CLOSED_NONAUTHORIZING",
+    "decision_status": "PASS_GENESIS_CPU_FLAT_DEVELOPMENT_V3_QUALIFICATION",
+    "result_binds_reservation_plan_and_preregistration": true,
+    "terminal_binds_exact_result": true,
+    "decision_binds_exact_result_and_terminal": true,
+    "result_authorizes_scientific_plan_release": false,
+    "terminal_authorizes_scientific_plan_release": false,
+    "decision_authorizes_scientific_plan_release": true,
+    "decision_emitted_last": true,
+    "emission_timestamps_local": {
+      "result": "2026-08-05 02:54:05.531705954 +0100",
+      "terminal": "2026-08-05 02:54:05.531824115 +0100",
+      "decision": "2026-08-05 02:54:05.531895655 +0100"
+    },
+    "failure": null,
+    "retry_or_resume_authorized": false
+  },
+  "independent_leaf_closure": {
+    "status": "PASS_INDEPENDENT_DEEP_SCENE_REOPEN",
+    "method": "The frozen V3 worker-plan loader and deep scene-result validator were invoked read-only against the consumed root, binding the recorded orchestrator and worker identities. A separate path-constrained checker compared state input bindings to the exact plan and rehashed the four unique nonprotected train-scene source leaves.",
+    "scene_results_rehashed": 2,
+    "state_receipts_rehashed": 8,
+    "render_receipts_rehashed": 2,
+    "rgb_png_files_rehashed_decoded_and_pixel_checked": 96,
+    "rgb_png_required_shape": [
+      224,
+      224,
+      3
+    ],
+    "rgb_png_required_mode": "RGB",
+    "stored_rgb_bytes_total": 4733414,
+    "derived_mesh_files_rehashed": 8,
+    "unique_external_train_scene_input_leaves_rehashed": 4,
+    "all_state_receipt_paths_order_and_bindings_exact": true,
+    "all_render_frame_identities_unique_and_covered_exactly_once": true,
+    "all_candidate_action_ids_and_lane_offsets_exact_zero_through_eight": true,
+    "all_mesh_cache_bindings_exact": true,
+    "all_leaf_rehash_decode_and_identity_checks_passed": true,
+    "render_receipt_bindings": [
+      {
+        "scene_index": 12,
+        "path": "scenes/train/medium_enclosed_maze_00d3d19d1f00/live_render_receipt.json",
+        "sha256": "790e9d8cfe3cecf166f4dce90b5011e067a9ba635fd9ea4faa66d655e8a615bd",
+        "byte_count": 153307
+      },
+      {
+        "scene_index": 0,
+        "path": "scenes/train/large_enclosed_maze_8a6599d5327d/live_render_receipt.json",
+        "sha256": "700773f5349556130028ec0c8ddcfbe781e6938e4d918676dabfb8aed9da8340",
+        "byte_count": 141380
+      }
+    ]
+  },
+  "physics_and_exactness": {
+    "scene_statuses": [
+      "SCENE_PHYSICS_COMPLETE",
+      "SCENE_PHYSICS_COMPLETE"
+    ],
+    "state_receipt_status": "PHYSICS_COMPLETE",
+    "scene_count": 2,
+    "state_count": 8,
+    "lanes_per_state": 9,
+    "candidate_branches": 72,
+    "exact_prebranch_lane_audits_passed": 8,
+    "unique_lane_state_hash_count_per_audit": 1,
+    "synchronization_component_count": 10,
+    "all_synchronization_components_exact_equal": true,
+    "all_component_max_abs_differences_zero": true,
+    "all_component_rms_differences_zero": true,
+    "all_per_lane_max_abs_differences_zero": true,
+    "common_history_and_checkpoint_exactness_gate_passed": true,
+    "all_existing_scene_gates_passed": true,
+    "all_exact_lane_equality_gates_passed": true
+  },
+  "rendering": {
+    "graphics_preflight_status": "PASS",
+    "physics_backend": "cpu",
+    "selected_render_vendor_id": "0x1002",
+    "selected_render_device_id": "0x7551",
+    "selected_render_device_name": "AMD Radeon AI PRO R9700",
+    "vulkan_selected_device_index": 0,
+    "egl_selected_device_index": 1,
+    "egl_expected_and_observed_exit_code": 2,
+    "exact_v03_renderer_compatibility_passed": true,
+    "native_render_calls_per_scene": 48,
+    "rgb_render_calls_per_scene": 48,
+    "auxiliary_depth_render_calls_per_scene": 48,
+    "depth_persisted": false,
+    "stored_rgb_frames_per_scene": 48,
+    "render_and_png_closure_passed": true
+  },
+  "resource_release": {
+    "selected_device_vram_ceiling_bytes": 16977405952,
+    "scene_12": {
+      "baseline_used_bytes": 2555998208,
+      "peak_used_bytes": 2960371712,
+      "peak_headroom_bytes": 14017034240,
+      "vram_samples": 1417,
+      "vram_read_errors": 0,
+      "cap_breached": false,
+      "release_status": "PASSED",
+      "release_final_used_bytes": 2555998208,
+      "release_final_consecutive_samples": 3,
+      "process_group_gone_after_exit": true,
+      "watchdog_timeout": false,
+      "forced_kill": false
+    },
+    "scene_0": {
+      "baseline_used_bytes": 2555998208,
+      "peak_used_bytes": 3574697984,
+      "peak_headroom_bytes": 13402707968,
+      "vram_samples": 950,
+      "vram_read_errors": 0,
+      "cap_breached": false,
+      "release_status": "PASSED",
+      "release_final_used_bytes": 2555998208,
+      "release_final_consecutive_samples": 3,
+      "process_group_gone_after_exit": true,
+      "watchdog_timeout": false,
+      "forced_kill": false
+    },
+    "all_vram_release_and_process_group_gates_passed": true
+  },
+  "kernel_and_timing": {
+    "qualification_kernel_query_succeeded": true,
+    "qualification_new_amdgpu_reset_wedge_or_hsa_exception_count": 0,
+    "qualification_matching_lines_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "independent_expanded_artifact_time_window_requery_match_count": 0,
+    "maximum_worker_elapsed_seconds": 28.48910297290422,
+    "scene_count_projection": 64,
+    "noncollection_reserve_seconds": 900.0,
+    "projected_total_seconds": 2723.30259026587,
+    "wall_ceiling_seconds": 7200.0,
+    "projected_margin_seconds": 4476.69740973413,
+    "kernel_gate_passed": true,
+    "timing_gate_passed": true
+  },
+  "metadata_semantics": {
+    "physics_validated_fields_observed_false_on_qualification_scene_state_and_render_payloads": true,
+    "frozen_harness_requires_those_fields_false": true,
+    "interpretation": "Those conservative historical payload fields keep qualification artifacts non-citable; qualification physics completion is established separately by PHYSICS_COMPLETE receipts and the deep exactness gates. They do not authorize reuse as scientific evidence.",
+    "both_workers_use_plan_first_scene_process_global_genesis_seed_witness": true,
+    "plan_first_seed_manifest_scene_id": "large_enclosed_maze_8a6599d5327d",
+    "interpretation_of_shared_initialization_witness": "This is the preregistered process-global Genesis seed source, not a claim that scene 12 executed the large-maze geometry. Scene 12's result, ordered state IDs, state receipts, manifest, Genesis-scene binding, render receipt, and RGB closure all bind the intended medium-maze scene.",
+    "metadata_inconsistency_remaining": false
+  },
+  "science_plan_release": {
+    "authorizing_artifact": "qualification_decision",
+    "authorizing_decision_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_qualification/attempt_v1/qualification_decision.json",
+      "sha256": "6eac9ff6458092d6284011934c865b45519cbd2ff14c0b2da3a515bbf4a6a299",
+      "byte_count": 1789
+    },
+    "decision_authorizes_only_a_separately_preregistered_and_independently_reviewed_science_plan": true,
+    "scientific_attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1",
+    "scientific_attempt_root_absent_and_not_symlink_at_terminal_review": true,
+    "qualification_payload_reuse_authorized": false,
+    "qualification_result_terminal_scene_state_render_rgb_mesh_or_diagnostic_payload_may_enter_science": false,
+    "qualification_output_citable_as_scientific_evidence": false,
+    "science_plan_created_by_this_review": false,
+    "scientific_execution_authorized_by_this_review": false,
+    "navigation_planning_representation_world_model_or_generalization_claim_authorized": false
+  },
+  "scientific_disposition": {
+    "qualification_passed": true,
+    "cpu_physics_mechanism_qualified_for_separate_science_plan_design": true,
+    "exact_36_lane_cpu_mechanism_qualified": true,
+    "v3_qualification_consumed_and_terminal": true,
+    "v3_retry_resume_refill_overwrite_repair_or_second_invocation_authorized": false,
+    "qualification_runtime_payload_reuse_authorized": false,
+    "separate_science_plan_release_condition_satisfied": true,
+    "scientific_execution_authorized": false,
+    "scientific_claim_authorized": false
+  },
+  "decision": {
+    "terminal_review_passed": true,
+    "terminal_chain_and_emission_order_valid": true,
+    "two_scene_deep_leaf_closure_passed": true,
+    "exact_lane_equality_and_existing_scene_gates_passed": true,
+    "rendering_and_rgb_closure_passed": true,
+    "vram_release_process_group_kernel_and_timing_gates_passed": true,
+    "v3_qualification_consumed_and_terminal": true,
+    "only_minimal_decision_plus_this_review_may_gate_a_separately_reviewed_science_plan": true,
+    "qualification_payload_reuse_authorized": false,
+    "scientific_execution_or_claim_authorized": false
+  }
+}

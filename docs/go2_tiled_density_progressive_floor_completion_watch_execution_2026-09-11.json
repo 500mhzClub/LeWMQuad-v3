@@ -1,0 +1,33 @@
+{
+  "status": "TILED_DENSITY_PROGRESSIVE_COMPLETION_WATCH_STARTED",
+  "owner": {
+    "pid": 2862653,
+    "created": 1789137051.46,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "-"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "watched_owner": {
+    "pid": 2862056,
+    "created": 1789136599.37,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_tiled_density_progressive_floor_late_history_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "watched_execution_sha256": "0d449415fdd73ce8160e73a243ec285612dcf4dc1d3be37e240480f95a7bb762",
+  "checker_source": "scripts/verify_go2_tiled_density_progressive_floor_controller_completion_v1.py",
+  "checker_source_sha256": "d0773b0938f0454bda1c26c3ac41ada354faf364f8b2f606820033f59c0b055c",
+  "checker_preparation_sha256": "a2bbac6f70acf89bd32ab7b2c5775476693783974ca32bf697932c770497b8dc",
+  "action": "Wait for exact replay owner to end; reject failure; hash actual result; invoke prepared completion checker once.",
+  "poll_seconds": 15,
+  "retry": false,
+  "replay_restarted": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

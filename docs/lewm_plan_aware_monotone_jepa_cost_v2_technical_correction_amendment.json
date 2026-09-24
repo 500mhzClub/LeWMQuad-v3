@@ -1,0 +1,128 @@
+{
+  "authorization": {
+    "authorized_corrected_technical_startups": 1,
+    "authorized_fresh_startup_identity": "v2-20260829-2",
+    "direct_scientific_continuation_if_preexecution_passes": true,
+    "no_further_technical_startup_automatically_authorized": true,
+    "publication_only_after_independent_payload_validation": true,
+    "scientific_attempts_authorized": 1,
+    "scientific_attempts_consumed_before_correction": 0
+  },
+  "changed_path_allow_list": [
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_allow_list.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_contract.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_output_schema.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_scientific_invariance.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_source_closure.json",
+    "docs/lewm_plan_aware_monotone_jepa_cost_v2_technical_correction_amendment.json",
+    "lewm/safety/plan_aware_monotone_jepa_cost_v2_contract.py",
+    "lewm/tests/test_evaluate_plan_aware_monotone_jepa_cost_v2.py",
+    "scripts/evaluate_plan_aware_monotone_jepa_cost_v2.py"
+  ],
+  "content_digest": "1fedfe62ee9318fbfcb5a356f835a7ffe0df87b1ad8c16c27cf9025ef6553d1c",
+  "correction_commit_must_descend_from": "92165c315cef5d214b8e0d48a7cf8636dc22afbf",
+  "correction_scope": "EXACTLY_THREE_PRE_SCIENCE_TECHNICAL_DEFECTS",
+  "defects": [
+    {
+      "defect_id": "V2-STARTUP-TECH-001-FOREGROUND-RUNTIME-METADATA",
+      "exact_proposed_correction": "Freeze and pass exact mode, uid, gid, and nlink authority for the foreground executable and each top-level module anchor without changing any scientific binding or computation.",
+      "failing_code_path": "observe_phase1_foreground_runtime_import_custody -> _observe_absolute_file_no_follow -> _validate_registered_static_file_stat",
+      "focused_regression": "Drive the real Phase-1 startup path through foreground runtime custody with all science entrypoints fail-closed; assert the original KeyError is unreachable and no registered scientific file is opened.",
+      "observed_exception_or_failed_invariant": "KeyError: 'mode' while validating the registered foreground interpreter authority",
+      "technical_not_scientific_reason": "The failure occurred while binding interpreter/package file metadata before PREEXECUTION, model initialization, or any registered scientific open."
+    },
+    {
+      "defect_id": "V2-STARTUP-TECH-002-BOOTSTRAP-ANCESTOR-OWNERSHIP",
+      "exact_proposed_correction": "Require O_DIRECTORY|O_NOFOLLOW and stable before/open/after identity for every ancestor, permit legitimate root-owned ancestors, and retain exact owner/mode/stable-identity validation for the final attempt root and historical custody cross-binding.",
+      "failing_code_path": "supervise_phase_1_execution -> _load_attempt_root_custody_for_reopen",
+      "focused_regression": "Drive the real Phase-1 supervisor root-custody reload path through root-owned ancestors; assert valid historical custody reopens and an ancestor/final-root identity replacement still rejects without opening scientific inputs.",
+      "observed_exception_or_failed_invariant": "V2EvaluationError: attempt-root bootstrap component drift because every absolute ancestor was required to have uid/gid 1000",
+      "technical_not_scientific_reason": "The failure occurred in post-child terminal custody while componentwise reopening an already-created attempt root; it does not inspect or alter scientific values."
+    },
+    {
+      "defect_id": "V2-STARTUP-TECH-003-ROOTED-DISPOSITION-SCHEMA-ASYMMETRY",
+      "exact_proposed_correction": "Add the already-builder-authorized rooted Phase-1 supervisor failure observation schema to the validator's exact Phase-1 exit-schema set, with no other disposition change.",
+      "failing_code_path": "_persist_rooted_phase1_supervisor_failure -> validate_rooted_phase1_supervisor_failure_custody -> validate_terminal_scientific_attempt_disposition",
+      "focused_regression": "Drive the real rooted Phase-1 supervisor failure persistence path with a pre-PREEXEC observation; assert build, validate, exclusive persistence, and reload succeed while continuation remains fail-closed.",
+      "observed_exception_or_failed_invariant": "V2ContractError: terminal science phase disposition drift because the validator omitted ROOTED_PHASE1_SUPERVISOR_FAILURE_OBSERVATION_SCHEMA accepted by the builder",
+      "technical_not_scientific_reason": "The failure occurred while validating terminal process/custody bookkeeping after the producer had exited before PREEXECUTION; it neither authorizes nor evaluates science."
+    }
+  ],
+  "experiment_id": "PLAN_AWARE_MONOTONE_JEPA_COST_V2",
+  "failed_startup": {
+    "adopt_namespace": false,
+    "attempt_id": "v2-20260829-1",
+    "attempt_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.plan_aware_monotone_jepa_cost_v2.attempt-v2-20260829-1",
+    "canonical_rooted_failure_custody_absent_due_to_defect_3": true,
+    "checkpoint_latent_route_calibration_or_heldout_opens": 0,
+    "exact_directory_inventory": [
+      "receipts",
+      "streams"
+    ],
+    "exact_leaf_inventory": [
+      {
+        "bytes": 2506,
+        "content_digest": "db9eac23ff641229a0aac0c1fe736cb5585418f532997410679855f56c648f39",
+        "path": "receipts/attempt_root_fd_custody.json",
+        "sha256": "fad87aa8d61260c64631c41f8126aaac8ec5682b045ce36e373c4df4292f4ac9"
+      },
+      {
+        "bytes": 125,
+        "content_digest": null,
+        "path": "receipts/phase_1_exception.json",
+        "sha256": "023ce9cc17d3cfc7ac01326fa8a890774885378a4bee8db7b1f27ba5816d59ab"
+      },
+      {
+        "bytes": 256,
+        "content_digest": "6b144703f28cd82cef5334f531ae5424906e777d0fb6896aac882ceb74185cdf",
+        "path": "receipts/phase_1_last_stage.json",
+        "sha256": "56846a84d767db58a0f56f03951174bf88cbd2bdb2b9f764c3ebf64a02ba9f16"
+      },
+      {
+        "bytes": 5515,
+        "content_digest": "7c2f509ba83cf0156b4c5eeb2072a37e3dc07238b5b3e2028a37d5ee95fd6a0f",
+        "path": "receipts/phase_1_supervisor_prelaunch_handoff.json",
+        "sha256": "91119f37d2860315bc2b95288c0599784e3d9a9cc1dcbfb517ccea29ac2fb951"
+      },
+      {
+        "bytes": 1228,
+        "content_digest": null,
+        "path": "streams/phase_1.traceback.txt",
+        "sha256": "7054bab788b3fe848e0737dbcb94caf3f907a5bd8afa135464e2bc179146bdfa"
+      }
+    ],
+    "first_scientific_open_initiation_absent": true,
+    "first_scientific_open_receipt_absent": true,
+    "immutable_scientific_payload_absent": true,
+    "model_initializations": 0,
+    "preexecution_receipt_absent": true,
+    "preserve_immutable_untouched_nonreusable": true,
+    "producer_exception_message": "'mode'",
+    "producer_exception_type": "KeyError",
+    "producer_last_stage": "STARTED",
+    "producer_traceback_sha256": "7054bab788b3fe848e0737dbcb94caf3f907a5bd8afa135464e2bc179146bdfa",
+    "reuse_any_failed_root_bytes": false,
+    "root_nlink_at_observation": 4,
+    "root_stable_identity": {
+      "device": 64513,
+      "file_type": "DIRECTORY",
+      "gid": 1000,
+      "inode": 95056023,
+      "mode": 448,
+      "uid": 1000
+    },
+    "scientific_artifacts_absent": true,
+    "scientific_attempt_boundary_entry_absent": true,
+    "scientific_attempt_consumed": false,
+    "scientific_inputs_opened": 0,
+    "source_freeze_commit": "92165c315cef5d214b8e0d48a7cf8636dc22afbf",
+    "source_freeze_subject": "Freeze direct PLAN_AWARE_MONOTONE_JEPA_COST_V2 execution",
+    "supervisor_returncode_externally_observed": 1,
+    "v2_processes_after_exit": 0
+  },
+  "failed_v1_and_v2_output_reuse": false,
+  "prohibited_scientific_changes": true,
+  "required_descendant_freeze_subject": "Freeze direct PLAN_AWARE_MONOTONE_JEPA_COST_V2 execution",
+  "schema": "plan_aware_monotone_jepa_cost_v2.technical_correction_amendment.v1",
+  "scientific_design_unchanged": true
+}

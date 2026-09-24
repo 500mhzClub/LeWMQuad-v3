@@ -1,0 +1,207 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 23,
+    "certified_source_rehash_count": 116,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "protected_role_open_count": 0,
+    "raw_consumed_file_rehash_count": 1158,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "728f17cffa42698c5025ffade7996e06b141c730aeea6ac38c3bdc61dfa79563",
+    "authority_commit": "19b21e6f42afcd5e445fc22a9602a881d8d32dfd",
+    "authority_execution_binding_commit": "47735d9faae43ca72cd6d9d5e9a824ef9b36d6be",
+    "authority_file_sha256": "d1989a8cbe19b16324d8d4661b274f454f64356feab945e1ea557b214f9d2dec",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "output_root": ".generated/go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19_integrity_replacement_v1/attempt_v1",
+    "reservation_content_sha256": "d64f7900bcf8bd72076aa58feb2edf85414865b25e187864a7d79456188aa23c",
+    "reservation_created_utc": "2026-07-30T04:14:28Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "content_sha256": "fb794750c9efcc1430235478c3f4da02dcaf5211c131ca4e15084950a8cbd4e3",
+  "date": "2026-07-30",
+  "decision": {
+    "checkpoint_published": false,
+    "further_integrity_replacement_authorized_by_this_result": false,
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_gate_reached": false,
+    "scientific_interpretation": "No scientific conclusion is available for or against executed-successor semantic grounding. One training update mutated online and EMA state, but its post-update integrity receipt was rejected before publication, and no registered scientific gate was reached.",
+    "status": "PASS_COMPLETE_ONE_EXECUTED_UPDATE_POST_VALIDATION_FAILURE_AUDIT",
+    "v19_integrity_replacement_v1_retry_authorized": false
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_source_and_hash": "V13 per-update accounting changed",
+    "exception_message_sha256": "7c734580a5729589bf3ef5171d0bb5776ab2c2926ee2aa78b88f7f14ff9a224d",
+    "exception_type": "RuntimeError",
+    "failure_content_sha256": "ec3d8dd4e0f7df131e2236608ec1807c2b16df35cb1c3b37a3ef69ca0e589762",
+    "integrity_validation_completed": false,
+    "optimizer_and_ema_occurred_before_exception": true,
+    "stage": "train_update_1",
+    "status": "FAIL_EXCEPTION_TERMINAL_NO_RETRY_NO_RESUME",
+    "terminal_access_receipt_content_sha256": "5424ba1782c0ba846bb5065212a558f31ff80c2c9b478307e7a419cd448ea603",
+    "update_result_returned_before_exception": true
+  },
+  "initialized_trace": {
+    "ema_update_count": 0,
+    "event": "initialized",
+    "n320_checkpoint_open_count": 1,
+    "n320_gate_open_count": 1,
+    "n320_gate_passed": true,
+    "online_trainable_parameter_count": 3439403,
+    "parameter_group_counts": [
+      3102824,
+      77506,
+      259073
+    ],
+    "payload_access_after_reservation": true,
+    "probability_calibration_open_count": 0,
+    "schedule_presentation_count": 16000,
+    "schedule_regeneration_count": 0,
+    "schedule_train_pair_count": 4262,
+    "structural_integrity_check_count": 12,
+    "structural_integrity_passed": true,
+    "target_hard_sync_count": 1,
+    "trace_access_receipt_sha256": "3875496f63e8a80b453c2fb1755bffe53db9a643b45657abe088c76412b3dd71",
+    "trace_row_content_sha256": "bcb30ea77847fca3c06fd5c6c59fa957bf5156d0fa1c8d2d89787da427393ccf",
+    "update": 0
+  },
+  "receipt_artifacts": [
+    {
+      "byte_count": 1165,
+      "content_sha256": "ec3d8dd4e0f7df131e2236608ec1807c2b16df35cb1c3b37a3ef69ca0e589762",
+      "file_sha256": "5f2b6544562b1e17b4857cb1579c08399bfa97bd514ff9091b5fff8549161b5b",
+      "path": "failure.json"
+    },
+    {
+      "byte_count": 11274,
+      "content_sha256": "3d1469b76cea691a572c9d4b177478be0879d5cae2c1a27d9ffa4a3d2b7d53d0",
+      "file_sha256": "054427a8fa0aaec5c20ae0f17e1f0f277a9249cd02c1c12eac5bde2a98e83296",
+      "path": "metrics/update_0.json"
+    },
+    {
+      "byte_count": 461134,
+      "content_sha256": "5424ba1782c0ba846bb5065212a558f31ff80c2c9b478307e7a419cd448ea603",
+      "file_sha256": "d82a76f1764ae687121ed5b16e3359bb89db1cc768751b49403d833b7e616b8e",
+      "path": "receipts/terminal_access.json"
+    },
+    {
+      "byte_count": 556,
+      "content_sha256": "d64f7900bcf8bd72076aa58feb2edf85414865b25e187864a7d79456188aa23c",
+      "file_sha256": "0c8e98351ef3432b2089b66cd58e16761cbf62cb92161ae9c24cecae1ddb6332",
+      "path": "reservation.json"
+    },
+    {
+      "byte_count": 2896,
+      "file_sha256": "03dd9ae6d4bef84101e48f15e56a8ffb04ef7952395d89328dc9c089d6b4cd9d",
+      "path": "trace.jsonl",
+      "row_content_sha256": "bcb30ea77847fca3c06fd5c6c59fa957bf5156d0fa1c8d2d89787da427393ccf",
+      "row_count": 1
+    }
+  ],
+  "root_cause": {
+    "exact_fault": "The V19 adapter globally replaced the inherited engine ACCOUNTING_MULTIPLIERS with the 13-field V19 schema. After the V19-specific update checks passed, the wrapper constructed an 11-field inherited V18 accounting receipt and invoked the captured base validator. That validator resolved the mutated 13-field global and rejected the intentionally filtered receipt.",
+    "failure_after_model_mutation": true,
+    "inherited_receipt_field_count": 11,
+    "model_or_data_fault": false,
+    "registered_scientific_gate_reached": false,
+    "source_adapter_defect": true,
+    "source_flow_proof": {
+      "base_validator_message_hash_exact_match": true,
+      "executor_assigned_result_accounting_before_validation": true,
+      "inherited_validator_called_after_v19_specific_checks": true,
+      "optimizer_step_precedes_update_result_return": true,
+      "target_ema_step_precedes_update_result_return": true,
+      "trace_append_follows_integrity_validation": true,
+      "v19_factual_route_loss_diagnostic_and_subset_checks_passed": true
+    },
+    "v19_engine_global_accounting_field_count": 13
+  },
+  "schema": "lewm_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19_integrity_replacement_v1_terminal_failure_result_v1",
+  "scientific_accounting": {
+    "backward_or_gradient_calls_executed": 12,
+    "camera_frame_objectives_executed": 32,
+    "checkpoint_artifact_count": 0,
+    "executed_microbatches": 4,
+    "executed_training_presentations": 16,
+    "executed_training_updates": 1,
+    "factual_successor_grad_calls_executed": 4,
+    "factual_successor_objectives_executed": 4,
+    "integrity_validated_training_presentations": 0,
+    "integrity_validated_training_updates": 0,
+    "metric_artifact_count": 1,
+    "online_optimizer_mutation_occurred": true,
+    "optimizer_steps_executed": 1,
+    "predictor_forwards_executed": 4,
+    "predictor_objectives_executed": 8,
+    "published_optimizer_ema_trace_rows": 0,
+    "published_update0_observations": 1,
+    "scheduled_microbatches_built": 4,
+    "target_ema_mutation_occurred": true,
+    "target_ema_steps_executed": 1,
+    "trace_row_count": 1,
+    "update_result_returned": true
+  },
+  "scientific_identity": {
+    "clean_export_certification_commit": "47735d9faae43ca72cd6d9d5e9a824ef9b36d6be",
+    "clean_export_certification_sha256": "9840e098690e3a0e631b6704fc5e54e30002abb9985cb76714cea38b71741ec9",
+    "frozen_source_and_review_commit": "b1430e51bb428376bdbe00ef81ce65d971c8b436",
+    "implementation_commit": "979269711fc14e20c6b7f1bda6baa166251b99cf",
+    "original_v19_frozen_source_and_review_commit": "0aa8b5670c0f7de22020d4cb290b2013d57bede0",
+    "original_v19_preregistration_commit": "6255a9a2cccffde4e777169eacf95105a828cf7e",
+    "recursive_source_closure_commit": "21b38699f50ea1ea442fe8eb235755b00bdd2571",
+    "replacement_preregistration_commit": "691ed5d39f0b8d1b40071045dc181b9a4b215573",
+    "science_identity_preserved_through_executed_update": {
+      "data": true,
+      "initialization": true,
+      "losses_and_q_route": true,
+      "model": true,
+      "optimizer_and_ema": true,
+      "schedule": true,
+      "seed": true,
+      "thresholds": true,
+      "update_and_presentation_caps": true
+    },
+    "source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-v19-executed-successor-semantic-grounding-integrity-replacement-v1-source",
+    "v18_controlling_result_commit": "f2e290ce42f7b0cd142131f3272d1119b7b5d3d1"
+  },
+  "update0_observation": {
+    "causal_comparison_control_count": 4,
+    "controls_gate_present": false,
+    "integrity_passed": true,
+    "metric_content_sha256": "3d1469b76cea691a572c9d4b177478be0879d5cae2c1a27d9ffa4a3d2b7d53d0",
+    "metric_published": true,
+    "registered_scientific_gate": false,
+    "state_mutation_count": 0,
+    "update": 0
+  },
+  "validation": {
+    "checkpoint_artifact_count": 0,
+    "content_binding_mismatch_count": 0,
+    "exception_message_independently_reconstructed": true,
+    "file_binding_mismatch_count": 0,
+    "immutable_regular_file_count": 5,
+    "independent_failure_review_passed": true,
+    "metric_artifact_count": 1,
+    "optimizer_and_ema_order_independently_proved_from_source": true,
+    "success_artifact_count": 0,
+    "symlink_count": 0,
+    "terminal_access_receipt_count": 1,
+    "trace_artifact_count": 1
+  }
+}

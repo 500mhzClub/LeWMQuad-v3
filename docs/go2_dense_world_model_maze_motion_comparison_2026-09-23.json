@@ -1,0 +1,268 @@
+{
+  "horizon_ms": 700,
+  "rows": [
+    {
+      "layout": 0,
+      "executed_controller": "action",
+      "selected_hold_plans": 504,
+      "selected_plans": 1198,
+      "translation_windows": 116,
+      "neural_translation_xy_rmse_mm": 68.4826450417071,
+      "command_history_translation_xy_rmse_mm": 10.551869188597621,
+      "all_window_yaw_rmse_deg": {
+        "applied": 9.12985183276808,
+        "neural": 9.12985183276808,
+        "nominal": 1.6549386916051083,
+        "command_history": 0.8201359238658867
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "executed_controller": "command_history",
+      "selected_hold_plans": 30,
+      "selected_plans": 417,
+      "translation_windows": 231,
+      "neural_translation_xy_rmse_mm": 97.78293409383929,
+      "command_history_translation_xy_rmse_mm": 8.457577177266904,
+      "all_window_yaw_rmse_deg": {
+        "applied": 0.6997928772577939,
+        "neural": 7.286448998723495,
+        "nominal": 1.5908725647454762,
+        "command_history": 0.6997928383724377
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "executed_controller": "reactive_feedback",
+      "selected_hold_plans": 675,
+      "selected_plans": 1198,
+      "translation_windows": 129,
+      "neural_translation_xy_rmse_mm": 96.16693552428033,
+      "command_history_translation_xy_rmse_mm": 9.825421952813013,
+      "all_window_yaw_rmse_deg": {
+        "applied": 5.301867042468188,
+        "neural": 5.301867042468188,
+        "nominal": 1.1879339291369875,
+        "command_history": 0.5144661620630891
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 0,
+      "executed_controller": "no_future_action",
+      "selected_hold_plans": 1198,
+      "selected_plans": 1198,
+      "translation_windows": 0,
+      "neural_translation_xy_rmse_mm": null,
+      "command_history_translation_xy_rmse_mm": null,
+      "all_window_yaw_rmse_deg": {
+        "applied": 3.861143467785756,
+        "neural": 3.861143467785756,
+        "nominal": 0.2850508527138493,
+        "command_history": 0.3092738573150067
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout00_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "executed_controller": "action",
+      "selected_hold_plans": 1033,
+      "selected_plans": 1198,
+      "translation_windows": 28,
+      "neural_translation_xy_rmse_mm": 65.19787179308439,
+      "command_history_translation_xy_rmse_mm": 6.8013525003397985,
+      "all_window_yaw_rmse_deg": {
+        "applied": 3.2625646035985034,
+        "neural": 3.2625646035985034,
+        "nominal": 0.7843414084444329,
+        "command_history": 0.4525479845924912
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "executed_controller": "command_history",
+      "selected_hold_plans": 544,
+      "selected_plans": 1198,
+      "translation_windows": 57,
+      "neural_translation_xy_rmse_mm": 93.01444085822331,
+      "command_history_translation_xy_rmse_mm": 7.751677442948288,
+      "all_window_yaw_rmse_deg": {
+        "applied": 0.6060783655303977,
+        "neural": 6.725033590518165,
+        "nominal": 1.2489824146312427,
+        "command_history": 0.6060782952640483
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "executed_controller": "reactive_feedback",
+      "selected_hold_plans": 717,
+      "selected_plans": 1198,
+      "translation_windows": 221,
+      "neural_translation_xy_rmse_mm": 96.71808575267488,
+      "command_history_translation_xy_rmse_mm": 9.10938964151576,
+      "all_window_yaw_rmse_deg": {
+        "applied": 6.6112396342399,
+        "neural": 6.6112396342399,
+        "nominal": 1.4571872347516166,
+        "command_history": 0.610876266333243
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 1,
+      "executed_controller": "no_future_action",
+      "selected_hold_plans": 1198,
+      "selected_plans": 1198,
+      "translation_windows": 0,
+      "neural_translation_xy_rmse_mm": null,
+      "command_history_translation_xy_rmse_mm": null,
+      "all_window_yaw_rmse_deg": {
+        "applied": 4.102196286717147,
+        "neural": 4.102196286717147,
+        "nominal": 0.2850508527138493,
+        "command_history": 0.3092738573150067
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout01_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "executed_controller": "action",
+      "selected_hold_plans": 117,
+      "selected_plans": 888,
+      "translation_windows": 346,
+      "neural_translation_xy_rmse_mm": 73.70228640634747,
+      "command_history_translation_xy_rmse_mm": 12.95664332577784,
+      "all_window_yaw_rmse_deg": {
+        "applied": 7.578699353612894,
+        "neural": 7.578699353612894,
+        "nominal": 2.496490095133034,
+        "command_history": 1.0624164772591007
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "executed_controller": "command_history",
+      "selected_hold_plans": 359,
+      "selected_plans": 808,
+      "translation_windows": 315,
+      "neural_translation_xy_rmse_mm": 101.91277773479862,
+      "command_history_translation_xy_rmse_mm": 6.77979350777735,
+      "all_window_yaw_rmse_deg": {
+        "applied": 0.5874958929405877,
+        "neural": 5.707521976777992,
+        "nominal": 1.2905533316060898,
+        "command_history": 0.5874958907583178
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "executed_controller": "reactive_feedback",
+      "selected_hold_plans": 1122,
+      "selected_plans": 1198,
+      "translation_windows": 62,
+      "neural_translation_xy_rmse_mm": 93.80881126796028,
+      "command_history_translation_xy_rmse_mm": 9.864493022762638,
+      "all_window_yaw_rmse_deg": {
+        "applied": 2.4576772062066015,
+        "neural": 2.4576772062066015,
+        "nominal": 0.5574170931965953,
+        "command_history": 0.34063838535215685
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 2,
+      "executed_controller": "no_future_action",
+      "selected_hold_plans": 1198,
+      "selected_plans": 1198,
+      "translation_windows": 0,
+      "neural_translation_xy_rmse_mm": null,
+      "command_history_translation_xy_rmse_mm": null,
+      "all_window_yaw_rmse_deg": {
+        "applied": 3.3224633671140533,
+        "neural": 3.3224633671140533,
+        "nominal": 0.2850508527138493,
+        "command_history": 0.3092738573150067
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout02_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "executed_controller": "action",
+      "selected_hold_plans": 971,
+      "selected_plans": 1198,
+      "translation_windows": 79,
+      "neural_translation_xy_rmse_mm": 69.09058239176666,
+      "command_history_translation_xy_rmse_mm": 14.930493914536203,
+      "all_window_yaw_rmse_deg": {
+        "applied": 3.934501171524356,
+        "neural": 3.934501171524356,
+        "nominal": 1.0204039831946203,
+        "command_history": 0.5331511223509874
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "executed_controller": "command_history",
+      "selected_hold_plans": 79,
+      "selected_plans": 575,
+      "translation_windows": 303,
+      "neural_translation_xy_rmse_mm": 102.2287099234286,
+      "command_history_translation_xy_rmse_mm": 6.877783460514514,
+      "all_window_yaw_rmse_deg": {
+        "applied": 0.7476444624005366,
+        "neural": 7.2611220802389695,
+        "nominal": 1.6729778655447358,
+        "command_history": 0.7476444374127231
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_command_history_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "executed_controller": "reactive_feedback",
+      "selected_hold_plans": 1164,
+      "selected_plans": 1198,
+      "translation_windows": 5,
+      "neural_translation_xy_rmse_mm": 61.8526862436836,
+      "command_history_translation_xy_rmse_mm": 4.273568997897916,
+      "all_window_yaw_rmse_deg": {
+        "applied": 1.917184895860937,
+        "neural": 1.917184895860937,
+        "nominal": 0.29567387659859584,
+        "command_history": 0.31283748073206635
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_reactive_feedback_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    },
+    {
+      "layout": 3,
+      "executed_controller": "no_future_action",
+      "selected_hold_plans": 1198,
+      "selected_plans": 1198,
+      "translation_windows": 0,
+      "neural_translation_xy_rmse_mm": null,
+      "command_history_translation_xy_rmse_mm": null,
+      "all_window_yaw_rmse_deg": {
+        "applied": 3.9408634319408185,
+        "neural": 3.9408634319408185,
+        "nominal": 0.2850508527138493,
+        "command_history": 0.3092738573150067
+      },
+      "source_readout": ".generated/navigation_development_artifacts_v1/go2_dense_world_model_maze_layout03_no_future_action_mixed_data_v1_attempt_001/dense_navigation_readout.json"
+    }
+  ],
+  "trajectories_with_translation_windows": 12,
+  "command_history_lower_translation_rmse": 12,
+  "neural_to_command_history_translation_rmse_ratio_range": [
+    4.627481367143565,
+    15.03184095767677
+  ],
+  "interpretation": "Descriptive same-window forecast comparison. Each controller executes a different trajectory; windows overlap and are not independent samples. No counterfactual navigation or causal attribution. The stationary blind arms have no translation windows. Reactive control does not use its recorded neural forecasts for action selection."
+}

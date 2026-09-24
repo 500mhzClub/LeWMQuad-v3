@@ -1,0 +1,558 @@
+{
+  "schema": "lewm_go2_dinov2_dense_shared_spatial_readout_calibration_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": {
+    "identity": "/root/historical_runtime_reproduction_audit with complementary cross-audits from /root/task_relevance_evaluator_impl/audit_posthoc_join_refs and /root/calibration_failure_compatibility_audit",
+    "independence_basis": "I did not author the primary runner, replay implementation, execution authority, or immutable attempt outputs, although I had previously authored the dense model and its focused model test. I independently rehashed the complete bound closure, safely rederived checkpoint identities, and recomputed all row-level summaries, bootstrap intervals, gates, and the STOP verdict without importing the primary aggregation, bootstrap, gate, or verdict implementation. The replay author independently audited the non-authored primary-runner custody path but did not approve their own replay or Gate 7; the primary-runner author independently audited the immutable outputs, checkpoint identities, and row-level science but did not approve their own runner. Together with the frozen source review and the completed fresh-process replay evidence, the cross-panel scopes are complementary rather than self-approval."
+  },
+  "protected_material_opened": false,
+  "citable_as_scientific_evidence": false,
+  "bindings": {
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_dense_shared_spatial_readout_calibration_v1_execution_authority_2026-08-03.json",
+      "sha256": "1232c93ef0410579df6f8d33210d425cb19b06bfd69f0e2c738428fc2523a3cd",
+      "byte_count": 21298
+    },
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_dense_shared_spatial_readout_calibration_v1_preregistration_2026-08-03.md",
+      "sha256": "630a1bd508629878f6eab1cd4d7839d530e6f9216789bd388f32d4853c2e3f34",
+      "byte_count": 17418
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_dense_shared_spatial_readout_calibration_v1_source_review_2026-08-03.json",
+      "sha256": "da213047000fbb7b9db6d42b25650a503acaf63b51c819912b972c02ef71ae24",
+      "byte_count": 12126
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/reservation.json",
+      "sha256": "258be296014873bdb460a9862ebefae12c013f179ebe9491dd225c951cf35288",
+      "byte_count": 541
+    },
+    "primary_compatibility_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/primary_compatibility_receipt.json",
+      "sha256": "8916e9b753793689e9bbecf88184a763152abef24b0a69f610b123d5d672e5ff",
+      "byte_count": 3347
+    },
+    "pca_readout_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/pca_readout_checkpoint.pt",
+      "sha256": "f198bd590c695804a97aaa956d0d448e1f9913b24705598672b45afb675dfb9f",
+      "byte_count": 180370
+    },
+    "evaluation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/evaluation.json",
+      "sha256": "137519532b59ac1c3d54387a1a518b81ba1e0ec782c0c644e1b877132c7a3825",
+      "byte_count": 579468
+    },
+    "replay_compatibility_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/replay_compatibility_receipt.json",
+      "sha256": "da1d538df7d746d3b4b381d1864db80e36f77b2d2ef0eb1f865857aa764abd87",
+      "byte_count": 3345
+    },
+    "replay": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/replay.json",
+      "sha256": "04bbd26766f92d5220f0fc4371ff6b52310d232bfba7e36444a68c15d1072132",
+      "byte_count": 581104
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/result.json",
+      "sha256": "18f8a641043d0f4efe8c213db2b118b786e3c02f7ba300c0d61cb9d618b90cc5",
+      "byte_count": 593788
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1/terminal.json",
+      "sha256": "a59c5101fd9d60fd471648aea3ff555abba5c8f77f27143d3d09e09361de54b8",
+      "byte_count": 572
+    }
+  },
+  "checks": {
+    "authority_preregistration_and_source_review_rehashed_exact": true,
+    "all_35_authority_source_bindings_rehashed_exact": true,
+    "all_16_authority_input_bindings_rehashed_opaquely_and_exact": true,
+    "exact_eight_regular_file_output_inventory": true,
+    "all_eight_output_bindings_rehashed_exact": true,
+    "reservation_and_single_attempt_consumption_exact": true,
+    "primary_and_replay_compatibility_receipts_exact": true,
+    "checkpoint_pca_task_initial_and_trained_state_identities_rederived_exact": true,
+    "evaluation_replay_and_result_evaluations_canonical_exact": true,
+    "primary_and_replay_checkpoint_state_and_score_evidence_exact": true,
+    "all_11_replay_reproduction_flags_true": true,
+    "all_arm_family_and_scene_summaries_independently_recomputed_exact": true,
+    "family_equal_scene_cluster_bootstrap_10000_seed_2026080302_recomputed_exact": true,
+    "scientific_gates_and_stop_verdict_independently_recomputed_exact": true,
+    "terminal_result_binding_and_status_exact": true,
+    "zero_rgb_encoder_collection_and_protected_access_for_this_attempt": true,
+    "no_retry_resume_or_world_model_training_authority": true,
+    "cross_panel_scope_caveats_recorded": true
+  },
+  "attempt_contract": {
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_dense_shared_spatial_readout_calibration_v1/attempt_v1",
+    "attempt_consumed": true,
+    "output_inventory": [
+      "reservation.json",
+      "primary_compatibility_receipt.json",
+      "pca_readout_checkpoint.pt",
+      "evaluation.json",
+      "replay_compatibility_receipt.json",
+      "replay.json",
+      "result.json",
+      "terminal.json"
+    ],
+    "result_status": "STOP_FROZEN_DINO_VISUAL_PLANNING_INTERFACE_NOT_ESTABLISHED",
+    "terminal_status": "STOP_FROZEN_DINO_VISUAL_PLANNING_INTERFACE_NOT_ESTABLISHED",
+    "scientific_gates_2_to_6_passed": false,
+    "deterministic_replay_passed": true,
+    "failure": null,
+    "development_calibration_only": true,
+    "dense_readout_fitting_performed": true,
+    "world_model_training_performed": false,
+    "terminal_audit_retrained_or_resumed_models": false,
+    "authorizes_model_training": false,
+    "authorizes_collection": false,
+    "authorizes_rgb_access": false,
+    "authorizes_encoder_execution": false,
+    "authorizes_protected_access": false,
+    "authorizes_retry_or_resume": false
+  },
+  "binding_audit": {
+    "authority_source_binding_count": 35,
+    "authority_source_binding_failures": 0,
+    "authority_source_bindings_sha256": "c6c26b7b20dab7391e789c1acbb24e0de01a8fe79102c3638d0d558b8f74883c",
+    "authority_input_binding_count": 16,
+    "authority_input_binding_failures": 0,
+    "authority_input_bindings_sha256": "f459e89a2f73f469281ca0d5df909ea94151e972a48fc03cfb88d85564eb39e3",
+    "direct_input_payloads_deserialized_by_terminal_audit": false,
+    "token_caches_rehashed_as_opaque_bytes_only": true,
+    "output_binding_count": 8,
+    "output_binding_failures": 0,
+    "output_bindings_sha256": "d740951cbef7b61f50a3e2ac18001b9e887da40d4d91e16f089f09f364f49a98",
+    "checkpoint_loaded_with_weights_only": true,
+    "protected_or_sealed_material_opened": false
+  },
+  "compatibility_audit": {
+    "primary_receipt_status": "PASS_PUBLISHED_BEFORE_STRICT_METADATA_LOADER_RETURN",
+    "primary_publication_stage": "inside_task_relevance_compatibility_replay_before_primary_strict_loader_return",
+    "replay_receipt_status": "PASS_PUBLISHED_BEFORE_STRICT_METADATA_LOADER_RETURN",
+    "replay_publication_stage": "inside_task_relevance_compatibility_replay_before_replay_strict_loader_return",
+    "primary_and_replay_admissions_canonical_exact": true,
+    "admission_status": "PASS_SINGLETON_SSIM_COMPATIBILITY_ADMISSION",
+    "allowed_differing_paths": [
+      "measurements.pixels.minimum_reference_candidate_rgb_ssim"
+    ],
+    "actual_differing_paths": [
+      "measurements.pixels.minimum_reference_candidate_rgb_ssim"
+    ],
+    "stored_minimum_reference_candidate_rgb_ssim": 0.999873849744854,
+    "recomputed_minimum_reference_candidate_rgb_ssim": 0.9998738497448542,
+    "absolute_difference": 1.1102230246251565e-16,
+    "absolute_tolerance": 1e-12,
+    "minimum_gate": 0.99,
+    "both_values_finite_and_at_or_above_gate": true,
+    "all_other_fields_canonical_exact": true,
+    "live_task_relevance_rgb_or_encoder_evaluation_run": false
+  },
+  "identity_audit": {
+    "checkpoint_identity_sha256": "61207c712d9749b915e59269bf43c82610d8e1af15f0843f0d85000d0edb126d",
+    "pca_identity_sha256": "9531577f9fee293467dd87e37e797a75c15ab9922af34b8ea84bfa5204646ad4",
+    "task_action_only_identity_sha256": "69895316b19bc179e35fdd76905aadbd50b6ad3e22e965b662ba59672c52886a",
+    "train_plan_identity_sha256": "f6f94cf589ec44324fdefe0939aa7076e25543d984464d5b264a0b2f0ff9535b",
+    "evaluation_plan_identity_sha256": "5dbf9733fd245caff27ce5c5c2b3dc90a3fe9ca9e1bc894dc10a97d64dad9231",
+    "combined_plan_identity_sha256": "99e60638634eff6ac244cff023cd2ae8f7aa0c53326263ba7a36fa6847386375",
+    "evaluation_identity_sha256": "b2f1f740ac21131917c8e4faf709f72dc5bcf8f8d63d664ee506ecf181253960",
+    "canonical_loaded_evaluation_sha256": "40368c8a6773dbde88e9824bda83cd8e0112dc2ee6331fa9baa2f5528a0e62bc",
+    "arms_sha256": "6f58cfb6e63b2a4cf769f2008fcccea35e8a2a85742cc953bf9c99fcb75ce239",
+    "comparisons_sha256": "229fb469f580482d6c6258a43cf3c2cca2faadf9f63d84e206c35440afb101af",
+    "gates_sha256": "25401f4a7837582499a82ea14bc0f5d38548b45f68970e214ce2abedcfa512c5",
+    "pca_eigenvalues": [
+      0.11336971211928018,
+      0.06267268146061086,
+      0.04540351934022999,
+      0.043908554913284055,
+      0.03481278924865214,
+      0.027513812098551724,
+      0.022661028917581236,
+      0.021587000288309736
+    ],
+    "initial_state_identities": {
+      "2026080303": "fa5e19c58a02fc2256bd512c8e809b522da476cc31a20d9fbe4ec3d54ea4d5f6",
+      "2026080304": "7765612fa393fb71b930b002c7c8273eb5e4995472c76082a628bf8f7ed89755",
+      "2026080305": "8e1328eca225c7a98b9dd61afb370f5afa544b0c9994455ae4fbf27ad46b509d"
+    },
+    "trained_state_identities": {
+      "2026080303": {
+        "true_future": "6e8e1cfaa559763ca817ff5a208ed76f5e442e4d7440bc54d9b8d6204e807224",
+        "current_state": "ac7cace9e911b4706fa1bb4758a981c305e79de4e7e31d65ff9ebc7d252a3199"
+      },
+      "2026080304": {
+        "true_future": "c5a8c134bc66d0f8f59dd8a220e5b99404a462d148f74c6c4b9ea80af33667b2",
+        "current_state": "e7938165ab52dcc78a960aef255ad6384961ae58dadd6458e49cd1ebc312d467"
+      },
+      "2026080305": {
+        "true_future": "644e9ec86c571433e3df5f140f801d533c9177f24318febb811742c7048e51e2",
+        "current_state": "8b024f6e6d4e67bf18d2ec20eb02e1f37bfcdee27c99cf2b4b68b0bb853f13b1"
+      }
+    },
+    "optimizer_steps_per_seed_and_arm": 2048,
+    "total_score_evidence_sha256_float64_c_order": {
+      "dense_shared_true_future": "6b56e3100d1bd1493cc11cf47d82ad63f6e854bbc9386c6394629a88e5b8274e",
+      "dense_shared_current_state": "a54b8422218a373e15f1ad6d23b3354d5dfbbb6974d5f20c01ea8c97c95c2c5d",
+      "task_action_only": "fe6a662a2881bca11df7c325f4b565e9e7117ef5010fa8e0db0437ae0e8202a3",
+      "dense_relational_persistence": "b830c3d9d772475e6501293a54755e6a95bebd6c5046bcbb7503224e584750b0",
+      "privileged_physical_oracle": "a1c335619ed32030e05a86595372344f1de6120ce07b93b4316fb98608de42b1",
+      "hold_constant": "c4a23afb5542abbab586ec62949c02e910ae434ff1b5e5373bf869cd0d967c63"
+    },
+    "residual_score_evidence": {
+      "true_future": {
+        "ensemble_sha256": "21c07286c016af687ec76843c191ac6f56a4ed8afa33bb303808850b97503940",
+        "per_seed_sha256": {
+          "2026080303": "81bba46aaca33e7dadc987210fcebb9cd5cd30ef7f532c7fa97114519378379b",
+          "2026080304": "d8518eed893766af1fb47e105f833b2d479ee39f19f90a819b548ce036dd808c",
+          "2026080305": "bcfe501a36fa55b890ce6d4ff1248c1cfa4e4b182ebfe8e0467ceda0882816f3"
+        },
+        "mean_cell_population_std": 0.05519160932112823,
+        "maximum_cell_population_std": 0.228023502655324,
+        "states_with_seed_argmin_disagreement": 95,
+        "state_seed_argmin_disagreement_rate": 0.7421875
+      },
+      "current_state": {
+        "ensemble_sha256": "b6451e9e7a7ed813cb37d457e4c1719a361aa50d4de434042597c5fbb19a91e4",
+        "per_seed_sha256": {
+          "2026080303": "d3fc5573eb4507366d99e48e42af127d91067013406d157966bec5fd5f1108e4",
+          "2026080304": "b9cf2967d7c0aaf252c54ab6b1886a94e52ab638de4c09d60d324270383c3cf0",
+          "2026080305": "1f97cb53b88cae2294c8b88f9b0b565301fc52ae86c7bcc6d19caa36ca03973f"
+        },
+        "mean_cell_population_std": 0.03528713776570745,
+        "maximum_cell_population_std": 0.13760587007398986,
+        "states_with_seed_argmin_disagreement": 86,
+        "state_seed_argmin_disagreement_rate": 0.671875
+      },
+      "relational_persistence": {
+        "ensemble_sha256": "79ddc75aac9e637a3b8c1eadc9c9df04eb7c40c65e406036e134d3c1522cf4bc",
+        "per_seed_sha256": {
+          "2026080303": "6899204dadee738ee9efbf75a7e7b55f860e6a0c2531f1dcf1f9c7deb7f2033d",
+          "2026080304": "73c0832b5b2c6743ddc5b2aa562163ba199a90cd94475e628a1f7b1edd07d573",
+          "2026080305": "f2a78bc683f19e345b107a58a7ec04f514f55e46f8bdc2507b4a02bfdd9ebdbc"
+        },
+        "mean_cell_population_std": 0.05318179705109352,
+        "maximum_cell_population_std": 0.27582942433609253,
+        "states_with_seed_argmin_disagreement": 102,
+        "state_seed_argmin_disagreement_rate": 0.796875
+      }
+    }
+  },
+  "replay_audit": {
+    "replay_status": "PASS_EXACT_FRESH_PROCESS_CACHE_ONLY_REPLAY",
+    "fresh_process": true,
+    "cache_only": true,
+    "primary_rgb_access_count": 0,
+    "replay_train_rgb_access_count": 0,
+    "replay_eval_rgb_access_count": 0,
+    "evaluation_replay_and_result_evaluation_canonical_exact": true,
+    "fresh_checkpoint_exactness_enforced_before_replay_publication": true,
+    "fresh_checkpoint_not_persisted_for_posthoc_reinspection": true,
+    "terminal_audit_retraining_prohibited_and_not_performed": true,
+    "reproduction": {
+      "pca_identity": true,
+      "state_dict_identities": true,
+      "step_counts": true,
+      "per_seed_scores": true,
+      "ensemble_scores": true,
+      "selected_actions": true,
+      "summaries": true,
+      "bootstrap_intervals": true,
+      "gates": true,
+      "verdict": true,
+      "exactly_reproduced": true
+    }
+  },
+  "evaluation_inventory": {
+    "train_states": 128,
+    "evaluation_states": 128,
+    "train_scenes": 16,
+    "evaluation_scenes": 16,
+    "families": 8,
+    "actions_per_state": 9,
+    "artifacts_per_role": 1536,
+    "pca_train_rows": 327680,
+    "paired_bootstrap_scene_clusters": 16,
+    "paired_bootstrap_resamples": 10000,
+    "paired_bootstrap_seed": 2026080302,
+    "safety_support": "NOT_TESTABLE_ZERO_EVENT_SUPPORT",
+    "train_falls": 0,
+    "train_tips": 0,
+    "evaluation_falls": 0,
+    "evaluation_tips": 0
+  },
+  "arm_summary": {
+    "privileged_physical_oracle": {
+      "normalized_rank_regret": 0.0,
+      "oracle_equivalent_selection_rate": 1.0,
+      "physical_target_progress_m": 0.07329987996631557,
+      "physical_path_length_m": 0.11746627803950105,
+      "chosen_action_histogram": {
+        "0": 8,
+        "1": 12,
+        "2": 16,
+        "3": 53,
+        "4": 9,
+        "5": 3,
+        "6": 13,
+        "7": 6,
+        "8": 8
+      }
+    },
+    "dense_shared_true_future": {
+      "normalized_rank_regret": 0.219921875,
+      "oracle_equivalent_selection_rate": 0.453125,
+      "physical_target_progress_m": 0.05587277866026166,
+      "physical_path_length_m": 0.11812662017473485,
+      "chosen_action_histogram": {
+        "0": 0,
+        "1": 5,
+        "2": 2,
+        "3": 80,
+        "4": 0,
+        "5": 0,
+        "6": 16,
+        "7": 22,
+        "8": 3
+      }
+    },
+    "dense_shared_current_state": {
+      "normalized_rank_regret": 0.2259300595238095,
+      "oracle_equivalent_selection_rate": 0.453125,
+      "physical_target_progress_m": 0.05667695170360583,
+      "physical_path_length_m": 0.11919470211432781,
+      "chosen_action_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 86,
+        "4": 0,
+        "5": 0,
+        "6": 8,
+        "7": 26,
+        "8": 8
+      }
+    },
+    "task_action_only": {
+      "normalized_rank_regret": 0.17441406250000002,
+      "oracle_equivalent_selection_rate": 0.46875,
+      "physical_target_progress_m": 0.06002022586594066,
+      "physical_path_length_m": 0.11497176463308278,
+      "chosen_action_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 75,
+        "4": 0,
+        "5": 0,
+        "6": 50,
+        "7": 1,
+        "8": 2
+      }
+    },
+    "dense_relational_persistence": {
+      "normalized_rank_regret": 0.21797805059523812,
+      "oracle_equivalent_selection_rate": 0.453125,
+      "physical_target_progress_m": 0.05686250753046636,
+      "physical_path_length_m": 0.11957628192612901,
+      "chosen_action_histogram": {
+        "0": 0,
+        "1": 1,
+        "2": 4,
+        "3": 82,
+        "4": 0,
+        "5": 0,
+        "6": 9,
+        "7": 14,
+        "8": 18
+      }
+    },
+    "hold_constant": {
+      "normalized_rank_regret": 0.5369233630952381,
+      "oracle_equivalent_selection_rate": 0.1015625,
+      "physical_target_progress_m": 0.014644353388888443,
+      "physical_path_length_m": 0.06948597110749688,
+      "chosen_action_histogram": {
+        "0": 0,
+        "1": 0,
+        "2": 0,
+        "3": 0,
+        "4": 0,
+        "5": 0,
+        "6": 128,
+        "7": 0,
+        "8": 0
+      }
+    },
+    "random_expected": {
+      "normalized_rank_regret": 0.49541377314814816,
+      "oracle_equivalent_selection_rate": 0.12239583333333337,
+      "physical_target_progress_m": "NOT_APPLICABLE",
+      "physical_path_length_m": "NOT_APPLICABLE",
+      "chosen_action_histogram": "NOT_APPLICABLE"
+    }
+  },
+  "paired_scene_cluster_comparisons": {
+    "true_future_vs_task_action_only": {
+      "mean_delta": 0.0455078125,
+      "lower_95": 0.007161458333333333,
+      "upper_95": 0.08364211309523807,
+      "mean_delta_by_family": {
+        "large_enclosed_maze": 0.0078125,
+        "local_composite_motifs": 0.32998511904761907,
+        "loop_alias_stress": 0.04352678571428571,
+        "medium_enclosed_maze": -0.06845238095238096,
+        "open_obstacle_field": 0.008928571428571428,
+        "rough_local_dynamics": -0.006696428571428572,
+        "small_enclosed_maze": -0.015625,
+        "visual_sensor_stress": 0.06458333333333334
+      },
+      "paired_states": 128,
+      "scene_clusters": 16,
+      "family_strata": 8,
+      "resamples": 10000,
+      "seed": 2026080302
+    },
+    "true_future_vs_current_state": {
+      "mean_delta": -0.006008184523809525,
+      "lower_95": -0.022249348958333335,
+      "upper_95": 0.010230654761904764,
+      "mean_delta_by_family": {
+        "large_enclosed_maze": -0.013392857142857144,
+        "local_composite_motifs": 0.06845238095238096,
+        "loop_alias_stress": -0.04910714285714286,
+        "medium_enclosed_maze": 0.020833333333333336,
+        "open_obstacle_field": 0.008928571428571428,
+        "rough_local_dynamics": -0.006696428571428572,
+        "small_enclosed_maze": -0.015625,
+        "visual_sensor_stress": -0.06145833333333334
+      },
+      "paired_states": 128,
+      "scene_clusters": 16,
+      "family_strata": 8,
+      "resamples": 10000,
+      "seed": 2026080302
+    },
+    "true_future_vs_relational_persistence": {
+      "mean_delta": 0.0019438244047619035,
+      "lower_95": -0.012992931547619048,
+      "upper_95": 0.016731770833333333,
+      "mean_delta_by_family": {
+        "large_enclosed_maze": -0.037946428571428575,
+        "local_composite_motifs": 0.05915178571428571,
+        "loop_alias_stress": -0.011160714285714288,
+        "medium_enclosed_maze": 0.026785714285714284,
+        "open_obstacle_field": 0.008928571428571428,
+        "rough_local_dynamics": -0.015625,
+        "small_enclosed_maze": -0.015625,
+        "visual_sensor_stress": 0.001041666666666663
+      },
+      "paired_states": 128,
+      "scene_clusters": 16,
+      "family_strata": 8,
+      "resamples": 10000,
+      "seed": 2026080302
+    }
+  },
+  "gate_audit": {
+    "1_infrastructure_and_custody": {
+      "passed": true
+    },
+    "2_privileged_physical_oracle": {
+      "passed": true,
+      "normalized_rank_regret": 0.0,
+      "oracle_equivalent_selection_rate": 1.0
+    },
+    "3_true_future_beats_task_action_only": {
+      "passed": false,
+      "mean_candidate_minus_baseline": 0.0455078125,
+      "lower_95": 0.007161458333333333,
+      "upper_95": 0.08364211309523807,
+      "interpretation": "The dense true-future arm is worse than the task/action-only control at the point estimate, and the entire scene-cluster interval is above zero."
+    },
+    "4_true_future_beats_current_state": {
+      "passed": false,
+      "mean_candidate_minus_baseline": -0.006008184523809525,
+      "lower_95": -0.022249348958333335,
+      "upper_95": 0.010230654761904764,
+      "interpretation": "The point estimate slightly favors true-future tokens, but the scene-cluster interval crosses zero, so reliable successor-token headroom over current-state tokens is not established."
+    },
+    "5_true_future_beats_relational_persistence": {
+      "passed": false,
+      "mean_candidate_minus_baseline": 0.0019438244047619035,
+      "lower_95": -0.012992931547619048,
+      "upper_95": 0.016731770833333333,
+      "interpretation": "The point estimate is slightly worse than relational persistence and the scene-cluster interval crosses zero."
+    },
+    "6_true_future_beats_random_expected": {
+      "passed": true,
+      "true_future": 0.219921875,
+      "random_expected": 0.49541377314814816,
+      "per_family_true_minus_random": {
+        "large_enclosed_maze": -0.3694361772486773,
+        "local_composite_motifs": 0.04021990740740744,
+        "loop_alias_stress": -0.16493055555555558,
+        "medium_enclosed_maze": -0.2985284391534392,
+        "open_obstacle_field": -0.3857473544973546,
+        "rough_local_dynamics": -0.3745453042328043,
+        "small_enclosed_maze": -0.4537450396825397,
+        "visual_sensor_stress": -0.19722222222222224
+      },
+      "interpretation": "The overall point regret beats random expectation as preregistered, while local_composite_motifs is the reported family-level exception."
+    },
+    "7_deterministic_replay": {
+      "passed": true,
+      "all_11_reproduction_flags_true": true,
+      "fresh_process_and_cache_only": true,
+      "interpretation": "The immutable replay artifact, exact bound source, and canonical primary/replay/result equality establish the preregistered replay gate. This terminal audit did not retrain because retry, resume, and retraining were prohibited."
+    },
+    "failed_gates": [
+      "3_true_future_beats_task_action_only",
+      "4_true_future_beats_current_state",
+      "5_true_future_beats_relational_persistence"
+    ],
+    "all_preregistered_gates_passed": false,
+    "terminal_status": "STOP_FROZEN_DINO_VISUAL_PLANNING_INTERFACE_NOT_ESTABLISHED"
+  },
+  "scientific_interpretation": {
+    "positive_result": "The dense true-future arm beats uniform random expectation overall and has a small favorable point estimate relative to the matched current-state arm.",
+    "negative_result": "The dense true-future arm is materially worse than the task/action-only control, does not reliably beat current-state tokens, and does not beat relational persistence.",
+    "route_consequence": "The frozen-DINO oracle-future planning-interface route closes under the preregistered one-shot rule and does not authorize the proposed dense action-conditioned JEPA experiment.",
+    "scope_limit": "This STOP is specific to the frozen DINOv2 dense shared readout calibration. It is not an impossibility result for all DINO interfaces, task-coupled or embodiment-supervised representations, JEPA navigation, or world models generally."
+  },
+  "claim_boundary": {
+    "world_model_trained": false,
+    "dense_oracle_future_readout_calibrated": true,
+    "planning_interface_headroom_established": false,
+    "navigation_usefulness_established": false,
+    "closed_loop_planning_run": false,
+    "planner_integration_authorized": false,
+    "retry_or_tune_this_route": false,
+    "strongest_positive_statement": "The fitted dense true-future DINO readout has lower point regret than random expectation and a small, non-significant point advantage over its matched current-state control.",
+    "strongest_terminal_statement": "The preregistered dense shared frozen-DINO interface fails three required superiority gates and therefore does not establish useful planning headroom."
+  },
+  "cross_review_evidence": [
+    {
+      "reviewer": "/root/task_relevance_evaluator_impl/audit_posthoc_join_refs",
+      "authorship_relation": "REPLAY_IMPLEMENTATION_AUTHOR_AND_PRIMARY_RUNNER_NON_AUTHOR",
+      "status": "PASS_NO_DISCREPANCY",
+      "scope": "Rehashed the reviewed sources, fixed inputs, exact output inventory, and runtime bindings; confirmed primary evaluation, replay recomputation, result, terminal, custody, and no-retry evidence without deserializing caches or retraining.",
+      "scope_caveat": "This reviewer did not independently approve their own replay implementation or Gate 7.",
+      "reported_evaluation_equivalence_digest": "90da27390434faf3b3041e4a014446735ea8343998d4d6778120512fe9be1539"
+    },
+    {
+      "reviewer": "/root/calibration_failure_compatibility_audit",
+      "authorship_relation": "PRIMARY_RUNNER_AUTHOR",
+      "status": "PASS_NO_DISCREPANCY",
+      "scope": "Independently reproduced immutable-output summaries, the 10000-resample bootstrap, gates, STOP verdict, all 11 replay flags, and safe checkpoint identities without cache, RGB, encoder, protected access, or retraining.",
+      "scope_caveat": "This reviewer did not independently approve their own primary runner custody path.",
+      "evaluation_identity_sha256": "b2f1f740ac21131917c8e4faf709f72dc5bcf8f8d63d664ee506ecf181253960",
+      "checkpoint_identity_sha256": "61207c712d9749b915e59269bf43c82610d8e1af15f0843f0d85000d0edb126d",
+      "pca_identity_sha256": "9531577f9fee293467dd87e37e797a75c15ab9922af34b8ea84bfa5204646ad4",
+      "task_identity_sha256": "69895316b19bc179e35fdd76905aadbd50b6ad3e22e965b662ba59672c52886a"
+    }
+  ],
+  "findings": []
+}

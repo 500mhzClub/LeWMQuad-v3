@@ -1,0 +1,243 @@
+{
+  "status": "GEOMETRY_PROGRESS_FAMILY_CAUSAL_READOUT_COMPLETE",
+  "collection_sha256": "376b2eeacfd5e741ba6b7a0e1b5e04399f782d16943d66ffdff92eada93ef0fb",
+  "collection_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_geometry_progress_family_v1_attempt_001",
+  "cohort": {
+    "episodes": 96,
+    "roles": {
+      "train": {
+        "episodes": 48,
+        "parameter_clusters": 2,
+        "layouts": 4,
+        "action_counts": {
+          "right_arc": 8,
+          "right_turn": 8,
+          "left_turn": 8,
+          "hold": 8,
+          "forward": 8,
+          "left_arc": 8
+        },
+        "successful_progress": 10,
+        "contact_episodes": 14,
+        "all_candidate_acquisitions_complete": true,
+        "hard_measurement_failed_cases": {},
+        "strict_depth_failed_cases": [
+          "family_episode_008",
+          "family_episode_057"
+        ],
+        "prediction_measurement_gate_pass": true,
+        "mirrored_reversals": [
+          {
+            "cluster": "cluster_00",
+            "appearance_seed": 2026090940,
+            "passes": true
+          },
+          {
+            "cluster": "cluster_00",
+            "appearance_seed": 2026090941,
+            "passes": true
+          },
+          {
+            "cluster": "cluster_01",
+            "appearance_seed": 2026090940,
+            "passes": false
+          },
+          {
+            "cluster": "cluster_01",
+            "appearance_seed": 2026090941,
+            "passes": false
+          }
+        ],
+        "constant_success_actions": [],
+        "nonprogress_controls_fail": true,
+        "native_action_design_informative": false,
+        "target_accounting": {
+          "expected_slots": 384,
+          "recorded_slots": 384,
+          "motion_valid": 322,
+          "future_image_valid": 322,
+          "contact_valid": 384,
+          "contact_positive": 62
+        }
+      },
+      "geometry_transfer": {
+        "episodes": 48,
+        "parameter_clusters": 2,
+        "layouts": 4,
+        "action_counts": {
+          "left_arc": 8,
+          "hold": 8,
+          "left_turn": 8,
+          "right_arc": 8,
+          "right_turn": 8,
+          "forward": 8
+        },
+        "successful_progress": 14,
+        "contact_episodes": 10,
+        "all_candidate_acquisitions_complete": true,
+        "hard_measurement_failed_cases": {},
+        "strict_depth_failed_cases": [],
+        "prediction_measurement_gate_pass": true,
+        "mirrored_reversals": [
+          {
+            "cluster": "cluster_02",
+            "appearance_seed": 2026090940,
+            "passes": false
+          },
+          {
+            "cluster": "cluster_02",
+            "appearance_seed": 2026090941,
+            "passes": false
+          },
+          {
+            "cluster": "cluster_03",
+            "appearance_seed": 2026090940,
+            "passes": false
+          },
+          {
+            "cluster": "cluster_03",
+            "appearance_seed": 2026090941,
+            "passes": false
+          }
+        ],
+        "constant_success_actions": [
+          "left_arc"
+        ],
+        "nonprogress_controls_fail": true,
+        "native_action_design_informative": false,
+        "target_accounting": {
+          "expected_slots": 384,
+          "recorded_slots": 384,
+          "motion_valid": 338,
+          "future_image_valid": 338,
+          "contact_valid": 384,
+          "contact_positive": 46
+        }
+      }
+    },
+    "all_measurement_gates_pass": true,
+    "training_design_informative": false,
+    "episode_exclusions": [],
+    "mirrored_siblings_are_independent": false,
+    "model_trained": false,
+    "independent_maze_evaluation_layouts": 0,
+    "navigation_qualified": false,
+    "goal_achieved": false
+  },
+  "window_counts": {
+    "train": {
+      "planned_episodes": 48,
+      "planned_windows": 384,
+      "available_windows": 336,
+      "available_initial_windows": 48,
+      "available_moving_windows": 288,
+      "unavailable_reasons": {
+        "MISSING_ACTUAL_CONTEXT": 48
+      },
+      "planned_known_horizon_slots": 1728,
+      "recorded_target_slots": 2688,
+      "recorded_known_horizon_slots": 1608,
+      "motion_valid": 1352,
+      "future_image_valid": 1352,
+      "contact_valid": 1608,
+      "contact_positive": 256,
+      "contact_positive_without_future_image": 256,
+      "contact_positive_without_motion": 256
+    },
+    "geometry_transfer": {
+      "planned_episodes": 48,
+      "planned_windows": 384,
+      "available_windows": 348,
+      "available_initial_windows": 48,
+      "available_moving_windows": 300,
+      "unavailable_reasons": {
+        "MISSING_ACTUAL_CONTEXT": 36
+      },
+      "planned_known_horizon_slots": 1728,
+      "recorded_target_slots": 2784,
+      "recorded_known_horizon_slots": 1642,
+      "motion_valid": 1446,
+      "future_image_valid": 1446,
+      "contact_valid": 1642,
+      "contact_positive": 196,
+      "contact_positive_without_future_image": 196,
+      "contact_positive_without_motion": 196
+    }
+  },
+  "total_planned_windows": 768,
+  "total_materialized_windows": 684,
+  "initial_tensor_equivalence_checked": 96,
+  "initial_context_counts": {
+    "rgb": 16,
+    "body": 1,
+    "control": 1
+  },
+  "raw_accounting": {
+    "physics_samples": 254726,
+    "frames": 3740,
+    "decisions": 3740,
+    "footprint_frames": 3740,
+    "stable_interior_failed_frames": 0,
+    "near_occlusion_failed_frames": 0
+  },
+  "observation_and_control_wall_ms": {
+    "median": 138.6640065,
+    "maximum": 200.760666,
+    "above100ms": 3522,
+    "count": 3740,
+    "includes_physics_tick": false,
+    "real_time_qualified": false
+  },
+  "ready_for_separately_frozen_learning": false,
+  "moving_contexts_do_not_prove_replanning": true,
+  "model_trained": false,
+  "navigation_qualified": false,
+  "goal_achieved": false,
+  "collection_launch_sha256": "bd851bc0ef6f078152b86b1998e2c0baa61ce18c2a584e6900ee41df86ec0216",
+  "collection_sources": 833,
+  "causal_sources": 838,
+  "causal_result_sha256": "37bd88d43fd0ebdcee80282d38695f82a41b83313d08158d076f5ad4ce7145a7",
+  "causal_artifact_sha256": {
+    "launch.json": "a02fae4600391aa6f85ffc85da45a207ed31fe6532e63f5c3011460c8a27cf16",
+    "windows.json": "e73c1c06b0afd8f58e96c7e6ee53da43368c1b3dde0fa4954e0385acdcf8f632",
+    "tensor_index.json": "181d05960261ccc52364bbdfdaac711ef47705a0de4b6021b874693c23a860f6",
+    "native_paths.png": "e58b14db34eeb4bced6f078bd33260185790cc5e32e4bb96f267e50e623d7978",
+    "native_paths.svg": "355fbde5253fb3389f21739c96af2d2db9049ebb3a35d238b996430f98c2d5a3"
+  },
+  "collection_artifacts": 18035,
+  "collection_bytes": 5724575574,
+  "collection_wall_s": 1106.0748102548532,
+  "strict_failed_cases": [
+    {
+      "trial": "family_episode_008",
+      "geometry": "cluster_00_right_open",
+      "action": "left_turn",
+      "frames": [
+        27
+      ]
+    },
+    {
+      "trial": "family_episode_057",
+      "geometry": "cluster_00_right_open",
+      "action": "left_turn",
+      "frames": [
+        27
+      ]
+    }
+  ],
+  "stable_maximum_error_m": 0.000340670964214862,
+  "stable_minimum_rays": 2790,
+  "clipped_opaque_rays": 0,
+  "false_public_valid_near_rays": 0,
+  "boundary_bad_rays": 2,
+  "nonreference_prefixes": 80,
+  "all_prefixes_exact": true,
+  "resource_summary": {
+    "observations": 65,
+    "max_cpu_busy_percent": 15.8,
+    "minimum_memory_available_bytes": 77246951424,
+    "minimum_artifact_free_bytes": 97094516736,
+    "max_python_rss_sum_bytes": 7982178304
+  },
+  "policy_stream_checker_output_exists": false
+}

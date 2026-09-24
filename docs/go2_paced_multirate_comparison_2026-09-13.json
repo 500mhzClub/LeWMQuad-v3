@@ -1,0 +1,141 @@
+{
+  "go2_paced_multirate_recorded_prefix_v1_attempt_001": {
+    "result_sha256": "ca03121e3e7e63498cd18b74c6f7764049dce4bf4d03aac769a646330b3f52ac",
+    "result": {
+      "status": "PACED_MULTIRATE_RECORDED_PREFIX_COMPLETE",
+      "observations": 61,
+      "all_raw_and_registered_evidence_equal_except_work_counts": true,
+      "model_unchanged": true,
+      "stage_counts": {
+        "tracking": 61,
+        "registration": 61,
+        "mapping": 16,
+        "planning": 15
+      },
+      "stage_max_completion_age_ms": {
+        "tracking": 930.01341,
+        "registration": 971.164126,
+        "mapping": 1219.916926,
+        "planning": 1143.444736
+      },
+      "plans_on_time": 1,
+      "plans_late": 14,
+      "planner_other_reasons": {},
+      "shadow_request_reasons": {
+        "NO_ON_TIME_PLAN": 320,
+        "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 5
+      },
+      "nonzero_shadow_requests": 0,
+      "skipped_request_ticks": 0,
+      "max_request_compute_ms": 0.02132,
+      "elapsed_paced_s": 7.243990094,
+      "shared_host": true,
+      "preloaded_recorded_acquisition": true,
+      "physical_execution": false,
+      "shadow_requests_only": true,
+      "recorded_motion_attributed_to_new_requests": false,
+      "continuous_navigation_demonstrated": false,
+      "whole_body_contact_or_ground_support_checked": false
+    },
+    "stage_mean_service_ms": {
+      "tracking": 112.27783268852458,
+      "registration": 45.508378983606555,
+      "mapping": 135.71060475,
+      "planning": 39.23771333333333
+    }
+  },
+  "go2_process_mapped_recorded_prefix_v1_attempt_001": {
+    "result_sha256": "8f65994590e4f0d2c3101da694e70af59fef17c674a5303fe534f57ee0f4f685",
+    "result": {
+      "status": "PROCESS_MAPPED_RECORDED_PREFIX_COMPLETE",
+      "observations": 61,
+      "all_raw_and_registered_evidence_equal_except_work_counts": true,
+      "model_unchanged": true,
+      "stage_counts": {
+        "tracking": 61,
+        "registration": 61,
+        "mapping": 16,
+        "planning": 15
+      },
+      "stage_max_completion_age_ms": {
+        "tracking": 835.594102,
+        "registration": 880.905482,
+        "mapping": 1024.760689,
+        "planning": 1051.039
+      },
+      "plans_on_time": 1,
+      "plans_late": 14,
+      "planner_other_reasons": {},
+      "shadow_request_reasons": {
+        "NO_ON_TIME_PLAN": 320,
+        "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 5
+      },
+      "nonzero_shadow_requests": 0,
+      "skipped_request_ticks": 0,
+      "max_request_compute_ms": 0.02686,
+      "elapsed_paced_s": 7.077921294,
+      "shared_host": true,
+      "preloaded_recorded_acquisition": true,
+      "physical_execution": false,
+      "shadow_requests_only": true,
+      "recorded_motion_attributed_to_new_requests": false,
+      "continuous_navigation_demonstrated": false,
+      "whole_body_contact_or_ground_support_checked": false,
+      "mapping_worker_separate_process": true,
+      "packet_transfer_included_in_stage_timing": true
+    },
+    "stage_mean_service_ms": {
+      "tracking": 110.18446337704918,
+      "registration": 46.04798180327869,
+      "mapping": 126.2699284375,
+      "planning": 39.03339686666666
+    }
+  },
+  "go2_process_separated_recorded_prefix_v1_attempt_001": {
+    "result_sha256": "f15bceedee3e4887d9cbbe10ca026070105e6b747b3a3965da227be896afde13",
+    "result": {
+      "status": "PROCESS_SEPARATED_RECORDED_PREFIX_COMPLETE",
+      "observations": 61,
+      "all_raw_and_registered_evidence_equal_except_work_counts": true,
+      "model_unchanged": true,
+      "stage_counts": {
+        "tracking": 61,
+        "registration": 61,
+        "mapping": 16,
+        "planning": 15
+      },
+      "stage_max_completion_age_ms": {
+        "tracking": 773.38038,
+        "registration": 816.88458,
+        "mapping": 949.290191,
+        "planning": 983.581978
+      },
+      "plans_on_time": 1,
+      "plans_late": 14,
+      "planner_other_reasons": {},
+      "shadow_request_reasons": {
+        "NO_ON_TIME_PLAN": 320,
+        "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 5
+      },
+      "nonzero_shadow_requests": 0,
+      "skipped_request_ticks": 0,
+      "max_request_compute_ms": 0.02271,
+      "elapsed_paced_s": 7.003702214,
+      "shared_host": true,
+      "preloaded_recorded_acquisition": true,
+      "physical_execution": false,
+      "shadow_requests_only": true,
+      "recorded_motion_attributed_to_new_requests": false,
+      "continuous_navigation_demonstrated": false,
+      "whole_body_contact_or_ground_support_checked": false,
+      "mapping_and_pose_separate_processes": true,
+      "packet_transfer_included_in_stage_timing": true
+    },
+    "stage_mean_service_ms": {
+      "tracking": 109.50619203278688,
+      "registration": 44.87981729508197,
+      "mapping": 120.90130225,
+      "planning": 35.25414133333334
+    }
+  }
+}

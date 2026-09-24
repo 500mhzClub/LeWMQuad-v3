@@ -21,8 +21,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lewm_genesis"))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lewm_worlds"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
+from lewm.benchmarks.go2_primitive_outcome import (  # noqa: E402
+    primitive_body_clearance_and_progress,
+)
 from lewm.models.go2_jepa import Go2PrimitiveOutcomeHead, load_go2_jepa_encoder  # noqa: E402
-from lewm_contract import PrimitiveRegistry, expand_primitive_to_block  # noqa: E402
+from lewm_contract import PrimitiveRegistry  # noqa: E402
 from lewm_worlds.manifest import parse_scene_manifest_dict  # noqa: E402
 from lewm_worlds.planning_grid import InflatedOccupancyGrid  # noqa: E402
 from train_go2_hidden_target_memory_probe import _load_image, _resolve_device  # noqa: E402
@@ -141,97 +144,6 @@ def _load_rows(
     return examples
 
 
-def _wrap_angle_pi(value: float) -> float:
-    return (float(value) + math.pi) % (2.0 * math.pi) - math.pi
-
-
-def _body_probe_clearance(
-    grid: InflatedOccupancyGrid,
-    xy: tuple[float, float],
-    yaw: float,
-    *,
-    body_forward_m: float,
-    body_half_width_m: float,
-    clearance_source: str = "configuration",
-) -> float:
-    x = float(xy[0])
-    y = float(xy[1])
-    fx, fy = math.cos(float(yaw)), math.sin(float(yaw))
-    lx, ly = -fy, fx
-    probes = (
-        (0.0, 0.0),
-        (body_forward_m, 0.0),
-        (body_forward_m, body_half_width_m),
-        (body_forward_m, -body_half_width_m),
-        (0.0, body_half_width_m),
-        (0.0, -body_half_width_m),
-    )
-    if str(clearance_source) == "obstacle":
-        clearance_fn = grid.obstacle_clearance_m
-    else:
-        clearance_fn = grid.configuration_clearance_m
-    return float(min(
-        clearance_fn((x + forward * fx + lateral * lx,
-                      y + forward * fy + lateral * ly))
-        for forward, lateral in probes
-    ))
-
-
-def _primitive_body_clearance_and_progress(
-    *,
-    registry: PrimitiveRegistry,
-    primitive: str,
-    grid: InflatedOccupancyGrid,
-    x_m: float,
-    y_m: float,
-    yaw_rad: float,
-    command_dt_s: float,
-    body_forward_m: float,
-    body_half_width_m: float,
-    clearance_source: str,
-) -> tuple[float, float, float, float]:
-    x = float(x_m)
-    y = float(y_m)
-    yaw = float(yaw_rad)
-    min_clearance = _body_probe_clearance(
-        grid,
-        (x, y),
-        yaw,
-        body_forward_m=body_forward_m,
-        body_half_width_m=body_half_width_m,
-        clearance_source=clearance_source,
-    )
-    min_after_start = float("inf")
-    final_clearance = float(min_clearance)
-    progress_m = 0.0
-    block = expand_primitive_to_block(registry, primitive)
-    for vx_body, vy_body, yaw_rate in block:
-        cos_yaw, sin_yaw = math.cos(yaw), math.sin(yaw)
-        next_x = x + (
-            float(vx_body) * cos_yaw - float(vy_body) * sin_yaw
-        ) * float(command_dt_s)
-        next_y = y + (
-            float(vx_body) * sin_yaw + float(vy_body) * cos_yaw
-        ) * float(command_dt_s)
-        next_yaw = _wrap_angle_pi(yaw + float(yaw_rate) * float(command_dt_s))
-        progress_m += math.hypot(next_x - x, next_y - y)
-        x, y, yaw = next_x, next_y, next_yaw
-        step_clearance = _body_probe_clearance(
-            grid,
-            (x, y),
-            yaw,
-            body_forward_m=body_forward_m,
-            body_half_width_m=body_half_width_m,
-            clearance_source=clearance_source,
-        )
-        final_clearance = float(step_clearance)
-        min_after_start = min(min_after_start, float(step_clearance))
-        min_clearance = min(min_clearance, float(step_clearance))
-    if not math.isfinite(min_after_start):
-        min_after_start = final_clearance
-    return float(min_clearance), float(min_after_start), float(final_clearance), float(progress_m)
-
-
 def _load_counterfactual_body_clearance_rows(
     paths: list[Path],
     *,
@@ -270,7 +182,11 @@ def _load_counterfactual_body_clearance_rows(
                 pose = row.get("start_base_pose_world") or {}
                 position = pose.get("position") or {}
                 rpy = row.get("start_base_rpy_rad") or {}
-                if position.get("x") is None or position.get("y") is None or rpy.get("yaw") is None:
+                if (
+                    position.get("x") is None
+                    or position.get("y") is None
+                    or rpy.get("yaw") is None
+                ):
                     continue
                 manifest_path = str(row.get("scene_manifest", ""))
                 if not manifest_path:
@@ -294,7 +210,12 @@ def _load_counterfactual_body_clearance_rows(
                     if key in seen:
                         continue
                     seen.add(key)
-                    swept_clearance_m, after_start_clearance_m, final_clearance_m, progress_m = _primitive_body_clearance_and_progress(
+                    (
+                        swept_clearance_m,
+                        after_start_clearance_m,
+                        final_clearance_m,
+                        progress_m,
+                    ) = primitive_body_clearance_and_progress(
                         registry=registry,
                         primitive=primitive,
                         grid=grid,
@@ -305,6 +226,9 @@ def _load_counterfactual_body_clearance_rows(
                         body_forward_m=float(body_forward_m),
                         body_half_width_m=float(body_half_width_m),
                         clearance_source=str(body_clearance_source),
+                        progress_collision_stop_m=(
+                            0.0 if str(blocked_label_source) == "progress" else None
+                        ),
                     )
                     if body_clearance_label_target == "final":
                         clearance_m = final_clearance_m

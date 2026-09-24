@@ -1,0 +1,601 @@
+# JEPA Navigation Literature and Experimental-History Critical Review
+
+**Review date:** 2026-08-02; **last updated:** 2026-08-03
+**Scope:** Current JEPA and JEPA-world-model literature, navigation-specific evidence, and a first-principles evaluation of this repository's approach and experimental history.
+
+## Verdict
+
+As of 3 August 2026, the repository has completed a scene-disjoint matched-
+branch development evaluation, bounded matched-branch training screens, a
+direct physical-outcome screen, and a privileged actual-future dense V-JEPA
+2.1 physical-interface ceiling.  The current globally pooled one-step
+checkpoints are not planning-ready; the bounded frozen/adapted-token mechanisms
+did not establish their registered capacity claim; the compact retained-input
+dynamics packages did not establish physical action-ranking headroom; and
+actual future frozen V-JEPA tokens did not establish that headroom through the
+fixed low-capacity spatial interface.
+
+The session handoff remains unusually honest and scientifically valuable,
+especially its withdrawn-claims section.  The accumulated result now supports
+a narrower current verdict:
+
+> Matched branches have enabled direct causal development tests.  The tested
+> learned mechanisms failed their fixed physical-ranking gates, and the tested
+> frozen V-JEPA physical interface failed even with privileged actual-future
+> tokens.  This neither proves that matched counterfactual training is
+> universally necessary nor rules out a jointly learned representation,
+> objective, interface, or planner as an alternative mechanism.
+
+The project is no longer waiting for its first calibrated branch set or
+controlled training comparison.  It remains substantially further away from
+evidence that a learned world model is useful for navigation planning.
+
+## What the current literature actually says
+
+| Area | Best evidence | Implication here |
+|---|---|---|
+| Representation JEPA | [I-JEPA](https://openaccess.thecvf.com/content/CVPR2023/papers/Assran_Self-Supervised_Learning_From_Images_With_a_Joint-Embedding_Predictive_Architecture_CVPR_2023_paper.pdf), [V-JEPA](https://arxiv.org/abs/2404.08471), and [V-JEPA 2.1](https://arxiv.org/abs/2603.14482) establish strong abstract and increasingly dense spatiotemporal representations. | Representation quality, rank, and anti-collapse health do not establish controllable dynamics. Dense spatial tokens increasingly appear preferable to one global embedding. |
+| Offline latent planning | [DINO-WM, ICML 2025](https://proceedings.mlr.press/v267/zhou25t.html) learns an action-conditioned predictor over frozen DINOv2 patch features and plans with CEM in six simulated task families. [PLDM, NeurIPS 2025](https://proceedings.neurips.cc/paper_files/paper/2025/hash/3e7cf447f21cd11c846463affefce665-Abstract-Conference.html) also learns planning latents from ordinary reward-free offline transitions. | Exact same-state/multiple-action examples are not universally necessary. Local state-action coverage and appropriate inductive bias can be sufficient. |
+| Physical JEPA planning | [V-JEPA 2-AC](https://arxiv.org/abs/2506.09985) combines internet-video pretraining with under 62 hours of robot interaction and closed-loop image-goal planning on Franka arms. | Large passive data helps the encoder, but a comparatively small action-labelled interaction set trains the dynamics. Evidence is short-horizon and based on small physical trial counts. |
+| Best current design study | The accepted TMLR study [What Drives Success in Physical Planning with JEPA-WMs?](https://arxiv.org/abs/2512.24497) favors dense DINO features, proprioception, AdaLN-style action conditioning, short multi-step training, and CEM. It also finds prediction loss can correlate poorly with planning success. | The repository's global pooling, missing or limited belief state, one-step target, and proxy-centric evaluation are all live failure causes. Model scale alone is not the answer. |
+| End-to-end JEPA | [LeWorldModel](https://arxiv.org/abs/2603.19312) is the closest published design to this repository: global latent, next-embedding prediction, SIGReg, and CEM. | It is a useful baseline, not an established recipe for complex navigation. Its own results and follow-up work show sensitivity to task dimensionality, data diversity, horizon, and latent geometry. |
+| Action sensitivity | Recent preprints [Delta-JEPA](https://arxiv.org/abs/2606.31232), [ActSWM](https://arxiv.org/abs/2607.26712), and [DWM](https://arxiv.org/abs/2607.18715) improve action-sensitive planning using displacement-action decoding, rollout separation, multi-step losses, or explicit action/world decomposition, all with factual logged transitions. | These directly contradict an objective-independent claim that matched counterfactual successors are the only route forward. They are promising but very recent and not yet strong consensus evidence. |
+| Planning geometry and horizon | [Temporal Straightening, ICML 2026](https://arxiv.org/abs/2603.12231), [Predictive but Not Plannable](https://arxiv.org/abs/2605.07278), [Temporal-Distance JEPA](https://arxiv.org/abs/2607.25337), and [Hierarchical Planning with Latent World Models](https://arxiv.org/abs/2604.03208) target curvature, reachability, temporal cost, and hierarchy. | Even a predictive, action-sensitive model can be useless to CEM if Euclidean latent distance has the wrong geometry or the planning horizon is misaligned. |
+| Navigation | [PiJEPA](https://openaccess.thecvf.com/content/CVPR2026W/WDFM-EAI/html/Chahe_Policy-Guided_World_Model_Planning_for_Language-Conditioned_Visual_Navigation_CVPRW_2026_paper.html) is relevant but evaluates trajectory errors rather than a robust closed-loop robot deployment; its policy prior can partially bypass weak world-model rollouts. [Navigation World Models](https://openaccess.thecvf.com/content/CVPR2025/html/Bar_Navigation_World_Models_CVPR_2025_paper.html) is generative rather than JEPA and also emphasizes offline prediction/ranking. | Direct JEPA navigation evidence remains thin. This review found no convincing JEPA result for closed-loop Go2 or comparable legged navigation with the world model causally controlling behavior. |
+
+For perspective, [DayDreamer](https://proceedings.mlr.press/v205/wu23c.html) already demonstrated actual physical world-model learning on a quadruped, arms, and wheeled navigation. It is online reward-driven Dreamer rather than reward-free JEPA, but it sets a much stronger evidence bar than latent probes.
+
+## What the repository has actually established
+
+The governing plan asks for untaken-action utility (WM-A), optional rollout composability (WM-C), physical/spatial retention (WM-S), and causal planner use (WM-D); see [the action-conditioned world-model plan](lewm_go2_action_conditioned_world_model_plan_2026-07-31.md).
+
+| Property | Current status | Correct interpretation |
+|---|---:|---|
+| WM-A | Measured; not established | The matched-branch panels now expose true untaken-action outcomes and physical rank regret. Current latent checkpoints and the compact retained-input dynamics packages failed their fixed development gates; no JEPA action-utility claim follows. |
+| WM-C | Failed only in the unchanged interface | The predictor consumes 256 lattice tokens but emits 64 masked tokens, so direct re-entry is impossible. Adapters and different rollout architectures remain untested. |
+| WM-S | Narrowly measured; not established | Actual action-matched future frozen V-JEPA tokens were tested through train-only `K=8` PCA and a 245-parameter shared spatial readout. They beat relational persistence but did not establish superiority over the full task/action, retained-physical, current-state, wrong-scene, and action-mean control set. This does not establish spatial/physical retention generally. |
+| WM-D | Absent | No learned world model has yet supplied planner scores that causally determined navigation actions. |
+
+The strongest early observational-training experiment was the three-arm V3
+comparison:
+
+- 16,000 training rows and 2,048 validation rows from 150 scene-disjoint scenes.
+- The conditioned model beat the blind and cross-scene shuffled models.
+- Balanced action identification reached 0.2469 versus 0.111 chance.
+- Yet hardest-action energy ordering was negative, and the model was substantially worse than persistence.
+
+Those results establish **scene-disjoint factual action association**, not causal action-conditioned dynamics. See [the three-arm terminal review](lewm_go2_world_model_existing_pool_three_arm_v1_integrity_replacement_v3_terminal_review_2026-08-01.json).
+
+The strongest direct WM-A test is now the scene-disjoint matched-branch
+physical-outcome screen described in the final update below.  It evaluates
+true physical outcomes for all nine candidate actions, but neither learned arm
+passed its registered headroom gate.
+
+The later frozen V-JEPA screen is not a WM-A test because it consumes actual
+future tokens rather than predicted ones.  It removes predictor error and asks
+whether this exact representation/readout interface can rank the physical
+branches.  Its failure therefore closes that interface, while leaving a jointly
+learned predictor, representation, and task interface untested.
+
+The successor-alignment hinge then produced a genuine relative improvement over its concurrent baseline, but its absolute margin remained negative and persistence still failed. See [the alignment terminal review](lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_2026-08-01.json). Continuing from u700 to u900 worsened the primary margin; stopping that mechanism was exactly right. See [the fixed-continuation terminal review](lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_terminal_review_2026-08-01.json).
+
+The correct conclusion is therefore:
+
+> The current objective and checkpoint are not credible as a planning world model, and more updates under the same mechanism are unjustified.
+
+It is not:
+
+> The architecture has been cleared and lack of matched counterfactual data is now the sole explanation.
+
+## Where the reasoning went off course
+
+### 1. Exact state duplication was treated as an identifiability requirement
+
+Continuous observations are almost always unique. Models can identify local action effects when nearby histories contain overlapping action support and the dynamics are sufficiently smooth or structured. The correct diagnostic is neighborhood-level action entropy and propensity overlap, not exact frame equality.
+
+### 2. The hinge can reward action-label association without learning consequences
+
+It asks the factual-action prediction to lie nearer the factual successor than predictions produced using wrong labels. Since it has no true wrong-action successors, it can learn "which action label belongs to this trajectory row" rather than "what each action would cause."
+
+The observed combination of above-chance balanced accuracy and positive wrong-history separation, but negative persistence and physical ordering, is consistent with exactly that failure.
+
+### 3. The hardest-action metric assumes action labels always imply distinct outcomes
+
+That is invalid when commands are clipped, motions are too short to separate, actions are symmetric, or different primitives produce physically equivalent outcomes. The smoke already found safety clipping for five of nine requested primitives, despite nine distinct executed-command hashes. See [the counterfactual smoke review](lewm_go2_world_model_counterfactual_smoke_v3_terminal_review_2026-08-01.json).
+
+Evaluation should use physical-outcome or regret-equivalence classes, not require every nominally wrong label to be worse.
+
+### 4. Proxy optimization displaced the actual goal
+
+Rank, variance, action decoding, hinge margins, and persistence are useful diagnostics. They became a long proxy ladder without a direct branch-truth or closed-loop planning result. The earlier June diagnosis was closer to the frontier: spatial tokens, recurrent belief/proprioception, multi-step prediction, and direct MPC were already identified as the real program. See [the June navigation plan](lewm_jepa_navigation_next_steps_2026-06-14.md).
+
+### 5. Uncertainty is understated
+
+The key training experiments use one seed, and the same validation scenes informed localization, treatment selection, and continuation. The bootstrap bounds are useful protocol-local evidence for stopping, but are not fresh-scene or training-seed uncertainty.
+
+### 6. The 3 TB figure is scientifically misleading by itself
+
+The pool contains roughly 1.81 million H6 candidates and 55.2 million frame rows, but the strongest experiment trained on only 16,000 candidates, about 0.9%. Bytes mainly measure image storage, not independent action-state coverage. Before generating or scaling anything, measure the effective conditional support already present.
+
+## What was done well
+
+The latest work has several real strengths:
+
+- Scene-disjoint validation and blind/shuffled controls.
+- Absolute baselines alongside relative treatment effects.
+- Independent receipts, preregistration, and custody discipline.
+- Explicitly recording withdrawn claims.
+- Refusing to turn diagnostic B's 2.43x training-set capacity result into a generalization claim.
+- Stopping the u700-to-u900 continuation when the registered metric worsened.
+
+Those practices rescued the project from drawing a stronger false conclusion. The failure was primarily in causal interpretation and experimental prioritization, not experimental honesty.
+
+## Recommended experimental reset
+
+### 1. Audit the existing pool before generating bulk data
+
+Measure, using only pre-action state/history information:
+
+- Local k-nearest-neighbor action entropy and effective action support.
+- Requested-versus-executed command discrepancies.
+- Proprioceptive and ego-motion coverage.
+- Dynamic-event density: meaningful displacement, contact, collision, turning, and stopping.
+- Coverage by scene, not merely by frame or state count.
+- Whether a state-only classifier can predict the behavior policy's action.
+
+If actions are almost deterministic from local history, coverage is genuinely confounded. If substantial local overlap exists, the handoff's data diagnosis weakens further.
+
+### 2. Make counterfactual generation evaluation-first
+
+The existing smoke proves only that the plumbing can branch one state. It remains `physics_validated:false` and explicitly non-scientific.
+
+Before a claim-bearing run, fix:
+
+- The unimplemented calibration joiner in [`join_go2_world_model_counterfactual_pilot_v1.py`](../scripts/join_go2_world_model_counterfactual_pilot_v1.py).
+- The real-data consumer's missing analyzer-provenance path in [`go2_world_model_counterfactual_pilot_v1.py`](../lewm/datasets/go2_world_model_counterfactual_pilot_v1.py).
+- The smoke-only collector assumptions.
+- The evaluator's inability to load current snapshots.
+- Requested/executed semantics: candidate scoring may use the requested primitive plus current controller/safety state; the future executed command tape is a target/audit variable and must not be leaked into the model input.
+
+Run the planned 160-branch calibration across all nine primitives, not only HOLD and forward. Scale to approximately 2,304 branches only if repeatability, action distinctness, physics, visual parity, and oracle diversity pass. Allocate more of those states across independent scenes.
+
+This set should initially be a withheld causal evaluation set, not automatically new training data.
+
+### 3. Run a controlled objective/architecture comparison on the existing pool
+
+At minimum:
+
+- Current conditioned baseline.
+- Same architecture plus Delta-JEPA-style latent-displacement action decoding.
+- A frozen dense spatial DINOv2 or V-JEPA-2.1 encoder with proprioception, AdaLN action conditioning, and a two-step predictor.
+
+Use the same training rows, compute budget, three or more seeds, and fresh scene-disjoint evaluation. Do not bundle every new loss into one arm.
+
+#### Assessment of the proposed self-supervised dense-token successor
+
+Do not interrupt the active branch-truth experiment or change the thesis in
+response to an unfinished result. The supervised semantic-anchor/auxiliary-head
+family is already a terminal negative mechanism branch, however, so a further
+BEV-label variant should not be the default successor if the current models
+also fail the direct causal gates. The active experiment is an evaluator of
+frozen models, not another semantic-head attempt.
+
+At that stage, the clean prospective successor was a preregistered matched
+comparison, not one favored V-JEPA arm.  The final physical-interface ceiling
+below now supersedes any empirical preference for V-JEPA initialization:
+
+- DINOv2 dense patch features versus V-JEPA 2.1 dense spatiotemporal features;
+- frozen initialization versus identical robot-domain self-supervised
+  adaptation for each initialization;
+- one local, no-external-pretraining dense-JEPA reference retained as a
+  report-only thesis-identity control; and
+- one shared action-conditioned predictor, history/proprioception interface,
+  optimizer budget, two-step target, seeds, planner, and evaluator across all
+  cells.
+
+The predictor should receive only pre-action RGB/history/proprioception and the
+requested candidate action, with AdaLN-style action conditioning at every
+predictor block. Future executed commands, semantic occupancy, depth, contact,
+reward, simulator pose, and evaluator labels must not enter the strict
+RGB/action training cell. An embodiment-derived variant may use measured
+motion, IMU, contact, calibration, or camera height, but it must be named and
+reported separately as *self-supervised visual predictive learning with
+embodiment-derived geometric supervision*. That is a useful formulation, but
+it is not the same scientific claim as pixels, temporal order, and actions
+only.
+
+Metric-scale wording also needs care. Discrete action IDs do not identify
+metres. Commands expressed in physical units can anchor a *commanded* scale
+only by assuming a calibrated actuation/dynamics model; they do not reveal the
+executed displacement under slip, clipping, or contact. Measured odometry or
+body displacement can identify executed metric scale, but belongs in the
+separately reported embodiment-derived cell. The strict RGB/action cell should
+therefore claim relative controllability, reachability, topology, temporal
+distance, and branch-specific prediction unless metric scale is established by
+an explicit allowed signal and ablation.
+
+V-JEPA 2.1 initialization is also not thesis-neutral. The foundational plan
+treats external pretraining as a control, so a frozen or adapted V-JEPA 2.1
+winner would establish that externally pretrained video features can make this
+planning stack work. It would not by itself establish that this repository
+learned the useful representation. If that broader claim is desired, retain
+the no-pretraining reference or explicitly amend the thesis scope before the
+run.
+
+Dense tokens alone are not the novelty: the repository already qualified a
+dense single-frame spatial JEPA and obtained a negative dense temporal
+predictor result. The proposed experiment is useful because it isolates
+pretraining source and robot-domain adaptation while testing the complete
+scientific chain: direct same-state branch truth, blind 1/2/4/8-step rollout,
+oracle-headroom planning calibration, and same-sensor closed loop. If frozen
+DINOv2 wins while V-JEPA 2.1 does not, the result is a planning-feature ceiling,
+not evidence for a video-JEPA mechanism.
+
+The completed ceiling does not falsify a fully joint dense action-conditioned
+JEPA, because it trained neither a predictor nor the backbone and intentionally
+fixed a very small readout.  It does falsify the narrower sufficiency premise:
+predicting frozen single-frame V-JEPA 2.1 tokens and passing them through this
+interface is not a qualified route to physical ranking.  V-JEPA initialization
+is therefore no longer empirically preferred; it can remain a representation
+control alongside DINOv2 and a no-external-pretraining reference.  A task-
+coupled or embodiment-derived jointly adapted dense JEPA remains untested, is a
+materially new mechanism, and requires a separate preregistration and authority
+rather than inheriting authorization from this result.
+
+### 4. Replace proxy-only gates with the actual scientific chain
+
+Require separate evidence for:
+
+1. **Representation health:** no collapse; spatial and proprioceptive information retained.
+2. **Action binding:** fixed-history interventions produce the correct branch-specific physical direction, including null/equivalent-action calibration.
+3. **Rollout:** blind 1/2/4/8-step predictions beat persistence for planning-relevant quantities.
+4. **Planning geometry:** predicted cost correlates with true physical progress/regret, with a true-future oracle demonstrating evaluator headroom.
+5. **Causal deployment:** under identical sensors, the world-model planner improves navigation success over reactive, kinematic, and action-only baselines; ablating or deranging the model changes planner choices and removes the gain.
+
+Align planner scoring with the prefix actually executed, rather than scoring a terminal horizon that is never reached before replanning.
+
+### 5. Apply a strict progression rule
+
+- If action-grounding objectives improve branch truth across seeds, scale training using the existing pool first.
+- If diagnostics improve but planning does not, investigate reachability, latent geometry, uncertainty, and planner exploitation.
+- If existing-pool methods cannot improve true branch fidelity, matched branch data becomes the leading training intervention.
+- After two adequately powered non-improving mechanisms, stop JEPA-specific tuning and compare against a conventional state-space dynamics model and a Dreamer-style task-coupled baseline.
+
+## Bottom line
+
+The repository has not established JEPA navigation.  It has now run valid
+scene-disjoint matched-branch development evaluation, training-capacity, and
+physical-outcome screens plus a privileged frozen-V-JEPA interface ceiling, but
+still no closed-loop JEPA navigation experiment.  The current pooled one-step
+checkpoints are not planning-ready, neither compact retained-input arm
+established physical-ranking headroom, and actual future V-JEPA tokens did not
+establish headroom through the fixed spatial readout.
+
+The most defensible current claim is:
+
+> We have reproducible action-conditioned latent signal and favorable point
+> physical-regret estimates for compact retained-input models, but no
+> statistically supported physical action-ranking headroom, relative-progress
+> advantage, rollout utility, planning geometry, or causal navigation benefit.
+
+The fixed branch evaluator, retained-input route, and frozen V-JEPA/readout
+route are complete.  Do not launch a bulk rerender, scale the 3 TB pool, tune
+these models or thresholds, or treat the negative conjunction as authorization
+for a dense successor.  Any materially different mechanism or conventional/
+Dreamer comparison requires a new rationale and preregistration outside these
+stopped routes before any closed-loop claim.
+
+## Post-panel result update (2026-08-02)
+
+After this review was written, the preregistered four-arm by three-seed
+update-700 panel completed on the fixed matched-branch evaluator. All 12 reports
+were produced. The aggregate verdict is
+`USEFUL_SCENE_DISJOINT_PLANNING_EVIDENCE_NOT_ESTABLISHED`.
+
+This resolves the review's largest open causal question:
+
+- `masked_plain` and `full_plain` show some direct latent improvement over
+  shuffled controls, so the learned representation is not simply action-blind;
+- neither plain arm passes physical rank-regret, relative target-progress,
+  retrieval, or falsification in any seed;
+- the true-future ceiling fails evaluator sensitivity, so this is evidence that
+  usefulness was not established, not proof that no useful model is possible;
+- mean physical rank-regret effects are adverse (`+0.0358166` masked and
+  `+0.0490916` full, where negative favors the forecast);
+- delta supervision and full-grid targets both significantly worsen direct
+  matched-branch error in all three seeds, so neither is a practical mechanism;
+- no checkpoint is eligible for blind rollout or planning integration.
+
+The result supports this review's warning that improved proxy prediction need
+not yield plannable geometry. It also changes the data recommendation. Matched
+branches are no longer merely the route to decisive evaluation; under the
+frozen stop rule they are now the next information-changing **training**
+intervention for this program. That is a progression decision, not proof that
+observational learning is impossible or that exact duplicate states are a
+general identifiability requirement.
+
+The registered route is
+`STOP_OBSERVATIONAL_MECHANISM_TUNING_AND_COLLECT_MATCHED_BRANCH_TRAINING_DATA_THEN_COMPARE_CONVENTIONAL_AND_DREAMER_BASELINES`.
+A dense spatial-token, action-conditioned JEPA initialized from V-JEPA 2.1 and
+controlled against frozen V-JEPA 2.1 and DINOv2 remains a defensible candidate
+inside that comparison. It should not replace the conventional and Dreamer
+controls or inherit a usefulness claim from pretraining.
+
+The bound aggregate is
+`.generated/dev/go2_world_model_bounded_branch_evaluation_panel_v1/panel_result.json`
+(SHA-256
+`5439afee451cc66ca21c991a55266aed1c430444cc0b8112a7e14155e7e57fe8`).
+The independent terminal record is
+`docs/lewm_go2_world_model_bounded_branch_posthoc_evaluation_v1_terminal_review_2026-08-02.json`
+(16,458 bytes, SHA-256
+`58cbaec33e27a65d25d0106a43f6995bc75393706c4ac99637ae3e9e0f08373e`;
+status `PASS_COMPLETE_TERMINAL_DEVELOPMENT_REVIEW`).
+
+## Matched-training mechanism update (2026-08-03)
+
+The next controlled training experiment has now run.  It was deliberately a
+train-only engineering screen, not a navigation evaluation.  The existing
+matched pool supplied 128 states from 16 scenes, with all nine requested
+successors per state.  Frozen V-JEPA 2.1 and DINOv2 tokens were representation
+controls: they tested whether a compact action-conditioned transition could use
+their spatial features.  They were not treated as policies and their feature
+quality was not counted as evidence that either encoder can navigate.
+
+The four fixed arms were a dense predictor over V-JEPA tokens, the same dense
+mechanism over DINOv2 tokens, a deterministic pooled state-space model over
+V-JEPA, and a compact RSSM-style model over V-JEPA.  At 800 updates every arm
+had a positive intervention margin and every arm had learned substantially
+from initialization, but all four failed both fixed capacity gates:
+
+| Arm | Error / persistence (must be <= 0.80) | Branch retrieval (must be >= 0.50) | Intervention margin |
+|---|---:|---:|---:|
+| Dense V-JEPA 2.1 | 0.9164 | 0.2804 | 0.0287 |
+| Dense DINOv2 | 0.9667 | 0.2049 | 0.0460 |
+| Deterministic state-space | 0.8784 | 0.1484 | 0.0148 |
+| Compact RSSM | 0.8263 | 0.1354 | 0.0106 |
+
+The full projected 12-member comparison would have required only 0.822 GPU
+hours, so compute was not the blocker.  The independently reproduced terminal
+decision was `STOP_BEFORE_FRESH_MATCHED_BRANCH_COLLECTION`; see
+[the four-arm terminal review](lewm_go2_matched_branch_successor_screen_v1_terminal_review_2026-08-03.json).
+
+Dense V-JEPA was the only arm whose late curve plausibly left an optimization-
+horizon ambiguity.  A separately preregistered, no-RGB diagnostic therefore
+retrained that exact mechanism from the same seed, replayed the exact
+update-800 witness, and imposed a conjunctive update-1,600 futility gate.  It
+stopped at 1,600:
+
+- retrieval improved from `0.28038` to `0.43056`, or from 323 to 496 correct
+  action-successor matches of 1,152;
+- intervention margin improved from `0.02867` to `0.04542`;
+- error-to-persistence ratio improved from `0.91644` to `0.87234`; but
+- the fixed fidelity midpoint was `0.85822`, so the ratio gate failed by
+  `0.01412` even though retrieval and intervention passed their midpoint gates.
+
+The correct interpretation is asymmetric progress.  The frozen-feature dense
+predictor increasingly identifies which successor belongs to which requested
+action on its training scenes, but its successor fidelity is not improving over
+persistence quickly enough to establish the registered capacity claim.  This
+is another concrete instance of the literature's warning that action
+discrimination or reduced prediction loss need not produce a plannable world
+model.  The independently reproduced terminal is
+`COMPLETE_FUTILITY_STOP`; see
+[the horizon terminal review](lewm_go2_dense_vjepa2_1_horizon_diagnostic_v1_terminal_review_2026-08-03.json).
+
+### What this changes
+
+1. **Do not generate the 1,024-state fresh campaign yet.**  The current
+   frozen-feature mechanism did not qualify, and the 3 TB passive H6 pool does
+   not supply same-state/multiple-action supervision merely by being large.
+2. **Do not extend this predictor to 3,200 updates or tune its width, seed,
+   optimizer, or loss weights.**  That would override a result-dependent stop.
+3. **Keep the thesis and benchmark.**  The direct branch-truth evaluator,
+   physical gates, scene separation, planner comparison, and memory question
+   remain the right scientific chain.
+4. **Change the next representation mechanism.**  The clean successor is a
+   joint or self-supervised action-conditioned dense-token learner initialized
+   from V-JEPA 2.1, with DINOv2 and frozen V-JEPA retained as representation
+   controls.  The encoder/latent must be allowed to reshape around
+   action-relevant innovation rather than asking a compact head to recover it
+   from a frozen geometry.  Semantic occupancy remains an evaluation or
+   qualification instrument, not the default training target.
+5. **Separate candidate qualification from baseline inclusion next time.**
+   Requiring both conventional controls to pass the candidate's capacity gate
+   conflates “the baseline is weak” with “the comparison is not worth running.”
+   Controls should remain in the matched comparison even when they are poor.
+   This did not change the present terminal because the dense candidate itself
+   also failed, but it should be corrected in a future preregistration.
+
+Nothing in these screens establishes fresh-scene generalization, correct
+physical action ranking, rollout composability, useful planning geometry, or
+causal navigation benefit.  The project has run a real representation-and-
+dynamics capacity experiment; it has still not run an experiment in which a
+learned world model successfully chooses and executes navigation actions.
+
+## Joint residual token-adapter result update (2026-08-03)
+
+The registered representation-mechanism successor has now also run.  This was
+not RGB backbone fine-tuning: it jointly trained the existing action predictor
+and a bounded two-block residual spatial adapter over each frozen pretrained
+token cache, with a detached EMA target adapter and a mandatory frozen-target
+loss.  Both arms were attempted independently on the same 128-state,
+1,152-branch train panel.
+
+| Arm and decision | Error / persistence | Branch retrieval | Correct / 1,152 | Intervention margin |
+|---|---:|---:|---:|---:|
+| V-JEPA adapter, update 800 | 0.9288 | 0.2873 | 331 | 0.0299 |
+| DINOv2 adapter, update 800 | 0.8018 | 0.3628 | 418 | 0.0906 |
+| DINOv2 adapter, update 1,600 | 0.7149 | 0.4887 | 563 | 0.1181 |
+
+The V-JEPA arm missed both update-800 midpoint gates and stopped.  Relative to
+the frozen V-JEPA update-800 control, its fidelity ratio was slightly worse
+(`+0.01238`), retrieval gained only eight rows, and margin gained `0.00120`.
+There is no material V-JEPA adapter benefit in this screen.
+
+The DINOv2 result is materially different.  It passed the registered
+update-800 continuation gate and continued because both ratio and retrieval
+improved strictly.  At update 1,600 it passed fidelity, positive-intervention,
+representation-retention, finiteness, and deterministic-repeat gates.  Its
+retrieval was 563 of 1,152, exactly 13 rows short of the required 576.  Against
+the frozen DINOv2 control, the terminal ratio improved by `0.25179`, retrieval
+by 327 rows (`+28.385` percentage points), and margin by `0.07211`.  Token
+retention remained high (`0.99142` mean cosine) and effective rank increased
+rather than collapsing (`1.08473` adapted/frozen ratio).
+
+This is strong evidence that the bounded joint-adaptation mechanism extracts
+action-conditional structure from DINOv2 tokens on the fixed training panel.
+It is also a clean negative capacity decision: the preregistered conjunction
+did not pass.  The correct joint terminal is
+`COMPLETE_BOTH_ATTEMPTED_NO_CAPACITY_ESTABLISHED`, with no eligible arm and no
+fresh-data authorization.  Extending DINO to update 3,200, changing a
+coefficient, or rerunning a seed because it missed by only 13 rows would be a
+result-dependent retry, not disciplined progression.
+
+The result narrows the next scientific choice.  It rules out this bounded
+cached-token adapter family, not full dense-token backbone adaptation or an
+end-to-end self-supervised JEPA.  DINO, rather than V-JEPA 2.1, supplied the
+stronger adaptable token geometry here.  Any later backbone-level successor
+must therefore be treated as a materially new mechanism with a new
+preregistration and must still earn fresh-scene, physical-ranking, planning,
+and closed-loop evidence.  Nothing in the 563 training-panel matches proves
+that DINOv2 can navigate.
+
+All three checkpoint evaluations and retention calculations were independently
+replayed twice from the bound train caches and matched bit-for-bit.  The
+independent terminal record is
+[the dual residual token-adapter terminal review](lewm_go2_dual_residual_token_adapter_jepa_v1_terminal_review_2026-08-03.json).
+
+## Matched-branch physical-outcome result update (2026-08-03)
+
+The final science-identical integrity replacement completed the registered
+physical-outcome screen.  It trained on 128 states from 16 scenes and evaluated
+128 states from 16 disjoint scenes, with all nine executed branches per state.
+The evaluation panel was already development-exposed, so scene separation does
+not make this fresh confirmation evidence and the 16 evaluation scenes remain
+the relevant uncertainty units.
+
+Arm A was the fixed task/action-only ridge.  Arm B combined retained odometry
+and command history with the requested candidate action.  Arm C used the same
+physical inputs and learned mechanism as B, adding only the frozen 16-dimensional
+PCA projection of current cached DINOv2 context grids.
+
+| Arm | Normalized physical rank regret | Three member point regrets | Difference from A, paired scene-bootstrap 95% interval |
+|---|---:|---|---|
+| A: task/action-only | `0.1744140625` | — | — |
+| B: odometry-and-command-history | `0.1489676339` | `0.1621093750`, `0.1685174851`, `0.1652157738` | `-0.0254464286` [`-0.0543712798`, `+0.0030691964`] |
+| C: B plus cached visual context | `0.1575706845` | `0.1714564732`, `0.1873511905`, `0.1808035714` | `-0.0168433780` [`-0.0391648065`, `+0.0054780506`] |
+
+Both learned ensembles beat the random expectation of `0.4954137731`, and the
+privileged oracle passed with zero regret and `1.0` oracle-equivalent selection.
+Neither learned arm passed its headroom gate because both upper confidence
+endpoints crossed zero.  C was also worse than B by `+0.0086030506`, with a
+paired interval of [`-0.0039062500`, `+0.0211135138`], so the clean incremental
+visual-value gate failed.  Two of C's three member regrets were also worse than
+A.  Infrastructure/custody, oracle sensitivity, random sanity, and exact fresh-
+process cache-only replay passed; the B-versus-A, C-versus-A, and C-versus-B
+scientific gates failed.  The terminal decision is therefore
+`STOP_RETAINED_INPUT_PHYSICAL_DYNAMICS_HEADROOM_NOT_ESTABLISHED`.
+
+The comparison needs two qualifications.  B versus A is a package comparison:
+A is a different ridge control, whereas B is a three-member nonlinear dynamics
+ensemble, so the effect cannot be attributed purely to odometry.  C versus B is
+the clean visual ablation because the physical inputs, architecture, seeds, and
+training schedule are matched.  That ablation provides no evidence of
+incremental value from this pooled 16-dimensional visual projection.
+
+The diagnostic standardized MSE was slightly lower for C (`0.7722862`) than B
+(`0.7816950`) even though C had worse physical rank regret.  This reinforces the
+loss-to-action-ranking mismatch identified throughout this review; because the
+screen did not run a planner, it is not itself direct planning evidence.
+
+Replay reproduced every registered identity, prediction, selection, summary,
+interval, gate, and verdict.  The run opened zero RGB leaves, executed zero
+encoders, and accessed no protected material.  It trained no JEPA: C consumed
+cached DINOv2 features, so the result says nothing about whether DINOv2 or
+V-JEPA can navigate.  Zero fall/tip support leaves safety untestable.  Nothing
+here establishes rollout composability, planning geometry, persistent memory,
+causal planner use, closed-loop navigation, or any G2-G8 claim, and the STOP
+authorizes neither a dense successor nor further tuning, scaling, or data
+generation on this route.
+
+The independent terminal record is
+[the matched-branch physical-outcome terminal review](lewm_go2_matched_branch_physical_outcome_screen_integrity_replacement_v1_terminal_review_2026-08-03.json)
+(22,378 bytes, SHA-256
+`d3f2d99c1a7f7d4e6d02215f04209732f326651e10bd06d040418cc7aafc5cbe`;
+status `PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW`).
+
+## Dense V-JEPA physical-interface ceiling result update (2026-08-03)
+
+The science-identical integrity replacement has now completed after the
+original attempt ended in an infrastructure-only failure.  This was a
+development-only, privileged representation/interface ceiling, not a dynamics
+or navigation experiment.  It used 128 matched states from 16 training scenes
+and 128 matched states from 16 disjoint evaluation scenes, with all nine
+executed branches per state.  The run trained no JEPA or predictor: it supplied
+the unchanged 245-parameter shared spatial readout with actual action-matched
+future tokens from the frozen V-JEPA 2.1 encoder after train-only `K=8` PCA.
+
+The true-future arm obtained normalized physical rank regret
+`0.20705915178571427`.
+The privileged physical oracle passed exactly at zero regret and `1.0` oracle-
+equivalent selection, while random expectation was `0.49541377314814816`.  The
+six registered control comparisons were:
+
+| Gate and comparator | Comparator regret | True future minus comparator, family-balanced scene-bootstrap 95% interval | Pass |
+|---|---:|---:|---:|
+| 3: task/action-only | `0.17441406250000002` | `+0.03264508928571429` [`-0.016741071428571428`, `+0.08203125`] | No |
+| 4: retained physical predecessor | `0.14896763392857143` | `+0.05809151785714286` [`+0.013764880952380952`, `+0.10240885416666666`] | No |
+| 5: current state | `0.2234561011904762` | `-0.0163969494047619` [`-0.047507440476190474`, `+0.014713541666666672`] | No |
+| 6: relational persistence | `0.22885044642857144` | `-0.02179129464285714` [`-0.043536086309523804`, `-0.00004650297619047299`] | Yes |
+| 7: same-action wrong-scene future | `0.2396298363095238` | `-0.03257068452380952` [`-0.06775599888392857`, `+0.002289109002976176`] | No |
+| 8: train action-mean innovation | `0.23229166666666667` | `-0.025232514880952378` [`-0.05120907738095237`, `+0.001069568452380952`] | No |
+
+Thus gates 1, 2, 6, 9, and 10 passed; gates 3, 4, 5, 7, and 8 failed.  The
+positive result is limited: actual future tokens contain enough successor-
+sensitive signal for this readout to beat relational persistence, just barely
+at the registered boundary, and they beat random.  The central negative is not
+a near-threshold artefact.  True future is worse than the retained physical
+baseline by `+0.05809151785714286`, with the entire interval above zero, and
+its point regret is also worse than task/action-only.  Relaxing the near-
+boundary wrong-scene or action-mean gates would not change the decision.  The zero-effect,
+whole-scene superiority thresholds are fit for this privileged ceiling claim;
+they are not universal planning thresholds and must not be relaxed post hoc.
+
+Custody and replay passed.  The primary process decoded and encoded exactly the
+1,536 bound evaluation RGB frames once, comprising 384 context and 1,152
+successor frames, and opened zero training RGB.  A fresh process loaded each
+bound train and evaluation feature cache once, recomputed the complete result
+before loading the primary checkpoint and evaluation as comparison references,
+and reproduced every registered field exactly with zero RGB access and zero
+encoder execution.  The exact eight-file inventory was present, and the audit
+found no protected, held-out, or sealed access.  Safety remains untestable
+because both roles contain zero fall or tip events.
+
+There is one real qualification.  The bound training cache was generated with
+Torch `2.12.0+rocm7.2` / HIP `7.2.53211`, while the new evaluation cache used
+Torch `2.14.0.dev20260726+rocm7.1` / HIP `7.1.52802`.  Repository commit,
+checkpoint, preprocessing, resampling, token normalization, artifact order,
+shape, and float16 storage contract match, but a small cross-runtime feature
+shift could hurt generalization.  This is a mild confound for treating the STOP
+as a runtime-invariant impossibility result.  It is not an infrastructure
+failure, has no measured direction or magnitude, and cannot reverse a frozen
+gate or authorize another attempt.
+
+The first-principles consequence is narrow but important.  Predictor error is
+not the sole blocker for this target/interface: even the actual future frozen
+tokens fail to provide qualified physical ranking through the fixed PCA and
+readout.  The frozen single-frame V-JEPA 2.1 plus `K=8` PCA plus 245-parameter
+readout route is closed, and V-JEPA initialization is no longer empirically
+preferred for the proposed successor.  This does not rule out V-JEPA, DINOv2,
+dense tokens, or JEPA navigation generally.  A fully joint task-coupled or
+embodiment-derived dense action-conditioned JEPA could reshape its backbone,
+latent target, and physical interface and remains untested; it is a materially
+new mechanism requiring its own rationale, preregistration, controls, and
+authority.  This STOP does not authorize it, a 12-model campaign, more data,
+threshold tuning, planning integration, or navigation.
+
+The independent terminal record is
+[the dense V-JEPA physical-interface ceiling terminal review](lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_integrity_replacement_v1_terminal_review_2026-08-03.json)
+(22,600 bytes, SHA-256
+`cbc121f5911cc39600debb14c94b077aa79db0e1424b854afcf472759dc67a77`;
+status `PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW`).

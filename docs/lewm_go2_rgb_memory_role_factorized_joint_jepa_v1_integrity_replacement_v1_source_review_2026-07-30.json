@@ -1,0 +1,286 @@
+{
+  "access": {
+    "attempt_reservation_count": 0,
+    "dataset_payload_or_rgb_open_count": 0,
+    "g2_payload_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "probability_calibration_open_count": 0,
+    "scientific_gpu_or_training_run_count": 0,
+    "source_only_cpu_test_run_count": 1,
+    "synthetic_rgb_fixture_test_run_count": 1,
+    "tensor_checkpoint_open_count": 0
+  },
+  "authority": "source_review_only_no_execution_generated_payload_checkpoint_tensor_dataset_rgb_gpu_training_probability_calibration_g2_navigation_memory_integration_heldout_sealed_production_promotion_retry_or_resume_authority",
+  "closure_and_custody_review": {
+    "checker_status": "PASS",
+    "dataset_payload_or_rgb_open_count": 0,
+    "entrypoint_count": 7,
+    "execution_authorized": false,
+    "generated_or_runtime_artifact_open_count": 0,
+    "implementation_commit_binding_failure_count": 0,
+    "implementation_commit_binding_pass_count": 114,
+    "manifest_canonical_content_hash_valid": true,
+    "manifest_source_binding_hash_valid": true,
+    "ordered_source_paths_equal_to_original": true,
+    "probability_calibration_open_count": 0,
+    "replacement_only_source_path_count": 0,
+    "sealed_or_heldout_open_count": 0,
+    "source_count": 114,
+    "source_path_set_equal_to_original": true,
+    "tensor_checkpoint_open_count": 0,
+    "whole_tree_export_authorized": false,
+    "worktree_binding_failure_count": 0,
+    "worktree_binding_pass_count": 114
+  },
+  "content_sha256": "44285ee543c0147eeb150eb0d53f9f90eecd63737bd7839f0665df6f8c5f6740",
+  "date": "2026-07-30",
+  "execution_authorized": false,
+  "implementation_delta_review": {
+    "changed_manifest_source_binding_count": 4,
+    "changed_manifest_source_bindings": [
+      {
+        "permitted_delta": "source_geometry_contract_224x224_to_224x168_plus_per_reference_access_accounting_callback",
+        "path": "lewm/datasets/go2_memory_role_place_triplets_v1.py",
+        "predecessor": {
+          "byte_count": 17707,
+          "file_sha256": "949334a29e3aa90e10838e47bf35f6f8975b5f9c425583091ccf98582be2486b"
+        },
+        "replacement": {
+          "byte_count": 18421,
+          "file_sha256": "36a8dc2538b60d3e92f48431f803c4b218095a94f8247d8b3ba4078517156267"
+        }
+      },
+      {
+        "permitted_delta": "replacement_schema_prefix_only",
+        "path": "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "predecessor": {
+          "byte_count": 41571,
+          "file_sha256": "63c94b4d0374a76cc921daaf7f9960b126187d4ce881e935ceda81506cc4541c"
+        },
+        "replacement": {
+          "byte_count": 41611,
+          "file_sha256": "61c17eb59c126e0034d8050ffb51fa88451fba06f0117079401623a5bd3dad15"
+        }
+      },
+      {
+        "permitted_delta": "replacement_lifecycle_identity_plus_in_memory_place_reference_failure_accounting",
+        "path": "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "predecessor": {
+          "byte_count": 63846,
+          "file_sha256": "1b8b3c19b6e5312eed1efbb40a20dfc30ecc15558fe3f12312da86959ee82103"
+        },
+        "replacement": {
+          "byte_count": 65125,
+          "file_sha256": "fd9384bbcdbaa9fc7422ea81d5aed26655eb2bbee890112ec9eefa00e0db7fdf"
+        }
+      },
+      {
+        "permitted_delta": "fresh_replacement_schema_arm_preregistration_certification_authority_source_and_output_roots",
+        "path": "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+        "predecessor": {
+          "byte_count": 29572,
+          "file_sha256": "5a46f66e556a751ed7838a97a400b6d468467a25c973670d18b8af4cd625c011"
+        },
+        "replacement": {
+          "byte_count": 30362,
+          "file_sha256": "a985d395e8ab1c928838096aada238badc6b4d7f2e1445d816c2da686501f2bb"
+        }
+      }
+    ],
+    "implementation_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5",
+    "implementation_commit_changed_paths": [
+      "lewm/datasets/go2_memory_role_place_triplets_v1.py",
+      "lewm/tests/test_check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py",
+      "lewm/tests/test_execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_go2_memory_role_place_triplets_v1.py",
+      "lewm/tests/test_launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "scripts/check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py",
+      "scripts/evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "scripts/execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "scripts/launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+    ],
+    "implementation_commit_parent": "ba6e37d63f099cd51184642dea39808ae1f2f99e",
+    "original_reviewed_source_commit": "2d3934055fdc33e528fcc55e36b35df98fe488f7",
+    "source_binding_unchanged_count": 110,
+    "source_manifest_commit": "220895c3318512b8f08639f2235356d02896b14c",
+    "test_and_checker_changes_are_source_only_and_within_preregistered_scope": true
+  },
+  "integrity_adapter_review": {
+    "bilinear_resize_112x112_unchanged": true,
+    "decoded_tensor_dtype_shape_and_finiteness_checks_unchanged": true,
+    "exact_other_source_dimensions_rejected": true,
+    "exact_png_and_rgb_mode_checks_unchanged": true,
+    "failure_counter_incremented_before_same_exception_propagates": true,
+    "imagenet_normalization_unchanged": true,
+    "no_additional_file_open_decode_rehash_or_ordering_change": true,
+    "per_reference_attempt_precedes_anchor_positive_or_negative_load": true,
+    "per_reference_success_follows_read_sha256_decode_and_tensor_validation": true,
+    "png_source_geometry": [
+      224,
+      168
+    ],
+    "reference_attempts_equal_successes_plus_failures_enforced": true,
+    "sha256_and_regular_file_no_follow_checks_unchanged": true,
+    "synthetic_exact_224x168_decode_regression_passed": true
+  },
+  "manifest": {
+    "byte_count": 38175,
+    "commit": "220895c3318512b8f08639f2235356d02896b14c",
+    "content_sha256": "52f21d2c18f036c50a774e8e469ce146632b28d42e4bd33e3940c20cf8b6a427",
+    "file_sha256": "d82c36c9e88c91408f8639d90e4d88f2d14862ffa3e3b91f682d056f7001e6af",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "dc4ec31374c00376f19fe7dfdf44a4da11b802eca041ecf39eb9e7cf120b5b56",
+    "source_count": 114
+  },
+  "predecessor": {
+    "original_manifest": {
+      "byte_count": 37491,
+      "commit": "521174f327f7a508d7051192cf64bda095af12c1",
+      "content_sha256": "456109f18d02d488f3c2c6c549796ec53d0b66b2807cd85063b683acf120a1cc",
+      "file_sha256": "a12e4ae81e1bdea485ca745c1a4054c206f4a3f66e41d66c53a4aeab0311ac1d",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_source_manifest_2026-07-30.json",
+      "source_bindings_sha256": "774260e908de790332f2ec935a18fe9d5471edb222679787c48ff1574fd7d353",
+      "source_count": 114
+    },
+    "original_one_shot_consumed": true,
+    "original_review": {
+      "byte_count": 9870,
+      "commit": "2d3934055fdc33e528fcc55e36b35df98fe488f7",
+      "content_sha256": "90b3c2b50c77ba3c04040711d861e1bdade11244a97e9b132759bbe390b79f88",
+      "file_sha256": "c5e7e4da21d785dfb5c4ce165c6ef5aa1e2441accd4f07a070317503ac94c30e",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_source_review_2026-07-30.json"
+    },
+    "original_reviewed_source_commit": "2d3934055fdc33e528fcc55e36b35df98fe488f7",
+    "retry_or_resume_original_attempt_authorized": false,
+    "terminal_failure_result": {
+      "byte_count": 6060,
+      "commit": "291a7bcfaf95f24d5c84bd3d590afd54556d5b3d",
+      "content_sha256": "e4d85114aa7e9f5187f237c65b72690c05662dcee8fe8bfcead8712368ba53e8",
+      "file_sha256": "80eaeb508a988b54e655df5b530fa3adab6a89bb13b6f5c45902ac851bc464f4",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_terminal_infrastructure_failure_result_2026-07-30.json",
+      "scientific_conclusion_available": false,
+      "status": "PASS_COMPLETE_TERMINAL_UPDATE0_INFRASTRUCTURE_FAILURE_AUDIT"
+    }
+  },
+  "preregistration": {
+    "byte_count": 7211,
+    "commit": "ba6e37d63f099cd51184642dea39808ae1f2f99e",
+    "file_sha256": "a7c757f4a58b9a7d068ceb2e6676573843d58e72606b55713868ddfe86b97820",
+    "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_preregistration_2026-07-30.md"
+  },
+  "reviewed_source_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5",
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_integrity_replacement_v1_source_review_v1",
+  "science_identity_review": {
+    "accepted_n320_initialization_unchanged": true,
+    "architecture_and_model_source_unchanged": true,
+    "checkpoint_publication_only_after_terminal_pass_unchanged": true,
+    "data_indexes_ordered_rows_and_split_unchanged": true,
+    "ema_target_and_update_order_unchanged": true,
+    "evaluation_metrics_thresholds_and_conjunctive_gates_unchanged": true,
+    "losses_coefficients_and_margins_unchanged": true,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "model_source_binding": {
+      "byte_count": 14637,
+      "file_sha256": "f8ea587cc860300be18dab937378aea04490b83272da1674b6d2ab9384dc3673",
+      "path": "lewm/models/memory_role_factorized_joint_jepa_v1.py"
+    },
+    "observation_updates": [
+      0,
+      100,
+      400
+    ],
+    "optimizer_hyperparameters_and_parameter_groups_unchanged": true,
+    "physical_local_place_presentations_per_update": [
+      16,
+      8,
+      8
+    ],
+    "place_triplet_index_builder_binding": {
+      "byte_count": 45597,
+      "file_sha256": "a92395b0a0cd798899744f032b3bba67cec3c3ec7a19141e34a38b57ffd98d65",
+      "path": "scripts/build_go2_memory_role_place_triplet_index_v1.py"
+    },
+    "presentation_schedule_and_microbatch_order_unchanged": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "role_and_constructor_seeds_unchanged": true,
+    "runner_source_binding": {
+      "byte_count": 48275,
+      "file_sha256": "05fa06733a2cec13ebc36fe14379b653f274c7ab6adec0ec90f195b9df075bfa",
+      "path": "scripts/run_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+    },
+    "shared_encoder_joint_optimization_unchanged": true,
+    "v27_h6_adapter_binding": {
+      "byte_count": 33483,
+      "file_sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+      "path": "lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py"
+    }
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY_SCIENCE_IDENTICAL_PLACE_RGB_GEOMETRY_INTEGRITY_REPLACEMENT",
+  "tests": {
+    "argv": [
+      "-I",
+      "-B",
+      "-m",
+      "pytest",
+      "-q",
+      "-W",
+      "error",
+      "lewm/tests/test_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_go2_memory_role_place_triplets_v1.py",
+      "lewm/tests/test_run_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py",
+      "lewm/tests/test_check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py"
+    ],
+    "exit_code": 0,
+    "failed": 0,
+    "interpreter": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-rocm711/bin/python",
+    "output": "54 passed in 7.30s",
+    "passed": 54,
+    "test_file_bindings": [
+      {
+        "byte_count": 6688,
+        "file_sha256": "af2983446fd74c4ba53df6a39ae1e2cbda5206def76068bf361dde5fee70a2b5",
+        "path": "lewm/tests/test_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 14110,
+        "file_sha256": "4d1030e2442145d3f509cd0e9aa7a6ec536cf439b70a2338425e4493024e739e",
+        "path": "lewm/tests/test_go2_memory_role_place_triplets_v1.py"
+      },
+      {
+        "byte_count": 14793,
+        "file_sha256": "a8846c77f841f48e67291afcea6cf865cb3bc624082c5c8a449068aaaad11c6b",
+        "path": "lewm/tests/test_run_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 11894,
+        "file_sha256": "534b9c228fb476db3495d7529bb688a362852bdcf142625f31794fd90938b1e9",
+        "path": "lewm/tests/test_evaluate_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 15336,
+        "file_sha256": "e0eaca5fb74ba52544c95583ca249d85711de7445bd33325485a7abd8c447093",
+        "path": "lewm/tests/test_execute_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 8828,
+        "file_sha256": "cd3a063839760d89149eaea3a3ab67e17e6ad3d9ca60f094b498df2a65f87980",
+        "path": "lewm/tests/test_launch_go2_rgb_memory_role_factorized_joint_jepa_v1.py"
+      },
+      {
+        "byte_count": 7003,
+        "file_sha256": "9fd1588d06a0adc109625cd9157170cb32dea3a204135650086c53a90aa89e17",
+        "path": "lewm/tests/test_check_go2_rgb_memory_role_factorized_joint_jepa_v1_source_closure.py"
+      }
+    ],
+    "test_files_commit": "a3ea38002abf96aa2b97e5e7a7180429705ba4b5",
+    "warnings_as_errors": true
+  }
+}

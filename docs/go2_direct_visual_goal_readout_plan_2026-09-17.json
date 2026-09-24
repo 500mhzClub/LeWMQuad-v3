@@ -1,0 +1,65 @@
+{
+  "pairs": 24294,
+  "recordings": 138,
+  "frame_paths": 5552,
+  "epochs": 24,
+  "batch": 128,
+  "seed": 2026091709,
+  "parameters": 426144,
+  "goal_metric_parameters": 426016,
+  "extra_parameters": 128,
+  "architecture": "shared 1024-to-32 GELU; concatenate current projection and goal-minus-current; 12288-to-32 GELU-to-3; subtract identical-pair output",
+  "target": "signed planar body-frame goal XY and wrapped world-yaw difference; no simulator pose input",
+  "target_scales": [
+    0.03,
+    0.03,
+    0.08726646259971647
+  ],
+  "loss": "MSE in original goal-tolerance units",
+  "directions": "each epoch uses every base pair exactly once; seeded balanced random forward/reverse orientation",
+  "native_pair_offsets_ms": [
+    100,
+    200,
+    500,
+    1000,
+    2000,
+    3000
+  ],
+  "encoder_frozen": true,
+  "optimizer": {
+    "name": "AdamW",
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "gradient_clip": 1.0
+  },
+  "encoder_batch": 8,
+  "feature_storage": "pooled normalized FP16 features in RAM only",
+  "input": "observed current and supplied goal RGB; no action, body, command, predicted feature or oracle pose inputs",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_direct_visual_goal_readout_development.py": "3d857b45c8e452b8189c4d4c74c802f808b039b203b6579f8603f344aed92570",
+    "lewm/direct_visual_goal_readout_development.py": "032e36923b3f15a108d4b827e31888507f1d15d8840dc32c4977681b7d9bc057"
+  },
+  "pairs_sha256": "3674b6bc7cf20b722ee50bd07fc999262779325a575770f2558d4d155121ee4a",
+  "paths_sha256": "f5bf9c10cd6bbd26f1c42479115e8c09fe0373b8bf1e08ff5a338f91a34d16be",
+  "original_pairs_sha256": "c75d22f4626700a9ccb89debf37bf3635efdbb4808393503dbe087b3c33d70e9",
+  "target_min": [
+    -0.566986620426178,
+    -0.31294745206832886,
+    -1.3904787302017212
+  ],
+  "target_max": [
+    0.5673398375511169,
+    0.27095451951026917,
+    1.3904787302017212
+  ],
+  "inverse_se2_and_goal_cost_checks_passed": true,
+  "train_roles_only": true,
+  "checkpoint": "fixed final epoch; no transfer selection",
+  "new_navigation": false,
+  "execution": "prepare labels on CPU while predictor continuation runs; defer GPU fitting until that comparison completes",
+  "limitations": [
+    "same pose-label source as learned cost but signed-vector versus scalar targets",
+    "parameter count and updates nearly/exactly matched to cost head, not entire world-model planner",
+    "baseline component only; a reactive controller still requires prospective evaluation"
+  ]
+}

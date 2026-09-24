@@ -1,0 +1,132 @@
+{
+  "schema": "decision_headroom_phase1_technical_stop.v1",
+  "status": "PILOT_INVALID_RGB_RESTORATION_UNQUALIFIED",
+  "stage_a": "COMPLETE_UNCHANGED",
+  "pilot_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001",
+  "evidence": {
+    "pilot_execution_admission.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/pilot_execution_admission.json",
+      "sha256": "41b049c4afe92c1fd3066fdfed273f528fbbb20f413edd04cb26440150001362",
+      "bytes": 11110
+    },
+    "resource_result.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/resource_result.json",
+      "sha256": "7c9b4145852347bb2ec1a245b606b5f065b9bfa92d99a2e123b12dd851fa75d7",
+      "bytes": 370661
+    },
+    "pilot_validity_report.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/pilot_validity_report.json",
+      "sha256": "de3d1e330bae24bbf43639117287dc5a36e437c5d2cb4ddf597902d43e670572",
+      "bytes": 13857
+    },
+    "technical_stop_request.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/technical_stop_request.json",
+      "sha256": "bf1465f78cb4c06d704e9c3a805f16bc08a364ab2379e8d07bacb2a7b3938bb6",
+      "bytes": 673
+    },
+    "reference_sanity_v1/result.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/reference_sanity_v1/result.json",
+      "sha256": "13ff24031ab0a82541272cb0593bd01d4b3057f2cc6da11ede94715af1779a19",
+      "bytes": 130011
+    },
+    "reference_sanity_v1/corrected_qualification.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/reference_sanity_v1/corrected_qualification.json",
+      "sha256": "6fc574d27e549e743ec7833ccaef77bb706e67cae2030a2f579579815ccefda5",
+      "bytes": 132029
+    },
+    "source_00/source_rgb_restoration_pixels.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/source_rgb_restoration_pixels.json",
+      "sha256": "08a6f5a09b0ef0c7a7d7915a860c8eafae338af1d393cdb6818a6985fec744d9",
+      "bytes": 63070
+    },
+    "prephysics_closeout_v1/resource_result.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/prephysics_closeout_v1/resource_result.json",
+      "sha256": "652ee5352a993066241a81a44ed2b51a51cae528c019306635381c93c29c4e25",
+      "bytes": 13665
+    }
+  },
+  "source_trace_horizon_checks": 216,
+  "maximum_source_restore_position_error_m": 0.0,
+  "maximum_source_restore_yaw_error_rad": 0.0,
+  "all_source_restore_contact_checks_match": true,
+  "comparison_outcomes_computed": false,
+  "phase2_protocol_ready": false,
+  "phase2_authorized": false,
+  "proposal": {
+    "status": "REQUIRES_EXPLICIT_APPROVAL_BEFORE_ANY_NEW_PHYSICS",
+    "scope": "One bounded renderer-cache restoration recheck, not completion of the full pilot or Phase 2.",
+    "source_snapshots": [
+      {
+        "case": 0,
+        "frame": 12
+      },
+      {
+        "case": 1,
+        "frame": 12
+      }
+    ],
+    "new_source_rollouts": 0,
+    "existing_states": 2,
+    "new_snapshots": 0,
+    "source_trace_replays_per_state": 3,
+    "candidate_branches_per_state": 6,
+    "candidate_repeats": 3,
+    "branch_attempts": 42,
+    "branch_horizon_s": 0.8,
+    "new_branch_physics_s": 33.6,
+    "scene_initializations": 2,
+    "maximum_settling_physics_s": 3.0,
+    "maximum_new_physics_s": 36.6,
+    "execution_wall_s": 900,
+    "aggregate_cpu_s": 14400,
+    "aggregate_rss_bytes": 17179869184,
+    "total_gpu_used_bytes": 8589934592,
+    "retained_bytes": 1073741824,
+    "peak_additional_bytes": 2147483648,
+    "recovery_reserve_bytes": 12884901888,
+    "workspace_reserve_bytes": 4294967296,
+    "expected_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_rgb_restore_recheck_v1_attempt_001",
+    "raw_depth_bytes": 0,
+    "dense_feature_bytes": 0,
+    "comparative_selections": 0,
+    "fitting": false,
+    "controllers_changed": false,
+    "sensors_changed": false,
+    "acceptance": "All 6 source-trace replays meet original pose/yaw/contact tolerances and 96/96 source-replay RGB images match bitwise; all candidate repeats match physics and corresponding RGB. Any mismatch remains a failure, with no adjusted tolerance or extra attempt.",
+    "stop": "After these fixed attempts, report the result and stop. Passing does not authorise more collection or Phase 2."
+  },
+  "reason_approval_needed": "The original fixed state/action/repeat identities have already been consumed. This proposal re-executes two existing state populations under a changed audit restore adapter; it is not one of the remaining original assignments. Cumulative counts include the original 168 branch attempts and 169.6 s physics.",
+  "after_proposed_recheck_cumulative": {
+    "branch_attempts_max": 210,
+    "physics_s_max": 206.2,
+    "original_pilot_still_incomplete": true
+  },
+  "qualification_limits": [
+    "Reference panel has two explicitly post-execution safety-label errata; all 24 original optimal sets passed.",
+    "Reference/render cache repair is proposed, not physically verified.",
+    "The fixed Phase 2 protocol, exposure list, sampling count and reliable cost budget cannot be finalised as qualified from this failed pilot."
+  ],
+  "review_bindings": {
+    "docs/go2_decision_headroom_render_cache_restore_proposal_2026-09-23.patch": {
+      "sha256": "f7626e280378cfcf8675a01b134bbde6e5bcaa181b4933acb298b0ded3f67afc",
+      "bytes": 631
+    },
+    "lewm/decision_headroom_snapshot_development.py": {
+      "sha256": "42019135cb9acc2125b53d64f3fc3685a225d78d134a80fe0b319e27e0507aba",
+      "bytes": 5073
+    },
+    "docs/go2_decision_headroom_phase1_result_2026-09-23.md": {
+      "sha256": "65814a6420e84e3664d45a145f883ecb487bfef5bc47c4e1dfcd2c613cc64938",
+      "bytes": 9304
+    },
+    "docs/go2_decision_headroom_phase1_caps_v1_2026-09-23.json": {
+      "sha256": "45ae230b727aad52a4efaff0a96ea1a27cb3eb1d63b7edf3224509ba799264e8",
+      "bytes": 4033
+    },
+    "docs/go2_decision_headroom_protocol_draft_2026-09-23.md": {
+      "sha256": "b2467967ce0f03e7a796ac7c711176b7f4f790c270439c3e469cb0044b780630",
+      "bytes": 12163
+    }
+  },
+  "patch_application_check": "git apply --check passed; patch remains unapplied"
+}

@@ -1,0 +1,1088 @@
+{
+  "status": "ELIGIBLE_FLOOR_CELL_INDEX_SYNTHETIC_MICROBENCHMARK_COMPLETE",
+  "source_sha256": {
+    "docs/go2_eligible_floor_cell_index_microbenchmark_v1_preflight_failure_2026-09-11.json": "f8b93b24af8c056252e2ed29886c958a91550baa9fb64ad021e4a1fa1d2374a5",
+    "scripts/benchmark_go2_eligible_floor_cell_index_v1.py": "16d284299b6d61c4f51800d8456767dc9e4d4444f849a31ec4c5a99569e8d269",
+    "scripts/startup_source_inventory_development.py": "90a0bb74b04ff6290197fc7874e77e5a7c001b97b65db1e1415061061024b6e5",
+    "scripts/run_go2_successive_choice_maze_development_v1.py": "f2cd2920d97dc916ff3c7ed92ee4d6ae107bcbfd6a34e9b0a9840d5fa05b9493",
+    "lewm_genesis/lewm_genesis/scene_builder.py": "297007a4b8c4eee5352574fefe945d16c83ddf5736051506af29d4adf08417bb",
+    "lewm_worlds/lewm_worlds/randomization.py": "df600c33020713af2bf623468270a40f9d4dcf5459f3f1526faf1a53875ab190",
+    "lewm_worlds/lewm_worlds/manifest.py": "5679768016226e89e385ec7a7238616416248a9a1194b898ecb9078662f6a888",
+    "lewm_worlds/lewm_worlds/families.py": "87515b932773aa518d18f9777af7c1567ae76368ce31e5519da7019f72d30189",
+    "lewm_genesis/lewm_genesis/textures.py": "a8a9b958ffbf927f330ef9f8f950adabe884f9137668780cd9f8015184bda1fc",
+    "lewm_genesis/lewm_genesis/scene_loader.py": "fcfc065716172320561803f274754b1ba3046c922f83b37abf16d796fe9417ea",
+    "lewm_worlds/lewm_worlds/scene_graph.py": "5b7ae6f7e5ac5c3aa83e0f3cc392c00ef3756d41b6a7fbe2acffa38ff7a1ed46",
+    "lewm_worlds/lewm_worlds/scene_validation.py": "9ecf9c7c6d87f2ba2be083883bbd621dcd9372f1ea74bf4545434f0135ad9ad3",
+    "lewm_worlds/lewm_worlds/planning_grid.py": "e6f7e26d584dfd7923493803fc95a75135122b37a1f95cb51f9267b284649510",
+    "lewm_genesis/lewm_genesis/go2_adapter.py": "66df7b2d6836f354ce40e7cf775a53b0d8747a90fbe305df9da7a84fb18fa9ce",
+    "scripts/run_go2_multijunction_route_development_v1.py": "86c4a49b8c60e09b3725c162927e9bd4219d5fe5457ef44422b9a530aa0878e2",
+    "scripts/run_go2_causal_rgb_body_capture_development_v1.py": "7e0b0d754917ba7cc33b8235698e3fb7111ed8813fde614fb8f89f955a024ca2",
+    "scripts/run_go2_local_control_factorial_development_v1.py": "c5b8c58c6988fd47bce5efa8ab8ae78d47b01c7ec4da6ee3ae026a4b8691bfdd",
+    "scripts/run_physical_graph_edge_handoff_qualification_v1.py": "d21876f55560e5bc2d91f4b29a238229bf432b8a25de9261e29c3758595a6b6b",
+    "scripts/evaluate_physical_graph_edge_handoff_qualification_v1.py": "7c9b86aefe16d34c42d17f612e2ae0da96d6de57e81812a1cab3e5714f6b03af",
+    "scripts/evaluate_occluded_goal_topological_belief_v2.py": "ac7af337ea2a21750778589821abcebe31b2c95b9d2955e30d366ca5194380e9",
+    "scripts/evaluate_occluded_goal_topological_belief_v1.py": "230b8c50adca66b6a3474938b8a200fed38840e9afc951eacb978c00aa2c6f1b",
+    "scripts/run_occluded_goal_topological_belief_v1.py": "3ad72dd37806c4add671ef018d1089ab749acc1816446072209241b2348e5123",
+    "lewm/safety/non_greedy_local_subgoal_jepa_planning_v1_contract.py": "fd698f7ba09cf9f76a8f6f978f133a5369466e4455cf9ad8bdf7ce5fa5351eed",
+    "lewm/safety/__init__.py": "fcf59bf8103cacd07f7900a9e3cb854543ab709e08ce6e94724b09844b9d5fbf",
+    "scripts/dev_frozen_dense_representation_encoders_v1.py": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2",
+    "lewm/models/direct_egocentric_bev_state_jepa_v1.py": "e39c8cb485e33ef891f5d1f29e0d513443715597e0973ab6af807bc15c45b930",
+    "lewm/models/encoders.py": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+    "lewm/safety/occluded_goal_topological_belief_metrics_v1.py": "fe17ee749859fdf7ec2b31843735f0664694e6bad31e627560b019ddf8bce533",
+    "lewm/safety/occluded_goal_topological_belief_v1_contract.py": "55e95c74ff1793ff0c51d7cad99b619a0acca23f9e65ecb1188b64f35f23ffe3",
+    "scripts/run_go2_oracle_branch_pilot_v1.py": "19cf29132d4d9c3c8a6f3630bc243caa62a27e5f3616a5598fa487775ef10955",
+    "lewm_genesis/lewm_genesis/rollout.py": "06501bbbdd1e071a3a91e765d77bd19da5f2c311c35d75df4631c452beea034a",
+    "lewm_genesis/lewm_genesis/collectors/base.py": "4e088a9682ff3c589555a7f9b92d5c61c88ee6f7196b64540b0e1bddb0f0f5ba",
+    "lewm_genesis/lewm_genesis/ros_msg_adapter.py": "56903a34072d821394c1e7f69232312b67194acc6e064fa5f94080e74a9f27e3",
+    "lewm_genesis/lewm_genesis/lewm_contract.py": "d7e8b021c4411e0e5f83b9ed61dbee1d70493d23d8c3e87123bd84f24a26db6d",
+    "lewm_genesis/lewm_genesis/__init__.py": "07a2cdb8c1087ca0517c3a581941de6b772ba75b6d3e3f22bd8aec8a5320b874",
+    "lewm_genesis/lewm_genesis/render_replay.py": "dc3414132f5d226bbde036cf62fddcdd7d392c0374a4586327fba7a530ce5f54",
+    "lewm_genesis/lewm_genesis/parity_checks.py": "22c6653ed1751fcb82653a71a32d37faea2b0c61b9bbc215c70c0593f2a85f26",
+    "lewm_genesis/lewm_genesis/batch_renderer.py": "04010c9e5be2d20383eab86398c47b12f94d1a2f96fa105a4ae1e631e21255f2",
+    "lewm_genesis/lewm_genesis/collectors/__init__.py": "3449122454b946f81b0cc936877c33993d173dedb729b169c6198dfb02064d81",
+    "lewm_genesis/lewm_genesis/collectors/route_teacher.py": "2ccd4fba3ef45bd3f75358dc617f4d575b96d7c6e4d3a2538b76e31bc3d79968",
+    "lewm_genesis/lewm_genesis/collectors/recovery.py": "cf7b50f7394e39986cf9339b253d1255bbb15109fb212e33c3e6d61fe3fa2bd5",
+    "lewm_genesis/lewm_genesis/collectors/primitive_curriculum.py": "595ea3799731076a7d8381fbf377c556175b07480f89052416685161eb6d8966",
+    "lewm_genesis/lewm_genesis/collectors/ou_noise.py": "01f2db82c4f47f58d9d17fe41677924c3947cdad5e23ce0098f5745d4c4c9d3b",
+    "lewm_genesis/lewm_genesis/collectors/frontier.py": "98fc61a6e4d7fc9c7d13109a7c9d7072992b883c56911931250f799ea0e0aeb3",
+    "lewm_genesis/lewm_genesis/camera_safety.py": "2526bf940dc27bcf8270b310320f7ed6228bb95d02b0851b4e88250c85d19998",
+    "lewm_worlds/lewm_worlds/labels/derived.py": "5e72678b204dc50d7e2ebb5f0146833623e55625db69decda08bd6c480f5c07d",
+    "lewm_worlds/lewm_worlds/labels/topology.py": "1cb83d219f43e862f77aac44f3f98f66578594be662055e070d41cc397ad0185",
+    "lewm/safety/contact_hazard_ontology_v1.py": "69550fe787e84331560013678abed3aab58f573719b7198c53bfef786fb6204b",
+    "lewm/safety/physical_graph_edge_handoff_qualification_v1_metrics.py": "49f907b452846bf81f8ff3aacadfaa5c4289b8b9f36a21c3d4dc45818aacec33",
+    "lewm/safety/physical_graph_edge_handoff_qualification_v1_contract.py": "80860405ea01328339de2f7837e7ab22423bb544180963c39ac16c39ef589e7a",
+    "lewm/safety/occluded_goal_topological_belief_v2_contract.py": "0784b75d22a301f2665f12d82b41aa6d6c259103cd6b0f7e2e93993bb9ede3c5",
+    "scripts/run_go2_contact_attributed_execution_development_v1.py": "c93c61a33b6fb245e4a23ded796da1b9ccbddda047322085ed72a4abda7fbda0",
+    "lewm/safety/contact_attribution.py": "0d51ac5bce2b91e04f4a331fe58fffe2364b08b9f4e8753c810de784e4f9902c",
+    "lewm/physical_semantics.py": "b1da57467a8ad16238e6f0a175ad0500c2617c9573f7c86c9b94dab4eb87982a",
+    "lewm/interface_semantics.py": "75adb9f965fcd350a214f050fe448a4cb3da082c035c7da774d5f1cf63c9c5d4",
+    "lewm/physical_execution_development.py": "35a2373e7f8507f86c02276cdbb66ffd0241b122d91cb35e303f750eac8bd0b3",
+    "lewm/local_execution_controller_development.py": "3671b73cf31e9890025717b1c4ef8320d7092a2a765ea8004cc46e14c4581c28",
+    "lewm/simulated_body_observation_development.py": "6a6dab353a24f567ff168c642609d5eeca8a5c2f0bb17a25414337c054a9e772",
+    "lewm/causal_sensor_state.py": "0576f47cae22c3eeb296823d7b5f40b6e638ce247f786fee116b082119940b38",
+    "lewm/actuator_gain_development.py": "fe74fac1e5c8fe50a2392e5314e6dccc1971284d2e1b1b57735c22522d3cd03c",
+    "lewm/multijunction_routes_development.py": "c7ec52dbd88e9689d985f3f141bca8763b5eca51978b3d0da12b04e316d10e59",
+    "scripts/run_go2_counterfactual_maze_dataset_development_v1.py": "88c85c805ad3d8cb4270a071f575e63ab3e95f4813e8b7b2375da262883986ac",
+    "lewm/counterfactual_maze_development.py": "c38dc24db0a9940481e8fd5fd008505f1788e3be8e505c6c2ead95a9704184f2",
+    "lewm/successive_choice_metrics_development.py": "f0a3cfd78d2b9bbb13910ba6e626737f859a9addc5752e727b158d2ce8f455e8",
+    "lewm/online_temporal_choice_development.py": "ecc5b26aabf6a8ced67ef06c084ed133636ad6f16c4b737adc0e6fe466bdc216",
+    "lewm/temporal_rgb_body_jepa_development.py": "904fe9d75a5e790943d1652b091dc91d47d8bbe98fc16bd1bced504cc81c48ab",
+    "lewm/rgb_body_jepa_reference_development.py": "51317ae75ce25715c4ace3e8c1f9f305309858a64fd7bd0f668acd337946a897",
+    "lewm/online_rgb_history_development.py": "9d7412103774547f3b13ac3d2b0d4a0342ee18cfc0ed86bf16eaf79d6392b037",
+    "lewm/causal_subtrajectory_learning_development.py": "9ce74eaaec3ea126f8c49f25157e6277a880190010ad9400f16c8a0cb41ef687",
+    "lewm/route_rgb_dataset_development.py": "0a387ef4658bfbad51182ae515b2646d7df5a97bf955267f0f683d13907f617e",
+    "lewm/causal_rgb_dataset_development.py": "81e8a357213f6034b891ed4692100bb3210e4dbf9e9e947dafd091e02e2bec20",
+    "lewm/rgb_body_tensor_interface_development.py": "9cf1ab4fc675219c638cfd92cb7f4c3947f5e0b94615e5a51d03c629aa9d3ba6",
+    "lewm/counterfactual_learning_data_development.py": "55ef1614e4e9906a5eb5ad85d8fcf3136efb7f480c984711aaf8d132e6757364",
+    "lewm/causal_subtrajectory_development.py": "d8df17e98222b323b4e3990d06028fccf3e0b4f0557257eab5bec4f7388dec05",
+    "lewm/causal_relative_orientation_development.py": "b92cf1a571ab3ca9a78bb575f32ab23ac967b35f449684385c21b06582affe14",
+    "lewm/relative_gyro_turn_development.py": "20cbf806ac980ec95b50f44688a13ef10577a7b642a585774b6c2b96d1f27850",
+    "lewm/successive_choice_maze_development.py": "7d9545154ca483ff6c206642bbcfc9e0ce313f73a8422ddd3f39ab983f726565",
+    "lewm/online_choice_maze_pilot_development.py": "b0d22336d6c8507c151ea21fb95d399f5d8334c21ee7a3b951342233d0cd787a",
+    "lewm/counterfactual_prefix_matching_development.py": "b473cbbd79bc2343aa9cfe35fb83bc70da17a373b18a79a5f7e9b80e0930977a",
+    "lewm/tests/test_floor_footprint_bounds_development.py": "f965f5f514799eeebe596fe150957e077cfb34778b79aee7a12baf2229ffe568",
+    "lewm/tests/test_correlated_moment_sensitivity_development.py": "563f51959b1dee47d61c1b9cec75199ffb4d2b4250e2938c988b29cd824283d7",
+    "lewm/depth_inertial_moment_fusion_development.py": "a3f301e53fe2f8cc1b4da070788639b7f4fd3d60ba21fd92ec187893b8917a16",
+    "lewm/gravity_feedback_ground_development.py": "be11057bc703fd5770d81d40c477377828a6ea36fb27256765bdd3a8e0695bad",
+    "lewm/causal_ground_plane_development.py": "7f3ebe71300f905ce912d92261fa2181ac0c70e305ec94415e1f7333f1372d80",
+    "lewm/depth_relative_motion_development.py": "02b4a87db021fa20672fad88bf9d4b22ce7ea8e43c3673e3f395443baf9aaf86",
+    "lewm/fast_gyro_development.py": "85c48098257e17b5e37081587d8c69535bc654271a9790923e46b574f5a1795a",
+    "lewm/depth_local_surfaces_development.py": "b83fc6fee89fcfdf32a6021d0649b949010049ef9bb65ba04efb5aadb6abb98d",
+    "lewm/causal_depth_observation_development.py": "57cab252da5e5f6dc2f5779056ca42463fb12b54ffa0b3b3865480c528b89454",
+    "lewm/tests/test_relative_gyro_turn_development.py": "75c769bec46a4d25cbc4b66a123d9a33008a7ac94f4d3f498905d968072eece1",
+    "lewm/tests/test_fast_gyro_development.py": "a2dfbf2f98e6e084ee2044acefd30d03d642aff945a9547d92a2fa2441fa582c",
+    "lewm/simulated_fast_gyro_development.py": "2feb01b0fc503dfed215505228b2dfab923954a321d82269e2f9280e01442571",
+    "lewm/fast_gyro_scan_development.py": "8402b59d2b29602773b962572ccfca0f4885239526f3b8cc61b08b86f3f7411f",
+    "lewm/active_gyro_scan_development.py": "aec915457c3d0395610cd073a7b42ee7452c43e539c09c9c50b766b1dcc4abc6",
+    "lewm/tests/test_depth_inertial_fusion_development.py": "672a3d70f8551f99a10492883b1e51ae198a38a7219b4d21b28e5ddc3dd39693",
+    "lewm/tests/test_depth_local_surfaces_development.py": "917437b0c50bdc0b9cf341593ba05d8fb03a264c89a5fcd3cac30e62605f7d59",
+    "lewm/tests/test_observed_traversal_controller_development.py": "8f5c5955d4202c5f7e46748800b6f3b96e8ab3696790fe2839bdab2ba1a7a10f",
+    "scripts/analyze_go2_ground_plane_development_v1.py": "3ee6e217354402fd23c331f1a745880438eefbb9f7fbd4c6f0d8f6c02cf49680",
+    "scripts/analyze_go2_route_turn_command_odometry_development_v1.py": "c2ec13efc222ae525dafaf8afa8d16ce405524b6ca7dde6157a8d94a9682091e",
+    "scripts/audit_go2_successive_choice_maze_development_v1.py": "79253302c8d59fd066ae451ab2e78dc3bd3d1ab45ac6cdc4cd98aacdbc9026f4",
+    "scripts/audit_go2_local_control_factorial_development_v1.py": "e804e86ff34978f2b162a7ab9acc03650eb3aeaf39a2f890d854466e89ea8311",
+    "scripts/audit_go2_contact_attributed_execution_development_v1.py": "fd465ca68abd8a8021554cf431d2c8f84e5b137dc64fcbabde4506dde5f8b1a5",
+    "scripts/audit_go2_causal_rgb_body_capture_development_v1.py": "db244087bbd2238d7892e41e7716c50d0c19d93168040b2aa0c26c69eba091ed",
+    "lewm/causal_command_odometry_development.py": "f93696f2dc6225d8f2523ef63ed8242687b8b3d1c9c6a3f0689997abb95f2156",
+    "lewm/observed_traversal_scene_development.py": "96ac05fa9f9abd628e3c968341469845060b8ba57189a1a9eda43410721f33ad",
+    "lewm/rgb_exit_candidates_development.py": "4a160776bf23dd2fd559f61bcad32806cb2d57615730d5c72103f4cbef20cd0a",
+    "lewm/ground_projection_envelope_development.py": "3722c50127b115089b93c6e32b1b791906f64a80327bf81879808eb7745986b2",
+    "lewm/rgb_floor_evidence_development.py": "11bbaf1511eae810a8e701be583f5cfce56bf18e5daf0a706f09980c68735e3b",
+    "lewm/provisional_traversal_ledger_development.py": "27b65ef32d467c94353a4b64e8a7cd47d3af489553b279c9e4f76cb0caa3657e",
+    "lewm/articulated_collision_geometry_development.py": "abd59e2960ae59a496904e39bbb16f5827b0ec9e57ac7b1da11d9a4947c6c61f",
+    "lewm/observed_traversal_controller_development.py": "3c3fff62c8369ec4e8b57d17d654e52b54d1bf387d8e1b9cfd5b6e7290b4866d",
+    "lewm/depth_inertial_fusion_development.py": "509d3017514a6034d847a01bc22e04616d7d41b4ff01e2154b5ce53931230dc9",
+    "lewm/correlated_moment_sensitivity_development.py": "944c0287e2d92f23c047b5a95bc3ae69faa8a6185a8cf01e276c7f418da7a52b",
+    "lewm/relative_pose_uncertainty_development.py": "3d44977b8ba51e0c4dc5c094efe6cc0c44da177bf83950c620a98e7de788f899",
+    "lewm/floor_footprint_bounds_development.py": "77d2f6ea546f166e9a262436989d11383436015093ac4cbc4b8ef036d1f74543",
+    "lewm/correlated_floor_evidence_development.py": "2243cc7a71135202c669e8b95f5cad588996276e01ae37bd884b98dc40584142",
+    "lewm/eligible_floor_cell_index_development.py": "5802e1960d2c29d6a901b36439848e27d2a174ff169436bf97416fcba44bc08a",
+    "lewm/tests/test_eligible_floor_cell_index_development.py": "13376b901eecc32a21d8088259c2bd1aa029b6fa2be576a09d1ee6f5a789de21",
+    "lewm/__init__.py": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+    "scripts/benchmark_go2_eligible_floor_cell_index_v2.py": "73e9a405c275c3723418f2825f19af8292a7fe05b70b81e8221473562807e17e"
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0"
+  },
+  "paired_repetitions": 20,
+  "fixtures": {
+    "room": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.252299,
+          "candidate_wall_ms": 22.78272
+        },
+        {
+          "pair": 1,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.189496,
+          "original_wall_ms": 30.119918
+        },
+        {
+          "pair": 2,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.089095,
+          "candidate_wall_ms": 22.975421
+        },
+        {
+          "pair": 3,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.263657,
+          "original_wall_ms": 30.351509
+        },
+        {
+          "pair": 4,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.895532,
+          "candidate_wall_ms": 22.679439
+        },
+        {
+          "pair": 5,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.024965,
+          "original_wall_ms": 30.683731
+        },
+        {
+          "pair": 6,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.414976,
+          "candidate_wall_ms": 22.82006
+        },
+        {
+          "pair": 7,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.046855,
+          "original_wall_ms": 29.930426
+        },
+        {
+          "pair": 8,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.584391,
+          "candidate_wall_ms": 22.501918
+        },
+        {
+          "pair": 9,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 21.907304,
+          "original_wall_ms": 30.323879
+        },
+        {
+          "pair": 10,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.649501,
+          "candidate_wall_ms": 22.330017
+        },
+        {
+          "pair": 11,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.033085,
+          "original_wall_ms": 29.988057
+        },
+        {
+          "pair": 12,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.700202,
+          "candidate_wall_ms": 22.476817
+        },
+        {
+          "pair": 13,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.076095,
+          "original_wall_ms": 30.40942
+        },
+        {
+          "pair": 14,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.108465,
+          "candidate_wall_ms": 22.676849
+        },
+        {
+          "pair": 15,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.072715,
+          "original_wall_ms": 29.974257
+        },
+        {
+          "pair": 16,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.954243,
+          "candidate_wall_ms": 22.681599
+        },
+        {
+          "pair": 17,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.139436,
+          "original_wall_ms": 29.955677
+        },
+        {
+          "pair": 18,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 30.860613,
+          "candidate_wall_ms": 22.395057
+        },
+        {
+          "pair": 19,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 22.047235,
+          "original_wall_ms": 29.895926
+        }
+      ],
+      "original_total_ms": 610.142117,
+      "candidate_total_ms": 447.12074,
+      "total_time_reduction_percent": 26.71859103933977,
+      "all_output_arrays_byte_exact": true,
+      "inputs_unchanged": true
+    },
+    "missing_returns": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.530944,
+          "candidate_wall_ms": 11.967708
+        },
+        {
+          "pair": 1,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.316804,
+          "original_wall_ms": 31.786029
+        },
+        {
+          "pair": 2,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.954176,
+          "candidate_wall_ms": 12.11563
+        },
+        {
+          "pair": 3,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.217454,
+          "original_wall_ms": 31.701838
+        },
+        {
+          "pair": 4,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.289622,
+          "candidate_wall_ms": 12.16598
+        },
+        {
+          "pair": 5,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.156304,
+          "original_wall_ms": 31.740698
+        },
+        {
+          "pair": 6,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.880556,
+          "candidate_wall_ms": 12.029979
+        },
+        {
+          "pair": 7,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.298334,
+          "original_wall_ms": 31.95257
+        },
+        {
+          "pair": 8,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.530973,
+          "candidate_wall_ms": 12.651854
+        },
+        {
+          "pair": 9,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.897098,
+          "original_wall_ms": 33.328489
+        },
+        {
+          "pair": 10,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 34.389236,
+          "candidate_wall_ms": 12.30272
+        },
+        {
+          "pair": 11,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.068553,
+          "original_wall_ms": 31.507037
+        },
+        {
+          "pair": 12,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 33.36434,
+          "candidate_wall_ms": 12.469582
+        },
+        {
+          "pair": 13,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.662077,
+          "original_wall_ms": 32.221151
+        },
+        {
+          "pair": 14,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 33.416389,
+          "candidate_wall_ms": 12.403031
+        },
+        {
+          "pair": 15,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.763967,
+          "original_wall_ms": 32.890656
+        },
+        {
+          "pair": 16,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 33.127257,
+          "candidate_wall_ms": 12.15213
+        },
+        {
+          "pair": 17,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.348415,
+          "original_wall_ms": 32.198782
+        },
+        {
+          "pair": 18,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 33.082288,
+          "candidate_wall_ms": 12.433722
+        },
+        {
+          "pair": 19,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 11.857558,
+          "original_wall_ms": 32.495374
+        }
+      ],
+      "original_total_ms": 652.388405,
+      "candidate_total_ms": 237.2789,
+      "total_time_reduction_percent": 63.62919724178727,
+      "all_output_arrays_byte_exact": true,
+      "inputs_unchanged": true
+    },
+    "all_missing": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.92873,
+          "candidate_wall_ms": 5.934359
+        },
+        {
+          "pair": 1,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.672257,
+          "original_wall_ms": 30.910673
+        },
+        {
+          "pair": 2,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.359473,
+          "candidate_wall_ms": 6.13512
+        },
+        {
+          "pair": 3,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.770208,
+          "original_wall_ms": 31.714448
+        },
+        {
+          "pair": 4,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.94743,
+          "candidate_wall_ms": 5.825728
+        },
+        {
+          "pair": 5,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.708317,
+          "original_wall_ms": 31.020074
+        },
+        {
+          "pair": 6,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.245892,
+          "candidate_wall_ms": 5.99602
+        },
+        {
+          "pair": 7,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.757157,
+          "original_wall_ms": 32.074951
+        },
+        {
+          "pair": 8,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.093771,
+          "candidate_wall_ms": 6.012229
+        },
+        {
+          "pair": 9,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.852149,
+          "original_wall_ms": 31.160184
+        },
+        {
+          "pair": 10,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.451916,
+          "candidate_wall_ms": 5.9432
+        },
+        {
+          "pair": 11,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.667468,
+          "original_wall_ms": 30.965083
+        },
+        {
+          "pair": 12,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.393293,
+          "candidate_wall_ms": 6.329872
+        },
+        {
+          "pair": 13,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.773548,
+          "original_wall_ms": 36.280538
+        },
+        {
+          "pair": 14,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.612224,
+          "candidate_wall_ms": 6.07693
+        },
+        {
+          "pair": 15,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.858119,
+          "original_wall_ms": 31.276625
+        },
+        {
+          "pair": 16,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.03547,
+          "candidate_wall_ms": 7.324549
+        },
+        {
+          "pair": 17,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.857368,
+          "original_wall_ms": 40.114974
+        },
+        {
+          "pair": 18,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 35.146611,
+          "candidate_wall_ms": 6.441593
+        },
+        {
+          "pair": 19,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 5.901559,
+          "original_wall_ms": 35.791855
+        }
+      ],
+      "original_total_ms": 655.524215,
+      "candidate_total_ms": 119.83775,
+      "total_time_reduction_percent": 81.7187912730272,
+      "all_output_arrays_byte_exact": true,
+      "inputs_unchanged": true
+    },
+    "unstructured_returns": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 36.133078,
+          "candidate_wall_ms": 12.847044
+        },
+        {
+          "pair": 1,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.725113,
+          "original_wall_ms": 37.521977
+        },
+        {
+          "pair": 2,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 37.764648,
+          "candidate_wall_ms": 12.660494
+        },
+        {
+          "pair": 3,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.531072,
+          "original_wall_ms": 74.646651
+        },
+        {
+          "pair": 4,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 38.158841,
+          "candidate_wall_ms": 12.673273
+        },
+        {
+          "pair": 5,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.268311,
+          "original_wall_ms": 38.618783
+        },
+        {
+          "pair": 6,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 37.438856,
+          "candidate_wall_ms": 12.671553
+        },
+        {
+          "pair": 7,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.390932,
+          "original_wall_ms": 43.344374
+        },
+        {
+          "pair": 8,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 47.409442,
+          "candidate_wall_ms": 12.806294
+        },
+        {
+          "pair": 9,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 13.841701,
+          "original_wall_ms": 41.655063
+        },
+        {
+          "pair": 10,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.058061,
+          "candidate_wall_ms": 12.413692
+        },
+        {
+          "pair": 11,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.460121,
+          "original_wall_ms": 75.976209
+        },
+        {
+          "pair": 12,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 33.786852,
+          "candidate_wall_ms": 13.259808
+        },
+        {
+          "pair": 13,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.578452,
+          "original_wall_ms": 33.44364
+        },
+        {
+          "pair": 14,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.607525,
+          "candidate_wall_ms": 13.108396
+        },
+        {
+          "pair": 15,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.422082,
+          "original_wall_ms": 33.746531
+        },
+        {
+          "pair": 16,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.198722,
+          "candidate_wall_ms": 12.233671
+        },
+        {
+          "pair": 17,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.441872,
+          "original_wall_ms": 33.582131
+        },
+        {
+          "pair": 18,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.94995,
+          "candidate_wall_ms": 12.475802
+        },
+        {
+          "pair": 19,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 12.2909,
+          "original_wall_ms": 32.483794
+        }
+      ],
+      "original_total_ms": 804.525128,
+      "candidate_total_ms": 253.100583,
+      "total_time_reduction_percent": 68.54037565872027,
+      "all_output_arrays_byte_exact": true,
+      "inputs_unchanged": true
+    },
+    "tilted_room": {
+      "pairs": [
+        {
+          "pair": 0,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.373806,
+          "candidate_wall_ms": 10.358318
+        },
+        {
+          "pair": 1,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.375238,
+          "original_wall_ms": 31.729179
+        },
+        {
+          "pair": 2,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.048421,
+          "candidate_wall_ms": 10.351928
+        },
+        {
+          "pair": 3,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.240807,
+          "original_wall_ms": 32.517994
+        },
+        {
+          "pair": 4,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.615598,
+          "candidate_wall_ms": 10.330778
+        },
+        {
+          "pair": 5,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.372788,
+          "original_wall_ms": 31.95795
+        },
+        {
+          "pair": 6,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.198141,
+          "candidate_wall_ms": 10.320358
+        },
+        {
+          "pair": 7,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.504609,
+          "original_wall_ms": 33.118947
+        },
+        {
+          "pair": 8,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.82981,
+          "candidate_wall_ms": 10.393008
+        },
+        {
+          "pair": 9,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.522589,
+          "original_wall_ms": 31.075535
+        },
+        {
+          "pair": 10,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.775549,
+          "candidate_wall_ms": 10.259887
+        },
+        {
+          "pair": 11,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.291157,
+          "original_wall_ms": 31.450277
+        },
+        {
+          "pair": 12,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.371807,
+          "candidate_wall_ms": 10.348437
+        },
+        {
+          "pair": 13,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.286687,
+          "original_wall_ms": 31.576488
+        },
+        {
+          "pair": 14,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 31.417467,
+          "candidate_wall_ms": 10.390358
+        },
+        {
+          "pair": 15,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.360198,
+          "original_wall_ms": 32.236072
+        },
+        {
+          "pair": 16,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.389243,
+          "candidate_wall_ms": 10.528139
+        },
+        {
+          "pair": 17,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.585669,
+          "original_wall_ms": 32.212892
+        },
+        {
+          "pair": 18,
+          "order": [
+            "original",
+            "candidate"
+          ],
+          "original_wall_ms": 32.07353,
+          "candidate_wall_ms": 10.406169
+        },
+        {
+          "pair": 19,
+          "order": [
+            "candidate",
+            "original"
+          ],
+          "candidate_wall_ms": 10.355479,
+          "original_wall_ms": 31.575717
+        }
+      ],
+      "original_total_ms": 637.5444229999999,
+      "candidate_total_ms": 207.582601,
+      "total_time_reduction_percent": 67.44029223513418,
+      "all_output_arrays_byte_exact": true,
+      "inputs_unchanged": true
+    }
+  },
+  "synthetic_inputs": true,
+  "controller_replay": false,
+  "real_sensor_inputs": false,
+  "isolated_benchmark": false,
+  "shared_host_timings": true,
+  "raw_controller_decisions_compared": false,
+  "native_execution": false,
+  "real_time_qualified": false,
+  "navigation_qualified": false,
+  "goal_achieved": false
+}

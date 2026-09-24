@@ -1,0 +1,49 @@
+{
+  "schema": "visual_target_navigation_forecast.v1",
+  "runs": [
+    {
+      "run": 1,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "previous": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_refitted_dynamics_readout_v1_attempt_001/navigation_forecasts/run_01.json",
+      "sha256": "ec4b4e1af5f734476a79a4b350498a21a572229d32b6eaf10a927860144eb7e5"
+    },
+    {
+      "run": 2,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_02_current_pair_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "previous": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_refitted_dynamics_readout_v1_attempt_001/navigation_forecasts/run_02.json",
+      "sha256": "1c911e1e8adc4ac0e9a957211d44b950721e39c2e79a6c7ad30c77eed87281d8"
+    },
+    {
+      "run": 3,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_03_current_pair_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "previous": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_refitted_dynamics_readout_v1_attempt_001/navigation_forecasts/run_03.json",
+      "sha256": "1cbdf67149ec8526f26d4261bdf821c5cc34cad9f7de563d18a2704d6b0d3da3"
+    },
+    {
+      "run": 4,
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "previous": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_refitted_dynamics_readout_v1_attempt_001/navigation_forecasts/run_04.json",
+      "sha256": "766812d9ee830e0318a4f2c886c2c97a10a9582d1cd7984a9d5184840f11ab08"
+    }
+  ],
+  "source_sha256": "bc2f418c0e4fb8b1db97cd19f6c925d459426601b3a032854f0e2a13ba65a9f2",
+  "fit_sha256": "b5f4e03868fc4b2353b68434df907c5aea3dafad5e323434dcf6164a57cd0d48",
+  "variants": [
+    "original_jepa",
+    "original_supervised_rollout",
+    "original_untrained",
+    "refitted_jepa",
+    "refitted_supervised_rollout",
+    "refitted_untrained",
+    "command_history",
+    "pose_command",
+    "visual_target_jepa"
+  ],
+  "windows": 2404,
+  "retain_both_failed_returns": true,
+  "primary": "700ms XY and yaw errors on all identical executed windows",
+  "previous_controls_reused_and_original_JEPA_recomputed": true,
+  "new_navigation": false,
+  "overlapping_windows_not_independent": true,
+  "no_fitting": true
+}

@@ -1,0 +1,28 @@
+{
+  "claim_boundary": "SIMULATED_DISALLOWED_CONTACT_PROXY only; no material-hazard, injury, property-damage, people, or fragile-infrastructure claim",
+  "classification": "CONTACT_PROXY_FILTER_SCORE_NO_GO",
+  "frontier": {
+    "complete_gate_points": 0,
+    "contact_filter_gate_points": 0,
+    "content_digest": "3d24726e5a3ed26f3345c951182199fcc9a102435faedb647c423ee1f5df6b31",
+    "sha256": "52ed45d42323ee093fd0e6fc85cfd9cae21370f188e64721462be1bb6a2b7111",
+    "thresholds": 290
+  },
+  "frozen_checkpoint": {
+    "executed": false,
+    "sha256": "3e556531a0442df214d0667ad42110e42806ec3aa7aa240c2b2746d7c304af31"
+  },
+  "frozen_row_ledger": {
+    "rows": 3456,
+    "sha256": "ab47eb7848b980947ced6ee6f10493ef12578ab7871ef8ebdb97b46122617e9c"
+  },
+  "next_step": "Close WIDE_GEOMETRY_EMBODIED_CONTACT_HEAD_V1; no automatic successor authorized",
+  "preserved_result": "WIDE_GEOMETRY_EMBODIED_CONTACT_PROXY_POSITIVE_TENDENCY",
+  "result": {
+    "bytes": 170918,
+    "content_digest": "7e95adbc95619f7a688ae48a4ac7d547752a1c4ce28ab5f02f5b97aa40941df7",
+    "sha256": "f3103eb1418294516cab9abdda70d2b4617cb0d5707d854f8eb1d0601b5889ec"
+  },
+  "schema": "lewm_true_future_contact_filter_decision_decomposition_v1_evidence_index",
+  "source_commit": "a2c2abfcf3d75a97371ddfbc73eaa6c79ed6f079"
+}

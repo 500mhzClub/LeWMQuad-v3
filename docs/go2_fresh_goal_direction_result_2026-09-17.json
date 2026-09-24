@@ -1,0 +1,156 @@
+{
+  "status": "COMPLETE",
+  "rows": [
+    {
+      "action": "hold",
+      "predicted_cost": 168.67066955566406,
+      "actual_image_cost": 155.85845947265625,
+      "actual_raw_goal_mse": 1.0568056106567383,
+      "xy_error_cm": 32.35760321359764,
+      "yaw_error_deg": 40.45272227840005,
+      "physical_cost": 181.79820354520373,
+      "future_dense_mse": 0.20703953504562378,
+      "persistence_mse": 0.032601624727249146,
+      "reused_factual_successor": false
+    },
+    {
+      "action": "forward",
+      "predicted_cost": 150.2137908935547,
+      "actual_image_cost": 152.6180419921875,
+      "actual_raw_goal_mse": 1.0862596035003662,
+      "xy_error_cm": 26.351951378834144,
+      "yaw_error_deg": 40.46066516226975,
+      "physical_cost": 142.82547134185685,
+      "future_dense_mse": 0.32273074984550476,
+      "persistence_mse": 0.5005103945732117,
+      "reused_factual_successor": false
+    },
+    {
+      "action": "left_arc",
+      "predicted_cost": 115.07288360595703,
+      "actual_image_cost": 110.89217376708984,
+      "actual_raw_goal_mse": 1.144602656364441,
+      "xy_error_cm": 27.681942511883882,
+      "yaw_error_deg": 52.68329557750234,
+      "physical_cost": 196.2927834574258,
+      "future_dense_mse": 0.3609031140804291,
+      "persistence_mse": 0.7750146389007568,
+      "reused_factual_successor": false
+    },
+    {
+      "action": "right_arc",
+      "predicted_cost": 131.53646850585938,
+      "actual_image_cost": 115.32597351074219,
+      "actual_raw_goal_mse": 0.9467200040817261,
+      "xy_error_cm": 26.426593451345227,
+      "yaw_error_deg": 27.95941443965691,
+      "physical_cost": 108.92338907398114,
+      "future_dense_mse": 0.4062769412994385,
+      "persistence_mse": 0.8624803423881531,
+      "reused_factual_successor": false
+    },
+    {
+      "action": "left_turn",
+      "predicted_cost": 92.6164779663086,
+      "actual_image_cost": 110.54827117919922,
+      "actual_raw_goal_mse": 1.115278720855713,
+      "xy_error_cm": 32.09892473613022,
+      "yaw_error_deg": 52.60886857110539,
+      "physical_cost": 225.24667596692717,
+      "future_dense_mse": 0.44956934452056885,
+      "persistence_mse": 0.7762749195098877,
+      "reused_factual_successor": true
+    },
+    {
+      "action": "right_turn",
+      "predicted_cost": 138.27198791503906,
+      "actual_image_cost": 125.23727416992188,
+      "actual_raw_goal_mse": 0.9377295970916748,
+      "xy_error_cm": 32.28955980276524,
+      "yaw_error_deg": 28.334552607216484,
+      "physical_cost": 147.85833401397832,
+      "future_dense_mse": 0.34296464920043945,
+      "persistence_mse": 0.821501612663269,
+      "reused_factual_successor": false
+    }
+  ],
+  "plan_sha256": "74a0ab4399f2a9ee581777224512bce9b45cf61080600db5ce57725518f67a6c",
+  "original_forecast_costs_reproduced": true,
+  "all_native_contexts_and_applied_tapes_matched": true,
+  "predicted_choice": "left_turn",
+  "actual_image_choice": "left_turn",
+  "physical_choice": "right_arc",
+  "actual_raw_goal_choice": "right_turn",
+  "mean_future_dense_mse": 0.34824737906455994,
+  "mean_persistence_mse": 0.6280639171600342,
+  "correct_action_retrieval": 5,
+  "correct_action_wins": [
+    true,
+    true,
+    true,
+    true,
+    false,
+    true
+  ],
+  "mse_matrix": [
+    [
+      0.20703953504562378,
+      0.48252153396606445,
+      0.7104525566101074,
+      0.7715154886245728,
+      0.7306439876556396,
+      0.7619651556015015
+    ],
+    [
+      0.44344770908355713,
+      0.32273077964782715,
+      0.6210127472877502,
+      0.7780890464782715,
+      0.6416612267494202,
+      0.7974647283554077
+    ],
+    [
+      0.6366759538650513,
+      0.5891985893249512,
+      0.3609031140804291,
+      0.8845247030258179,
+      0.4487706124782562,
+      0.8872998952865601
+    ],
+    [
+      0.6019203066825867,
+      0.6419075727462769,
+      0.8258329629898071,
+      0.4062769412994385,
+      0.812529444694519,
+      0.46500930190086365
+    ],
+    [
+      0.6544004678726196,
+      0.639546275138855,
+      0.520546555519104,
+      0.9010958075523376,
+      0.44956934452056885,
+      0.8881670832633972
+    ],
+    [
+      0.6483385562896729,
+      0.6830660104751587,
+      0.8560600280761719,
+      0.4421449601650238,
+      0.8315243124961853,
+      0.34296464920043945
+    ]
+  ],
+  "wall_s": 6.125125743914396,
+  "new_native_branches": 5,
+  "reused_factual_branches": 1,
+  "post_hoc_diagnostic": true,
+  "new_navigation": false,
+  "encoder_predictor_cost_unchanged": true,
+  "limitations": [
+    "one exposed post-hoc state",
+    "five new branches plus one reused factual successor",
+    "500-ms local ranking does not prove navigation or long-horizon optimality"
+  ]
+}

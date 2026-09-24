@@ -1,0 +1,50 @@
+{
+  "schema": "frozen_representation_dynamics_plan.v1",
+  "arms": [
+    "jepa",
+    "supervised_rollout",
+    "untrained"
+  ],
+  "contexts": 4694,
+  "updates": 1200,
+  "draws": 7200,
+  "batch_size": 6,
+  "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+  "representation_plan_sha256": "acfe7d2cee9dbe2c073f4a5b515901f91125e37bdd6c8ef5485ff744cb508f58",
+  "representation_fit_result_sha256": "d678fa5e27c51589c90969f41b306caa99e22b59621a79a3d0665ec3f82142fd",
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_frozen_representation_dynamics_development.py": "e6141683f69d4bcd0b17991af97a113ff14c458881377593419f190cb2d37305",
+    "lewm/frozen_representation_dynamics_development.py": "8d8f852c99ee08677adee121649a4f4e34074eb17d9bc6633e554995070e168a"
+  },
+  "trainable_modules": [
+    "history",
+    "history_norm",
+    "transition"
+  ],
+  "fresh_common_predictor_initialization": true,
+  "frozen_modules": "online/EMA observation encoders, motion/contact heads and command reference",
+  "objective": "mean per-context latent squared error over actual available future observations",
+  "optimizer": "AdamW",
+  "learning_rate": 0.001,
+  "weight_decay": 0.0,
+  "gradient_clip_norm": 1.0,
+  "ema_updates": false,
+  "no_native_motion_loss": true,
+  "hyperparameter_search": false,
+  "checkpoint_selection": false,
+  "evaluation": "same fixed 36 action-branch contexts; all horizons, 800ms primary; training means and centered action effects",
+  "transfer_labels_used_for_fit": false,
+  "native_navigation": false,
+  "cpu_cores": {
+    "jepa": 8,
+    "supervised_rollout": 0,
+    "untrained": 1
+  },
+  "concurrent_fits": 3,
+  "threads_per_fit": 1,
+  "limits": [
+    "one seed and exposed development transfer",
+    "representation-specific target spaces; raw errors across arms not directly comparable",
+    "existing motion readout becomes stale after predictor refit and is not promoted"
+  ]
+}

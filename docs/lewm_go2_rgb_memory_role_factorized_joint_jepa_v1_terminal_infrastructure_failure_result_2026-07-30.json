@@ -1,0 +1,126 @@
+{
+  "attempt": {
+    "authority": {
+      "byte_count": 5485,
+      "commit": "9283bda163405336030a003184775a90680c37b3",
+      "content_sha256": "e7edce9bc4a263f5ca7987739b6e4c28e0e36d2103f17f6d3fa0cfc5d7dfb061",
+      "file_sha256": "e0d66e9a962a4bba561b169ae2d0846df82885826547971a06ae5913e5e31dca",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_execution_authorization_2026-07-30.json",
+      "validated_authority_sha256": "722d292ad98afe3c854f59550097ad5c984470348e48763f700f68fe2d4d8549"
+    },
+    "clean_export_certification": {
+      "byte_count": 22326,
+      "commit": "3c2db570beeb41144c058c3e8b7b3bfeb7c9f51d",
+      "content_sha256": "cd45d297526f00302b66f0fd7ce62bc4594f470fd733815e2779a6251a464b3f",
+      "file_sha256": "82e28cba0101cfde7bd258f653e88ad720146196c3b7b66ec781d3ce9bba1cfc",
+      "path": "docs/lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_clean_export_certification_2026-07-30.json"
+    },
+    "certified_source_root": "/home/andrewknowles/Workspace/LeWMQuad-v3-memory-role-factorized-joint-jepa-v1-source",
+    "implementation_commit": "4e1fbcfb08508131b9a071b9d83a41d9b22bf404",
+    "one_shot_consumed": true,
+    "output_root": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v1/attempt_v1",
+    "pinned_source_and_review_commit": "2d3934055fdc33e528fcc55e36b35df98fe488f7",
+    "preregistration_commit": "01d78284a22a52816a41f31a78411491714b4f9c",
+    "reservation_created_utc": "2026-07-30T21:34:27Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "classification": "TERMINAL_UPDATE0_PLACE_RGB_SOURCE_GEOMETRY_ADAPTER_FAILURE_NOT_SCIENTIFIC_RESULT",
+  "content_sha256": "e4d85114aa7e9f5187f237c65b72690c05662dcee8fe8bfcead8712368ba53e8",
+  "date": "2026-07-30",
+  "decision": {
+    "exact_original_attempt_closed": true,
+    "integrity_replacement_authorized_by_this_result": false,
+    "memory_role_factorization_hypothesis_conclusion_available": false,
+    "mechanism_rejected": false,
+    "recommended_next_action": "separately_preregister_at_most_one_science_identical_integrity_replacement_that_changes_only_the_place_RGB_source_geometry_adapter_and_complete_failure_receipts_then_run_one_live_development_triplet_decode_preflight_before_new_authority",
+    "retry_or_resume_this_attempt": false,
+    "status": "CLOSE_MEMORY_ROLE_FACTORIZED_JOINT_JEPA_V1_WITHOUT_SCIENTIFIC_CONCLUSION"
+  },
+  "failure": {
+    "exception_message_literal_reconstructed_from_frozen_source_and_hash": "image must be exact 224x224 RGB PNG",
+    "exception_message_sha256": "0f2bbeae0fc2f5a7b5cc1d7918652ac08a4154de071a13d710d86e05135d6493",
+    "exception_type": "PlaceTripletContractError",
+    "reported_stage": "observe_update_0",
+    "root_cause": "the_frozen_place_triplet_decoder_required_exact_224x224_RGB_PNG_inputs_but_the_authorized_selected_v04_place_RGB_leaves_are_exact_224x168_RGB_PNG_inputs",
+    "source": {
+      "byte_count": 17707,
+      "file_sha256": "949334a29e3aa90e10838e47bf35f6f8975b5f9c425583091ccf98582be2486b",
+      "line": 426,
+      "path": "lewm/datasets/go2_memory_role_place_triplets_v1.py",
+      "pinned_commit": "2d3934055fdc33e528fcc55e36b35df98fe488f7"
+    }
+  },
+  "observability": {
+    "failed_attempt_role_snapshot": {
+      "local_rgb_all_counters_zero": true,
+      "new_file_open_count_during_snapshot": 0,
+      "place_rgb_sha256_verified_per_access_count": 0,
+      "place_triplet_loader_call_count": 0,
+      "place_unique_row_count_opened": 0,
+      "terminal_rehash_count": 0
+    },
+    "loader_call_counter_semantics": "the_frozen_counter_incremented_only_after_load_rgb_triplet_returned_successfully",
+    "observability_gap": "zero_completed_triplet_loader_calls_does_not_prove_zero_partial_RGB_leaf_opens_reads_hash_checks_or_decode_attempts_before_the_exception",
+    "post_terminal_development_diagnostic": {
+      "authorized_role": "checkpoint_selection",
+      "diagnostic_outside_failed_attempt": true,
+      "first_row_content_sha256": "f3c8f2760977c3090974b70d184f58e38eca07c25e21703db4019484d2ae1e5d",
+      "inspected_leaf_count": 3,
+      "observed_format": "PNG",
+      "observed_mode": "RGB",
+      "observed_size": [
+        224,
+        168
+      ],
+      "index": {
+        "byte_count": 473508,
+        "file_sha256": "a628a1047b6f15223a4fd7d30c5c87fa1914efef0955d70d9bd2f5330c77dcb0",
+        "path": ".generated/go2_memory_role_place_triplet_index_v1/checkpoint_selection.jsonl"
+      },
+      "row_index": 0
+    }
+  },
+  "receipts": {
+    "failure": {
+      "byte_count": 1963,
+      "content_sha256": "a7b9210b64bd26badec38a5dc0aab9549d6804e42f1d67a2aaa838cc07d94735",
+      "file_sha256": "85b2d6608a209dff0f7b2d6b78e5b2a74baa2b347324832d46feedc23f5caf50",
+      "mode_at_audit": "0444",
+      "path": "failure.json"
+    },
+    "reservation": {
+      "byte_count": 469,
+      "content_sha256": "e0ec902d58e3ed609f802f1de2bebae6d4e71bd5ca4912be17b15f7943658b23",
+      "file_sha256": "bacd6960a71072b9719d5fc531ee30ab4accc94eed88daff559040c006fc5eff",
+      "mode_at_audit": "0444",
+      "path": "reservation.json"
+    },
+    "reserved_root_mode_at_audit": "0700"
+  },
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v1_terminal_infrastructure_failure_result_v1",
+  "scientific_accounting": {
+    "completed_observation_count": 0,
+    "completed_observation_updates": [],
+    "ema_steps": 0,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "model_and_optimizer_initialized": true,
+    "optimizer_steps": 0,
+    "output_checkpoint_count": 0,
+    "presentations": 0,
+    "published_metric_binding_count": 0,
+    "scientific_terminal_gate_reached": false,
+    "successful_updates": 0,
+    "trace_event_count": 1,
+    "training_loss_receipt_count": 0,
+    "update0_observation_completed": false
+  },
+  "status": "PASS_COMPLETE_TERMINAL_UPDATE0_INFRASTRUCTURE_FAILURE_AUDIT",
+  "unauthorized_access": {
+    "heldout_or_sealed_opened": false,
+    "navigation_executed": false,
+    "probability_calibration_opened": false,
+    "rejected_or_output_checkpoint_opened": false
+  }
+}

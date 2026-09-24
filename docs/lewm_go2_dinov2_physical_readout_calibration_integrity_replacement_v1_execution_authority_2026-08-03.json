@@ -1,0 +1,274 @@
+{
+  "schema": "lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_execution_authority_v1",
+  "status": "AUTHORIZED_ONE_SCIENCE_IDENTICAL_INTEGRITY_REPLACEMENT",
+  "citable_as_scientific_evidence": false,
+  "science_identical_to_original": true,
+  "original_attempt_remains_consumed": true,
+  "authorizes_compatibility_admission": true,
+  "authorizes_collection": false,
+  "authorizes_eval_rgb_access": true,
+  "authorizes_model_training": false,
+  "authorizes_retry_or_resume": false,
+  "authorizes_train_rgb_access": false,
+  "preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_preregistration_2026-08-03.md",
+    "sha256": "034e7b29803394d7da229273945deafa771a8104568e6b9a40ce492458f00c52",
+    "byte_count": 8511
+  },
+  "source_review_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_integrity_replacement_v1_source_review_2026-08-03.json",
+    "sha256": "f398b47196b4e7619a6d9770b0ae6edc9074bb9b0c5fd867debc23bbc3c6ad62",
+    "byte_count": 12423
+  },
+  "source_bindings": {
+    "compatibility_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_integrity_replacement_v1.py",
+      "sha256": "a9068831a17bb6f6be646a842e648131e5344000ca56a29ba02f58663a440ad3",
+      "byte_count": 7796
+    },
+    "compatibility_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dinov2_physical_readout_calibration_integrity_replacement_v1.py",
+      "sha256": "ca8a57920998fcd46467953b98f28772fe05c6956354dc34ed4e5438beb0f25a",
+      "byte_count": 7153
+    },
+    "original_action_regret_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_counterfactual_action_regret_v1.py",
+      "sha256": "395b78f95ed6b632ea629d2359dabb01f8b1123779207a93c967b3d2a4ae3520",
+      "byte_count": 28399
+    },
+    "original_calibration_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "89afbc4b4611806ba5fd230747ee9de31edbb9ddf39701150246439b637c0d98",
+      "byte_count": 34541
+    },
+    "original_calibration_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "6bed825d428c1b0faa44eb159bb86af70e309f14efc87d1c9d7b165fa723ccb5",
+      "byte_count": 17058
+    },
+    "original_counterfactual_benchmark_contract": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "265c395f8e4e0248da3360d43396654bc13e03d4f52aa5fd54df43740b5919fa",
+      "byte_count": 102894
+    },
+    "original_pilot_consumer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "eb0f770f4294acfe4f058f614779a75356d03164bf75e1e8f782d0a421eeb1a2",
+      "byte_count": 153820
+    },
+    "original_posthoc_loader": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/materialize_go2_world_model_bounded_branch_posthoc_join_admission_v1.py",
+      "sha256": "93e9778052c657c9b7e54c958167dbd41acc572be1eb7585d03703dfcc98fb0c",
+      "byte_count": 55667
+    },
+    "original_predecessor_model_module": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "db060611391eb8e1576827f528cd7ad5392320e391d2b9b996c7baf4dcf13e65",
+      "byte_count": 19344
+    },
+    "original_predecessor_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_matched_branch_successor_screen_v1.py",
+      "sha256": "4e9f9358d597216f13eb9c6b6143e5823144de1c3a8cf9490d19d785df4c622e",
+      "byte_count": 42491
+    },
+    "original_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "90ff45cf5afecc442e075fa96b8957d7646cf181ccb644365711be8c23a397f7",
+      "byte_count": 36333
+    },
+    "original_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dinov2_physical_readout_calibration_v1.py",
+      "sha256": "00e24b9d6b5782622be1f83d0e4ee233a859d9048d67e4ad7b49eb1d32fa5d23",
+      "byte_count": 13313
+    },
+    "original_screen_data": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_matched_branch_successor_screen_v1.py",
+      "sha256": "c3482fe8d72366d3102e78a62b8bfcbdd9cb423d45cbb3ec44531eea443922e7",
+      "byte_count": 19902
+    },
+    "replacement_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_dinov2_physical_readout_calibration_integrity_replacement_v1.py",
+      "sha256": "f83217a75ce5823ae196e47a0af6b3df68ece8ffc72ed4a1660e2c55afe1aa1d",
+      "byte_count": 25373
+    },
+    "replacement_runner_test": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_dinov2_physical_readout_calibration_integrity_replacement_v1.py",
+      "sha256": "24101c656e760ba2d846742668ea040a5d222ba032f4a826f69b9d6ea519fcab",
+      "byte_count": 14006
+    },
+    "task_relevance_collector": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_world_model_counterfactual_pilot_v1.py",
+      "sha256": "b5602e980baa616a9360115deec6f8bf23dbc99a24181f42800e0af4fecf1896",
+      "byte_count": 142255
+    },
+    "task_relevance_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_task_relevance_v1.py",
+      "sha256": "22d370945ad3dcd09bfa9405841450a834f71029c9f16de86e17daa37ee4453c",
+      "byte_count": 30488
+    },
+    "task_relevance_graphics_supervisor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_counterfactual_calibration_authorized_v1.py",
+      "sha256": "99de52eba024ee115a137697a48f14ff7931e2f424e5cdaf3301c7e22aad533b",
+      "byte_count": 35532
+    },
+    "task_relevance_h6_dataset": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+      "sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+      "byte_count": 33483
+    },
+    "task_relevance_mask_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84",
+      "byte_count": 44605
+    },
+    "task_relevance_parity_authority_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_authority_v1.py",
+      "sha256": "ff3cde2aadb465860752f785e9fa7468b5aadd8e0be868f08b8c367763070baa",
+      "byte_count": 23820
+    },
+    "task_relevance_parity_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_world_model_visual_domain_parity_v1.py",
+      "sha256": "8e4d214bcbc0501fd9a68d3b4e30bdcd9962e83f8342929e7907dc7afa5aa962",
+      "byte_count": 63538
+    },
+    "task_relevance_parity_plan_builder": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_world_model_visual_domain_parity_plan_v1.py",
+      "sha256": "3fc3993aceb8cd332073b4032bc07dda88d1f537f709bedbee50f627a21d80cd",
+      "byte_count": 53203
+    },
+    "task_relevance_parity_supervisor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_visual_domain_parity_authorized_v1.py",
+      "sha256": "4b1adcd9950e575923a8f61f9b3ec7090e94eaa445f808f44015abdb891184a3",
+      "byte_count": 73334
+    },
+    "task_relevance_probe": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_probe_counterfactual_action_fidelity.py",
+      "sha256": "0441837123792976489acc917ee87a0972a09eeb70e6950554b2c294f762003f",
+      "byte_count": 51539
+    },
+    "task_relevance_probe_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3",
+      "byte_count": 78825
+    },
+    "task_relevance_probe_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3",
+      "byte_count": 17480
+    },
+    "task_relevance_probe_trainer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_temporal_jepa_scaled.py",
+      "sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037",
+      "byte_count": 35478
+    },
+    "task_relevance_reference_renderer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/render_replay_v03.py",
+      "sha256": "99453ee5fe5c068a0d9c63d663e651a2a871971dd6122fda10fc72b909fb659d",
+      "byte_count": 9590
+    }
+  },
+  "input_bindings": {
+    "original_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_execution_authority_2026-08-03.json",
+      "sha256": "3a403377b071a9f916882cc5315b6b5be4d097a6c215562a565245962e6e2cc2",
+      "byte_count": 6407
+    },
+    "original_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_preregistration_2026-08-03.md",
+      "sha256": "ff6e42042792ffc66c51ac9e6fd31d9da194cb22c5526edfd1ce3cfe22db55ee",
+      "byte_count": 10285
+    },
+    "original_reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v1/reservation.json",
+      "sha256": "963b915597c69e55e459db0018e9e9acb773a75f6d1da3ee3b3fd706a641f6fd",
+      "byte_count": 501
+    },
+    "original_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_source_review_2026-08-03.json",
+      "sha256": "2e0305154674da1f39a621d4ac90e58652721403dde7e0cb1d782b8f79944174",
+      "byte_count": 6927
+    },
+    "original_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v1/terminal.json",
+      "sha256": "066ad891811f7f5a7d7969b8d584ae12ca896a51b7702716cfc50ce096addb48",
+      "byte_count": 403
+    },
+    "original_terminal_failure_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dinov2_physical_readout_calibration_v1_terminal_failure_review_2026-08-03.json",
+      "sha256": "7f99e3136857a5149acfa74daed5f2ba54be5110942544c2df5aa230e0dd7ea9",
+      "byte_count": 6201
+    },
+    "posthoc_manifest": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/manifest.json",
+      "sha256": "87448995c905107453814a5e7e4cd9968d31cbc0e308513d17bc038c6585f15e",
+      "byte_count": 11964
+    },
+    "posthoc_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1/terminal.json",
+      "sha256": "a1590fffc673f7676016bb70d4b4f5530f24b9a49bf05e84dcec6bc1756fbe56",
+      "byte_count": 1250
+    },
+    "posthoc_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_posthoc_join_admission_v1_terminal_review_2026-08-02.json",
+      "sha256": "bfd0250357d0f681c674db6c54ea4a8c4d5e617230332383beda3db3e0f38669",
+      "byte_count": 2844
+    },
+    "stored_task_relevance_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_result_v1_2026-08-02.json",
+      "sha256": "5094104ac29b4652cd577015c5fbf23b42f0768c78a205cbf07a77d992339ca7",
+      "byte_count": 94165
+    },
+    "stored_task_relevance_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_visual_domain_parity_task_relevant_input_adequacy_independent_review_v1_2026-08-02.json",
+      "sha256": "29eb00a486604824effb56502194855553f87c81a9691d4075a5810273c92ca9",
+      "byte_count": 2080
+    },
+    "train_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.pt",
+      "sha256": "164f1fef8c859976c93f7fc978e938c6c8f7f9963cf92bb154f51b23d158b34b",
+      "byte_count": 302107682
+    },
+    "train_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_matched_branch_successor_screen_v1/attempt_v1/features/dinov2.json",
+      "sha256": "e94ec5d188811c44d4cc870e76d1888aa6f30ee6d423557ee9f3e2918a700994",
+      "byte_count": 1770
+    }
+  },
+  "encoder_source": {
+    "repo_path": "/home/andrewknowles/.cache/dinov2-7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "repo_commit": "7764ea0f912e53c92e82eb78a2a1631e92725fc8",
+    "checkpoint_binding": {
+      "path": "/home/andrewknowles/.cache/torch/hub/checkpoints/dinov2_vits14_pretrain.pth",
+      "sha256": "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9",
+      "byte_count": 88283115
+    }
+  },
+  "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dinov2_physical_readout_calibration_v1/attempt_v2_integrity_replacement_v1",
+  "environment": {
+    "python": "/usr/bin/python3.12",
+    "torch": "2.14.0.dev20260726+rocm7.1",
+    "hip": "7.1.52802",
+    "numpy": "1.26.4",
+    "pillow": "10.2.0"
+  },
+  "config": {
+    "compatibility_absolute_tolerance": 1e-12,
+    "compatibility_allowed_differing_paths": [
+      "measurements.pixels.minimum_reference_candidate_rgb_ssim"
+    ],
+    "compatibility_relative_tolerance": 0.0,
+    "eval_artifact_count": 1536,
+    "eval_batch_size": 32,
+    "eval_state_count": 128,
+    "feature_shape": [
+      1536,
+      256,
+      384
+    ],
+    "integrity_replacement": "v1",
+    "replay_count": 1,
+    "train_artifact_count": 1536,
+    "train_state_count": 128
+  },
+  "git_commit": "47b0593d04fb6cdf9f556ff0779cc2549b6fcf86"
+}

@@ -1,0 +1,190 @@
+{
+  "access_accounting": {
+    "all_consumed_inputs_rehashed": true,
+    "bound_parent_source_rehash_count": 7,
+    "certified_source_bindings_sha256": "3c1fb878ee5b82c83f797bbfc1ef0ff1346850a62fb4ccfd6a76f3f8027c6296",
+    "certified_source_rehash_count": 91,
+    "forbidden_input_count": 0,
+    "label_source_rehash_count": 3,
+    "opened_roles": [
+      "authority",
+      "index",
+      "train",
+      "checkpoint_selection"
+    ],
+    "probability_calibration_open_count": 0,
+    "raw_consumed_file_rehash_count": 9425,
+    "raw_consumed_inputs_rehashed": true,
+    "raw_consumed_records_sha256": "bdef16f759663f4ae30c9c57900b177176e391d2d9763e434a7e3d205b23cd65",
+    "raw_consumed_unique_file_count": 9425,
+    "raw_development_rgb_file_count": 8701,
+    "raw_supervision_file_count": 722,
+    "terminal_full_rehash_count": 1
+  },
+  "attempt": {
+    "attempt_consumed": true,
+    "authority_canonical_sha256": "8c0769d50bee1d2f03417d90ccdf5019f6ceedb9f7a0bd66db36030f10add05b",
+    "maximum_presentations": 16000,
+    "maximum_updates": 1000,
+    "one_shot_attempt": 1,
+    "reservation_created_utc": "2026-07-29T14:02:25Z",
+    "resume_authorized": false,
+    "retry_authorized": false
+  },
+  "date": "2026-07-29",
+  "decision": {
+    "checkpoint_published": false,
+    "failure_status": "FAIL_SCIENTIFIC_UPDATE1000_GATE_TERMINAL",
+    "g2_authorized": false,
+    "held_out_authorized": false,
+    "navigation_authorized": false,
+    "probability_calibration_authorized": false,
+    "scientific_interpretation": "The joint JEPA learned the inherited predictive and semantic controls and continued improving through the full cap, but its RGB-derived physical evidence was not broad or depth-precise enough for promotion.",
+    "status": "PASS_COMPLETE_SCIENTIFIC_FAILURE"
+  },
+  "final_gate": {
+    "checks": {
+      "complete_physical_scope_count_at_least_1": false,
+      "inherited_v12_full_arm_24_of_24": true,
+      "passed_physical_margin_count_at_least_112": false,
+      "rough_depth_p95_strictly_below_threshold": false,
+      "rough_ground_balanced_accuracy_strictly_above_threshold": true,
+      "rough_pixel_balanced_accuracy_strictly_above_threshold": true,
+      "structural_integrity_pass": true,
+      "total_physical_shortfall_strictly_below_threshold": false
+    },
+    "observed": {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 24,
+      "passed_physical_margin_count": 82,
+      "rough_depth_p95_m": 1.6219202995300286,
+      "rough_ground_balanced_accuracy": 0.6779702244743685,
+      "rough_pixel_balanced_accuracy": 0.8932241139294643,
+      "total_physical_shortfall": 41.14716843735617,
+      "worst_physical_margin": -5.487681198120114
+    },
+    "required": {
+      "complete_physical_scope_count_minimum": 1,
+      "inherited_v12_passed_checks": 24,
+      "passed_physical_margin_count_minimum": 112,
+      "rough_depth_p95_m_strict_upper_bound": 0.9777327477931971,
+      "rough_ground_balanced_accuracy_strict_lower_bound": 0.647134926562893,
+      "rough_pixel_balanced_accuracy_strict_lower_bound": 0.8198594673963917,
+      "total_physical_shortfall_strict_upper_bound": 33.05143763708337
+    }
+  },
+  "progression": [
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 2,
+      "passed_physical_margin_count": 39,
+      "rough_depth_p95_m": 4.869073963165282,
+      "rough_ground_balanced_accuracy": 0.6396004783234008,
+      "rough_pixel_balanced_accuracy": 0.6326792707919727,
+      "total_physical_shortfall": 190.80520420417014,
+      "update": 0,
+      "worst_physical_margin": -18.476295852661128
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 12,
+      "passed_physical_margin_count": 64,
+      "rough_depth_p95_m": 3.3060383319854707,
+      "rough_ground_balanced_accuracy": 0.6703678510182464,
+      "rough_pixel_balanced_accuracy": 0.8027066945161299,
+      "total_physical_shortfall": 110.56903516072543,
+      "update": 100,
+      "worst_physical_margin": -12.224153327941883
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "directional_control_gate": "PASS_CONTINUE",
+      "inherited_v12_passed_checks": 22,
+      "passed_physical_margin_count": 71,
+      "rough_depth_p95_m": 1.936374711990354,
+      "rough_ground_balanced_accuracy": 0.677150630148253,
+      "rough_pixel_balanced_accuracy": 0.863384440489459,
+      "total_physical_shortfall": 71.67935936391197,
+      "update": 400,
+      "worst_physical_margin": -6.745498847961416
+    },
+    {
+      "complete_physical_scope_count": 0,
+      "inherited_v12_passed_checks": 24,
+      "passed_physical_margin_count": 82,
+      "rough_depth_p95_m": 1.6219202995300286,
+      "rough_ground_balanced_accuracy": 0.6779702244743685,
+      "rough_pixel_balanced_accuracy": 0.8932241139294643,
+      "total_physical_shortfall": 41.14716843735617,
+      "update": 1000,
+      "worst_physical_margin": -5.487681198120114
+    }
+  ],
+  "receipt_artifacts": {
+    "failure": {
+      "byte_count": 2962,
+      "content_sha256": "065692a66f60d54d09dbd55f693e60df77f46408c04a4869ae4ab13eafabaaf5",
+      "file_sha256": "beecdb0b610166cc5dccf0c0f5f6d041e6fa583e2c822cbac653d6228dbad558",
+      "mode": "0444",
+      "path": "failure.json",
+      "regular_nonsymlink": true
+    },
+    "metrics": {
+      "update_0_file_sha256": "3ca5b03ba8e6375a4e8a17ddbf0db9bcb6dfabdec986130297b2a1a449f670a9",
+      "update_1000_file_sha256": "11cb8b1be8b9b8a348e57e2814f99196a2e3a877547f772e3c443f866bb58a09",
+      "update_100_file_sha256": "e827a78e4aa79a9e9630f3f162be2f1a0122240a260a5339d74de3b35533c69c",
+      "update_400_file_sha256": "c568614ac83af8743282b1b5ec35a14c455d337a8d8586a4eb685af1f664cd27"
+    },
+    "reservation": {
+      "byte_count": 493,
+      "content_sha256": "751fca2976737209011db4e569d74dd2f8363f40a1bdd4530a08095f42f0344d",
+      "file_sha256": "7dc172ca278637b21f4470f4dae5d1716097a141eb181799557c8290385e5ea0",
+      "mode": "0444",
+      "path": "reservation.json",
+      "regular_nonsymlink": true
+    },
+    "success": {
+      "path": "success.json",
+      "present": false
+    },
+    "terminal_access": {
+      "byte_count": 3290702,
+      "content_sha256": "a31dc438c18b401252e23a2c3e44e29dcb5eb9361737025d92f4897982df4b6e",
+      "file_sha256": "54b626b69617ff2a99dfbd91ca038b11219589b02f06dee2650ac9ed1150e673",
+      "mode": "0444",
+      "path": "receipts/terminal_access.json",
+      "regular_nonsymlink": true
+    },
+    "trace": {
+      "byte_count": 1606598,
+      "file_sha256": "e1103cc6e3a5ffba49c3892584493100075cd86574ebb74f79e4cb7f77650e26",
+      "mode": "0444",
+      "path": "trace.jsonl",
+      "regular_nonsymlink": true,
+      "row_count": 1003
+    }
+  },
+  "scientific_accounting": {
+    "backward_calls": 8000,
+    "camera_frame_objectives": 32000,
+    "camera_route_grad_calls": 4000,
+    "ema_steps": 1000,
+    "joint_route_grad_calls": 4000,
+    "microbatch_graphs": 4000,
+    "optimizer_steps": 1000,
+    "predictor_forwards": 4000,
+    "predictor_objectives": 4000,
+    "presentations": 16000,
+    "updates": 1000
+  },
+  "validation": {
+    "all_1003_trace_rows_byte_canonical_and_content_valid": true,
+    "failure_metric_and_access_crosslinks_valid": true,
+    "final_gate_independently_recomputed_exactly": true,
+    "immutable_artifact_modes_valid": true,
+    "independent_audit_count": 2,
+    "output_inventory_exactly_eight_files": true,
+    "schedule_and_accounting_sequence_exact": true,
+    "source_and_raw_input_rehashes_valid": true
+  }
+}

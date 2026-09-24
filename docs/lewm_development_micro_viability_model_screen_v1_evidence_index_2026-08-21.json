@@ -1,0 +1,26 @@
+{
+  "claim_boundary": "Development-only SIMULATED_ONE_TICK_CONTACT_AND_SUCCESSOR_VIABILITY screen; no independent held-out, learned closed-loop, physical Go2, JEPA-planner, or navigation claim.",
+  "evidence_root": ".generated/development_micro_viability_model_screen_v1",
+  "external_evidence_root": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/development_micro_viability_model_screen_v1",
+  "key_artifact_digests": {
+    "compute_benchmark.json": {"bytes": 1770, "sha256": "7036402e569ca9d7ad8b995eb4eb2d4d48f169a0770c871874823790ab8f8727"},
+    "development_internal_calibration_v1.json": {"bytes": 9538, "sha256": "d4148595ae1b3336eb7b5b597e78f83303c79af41bdc2e3210cd9c39b1c72db2"},
+    "development_micro_viability_model_seed_2026082016.pt": {"bytes": 684145, "sha256": "d30036746d0226eb36e9582c89122ea828aa2f509e18135135198639e51f846a"},
+    "evaluator_fixture.json": {"bytes": 600, "sha256": "2d04edd719cad0d1ed3e03bd0d693d14c5987a9cb60038dbcc09e985fada4b58"},
+    "persistence_receipt.json": {"bytes": 322, "sha256": "d0ed8c436b4a8400280a957b21f4d55c3abd20e96ffe0140f624a1fb7c5b0f27"},
+    "result.json": {"bytes": 194533, "sha256": "957e123b779a894f1f1cc2b5686d2ca9173bdacbdd33d5cd4f814171faf8a15d"},
+    "screen_summary.json": {"bytes": 2446, "sha256": "2361d99731314ccc48deb1da356922154ef2c904c570e40307a227c7746ffae2"},
+    "training_result.json": {"bytes": 14824, "sha256": "6fd6c31e07444763d0570261ce6ccbdf209843a3c0ff9882ee0fed8519d94d97"},
+    "training_smoke.json": {"bytes": 717, "sha256": "cd47cc6322c1abf4f5cd627e0c2c9e5db347a061d62f30b67c7a8355a599e76c"}
+  },
+  "external_artifacts": {
+    "joint_threshold_frontier.json": {"bytes": 128952, "sha256": "79816f63a933e61c595000ccdf8cb04d181de0d03d7f50496179d931ef70c764"},
+    "micro_compute_timing_rows.jsonl": {"bytes": 245867, "rows": 1000, "sha256": "7d86e0fef032ac197bc320bd6b07c604517b4b6f7e6b62568f50985dd5c114c1"},
+    "row_level_model_evidence_v1.jsonl": {"bytes": 1700696, "rows": 2464, "sha256": "555ba6d2678e543cf78d6a53977eceeaa5bddf60a6c16c2510ee028db9f7cba2"}
+  },
+  "model_classification": "DEVELOPMENT_MICRO_VIABILITY_NO_SIGNAL",
+  "compute_classification": "MICRO_VIABILITY_COMPUTE_SIGNAL",
+  "predecessor_terminal": "FRESH_MICRO_VIABILITY_PANEL_INADEQUATE",
+  "source_commit": "53a011f0b55b816294c49ced88bd3a6a55c4adec",
+  "schema": "development_micro_viability_model_screen_v1_evidence_index"
+}

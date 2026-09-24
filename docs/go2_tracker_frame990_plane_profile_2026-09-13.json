@@ -1,0 +1,794 @@
+{
+  "frame": 990,
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_settling_maze02_v1_attempt_001/no_rgb_direct_stop_conditioned_settling_maze_02",
+  "times": {
+    "primary": {
+      "seconds": 0.01641084090806544,
+      "candidates": 6370
+    },
+    "auxiliary": {
+      "seconds": 0.016451150877401233,
+      "candidates": 18856
+    }
+  },
+  "profiled_functions": [
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/sampled_plane_candidates_development.py",
+      "line": 18,
+      "name": "measured_candidates",
+      "calls": 2,
+      "self_s": 0.017400848,
+      "total_s": 0.031417164000000004
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'reduce' of 'numpy.ufunc' objects>",
+      "calls": 48,
+      "self_s": 0.006131546000000001,
+      "total_s": 0.006131546000000001
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1567,
+      "name": "cross",
+      "calls": 6,
+      "self_s": 0.0025942730000000002,
+      "total_s": 0.005447059000000001
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 2599,
+      "name": "norm",
+      "calls": 10,
+      "self_s": 0.0005532,
+      "total_s": 0.0045921140000000004
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'astype' of 'numpy.ndarray' objects>",
+      "calls": 12,
+      "self_s": 0.0026771060000000003,
+      "total_s": 0.0026771060000000003
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2304,
+      "name": "sum",
+      "calls": 2,
+      "self_s": 5.11e-06,
+      "total_s": 0.001358058
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 66,
+      "name": "_wrapreduction",
+      "calls": 2,
+      "self_s": 6.3200000000000005e-06,
+      "total_s": 0.001352198
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/shape_base.py",
+      "line": 378,
+      "name": "stack",
+      "calls": 4,
+      "self_s": 0.0011736960000000001,
+      "total_s": 0.001177036
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'all' of 'numpy.ndarray' objects>",
+      "calls": 14,
+      "self_s": 7.39e-06,
+      "total_s": 0.000725294
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/_methods.py",
+      "line": 64,
+      "name": "_all",
+      "calls": 18,
+      "self_s": 6.78e-06,
+      "total_s": 0.000722814
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/joint_rgbd_rigid_pose_development.py",
+      "line": 30,
+      "name": "proper",
+      "calls": 2,
+      "self_s": 6.326e-05,
+      "total_s": 0.00026315100000000004
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_index_tricks_impl.py",
+      "line": 31,
+      "name": "ix_",
+      "calls": 28,
+      "self_s": 6.954e-05,
+      "total_s": 0.000172062
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1493,
+      "name": "moveaxis",
+      "calls": 18,
+      "self_s": 4.5600000000000004e-05,
+      "total_s": 0.00015535
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2290,
+      "name": "allclose",
+      "calls": 2,
+      "self_s": 7.33e-06,
+      "total_s": 0.00012956100000000002
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2384,
+      "name": "isclose",
+      "calls": 2,
+      "self_s": 6.47e-05,
+      "total_s": 0.000117201
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py",
+      "line": 5050,
+      "name": "meshgrid",
+      "calls": 2,
+      "self_s": 1.8820000000000003e-05,
+      "total_s": 0.00011565
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 86,
+      "name": "_wrapreduction_any_all",
+      "calls": 26,
+      "self_s": 3.2091e-05,
+      "total_s": 9.2131e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1431,
+      "name": "normalize_axis_tuple",
+      "calls": 36,
+      "self_s": 5.8450000000000005e-05,
+      "total_s": 8.647e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2436,
+      "name": "any",
+      "calls": 20,
+      "self_s": 1.5801e-05,
+      "total_s": 8.5871e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 514,
+      "name": "broadcast_arrays",
+      "calls": 2,
+      "self_s": 1.146e-05,
+      "total_s": 7.676e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numerictypes.py",
+      "line": 475,
+      "name": "issubdtype",
+      "calls": 56,
+      "self_s": 3.1971e-05,
+      "total_s": 7.0522e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 2356,
+      "name": "det",
+      "calls": 2,
+      "self_s": 3.982e-05,
+      "total_s": 5.7060000000000006e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 373,
+      "name": "_broadcast_to",
+      "calls": 4,
+      "self_s": 4.761e-05,
+      "total_s": 5.6790000000000003e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numerictypes.py",
+      "line": 293,
+      "name": "issubclass_",
+      "calls": 112,
+      "self_s": 2.029e-05,
+      "total_s": 3.5411000000000004e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/floor_pose_registration_development.py",
+      "line": 17,
+      "name": "unit",
+      "calls": 2,
+      "self_s": 1.274e-05,
+      "total_s": 3.1e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'disable' of '_lsprof.Profiler' objects>",
+      "calls": 2,
+      "self_s": 2.9971e-05,
+      "total_s": 2.9971e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2548,
+      "name": "all",
+      "calls": 6,
+      "self_s": 5.1600000000000006e-06,
+      "total_s": 2.7221000000000002e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'reshape' of 'numpy.ndarray' objects>",
+      "calls": 62,
+      "self_s": 2.425e-05,
+      "total_s": 2.425e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.issubclass>",
+      "calls": 188,
+      "self_s": 2.0551e-05,
+      "total_s": 2.0551e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 170,
+      "name": "ones",
+      "calls": 2,
+      "self_s": 1.376e-05,
+      "total_s": 1.791e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py",
+      "line": 5196,
+      "name": "<genexpr>",
+      "calls": 6,
+      "self_s": 2.13e-06,
+      "total_s": 1.779e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'copy' of 'numpy.ndarray' objects>",
+      "calls": 4,
+      "self_s": 1.5660000000000003e-05,
+      "total_s": 1.5660000000000003e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.empty>",
+      "calls": 8,
+      "self_s": 1.4200000000000001e-05,
+      "total_s": 1.4200000000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.len>",
+      "calls": 160,
+      "self_s": 1.413e-05,
+      "total_s": 1.413e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1480,
+      "name": "<genexpr>",
+      "calls": 72,
+      "self_s": 8.77e-06,
+      "total_s": 1.3180000000000001e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.isinstance>",
+      "calls": 108,
+      "self_s": 1.2990000000000001e-05,
+      "total_s": 1.2990000000000001e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/_ufunc_config.py",
+      "line": 472,
+      "name": "__enter__",
+      "calls": 2,
+      "self_s": 9.420000000000001e-06,
+      "total_s": 1.2280000000000001e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/shape_base.py",
+      "line": 368,
+      "name": "_stack_dispatcher",
+      "calls": 4,
+      "self_s": 4.22e-06,
+      "total_s": 1.183e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2535,
+      "name": "array_equal",
+      "calls": 2,
+      "self_s": 6.81e-06,
+      "total_s": 1.169e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.asarray>",
+      "calls": 40,
+      "self_s": 1.0820000000000001e-05,
+      "total_s": 1.0820000000000001e-05
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 188,
+      "name": "_commonType",
+      "calls": 2,
+      "self_s": 7.370000000000001e-06,
+      "total_s": 1.077e-05
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'all' of 'numpy.generic' objects>",
+      "calls": 4,
+      "self_s": 4.96e-06,
+      "total_s": 9.87e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.lib.array_utils.normalize_axis_index>",
+      "calls": 58,
+      "self_s": 9.620000000000001e-06,
+      "total_s": 9.620000000000001e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_twodim_base_impl.py",
+      "line": 176,
+      "name": "eye",
+      "calls": 2,
+      "self_s": 7.97e-06,
+      "total_s": 9.57e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'transpose' of 'numpy.ndarray' objects>",
+      "calls": 18,
+      "self_s": 8.44e-06,
+      "total_s": 8.44e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.sorted>",
+      "calls": 18,
+      "self_s": 8.07e-06,
+      "total_s": 8.07e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.arange>",
+      "calls": 4,
+      "self_s": 7.93e-06,
+      "total_s": 7.93e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/shape_base.py",
+      "line": 206,
+      "name": "_arrays_for_stack_dispatcher",
+      "calls": 4,
+      "self_s": 3.39e-06,
+      "total_s": 7.610000000000001e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.abs>",
+      "calls": 10,
+      "self_s": 7.1100000000000005e-06,
+      "total_s": 7.1100000000000005e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 446,
+      "name": "_broadcast_shape",
+      "calls": 2,
+      "self_s": 6.560000000000001e-06,
+      "total_s": 6.79e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'dot' of 'numpy.ndarray' objects>",
+      "calls": 4,
+      "self_s": 6.220000000000001e-06,
+      "total_s": 6.220000000000001e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2476,
+      "name": "<genexpr>",
+      "calls": 10,
+      "self_s": 4.6e-06,
+      "total_s": 6.16e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/getlimits.py",
+      "line": 178,
+      "name": "__new__",
+      "calls": 2,
+      "self_s": 3.321e-06,
+      "total_s": 5.531e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'append' of 'list' objects>",
+      "calls": 56,
+      "self_s": 4.9000000000000005e-06,
+      "total_s": 4.9000000000000005e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'insert' of 'list' objects>",
+      "calls": 18,
+      "self_s": 4.4e-06,
+      "total_s": 4.4e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.hasattr>",
+      "calls": 4,
+      "self_s": 4.22e-06,
+      "total_s": 4.22e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'items' of 'dict' objects>",
+      "calls": 28,
+      "self_s": 4.0100000000000006e-06,
+      "total_s": 4.0100000000000006e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'astype' of 'numpy.generic' objects>",
+      "calls": 2,
+      "self_s": 3.94e-06,
+      "total_s": 3.94e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method _operator.index>",
+      "calls": 40,
+      "self_s": 3.8400000000000005e-06,
+      "total_s": 3.8400000000000005e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.any>",
+      "calls": 4,
+      "self_s": 2.3600000000000003e-06,
+      "total_s": 3.66e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/_ufunc_config.py",
+      "line": 488,
+      "name": "__exit__",
+      "calls": 2,
+      "self_s": 1.56e-06,
+      "total_s": 3.2900000000000003e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.asanyarray>",
+      "calls": 24,
+      "self_s": 2.92e-06,
+      "total_s": 2.92e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'get' of 'dict' objects>",
+      "calls": 6,
+      "self_s": 2.82e-06,
+      "total_s": 2.82e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py",
+      "line": 363,
+      "name": "iterable",
+      "calls": 4,
+      "self_s": 2.2200000000000003e-06,
+      "total_s": 2.6300000000000002e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2431,
+      "name": "_any_dispatcher",
+      "calls": 20,
+      "self_s": 2.57e-06,
+      "total_s": 2.57e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 168,
+      "name": "isComplexType",
+      "calls": 8,
+      "self_s": 1.74e-06,
+      "total_s": 2.43e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.promote_types>",
+      "calls": 6,
+      "self_s": 2.28e-06,
+      "total_s": 2.28e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.array>",
+      "calls": 8,
+      "self_s": 2.25e-06,
+      "total_s": 2.25e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 182,
+      "name": "_realType",
+      "calls": 2,
+      "self_s": 1.5800000000000001e-06,
+      "total_s": 2.19e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.getattr>",
+      "calls": 6,
+      "self_s": 2.1400000000000003e-06,
+      "total_s": 2.1400000000000003e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_index_tricks_impl.py",
+      "line": 27,
+      "name": "_ix__dispatcher",
+      "calls": 28,
+      "self_s": 2.04e-06,
+      "total_s": 2.04e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy._core._multiarray_umath._make_extobj>",
+      "calls": 2,
+      "self_s": 1.81e-06,
+      "total_s": 1.81e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'reset' of '_contextvars.ContextVar' objects>",
+      "calls": 2,
+      "self_s": 1.7300000000000002e-06,
+      "total_s": 1.7300000000000002e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 237,
+      "name": "_assert_stacked_square",
+      "calls": 2,
+      "self_s": 1.72e-06,
+      "total_s": 1.72e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'conj' of 'numpy.ndarray' objects>",
+      "calls": 6,
+      "self_s": 1.72e-06,
+      "total_s": 1.72e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'ravel' of 'numpy.ndarray' objects>",
+      "calls": 4,
+      "self_s": 1.6600000000000002e-06,
+      "total_s": 1.6600000000000002e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1489,
+      "name": "_moveaxis_dispatcher",
+      "calls": 18,
+      "self_s": 1.4200000000000002e-06,
+      "total_s": 1.4200000000000002e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 24,
+      "name": "_maybe_view_as_subclass",
+      "calls": 4,
+      "self_s": 1.4200000000000002e-06,
+      "total_s": 1.4200000000000002e-06
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 378,
+      "name": "<genexpr>",
+      "calls": 12,
+      "self_s": 1.3e-06,
+      "total_s": 1.3e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method numpy.zeros>",
+      "calls": 2,
+      "self_s": 1.2200000000000002e-06,
+      "total_s": 1.2200000000000002e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method 'set' of '_contextvars.ContextVar' objects>",
+      "calls": 2,
+      "self_s": 1.0500000000000001e-06,
+      "total_s": 1.0500000000000001e-06
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<method '__exit__' of 'numpy.nditer' objects>",
+      "calls": 4,
+      "self_s": 9.400000000000001e-07,
+      "total_s": 9.400000000000001e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 1563,
+      "name": "_cross_dispatcher",
+      "calls": 6,
+      "self_s": 7.3e-07,
+      "total_s": 7.3e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 2595,
+      "name": "_norm_dispatcher",
+      "calls": 10,
+      "self_s": 6.800000000000001e-07,
+      "total_s": 6.800000000000001e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2543,
+      "name": "_all_dispatcher",
+      "calls": 6,
+      "self_s": 6.000000000000001e-07,
+      "total_s": 6.000000000000001e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/_ufunc_config.py",
+      "line": 462,
+      "name": "__init__",
+      "calls": 2,
+      "self_s": 4.900000000000001e-07,
+      "total_s": 4.900000000000001e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/multiarray.py",
+      "line": 197,
+      "name": "concatenate",
+      "calls": 4,
+      "self_s": 4.5000000000000003e-07,
+      "total_s": 4.5000000000000003e-07
+    },
+    {
+      "file": "~",
+      "line": 0,
+      "name": "<built-in method builtins.iter>",
+      "calls": 4,
+      "self_s": 4.1000000000000004e-07,
+      "total_s": 4.1000000000000004e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_function_base_impl.py",
+      "line": 5045,
+      "name": "_meshgrid_dispatcher",
+      "calls": 2,
+      "self_s": 3.4000000000000003e-07,
+      "total_s": 3.4000000000000003e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/fromnumeric.py",
+      "line": 2299,
+      "name": "_sum_dispatcher",
+      "calls": 2,
+      "self_s": 2.4000000000000003e-07,
+      "total_s": 2.4000000000000003e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2286,
+      "name": "_allclose_dispatcher",
+      "calls": 2,
+      "self_s": 2.3000000000000002e-07,
+      "total_s": 2.3000000000000002e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/multiarray.py",
+      "line": 1085,
+      "name": "copyto",
+      "calls": 2,
+      "self_s": 2.3000000000000002e-07,
+      "total_s": 2.3000000000000002e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2516,
+      "name": "_array_equal_dispatcher",
+      "calls": 2,
+      "self_s": 2.1e-07,
+      "total_s": 2.1e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/numeric.py",
+      "line": 2380,
+      "name": "_isclose_dispatcher",
+      "calls": 2,
+      "self_s": 1.9e-07,
+      "total_s": 1.9e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/lib/_stride_tricks_impl.py",
+      "line": 510,
+      "name": "_broadcast_arrays_dispatcher",
+      "calls": 2,
+      "self_s": 1.6e-07,
+      "total_s": 1.6e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/linalg/_linalg.py",
+      "line": 531,
+      "name": "_unary_dispatcher",
+      "calls": 2,
+      "self_s": 1.3e-07,
+      "total_s": 1.3e-07
+    },
+    {
+      "file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/_core/multiarray.py",
+      "line": 710,
+      "name": "result_type",
+      "calls": 2,
+      "self_s": 1.1e-07,
+      "total_s": 1.1e-07
+    }
+  ],
+  "native_pose_loaded": false,
+  "new_tracker": false
+}

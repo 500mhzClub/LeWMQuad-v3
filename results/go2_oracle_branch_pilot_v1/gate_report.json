@@ -1,0 +1,198 @@
+{
+  "schema": "go2_oracle_branch_pilot_gate_report_v1",
+  "status": "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING",
+  "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+  "oracle_contract_digest": "03dbe01100870cb4cc082f936bc3d0b62aa1e5d23e8eedb44188e88992acbb53",
+  "superseded_oracle_digest_pre_run": "4849e6dd99cc40ab721eaf9065a553d652513e36ef476d4df98f402ef903c399",
+  "tie_tolerance": 0.02,
+  "genesis_backend": "cpu",
+  "statistics": {
+    "attempted": 240,
+    "valid": 203,
+    "invalid": 37,
+    "invalid_rate": 0.15416666666666667,
+    "states_scored": 17,
+    "uniquely_separated_fraction": 0.47058823529411764,
+    "median_distinct_levels": 2.0,
+    "median_spread": 0.55,
+    "families_with_two_valid_states": 7,
+    "families_present": 8,
+    "per_family_valid_states": {
+      "large_enclosed_maze": 2,
+      "local_composite_motifs": 3,
+      "loop_alias_stress": 3,
+      "medium_enclosed_maze": 2,
+      "open_obstacle_field": 2,
+      "rough_local_dynamics": 2,
+      "small_enclosed_maze": 1,
+      "visual_sensor_stress": 2
+    }
+  },
+  "gate": {
+    "components": {
+      "uniquely_separated_ge_0.70": false,
+      "median_distinct_levels_ge_5": false,
+      "median_spread_ge_0.10": true,
+      "invalid_rate_le_0.20": true,
+      "all_eight_families_two_valid_states": false
+    },
+    "pass": false
+  },
+  "diagnostics": {
+    "invalid_reasons": {
+      "no_eligible_canonical_boundary": 36,
+      "final_pose_unlocatable_or_unreachable": 1
+    },
+    "valid_branch_safety_rate": 0.9606,
+    "valid_branch_completion_count": 5,
+    "safety_evidence_counts": {
+      "stuck": 186,
+      "contact": 116,
+      "low_clearance": 1
+    },
+    "delta_bfs_cells_histogram": {
+      "-1": 22,
+      "0": 162,
+      "1": 19
+    },
+    "distinct_utility_values_observed": [
+      -2.05,
+      -2.0,
+      -1.95,
+      -1.45,
+      0.0,
+      0.05
+    ],
+    "per_state": {
+      "pilot-large_enclosed_maze-0": {
+        "valid": 0
+      },
+      "pilot-large_enclosed_maze-1": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.05,
+        "top_margin": 2.0,
+        "safety_rate": 0.917
+      },
+      "pilot-large_enclosed_maze-2": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.05,
+        "top_margin": 2.0,
+        "safety_rate": 0.917
+      },
+      "pilot-local_composite_motifs-0": {
+        "valid": 12,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-local_composite_motifs-1": {
+        "valid": 12,
+        "distinct_levels": 2,
+        "spread": 0.55,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-local_composite_motifs-2": {
+        "valid": 12,
+        "distinct_levels": 2,
+        "spread": 0.05,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-loop_alias_stress-0": {
+        "valid": 12,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-loop_alias_stress-1": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.0,
+        "top_margin": 1.95,
+        "safety_rate": 0.917
+      },
+      "pilot-loop_alias_stress-2": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.05,
+        "top_margin": 2.0,
+        "safety_rate": 0.917
+      },
+      "pilot-medium_enclosed_maze-0": {
+        "valid": 11,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-medium_enclosed_maze-1": {
+        "valid": 0
+      },
+      "pilot-medium_enclosed_maze-2": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.0,
+        "top_margin": 1.95,
+        "safety_rate": 0.917
+      },
+      "pilot-open_obstacle_field-0": {
+        "valid": 12,
+        "distinct_levels": 2,
+        "spread": 2.0,
+        "top_margin": 2.0,
+        "safety_rate": 0.917
+      },
+      "pilot-open_obstacle_field-1": {
+        "valid": 12,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-rough_local_dynamics-0": {
+        "valid": 12,
+        "distinct_levels": 2,
+        "spread": 2.0,
+        "top_margin": 2.0,
+        "safety_rate": 0.917
+      },
+      "pilot-rough_local_dynamics-1": {
+        "valid": 12,
+        "distinct_levels": 3,
+        "spread": 2.0,
+        "top_margin": 1.45,
+        "safety_rate": 0.917
+      },
+      "pilot-small_enclosed_maze-0": {
+        "valid": 12,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-small_enclosed_maze-1": {
+        "valid": 0
+      },
+      "pilot-visual_sensor_stress-0": {
+        "valid": 12,
+        "distinct_levels": 1,
+        "spread": 0.0,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      },
+      "pilot-visual_sensor_stress-1": {
+        "valid": 12,
+        "distinct_levels": 2,
+        "spread": 0.05,
+        "top_margin": 0.0,
+        "safety_rate": 1.0
+      }
+    }
+  },
+  "branch_wall_time_s": 49.4
+}

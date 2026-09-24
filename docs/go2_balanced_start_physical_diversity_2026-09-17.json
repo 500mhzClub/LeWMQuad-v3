@@ -1,0 +1,176 @@
+{
+  "status": "COMPLETE",
+  "collection_sha256": "9cd2d43afe03161b4d0ecda75174bd5e741f4543cfbcc53838550870512e0069",
+  "rows": [
+    {
+      "action": "right_arc",
+      "cases": [
+        0,
+        1,
+        5,
+        9,
+        16,
+        23,
+        41,
+        45
+      ],
+      "reference_case": 0,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        0.05932490119251119,
+        -0.012411405725255726,
+        -0.21676577500610342
+      ],
+      "maximum_motion_difference": 0.0
+    },
+    {
+      "action": "right_turn",
+      "cases": [
+        2,
+        13,
+        18,
+        29,
+        30,
+        36,
+        37,
+        46
+      ],
+      "reference_case": 2,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        -0.0013820227920799694,
+        -0.005017645045861076,
+        -0.21145572361149886
+      ],
+      "maximum_motion_difference": 0.0
+    },
+    {
+      "action": "left_turn",
+      "cases": [
+        3,
+        4,
+        11,
+        12,
+        19,
+        24,
+        31,
+        34
+      ],
+      "reference_case": 3,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        0.00010136874760379969,
+        -0.006395334955421773,
+        0.21322968107260823
+      ],
+      "maximum_motion_difference": 0.0
+    },
+    {
+      "action": "hold",
+      "cases": [
+        6,
+        7,
+        17,
+        26,
+        33,
+        38,
+        42,
+        44
+      ],
+      "reference_case": 6,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        0.00010262739229816447,
+        0.00042662136375066795,
+        0.0008643687622646991
+      ],
+      "maximum_motion_difference": 0.0
+    },
+    {
+      "action": "forward",
+      "cases": [
+        8,
+        10,
+        15,
+        21,
+        27,
+        32,
+        40,
+        43
+      ],
+      "reference_case": 8,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        0.06849651913305188,
+        0.0037420810981745227,
+        0.0019627901191565525
+      ],
+      "maximum_motion_difference": 0.0
+    },
+    {
+      "action": "left_arc",
+      "cases": [
+        14,
+        20,
+        22,
+        25,
+        28,
+        35,
+        39,
+        47
+      ],
+      "reference_case": 14,
+      "max_trace_absolute_difference": {
+        "base_pose_world": 0.0,
+        "joint_position": 0.0,
+        "joint_velocity": 0.0,
+        "applied_command": 0.0
+      },
+      "trace_fields_exact": true,
+      "motion_body_xy_m_and_world_yaw_rad": [
+        0.054682377897999096,
+        0.006230714140981937,
+        0.214824920416502
+      ],
+      "maximum_motion_difference": 0.0
+    }
+  ],
+  "recordings": 48,
+  "action_groups": 6,
+  "visual_environment_groups": 8,
+  "all_same_action_traces_exact": true,
+  "interpretation": "If traces match, the collection supplies eight visual contexts for each of six motions, not 48 independent physical responses. It cannot demonstrate geometry-dependent collision dynamics.",
+  "source_sha256": "fe120a8ce8b80926f0efb0ac116f6f2a3fdcec9394dd091fd462e932842be335",
+  "new_training": false,
+  "new_navigation": false
+}

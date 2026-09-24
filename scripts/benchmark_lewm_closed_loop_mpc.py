@@ -10,10 +10,13 @@ physical success/progress metrics, not latent MSE.
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.util
 import json
 import math
 import os
 import random
+import subprocess
 import sys
 import time
 from dataclasses import dataclass
@@ -23,6 +26,24 @@ from typing import Any
 
 import numpy as np
 import torch
+import torch.nn.functional as F
+
+# The DINO ceiling needs the ROCm torch build and Genesis in one process.  The
+# ROCm environment intentionally does not duplicate the renderer's dependencies;
+# append those only after torch is loaded so its CPU-only torch cannot shadow the
+# already imported ROCm package.
+_EARLY_REPO_ROOT = Path(__file__).resolve().parents[1]
+_RENDER_SITE_PACKAGES = (
+    _EARLY_REPO_ROOT
+    / ".generated/venvs/genesis_render_vulkan/lib/python3.12/site-packages"
+)
+if (
+    (importlib.util.find_spec("genesis") is None or importlib.util.find_spec("tqdm") is None)
+    and _RENDER_SITE_PACKAGES.is_dir()
+    and str(_RENDER_SITE_PACKAGES) not in sys.path
+):
+    sys.path.append(str(_RENDER_SITE_PACKAGES))
+
 from PIL import Image
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -82,6 +103,38 @@ from lewm.planning.local_mpc import (  # noqa: E402
 )
 
 
+ORACLE_ASSAY_NAME = "privileged_kinematic_endpoint_distance"
+ORACLE_ASSAY_VERSION = 1
+ORACLE_COST_TIE_TOLERANCE_M = 1e-9
+ORACLE_TIE_BREAK = "lowest_candidate_index_within_tolerance"
+ORACLE_SHUFFLE_NAME = "deterministic_candidate_score_permutation"
+ORACLE_SHUFFLE_VERSION = 1
+ORACLE_SHUFFLE_MIX_CONSTANT = 0x9E3779B97F4A7C15
+PLANNING_GRID_CELL_SIZE_M = 0.05
+PLANNING_GRID_INFLATION_M = 0.20
+DINO_ASSAY_NAME = "frozen_dinov2_true_successor_goal_cost"
+DINO_ASSAY_VERSION = 1
+DINO_ENCODER_NAME = "dinov2_vits14"
+DINO_REPOSITORY_COMMIT = "7764ea0f912e53c92e82eb78a2a1631e92725fc8"
+DINO_CHECKPOINT_BYTES = 88_283_115
+DINO_CHECKPOINT_SHA256 = (
+    "b938bf1bc15cd2ec0feacfe3a1bb553fe8ea9ca46a7e1d8d00217f29aef60cd9"
+)
+DINO_IMAGE_SIZE = 224
+DINO_TOKEN_COUNT = 256
+DINO_FEATURE_DIM = 384
+DINO_IMAGENET_MEAN = (0.485, 0.456, 0.406)
+DINO_IMAGENET_STD = (0.229, 0.224, 0.225)
+DINO_COST_DEFINITION = (
+    "mean_j(1-dot(l2_normalize(successor_patch_j),"
+    "l2_normalize(single_goal_patch_j)))"
+)
+DINO_TRUE_SUCCESSOR_POLICIES = frozenset(
+    ("dino_true_successor", "dino_true_successor_shuffled")
+)
+DINO_POLICIES = frozenset((*DINO_TRUE_SUCCESSOR_POLICIES, "dino_persistence"))
+
+
 @dataclass(frozen=True)
 class GoalSpec:
     object_id: str
@@ -107,6 +160,7 @@ class PolicyResult:
     blocks_executed: int
     primitive_sequence: list[str]
     mean_plan_cost: float | None = None
+    decision_log: list[dict[str, Any]] | None = None
 
 
 def _quat_wxyz_from_yaw(yaw_rad: float) -> np.ndarray:
@@ -897,6 +951,583 @@ def _execute_kinematic_primitive(
     return block
 
 
+def _kinematic_endpoint(
+    sequence: tuple[str, ...],
+    registry: PrimitiveRegistry,
+    grid: InflatedOccupancyGrid | None,
+    start_xy: tuple[float, float] | np.ndarray,
+    start_yaw: float,
+    command_dt_s: float,
+) -> tuple[float, float]:
+    """Integrate one candidate without mutating the scene.
+
+    This deliberately mirrors ``_execute_kinematic_primitive`` tick for tick:
+    a collision stops the current primitive, while a later primitive in the
+    candidate sequence is still considered.  ``diagnose_nav_cost.py`` uses the
+    same semantics for its endpoint oracle.
+    """
+    x, y = float(start_xy[0]), float(start_xy[1])
+    yaw = float(start_yaw)
+    for primitive_name in sequence:
+        block = expand_primitive_to_block(registry, primitive_name)
+        for vx_body, vy_body, yaw_rate in block:
+            cos_yaw = math.cos(yaw)
+            sin_yaw = math.sin(yaw)
+            next_xy = (
+                x + (float(vx_body) * cos_yaw - float(vy_body) * sin_yaw) * command_dt_s,
+                y + (float(vx_body) * sin_yaw + float(vy_body) * cos_yaw) * command_dt_s,
+            )
+            if grid is not None and not grid.is_free(next_xy):
+                break
+            x, y = next_xy
+            yaw = wrap_angle_pi(yaw + float(yaw_rate) * command_dt_s)
+    return x, y
+
+
+def _oracle_candidate_costs(
+    sequences: list[tuple[str, ...]],
+    registry: PrimitiveRegistry,
+    grid: InflatedOccupancyGrid | None,
+    start_xy: tuple[float, float] | np.ndarray,
+    start_yaw: float,
+    command_dt_s: float,
+    target_xy: tuple[float, float],
+) -> np.ndarray:
+    """Privileged endpoint distance for every candidate, in candidate order."""
+    return np.asarray(
+        [
+            _xy_distance(
+                _kinematic_endpoint(
+                    sequence,
+                    registry,
+                    grid,
+                    start_xy,
+                    start_yaw,
+                    command_dt_s,
+                ),
+                target_xy,
+            )
+            for sequence in sequences
+        ],
+        dtype=np.float64,
+    )
+
+
+def _oracle_ranking(
+    costs: np.ndarray,
+    sequences: list[tuple[str, ...]],
+    *,
+    tie_tolerance_m: float = ORACLE_COST_TIE_TOLERANCE_M,
+) -> dict[str, Any]:
+    """Summarize a candidate-cost vector without hiding numerical ties.
+
+    Every candidate within ``tie_tolerance_m`` of the exact minimum is treated
+    as optimal.  The representative used by ``oracle_mpc`` is the first such
+    row in the committed candidate order.  Regret always remains relative to
+    the exact minimum, so the representative can have only a tolerance-sized
+    positive regret.
+    """
+    values = np.asarray(costs, dtype=np.float64)
+    if values.ndim != 1 or values.size == 0:
+        raise ValueError("oracle costs must be a non-empty one-dimensional vector")
+    if len(sequences) != int(values.size):
+        raise ValueError(
+            "oracle costs and candidate sequences disagree: "
+            f"{values.size} costs for {len(sequences)} sequences"
+        )
+    if not np.isfinite(values).all():
+        raise ValueError("oracle costs must all be finite")
+    tolerance = float(tie_tolerance_m)
+    if not math.isfinite(tolerance) or tolerance < 0.0:
+        raise ValueError("oracle tie tolerance must be finite and non-negative")
+
+    exact_minimum = float(np.min(values))
+    optimal_indices = np.flatnonzero(values <= exact_minimum + tolerance)
+    representative_index = int(optimal_indices[0])
+    optimal_first_primitives = list(
+        dict.fromkeys(sequences[int(index)][0] for index in optimal_indices)
+    )
+    return {
+        "best_candidate_index": representative_index,
+        "best_cost_m": exact_minimum,
+        "optimal_candidate_indices": [int(index) for index in optimal_indices],
+        "optimal_candidate_count": int(optimal_indices.size),
+        "optimal_first_primitives": optimal_first_primitives,
+        "tie_tolerance_m": tolerance,
+        "tie_break": ORACLE_TIE_BREAK,
+    }
+
+
+def _oracle_first_action_assessment(
+    costs: np.ndarray,
+    sequences: list[tuple[str, ...]],
+    primitive_name: str,
+    *,
+    oracle_best_cost_m: float,
+    tie_tolerance_m: float = ORACLE_COST_TIE_TOLERANCE_M,
+) -> dict[str, Any]:
+    """Return tie-aware regret for the executed first primitive."""
+    values = np.asarray(costs, dtype=np.float64)
+    matching = np.asarray(
+        [index for index, sequence in enumerate(sequences) if sequence[0] == primitive_name],
+        dtype=np.int64,
+    )
+    if not matching.size:
+        return {
+            "best_candidate_index": None,
+            "best_cost_m": None,
+            "regret_m": None,
+            "disagreement": None,
+        }
+    local_costs = values[matching]
+    best_cost = float(np.min(local_costs))
+    local_optimal = matching[
+        np.flatnonzero(local_costs <= best_cost + float(tie_tolerance_m))
+    ]
+    representative_index = int(local_optimal[0])
+    regret = max(0.0, best_cost - float(oracle_best_cost_m))
+    return {
+        "best_candidate_index": representative_index,
+        "best_cost_m": best_cost,
+        "regret_m": regret,
+        "disagreement": bool(regret > float(tie_tolerance_m)),
+    }
+
+
+def _deterministic_score_permutation(
+    candidate_count: int,
+    *,
+    seed: int,
+    block_index: int,
+) -> np.ndarray:
+    """Return a reproducible score permutation independent of policy order."""
+    indices = list(range(int(candidate_count)))
+    mixed_seed = (
+        (int(seed) & ((1 << 64) - 1))
+        ^ (((int(block_index) + 1) * ORACLE_SHUFFLE_MIX_CONSTANT) & ((1 << 64) - 1))
+    )
+    random.Random(mixed_seed).shuffle(indices)
+    if len(indices) > 1 and indices == list(range(len(indices))):
+        indices = indices[1:] + indices[:1]
+    return np.asarray(indices, dtype=np.int64)
+
+
+def _oracle_assay_provenance(
+    *,
+    seed: int,
+    max_candidates: int | None,
+    sequences: list[tuple[str, ...]],
+    mode: str,
+) -> dict[str, Any]:
+    """Exact, JSON-ready definition of the oracle and shuffled intervention."""
+    return {
+        "name": ORACLE_ASSAY_NAME,
+        "version": ORACLE_ASSAY_VERSION,
+        "mode": str(mode),
+        "validity": (
+            "exact_execution_oracle_in_kinematic_mode"
+            if str(mode) == "kinematic"
+            else "privileged_nominal_geometric_controller_not_a_physical_outcome_oracle"
+        ),
+        "cost_definition": (
+            "euclidean_distance_from_nominal_kinematic_sequence_endpoint_"
+            "to_privileged_target_xy"
+        ),
+        "collision_semantics": (
+            "stop_current_primitive_at_first_occupied_tick_then_continue_later_"
+            "candidate_primitives"
+        ),
+        "tie_tolerance_m": ORACLE_COST_TIE_TOLERANCE_M,
+        "tie_break": ORACLE_TIE_BREAK,
+        "candidate_bank": {
+            "count": len(sequences),
+            "max_candidates": (
+                None if max_candidates is None else int(max_candidates)
+            ),
+            "ordered_sequences": [list(sequence) for sequence in sequences],
+        },
+        "planning_grid": {
+            "cell_size_m": PLANNING_GRID_CELL_SIZE_M,
+            "inflation_m": PLANNING_GRID_INFLATION_M,
+        },
+        "shuffle": {
+            "name": ORACLE_SHUFFLE_NAME,
+            "version": ORACLE_SHUFFLE_VERSION,
+            "seed": int(seed),
+            "block_seed_definition": (
+                "uint64(seed) XOR uint64((block_index + 1) * "
+                "0x9E3779B97F4A7C15)"
+            ),
+            "permutation_definition": (
+                "python_random_shuffle_candidate_indices; rotate_left_one_if_"
+                "the_whole_permutation_is_identity"
+            ),
+            "score_assignment": (
+                "policy_scores[candidate_index] = "
+                "oracle_costs[permutation[candidate_index]]"
+            ),
+        },
+    }
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with Path(path).open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _dino_repository_commit(repo_path: Path) -> str:
+    try:
+        completed = subprocess.run(
+            ["git", "-C", str(repo_path), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise RuntimeError(f"cannot identify DINO repository commit: {repo_path}") from exc
+    commit = completed.stdout.strip()
+    if len(commit) != 40 or any(character not in "0123456789abcdef" for character in commit):
+        raise RuntimeError(f"invalid DINO repository commit: {commit!r}")
+    return commit
+
+
+def _dino_assay_provenance(
+    *,
+    repo_path: Path,
+    repository_commit: str,
+    checkpoint_path: Path,
+    checkpoint_bytes: int,
+    checkpoint_sha256: str,
+    device: torch.device,
+) -> dict[str, Any]:
+    """Flat, analyzer-bound provenance for the frozen DINO ceiling."""
+
+    device_name = (
+        torch.cuda.get_device_name(device) if device.type == "cuda" else None
+    )
+    return {
+        "name": DINO_ASSAY_NAME,
+        "version": DINO_ASSAY_VERSION,
+        "encoder_name": DINO_ENCODER_NAME,
+        "repository_path": str(Path(repo_path).resolve()),
+        "repository_commit": str(repository_commit),
+        "checkpoint_path": str(Path(checkpoint_path).resolve()),
+        "checkpoint_bytes": int(checkpoint_bytes),
+        "checkpoint_sha256": str(checkpoint_sha256),
+        "device": str(device),
+        "device_name": device_name,
+        "torch_version": str(torch.__version__),
+        "hip_version": (
+            None if torch.version.hip is None else str(torch.version.hip)
+        ),
+        "frozen": True,
+        "eval_mode": True,
+        "no_grad": True,
+        "feature_cache_written": False,
+        "input_rgb_shape": [3, DINO_IMAGE_SIZE, DINO_IMAGE_SIZE],
+        "imagenet_mean": list(DINO_IMAGENET_MEAN),
+        "imagenet_std": list(DINO_IMAGENET_STD),
+        "patch_output_shape": [DINO_TOKEN_COUNT, DINO_FEATURE_DIM],
+        "token_normalization": "per_patch_l2",
+        "cost_definition": DINO_COST_DEFINITION,
+        "goal_view_count": 1,
+        "successor_evaluation": (
+            "reset_observed_pose_execute_one_nominal_kinematic_candidate_render_"
+            "actual_successor_restore_observed_pose"
+        ),
+    }
+
+
+def _load_dinov2_encoder(
+    repo_path: Path,
+    checkpoint_path: Path,
+    device: torch.device,
+) -> tuple[torch.nn.Module, dict[str, Any]]:
+    """Load and bind the exact preregistered local frozen DINOv2 encoder."""
+
+    repo = Path(repo_path).resolve(strict=True)
+    checkpoint = Path(checkpoint_path).resolve(strict=True)
+    if not repo.is_dir() or not checkpoint.is_file():
+        raise RuntimeError("DINO repository/checkpoint types are invalid")
+    repository_commit = _dino_repository_commit(repo)
+    checkpoint_bytes = checkpoint.stat().st_size
+    checkpoint_sha256 = _sha256_file(checkpoint)
+    if repository_commit != DINO_REPOSITORY_COMMIT:
+        raise RuntimeError(
+            "DINO repository commit changed: "
+            f"expected {DINO_REPOSITORY_COMMIT}, got {repository_commit}"
+        )
+    if (
+        checkpoint_bytes != DINO_CHECKPOINT_BYTES
+        or checkpoint_sha256 != DINO_CHECKPOINT_SHA256
+    ):
+        raise RuntimeError("DINO checkpoint binding changed")
+
+    encoder = torch.hub.load(
+        str(repo),
+        DINO_ENCODER_NAME,
+        source="local",
+        pretrained=False,
+    )
+    state = torch.load(checkpoint, map_location="cpu", weights_only=True)
+    encoder.load_state_dict(state, strict=True)
+    del state
+    encoder = encoder.to(device).eval().requires_grad_(False)
+    provenance = _dino_assay_provenance(
+        repo_path=repo,
+        repository_commit=repository_commit,
+        checkpoint_path=checkpoint,
+        checkpoint_bytes=checkpoint_bytes,
+        checkpoint_sha256=checkpoint_sha256,
+        device=device,
+    )
+    return encoder, provenance
+
+
+def _preprocess_dinov2_images(images: torch.Tensor) -> torch.Tensor:
+    """Apply exact 224-square RGB and ImageNet preprocessing for DINOv2."""
+
+    if not isinstance(images, torch.Tensor):
+        raise TypeError("DINO images must be a torch.Tensor")
+    values = images.unsqueeze(0) if images.ndim == 3 else images
+    if values.ndim != 4 or tuple(values.shape[1:]) != (
+        3,
+        DINO_IMAGE_SIZE,
+        DINO_IMAGE_SIZE,
+    ):
+        raise ValueError("DINO images must have shape [B,3,224,224]")
+    if values.shape[0] < 1:
+        raise ValueError("DINO image batch must be nonempty")
+    if values.dtype == torch.uint8:
+        values = values.to(torch.float32).div(255.0)
+    elif values.dtype.is_floating_point:
+        values = values.to(torch.float32)
+    else:
+        raise TypeError("DINO images must be uint8 or floating point")
+    if not bool(torch.isfinite(values).all()):
+        raise FloatingPointError("DINO images contain a nonfinite value")
+    if bool((values < 0.0).any()) or bool((values > 1.0).any()):
+        raise ValueError("floating DINO images must be in [0,1]")
+    mean = values.new_tensor(DINO_IMAGENET_MEAN).view(1, 3, 1, 1)
+    std = values.new_tensor(DINO_IMAGENET_STD).view(1, 3, 1, 1)
+    return values.sub(mean).div(std).contiguous()
+
+
+@torch.no_grad()
+def _encode_dinov2_images(
+    encoder: Any,
+    images: torch.Tensor,
+    *,
+    device: torch.device,
+) -> torch.Tensor:
+    inputs = _preprocess_dinov2_images(images).to(device)
+    payload = encoder.forward_features(inputs)
+    if not isinstance(payload, dict) or "x_norm_patchtokens" not in payload:
+        raise RuntimeError("DINO encoder did not return x_norm_patchtokens")
+    raw_tokens = payload["x_norm_patchtokens"]
+    if not isinstance(raw_tokens, torch.Tensor) or raw_tokens.ndim != 3:
+        raise RuntimeError("DINO patch tokens must be rank three")
+    expected = (inputs.shape[0], DINO_TOKEN_COUNT, DINO_FEATURE_DIM)
+    if tuple(raw_tokens.shape) != expected:
+        raise RuntimeError(f"DINO patch-token shape changed: {tuple(raw_tokens.shape)}")
+    tokens = raw_tokens.to(torch.float32)
+    if not bool(torch.isfinite(tokens).all()):
+        raise FloatingPointError("DINO patch tokens contain a nonfinite value")
+    norms = torch.linalg.vector_norm(tokens, dim=-1)
+    if bool((norms <= 0.0).any()):
+        raise FloatingPointError("DINO patch tokens contain a zero vector")
+    return F.normalize(tokens, p=2.0, dim=-1).contiguous()
+
+
+def _dinov2_same_patch_costs(
+    candidate_tokens: torch.Tensor,
+    goal_tokens: torch.Tensor,
+) -> torch.Tensor:
+    """Mean same-position patch cosine distance to one encoded goal."""
+
+    if not isinstance(candidate_tokens, torch.Tensor) or not isinstance(
+        goal_tokens, torch.Tensor
+    ):
+        raise TypeError("candidate and goal tokens must be tensors")
+    goal = goal_tokens.unsqueeze(0) if goal_tokens.ndim == 2 else goal_tokens
+    if candidate_tokens.ndim != 3 or candidate_tokens.shape[0] < 1:
+        raise ValueError("candidate tokens must have shape [N,256,D]")
+    if tuple(candidate_tokens.shape[1:]) != (DINO_TOKEN_COUNT, DINO_FEATURE_DIM):
+        raise ValueError("candidate tokens must have shape [N,256,384]")
+    if tuple(goal.shape) != (1, DINO_TOKEN_COUNT, DINO_FEATURE_DIM):
+        raise ValueError("goal tokens must have shape [1,256,384]")
+    if candidate_tokens.device != goal.device:
+        raise TypeError("candidate and goal tokens must share one device")
+    if not bool(torch.isfinite(candidate_tokens).all()) or not bool(
+        torch.isfinite(goal).all()
+    ):
+        raise FloatingPointError("DINO cost received nonfinite tokens")
+    candidates = F.normalize(candidate_tokens.to(torch.float32), p=2.0, dim=-1)
+    normalized_goal = F.normalize(goal.to(torch.float32), p=2.0, dim=-1)
+    cosine = torch.sum(candidates * normalized_goal, dim=-1)
+    costs = torch.mean(1.0 - cosine, dim=-1)
+    if not bool(torch.isfinite(costs).all()):
+        raise FloatingPointError("DINO candidate costs are nonfinite")
+    return costs
+
+
+def _rank_dino_policy_scores(
+    unshuffled_costs: np.ndarray,
+    *,
+    policy_name: str,
+    seed: int,
+    block_index: int,
+) -> dict[str, Any]:
+    values = np.asarray(unshuffled_costs, dtype=np.float64)
+    if values.ndim != 1 or values.size < 1 or not np.isfinite(values).all():
+        raise ValueError("DINO candidate costs must be a finite nonempty vector")
+    if policy_name not in DINO_POLICIES:
+        raise ValueError(f"not a DINO policy: {policy_name!r}")
+    score_sources = np.arange(values.size, dtype=np.int64)
+    if policy_name == "dino_true_successor_shuffled":
+        score_sources = _deterministic_score_permutation(
+            int(values.size), seed=int(seed), block_index=int(block_index)
+        )
+    policy_scores = values[score_sources]
+    selected_index = int(np.argmin(policy_scores))
+    margin = None
+    if policy_scores.size > 1:
+        two_smallest = np.partition(policy_scores, 1)[:2]
+        margin = float(two_smallest[1] - two_smallest[0])
+    return {
+        "policy_candidate_scores": policy_scores,
+        "score_source_candidate_indices": score_sources,
+        "selected_candidate_index": selected_index,
+        "selected_score_source_candidate_index": int(score_sources[selected_index]),
+        "selected_policy_score": float(policy_scores[selected_index]),
+        "policy_score_margin": margin,
+    }
+
+
+def _validate_dino_policy_scope(
+    policies: list[str],
+    *,
+    mode: str,
+    horizon: int,
+    goal_views: int,
+) -> None:
+    requested = DINO_POLICIES.intersection(policies)
+    if not requested:
+        return
+    if int(horizon) != 1:
+        raise ValueError("DINO ceiling policies are preregistered for H1 only")
+    if int(goal_views) != 0:
+        raise ValueError("DINO ceiling policies support one goal image only")
+    if DINO_TRUE_SUCCESSOR_POLICIES.intersection(requested) and mode != "kinematic":
+        raise ValueError("DINO true-successor policies require kinematic mode")
+
+
+def _render_kinematic_h1_successors(
+    *,
+    build: Any,
+    pack: Any,
+    registry: PrimitiveRegistry,
+    sequences: list[tuple[str, ...]],
+    start_pos: np.ndarray,
+    start_quat: np.ndarray,
+    command_dt_s: float,
+    grid: InflatedOccupancyGrid | None,
+    render_device: torch.device,
+) -> torch.Tensor:
+    """Render candidates in order, resetting around every nominal H1 branch."""
+
+    if not sequences or any(len(sequence) != 1 for sequence in sequences):
+        raise ValueError("DINO true-successor evaluation requires nonempty H1 candidates")
+    images: list[torch.Tensor] = []
+    try:
+        for sequence in sequences:
+            _set_pose(
+                build=build,
+                runner=None,
+                pos_xyz=start_pos,
+                quat_wxyz=start_quat,
+            )
+            _execute_kinematic_primitive(
+                build,
+                registry,
+                sequence[0],
+                command_dt_s=command_dt_s,
+                grid=grid,
+            )
+            successor_pos, successor_quat = _current_pose(build)
+            images.append(
+                _render_tensor_from_base(
+                    build,
+                    pack,
+                    base_xyz_m=successor_pos,
+                    base_quat_wxyz=successor_quat,
+                    device=render_device,
+                )
+            )
+    finally:
+        _set_pose(
+            build=build,
+            runner=None,
+            pos_xyz=start_pos,
+            quat_wxyz=start_quat,
+        )
+    return torch.stack(images, dim=0)
+
+
+def _dino_true_successor_candidate_costs(
+    *,
+    encoder: Any,
+    goal_tokens: torch.Tensor,
+    dino_device: torch.device,
+    build: Any,
+    pack: Any,
+    registry: PrimitiveRegistry,
+    sequences: list[tuple[str, ...]],
+    start_pos: np.ndarray,
+    start_quat: np.ndarray,
+    command_dt_s: float,
+    grid: InflatedOccupancyGrid | None,
+) -> np.ndarray:
+    images = _render_kinematic_h1_successors(
+        build=build,
+        pack=pack,
+        registry=registry,
+        sequences=sequences,
+        start_pos=start_pos,
+        start_quat=start_quat,
+        command_dt_s=command_dt_s,
+        grid=grid,
+        render_device=dino_device,
+    )
+    successor_tokens = _encode_dinov2_images(
+        encoder, images, device=dino_device
+    )
+    return (
+        _dinov2_same_patch_costs(successor_tokens, goal_tokens)
+        .detach()
+        .cpu()
+        .numpy()
+        .astype(np.float64, copy=False)
+    )
+
+
+def _dino_persistence_candidate_costs(
+    current_tokens: torch.Tensor,
+    goal_tokens: torch.Tensor,
+    *,
+    candidate_count: int,
+) -> np.ndarray:
+    if int(candidate_count) < 1:
+        raise ValueError("candidate_count must be positive")
+    scalar = float(
+        _dinov2_same_patch_costs(current_tokens, goal_tokens)[0].detach().cpu()
+    )
+    return np.full(int(candidate_count), scalar, dtype=np.float64)
+
+
 def _primitive_active_blocks(
     registry: PrimitiveRegistry,
     primitive_names: list[str],
@@ -1145,7 +1776,11 @@ def _select_goal(
     goal_standoff_m: float,
 ) -> GoalSpec:
     graph = pack.scene_graph
-    grid = InflatedOccupancyGrid(pack.scene_graph.manifest, cell_size_m=0.05, inflation_m=0.20)
+    grid = InflatedOccupancyGrid(
+        pack.scene_graph.manifest,
+        cell_size_m=PLANNING_GRID_CELL_SIZE_M,
+        inflation_m=PLANNING_GRID_INFLATION_M,
+    )
     landmarks = list(graph.landmark_cells)
     if not landmarks:
         raise RuntimeError(f"scene {pack.scene_id} has no landmarks to target")
@@ -1222,6 +1857,10 @@ def _run_policy_trial(
     device: torch.device,
     command_dt_s: float,
     grid: InflatedOccupancyGrid | None,
+    oracle_shuffle_seed: int = 0,
+    dino_encoder: Any | None = None,
+    dino_device: torch.device | None = None,
+    dino_provenance: dict[str, Any] | None = None,
     frame_sink: list | None = None,
     third_person_build: Any | None = None,
 ) -> PolicyResult:
@@ -1232,15 +1871,48 @@ def _run_policy_trial(
     path_length = 0.0
     primitives: list[str] = []
     plan_costs: list[float] = []
+    decision_log: list[dict[str, Any]] = []
     fell = False
+    dino_goal_tokens: torch.Tensor | None = None
+    if policy_name in DINO_POLICIES:
+        if dino_encoder is None or dino_device is None or dino_provenance is None:
+            raise ValueError("DINO policy requires encoder, device, and provenance")
+        if goal.approach_images is not None:
+            raise ValueError("DINO ceiling policies support one goal image only")
+        dino_goal_tokens = _encode_dinov2_images(
+            dino_encoder,
+            goal.image,
+            device=dino_device,
+        )
 
-    for _block_idx in range(int(max_blocks)):
+    for block_idx in range(int(max_blocks)):
         pos, quat = _current_pose(build)
         if float(pos[2]) < float(fall_z_threshold_m):
             fell = True
             break
         if _xy_distance(pos[:2], goal.target_xy) <= float(goal_radius_m):
             break
+
+        yaw = _yaw_from_quat_wxyz(quat)
+        oracle_costs = _oracle_candidate_costs(
+            sequences,
+            registry,
+            grid,
+            pos[:2],
+            yaw,
+            command_dt_s,
+            goal.target_xy,
+        )
+        oracle_ranking = _oracle_ranking(oracle_costs, sequences)
+        oracle_best_index = int(oracle_ranking["best_candidate_index"])
+        oracle_best_cost = float(oracle_ranking["best_cost_m"])
+        selected_candidate_index: int | None = None
+        selected_score_source_index: int | None = None
+        selected_policy_score: float | None = None
+        policy_score_margin: float | None = None
+        dino_unshuffled_costs: np.ndarray | None = None
+        dino_policy_scores: np.ndarray | None = None
+        dino_score_sources: np.ndarray | None = None
 
         if policy_name in ("lewm", "lewm_pose"):
             image = _render_tensor_from_base(
@@ -1259,7 +1931,83 @@ def _run_policy_trial(
                 primitive_name, cost = _choose_lewm_pose_primitive(
                     model, model._pose_head, image, goal_img, sequences, action_tensor,
                 )
+            selected_policy_score = float(cost)
             plan_costs.append(cost)
+        elif policy_name in ("oracle_mpc", "oracle_shuffled"):
+            score_sources = np.arange(len(sequences), dtype=np.int64)
+            policy_scores = oracle_costs
+            if policy_name == "oracle_shuffled":
+                score_sources = _deterministic_score_permutation(
+                    len(sequences),
+                    seed=oracle_shuffle_seed,
+                    block_index=block_idx,
+                )
+                policy_scores = oracle_costs[score_sources]
+            policy_ranking = _oracle_ranking(policy_scores, sequences)
+            selected_candidate_index = int(policy_ranking["best_candidate_index"])
+            selected_score_source_index = int(score_sources[selected_candidate_index])
+            primitive_name = sequences[selected_candidate_index][0]
+            selected_policy_score = float(policy_scores[selected_candidate_index])
+            if len(policy_scores) > 1:
+                two_smallest = np.partition(policy_scores, 1)[:2]
+                policy_score_margin = float(two_smallest[1] - two_smallest[0])
+            plan_costs.append(selected_policy_score)
+        elif policy_name in DINO_POLICIES:
+            assert dino_encoder is not None
+            assert dino_device is not None
+            assert dino_goal_tokens is not None
+            if policy_name in DINO_TRUE_SUCCESSOR_POLICIES:
+                if runner is not None:
+                    raise ValueError("DINO true-successor policies require kinematic mode")
+                dino_unshuffled_costs = _dino_true_successor_candidate_costs(
+                    encoder=dino_encoder,
+                    goal_tokens=dino_goal_tokens,
+                    dino_device=dino_device,
+                    build=build,
+                    pack=pack,
+                    registry=registry,
+                    sequences=sequences,
+                    start_pos=np.asarray(pos, dtype=np.float32).copy(),
+                    start_quat=np.asarray(quat, dtype=np.float32).copy(),
+                    command_dt_s=command_dt_s,
+                    grid=grid,
+                )
+            else:
+                current_image = _render_tensor_from_base(
+                    build,
+                    pack,
+                    base_xyz_m=pos,
+                    base_quat_wxyz=quat,
+                    device=dino_device,
+                )
+                current_tokens = _encode_dinov2_images(
+                    dino_encoder,
+                    current_image,
+                    device=dino_device,
+                )
+                dino_unshuffled_costs = _dino_persistence_candidate_costs(
+                    current_tokens,
+                    dino_goal_tokens,
+                    candidate_count=len(sequences),
+                )
+            dino_ranking = _rank_dino_policy_scores(
+                dino_unshuffled_costs,
+                policy_name=policy_name,
+                seed=oracle_shuffle_seed,
+                block_index=block_idx,
+            )
+            dino_policy_scores = dino_ranking["policy_candidate_scores"]
+            dino_score_sources = dino_ranking["score_source_candidate_indices"]
+            selected_candidate_index = int(
+                dino_ranking["selected_candidate_index"]
+            )
+            selected_score_source_index = int(
+                dino_ranking["selected_score_source_candidate_index"]
+            )
+            selected_policy_score = float(dino_ranking["selected_policy_score"])
+            policy_score_margin = dino_ranking["policy_score_margin"]
+            primitive_name = sequences[selected_candidate_index][0]
+            plan_costs.append(selected_policy_score)
         elif policy_name == "bearing":
             primitive_name = _choose_bearing_primitive(build, goal.target_xy)
             if primitive_name not in primitive_names:
@@ -1270,6 +2018,88 @@ def _run_policy_trial(
             primitive_name = rng.choice(primitive_names)
         else:
             raise ValueError(f"unknown policy_name={policy_name!r}")
+
+        first_action_assessment = _oracle_first_action_assessment(
+            oracle_costs,
+            sequences,
+            primitive_name,
+            oracle_best_cost_m=oracle_best_cost,
+        )
+        decision = {
+                "block_index": int(block_idx),
+                "selected_primitive": primitive_name,
+                "selected_candidate_index": selected_candidate_index,
+                "selected_candidate_sequence": (
+                    list(sequences[selected_candidate_index])
+                    if selected_candidate_index is not None
+                    else None
+                ),
+                "selected_policy_score": selected_policy_score,
+                "policy_score_margin": policy_score_margin,
+                "selected_score_source_candidate_index": selected_score_source_index,
+                "selected_candidate_true_cost_m": (
+                    float(oracle_costs[selected_candidate_index])
+                    if selected_candidate_index is not None
+                    else None
+                ),
+                "selected_candidate_oracle_regret_m": (
+                    float(oracle_costs[selected_candidate_index] - oracle_best_cost)
+                    if selected_candidate_index is not None
+                    else None
+                ),
+                "oracle_best_candidate_index": oracle_best_index,
+                "oracle_best_candidate_sequence": list(sequences[oracle_best_index]),
+                "oracle_best_first_primitive": sequences[oracle_best_index][0],
+                "oracle_best_cost_m": oracle_best_cost,
+                "oracle_optimal_candidate_indices": oracle_ranking[
+                    "optimal_candidate_indices"
+                ],
+                "oracle_optimal_candidate_count": oracle_ranking[
+                    "optimal_candidate_count"
+                ],
+                "oracle_optimal_first_primitives": oracle_ranking[
+                    "optimal_first_primitives"
+                ],
+                "oracle_cost_tie_tolerance_m": oracle_ranking[
+                    "tie_tolerance_m"
+                ],
+                "oracle_candidate_tie_break": oracle_ranking["tie_break"],
+                "selected_first_action_best_candidate_index": (
+                    first_action_assessment["best_candidate_index"]
+                ),
+                "selected_first_action_best_cost_m": first_action_assessment[
+                    "best_cost_m"
+                ],
+                "oracle_first_action_regret_m": first_action_assessment[
+                    "regret_m"
+                ],
+                "oracle_first_action_disagreement": first_action_assessment[
+                    "disagreement"
+                ],
+            }
+        if policy_name in DINO_POLICIES:
+            assert dino_unshuffled_costs is not None
+            assert dino_policy_scores is not None
+            assert dino_score_sources is not None
+            assert dino_provenance is not None
+            decision.update(
+                {
+                    "policy_candidate_scores": [
+                        float(value) for value in dino_policy_scores
+                    ],
+                    "unshuffled_dino_candidate_costs": [
+                        float(value) for value in dino_unshuffled_costs
+                    ],
+                    "score_source_candidate_indices": [
+                        int(value) for value in dino_score_sources
+                    ],
+                    "dino_cost_definition": DINO_COST_DEFINITION,
+                    "dino_checkpoint_sha256": dino_provenance[
+                        "checkpoint_sha256"
+                    ],
+                }
+            )
+        decision_log.append(decision)
 
         if runner is None:
             _execute_kinematic_primitive(
@@ -1313,6 +2143,7 @@ def _run_policy_trial(
         blocks_executed=len(primitives),
         primitive_sequence=primitives,
         mean_plan_cost=(float(np.mean(plan_costs)) if plan_costs else None),
+        decision_log=decision_log,
     )
 
 
@@ -1350,6 +2181,7 @@ def _to_jsonable(result: PolicyResult) -> dict[str, Any]:
         "blocks_executed": result.blocks_executed,
         "primitive_sequence": result.primitive_sequence,
         "mean_plan_cost": result.mean_plan_cost,
+        "decision_log": result.decision_log,
     }
 
 
@@ -1462,6 +2294,23 @@ def main() -> int:
     )
     parser.add_argument("--model-device", default="cpu")
     parser.add_argument("--policy-device", default="cpu")
+    parser.add_argument(
+        "--dino-repo",
+        type=Path,
+        default=None,
+        help="Exact local DINOv2 repository (required only by dino_* policies).",
+    )
+    parser.add_argument(
+        "--dino-checkpoint",
+        type=Path,
+        default=None,
+        help="Exact frozen dinov2_vits14 checkpoint (required only by dino_* policies).",
+    )
+    parser.add_argument(
+        "--dino-device",
+        default=None,
+        help="Torch device for frozen DINO encoding (required only by dino_* policies).",
+    )
     parser.add_argument("--horizon", type=int, default=2)
     parser.add_argument("--max-candidates", type=int, default=None)
     parser.add_argument("--max-blocks", type=int, default=12)
@@ -1492,7 +2341,15 @@ def main() -> int:
         "--primitive-names",
         default="hold,forward_medium,arc_left,arc_right,yaw_left,yaw_right,backward",
     )
-    parser.add_argument("--policies", default="lewm,bearing,hold,random")
+    parser.add_argument(
+        "--policies",
+        default="lewm,bearing,hold,random",
+        help=(
+            "Comma-separated policies: lewm, lewm_pose, oracle_mpc, "
+            "oracle_shuffled, dino_true_successor, "
+            "dino_true_successor_shuffled, dino_persistence, bearing, hold, random."
+        ),
+    )
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--sigreg-lambda", type=float, default=None)
     parser.add_argument(
@@ -1559,11 +2416,41 @@ def main() -> int:
         policies = ["lewm"]
     if "hold" not in primitive_names:
         raise SystemExit("--primitive-names must include hold")
-    unsupported = sorted(set(policies) - {"lewm", "lewm_pose", "bearing", "hold", "random"})
+    supported_policies = {
+        "lewm",
+        "lewm_pose",
+        "oracle_mpc",
+        "oracle_shuffled",
+        "dino_true_successor",
+        "dino_true_successor_shuffled",
+        "dino_persistence",
+        "bearing",
+        "hold",
+        "random",
+    }
+    unsupported = sorted(set(policies) - supported_policies)
     if unsupported:
         raise SystemExit(f"unsupported policies: {unsupported}")
     if int(args.horizon) < 1:
         raise SystemExit("--horizon must be >= 1")
+    try:
+        _validate_dino_policy_scope(
+            policies,
+            mode=str(args.mode),
+            horizon=int(args.horizon),
+            goal_views=int(args.goal_views),
+        )
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+    dino_requested = bool(DINO_POLICIES.intersection(policies))
+    if dino_requested and (
+        args.dino_repo is None
+        or args.dino_checkpoint is None
+        or args.dino_device is None
+    ):
+        raise SystemExit(
+            "dino_* policies require --dino-repo, --dino-checkpoint, and --dino-device"
+        )
     if (
         "lewm_pose" in policies
         and int(args.goal_views) > 0
@@ -1595,6 +2482,28 @@ def main() -> int:
         rng=rng,
         device=device,
     )
+
+    dino_encoder: torch.nn.Module | None = None
+    dino_device: torch.device | None = None
+    dino_provenance: dict[str, Any] | None = None
+    if dino_requested:
+        assert args.dino_repo is not None
+        assert args.dino_checkpoint is not None
+        assert args.dino_device is not None
+        dino_device = torch.device(args.dino_device)
+        try:
+            dino_encoder, dino_provenance = _load_dinov2_encoder(
+                args.dino_repo,
+                args.dino_checkpoint,
+                dino_device,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise SystemExit(f"cannot load frozen DINOv2 encoder: {exc}") from exc
+        print(
+            f"[dino] using {DINO_ENCODER_NAME} on {dino_device} "
+            f"checkpoint={dino_provenance['checkpoint_sha256']}",
+            flush=True,
+        )
 
     scene_dirs = find_scene_dirs(args.scene_corpus.resolve(), split=args.split, family=args.family)
     scene_dirs = sorted(scene_dirs, key=lambda p: p.name)
@@ -1673,7 +2582,11 @@ def main() -> int:
                     randomize_spawn_pose=True,
                 )
                 runner = RolloutRunner(build, policy, registry, safety, config=config)
-            grid = InflatedOccupancyGrid(pack.scene_graph.manifest, cell_size_m=0.05, inflation_m=0.20)
+            grid = InflatedOccupancyGrid(
+                pack.scene_graph.manifest,
+                cell_size_m=PLANNING_GRID_CELL_SIZE_M,
+                inflation_m=PLANNING_GRID_INFLATION_M,
+            )
             if args.demo_video is not None and int(args.demo_beacons) > 1:
                 demo_frames: list = []
                 demo_goal_insets: list = []
@@ -1822,6 +2735,10 @@ def main() -> int:
                         device=device,
                         command_dt_s=command_dt_s,
                         grid=grid,
+                        oracle_shuffle_seed=int(args.seed),
+                        dino_encoder=dino_encoder,
+                        dino_device=dino_device,
+                        dino_provenance=dino_provenance,
                         frame_sink=demo_frames,
                         third_person_build=third_person_build,
                     )
@@ -1857,8 +2774,23 @@ def main() -> int:
         "model_device": args.model_device,
         "policy_device": args.policy_device,
         "task": args.task,
+        "seed": int(args.seed),
         "horizon": int(args.horizon),
         "candidate_count": len(sequences),
+        "max_candidates": (
+            None if args.max_candidates is None else int(args.max_candidates)
+        ),
+        "candidate_sequences": [list(sequence) for sequence in sequences],
+        "planning_grid": {
+            "cell_size_m": PLANNING_GRID_CELL_SIZE_M,
+            "inflation_m": PLANNING_GRID_INFLATION_M,
+        },
+        "oracle_assay": _oracle_assay_provenance(
+            seed=int(args.seed),
+            max_candidates=args.max_candidates,
+            sequences=sequences,
+            mode=str(args.mode),
+        ),
         "primitive_names": primitive_names,
         "policies": policies,
         "max_blocks": int(args.max_blocks),
@@ -1872,6 +2804,8 @@ def main() -> int:
         "results": [_to_jsonable(row) for row in results],
         "skipped": skipped,
     }
+    if dino_provenance is not None:
+        summary["dino_assay"] = dino_provenance
     text = json.dumps(summary, indent=2, sort_keys=True)
     if args.output is None:
         print(text)

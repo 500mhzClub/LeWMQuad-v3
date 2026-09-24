@@ -1,0 +1,303 @@
+{
+  "audit_passed": true,
+  "bindings": {
+    "collector_source": {
+      "byte_count": 12665,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/collect_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2.py",
+      "sha256": "fa0459e134db63f941aff046aeeae6eab391a04e32bf84e2e7793b02207e729a"
+    },
+    "inherited_qualifier_source": {
+      "byte_count": 37259,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v1.py",
+      "sha256": "5126fd1522ca3652afd9a8343a1d26c9af8ba8b20953ef2c922a983841261ff0"
+    },
+    "plan_builder_source": {
+      "byte_count": 19783,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/build_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_plan.py",
+      "sha256": "e6c52a11248b29fe2ab18d9dca299661ac3c7617e32649c30faaf59b0784d21d"
+    },
+    "preregistration": {
+      "byte_count": 4007,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_preregistration_2026-08-04.md",
+      "sha256": "f4d2b46ddb7a0ac97f95160f55c8aadd58f22ae1e63b7ab85e500c083a86b334"
+    },
+    "qualification_plan": {
+      "byte_count": 365708,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_qualification_exact_plan_2026-08-04.json",
+      "sha256": "28b21d9ebbc67b26cad338a1c27ecc9df07bfa7b94d08a2b8aeac7dc29e3ec46"
+    },
+    "qualification_terminal": {
+      "byte_count": 445,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_qualification/attempt_v1/terminal.json",
+      "sha256": "6a8d0a94031d80204f1cd346f2c14fdc97cb68bc01c56fed7025800a913ada2b"
+    },
+    "qualifier_source": {
+      "byte_count": 19892,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/qualify_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2.py",
+      "sha256": "fa61f2137431e687e3a4e54172d3c747527c702da7a87d3be0876410c7b31731"
+    },
+    "scientific_plan": {
+      "byte_count": 365454,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_exact_plan_2026-08-04.json",
+      "sha256": "b20159f75343505aff79ffa5070b6c9a5625546118bd2007d0de60bac8da5e88"
+    },
+    "source_review": {
+      "byte_count": 69851,
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_source_review_2026-08-04.json",
+      "sha256": "8ecebd5588683117ee8564fa4627583480f8c69de62d2b14317c6b043b4a1dff"
+    }
+  },
+  "custody_audit": {
+    "attempt_reservation_payload_opened": false,
+    "collection_reservation_payload_opened": false,
+    "custody_passed": true,
+    "filesystem_names_types_sizes_and_counts_opened": true,
+    "gpu_output_written": false,
+    "protected_material_opened": false,
+    "qualification_authority_payload_opened": false,
+    "qualification_result_payload_opened": false,
+    "qualification_terminal_payload_opened": true,
+    "read_only_identity_subprocesses_executed": true,
+    "rgb_payload_opened": false,
+    "runtime_metadata_reused_as_successor_identity_evidence": false,
+    "scene_payload_opened": false,
+    "source_documents_and_source_code_opened": true,
+    "temporary_replay_cache_removed": true,
+    "v2_runtime_root_written": false,
+    "worker_payload_opened": false
+  },
+  "decision": {
+    "attempt_consumed": true,
+    "backend_metrics": null,
+    "backend_scene_decision": null,
+    "failure_is_backend_evidence": false,
+    "failure_is_backend_scene_evidence": false,
+    "failure_is_scientific": false,
+    "failure_is_source_control_flow_infrastructure": true,
+    "failure_phase": "identity_subprocess_genesis_import_before_genesis_initialization",
+    "identity_with_bound_home_passed_in_isolated_replay": true,
+    "ld_lld_driver_gate_passed_by_control_flow_inference": true,
+    "navigation_or_world_model_claim": null,
+    "qualification_pass": false,
+    "qualification_status": "FAIL_GENESIS_ROCM_BACKEND_V2_QUALIFICATION_HARD_STOP",
+    "rocminfo_gfx1201_gate_passed_by_control_flow_inference": true,
+    "scientific_authority_eligible_from_v2": false,
+    "scientific_decision": null,
+    "scientific_metrics": null
+  },
+  "filesystem_metadata_audit": {
+    "directories_relative": [
+      ".",
+      "collection",
+      "collection/scene_results",
+      "collection/scenes"
+    ],
+    "directory_count": 4,
+    "filesystem_audit_used_names_types_sizes_and_counts_only_except_bound_terminal": true,
+    "qualification_attempt_root_present": true,
+    "qualification_result_absent": true,
+    "regular_file_count": 3,
+    "regular_file_sizes_bytes": {
+      "collection/reservation.json": 2950,
+      "reservation.json": 1054,
+      "terminal.json": 445
+    },
+    "regular_files_relative": [
+      "reservation.json",
+      "collection/reservation.json",
+      "terminal.json"
+    ],
+    "rgb_file_count": 0,
+    "role_local_quadrants_cache_absent": true,
+    "scene_directory_entry_count": 0,
+    "scene_payload_file_count": 0,
+    "scene_result_directory_entry_count": 0,
+    "scientific_attempt_root_absent": true,
+    "symlink_count": 0,
+    "worker_output_file_count": 0
+  },
+  "identity_replay_audit": {
+    "backend_scene_or_scientific_capability_tested": false,
+    "causal_host_identity_environment_hypothesis_supported": true,
+    "controlled_difference_note": "The semantic environment delta was HOME=/home/andrewknowles; each replay also used its own required isolated temporary GS cache path. Both temporary caches remained empty.",
+    "exact_argv": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-I",
+      "-B",
+      "-c",
+      "<exact_bound_identity_query>"
+    ],
+    "genesis_initialization_called": false,
+    "plan_environment_replayed": true,
+    "separate_automatically_removed_temporary_cache_per_replay": true,
+    "v2_role_cache_reused": false,
+    "with_home": {
+      "conventional_shell_exit_code": 0,
+      "exact_identity_validation_passed": true,
+      "genesis_0_4_6_amdgpu_identity_passed": true,
+      "gfx1201_r9700_passed": true,
+      "home": "/home/andrewknowles",
+      "hsa_override_absence_passed": true,
+      "identity_json": {
+        "arch_name": "gfx1201",
+        "device_name": "AMD Radeon AI PRO R9700",
+        "genesis_backend_symbol": "gs.amdgpu",
+        "genesis_file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/__init__.py",
+        "genesis_version": "0.4.6",
+        "hsa_override_present": false,
+        "numpy_file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/numpy/__init__.py",
+        "pillow_file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/PIL/__init__.py",
+        "torch_file": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/world_model_rocm_7_2_1_v1/lib/python3.12/site-packages/torch/__init__.py",
+        "torch_hip_version": "7.2.53211",
+        "torch_version": "2.12.0+rocm7.2",
+        "visible_device_count": 1
+      },
+      "module_path_identity_passed": true,
+      "raw_subprocess_returncode": 0,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_line_count": 1,
+      "stdout_sha256": "7d582a02e74f33266ca0047b96607d6e892275d624e83ffba3ef1cb6d0191518",
+      "temporary_cache_entry_count": 0,
+      "torch_rocm_identity_passed": true
+    },
+    "without_home": {
+      "conventional_shell_exit_code": 134,
+      "home_present": false,
+      "native_assertion": "Assertion failure: home != nullptr",
+      "native_failure_site": "core.cpp:get_repo_dir@45",
+      "raw_subprocess_returncode": -6,
+      "reproduced_consumed_failure_mechanism": true,
+      "stderr_sha256": "8d7e6e6f9cdedabe0426732239ad7b64ce99a6738d4719a187c8c9bb6521af6c",
+      "stdout_line_count": 0,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "temporary_cache_entry_count": 0,
+      "terminating_signal": 6,
+      "terminating_signal_name": "SIGABRT"
+    },
+    "working_directory": "/home/andrewknowles/Workspace/LeWMQuad-v3"
+  },
+  "observed_at": "2026-08-04T22:38:29+01:00",
+  "permission_audit": {
+    "authorizes_v2_payload_or_runtime_metadata_reuse": false,
+    "authorizes_v2_retry_or_resume": false,
+    "authorizes_v2_scientific_authority": false,
+    "authorizes_v3_qualification_execution": false,
+    "authorizes_v3_scientific_execution": false,
+    "authorizes_v3_source_development_and_independent_review": true,
+    "creates_execution_authority": false
+  },
+  "review_scope": {
+    "description": "Independent metadata/source audit of the consumed V2 qualification terminal plus two exact isolated identity-subprocess replays.",
+    "gpu_or_v2_root_output_written": false,
+    "qualification_authority_payload_opened": false,
+    "reservation_payloads_opened": false,
+    "runtime_payload_reuse_performed": false,
+    "scene_or_rgb_payloads_opened": false,
+    "temporary_replay_caches_outside_v2_roots_only": true,
+    "terminal_payload_opened": true
+  },
+  "root_cause_audit": {
+    "backend_scene_qualification_failed": null,
+    "classification": "deterministic_host_identity_environment_source_contract_gap",
+    "genesis_import_with_required_home_failed": false,
+    "immediate_cause": "Genesis 0.4.6 import calls native get_repo_dir, which aborts when getenv(HOME) is null.",
+    "rocm_or_gfx1201_identity_failed": false,
+    "scientific_model_or_gate_failed": null,
+    "source_contract_cause": "The claimed complete sanitized V2 environment omitted HOME from both the bound environment and the sanitized/required key union; the child builder preserved HOME only when it happened to exist ambiently.",
+    "test_coverage_cause": "The exact-environment tests cleared only the declared selector union and therefore retained the test process HOME, so the actual interpreter regression did not exercise an env-i/no-HOME launch.",
+    "v2_ld_lld_driver_correction_failed": false
+  },
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_qualification_terminal_review_v1",
+  "source_control_flow_audit": {
+    "egl_query_reached": false,
+    "evidence_basis": "The exact V2 source raises the persisted terminal message only when the identity child emits no parseable stdout. LLD and rocminfo have earlier fail-closed guards; EGL, VRAM selection, and worker construction occur later. The no-HOME replay reproduces the empty stdout and native abort, while the filesystem contains no scene or result entries.",
+    "explicit_query_numpy_import_reached": false,
+    "explicit_query_pillow_import_reached": false,
+    "explicit_query_torch_import_reached": false,
+    "genesis_import_aborted_on_missing_home": true,
+    "genesis_import_reached": true,
+    "genesis_initialization_reached": false,
+    "identity_json_emitted_in_consumed_attempt": false,
+    "identity_query_explicit_import_order": [
+      "genesis",
+      "numpy",
+      "PIL",
+      "torch"
+    ],
+    "identity_subprocess_reached": true,
+    "ld_lld_driver_gate_passed_by_control_flow_inference": true,
+    "ld_lld_pass_is_not_a_persisted_preflight_receipt": true,
+    "qualification_result_created": false,
+    "qualifier_preflight_order": [
+      "validate exact bound paths and unresolved ld.lld driver identity",
+      "invoke exact unresolved ld.lld --version",
+      "invoke rocminfo and require gfx1201",
+      "invoke isolated Python HIP/Torch/Genesis identity query",
+      "parse and validate identity JSON",
+      "invoke EGL query",
+      "select VRAM counters",
+      "construct and launch qualification scene workers"
+    ],
+    "rocminfo_gfx1201_gate_passed_by_control_flow_inference": true,
+    "rocminfo_pass_is_not_a_persisted_preflight_receipt": true,
+    "scene_execution_reached": false,
+    "torch_gpu_query_reached_in_consumed_attempt": false,
+    "vram_counter_selection_reached": false,
+    "worker_argv_construction_reached": false,
+    "worker_process_launched": false
+  },
+  "source_review_accountability": {
+    "complete_sanitized_environment_claim_was_too_weak_for_execution_confidence": true,
+    "missed_issue": "The review accepted the complete-environment claim without binding or negatively testing Genesis native HOME dependence; its tests ran with inherited HOME.",
+    "reviewed_source_review_findings": [],
+    "reviewed_source_review_status": "PASS_INDEPENDENT_SOURCE_REVIEW",
+    "source_review_accountable_for_missed_issue": true,
+    "source_review_does_not_authorize_v2_retry_or_v3_execution": true,
+    "source_review_remains_immutable_historical_source_identity_evidence": true,
+    "source_review_superseded_for_v2_execution_confidence": true
+  },
+  "status": "PASS_FAIL_CLOSED_PRE_GENESIS_INITIALIZATION_QUALIFICATION_TERMINAL_REVIEW",
+  "successor_eligibility": {
+    "eligibility_basis": "V2 failed before Genesis initialization, EGL, workers, scenes, or science because a required host identity variable was unbound. The isolated positive replay changes that one semantic variable and passes the exact identity query.",
+    "separately_preregistered_fresh_v3_host_identity_environment_hypothesis_eligible": true,
+    "v2_payload_reuse_authorized": false,
+    "v2_reservation_direct_successor_binding_authorized": false,
+    "v2_retry_resume_refill_overwrite_eligible": false,
+    "v2_runtime_metadata_as_identity_evidence_authorized": false,
+    "v2_same_root_or_science_identical_replacement_eligible": false,
+    "v2_terminal_direct_successor_binding_authorized": false,
+    "v2_terminal_review_document_as_source_evidence_authorized": true,
+    "v3_hypothesis": "Binding and fail-closed validating HOME=/home/andrewknowles in the qualification/orchestrator child environment removes the Genesis native get_repo_dir abort while retaining the V2 ld.lld correction and all frozen science.",
+    "v3_qualification_execution_authorized_by_this_review": false,
+    "v3_requirements": [
+      "new preregistration, attempt identity, qualification root, role-local cache, source review, and one-shot authority",
+      "HOME=/home/andrewknowles explicitly bound, sanitized, required, and receipt-audited before reservation and in every child",
+      "focused negative no-HOME SIGABRT/134 oracle and positive with-HOME exact identity regression",
+      "exact V2 unresolved ld.lld driver correction, ROCm runtime, scene panel, data, model, seeds, evaluation, caps, gates, and two-scene qualification contract retained",
+      "no V2 runtime, reservation, terminal, cache, worker, scene, RGB, result, process, or replay payload reuse",
+      "this V2 terminal review document may be bound only as source-level identity and failure evidence; the V2 terminal and runtime metadata must not be bound directly"
+    ],
+    "v3_scientific_execution_authorized_by_this_review": false
+  },
+  "terminal_contract_audit": {
+    "authorizes_retry_or_resume": false,
+    "authorizes_scientific_authority": false,
+    "qualification_result_binding_is_null": true,
+    "reservation_payloads_not_opened_or_bound": true,
+    "terminal_binding_matches_preregistered_audit_input": true,
+    "terminal_created_fail_closed": true,
+    "terminal_failure_string_occurs_at_the_v2_identity_parse_boundary": true,
+    "terminal_matches_v2_schema_and_hard_stop_status": true,
+    "terminal_payload": {
+      "authorizes_retry_or_resume": false,
+      "authorizes_scientific_authority": false,
+      "failure": {
+        "message": "HIP identity preflight emitted malformed output",
+        "type": "GenesisRocmBackendV2QualificationError"
+      },
+      "qualification_result_binding": null,
+      "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_rocm_backend_v2_qualification_terminal_v1",
+      "status": "FAIL_GENESIS_ROCM_BACKEND_V2_QUALIFICATION_HARD_STOP"
+    }
+  }
+}

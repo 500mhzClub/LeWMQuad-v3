@@ -1,0 +1,545 @@
+{
+  "status": "VERIFIED_PACKED_FUSED_PROFILE_CALLER_DIAGNOSIS",
+  "utc": "2026-09-11T03:36:35.009160+00:00",
+  "completion_verification_sha256": "f1f68c1bafea843b9a53029f455c171c0ff4ccd2186a78cef59532d44d152244",
+  "profile_sha256": "0e1d2aa199ca6b923da5abe2e57445cff27a871ea6e534a5d9ab8d928b353af6",
+  "source_sha256": {
+    "lewm/later_floor_resolution_controller_development.py": "cb9954bd24735761135338e8f813e645e8bb595470414aa5f4b710c03c8eb79c",
+    "lewm/confirmed_auxiliary_floor_memory_development.py": "b40d5fd5934f68d33f2a77dd128b990fcf8114860b7c4d98b9c049c91fcccab0",
+    "lewm/single_pass_sample_bounds_development.py": "97febd7b6476b3c6e262a9513b070256efed78a8a2beabc260400635ad7419b9"
+  },
+  "window_frames": [
+    1418,
+    1419,
+    1420,
+    1421,
+    1422,
+    1423,
+    1424,
+    1425,
+    1426,
+    1427
+  ],
+  "total_exclusive_profiled_s": 13.873421589000001,
+  "footprint_cumulative_s": 7.944970669000001,
+  "footprint_cumulative_fraction": 0.5726756458766763,
+  "deepcopy_calls": 4493101,
+  "deepcopy_self_s": 1.8436535760000001,
+  "deepcopy_cumulative_s": 3.431903069,
+  "non_recursive_deepcopy_callers": [
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/later_floor_resolution_controller_development.py",
+      "line": 43,
+      "function": "footprint",
+      "profiler_caller_tuple": [
+        114,
+        114,
+        0.000125152,
+        1.213480825
+      ],
+      "cumulative_time_s": 1.213480825
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/confirmed_auxiliary_floor_memory_development.py",
+      "line": 12,
+      "function": "confirmed_contact_check",
+      "profiler_caller_tuple": [
+        4902,
+        4902,
+        0.0032126790000000004,
+        1.032432178
+      ],
+      "cumulative_time_s": 1.032432178
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/joint_visual_surface_memory_development.py",
+      "line": 27,
+      "function": "insert",
+      "profiler_caller_tuple": [
+        60602,
+        60602,
+        0.032139462,
+        0.391879646
+      ],
+      "cumulative_time_s": 0.391879646
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_floor_contact_development.py",
+      "line": 11,
+      "function": "apply_floor_contact_rule",
+      "profiler_caller_tuple": [
+        2926,
+        2926,
+        0.0020421740000000003,
+        0.13058407700000002
+      ],
+      "cumulative_time_s": 0.13058407700000002
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/retained_patch_contact_goal_probe_development.py",
+      "line": 19,
+      "function": "footprint",
+      "profiler_caller_tuple": [
+        235,
+        235,
+        0.0002045,
+        0.10618045100000001
+      ],
+      "cumulative_time_s": 0.10618045100000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/eight_step_planning_development.py",
+      "line": 12,
+      "function": "plan",
+      "profiler_caller_tuple": [
+        92,
+        92,
+        8.680000000000001e-05,
+        0.10010993700000001
+      ],
+      "cumulative_time_s": 0.10010993700000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observation_horizon_nominal_constraint_development.py",
+      "line": 14,
+      "function": "constrain",
+      "profiler_caller_tuple": [
+        46,
+        46,
+        4.636e-05,
+        0.091507828
+      ],
+      "cumulative_time_s": 0.091507828
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/auxiliary_depth_floor_map_development.py",
+      "line": 55,
+      "function": "footprint",
+      "profiler_caller_tuple": [
+        3534,
+        3534,
+        0.002428772,
+        0.07541083100000001
+      ],
+      "cumulative_time_s": 0.07541083100000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observed_floor_contact_development.py",
+      "line": 13,
+      "function": "separate_ground_contact",
+      "profiler_caller_tuple": [
+        1824,
+        1824,
+        0.00118435,
+        0.050484328
+      ],
+      "cumulative_time_s": 0.050484328
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observation_horizon_surface_filter_development.py",
+      "line": 8,
+      "function": "filter_selection",
+      "profiler_caller_tuple": [
+        28,
+        28,
+        3.909e-05,
+        0.046009698
+      ],
+      "cumulative_time_s": 0.046009698
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/executed_waypoint_score_development.py",
+      "line": 10,
+      "function": "score_waypoint_execution",
+      "profiler_caller_tuple": [
+        30,
+        30,
+        2.4301e-05,
+        0.023132073000000003
+      ],
+      "cumulative_time_s": 0.023132073000000003
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/joint_visual_surface_memory_development.py",
+      "line": 39,
+      "function": "intersect",
+      "profiler_caller_tuple": [
+        2400,
+        2400,
+        0.0021033000000000002,
+        0.022676184000000002
+      ],
+      "cumulative_time_s": 0.022676184000000002
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/residual_anchored_continuation_development.py",
+      "line": 20,
+      "function": "_reconsider_anchored_hold",
+      "profiler_caller_tuple": [
+        9,
+        9,
+        1.0690000000000001e-05,
+        0.021333322000000002
+      ],
+      "cumulative_time_s": 0.021333322000000002
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/residual_hold_feasibility_development.py",
+      "line": 21,
+      "function": "reconsider_hold_feasibility",
+      "profiler_caller_tuple": [
+        9,
+        9,
+        1.095e-05,
+        0.021260661
+      ],
+      "cumulative_time_s": 0.021260661
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_sample_bounds_development.py",
+      "line": 42,
+      "function": "_intersect",
+      "profiler_caller_tuple": [
+        2228,
+        2228,
+        0.001789381,
+        0.020253161000000002
+      ],
+      "cumulative_time_s": 0.020253161000000002
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_floor_transport_registration_development.py",
+      "line": 31,
+      "function": "observe",
+      "profiler_caller_tuple": [
+        50,
+        50,
+        5.263e-05,
+        0.018112349
+      ],
+      "cumulative_time_s": 0.018112349
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/online_executed_residual_development.py",
+      "line": 68,
+      "function": "snapshot",
+      "profiler_caller_tuple": [
+        60,
+        60,
+        4.8710000000000006e-05,
+        0.013869010000000001
+      ],
+      "cumulative_time_s": 0.013869010000000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observation_horizon_waypoint_selection_development.py",
+      "line": 37,
+      "function": "restrict",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        1.963e-05,
+        0.010019024000000001
+      ],
+      "cumulative_time_s": 0.010019024000000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/dual_camera_visual_motion_development.py",
+      "line": 77,
+      "function": "snapshot",
+      "profiler_caller_tuple": [
+        80,
+        80,
+        5.4011e-05,
+        0.0076395000000000005
+      ],
+      "cumulative_time_s": 0.0076395000000000005
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/batched_retained_floor_patch_development.py",
+      "line": 33,
+      "function": "record_coverage",
+      "profiler_caller_tuple": [
+        622,
+        622,
+        0.0007432970000000001,
+        0.006968281000000001
+      ],
+      "cumulative_time_s": 0.006968281000000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observation_horizon_waypoint_utility_development.py",
+      "line": 30,
+      "function": "score_commitment_pose",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        1.6930000000000002e-05,
+        0.0054801170000000005
+      ],
+      "cumulative_time_s": 0.0054801170000000005
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/joint_temporal_anchor_continuity_development.py",
+      "line": 56,
+      "function": "_measure",
+      "profiler_caller_tuple": [
+        30,
+        30,
+        3.702e-05,
+        0.003279225
+      ],
+      "cumulative_time_s": 0.003279225
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/joint_floor_registered_evidence_development.py",
+      "line": 22,
+      "function": "current_joint_floor_registered_pose",
+      "profiler_caller_tuple": [
+        40,
+        40,
+        4.7210000000000004e-05,
+        0.002930357
+      ],
+      "cumulative_time_s": 0.002930357
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/visual_led_motion_development.py",
+      "line": 147,
+      "function": "snapshot",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        1.8140000000000003e-05,
+        0.002201261
+      ],
+      "cumulative_time_s": 0.002201261
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/matched_model_goal_probe_development.py",
+      "line": 121,
+      "function": "_result",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        1.6590000000000002e-05,
+        0.0017377690000000001
+      ],
+      "cumulative_time_s": 0.0017377690000000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/packed_owned_sample_bounds_development.py",
+      "line": 23,
+      "function": "insert",
+      "profiler_caller_tuple": [
+        184,
+        184,
+        0.00020082000000000002,
+        0.001647879
+      ],
+      "cumulative_time_s": 0.001647879
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/corner_support_features_development.py",
+      "line": 20,
+      "function": "__init__",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        2.786e-05,
+        0.001398518
+      ],
+      "cumulative_time_s": 0.001398518
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/frame_cached_floor_map_development.py",
+      "line": 92,
+      "function": "observe_auxiliary",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        2.3120000000000002e-05,
+        0.001277437
+      ],
+      "cumulative_time_s": 0.001277437
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observed_round_trip_controller_development.py",
+      "line": 94,
+      "function": "_result",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        6.98e-06,
+        0.000683385
+      ],
+      "cumulative_time_s": 0.000683385
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/later_floor_evidence_development.py",
+      "line": 59,
+      "function": "record_pair",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        1.877e-05,
+        0.0006694720000000001
+      ],
+      "cumulative_time_s": 0.0006694720000000001
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/settled_boundary_round_trip_development.py",
+      "line": 12,
+      "function": "advance",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        7.080000000000001e-06,
+        0.000645224
+      ],
+      "cumulative_time_s": 0.000645224
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_floor_transport_controller_development.py",
+      "line": 95,
+      "function": "advance",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        6.4000000000000006e-06,
+        0.000637072
+      ],
+      "cumulative_time_s": 0.000637072
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_settling_round_trip_mission_development.py",
+      "line": 19,
+      "function": "advance",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        7.07e-06,
+        0.000614024
+      ],
+      "cumulative_time_s": 0.000614024
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/fast_gyro_development.py",
+      "line": 92,
+      "function": "step",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        2.413e-05,
+        0.000453372
+      ],
+      "cumulative_time_s": 0.000453372
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/frame_cached_floor_geometry_development.py",
+      "line": 130,
+      "function": "append_patch",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        9.017e-05,
+        0.00044826400000000003
+      ],
+      "cumulative_time_s": 0.00044826400000000003
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/dual_camera_visual_motion_development.py",
+      "line": 44,
+      "function": "observe",
+      "profiler_caller_tuple": [
+        210,
+        210,
+        9.6161e-05,
+        0.00043884200000000005
+      ],
+      "cumulative_time_s": 0.00043884200000000005
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/observed_round_trip_mission_development.py",
+      "line": 40,
+      "function": "advance",
+      "profiler_caller_tuple": [
+        20,
+        20,
+        1.805e-05,
+        0.00037167200000000003
+      ],
+      "cumulative_time_s": 0.00037167200000000003
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/frame_cached_floor_map_development.py",
+      "line": 59,
+      "function": "_observe_auxiliary_original",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        3.099e-05,
+        0.000368741
+      ],
+      "cumulative_time_s": 0.000368741
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/online_executed_residual_development.py",
+      "line": 49,
+      "function": "remember",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        9.18e-06,
+        0.00028309200000000003
+      ],
+      "cumulative_time_s": 0.00028309200000000003
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/auxiliary_depth_goal_probe_development.py",
+      "line": 24,
+      "function": "_result",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        7.16e-06,
+        0.000265341
+      ],
+      "cumulative_time_s": 0.000265341
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/measured_floor_contact_goal_probe_development.py",
+      "line": 27,
+      "function": "_result",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        7.71e-06,
+        0.00020272
+      ],
+      "cumulative_time_s": 0.00020272
+    },
+    {
+      "filename": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/dual_camera_anchor_pose_development.py",
+      "line": 111,
+      "function": "observe",
+      "profiler_caller_tuple": [
+        10,
+        10,
+        1.448e-05,
+        0.000182971
+      ],
+      "cumulative_time_s": 0.000182971
+    }
+  ],
+  "next_candidate": "Reduce ordinary nested evidence copying in later-floor and confirmed auxiliary-contact receipt construction; preserve complete values, independent ownership, alias topology and all failure checks.",
+  "single_pass_query_priority": "secondary: all measured-bound queries consume about 0.638 s cumulative across this late window",
+  "predicted_speedup_established": false,
+  "cumulative_times_overlap": true,
+  "profiler_overhead_removed": false,
+  "isolated_benchmark": false,
+  "native_execution": false,
+  "navigation_qualified": false,
+  "real_time_qualified": false,
+  "goal_achieved": false
+}

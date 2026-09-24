@@ -1,0 +1,455 @@
+{
+  "audit_procedure": {
+    "checkpoint_file_byte_hash_recomputation_count": 0,
+    "checkpoint_internal_state_load_count": 0,
+    "checkpoint_pt_deserialization_count": 0,
+    "docs_audit_publication_count": 1,
+    "external_evaluator_rerun_count": 0,
+    "generated_mutation_count": 0,
+    "gpu_initialization_by_auditor_count": 0,
+    "model_construction_count": 0,
+    "non_pt_regular_file_byte_hash_count": 8,
+    "raw_development_g2_navigation_or_heldout_payload_open_count": 0,
+    "scope": "read_hash_validate_and_publish_this_terminal_audit_only",
+    "source_mutation_count": 0,
+    "terminal_json_parse_count": 7,
+    "trace_row_parse_count": 1000
+  },
+  "authority": {
+    "architecture_mutation_authorized": false,
+    "audit_only_no_execution_authority": true,
+    "automatic_successor_authorized": false,
+    "data_mutation_authorized": false,
+    "data_refinement_authorized": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "generated_mutation_authorized": false,
+    "heldout_authorized": false,
+    "jepa_training_authorized": false,
+    "navigation_authorized": false,
+    "next_authority_status": "denied_absent_new_bounded_independent_review_and_explicit_execution_authorization",
+    "probability_calibration_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "retry_authorized": false,
+    "runtime_candidate_use_authorized": false,
+    "schedule_extension_authorized": false,
+    "soft_or_closest_promotion_authorized": false,
+    "source_mutation_authorized": false,
+    "training_authorized": false,
+    "training_extension_authorized": false
+  },
+  "bindings": {
+    "control_contract_sha256": "3c7b72318aef6cdec2be4fa4e4c627e1a607b7685d3466dcac4a8ed2f41bd6be",
+    "execution_authorization": {
+      "byte_count": 28401,
+      "content_sha256": "5f2da6766e3b98add0798806a4cf27022f4d8d29493cd4a9bc7cd627e72aab36",
+      "file_sha256": "d499020922490451b4b02127178a1bce473ea540f50dd4513d7cdba09a805943",
+      "path": "docs/lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1_execution_authorization_2026-07-16.json",
+      "status": "authorized_one_exact_camera_v5_environment_recovery_v1_attempt"
+    },
+    "independent_review": {
+      "byte_count": 34641,
+      "content_sha256": "c65c7883ea9753decc2e9de1619d62b690ea440746a7ea5e3b4862a6f10bb47b",
+      "file_sha256": "a33e5163d0d2b298d3c89870eb77636b6fb71040e04f6ba24c3a6b59cae36556",
+      "path": "docs/lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1_independent_review_2026-07-16.json",
+      "status": "PASS"
+    },
+    "reporting_contract_sha256": "cb9eb1d162b97d2005d552d4189234965a8b4b5b7e1bf6a3a82559601f2d2eed",
+    "science_contract_sha256": "d5f1ae7da90c505aca4fb6f0bc10c382d7d2a223ba6217b0b89b608a6dd1da76",
+    "science_delta_sha256": "79d80a0c8add39b1123b125ee978d7ac15b4823c28472d60afedc999ef4599df",
+    "terminal_artifacts": {
+      "access": {
+        "byte_count": 3133689,
+        "content_sha256": "44ae9176ad6069656fc294a7d90b651cfc6a4bffa199cb83c3191e883435ea23",
+        "file_sha256": "d5e6c3b5eab6ce84ca5fb77e811d8a4da38976ef8d5693bc858d12dd1aefdcd2",
+        "mode": "0644",
+        "path": "access.json",
+        "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_access_v1"
+      },
+      "checkpoint_metrics": {
+        "byte_count": 45028,
+        "content_sha256": "1a02fd26ee32bd16daa1ea47753aa6e8a540fa3d7c5d2283965d661a058756bf",
+        "file_sha256": "d825ea4ce59acb9d06cfb840f9630beb83aaebe3da7754ee09b97d3c929d4474",
+        "mode": "0644",
+        "path": "checkpoint_metrics.json",
+        "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_checkpoint_metrics_v1"
+      },
+      "checkpoints": [
+        {
+          "byte_count": 29466305,
+          "content_and_state_claim_source": "checkpoints/update_100.metrics.json",
+          "file_bytes_sha256_independently_recomputed": false,
+          "file_sha256": "c3a997adc7be4e043db1e3ed838e6115fb51a739a990cb80e2693cff5d86469f",
+          "file_sha256_source": "failed.json.artifacts",
+          "mode": "0644",
+          "path": "checkpoints/update_100.pt",
+          "pt_deserialized_or_tensor_state_loaded_by_auditor": false,
+          "sidecar_declared_content_sha256": "0ce199e19766ade3b341feba3907307d65bee5966482e2b1f0302aab3b50bee1",
+          "sidecar_declared_frozen_state_sha256": "3f5cce294f840be4c6c8cfa43b2818bae68da739b13348fe45a3d5087fe2524e",
+          "sidecar_declared_state_sha256": "e4dd40fbede4c065801c1ea510a8f80cef7f3069c0590a540beb23c74cd71f80",
+          "sidecar_declared_trainable_state_sha256": "94af07b1bd6574afd0050caa7eee7e3568b8f6952d522217122bd1445b74f998",
+          "update": 100
+        },
+        {
+          "byte_count": 29466305,
+          "content_and_state_claim_source": "checkpoints/update_400.metrics.json",
+          "file_bytes_sha256_independently_recomputed": false,
+          "file_sha256": "c3e849574b116319beb3fcd6663fe05e614e23388cab853d93e2c05a5396273c",
+          "file_sha256_source": "failed.json.artifacts",
+          "mode": "0644",
+          "path": "checkpoints/update_400.pt",
+          "pt_deserialized_or_tensor_state_loaded_by_auditor": false,
+          "sidecar_declared_content_sha256": "88fd8b41b3378e8e84f8bbbc4be06f363b915c24a92055fb340ec533623593fc",
+          "sidecar_declared_frozen_state_sha256": "3f5cce294f840be4c6c8cfa43b2818bae68da739b13348fe45a3d5087fe2524e",
+          "sidecar_declared_state_sha256": "5a99bf9f657fd9a8191764a282cbb96f5e7923fe2a31f6f0ebfe717d154cbf93",
+          "sidecar_declared_trainable_state_sha256": "181b6dfbce827fc307ab467696d2f6ec24e851c14a7e503d7bdfb80890642917",
+          "update": 400
+        },
+        {
+          "byte_count": 29466305,
+          "content_and_state_claim_source": "checkpoints/update_1000.metrics.json",
+          "file_bytes_sha256_independently_recomputed": false,
+          "file_sha256": "40c3061fcd4db51a47e98da7d0455626a53b550d2a990796dda5060b0bedb537",
+          "file_sha256_source": "failed.json.artifacts",
+          "mode": "0644",
+          "path": "checkpoints/update_1000.pt",
+          "pt_deserialized_or_tensor_state_loaded_by_auditor": false,
+          "sidecar_declared_content_sha256": "575b9f32b7ae06329b2551ef4e5cf72aa5a6730800690bcd7e0a11f1134ae145",
+          "sidecar_declared_frozen_state_sha256": "3f5cce294f840be4c6c8cfa43b2818bae68da739b13348fe45a3d5087fe2524e",
+          "sidecar_declared_state_sha256": "034d18cc6c6d8a900871b9dc2eed96c4a3393a0315be1e7d5c5c807b180f234c",
+          "sidecar_declared_trainable_state_sha256": "9d83e92f4111c018b3591e68f6c2e285b5293d343fadb5a712867d2d2f895238",
+          "update": 1000
+        }
+      ],
+      "failed": {
+        "byte_count": 5801,
+        "content_sha256": "c765a7c73a701c8249dd8fb4f749e1bc341291bca1081b27077073a8a4dd3a16",
+        "file_sha256": "5b7d9880f574ccf280835b7b7a14f9f0228eba1a5f3213b0feb54fb3cb42a9bd",
+        "mode": "0644",
+        "path": "failed.json",
+        "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_failure_v1"
+      },
+      "reservation": {
+        "byte_count": 17236,
+        "content_sha256": "885bff33f9052fba1d1ab2a18e42d8b0c2cd7f3eb11dc6dfb06bfe98a2f5bcaf",
+        "file_sha256": "24a6f0db3b4e49f6c9043a1c984f9faa2775bdf6b153f1a25b9cf6d85f6666dd",
+        "mode": "0644",
+        "path": "reservation.json",
+        "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_reservation_v1"
+      },
+      "sidecars": [
+        {
+          "byte_count": 15333,
+          "content_sha256": "99a3e868d40a2788165f24d6d3be2eb0c527be3c81281188b9cc078d4d6d1774",
+          "control_action": "continue_to_next_fixed_checkpoint",
+          "file_sha256": "7c9deea97d80c94419b2b300674b1013f2b353f6cceff0834354e5072ac7e5cd",
+          "mode": "0444",
+          "path": "checkpoints/update_100.metrics.json",
+          "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_checkpoint_metric_sidecar_v1",
+          "update": 100
+        },
+        {
+          "byte_count": 15337,
+          "content_sha256": "98db54e53d90fa53cd5f191fc2a7ccd07125dc17ac8636cc92fa023edd3a4519",
+          "control_action": "continue_to_next_fixed_checkpoint",
+          "file_sha256": "4fcf93a96dde349a1f4071e292f63a59c8dfe1bb195713148148f4da5fdeab9f",
+          "mode": "0444",
+          "path": "checkpoints/update_400.metrics.json",
+          "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_checkpoint_metric_sidecar_v1",
+          "update": 400
+        },
+        {
+          "byte_count": 15390,
+          "content_sha256": "73d51e7bb6196d8a00b4fedbdeba18a27ccc3457c58d6e0b28bd3ced0af0d5be",
+          "control_action": "stop_predeclared_numeric_progress_cutoff",
+          "file_sha256": "81c4d571f02c554feef30edc0634ae07011861b3c88b53dd297758c011989710",
+          "mode": "0444",
+          "path": "checkpoints/update_1000.metrics.json",
+          "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_checkpoint_metric_sidecar_v1",
+          "update": 1000
+        }
+      ],
+      "training_trace": {
+        "byte_count": 1594860,
+        "file_sha256": "5eec1f9d0eca925b7cceaf2219ae824f4b5bfc7ee0bf3bd058df967e1e3aba1e",
+        "mode": "0644",
+        "path": "training_trace.jsonl",
+        "row_count": 1000,
+        "rows_content_sha256": "32397d0e3ccbf0c96b97042f206f15b6681df3aaaaac8a9005e25f7f66b809c9"
+      }
+    }
+  },
+  "content_sha256": "582325e20fa4622c9f9be1c46ae67011c4df1fc43ad2cdcc396fb5a1df6c671f",
+  "failure": {
+    "all_existing_pre_failure_regular_artifacts_bound_by_failed_json": true,
+    "all_terminal_regular_artifacts_bound_by_this_audit": true,
+    "attempt_consumed": true,
+    "attempt_identity": "9665afd2f71dd246a6147889f0f120d814cbc5b3e14f4f94e8ab90e40d34cde4",
+    "caller_error": {
+      "message": "base lifecycle requested numeric terminalization after the predeclared stop at update 1000; update 8000 was not reached",
+      "type": "BaseLifecycleSelectedCheckpointAbsentTrigger"
+    },
+    "checkpoint_control": {
+      "action": "stop_predeclared_numeric_progress_cutoff",
+      "control_contract_sha256": "3c7b72318aef6cdec2be4fa4e4c627e1a607b7685d3466dcac4a8ed2f41bd6be",
+      "next_checkpoint_update": null,
+      "qualifies": false,
+      "reason": "update 1000 missed the frozen V3 P/S/W reproduction floor",
+      "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_checkpoint_control_decision_v1",
+      "statistics": {
+        "aggregate_complete_v4_loss": 0.6730999017368148,
+        "all_nine_physical_pass": false,
+        "margin_count": 189,
+        "passed_margin_count": 106,
+        "total_shortfall": 49.13255561472496,
+        "update_4000_control_baseline": null,
+        "worst_margin": -7.945521640777587
+      },
+      "terminal_stage": "predeclared_numeric_progress_cutoff_at_update_1000",
+      "update": 1000
+    },
+    "closest_or_soft_promotion": false,
+    "deliberate_predeclared_numeric_progress_cutoff": true,
+    "downstream_authority_granted": false,
+    "error": {
+      "message": "update 1000 missed the frozen V3 P/S/W reproduction floor",
+      "type": "PredeclaredNumericProgressCutoff"
+    },
+    "extension_or_retry_authorized": false,
+    "g2_attempted": false,
+    "heldout_open_count": 0,
+    "last_completed_update": 1000,
+    "maximum_update_no_pass": false,
+    "navigation_attempted": false,
+    "numeric_progress_cutoff_applied": true,
+    "stage": "predeclared_numeric_progress_cutoff_at_update_1000",
+    "status": "failed_predeclared_numeric_progress_cutoff",
+    "updates_4000_6000_and_8000_intentionally_not_reached": true
+  },
+  "input_access": {
+    "access_receipt_canonical_content_hash_valid": true,
+    "auditor_independently_reopened_consumed_development_or_raw_payload_count": 0,
+    "auditor_opened_g2_navigation_or_heldout_payload": false,
+    "g2_open_count": 0,
+    "heldout_open_count": 0,
+    "navigation_open_count": 0,
+    "probability_calibration_open_count": 0,
+    "roles_opened": [
+      "train",
+      "checkpoint_selection"
+    ],
+    "runner_reported_all_consumed_files_rehashed": true,
+    "runner_reported_consumed_kind_counts": {
+      "development_rgb": 8701,
+      "raw_audit": 1,
+      "raw_manifest": 1,
+      "raw_supervision": 722
+    },
+    "runner_reported_consumed_records_sha256": "4a8485ae4f0d84ab09790572ecfe6664b9c93aa9efcd657ac67fcb55721c5d17",
+    "runner_reported_unique_consumed_file_count": 9425
+  },
+  "outcome": "predeclared_numeric_progress_stop_at_update_1000",
+  "reporting_integrity": {
+    "all_json_content_hashes_valid": true,
+    "all_nine_physical_pass_vector": [
+      false,
+      false,
+      false
+    ],
+    "checkpoint_control_decisions_match_fixed_contract": true,
+    "checkpoint_metric_sidecar_pairs": 3,
+    "checkpoint_metrics_controls_deep_equal_sidecar_controls": true,
+    "checkpoint_metrics_rows_deep_equal_sidecar_metrics": true,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ],
+    "eligible_checkpoint_count": 0,
+    "inline_evaluation_count": 3,
+    "loss_not_used_in_pareto_continuation_decision": true,
+    "no_external_evaluator_rerun_by_auditor": true,
+    "observer_evaluation_rerun_count": 0,
+    "physical_pass_count_by_checkpoint": [
+      0,
+      0,
+      0
+    ],
+    "selected_checkpoint": null,
+    "sidecar_file_modes_are_0444": true,
+    "sidecar_state_mutation_count": 0,
+    "terminal_checkpoint": {
+      "aggregate_complete_v4_loss": 0.6730999017368148,
+      "physical_pass_count": 0,
+      "state_sha256": "034d18cc6c6d8a900871b9dc2eed96c4a3393a0315be1e7d5c5c807b180f234c",
+      "total_shortfall": 49.13255561472496,
+      "update": 1000,
+      "worst_margin": -7.945521640777587
+    },
+    "update_1000_frozen_v3_reproduction_floor_comparison": {
+      "baseline": {
+        "passed_margin_count": 106,
+        "total_shortfall": 49.09939462151839,
+        "worst_margin": -7.944758415222166
+      },
+      "continuation_rule_passed": false,
+      "delta_observed_minus_baseline": {
+        "passed_margin_count": 0,
+        "total_shortfall": 0.033160993206564626,
+        "worst_margin": -0.0007632255554206324
+      },
+      "observed": {
+        "passed_margin_count": 106,
+        "total_shortfall": 49.13255561472496,
+        "worst_margin": -7.945521640777587
+      },
+      "weak_conditions": {
+        "passed_margin_count_greater_equal": true,
+        "total_shortfall_less_equal": false,
+        "worst_margin_greater_equal": false
+      }
+    }
+  },
+  "reservation": {
+    "attempt_identity": "9665afd2f71dd246a6147889f0f120d814cbc5b3e14f4f94e8ab90e40d34cde4",
+    "attempt_index": 1,
+    "canonical_content_hash_valid": true,
+    "environment": {
+      "bytecode_disabled": true,
+      "conflicting_selectors_absent": true,
+      "hip_visible_devices": "0",
+      "isolated_python": true,
+      "native_thread_environment": {
+        "BLIS_NUM_THREADS": "1",
+        "MKL_NUM_THREADS": "1",
+        "NUMEXPR_NUM_THREADS": "1",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1"
+      },
+      "torch_module_absent": true
+    },
+    "maximum_attempts": 1,
+    "output_root_absent_before_reservation": true,
+    "output_root_observed_absent_at_authorization": true,
+    "retry_authorized": false,
+    "review_and_authorization_bindings_exact": true,
+    "status": "reserved_before_torch_v4_terminal_update0_terminal_camera_raw_or_rgb"
+  },
+  "root": ".generated/go2_shared_observable_camera_ray_jepa_v5/protected_camera_adaptation_v5_native_schedule_completion_environment_recovery_v1",
+  "schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1_terminal_audit_v1",
+  "source_closure": {
+    "commits": {
+      "execution_authorization": "ec1f389092ef7775e261e47b4f6986a3d865aa5b",
+      "implementation": "76b7bf15cb2bee58fa8e6c3bc5dfb8fb5090a3a3",
+      "independent_review": "15f6fca1c95363ff81f7377d6bb6e9b6f13bd61c",
+      "preregistration": "7ac1c9dc8a4273b380edf61712d60772a2c6e3dc"
+    },
+    "current_git_head_at_audit": "ec1f389092ef7775e261e47b4f6986a3d865aa5b",
+    "recovery_source_bindings": {
+      "contract": {
+        "file_sha256": "71c3f40c42de8d08f190654845c6f34052b144ec5f6cb4aa6953e9a8325c8136",
+        "path": "lewm/benchmarks/go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1.py"
+      },
+      "runner": {
+        "file_sha256": "358b5abfc1505545bab8cdebb86d9865db38b94e0949816feef47da4526361ed",
+        "path": "scripts/run_go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1.py"
+      },
+      "test": {
+        "file_sha256": "6a6788e17c9146db194dd3c589649140fd9fcb290ba18108990a9a938e17ae9c",
+        "path": "lewm/tests/test_go2_shared_jepa_v5_protected_camera_adaptation_v5_environment_recovery_v1.py"
+      }
+    },
+    "runner_reported_all_61_reviewed_sources_rehashed": true,
+    "runner_reported_reviewed_source_bindings_sha256": "c735f1a8847cf652f00c06524f40ef35b4e628b097e7ed61836772de48f4d725",
+    "source_rehash_by_terminal_auditor_count": 0
+  },
+  "successor_decision": {
+    "architecture_data_loss_threshold_or_schedule_change_authorized_by_this_audit": false,
+    "attempt_exhausted": true,
+    "automatic_successor_authorized": false,
+    "camera_checkpoint_qualified": false,
+    "closest_or_soft_checkpoint_promotion_authorized": false,
+    "decision": "REJECT_ALL_CAMERA_V5_ENVIRONMENT_RECOVERY_V1_CHECKPOINTS_AND_STOP_BEFORE_JEPA_G2_NAVIGATION_OR_HELDOUT",
+    "frozen_camera_jepa_training_may_start": false,
+    "g2_may_start": false,
+    "heldout_may_start": false,
+    "navigation_may_start": false,
+    "new_bounded_independent_science_review_and_explicit_execution_authorization_required_for_any_successor": true,
+    "retry_or_extension_authorized": false
+  },
+  "terminal_inventory": {
+    "all_files_regular_and_non_symlink": true,
+    "directory_modes": {
+      ".": "0700",
+      "checkpoints": "0775"
+    },
+    "exact_directories_including_root": [
+      ".",
+      "checkpoints"
+    ],
+    "exact_file_count": 11,
+    "exact_paths": [
+      "access.json",
+      "checkpoint_metrics.json",
+      "checkpoints/update_100.metrics.json",
+      "checkpoints/update_100.pt",
+      "checkpoints/update_1000.metrics.json",
+      "checkpoints/update_1000.pt",
+      "checkpoints/update_400.metrics.json",
+      "checkpoints/update_400.pt",
+      "failed.json",
+      "reservation.json",
+      "training_trace.jsonl"
+    ],
+    "file_modes": {
+      "access.json": "0644",
+      "checkpoint_metrics.json": "0644",
+      "checkpoints/update_100.metrics.json": "0444",
+      "checkpoints/update_100.pt": "0644",
+      "checkpoints/update_1000.metrics.json": "0444",
+      "checkpoints/update_1000.pt": "0644",
+      "checkpoints/update_400.metrics.json": "0444",
+      "checkpoints/update_400.pt": "0644",
+      "failed.json": "0644",
+      "reservation.json": "0644",
+      "training_trace.jsonl": "0644"
+    },
+    "no_completed_or_result_artifact": true,
+    "no_g2_navigation_or_heldout_artifact": true,
+    "no_hidden_publication_temporary": true,
+    "no_other_file_or_directory": true,
+    "no_update_4000_6000_or_8000_artifact_due_predeclared_early_stop": true,
+    "root": ".generated/go2_shared_observable_camera_ray_jepa_v5/protected_camera_adaptation_v5_native_schedule_completion_environment_recovery_v1",
+    "sidecar_file_modes_are_0444": true
+  },
+  "training_boundary": {
+    "camera_backward_count": 4000,
+    "camera_microbatches_per_update": 4,
+    "checkpoint_file_byte_hashes_independently_recomputed": false,
+    "checkpoint_file_byte_hashes_source": "failed.json.artifacts",
+    "checkpoint_internal_content_state_and_frozen_hashes_are_sidecar_claims_not_independently_recomputed": true,
+    "checkpoint_pt_deserialization_or_tensor_load_count": 0,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ],
+    "ema_update_count": 0,
+    "encoder_gradient_tensor_count_every_update": 78,
+    "evidence_head_gradient_tensor_count_every_update": 14,
+    "frozen_state_sha256_at_all_sidecars": "3f5cce294f840be4c6c8cfa43b2818bae68da739b13348fe45a3d5087fe2524e",
+    "jepa_backward_count": 0,
+    "jepa_objective_count": 0,
+    "last_completed_update": 1000,
+    "optimizer_step_count": 1000,
+    "trace_updates_exactly_contiguous_1_through_1000": true,
+    "trainable_parameter_prefixes": [
+      "encoder.",
+      "evidence_head."
+    ],
+    "training_trace_schema": "lewm_go2_shared_jepa_v5_protected_camera_adaptation_v5_native_schedule_completion_trace_row_v1"
+  },
+  "verdict": "PASS_CONFIRMED_PREDECLARED_UPDATE_1000_NUMERIC_PROGRESS_FAILURE_NO_CAMERA_CHECKPOINT_QUALIFIED_NO_DOWNSTREAM_AUTHORITY"
+}

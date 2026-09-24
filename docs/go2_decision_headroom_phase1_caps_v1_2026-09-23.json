@@ -1,0 +1,121 @@
+{
+  "schema": "go2_decision_headroom_phase1_caps.v1",
+  "recorded_at": "2026-09-23T17:25:01.218960+01:00",
+  "authority": "docs/go2_decision_headroom_agent_handoff_final_2026-09-23.md",
+  "authority_sha256": "054343396f42d5df3191a97415fece28da1b58101a55d8914571ab8447de3448",
+  "phase": "bounded blinded technical pilot; no Phase 2 authority",
+  "start_condition": "All four original Stage A assignments terminal and physically read; coordinator and native owners exited. No pilot physics or GPU work competes with Stage A.",
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001",
+  "collection_caps": {
+    "layouts": 2,
+    "layout_indices": [
+      0,
+      2
+    ],
+    "layout_family": "existing dense-maze development cohort; exposed pilot-only",
+    "source_rollouts": 6,
+    "source_controller_quotas": {
+      "command_history": 2,
+      "reactive_feedback": 2,
+      "action": 2
+    },
+    "source_camera_frames_per_rollout": 161,
+    "source_policy_steps_per_rollout": 805,
+    "source_settling_seconds_per_rollout": 1.5,
+    "source_physics_seconds_total": 105.6,
+    "snapshots_per_rollout": 4,
+    "sampled_states_total": 24,
+    "snapshot_frames": [
+      12,
+      52,
+      92,
+      132
+    ],
+    "sanity_cases": 24,
+    "sanity_cases_per_category": 4,
+    "sanity_categories": [
+      "wall_ahead",
+      "open_corridor",
+      "preparatory_turn",
+      "goal_settling",
+      "wall_grazing",
+      "reversal"
+    ],
+    "sanity_panel": "Prewritten analytical physical cases for independent evaluator qualification; not comparative method rows or extra source rollouts."
+  },
+  "branch_caps": {
+    "candidates_per_state": 6,
+    "repeat_attempts_per_candidate": 3,
+    "source_trace_restore_attempts_per_state": 3,
+    "candidate_attempts_total": 432,
+    "source_trace_attempts_total": 72,
+    "all_branch_attempts_total": 504,
+    "seconds_per_branch": 0.8,
+    "branch_physics_seconds_total": 403.2,
+    "all_physics_seconds_total": 508.8,
+    "include_failed_attempts": true,
+    "extra_off_bank_reactive_branches": 0,
+    "horizons_ms": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800
+    ],
+    "committed_prefix_included": true
+  },
+  "compute_caps": {
+    "execution_wall_seconds": 14400,
+    "aggregate_cpu_seconds": 230400,
+    "gpu_owner_wall_seconds": 14400,
+    "concurrent_native_owners": 1,
+    "concurrent_gpu_owners": 1,
+    "cpu_affinity": [
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31
+    ],
+    "torch_threads": 4,
+    "aggregate_rss_bytes": 51539607552,
+    "gpu_allocated_bytes": 25769803776,
+    "minimum_available_ram_bytes": 17179869184,
+    "minimum_available_vram_bytes": 4294967296,
+    "encoder_timing_passes": 12,
+    "predictor_timing_passes": 12,
+    "readout_timing_passes_per_existing_head": 12,
+    "comparative_selections_or_rankings": 0
+  },
+  "storage_caps": {
+    "retained_bytes": 8589934592,
+    "peak_additional_bytes": 12884901888,
+    "recovery_filesystem_reserve_bytes": 12884901888,
+    "workspace_filesystem_reserve_bytes": 4294967296,
+    "new_raw_depth_bytes": 0,
+    "new_dense_feature_file_bytes": 0,
+    "artifact_retirement_authorized": false
+  },
+  "stops": [
+    "Stop on any cap; do not enlarge it to achieve a pass.",
+    "Stop if faithful physical/decision restoration requires a controller change or prohibited retained input.",
+    "Stop if reference-cost qualification or usable restoration cannot be achieved within caps.",
+    "At checkpoint (a), submit frozen committed protocol/config and measured evidence; wait for explicit Andrew approval."
+  ],
+  "blinding": "No R0-R5 comparative audit selections, rankings, harms, regrets or paired-regret variance on pilot states. Ordinary source-controller choices and prewritten reference-cost sanity rankings only.",
+  "phase2_approved": false
+}

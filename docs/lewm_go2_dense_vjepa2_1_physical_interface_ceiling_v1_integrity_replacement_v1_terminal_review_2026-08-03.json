@@ -1,0 +1,367 @@
+{
+  "schema": "lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_integrity_replacement_v1_terminal_review_v1",
+  "status": "PASS_COMPLETE_SCIENTIFIC_STOP_TERMINAL_REVIEW",
+  "review_date": "2026-08-03",
+  "reviewer": {
+    "identity": "/root/vjepa_ceiling_terminal_audit",
+    "independence_basis": "I authored neither preregistration, implementation, tests, source review, execution authority, runtime attempt, nor primary or replay evaluator output. I independently checked the exact JSON, Markdown, source, and test records; reconstructed row-backed summaries, family-balanced whole-scene bootstrap intervals, gates, and verdict without importing any repository aggregation, bootstrap, gate, or verdict function; and did not deserialize either feature cache or the checkpoint, execute an encoder, retrain a model, open RGB or state receipts, or access protected, held-out, or sealed material. The root auditor supplied the two binary output SHA-256 values from opaque read-only hashing.",
+    "repository_statistical_functions_imported": false,
+    "model_retrained_or_resumed": false
+  },
+  "protected_material_opened": false,
+  "development_only": true,
+  "citable_as_scientific_evidence": false,
+  "citable_as_development_evidence": true,
+  "bindings": {
+    "original_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_preregistration_2026-08-03.md",
+      "sha256": "ef5c687d509929169280a456618e92e92f2a072a646bc292be3d16850f801ad0",
+      "byte_count": 20816
+    },
+    "original_failure_terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v1/terminal.json",
+      "sha256": "b8c04572ba67baccbd81d54bf9039398c490a451e70b7c83d1cc03f07565ebf7",
+      "byte_count": 1801
+    },
+    "original_terminal_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_terminal_review_2026-08-03.json",
+      "sha256": "69f2a77962abcfec16331a2fb71b799521173781da102c5fac7af4a0246954bc",
+      "byte_count": 10826
+    },
+    "replacement_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_integrity_replacement_v1_preregistration_2026-08-03.md",
+      "sha256": "724c52e59696e22efcfdb9e3427cd5a622a536400359389476bff1c8d1fe3ce6",
+      "byte_count": 11704
+    },
+    "replacement_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_integrity_replacement_v1_source_review_2026-08-03.json",
+      "sha256": "8d859b5cdb23909d1d32901c7f0a71454ed3ef8f35eda74a5f00a02ecccbfd7e",
+      "byte_count": 12898
+    },
+    "replacement_execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_dense_vjepa2_1_physical_interface_ceiling_v1_integrity_replacement_v1_execution_authority_2026-08-03.json",
+      "sha256": "e7963f0d82d0a4182cde1add2d4643edaf4560e9f1d85eb93d6a6f9def1e6bc2",
+      "byte_count": 983826
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/reservation.json",
+      "sha256": "b19a9cc7ba66b4f35575c32e699db25bc1b1d76e75d72345ac7a2d4030121733",
+      "byte_count": 658
+    },
+    "eval_cache": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/vjepa2_1_eval.pt",
+      "sha256": "6ebe1074f74a796c2ad7dba09b617302bbcfcec1a0c24ad5ed466da1a54cea2a",
+      "byte_count": 604096297
+    },
+    "eval_cache_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/vjepa2_1_eval.json",
+      "sha256": "38462390fc323deaaf5e3305ae2ebc63776ea0d47dcd498dce3e1ea620b37df3",
+      "byte_count": 7499
+    },
+    "ceiling_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/ceiling_checkpoint.pt",
+      "sha256": "5d51cf7b60f16fdd58d232db8be8ca3209a695355c11063330465c618bbdf117",
+      "byte_count": 282063
+    },
+    "evaluation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/evaluation.json",
+      "sha256": "836b7d33a07517df63bf97b01f992788929c1cd12be1b9e8ad5049c4c1ab0496",
+      "byte_count": 892754
+    },
+    "replay": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/replay.json",
+      "sha256": "5f8a1151f43709276fa61fe3bf2543ce8117a485ce0d0406781c3cac0ccf1015",
+      "byte_count": 902734
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/result.json",
+      "sha256": "af5b289215c6d5fda336397e8db9b1049d2eb956eefa7080da38e85329ba2206",
+      "byte_count": 1001961
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1/terminal.json",
+      "sha256": "b6e46092a75c16f3189720b1cb1dd9b64ae3c46198fa902b1d4da1320373a6dc",
+      "byte_count": 990
+    }
+  },
+  "binding_provenance": {
+    "json_markdown_source_and_test_records": "Independently SHA-256 and byte-count checked by this reviewer where listed or bound by the authority.",
+    "eval_cache_and_checkpoint": "SHA-256 values supplied by the root auditor after opaque read-only hashing; this reviewer independently checked regular-file byte counts and cross-record bindings but did not open or deserialize either binary.",
+    "binary_payloads_deserialized_by_terminal_review": false,
+    "all_six_output_json_bindings_match_independent_hashes": true,
+    "all_twelve_authority_source_test_bindings_match_live_files_and_authorized_commit": true
+  },
+  "commit_lineage": {
+    "original_preregistration_commit": "a6c2427d0a07c1287ecf76c8a62508d392f855e7",
+    "original_terminal_review_commit": "55bfaac5aa400c904c8ee70e071936e2a11d577e",
+    "replacement_preregistration_commit": "593f8c5f752f608f6072e17a188b860c8e558524",
+    "replacement_implementation_commit": "715f692c9c7b27b628668678f8c28433ebd66ac6",
+    "replacement_source_review_commit": "6e780efa786476d910c93c064575dc09fab24780",
+    "replacement_execution_authority_commit": "8076ece1e77ff82bb40cce3fcc145b58eef23f2d",
+    "authority_reviewed_git_commit": "6e780efa786476d910c93c064575dc09fab24780"
+  },
+  "attempt_contract": {
+    "attempt_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_dense_vjepa2_1_physical_interface_ceiling_v1/attempt_v2_integrity_replacement_v1",
+    "attempt_consumed": true,
+    "reserved_before_cache_deserialization_or_rgb_decode": true,
+    "exact_regular_file_inventory": [
+      "reservation.json",
+      "vjepa2_1_eval.pt",
+      "vjepa2_1_eval.json",
+      "ceiling_checkpoint.pt",
+      "evaluation.json",
+      "replay.json",
+      "result.json",
+      "terminal.json"
+    ],
+    "all_inventory_members_regular_and_not_symlinks": true,
+    "unexpected_files": [],
+    "missing_files": [],
+    "evaluation_status": "COMPLETE_DEVELOPMENT_ONLY_PHYSICAL_INTERFACE_EVALUATION",
+    "result_status": "STOP_FROZEN_VJEPA_PHYSICAL_INTERFACE_NOT_ESTABLISHED",
+    "terminal_status": "STOP_FROZEN_VJEPA_PHYSICAL_INTERFACE_NOT_ESTABLISHED",
+    "terminal_failure": null,
+    "deterministic_replay_passed": true
+  },
+  "source_authority_audit": {
+    "source_test_binding_count": 12,
+    "source_test_binding_failures": 0,
+    "replacement_source_review_status": "PASS_INDEPENDENT_DENSE_VJEPA2_1_CEILING_INTEGRITY_REPLACEMENT_V1_SOURCE_REVIEW",
+    "replacement_authority_status": "AUTHORIZED_ONE_DENSE_VJEPA2_1_PHYSICAL_INTERFACE_CEILING_INTEGRITY_REPLACEMENT_V1_ATTEMPT",
+    "authority_preregistration_and_source_review_bindings_exact": true,
+    "replacement_namespace_and_root_exact": true,
+    "encoder_identity_cross_record_consistent": true,
+    "encoder_repo_commit": "204698b45b3712590f06245fbfba32d3be539812",
+    "encoder_repo_tree": "dd6cfc1e792158510b983d827cb2e84f47fd5706",
+    "encoder_checkpoint_sha256": "848a77c33cc9e6649ed2119c9bea1e2c569bcdab9539ff3e7c02ccc2959ddf4d",
+    "encoder_or_checkpoint_executed_or_deserialized_by_terminal_review": false
+  },
+  "access_accounting": {
+    "primary": {
+      "train_rgb": 0,
+      "eval_rgb": 1536,
+      "eval_context_rgb": 384,
+      "eval_successor_rgb": 1152,
+      "vjepa_encoded_frames": 1536,
+      "eval_receipt_decoded_pixel_verification_count": 1536,
+      "eval_receipt_encoded_frame_count": 1536,
+      "state_receipts_reported_opened": 256,
+      "render_receipts_reported_opened": 0,
+      "calibration_collection_receipts_reported_opened": 0
+    },
+    "replay": {
+      "train_vjepa_cache_loads": 1,
+      "eval_vjepa_cache_loads": 1,
+      "primary_checkpoint_comparison_loads": 1,
+      "primary_evaluation_comparison_loads": 1,
+      "comparison_references_loaded_after_recomputation": true,
+      "train_rgb": 0,
+      "eval_rgb": 0,
+      "encoder_execution": 0
+    },
+    "protected_heldout_or_sealed_access": 0,
+    "counts_match_authority": true
+  },
+  "replay_audit": {
+    "status": "PASS_EXACT_FRESH_PROCESS_CACHE_ONLY_REPLAY_INTEGRITY_REPLACEMENT_V1",
+    "fresh_process": true,
+    "cache_only_feature_inputs": true,
+    "primary_evaluation_equals_result_embedded_evaluation": true,
+    "primary_evaluation_equals_replay_recomputed_evaluation": true,
+    "primary_and_recomputed_gates_2_to_9_exact": true,
+    "recomputed_verdict_exact": true,
+    "all_fifteen_reproduction_flags_true": true,
+    "reproduction": {
+      "bootstrap_intervals": true,
+      "complete_checkpoint_tree": true,
+      "complete_evaluation": true,
+      "ensemble_scores": true,
+      "exactly_reproduced": true,
+      "gates": true,
+      "model_state_identities_and_values": true,
+      "optimizer_step_counts": true,
+      "pca_identity_and_arrays": true,
+      "per_seed_scores": true,
+      "selected_actions": true,
+      "summaries": true,
+      "task_readout_identity_and_state": true,
+      "train_action_mean_identity_and_values": true,
+      "verdict": true
+    }
+  },
+  "independent_recomputation": {
+    "method": "Parsed only evaluation.json row records. For each row-backed arm I recomputed state counts, scene counts, action histograms, regret, oracle-match rate, physical path length, target progress, progress delta, fall and tip rates using float64 reductions. I paired true-future and comparator rows by exact state, family, and scene identity; averaged state differences within each whole scene; sampled both scenes with replacement inside each of eight equally weighted families using NumPy default_rng seed 2026080314 for 10000 resamples; and used percentile 2.5 and 97.5 quantiles. No repository statistical or verdict implementation was imported.",
+    "row_backed_arm_summaries_exact": 9,
+    "per_family_summaries_exact": 72,
+    "per_scene_summaries_exact": 144,
+    "summary_failures": 0,
+    "arm_summary": {
+      "privileged_physical_oracle": {
+        "normalized_rank_regret": 0.0,
+        "oracle_equivalent_selection_rate": 1.0
+      },
+      "dense_vjepa_true_future": {
+        "normalized_rank_regret": 0.20705915178571427,
+        "oracle_equivalent_selection_rate": 0.4375,
+        "physical_target_progress_m": 0.057852301746433715
+      },
+      "task_action_only": {
+        "normalized_rank_regret": 0.17441406250000002,
+        "oracle_equivalent_selection_rate": 0.46875
+      },
+      "retained_physical_predecessor": {
+        "normalized_rank_regret": 0.14896763392857143,
+        "oracle_equivalent_selection_rate": 0.5625
+      },
+      "dense_vjepa_current_state": {
+        "normalized_rank_regret": 0.2234561011904762,
+        "oracle_equivalent_selection_rate": 0.4375
+      },
+      "dense_vjepa_relational_persistence": {
+        "normalized_rank_regret": 0.22885044642857144,
+        "oracle_equivalent_selection_rate": 0.421875
+      },
+      "dense_vjepa_same_action_wrong_scene": {
+        "normalized_rank_regret": 0.2396298363095238,
+        "oracle_equivalent_selection_rate": 0.359375
+      },
+      "dense_vjepa_train_action_mean_innovation": {
+        "normalized_rank_regret": 0.23229166666666667,
+        "oracle_equivalent_selection_rate": 0.4296875
+      },
+      "random_expected": {
+        "normalized_rank_regret": 0.49541377314814816
+      }
+    },
+    "paired_family_scene_cluster_comparisons": {
+      "true_future_minus_task_action_only": {
+        "mean_delta": 0.03264508928571429,
+        "lower_95": -0.016741071428571428,
+        "upper_95": 0.08203125
+      },
+      "true_future_minus_retained_physical_predecessor": {
+        "mean_delta": 0.05809151785714286,
+        "lower_95": 0.013764880952380952,
+        "upper_95": 0.10240885416666666
+      },
+      "true_future_minus_current_state": {
+        "mean_delta": -0.0163969494047619,
+        "lower_95": -0.047507440476190474,
+        "upper_95": 0.014713541666666672
+      },
+      "true_future_minus_relational_persistence": {
+        "mean_delta": -0.02179129464285714,
+        "lower_95": -0.043536086309523804,
+        "upper_95": -0.00004650297619047299
+      },
+      "true_future_minus_same_action_wrong_scene": {
+        "mean_delta": -0.03257068452380952,
+        "lower_95": -0.06775599888392857,
+        "upper_95": 0.002289109002976176
+      },
+      "true_future_minus_train_action_mean_innovation": {
+        "mean_delta": -0.025232514880952378,
+        "lower_95": -0.05120907738095237,
+        "upper_95": 0.001069568452380952
+      }
+    },
+    "scientific_gates": {
+      "1_infrastructure_and_custody": true,
+      "2_privileged_physical_oracle": true,
+      "3_true_future_beats_task_action_only": false,
+      "4_true_future_beats_retained_physical_predecessor": false,
+      "5_true_future_beats_current_state": false,
+      "6_true_future_beats_relational_persistence": true,
+      "7_true_future_beats_same_action_wrong_scene": false,
+      "8_true_future_beats_train_action_mean_innovation": false,
+      "9_true_future_beats_random_expected": true,
+      "10_exact_fresh_process_cache_only_replay": true
+    },
+    "all_ten_gates_pass": false,
+    "recomputed_terminal_status": "STOP_FROZEN_VJEPA_PHYSICAL_INTERFACE_NOT_ESTABLISHED"
+  },
+  "runtime_compatibility_caveat": {
+    "train_cache_runtime_evidence": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_matched_branch_successor_screen_v1_execution_authority_2026-08-03.json",
+      "sha256": "2f293e69669ccc16a8f728a7267a243f207c25be6a6e40a5b2799648df20b591",
+      "byte_count": 5065,
+      "python": "/usr/bin/python3.12",
+      "torch": "2.12.0+rocm7.2",
+      "hip_rocm": "7.2.53211"
+    },
+    "evaluation_runtime_evidence": {
+      "python": "/usr/bin/python3.12",
+      "python_version": "3.12.3",
+      "torch": "2.14.0.dev20260726+rocm7.1",
+      "hip_rocm": "7.1.52802"
+    },
+    "classification": "MILD_NEGATIVE_RESULT_CONFOUND_NOT_INFRASTRUCTURE_FAILURE",
+    "reason": "Train and evaluation caches use the same frozen repository commit, checkpoint, image preprocessing, 24-to-16 resampling, token normalization, shape, order, and float16 storage contract, but they were produced under different Torch and ROCm versions. A small numerical or kernel-domain shift could hurt cross-role readout generalization, so the negative result should be scoped to the executed bound runtimes rather than treated as a runtime-invariant impossibility result.",
+    "positive_gate_credibility": "The persistence, wrong-scene, current-state, and action-mean controls share the same evaluation cache and train-to-evaluation runtime boundary. The strict persistence superiority and exact replay therefore remain credible within the executed interface, and the random comparison is unaffected as a fixed expectation.",
+    "why_failed_gates_are_not_rescued": "No matched-runtime counterfactual was executed, so the runtime difference supplies no measured sign or magnitude and cannot be used post hoc to reverse a preregistered gate. The retained physical baseline is significantly better with the entire registered interval above zero, task/action has a better point regret, and several controls that share the V-JEPA runtime boundary also fail. The caveat narrows generalization of the STOP; it does not qualify the interface or authorize another attempt."
+  },
+  "threshold_audit": {
+    "fitness_for_preregistered_claim": "FIT",
+    "basis": "The six comparison thresholds are zero-effect, family-balanced whole-scene superiority boundaries tied to explicit alternative explanations, not arbitrary round-number performance targets. Requiring actual future tokens to beat task/action, retained physical inputs, current-state capacity, persistence, wrong-scene, and action-mean controls is proportionate to the claimed scene-specific physical-interface ceiling.",
+    "near_boundary_results": {
+      "persistence_upper_95": -0.00004650297619047299,
+      "wrong_scene_upper_95": 0.002289109002976176,
+      "action_mean_upper_95": 0.001069568452380952
+    },
+    "critical_interpretation": "The panel is small at 16 independent scene clusters, so near-zero endpoints should not be overinterpreted. However, threshold sensitivity does not drive the STOP: true-future regret is worse than task/action at the point estimate and worse than the retained physical predecessor by 0.05809151785714286 with a wholly positive 95% interval. Relaxing only the near-boundary controls would still leave the central qualification claim unsupported.",
+    "posthoc_threshold_relaxation_permitted": false
+  },
+  "scientific_interpretation": {
+    "strongest_positive": "Actual action-matched future V-JEPA tokens beat relational persistence by -0.02179129464285714 normalized regret with upper95 -0.00004650297619047299, and true-future regret 0.20705915178571427 is well below random expectation 0.49541377314814816. This establishes limited successor-sensitive signal in this readout, not a useful physical interface.",
+    "strongest_negative": "The true-future interface is worse than the retained physical predecessor by +0.05809151785714286 normalized regret, with 95% interval [0.013764880952380952, 0.10240885416666666], and is also worse than task/action at the point estimate. It fails to establish superiority over current-state, same-action wrong-scene, or train action-mean innovation controls.",
+    "heterogeneity": "Family effects change sign: the interface helps on medium enclosed maze and rough local dynamics against retained physical inputs but is materially worse on large enclosed maze, local composite motifs, and loop alias stress. This is inconsistent with a stable general physical ranking interface.",
+    "route_consequence": "The exact preregistered consequence is STOP_FROZEN_VJEPA_PHYSICAL_INTERFACE_NOT_ESTABLISHED. The frozen single-frame V-JEPA 2.1 plus K=8 PCA plus 245-parameter shared-readout route closes. It does not qualify or authorize a backbone-level matched-branch predictor preregistration, threshold tuning, readout variants, extra seeds or epochs, cache variants, or a 12-model V-JEPA/DINO campaign.",
+    "safety": "NOT_TESTABLE_ZERO_EVENT_SUPPORT"
+  },
+  "claim_boundary": {
+    "development_exposed_scene_disjoint_panel": true,
+    "actual_future_tokens_are_privileged_and_not_deployable": true,
+    "jepa_or_predictor_trained": false,
+    "dynamics_model_established": false,
+    "navigation_usefulness_established": false,
+    "closed_loop_planning_established": false,
+    "rollout_composability_established": false,
+    "persistent_memory_established": false,
+    "safety_established": false,
+    "fresh_heldout_confirmation_established": false,
+    "vjepa_or_jepa_navigation_capability_generally_ruled_out": false,
+    "dense_self_supervised_token_jepa_generally_ruled_out": false,
+    "permitted_conclusion": "On this development-exposed, scene-disjoint one-step branch panel and the bound mixed-runtime cache pair, the frozen V-JEPA 2.1 dense representation with this fixed low-capacity interface did not establish scene-specific physical action-ranking headroom beyond the complete registered control set.",
+    "prohibited_overclaim": "The result does not show that V-JEPA 2.1, DINOv2, JEPA training, dense token representations, action-conditioned predictors, world models, navigation, or planning are generally incapable."
+  },
+  "permission_audit": {
+    "authorizes_retry_or_resume": false,
+    "authorizes_second_integrity_replacement": false,
+    "authorizes_model_or_predictor_training": false,
+    "authorizes_downstream_successor_execution": false,
+    "authorizes_navigation_or_planning_claim": false,
+    "authorizes_collection_or_3tb_pool_use": false,
+    "authorizes_protected_heldout_or_sealed_access": false,
+    "terminal_review_grants_new_execution_authority": false
+  },
+  "checks": {
+    "original_failure_lineage_and_science_identical_replacement_bindings_exact": true,
+    "replacement_preregistration_source_review_and_authority_rehashed_exact": true,
+    "all_twelve_source_test_bindings_match_authorized_commit": true,
+    "exact_eight_regular_file_output_inventory": true,
+    "all_six_json_output_bindings_independently_rehashed_exact": true,
+    "binary_output_bindings_cross_record_exact_without_deserialization": true,
+    "reservation_authority_root_and_attempt_consumption_exact": true,
+    "evaluation_result_replay_and_terminal_binding_chain_exact": true,
+    "primary_result_and_replay_evaluations_exact": true,
+    "all_fifteen_replay_reproduction_flags_true": true,
+    "all_row_backed_arm_family_and_scene_summaries_recomputed_exact": true,
+    "all_six_family_equal_scene_cluster_bootstraps_recomputed_exact": true,
+    "all_ten_gates_and_stop_verdict_recomputed_exact": true,
+    "primary_and_replay_access_accounting_complete_and_authority_compliant": true,
+    "runtime_difference_disclosed_and_correctly_scoped": true,
+    "zero_event_safety_nonapplicability_preserved": true,
+    "no_retry_training_downstream_or_protected_authority": true,
+    "no_tensor_checkpoint_rgb_state_receipt_or_protected_payload_opened": true
+  }
+}

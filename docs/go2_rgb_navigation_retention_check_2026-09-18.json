@@ -1,0 +1,8 @@
+{
+  "status": "PASS",
+  "retained_rgb_pixels_exact": true,
+  "depth_and_rgb_hashes_exact": true,
+  "raw_depth_files_written": 0,
+  "source_frame": ".generated/navigation_development_artifacts_v1/go2_dense_horizon_untimed_exposed_maze_pilot_v1_attempt_002/native/rgb_0000.png",
+  "existing_artifacts_modified": false
+}

@@ -1,0 +1,13 @@
+{
+  "content_sha256": "4f621c5b75c4e455c4428cea2d65c09edc89e09d7358a8fe5688f0d8f2479ed6",
+  "manifest": {
+    "content_sha256": "91e11b071782ab6e825239fb6849e9678fa03e7b130e0da2da9dc1d88fe08ece",
+    "file_sha256": "647a26987b4f09dba2a0993e4cc679c38a1445305677de82ed46d759a464de90",
+    "path": "docs/lewm_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "2e87a10beed877065f05a3daf50f98d403e75cf210b4fd31eed5df44bf016b50"
+  },
+  "reviewed_source_commit": "c5bfc61223f3bada483ec3bbfb69234c65651c24",
+  "schema": "lewm_go2_rgb_same_action_cross_scene_contrastive_innovation_joint_jepa_v21_source_review_v1",
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY"
+}

@@ -1,0 +1,420 @@
+{
+  "schema": "decision_headroom_rgb_recheck_amended.v2",
+  "authority": "Andrew explicit amendment 2026-09-23: two-state RGB-restoration recheck and bounded read-only analyses; no Phase 2.",
+  "pre_execution_status": "Original recheck output absent and no live recheck process at 19:58 BST; amendments applied before execution.",
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_rgb_restore_recheck_v1_attempt_001",
+  "limits": {
+    "status": "AUTHORISED_BY_USER_AMENDMENT_2026-09-23",
+    "scope": "One bounded renderer-cache restoration recheck, not completion of the full pilot or Phase 2.",
+    "source_snapshots": [
+      {
+        "case": 0,
+        "frame": 12
+      },
+      {
+        "case": 1,
+        "frame": 132
+      }
+    ],
+    "new_source_rollouts": 0,
+    "existing_states": 2,
+    "new_snapshots": 0,
+    "source_trace_replays_per_state": 3,
+    "candidate_branches_per_state": 6,
+    "candidate_repeats": 3,
+    "branch_attempts": 42,
+    "branch_horizon_s": 0.8,
+    "new_branch_physics_s": 33.6,
+    "scene_initializations": 2,
+    "maximum_settling_physics_s": 3.0,
+    "maximum_new_physics_s": 36.6,
+    "execution_wall_s": 900,
+    "aggregate_cpu_s": 14400,
+    "aggregate_rss_bytes": 17179869184,
+    "total_gpu_used_bytes": 8589934592,
+    "retained_bytes": 1073741824,
+    "peak_additional_bytes": 2147483648,
+    "recovery_reserve_bytes": 12884901888,
+    "workspace_reserve_bytes": 4294967296,
+    "expected_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_rgb_restore_recheck_v1_attempt_001",
+    "raw_depth_bytes": 0,
+    "dense_feature_bytes": 0,
+    "comparative_selections": 0,
+    "fitting": false,
+    "controllers_changed": false,
+    "sensors_changed": false,
+    "acceptance": "All 6 source-trace replays meet original pose/yaw/contact tolerances and 96/96 source-replay RGB images match bitwise; all candidate repeats match physics and corresponding RGB. Any mismatch remains a failure, with no adjusted tolerance or extra attempt.",
+    "stop": "After these fixed attempts, report the result and stop. Passing does not authorise more collection or Phase 2."
+  },
+  "states": [
+    {
+      "case": 0,
+      "controller": "command_history",
+      "source_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00",
+      "frame": 12,
+      "measured_ns": 2700000000,
+      "snapshot": {
+        "frame": 12,
+        "measured_ns": 2700000000,
+        "source_physical_sample_index": 1349,
+        "physical": {
+          "path": "physical.pkl",
+          "bytes": 28427086,
+          "sha256": "2a0266597b4f06a31cc5f632d11bfd7d3a3af25e02e68482e3eb5b69a1279c48"
+        },
+        "decision": {
+          "path": "decision.pkl",
+          "bytes": 12340223,
+          "sha256": "e7bfb3c1cfdc80a1b12f2eb0e9d1c7b522c245d7dd950ff47f2e64a161ae1fea"
+        },
+        "capture_and_write_wall_s": 1.593201023992151,
+        "source_controller": "command_history",
+        "layout": 0,
+        "pilot_only": true,
+        "restoration_qualified": false,
+        "comparative_rows_computed": false
+      },
+      "base_pose_world": [
+        -1.3003380298614502,
+        0.01648484356701374,
+        0.31918931007385254,
+        -0.016259675845503807,
+        0.00810258463025093,
+        0.004152745474129915,
+        0.9998263716697693
+      ],
+      "camera_transforms": [
+        [
+          [
+            0.00856753927010961,
+            -0.016067310226772106,
+            0.9998342056625847,
+            -0.9737011844756963
+          ],
+          [
+            -0.9994367553197292,
+            -0.032580999798890266,
+            0.00804055769686134,
+            0.02050704836754282
+          ],
+          [
+            0.032446407918704546,
+            -0.9993399421589139,
+            -0.01633739939499704,
+            0.3568349353839168
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        [
+          [
+            0.00856753927010961,
+            -0.7183508509030573,
+            0.6956282428695004,
+            -0.9491106730614038
+          ],
+          [
+            -0.9994367553197292,
+            -0.02872377876760519,
+            -0.017352713023660503,
+            0.021905518744826432
+          ],
+          [
+            0.032446407918704546,
+            -0.6950877639119848,
+            -0.7181923357102955,
+            0.3934184156583167
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      ]
+    },
+    {
+      "case": 1,
+      "controller": "reactive_feedback",
+      "source_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01",
+      "frame": 132,
+      "measured_ns": 14700000000,
+      "snapshot": {
+        "frame": 132,
+        "measured_ns": 14700000000,
+        "source_physical_sample_index": 7349,
+        "physical": {
+          "path": "physical.pkl",
+          "bytes": 28502935,
+          "sha256": "d67ee2ad72e0bae68e55e99f715a811e3eac2e735d02e3a32ab8df60dfe7d13a"
+        },
+        "decision": {
+          "path": "decision.pkl",
+          "bytes": 15293885,
+          "sha256": "fcea3b47d41e8d74aad0efdb9b12026fc6ea73886386f0dccc9007e2bd23ebde"
+        },
+        "capture_and_write_wall_s": 0.14126292000582907,
+        "source_controller": "reactive_feedback",
+        "layout": 0,
+        "pilot_only": true,
+        "restoration_qualified": false,
+        "comparative_rows_computed": false
+      },
+      "base_pose_world": [
+        -1.273348331451416,
+        0.018770011141896248,
+        0.3155876696109772,
+        0.03163187578320503,
+        -0.030344536527991295,
+        0.4660193920135498,
+        -0.8836880326271057
+      ],
+      "camera_transforms": [
+        [
+          [
+            -0.8217118272573234,
+            -0.08311234434070736,
+            0.5638102616693156,
+            -1.0859723553405687
+          ],
+          [
+            -0.5636506923290661,
+            -0.027623135805374815,
+            -0.8255512457777785,
+            -0.24917190014202845
+          ],
+          [
+            0.08418770683653809,
+            -0.9961572669947599,
+            -0.024148073031519692,
+            0.3505501602834764
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ],
+        [
+          [
+            -0.8217118272573234,
+            -0.45744336161256033,
+            0.3399047570453093,
+            -1.069365752319899
+          ],
+          [
+            -0.5636506923290661,
+            0.5642203774608519,
+            -0.6032853907520869,
+            -0.2679630740158962
+          ],
+          [
+            0.08418770683653809,
+            -0.6873142924270774,
+            -0.7214648248134284,
+            0.38682842540952606
+          ],
+          [
+            0.0,
+            0.0,
+            0.0,
+            1.0
+          ]
+        ]
+      ]
+    }
+  ],
+  "reactive_snapshot_eligibility": [
+    {
+      "frame": 12,
+      "measured_ns": 2700000000,
+      "complete_source_trace": true
+    },
+    {
+      "frame": 52,
+      "measured_ns": 6700000000,
+      "complete_source_trace": true
+    },
+    {
+      "frame": 92,
+      "measured_ns": 10700000000,
+      "complete_source_trace": true
+    },
+    {
+      "frame": 132,
+      "measured_ns": 14700000000,
+      "complete_source_trace": true
+    }
+  ],
+  "selection_rule": "Command-history frame12; latest already-collected reactive snapshot by measured_ns alone among complete 40-command 800-ms traces. No outcome-based selection.",
+  "temporal_and_pose_coverage": {
+    "timestamp_separation_s": 12.0,
+    "base_position_separation_m": 0.027324670631751757,
+    "wrapped_yaw_difference_rad": -0.979646888712817,
+    "same_exposed_layout": 0,
+    "not_independent_layouts": true
+  },
+  "branch_order_per_state": [
+    "source_trace_0",
+    "hold_0",
+    "hold_1",
+    "hold_2",
+    "forward_0",
+    "forward_1",
+    "forward_2",
+    "left_arc_0",
+    "left_arc_1",
+    "left_arc_2",
+    "right_arc_0",
+    "right_arc_1",
+    "right_arc_2",
+    "left_turn_0",
+    "left_turn_1",
+    "left_turn_2",
+    "right_turn_0",
+    "right_turn_1",
+    "right_turn_2",
+    "source_trace_1",
+    "source_trace_2"
+  ],
+  "state_order": [
+    0,
+    1
+  ],
+  "physical_tolerances": {
+    "position_m": 0.001,
+    "yaw_rad": 0.0017453292519943296
+  },
+  "strict_rgb_matches_required": 96,
+  "require_candidate_repeat_rgb_bitwise": true,
+  "optional_features": {
+    "max_encoder_images": 160,
+    "camera": "primary only",
+    "horizons_ms": [
+      100,
+      200,
+      300,
+      400,
+      500,
+      600,
+      700,
+      800
+    ],
+    "candidate_repeat": 0,
+    "feature_space": "Original frozen encoder tokens and per-token layer-normalised tokens",
+    "negligible_between_candidate_mse": 1e-12,
+    "outputs": "Only scalar MSE/RMSE/cosine-distance summaries and ratios; no rankings, dense tensors or fitting.",
+    "omit_if_headroom_insufficient": true
+  },
+  "capture_contract": {
+    "source": "InMemoryPairedCameraSession._render_pair",
+    "replay": "The same session._render_pair implementation through the existing branch execute function",
+    "native_shape": [
+      480,
+      640,
+      3
+    ],
+    "dtype": "uint8 RGB",
+    "capture_resize": "none",
+    "capture_colour_conversion": "none beyond shared runner._extract_rgb",
+    "save": "PIL.Image.fromarray(rgb).save(..., compress_level=1), PNG, both paths",
+    "encoder_preprocessing": "Image RGB -> PIL bicubic512x384 -> _to_chw RGB float /255 -> _normalise; frozen VJepa21Arm.tokens",
+    "historical_images_unmodified": true
+  },
+  "renderer_correction": "Only approved scene._visualizer.reset() before RNG restoration",
+  "no_phase2": true,
+  "no_additional_retries": true,
+  "stop_after_fixed_attempts": true,
+  "source_sha256": {
+    "scripts/run_go2_decision_headroom_pilot_development.py": "803497e83d86f2c8d4a4c1db466906e508e97e631f4f7dd52404f6c037d11958",
+    "scripts/run_go2_decision_headroom_source_development.py": "4f2f9336d55b8838c88b60d725f57843bd204d72a0138d8ebbe90de530d43bb6",
+    "scripts/run_go2_decision_headroom_branches_development.py": "2ccf66a39842034ae0148a8a1e575b981333c5602f7153ff665a6ccb264c0d8a",
+    "scripts/qualify_go2_decision_headroom_reference_development.py": "bc61ec6f238edfdf54dbddbcbccab424019933f3178f8f2789956a83ed93c6a7",
+    "lewm/decision_headroom_packet_development.py": "529e3a9c734c439d55b2fba83bd0e28a66a64d9216f66aeb249a987427c546c7",
+    "lewm/decision_headroom_snapshot_development.py": "676e57c7dd8b41a6b5b229d62c8042255761a362bd665f7300c06de42394d54a",
+    "lewm/decision_headroom_reference_development.py": "b9f08da08704893aff9299a9b57ded142dd1831d4edd1289c46cefd5c6a6e81d",
+    "scripts/check_go2_decision_headroom_pilot_development.py": "a9d7543d7d9e3b6dad08ed2c0ce3b871e20e374008e6085213d045d2d173ebcb",
+    "scripts/time_go2_decision_headroom_components_development.py": "94e605e5a2b6674d01f9e970cf26bcd96e1fdaa6728287362566afc0f7718f05",
+    "scripts/read_go2_decision_headroom_pilot_development.py": "fbe01c9822ea58e70feb1b41c72f22f418e052e90eea7d70acd08126d2080799",
+    "scripts/run_go2_dense_horizon_navigation_development.py": "519fdc0b0f1e170bb93b0b98663d5984b404fce840df2f20738b97c3d443e37e",
+    "lewm/dense_horizon_navigation_development.py": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+    "lewm/dense_native_observation_development.py": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+    "scripts/paced_native_session_development.py": "223c65fea3efcc2870f9f470afc954ccb0ff28f3e2501d27f239b3c873321898",
+    "scripts/whole_task_physics_session_development.py": "0a118879d6e890f0b262902eafc90dd7a969128bac5ead43de226ba0b02f48bd",
+    "scripts/rgb_navigation_retention_development.py": "e4f9957bf240047048179f4a46c5ba25e8a0470f6b74fdf821d94fda43aaff99",
+    "lewm/dense_world_model_maze_layouts_development.py": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8",
+    "scripts/continue_go2_decision_headroom_prephysics_development.py": "f23b3c48f19cf0b3849e3ba316bb8cd1980c2e1d839162f206b9d5247be03f68",
+    "scripts/run_go2_decision_headroom_rgb_recheck_development.py": "fe397738ae12410a1560c3a81e40c3af9eef69fc253658723559fc8c6b7494eb",
+    "scripts/in_memory_paired_camera_session_development.py": "dd825899993b68cc98d43421730fd89ae92c07aeecbec48375150315b8aa021e",
+    "scripts/dev_frozen_dense_representation_encoders_v1.py": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2"
+  },
+  "input_bindings": {
+    "vjepa_checkpoint": {
+      "path": "/home/andrewknowles/.cache/vjepa2_1_vitl_dist_vitG_384.pt",
+      "bytes": 5151198524,
+      "sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6"
+    },
+    "gait_checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt",
+      "bytes": 4547691,
+      "sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff"
+    },
+    "gait_config": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+      "bytes": 2409,
+      "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+    },
+    "state_0_requests.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/requests.json",
+      "sha256": "466f151f7e3e054108f87df68a82c124ca9e70b425130d7842e96a5aa3c6412c",
+      "bytes": 1127889
+    },
+    "state_0_native/physics_trace.npz": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/native/physics_trace.npz",
+      "sha256": "97f64102dc7c159451a041fc1be7015c26e79511b8780926b0ce448425c4193c",
+      "bytes": 1352007
+    },
+    "state_0_native/in_memory_camera_observations.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/native/in_memory_camera_observations.json",
+      "sha256": "d9082073e83e477828a491bfb5bae48808ac824d1b705e5ce66ee4cbd341865c",
+      "bytes": 381765
+    },
+    "state_0_specification.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_00/specification.json",
+      "sha256": "c431b9b3a3928b782f82b6a2f0b954bd62f6b29753ee6fccb490269f089da6b8",
+      "bytes": 12105
+    },
+    "state_1_requests.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/requests.json",
+      "sha256": "7a9f2129a24aab74396d1f0021c54f67bfa51e451e8a0b44074f6fc9751d5733",
+      "bytes": 1127769
+    },
+    "state_1_native/physics_trace.npz": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/native/physics_trace.npz",
+      "sha256": "d7ccdb3f762c07b31bb10da8ee8eb1eef1e19cb118e1992732d4d6f6dda81556",
+      "bytes": 1351687
+    },
+    "state_1_native/in_memory_camera_observations.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/native/in_memory_camera_observations.json",
+      "sha256": "26ae59e3914ac3904ac4b47f64b686398a9f00b4014449f374b9291ed5a02bbf",
+      "bytes": 381776
+    },
+    "state_1_specification.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_decision_headroom_phase1_v1_attempt_001/source_01/specification.json",
+      "sha256": "c431b9b3a3928b782f82b6a2f0b954bd62f6b29753ee6fccb490269f089da6b8",
+      "bytes": 12105
+    }
+  },
+  "workspace_peak_write_admission_bytes": 536870912,
+  "peak_write_limit_includes_retained_and_external_cache_growth": true,
+  "software": {
+    "genesis_visualizer_sha256": "045adba100eef7567878638bcd55336188692ad1e933ec2edcdbcb04d6610ef0",
+    "genesis_rasterizer_context_sha256": "28c453f97266fc9595202c58049ada16038c180eb7bfc60b8424c3a2bedf03e8"
+  }
+}

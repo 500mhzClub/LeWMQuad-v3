@@ -1,0 +1,24 @@
+{
+  "status": "RECORDED_VISIBILITY_DIAGNOSTIC_BINDINGS_AND_SCALAR_GEOMETRY_VERIFIED",
+  "diagnostic_sha256": "cfa6849af9b037acc8d75f47289fcdf8df7c9cb28cda1a10321a988117cd6f53",
+  "source_count": 1910,
+  "artifact_count": 9,
+  "failed_sampled_rays_by_frame": [
+    0,
+    1,
+    0
+  ],
+  "independent_scalar_edge_distance_pixels": 1.4928910230208442e-05,
+  "independent_floor_optical_depth_m": 1.9103261277075272,
+  "at_nearest_edge_x_plane_optical_depth_m": 1.368109399245039,
+  "at_nearest_edge_x_plane_world_xyz": [
+    0.6099999999999999,
+    -0.6900000536012195,
+    0.09973741643156486
+  ],
+  "ray_y_minus_edge_y_m": -5.3601219462962035e-08,
+  "strict_failure_preserved": true,
+  "new_native_execution": false,
+  "full_raw_audit_reexecuted": false,
+  "goal_achieved": false
+}

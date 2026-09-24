@@ -1,0 +1,121 @@
+{
+  "status": "COMPLETED_CONTACT_PARENT_AND_WAITER_BOUND_TO_DIAGNOSED_WORKER",
+  "native_result_sha256": "786107574dd5a4affc22d9a97ce16e9247214914ecf021df5079b7a1f2113865",
+  "waiter_result_sha256": "8ce84ca1568df9848ca3f95ea02c400bde911162e50441cca70f5c913a4ea4f7",
+  "native_launch_sha256": "8d6a736c2f1f6de1f461fa6952341c1a7f3d321ccdd37881ac27a6da35191b8c",
+  "waiter_launch_sha256": "0c57eabf201e1eaba5f19e4f4fba55ed5948d490c8e5dc20d3bf4098f92e4cb2",
+  "worker_terminal_sha256": "5b2791c83053ea944db281bb4e6990e5eddee0a00ac89e4e03ccef8cd185bac3",
+  "waiter_owner": {
+    "pid": 2703476,
+    "created": 1789048977.88,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/await_go2_commitment_contact_anchored_maze02_native_v1.py"
+    ]
+  },
+  "waiter_owner_ended": true,
+  "native_source_count": 1985,
+  "waiter_source_count": 1988,
+  "native_artifact_count": 3472,
+  "complete_native_and_waiter_artifacts_rehashed": true,
+  "prior_worker_raw_diagnosis_sha256": "9f28b43e90a9e4076b61ced5bac7daa43476a2b18d3e6acec8db8ec926244cea",
+  "readout": {
+    "schedule_terminal": "SENSOR_OR_MODEL_FAILURE",
+    "physical_stop": null,
+    "acquisition_stop": null,
+    "terminal_zero_ticks": 10,
+    "observed_arrivals": [],
+    "native_arrival_windows": [],
+    "outbound": {
+      "total_crossings": 5,
+      "distinct_open_edges": 5,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": [
+        [
+          [
+            -1,
+            0
+          ],
+          [
+            0,
+            0
+          ]
+        ],
+        [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ]
+        ],
+        [
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ]
+        ],
+        [
+          [
+            -1,
+            2
+          ],
+          [
+            0,
+            2
+          ]
+        ],
+        [
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            1
+          ]
+        ]
+      ]
+    },
+    "returning": {
+      "total_crossings": 0,
+      "distinct_open_edges": 0,
+      "invalid_crossings": 0,
+      "distinct_open_edge_cells": []
+    },
+    "physically_retraced_outbound_route": false,
+    "native_physics_samples": 29300,
+    "native_contact_samples": 0,
+    "native_contact_free": true,
+    "observation_and_control": {
+      "samples": 572,
+      "median_ms": 1075.5291275,
+      "p95_ms": 1421.535919,
+      "maximum_ms": 2055.32771,
+      "samples_above_command_interval_100ms": 572
+    },
+    "iteration_with_receipt": {
+      "samples": 572,
+      "median_ms": 1127.9577515,
+      "p95_ms": 1474.5289116999998,
+      "maximum_ms": 2112.443473,
+      "samples_above_command_interval_100ms": 572
+    },
+    "strict_physical_visibility_pass": true,
+    "hard_measurement_failed_frames": [],
+    "verified_round_trip": false,
+    "evaluator_only": true,
+    "real_time_qualified": false
+  },
+  "measured_round_trip_successes": 0,
+  "full_input_admission_reexecuted": false,
+  "raw_model_audit_reexecuted": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

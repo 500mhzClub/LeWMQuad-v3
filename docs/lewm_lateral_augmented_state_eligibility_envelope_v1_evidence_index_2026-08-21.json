@@ -1,0 +1,45 @@
+{
+  "claim_boundary": "Oracle simulated viability only; no learned safety, physical Go2 qualification, or emergency-stop claim.",
+  "evidence_root": ".generated/lateral_augmented_state_eligibility_envelope_v1",
+  "external_evidence_root": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lateral_augmented_state_eligibility_envelope_v1",
+  "key_artifact_digests": {
+    "collection_receipt.json": {
+      "bytes": 577,
+      "sha256": "a32db3a53e7935c050c50cae4741e21ad6a5cf1c5ad49ccbc70966e4ddbf6c21"
+    },
+    "fixture.json": {
+      "bytes": 735,
+      "sha256": "a4ba25f377382f59e15b82842acd70426cc50bbc71621c2afbb965a53c777634"
+    },
+    "frozen_selection.json": {
+      "bytes": 3820,
+      "sha256": "06e711dc85fb1e195199599c2cf4d769a7cd9bd453419e7eb8c05ae95a334769"
+    },
+    "index.json": {
+      "bytes": 25575222,
+      "sha256": "25490db9b4378356230516b5037e61c9edc6a4550e0b3aca0e9f831ca6cf9ada"
+    },
+    "result.json": {
+      "bytes": 4783,
+      "sha256": "c2749fddeefab0ed5ab532897e10e21bfa43ba2159b6f00968c4693a163f05f1"
+    }
+  },
+  "primary_classification": "LATERAL_AUGMENTED_STATE_ELIGIBILITY_SIGNAL",
+  "required_paths": [
+    "frozen_selection.json",
+    "fixture.json",
+    "collection_receipt.json",
+    "result.json",
+    "index.json",
+    "persistence_receipt.json",
+    "residual_states/*.json",
+    "matched_controls/*.json"
+  ],
+  "row_level_ledger": {
+    "bytes": 10468509,
+    "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/lateral_augmented_state_eligibility_envelope_v1/row_level_evidence_v1.jsonl",
+    "sha256": "ba0d0697fe7dacdc071be4ebede7e4ebd28b3e09be56ee14bcd499d68f34cc22"
+  },
+  "schema": "lateral_augmented_state_eligibility_envelope_v1_evidence_index",
+  "source_commit": "7d6672e53e567a2b07e51df506be5db4d6b2d04c"
+}

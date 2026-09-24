@@ -1,0 +1,259 @@
+{
+  "schema": "lewm_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1_custody_review_v1",
+  "date": "2026-07-28",
+  "status": "PASS_FROZEN_SOURCE_AND_CUSTODY_REVIEW_NO_EXECUTION_AUTHORITY",
+  "frozen_source": {
+    "commit": "e770445e79e9f54997041d57514466831e8c1308",
+    "parent": "9d2898d017345d8844952d359ae886ba5577242d",
+    "subject": "add dense cross-attention H4 JEPA probe",
+    "exact_commit_reaudited": true,
+    "working_tree_matches_commit_for_all_reviewed_paths": true
+  },
+  "new_file_bindings": [
+    {
+      "path": "docs/lewm_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1_preregistration_2026-07-28.md",
+      "byte_count": 13664,
+      "sha256": "56cc9435e21e2611a3dd977b1352f950d1fa67f2d654dcd05b7481b72894e046"
+    },
+    {
+      "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "byte_count": 23712,
+      "sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30"
+    },
+    {
+      "path": "scripts/run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "byte_count": 9842,
+      "sha256": "30838feadc6e211df0d8b32638abdcab761f9e77132dc52b90aedace232db142"
+    },
+    {
+      "path": "lewm/tests/test_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "byte_count": 12364,
+      "sha256": "fe9239cccfcb611337b5499242ec8aea7379117b7478970a50ce4aae34d9ccca"
+    },
+    {
+      "path": "lewm/tests/test_run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+      "byte_count": 7933,
+      "sha256": "895c6ff9e57f003c372a88ea30a69d141ebd1f34a82fbfa5ccfd9d157867ba02"
+    }
+  ],
+  "runtime_source_closure": {
+    "exact_key_count": 6,
+    "namespace_stubs_required_before_model_import": true,
+    "bindings": {
+      "dense_h4_wrapper": {
+        "path": "scripts/run_go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+        "byte_count": 9842,
+        "sha256": "30838feadc6e211df0d8b32638abdcab761f9e77132dc52b90aedace232db142"
+      },
+      "shared_runner": {
+        "path": "scripts/run_go2_recurrent_h4_joint_jepa_v1.py",
+        "byte_count": 70301,
+        "sha256": "fc35d535e1c07b56c667474e6e10c5c7587fa01e627567148c022331983616fc"
+      },
+      "v3_gate_source": {
+        "path": "scripts/run_go2_recurrent_h4_fixed_teacher_delta_joint_jepa_v3.py",
+        "byte_count": 13691,
+        "sha256": "6347adaaae9f66236b3988960ac45f8923d39a0be232572adb6531d401c63368"
+      },
+      "dense_h4_model": {
+        "path": "lewm/models/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1.py",
+        "byte_count": 23712,
+        "sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30"
+      },
+      "inherited_v1_model": {
+        "path": "lewm/models/go2_recurrent_h4_joint_jepa.py",
+        "byte_count": 21166,
+        "sha256": "ddd84561aba5a36df1255ab942bb29db943cc1bf7b0e496ae41b3d1cdc218f55"
+      },
+      "encoder_dependency": {
+        "path": "lewm/models/encoders.py",
+        "byte_count": 7028,
+        "sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d"
+      }
+    }
+  },
+  "output_root_freshness": {
+    "path": ".generated/go2_rgb_fixed_teacher_dense_spatiotemporal_cross_attention_h4_jepa_v1/probe_v1",
+    "observed_at": "2026-07-28T00:51:19+01:00",
+    "observed_absent": true,
+    "observation_scope": "existence_metadata_only_no_generated_content_opened",
+    "must_be_rechecked_immediately_before_execution": true
+  },
+  "frozen_runtime_inputs": {
+    "training_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v1/train.jsonl",
+      "row_count": 16000,
+      "byte_count": 10024000,
+      "sha256": "f3f4dbe9ddd830427cc86bd27b0adb0b0fd0cebf64e937626088711748d9dd6b",
+      "ordered_identity_sha256": "c730c3f2a6afd36c351d461feb3ca122d96db38a8a6df269085273ff526dbdaa"
+    },
+    "validation_index": {
+      "path": ".generated/go2_recurrent_h4_rgb_sequence_index_v1/val.jsonl",
+      "row_count": 2048,
+      "byte_count": 1278976,
+      "sha256": "86ab3130e5ba3468bd7f7f3e3cb1759d0e4a30d2326496e06845b4af7cb66880",
+      "ordered_identity_sha256": "89f05e2c77261b387b7f4763b502adafaf1dfbdf32f08830b08852143a8f75ef"
+    },
+    "accepted_n320_encoder_initialization": {
+      "path": ".generated/go2_observable_camera_ray_fit_v4/n320_compute_scaled_v1/checkpoint.pt",
+      "byte_count": 13777100,
+      "file_sha256": "ece874b53941e841fffc61b724a86d4383b881549afa453b746dd5d68aba11b0",
+      "content_sha256": "9dcca536943f89acfd7d463fdab591e19a030ef3dc8f3f19a050b1b10025fc2b",
+      "accepted_prefix_only": "encoder."
+    },
+    "main_pool_census": {
+      "path": ".generated/go2_recurrent_jepa_main_pool_census_v2/receipt.json",
+      "byte_count": 54695,
+      "file_sha256": "aac85f1016dca12e57e0cf612cd51a745becb2941adf361c0b4a752fe10a5408",
+      "source_binding_sha256": "0d5ce1c8aae3777a3e1c930959d5985817d92c28ec240ad03ed79121869d4696"
+    },
+    "review_note": "Bindings were read only from frozen source and preregistration; none of these generated inputs was opened by this review."
+  },
+  "science_and_optimizer_invariants": {
+    "jointly_trained_online_components": [
+      "online_encoder",
+      "dense_history_encoder",
+      "shared_action_path",
+      "cross_attention_predictor",
+      "delta_head"
+    ],
+    "training_losses": {
+      "raw_fixed_teacher_future_delta_weight": 1.0,
+      "three_frame_fixed_teacher_alignment_weight": 1.0,
+      "all_other_gradient_contributions": 0.0
+    },
+    "fixed_teacher": {
+      "evaluation_mode": true,
+      "requires_grad": false,
+      "optimizer_membership": false,
+      "ema_enabled": false,
+      "required_initial_final_state_sha256_equal": true,
+      "required_gradient_tensor_count": 0
+    },
+    "optimizer": {
+      "type": "AdamW",
+      "seed": 20260727,
+      "groups_disjoint_and_cover_all_trainable_parameters": true,
+      "online_encoder_lr": 0.0001,
+      "history_lr": 0.0003,
+      "predictor_lr": 0.0003,
+      "weight_decay": 0.0001,
+      "betas": [0.9, 0.999],
+      "epsilon": 1e-08,
+      "per_group_gradient_clip_norm": 1.0,
+      "backward_passes_per_update": 1,
+      "optimizer_steps_per_update": 1,
+      "autocast": false
+    }
+  },
+  "exact_successful_run_expectations": {
+    "caps": {
+      "optimizer_updates": 1000,
+      "effective_batch_size": 16,
+      "training_sequence_presentations": 16000,
+      "training_rgb_frame_views": 112000,
+      "validation_rows_per_observation": 2048,
+      "validation_observation_updates": [0, 250, 500, 750, 1000],
+      "validation_sequence_presentations": 10240,
+      "total_rgb_physical_open_attempts": 183680,
+      "gpu_active_seconds_maximum": 5400
+    },
+    "access_json_counts": {
+      "census_receipt_open_count": 1,
+      "train_index_open_attempt_count": 1,
+      "train_index_open_success_count": 1,
+      "val_index_open_attempt_count": 1,
+      "val_index_open_success_count": 1,
+      "model_source_open_attempt_count": 1,
+      "model_source_open_success_count": 1,
+      "model_source_post_import_recheck_attempt_count": 1,
+      "model_source_post_import_recheck_success_count": 1,
+      "n320_initialization_checkpoint_open_attempt_count": 1,
+      "n320_initialization_checkpoint_open_success_count": 1,
+      "rgb_physical_open_attempt_count": 183680,
+      "rgb_physical_open_success_count": 183680,
+      "validation_sequence_presentation_count": 10240,
+      "train_sequence_presentation_count": 16000,
+      "optimizer_update_count": 1000,
+      "optimizer_updates_with_fixed_target_count": 1000,
+      "target_ema_update_count": 0,
+      "wrong_action_counterfactual_sequence_count": 0,
+      "auxiliary_training_control_sequence_count": 0
+    },
+    "checkpoint_outputs": {
+      "write_only_updates": [250, 500, 750, 1000],
+      "runtime_checkpoint_input_count": 0,
+      "selected_checkpoint_access_requires_separate_authority": true
+    }
+  },
+  "prohibitions": {
+    "only_checkpoint_input_is_exact_n320_encoder_prefix": true,
+    "predecessor_predictor_checkpoint_or_tensor_input_count": 0,
+    "retry_or_resume_checkpoint_input_count": 0,
+    "arbitrary_initialization_checkpoint_input_count": 0,
+    "retry_or_resume_count": 0,
+    "heldout_open_count": 0,
+    "sealed_open_count": 0,
+    "label_open_count": 0,
+    "navigation_or_g2_g8_run_count": 0,
+    "future_rgb_online_path": false,
+    "recurrent_bev_warp_flow_cost_volume_retrieval_or_transport_module": false
+  },
+  "reported_source_and_resource_verification": {
+    "intended_execution_runtime": {
+      "status": "REPORTED_REVIEWED_NOT_EXECUTED_BY_CUSTODY_REVIEWER",
+      "python": "/home/andrewknowles/.local/share/lewmquad-v12-runtime-torch291-rocm64/bin/python",
+      "torch": "2.9.1+rocm6.4",
+      "hip": "6.4.43484-123eb5128",
+      "pillow": "10.2.0",
+      "accelerator_available": true
+    },
+    "focused_model_and_wrapper_cpu_tests": {
+      "passed": 15,
+      "failed": 0
+    },
+    "relevant_test_suite": {
+      "passed": 29,
+      "failed": 0
+    },
+    "independent_intended_runtime_suite": {
+      "passed": 32,
+      "failed": 0
+    },
+    "full_default_batch16_synthetic_gpu_smoke": {
+      "status": "PASS_REPORTED",
+      "model_source_sha256": "5c74675b93667e6035fc21c9fe497880ba4bff22641b3e735272e4cc1ede3d30",
+      "output_shape": [16, 4, 256, 192],
+      "belief_shape": [16, 1026, 192],
+      "update_zero_persistence_max_abs_difference": 0.0,
+      "teacher_gradient_tensor_count": 0,
+      "intended_online_gradients_present": true,
+      "peak_allocated_gib": 2.327,
+      "peak_reserved_gib": 2.563,
+      "elapsed_seconds": 0.706,
+      "synthetic_tensors_only": true,
+      "scientific_or_runtime_evidence": false
+    },
+    "reviewer_reran_gpu_or_runtime_probe": false
+  },
+  "review_access_and_authority": {
+    "generated_input_or_receipt_opened": false,
+    "checkpoint_or_pt_opened": false,
+    "rgb_or_index_opened": false,
+    "heldout_or_sealed_opened": false,
+    "gpu_used": false,
+    "execution_authorized": false,
+    "preflight_authorized": false,
+    "runtime_input_access_authorized": false,
+    "navigation_heldout_promotion_or_deployment_authorized": false,
+    "required_next_control": "separate exact-commit one-shot execution authorization after immediate output-root absence recheck"
+  },
+  "conclusion": {
+    "source_closure_complete": true,
+    "science_matches_preregistration": true,
+    "custody_contract_fail_closed": true,
+    "resource_blocker": false,
+    "review_blocker": false,
+    "pass_scope": "frozen source and custody review only"
+  }
+}

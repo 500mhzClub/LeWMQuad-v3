@@ -1,0 +1,5088 @@
+{
+  "roots": [
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "eligible": 509,
+      "excluded_short_history": 2,
+      "windows": [
+        {
+          "frame": 12,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0038906464095235737,
+            -0.008753529290199276
+          ],
+          "raw_endpoint_error_m": 0.008090042515804204,
+          "corrected_endpoint_error_m": 0.008090042515804204,
+          "corrected_path_error_maximum_m": 0.008456823281527437
+        },
+        {
+          "frame": 32,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009098848200591952,
+            -0.004548483263831412
+          ],
+          "raw_endpoint_error_m": 0.0015107058831188573,
+          "corrected_endpoint_error_m": 0.0015107058831188573,
+          "corrected_path_error_maximum_m": 0.00502744613620159
+        },
+        {
+          "frame": 52,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.002200282247312931,
+            -0.007683961270589969
+          ],
+          "raw_endpoint_error_m": 0.0033093842276252744,
+          "corrected_endpoint_error_m": 0.0033093842276252744,
+          "corrected_path_error_maximum_m": 0.0033093842276252744
+        },
+        {
+          "frame": 80,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.007980290045859909,
+            -0.0030380885782997223
+          ],
+          "raw_endpoint_error_m": 0.005485455300224321,
+          "corrected_endpoint_error_m": 0.005485455300224321,
+          "corrected_path_error_maximum_m": 0.005485455300224321
+        },
+        {
+          "frame": 104,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0013543433529939312,
+            -0.005608968629379735
+          ],
+          "raw_endpoint_error_m": 0.005858206971698418,
+          "corrected_endpoint_error_m": 0.005858206971698418,
+          "corrected_path_error_maximum_m": 0.005858206971698418
+        },
+        {
+          "frame": 128,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.004597417457105308,
+            -0.005652774323812832
+          ],
+          "raw_endpoint_error_m": 0.0038324036925632948,
+          "corrected_endpoint_error_m": 0.0038324036925632948,
+          "corrected_path_error_maximum_m": 0.005999383704612417
+        },
+        {
+          "frame": 156,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00970659651878001,
+            -0.001645704841351291
+          ],
+          "raw_endpoint_error_m": 0.0035391335791890924,
+          "corrected_endpoint_error_m": 0.0035391335791890924,
+          "corrected_path_error_maximum_m": 0.00515107312302397
+        },
+        {
+          "frame": 176,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0020781139705544015,
+            -0.010352150046006559
+          ],
+          "raw_endpoint_error_m": 0.003669529315003171,
+          "corrected_endpoint_error_m": 0.003669529315003171,
+          "corrected_path_error_maximum_m": 0.005114805792534217
+        },
+        {
+          "frame": 200,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008372101363602287,
+            0.004033893149994827
+          ],
+          "raw_endpoint_error_m": 0.00830149110522411,
+          "corrected_endpoint_error_m": 0.00830149110522411,
+          "corrected_path_error_maximum_m": 0.00830149110522411
+        },
+        {
+          "frame": 224,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003125146597917818,
+            -0.0076085722622603645
+          ],
+          "raw_endpoint_error_m": 0.001442783110309121,
+          "corrected_endpoint_error_m": 0.001442783110309121,
+          "corrected_path_error_maximum_m": 0.004746283303989573
+        },
+        {
+          "frame": 244,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0010396623481306487,
+            -0.008046396456854166
+          ],
+          "raw_endpoint_error_m": 0.0034960760698177565,
+          "corrected_endpoint_error_m": 0.0034960760698177565,
+          "corrected_path_error_maximum_m": 0.0034960760698177565
+        },
+        {
+          "frame": 264,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": false,
+          "actual_endpoint_xy_m": [
+            0.0042468653203219225,
+            -0.001836178294980965
+          ],
+          "raw_endpoint_error_m": 0.0028160088209156745,
+          "corrected_endpoint_error_m": 0.0028160088209156745,
+          "corrected_path_error_maximum_m": 0.003226927704879043
+        },
+        {
+          "frame": 288,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12388799708040614,
+            -0.00897974790739343
+          ],
+          "raw_endpoint_error_m": 0.014155577723953714,
+          "corrected_endpoint_error_m": 0.014155577723953714,
+          "corrected_path_error_maximum_m": 0.014155577723953714
+        },
+        {
+          "frame": 308,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12282124562875253,
+            0.0025104457436854774
+          ],
+          "raw_endpoint_error_m": 0.00679623912339569,
+          "corrected_endpoint_error_m": 0.00679623912339569,
+          "corrected_path_error_maximum_m": 0.00679623912339569
+        },
+        {
+          "frame": 328,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010850831099764735,
+            0.010213859065408578
+          ],
+          "raw_endpoint_error_m": 0.008251104914719426,
+          "corrected_endpoint_error_m": 0.008251104914719426,
+          "corrected_path_error_maximum_m": 0.008251104914719426
+        },
+        {
+          "frame": 352,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0077822500781809046,
+            0.0027863903949909507
+          ],
+          "raw_endpoint_error_m": 0.0033994878350998205,
+          "corrected_endpoint_error_m": 0.0033994878350998205,
+          "corrected_path_error_maximum_m": 0.0033994878350998205
+        },
+        {
+          "frame": 372,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.01097476904905947,
+            0.007338836845358121
+          ],
+          "raw_endpoint_error_m": 0.0034355828530438512,
+          "corrected_endpoint_error_m": 0.0034355828530438512,
+          "corrected_path_error_maximum_m": 0.003815899459951439
+        },
+        {
+          "frame": 408,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0020200993011077,
+            -0.00019574749973476856
+          ],
+          "raw_endpoint_error_m": 0.008324009497357072,
+          "corrected_endpoint_error_m": 0.008324009497357072,
+          "corrected_path_error_maximum_m": 0.008324009497357072
+        },
+        {
+          "frame": 432,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0006233809261690121,
+            -0.007978478041753816
+          ],
+          "raw_endpoint_error_m": 0.0023545858384470507,
+          "corrected_endpoint_error_m": 0.0023545858384470507,
+          "corrected_path_error_maximum_m": 0.0038964242530197396
+        },
+        {
+          "frame": 452,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.009485982141668028,
+            -0.0037560529752825715
+          ],
+          "raw_endpoint_error_m": 0.006528559437309901,
+          "corrected_endpoint_error_m": 0.006528559437309901,
+          "corrected_path_error_maximum_m": 0.006734203475072862
+        },
+        {
+          "frame": 472,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.08121356808422014,
+            0.0023286945279144596
+          ],
+          "raw_endpoint_error_m": 0.025578443108627003,
+          "corrected_endpoint_error_m": 0.025578443108627003,
+          "corrected_path_error_maximum_m": 0.025578443108627003
+        },
+        {
+          "frame": 496,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11983038014431642,
+            -0.005428008391533325
+          ],
+          "raw_endpoint_error_m": 0.006923908109979409,
+          "corrected_endpoint_error_m": 0.006923908109979409,
+          "corrected_path_error_maximum_m": 0.006923908109979409
+        },
+        {
+          "frame": 516,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11682649839701136,
+            -0.0033276170924661764
+          ],
+          "raw_endpoint_error_m": 0.015481505468923327,
+          "corrected_endpoint_error_m": 0.015481505468923327,
+          "corrected_path_error_maximum_m": 0.015481505468923327
+        },
+        {
+          "frame": 536,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0027620934124173756,
+            -0.0004847068719402607
+          ],
+          "raw_endpoint_error_m": 0.010152912160273793,
+          "corrected_endpoint_error_m": 0.010152912160273793,
+          "corrected_path_error_maximum_m": 0.010152912160273793
+        },
+        {
+          "frame": 560,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010055812711292435,
+            0.0065381142425502674
+          ],
+          "raw_endpoint_error_m": 0.007237721060345002,
+          "corrected_endpoint_error_m": 0.007237721060345002,
+          "corrected_path_error_maximum_m": 0.007237721060345002
+        },
+        {
+          "frame": 580,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.007067817513267598,
+            0.00887029445081301
+          ],
+          "raw_endpoint_error_m": 0.001888312972882794,
+          "corrected_endpoint_error_m": 0.001888312972882794,
+          "corrected_path_error_maximum_m": 0.0025690624879967637
+        },
+        {
+          "frame": 604,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0032104224949235263,
+            0.011974991512876012
+          ],
+          "raw_endpoint_error_m": 0.008201483748923903,
+          "corrected_endpoint_error_m": 0.008201483748923903,
+          "corrected_path_error_maximum_m": 0.008261576184830104
+        },
+        {
+          "frame": 628,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09033069938881454,
+            0.015439244267248617
+          ],
+          "raw_endpoint_error_m": 0.003609414373044927,
+          "corrected_endpoint_error_m": 0.003609414373044927,
+          "corrected_path_error_maximum_m": 0.003609414373044927
+        },
+        {
+          "frame": 648,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11394593441436421,
+            0.015737378354258758
+          ],
+          "raw_endpoint_error_m": 0.0034023393283867777,
+          "corrected_endpoint_error_m": 0.0034023393283867777,
+          "corrected_path_error_maximum_m": 0.0035866975011816806
+        },
+        {
+          "frame": 672,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1307869528544232,
+            0.003979341336880859
+          ],
+          "raw_endpoint_error_m": 0.0031313280061718374,
+          "corrected_endpoint_error_m": 0.0031313280061718374,
+          "corrected_path_error_maximum_m": 0.0031313280061718374
+        },
+        {
+          "frame": 692,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11923680897717635,
+            -0.0019549619539084924
+          ],
+          "raw_endpoint_error_m": 0.006372170442959153,
+          "corrected_endpoint_error_m": 0.006372170442959153,
+          "corrected_path_error_maximum_m": 0.006372170442959153
+        },
+        {
+          "frame": 712,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10124187902430441,
+            -0.008252680950816648
+          ],
+          "raw_endpoint_error_m": 0.0035974005908724193,
+          "corrected_endpoint_error_m": 0.0035974005908724193,
+          "corrected_path_error_maximum_m": 0.003806276964030537
+        },
+        {
+          "frame": 736,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12318738062059133,
+            0.01716703998726159
+          ],
+          "raw_endpoint_error_m": 0.01107974348058743,
+          "corrected_endpoint_error_m": 0.01107974348058743,
+          "corrected_path_error_maximum_m": 0.01107974348058743
+        },
+        {
+          "frame": 756,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1073643253835417,
+            0.01770176579134068
+          ],
+          "raw_endpoint_error_m": 0.007561090766708298,
+          "corrected_endpoint_error_m": 0.007561090766708298,
+          "corrected_path_error_maximum_m": 0.007561090766708298
+        },
+        {
+          "frame": 780,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.01074217947970608,
+            -0.006747652947801016
+          ],
+          "raw_endpoint_error_m": 0.015620464451488241,
+          "corrected_endpoint_error_m": 0.015620464451488241,
+          "corrected_path_error_maximum_m": 0.015620464451488241
+        },
+        {
+          "frame": 804,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0031837213438260896,
+            -0.006108428821376823
+          ],
+          "raw_endpoint_error_m": 0.005279044359615522,
+          "corrected_endpoint_error_m": 0.005279044359615522,
+          "corrected_path_error_maximum_m": 0.005279044359615522
+        },
+        {
+          "frame": 824,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.006137816055894703,
+            0.003847284977675963
+          ],
+          "raw_endpoint_error_m": 0.0001793204012911056,
+          "corrected_endpoint_error_m": 0.0001793204012911056,
+          "corrected_path_error_maximum_m": 0.0022118585292348327
+        },
+        {
+          "frame": 848,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09956623940559074,
+            0.013850835058141307
+          ],
+          "raw_endpoint_error_m": 0.001548411080610018,
+          "corrected_endpoint_error_m": 0.001548411080610018,
+          "corrected_path_error_maximum_m": 0.002825986471480169
+        },
+        {
+          "frame": 872,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1156304179486308,
+            0.017557590238357016
+          ],
+          "raw_endpoint_error_m": 0.008090698685733269,
+          "corrected_endpoint_error_m": 0.008090698685733269,
+          "corrected_path_error_maximum_m": 0.008090698685733269
+        },
+        {
+          "frame": 904,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.14075571873356887,
+            -0.00013070095993394752
+          ],
+          "raw_endpoint_error_m": 0.012665451362023803,
+          "corrected_endpoint_error_m": 0.012665451362023803,
+          "corrected_path_error_maximum_m": 0.012885469313744503
+        },
+        {
+          "frame": 924,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13293701978522315,
+            0.0050223716188587475
+          ],
+          "raw_endpoint_error_m": 0.004278187896532835,
+          "corrected_endpoint_error_m": 0.004278187896532835,
+          "corrected_path_error_maximum_m": 0.004278187896532835
+        },
+        {
+          "frame": 948,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10770472949728661,
+            -0.004038386913917161
+          ],
+          "raw_endpoint_error_m": 0.008473704143997667,
+          "corrected_endpoint_error_m": 0.008473704143997667,
+          "corrected_path_error_maximum_m": 0.008473704143997667
+        },
+        {
+          "frame": 968,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0072070341967716,
+            -0.01164025114144954
+          ],
+          "raw_endpoint_error_m": 0.00467510387922242,
+          "corrected_endpoint_error_m": 0.00467510387922242,
+          "corrected_path_error_maximum_m": 0.008141835823285785
+        },
+        {
+          "frame": 988,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.005795071261083744,
+            -0.00462880038107783
+          ],
+          "raw_endpoint_error_m": 0.003866125168048795,
+          "corrected_endpoint_error_m": 0.003866125168048795,
+          "corrected_path_error_maximum_m": 0.003866125168048795
+        },
+        {
+          "frame": 1016,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0527969982594392,
+            -0.004105821293622563
+          ],
+          "raw_endpoint_error_m": 0.007402226935633308,
+          "corrected_endpoint_error_m": 0.007402226935633308,
+          "corrected_path_error_maximum_m": 0.007402226935633308
+        },
+        {
+          "frame": 1036,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1055833575991426,
+            0.01654798293821494
+          ],
+          "raw_endpoint_error_m": 0.0036342942244985254,
+          "corrected_endpoint_error_m": 0.0036342942244985254,
+          "corrected_path_error_maximum_m": 0.004511907190138932
+        },
+        {
+          "frame": 1056,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12864639234214606,
+            0.004109564325666667
+          ],
+          "raw_endpoint_error_m": 0.02118424823677961,
+          "corrected_endpoint_error_m": 0.02118424823677961,
+          "corrected_path_error_maximum_m": 0.02118424823677961
+        },
+        {
+          "frame": 1080,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0392154332815696,
+            -0.0005551736075256451
+          ],
+          "raw_endpoint_error_m": 0.010748733636482627,
+          "corrected_endpoint_error_m": 0.010748733636482627,
+          "corrected_path_error_maximum_m": 0.010748733636482627
+        },
+        {
+          "frame": 1100,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10405197392159078,
+            0.01745755257623981
+          ],
+          "raw_endpoint_error_m": 0.009372242546940942,
+          "corrected_endpoint_error_m": 0.009372242546940942,
+          "corrected_path_error_maximum_m": 0.009372242546940942
+        },
+        {
+          "frame": 1124,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.01414497766275479,
+            0.0038274920221611926
+          ],
+          "raw_endpoint_error_m": 0.008527231441848741,
+          "corrected_endpoint_error_m": 0.008527231441848741,
+          "corrected_path_error_maximum_m": 0.010015413098817694
+        },
+        {
+          "frame": 1144,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.042976079711747404,
+            -0.018771819894403827
+          ],
+          "raw_endpoint_error_m": 0.004277973418729378,
+          "corrected_endpoint_error_m": 0.004277973418729378,
+          "corrected_path_error_maximum_m": 0.004450357507273443
+        },
+        {
+          "frame": 1164,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006995581193934688,
+            0.0025294734513570862
+          ],
+          "raw_endpoint_error_m": 0.004683044976885494,
+          "corrected_endpoint_error_m": 0.004683044976885494,
+          "corrected_path_error_maximum_m": 0.004683044976885494
+        },
+        {
+          "frame": 1188,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00632606659487495,
+            -0.001141429215519899
+          ],
+          "raw_endpoint_error_m": 0.005500798513823546,
+          "corrected_endpoint_error_m": 0.005500798513823546,
+          "corrected_path_error_maximum_m": 0.005500798513823546
+        },
+        {
+          "frame": 1208,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0504517886821737,
+            -0.0052756334243192
+          ],
+          "raw_endpoint_error_m": 0.0016063082383172133,
+          "corrected_endpoint_error_m": 0.0016063082383172133,
+          "corrected_path_error_maximum_m": 0.0036712118542235246
+        },
+        {
+          "frame": 1228,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12970697742231624,
+            -0.0030282479908214045
+          ],
+          "raw_endpoint_error_m": 0.009285924946473461,
+          "corrected_endpoint_error_m": 0.009285924946473461,
+          "corrected_path_error_maximum_m": 0.009285924946473461
+        },
+        {
+          "frame": 1256,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12710728290488799,
+            -0.010288334158875232
+          ],
+          "raw_endpoint_error_m": 0.013794278367628213,
+          "corrected_endpoint_error_m": 0.013794278367628213,
+          "corrected_path_error_maximum_m": 0.013794278367628213
+        },
+        {
+          "frame": 1280,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.052615160668015526,
+            -0.0030899917698517694
+          ],
+          "raw_endpoint_error_m": 0.0056722762733459,
+          "corrected_endpoint_error_m": 0.0056722762733459,
+          "corrected_path_error_maximum_m": 0.005910033168555674
+        },
+        {
+          "frame": 1300,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1321901062791618,
+            0.004633329952249578
+          ],
+          "raw_endpoint_error_m": 0.009030155508400165,
+          "corrected_endpoint_error_m": 0.009030155508400165,
+          "corrected_path_error_maximum_m": 0.009030155508400165
+        },
+        {
+          "frame": 1328,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.008072219630884092,
+            0.0017585672570685008
+          ],
+          "raw_endpoint_error_m": 0.009219268474181728,
+          "corrected_endpoint_error_m": 0.009219268474181728,
+          "corrected_path_error_maximum_m": 0.009219268474181728
+        },
+        {
+          "frame": 1348,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.009002462695978757,
+            0.005617005405493707
+          ],
+          "raw_endpoint_error_m": 0.006527355737265225,
+          "corrected_endpoint_error_m": 0.006527355737265225,
+          "corrected_path_error_maximum_m": 0.006527355737265225
+        },
+        {
+          "frame": 1368,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.06061740152979927,
+            -0.002601293083091516
+          ],
+          "raw_endpoint_error_m": 0.011219387621388455,
+          "corrected_endpoint_error_m": 0.011219387621388455,
+          "corrected_path_error_maximum_m": 0.011694488811921191
+        },
+        {
+          "frame": 1396,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0032950213979186798,
+            -0.007972874490563083
+          ],
+          "raw_endpoint_error_m": 0.004602332283438514,
+          "corrected_endpoint_error_m": 0.004602332283438514,
+          "corrected_path_error_maximum_m": 0.006264618278303298
+        },
+        {
+          "frame": 1416,
+          "action": "left_arc",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0009047149008968793,
+            0.0007344448306984068
+          ],
+          "raw_endpoint_error_m": 0.014257937305449131,
+          "corrected_endpoint_error_m": 0.014257937305449131,
+          "corrected_path_error_maximum_m": 0.014257937305449131
+        },
+        {
+          "frame": 1436,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003768064201091472,
+            -0.0003617661492308444
+          ],
+          "raw_endpoint_error_m": 0.0184699956940913,
+          "corrected_endpoint_error_m": 0.0184699956940913,
+          "corrected_path_error_maximum_m": 0.0184699956940913
+        },
+        {
+          "frame": 1460,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.002609302286161855,
+            1.0071247553902967e-05
+          ],
+          "raw_endpoint_error_m": 0.020966188599738915,
+          "corrected_endpoint_error_m": 0.020966188599738915,
+          "corrected_path_error_maximum_m": 0.020966188599738915
+        },
+        {
+          "frame": 1480,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0017033401156138887,
+            -0.0012904970325266244
+          ],
+          "raw_endpoint_error_m": 0.015274792855432257,
+          "corrected_endpoint_error_m": 0.015274792855432257,
+          "corrected_path_error_maximum_m": 0.015274792855432257
+        },
+        {
+          "frame": 1500,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0021995243245804884,
+            -0.00108024158585337
+          ],
+          "raw_endpoint_error_m": 0.015888253872273102,
+          "corrected_endpoint_error_m": 0.015888253872273102,
+          "corrected_path_error_maximum_m": 0.015888253872273102
+        },
+        {
+          "frame": 1524,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0010266417034482873,
+            -0.0029890052898081635
+          ],
+          "raw_endpoint_error_m": 0.014832435000510092,
+          "corrected_endpoint_error_m": 0.014832435000510092,
+          "corrected_path_error_maximum_m": 0.014832435000510092
+        },
+        {
+          "frame": 1552,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0016186375028364617,
+            0.00018223886671025168
+          ],
+          "raw_endpoint_error_m": 0.007360154731107256,
+          "corrected_endpoint_error_m": 0.007360154731107256,
+          "corrected_path_error_maximum_m": 0.007360154731107256
+        },
+        {
+          "frame": 1572,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00222636244923924,
+            -0.0006203346513698033
+          ],
+          "raw_endpoint_error_m": 0.011683404441397881,
+          "corrected_endpoint_error_m": 0.011683404441397881,
+          "corrected_path_error_maximum_m": 0.011683404441397881
+        },
+        {
+          "frame": 1624,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.007475401797809391,
+            -0.002861848095949558
+          ],
+          "raw_endpoint_error_m": 0.00665489526123987,
+          "corrected_endpoint_error_m": 0.00665489526123987,
+          "corrected_path_error_maximum_m": 0.006966756741398733
+        },
+        {
+          "frame": 1672,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003427431050892294,
+            -0.006399112659024994
+          ],
+          "raw_endpoint_error_m": 0.005994635601895275,
+          "corrected_endpoint_error_m": 0.005994635601895275,
+          "corrected_path_error_maximum_m": 0.005994635601895275
+        },
+        {
+          "frame": 1700,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010643968786601924,
+            -0.014113031794534854
+          ],
+          "raw_endpoint_error_m": 0.0060252761121709535,
+          "corrected_endpoint_error_m": 0.0060252761121709535,
+          "corrected_path_error_maximum_m": 0.0060252761121709535
+        },
+        {
+          "frame": 1720,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0421430441412045,
+            -0.0031620470316518438
+          ],
+          "raw_endpoint_error_m": 0.01166856616151354,
+          "corrected_endpoint_error_m": 0.01166856616151354,
+          "corrected_path_error_maximum_m": 0.01166856616151354
+        },
+        {
+          "frame": 1740,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12538635316708974,
+            -0.0012816507858964643
+          ],
+          "raw_endpoint_error_m": 0.0006974594598896882,
+          "corrected_endpoint_error_m": 0.0006974594598896882,
+          "corrected_path_error_maximum_m": 0.0014825188026129311
+        },
+        {
+          "frame": 1772,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.14245557250841137,
+            0.005929139065091221
+          ],
+          "raw_endpoint_error_m": 0.008606910028575174,
+          "corrected_endpoint_error_m": 0.008606910028575174,
+          "corrected_path_error_maximum_m": 0.008606910028575174
+        },
+        {
+          "frame": 1796,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.07068075989687152,
+            0.015484840653025524
+          ],
+          "raw_endpoint_error_m": 0.009559614897074523,
+          "corrected_endpoint_error_m": 0.009559614897074523,
+          "corrected_path_error_maximum_m": 0.010465848578256748
+        },
+        {
+          "frame": 1816,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13294148086069657,
+            0.003478365215130263
+          ],
+          "raw_endpoint_error_m": 0.006983304989683226,
+          "corrected_endpoint_error_m": 0.006983304989683226,
+          "corrected_path_error_maximum_m": 0.006983304989683226
+        },
+        {
+          "frame": 1840,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13267469026921955,
+            0.004805206729296485
+          ],
+          "raw_endpoint_error_m": 0.003089569092679672,
+          "corrected_endpoint_error_m": 0.003089569092679672,
+          "corrected_path_error_maximum_m": 0.003089569092679672
+        },
+        {
+          "frame": 1860,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.05261759837518732,
+            -9.437722967864215e-05
+          ],
+          "raw_endpoint_error_m": 0.007920316501781172,
+          "corrected_endpoint_error_m": 0.007920316501781172,
+          "corrected_path_error_maximum_m": 0.008536174247044632
+        },
+        {
+          "frame": 1880,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12954250229683195,
+            -0.004567004241119238
+          ],
+          "raw_endpoint_error_m": 0.004330708960548707,
+          "corrected_endpoint_error_m": 0.004330708960548707,
+          "corrected_path_error_maximum_m": 0.004330708960548707
+        },
+        {
+          "frame": 1908,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.04440757603214951,
+            -0.0065987878212001305
+          ],
+          "raw_endpoint_error_m": 0.007340674904556599,
+          "corrected_endpoint_error_m": 0.007340674904556599,
+          "corrected_path_error_maximum_m": 0.008420472814197433
+        },
+        {
+          "frame": 1932,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1333039400101993,
+            0.003368590660721895
+          ],
+          "raw_endpoint_error_m": 0.010487053879671355,
+          "corrected_endpoint_error_m": 0.010487053879671355,
+          "corrected_path_error_maximum_m": 0.010487053879671355
+        },
+        {
+          "frame": 1952,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11973724601404548,
+            -0.007481340731380888
+          ],
+          "raw_endpoint_error_m": 0.005435900709382768,
+          "corrected_endpoint_error_m": 0.005435900709382768,
+          "corrected_path_error_maximum_m": 0.005521140460722023
+        },
+        {
+          "frame": 1976,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13980360765391533,
+            0.004959584743543313
+          ],
+          "raw_endpoint_error_m": 0.016435566947045167,
+          "corrected_endpoint_error_m": 0.016435566947045167,
+          "corrected_path_error_maximum_m": 0.016435566947045167
+        },
+        {
+          "frame": 1996,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1070265783429525,
+            -0.006272046285094405
+          ],
+          "raw_endpoint_error_m": 0.01599039216593358,
+          "corrected_endpoint_error_m": 0.01599039216593358,
+          "corrected_path_error_maximum_m": 0.01599039216593358
+        },
+        {
+          "frame": 2024,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.04836555222187486,
+            0.0032686653463807076
+          ],
+          "raw_endpoint_error_m": 0.004478173344137222,
+          "corrected_endpoint_error_m": 0.004478173344137222,
+          "corrected_path_error_maximum_m": 0.004478173344137222
+        },
+        {
+          "frame": 2048,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13775454100677814,
+            0.004246452023713125
+          ],
+          "raw_endpoint_error_m": 0.018832245928956087,
+          "corrected_endpoint_error_m": 0.018832245928956087,
+          "corrected_path_error_maximum_m": 0.018832245928956087
+        },
+        {
+          "frame": 2068,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11760243611678294,
+            -0.00876475283831407
+          ],
+          "raw_endpoint_error_m": 0.0112543737340475,
+          "corrected_endpoint_error_m": 0.0112543737340475,
+          "corrected_path_error_maximum_m": 0.0112543737340475
+        },
+        {
+          "frame": 2092,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12755895338392295,
+            0.0024950242550064944
+          ],
+          "raw_endpoint_error_m": 0.015292486789146478,
+          "corrected_endpoint_error_m": 0.015292486789146478,
+          "corrected_path_error_maximum_m": 0.015292486789146478
+        },
+        {
+          "frame": 2116,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13321836208819335,
+            0.003896682848087458
+          ],
+          "raw_endpoint_error_m": 0.010705349393855423,
+          "corrected_endpoint_error_m": 0.010705349393855423,
+          "corrected_path_error_maximum_m": 0.010705349393855423
+        },
+        {
+          "frame": 2136,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12897550274125288,
+            0.006651590254350515
+          ],
+          "raw_endpoint_error_m": 0.012448283435163817,
+          "corrected_endpoint_error_m": 0.012448283435163817,
+          "corrected_path_error_maximum_m": 0.012448283435163817
+        },
+        {
+          "frame": 2156,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1393437869375664,
+            0.0065428568999545585
+          ],
+          "raw_endpoint_error_m": 0.018260185023371088,
+          "corrected_endpoint_error_m": 0.018260185023371088,
+          "corrected_path_error_maximum_m": 0.018260185023371088
+        },
+        {
+          "frame": 2180,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13328767213267623,
+            0.004944573932049901
+          ],
+          "raw_endpoint_error_m": 0.011627025849741438,
+          "corrected_endpoint_error_m": 0.011627025849741438,
+          "corrected_path_error_maximum_m": 0.011627025849741438
+        },
+        {
+          "frame": 2200,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13280268010665294,
+            0.0046554677377592295
+          ],
+          "raw_endpoint_error_m": 0.01179397471309569,
+          "corrected_endpoint_error_m": 0.01179397471309569,
+          "corrected_path_error_maximum_m": 0.01179397471309569
+        },
+        {
+          "frame": 2224,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.08247471984468231,
+            -0.0027897319084291567
+          ],
+          "raw_endpoint_error_m": 0.011315842583364384,
+          "corrected_endpoint_error_m": 0.011315842583364384,
+          "corrected_path_error_maximum_m": 0.011315842583364384
+        }
+      ],
+      "action_counts": {
+        "left_turn": 21,
+        "right_turn": 13,
+        "hold": 4,
+        "right_arc": 16,
+        "left_arc": 9,
+        "forward": 33
+      },
+      "window_sha256": "4d7e1486f9508dfd9966171348ed77b3a9666ce2dffab970edc8b9c9bb69355a",
+      "planning_sha256": "c1c6bf098d88806912b26b2261603032425ef092bfcae5fb3c64589ccbdd9c86"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_02_current_pair_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "eligible": 1134,
+      "excluded_short_history": 2,
+      "windows": [
+        {
+          "frame": 12,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0038906464095235737,
+            -0.008753529290199276
+          ],
+          "raw_endpoint_error_m": 0.008090042515804204,
+          "corrected_endpoint_error_m": 0.008090042515804204,
+          "corrected_path_error_maximum_m": 0.008456823281527437
+        },
+        {
+          "frame": 56,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.005451341373273604,
+            -0.007674140454135446
+          ],
+          "raw_endpoint_error_m": 0.0033198892457151166,
+          "corrected_endpoint_error_m": 0.0033198892457151166,
+          "corrected_path_error_maximum_m": 0.0033198892457151166
+        },
+        {
+          "frame": 108,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.01186054300928505,
+            -0.008023969269020756
+          ],
+          "raw_endpoint_error_m": 0.005001208642855385,
+          "corrected_endpoint_error_m": 0.005001208642855385,
+          "corrected_path_error_maximum_m": 0.007784135724686016
+        },
+        {
+          "frame": 156,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008043119182981891,
+            -0.004071224848310713
+          ],
+          "raw_endpoint_error_m": 0.002629643221988737,
+          "corrected_endpoint_error_m": 0.002629643221988737,
+          "corrected_path_error_maximum_m": 0.004675725378720725
+        },
+        {
+          "frame": 204,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008594195271405326,
+            -0.0005920253893030396
+          ],
+          "raw_endpoint_error_m": 0.005615601975682584,
+          "corrected_endpoint_error_m": 0.005615601975682584,
+          "corrected_path_error_maximum_m": 0.00577974528140877
+        },
+        {
+          "frame": 260,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00805557796779805,
+            -0.004608805554758692
+          ],
+          "raw_endpoint_error_m": 0.007529372639361554,
+          "corrected_endpoint_error_m": 0.007529372639361554,
+          "corrected_path_error_maximum_m": 0.007529372639361554
+        },
+        {
+          "frame": 308,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1207774210821639,
+            0.008650736152645232
+          ],
+          "raw_endpoint_error_m": 0.01373409568380456,
+          "corrected_endpoint_error_m": 0.01373409568380456,
+          "corrected_path_error_maximum_m": 0.01373409568380456
+        },
+        {
+          "frame": 364,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0059820725540235785,
+            -0.0028363399069066325
+          ],
+          "raw_endpoint_error_m": 0.004633870381755116,
+          "corrected_endpoint_error_m": 0.004633870381755116,
+          "corrected_path_error_maximum_m": 0.004633870381755116
+        },
+        {
+          "frame": 420,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00701069847742196,
+            -0.0008247284863275434
+          ],
+          "raw_endpoint_error_m": 0.008465249942189043,
+          "corrected_endpoint_error_m": 0.008465249942189043,
+          "corrected_path_error_maximum_m": 0.008465249942189043
+        },
+        {
+          "frame": 468,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.004603763170134372,
+            -0.0028826941306764413
+          ],
+          "raw_endpoint_error_m": 0.005349345507955961,
+          "corrected_endpoint_error_m": 0.005349345507955961,
+          "corrected_path_error_maximum_m": 0.005349345507955961
+        },
+        {
+          "frame": 520,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.14028394287300322,
+            0.005649114725807593
+          ],
+          "raw_endpoint_error_m": 0.010570409603045438,
+          "corrected_endpoint_error_m": 0.010570409603045438,
+          "corrected_path_error_maximum_m": 0.010570409603045438
+        },
+        {
+          "frame": 568,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.005087753978335813,
+            -0.0008557420646332469
+          ],
+          "raw_endpoint_error_m": 0.011908699772418221,
+          "corrected_endpoint_error_m": 0.011908699772418221,
+          "corrected_path_error_maximum_m": 0.011908699772418221
+        },
+        {
+          "frame": 616,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00021558309738203656,
+            0.000269123477145204
+          ],
+          "raw_endpoint_error_m": 0.0043862175763374174,
+          "corrected_endpoint_error_m": 0.0043862175763374174,
+          "corrected_path_error_maximum_m": 0.0043862175763374174
+        },
+        {
+          "frame": 664,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00017553544893593245,
+            0.00012357110732115123
+          ],
+          "raw_endpoint_error_m": 0.004739571617143206,
+          "corrected_endpoint_error_m": 0.004739571617143206,
+          "corrected_path_error_maximum_m": 0.004739571617143206
+        },
+        {
+          "frame": 708,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00016944686697642104,
+            7.563881680710021e-05
+          ],
+          "raw_endpoint_error_m": 0.005023562667295535,
+          "corrected_endpoint_error_m": 0.005023562667295535,
+          "corrected_path_error_maximum_m": 0.005023562667295535
+        },
+        {
+          "frame": 756,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0001486506101565906,
+            4.4758039357208336e-05
+          ],
+          "raw_endpoint_error_m": 0.005282713507439394,
+          "corrected_endpoint_error_m": 0.005282713507439394,
+          "corrected_path_error_maximum_m": 0.005282713507439394
+        },
+        {
+          "frame": 804,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00012085067266405184,
+            6.566656226347944e-07
+          ],
+          "raw_endpoint_error_m": 0.00540212244418302,
+          "corrected_endpoint_error_m": 0.00540212244418302,
+          "corrected_path_error_maximum_m": 0.00540212244418302
+        },
+        {
+          "frame": 852,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            6.555588383133061e-05,
+            -0.00014428377346160787
+          ],
+          "raw_endpoint_error_m": 0.005486461212961607,
+          "corrected_endpoint_error_m": 0.005486461212961607,
+          "corrected_path_error_maximum_m": 0.005486461212961607
+        },
+        {
+          "frame": 900,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.052948021189574326,
+            0.0031003373625618142
+          ],
+          "raw_endpoint_error_m": 0.008026487773403552,
+          "corrected_endpoint_error_m": 0.008026487773403552,
+          "corrected_path_error_maximum_m": 0.008026487773403552
+        },
+        {
+          "frame": 948,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0033163981972547407,
+            -0.005525722367270637
+          ],
+          "raw_endpoint_error_m": 0.0059438617184738056,
+          "corrected_endpoint_error_m": 0.0059438617184738056,
+          "corrected_path_error_maximum_m": 0.005996706407071519
+        },
+        {
+          "frame": 996,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12015412172654154,
+            0.00010954785055266117
+          ],
+          "raw_endpoint_error_m": 0.004985894341137856,
+          "corrected_endpoint_error_m": 0.004985894341137856,
+          "corrected_path_error_maximum_m": 0.004985894341137856
+        },
+        {
+          "frame": 1044,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1398096948721803,
+            0.003975581504790422
+          ],
+          "raw_endpoint_error_m": 0.018044558188143524,
+          "corrected_endpoint_error_m": 0.018044558188143524,
+          "corrected_path_error_maximum_m": 0.018044558188143524
+        },
+        {
+          "frame": 1092,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10537951900964111,
+            0.01531351270540652
+          ],
+          "raw_endpoint_error_m": 0.0034236282202501312,
+          "corrected_endpoint_error_m": 0.0034236282202501312,
+          "corrected_path_error_maximum_m": 0.004110603497354717
+        },
+        {
+          "frame": 1144,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.008099878201440267,
+            0.009208644307732841
+          ],
+          "raw_endpoint_error_m": 0.013364455069603027,
+          "corrected_endpoint_error_m": 0.013364455069603027,
+          "corrected_path_error_maximum_m": 0.013364455069603027
+        },
+        {
+          "frame": 1192,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09856914283792705,
+            0.017012247654913902
+          ],
+          "raw_endpoint_error_m": 0.011790840150844034,
+          "corrected_endpoint_error_m": 0.011790840150844034,
+          "corrected_path_error_maximum_m": 0.011790840150844034
+        },
+        {
+          "frame": 1252,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10344620485192195,
+            0.018494822617818367
+          ],
+          "raw_endpoint_error_m": 0.013149985811115227,
+          "corrected_endpoint_error_m": 0.013149985811115227,
+          "corrected_path_error_maximum_m": 0.013149985811115227
+        },
+        {
+          "frame": 1304,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10678794921155794,
+            -0.01429047930723355
+          ],
+          "raw_endpoint_error_m": 0.004780784881751019,
+          "corrected_endpoint_error_m": 0.004780784881751019,
+          "corrected_path_error_maximum_m": 0.004780784881751019
+        },
+        {
+          "frame": 1356,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1258236356192626,
+            -0.010154421012450598
+          ],
+          "raw_endpoint_error_m": 0.013764136236434023,
+          "corrected_endpoint_error_m": 0.013764136236434023,
+          "corrected_path_error_maximum_m": 0.013764136236434023
+        },
+        {
+          "frame": 1400,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00268232420901141,
+            -0.0110953872794061
+          ],
+          "raw_endpoint_error_m": 0.01031002949652029,
+          "corrected_endpoint_error_m": 0.01031002949652029,
+          "corrected_path_error_maximum_m": 0.011452865450806194
+        },
+        {
+          "frame": 1448,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10617428057305944,
+            0.018473012396026174
+          ],
+          "raw_endpoint_error_m": 0.005823477655145952,
+          "corrected_endpoint_error_m": 0.005823477655145952,
+          "corrected_path_error_maximum_m": 0.005823477655145952
+        },
+        {
+          "frame": 1540,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0037571326239401095,
+            -0.002796788486749422
+          ],
+          "raw_endpoint_error_m": 0.012843046790050725,
+          "corrected_endpoint_error_m": 0.012843046790050725,
+          "corrected_path_error_maximum_m": 0.01589676299049482
+        },
+        {
+          "frame": 1608,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.007630582642572959,
+            -0.011377892611744626
+          ],
+          "raw_endpoint_error_m": 0.011318741507614815,
+          "corrected_endpoint_error_m": 0.011318741507614815,
+          "corrected_path_error_maximum_m": 0.011318741507614815
+        },
+        {
+          "frame": 1656,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1257046548308508,
+            0.0016874200982792405
+          ],
+          "raw_endpoint_error_m": 0.01090235564010678,
+          "corrected_endpoint_error_m": 0.01090235564010678,
+          "corrected_path_error_maximum_m": 0.01090235564010678
+        },
+        {
+          "frame": 1708,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.003885546548807097,
+            -0.003993662648852457
+          ],
+          "raw_endpoint_error_m": 0.003553515021801814,
+          "corrected_endpoint_error_m": 0.003553515021801814,
+          "corrected_path_error_maximum_m": 0.003553515021801814
+        },
+        {
+          "frame": 1760,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0879926432364047,
+            -0.005181035203068559
+          ],
+          "raw_endpoint_error_m": 0.006463382342635979,
+          "corrected_endpoint_error_m": 0.006463382342635979,
+          "corrected_path_error_maximum_m": 0.006463382342635979
+        },
+        {
+          "frame": 1808,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.015777572069121712,
+            0.010179144678830535
+          ],
+          "raw_endpoint_error_m": 0.005737772120099656,
+          "corrected_endpoint_error_m": 0.005737772120099656,
+          "corrected_path_error_maximum_m": 0.010025485608917776
+        },
+        {
+          "frame": 1856,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0053387346274784905,
+            -0.007925806255524066
+          ],
+          "raw_endpoint_error_m": 0.004903732377001005,
+          "corrected_endpoint_error_m": 0.004903732377001005,
+          "corrected_path_error_maximum_m": 0.004903732377001005
+        },
+        {
+          "frame": 1920,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010441283053934918,
+            0.006971719669914524
+          ],
+          "raw_endpoint_error_m": 0.0028434086869954587,
+          "corrected_endpoint_error_m": 0.0028434086869954587,
+          "corrected_path_error_maximum_m": 0.0028434086869954587
+        },
+        {
+          "frame": 1968,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11555118193653115,
+            -0.010793477550745426
+          ],
+          "raw_endpoint_error_m": 0.012238848360283706,
+          "corrected_endpoint_error_m": 0.012238848360283706,
+          "corrected_path_error_maximum_m": 0.012238848360283706
+        },
+        {
+          "frame": 2020,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1277273997764855,
+            0.0010349523954493556
+          ],
+          "raw_endpoint_error_m": 0.004964647875386317,
+          "corrected_endpoint_error_m": 0.004964647875386317,
+          "corrected_path_error_maximum_m": 0.004964647875386317
+        },
+        {
+          "frame": 2068,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0784878741980828,
+            -0.0008294312172413427
+          ],
+          "raw_endpoint_error_m": 0.020561332593953405,
+          "corrected_endpoint_error_m": 0.020561332593953405,
+          "corrected_path_error_maximum_m": 0.020561332593953405
+        },
+        {
+          "frame": 2112,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009587637855527973,
+            0.004086298848970404
+          ],
+          "raw_endpoint_error_m": 0.005177078107229538,
+          "corrected_endpoint_error_m": 0.005177078107229538,
+          "corrected_path_error_maximum_m": 0.005177078107229538
+        },
+        {
+          "frame": 2164,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.006990500836641423,
+            -0.007259310189068434
+          ],
+          "raw_endpoint_error_m": 0.008924700484118352,
+          "corrected_endpoint_error_m": 0.008924700484118352,
+          "corrected_path_error_maximum_m": 0.008924700484118352
+        },
+        {
+          "frame": 2244,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.006245891451251336,
+            0.00447946634851555
+          ],
+          "raw_endpoint_error_m": 0.00344049225218734,
+          "corrected_endpoint_error_m": 0.00344049225218734,
+          "corrected_path_error_maximum_m": 0.003846517823177929
+        },
+        {
+          "frame": 2292,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0006556067826942132,
+            -0.0059431242995076974
+          ],
+          "raw_endpoint_error_m": 0.00441191277420534,
+          "corrected_endpoint_error_m": 0.00441191277420534,
+          "corrected_path_error_maximum_m": 0.00441191277420534
+        },
+        {
+          "frame": 2344,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00284249839773156,
+            -0.006135474695013655
+          ],
+          "raw_endpoint_error_m": 0.004504681142331852,
+          "corrected_endpoint_error_m": 0.004504681142331852,
+          "corrected_path_error_maximum_m": 0.00511741807674209
+        },
+        {
+          "frame": 2396,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13425647609675556,
+            0.0004493104708008285
+          ],
+          "raw_endpoint_error_m": 0.0069951734373697155,
+          "corrected_endpoint_error_m": 0.0069951734373697155,
+          "corrected_path_error_maximum_m": 0.008443765614366475
+        },
+        {
+          "frame": 2448,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11216262567025038,
+            0.0081568931146494
+          ],
+          "raw_endpoint_error_m": 0.02767361455260802,
+          "corrected_endpoint_error_m": 0.02767361455260802,
+          "corrected_path_error_maximum_m": 0.02767361455260802
+        },
+        {
+          "frame": 2496,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0922612710809775,
+            0.0024208588861932482
+          ],
+          "raw_endpoint_error_m": 0.004325329029475391,
+          "corrected_endpoint_error_m": 0.004325329029475391,
+          "corrected_path_error_maximum_m": 0.004354121152845677
+        },
+        {
+          "frame": 2548,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1430968571927312,
+            0.003946982653547722
+          ],
+          "raw_endpoint_error_m": 0.0213579513560447,
+          "corrected_endpoint_error_m": 0.0213579513560447,
+          "corrected_path_error_maximum_m": 0.0213579513560447
+        },
+        {
+          "frame": 2600,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0010732948636595883,
+            0.0005411390740388096
+          ],
+          "raw_endpoint_error_m": 0.009680051765946612,
+          "corrected_endpoint_error_m": 0.009680051765946612,
+          "corrected_path_error_maximum_m": 0.009680051765946612
+        },
+        {
+          "frame": 2648,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0008455561025553523,
+            0.00035472956286593845
+          ],
+          "raw_endpoint_error_m": 0.006360786058515657,
+          "corrected_endpoint_error_m": 0.006360786058515657,
+          "corrected_path_error_maximum_m": 0.006360786058515657
+        },
+        {
+          "frame": 2696,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.000662879170857891,
+            0.00027176833642972905
+          ],
+          "raw_endpoint_error_m": 0.006483351935383147,
+          "corrected_endpoint_error_m": 0.006483351935383147,
+          "corrected_path_error_maximum_m": 0.006483351935383147
+        },
+        {
+          "frame": 2744,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.010582457651328767,
+            -0.0026828677921088588
+          ],
+          "raw_endpoint_error_m": 0.010364346930767961,
+          "corrected_endpoint_error_m": 0.010364346930767961,
+          "corrected_path_error_maximum_m": 0.010364346930767961
+        },
+        {
+          "frame": 2792,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.004282642303299004,
+            -0.002650905679522448
+          ],
+          "raw_endpoint_error_m": 0.005286288529907886,
+          "corrected_endpoint_error_m": 0.005286288529907886,
+          "corrected_path_error_maximum_m": 0.005286288529907886
+        },
+        {
+          "frame": 2836,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            3.086527465797424e-05,
+            0.011868904596804411
+          ],
+          "raw_endpoint_error_m": 0.01581091153771294,
+          "corrected_endpoint_error_m": 0.01581091153771294,
+          "corrected_path_error_maximum_m": 0.01581091153771294
+        },
+        {
+          "frame": 2884,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00042783781274924326,
+            0.0003055842858867465
+          ],
+          "raw_endpoint_error_m": 0.004577234294156295,
+          "corrected_endpoint_error_m": 0.004577234294156295,
+          "corrected_path_error_maximum_m": 0.004577234294156295
+        },
+        {
+          "frame": 2932,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00027848382163728615,
+            0.00014039837555870305
+          ],
+          "raw_endpoint_error_m": 0.0044709091439273435,
+          "corrected_endpoint_error_m": 0.0044709091439273435,
+          "corrected_path_error_maximum_m": 0.0044709091439273435
+        },
+        {
+          "frame": 2980,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00017056219327195237,
+            8.750174892490717e-05
+          ],
+          "raw_endpoint_error_m": 0.004574908435508158,
+          "corrected_endpoint_error_m": 0.004574908435508158,
+          "corrected_path_error_maximum_m": 0.004574908435508158
+        },
+        {
+          "frame": 3028,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0001201706200078703,
+            6.293656206489393e-05
+          ],
+          "raw_endpoint_error_m": 0.004707326097554965,
+          "corrected_endpoint_error_m": 0.004707326097554965,
+          "corrected_path_error_maximum_m": 0.004707326097554965
+        },
+        {
+          "frame": 3076,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1262995266731746,
+            -0.007055694664960912
+          ],
+          "raw_endpoint_error_m": 0.006697747685697474,
+          "corrected_endpoint_error_m": 0.006697747685697474,
+          "corrected_path_error_maximum_m": 0.01025954298410125
+        },
+        {
+          "frame": 3152,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12423693501383498,
+            0.0025105128112885007
+          ],
+          "raw_endpoint_error_m": 0.014623985057596336,
+          "corrected_endpoint_error_m": 0.014623985057596336,
+          "corrected_path_error_maximum_m": 0.014623985057596336
+        },
+        {
+          "frame": 3204,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13135715106847404,
+            -0.010370279071136211
+          ],
+          "raw_endpoint_error_m": 0.013784237204401747,
+          "corrected_endpoint_error_m": 0.013784237204401747,
+          "corrected_path_error_maximum_m": 0.013784237204401747
+        },
+        {
+          "frame": 3256,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1308822368559621,
+            0.00360077190994728
+          ],
+          "raw_endpoint_error_m": 0.00391602378802769,
+          "corrected_endpoint_error_m": 0.00391602378802769,
+          "corrected_path_error_maximum_m": 0.004073836568241895
+        },
+        {
+          "frame": 3304,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.008588373516230803,
+            0.011265756443076754
+          ],
+          "raw_endpoint_error_m": 0.005331187806481738,
+          "corrected_endpoint_error_m": 0.005331187806481738,
+          "corrected_path_error_maximum_m": 0.005331187806481738
+        },
+        {
+          "frame": 3360,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12360384030263846,
+            0.007108298643353408
+          ],
+          "raw_endpoint_error_m": 0.010563754885624136,
+          "corrected_endpoint_error_m": 0.010563754885624136,
+          "corrected_path_error_maximum_m": 0.010563754885624136
+        },
+        {
+          "frame": 3408,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12577874587624696,
+            0.008232386857303958
+          ],
+          "raw_endpoint_error_m": 0.017049966852745634,
+          "corrected_endpoint_error_m": 0.017049966852745634,
+          "corrected_path_error_maximum_m": 0.017049966852745634
+        },
+        {
+          "frame": 3456,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11019514869103282,
+            0.014753793819779993
+          ],
+          "raw_endpoint_error_m": 0.016515014451252277,
+          "corrected_endpoint_error_m": 0.016515014451252277,
+          "corrected_path_error_maximum_m": 0.016515014451252277
+        },
+        {
+          "frame": 3500,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13958329901215324,
+            0.005720728226399271
+          ],
+          "raw_endpoint_error_m": 0.01957361548137515,
+          "corrected_endpoint_error_m": 0.01957361548137515,
+          "corrected_path_error_maximum_m": 0.01957361548137515
+        },
+        {
+          "frame": 3552,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0004759116552819866,
+            0.005642455447533466
+          ],
+          "raw_endpoint_error_m": 0.013205730803843834,
+          "corrected_endpoint_error_m": 0.013205730803843834,
+          "corrected_path_error_maximum_m": 0.013205730803843834
+        },
+        {
+          "frame": 3600,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00022311165164031155,
+            0.00034851355720416443
+          ],
+          "raw_endpoint_error_m": 0.005544231040671556,
+          "corrected_endpoint_error_m": 0.005544231040671556,
+          "corrected_path_error_maximum_m": 0.005544231040671556
+        },
+        {
+          "frame": 3648,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0002520634642898986,
+            0.0001837362852455533
+          ],
+          "raw_endpoint_error_m": 0.005904372467738828,
+          "corrected_endpoint_error_m": 0.005904372467738828,
+          "corrected_path_error_maximum_m": 0.005904372467738828
+        },
+        {
+          "frame": 3696,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009580834944053396,
+            0.0074852420889377665
+          ],
+          "raw_endpoint_error_m": 0.016569997506072562,
+          "corrected_endpoint_error_m": 0.016569997506072562,
+          "corrected_path_error_maximum_m": 0.016569997506072562
+        },
+        {
+          "frame": 3744,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.004650914564979499,
+            0.00015000749574278243
+          ],
+          "raw_endpoint_error_m": 0.007823748730580718,
+          "corrected_endpoint_error_m": 0.007823748730580718,
+          "corrected_path_error_maximum_m": 0.007823748730580718
+        },
+        {
+          "frame": 3792,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.000434051556541487,
+            0.00010216392822545818
+          ],
+          "raw_endpoint_error_m": 0.005388658712470988,
+          "corrected_endpoint_error_m": 0.005388658712470988,
+          "corrected_path_error_maximum_m": 0.005388658712470988
+        },
+        {
+          "frame": 3840,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0002078173738505795,
+            9.448615897010949e-05
+          ],
+          "raw_endpoint_error_m": 0.005600004673211964,
+          "corrected_endpoint_error_m": 0.005600004673211964,
+          "corrected_path_error_maximum_m": 0.005600004673211964
+        },
+        {
+          "frame": 3888,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00016563517510285466,
+            5.834417277357924e-05
+          ],
+          "raw_endpoint_error_m": 0.005973752968716102,
+          "corrected_endpoint_error_m": 0.005973752968716102,
+          "corrected_path_error_maximum_m": 0.005973752968716102
+        },
+        {
+          "frame": 3936,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00013647283640053193,
+            9.085102469496005e-06
+          ],
+          "raw_endpoint_error_m": 0.0061692546506875575,
+          "corrected_endpoint_error_m": 0.0061692546506875575,
+          "corrected_path_error_maximum_m": 0.0061692546506875575
+        },
+        {
+          "frame": 3984,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": false,
+          "actual_endpoint_xy_m": [
+            9.085110917450928e-05,
+            -7.487489456198664e-05
+          ],
+          "raw_endpoint_error_m": 0.006372441661135306,
+          "corrected_endpoint_error_m": 0.006372441661135306,
+          "corrected_path_error_maximum_m": 0.006372441661135306
+        },
+        {
+          "frame": 4032,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.008226799807174983,
+            0.009040495261737065
+          ],
+          "raw_endpoint_error_m": 0.015754752600962398,
+          "corrected_endpoint_error_m": 0.015754752600962398,
+          "corrected_path_error_maximum_m": 0.015754752600962398
+        },
+        {
+          "frame": 4080,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00022634418279303452,
+            9.652222335288691e-05
+          ],
+          "raw_endpoint_error_m": 0.006072909091233833,
+          "corrected_endpoint_error_m": 0.006072909091233833,
+          "corrected_path_error_maximum_m": 0.006072909091233833
+        },
+        {
+          "frame": 4128,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00017377285610504709,
+            9.4571762658672e-05
+          ],
+          "raw_endpoint_error_m": 0.0061675063910126586,
+          "corrected_endpoint_error_m": 0.0061675063910126586,
+          "corrected_path_error_maximum_m": 0.0061675063910126586
+        },
+        {
+          "frame": 4172,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00012995250310044224,
+            9.976772725355429e-06
+          ],
+          "raw_endpoint_error_m": 0.006381306818805168,
+          "corrected_endpoint_error_m": 0.006381306818805168,
+          "corrected_path_error_maximum_m": 0.006381306818805168
+        },
+        {
+          "frame": 4220,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            7.928548580042197e-05,
+            -7.508652081928941e-05
+          ],
+          "raw_endpoint_error_m": 0.006490334874066482,
+          "corrected_endpoint_error_m": 0.006490334874066482,
+          "corrected_path_error_maximum_m": 0.006490334874066482
+        },
+        {
+          "frame": 4268,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0003929030481925849,
+            -0.0009347771881563053
+          ],
+          "raw_endpoint_error_m": 0.0062383625115322115,
+          "corrected_endpoint_error_m": 0.0062383625115322115,
+          "corrected_path_error_maximum_m": 0.0062383625115322115
+        },
+        {
+          "frame": 4316,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.000745792835921547,
+            0.00039167613255684894
+          ],
+          "raw_endpoint_error_m": 0.007322863526759058,
+          "corrected_endpoint_error_m": 0.007322863526759058,
+          "corrected_path_error_maximum_m": 0.007322863526759058
+        },
+        {
+          "frame": 4364,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0006147834341915636,
+            0.00027048340753735127
+          ],
+          "raw_endpoint_error_m": 0.007065833444425847,
+          "corrected_endpoint_error_m": 0.007065833444425847,
+          "corrected_path_error_maximum_m": 0.007065833444425847
+        },
+        {
+          "frame": 4412,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00037947877726553556,
+            0.00020565598090257873
+          ],
+          "raw_endpoint_error_m": 0.0068262950782566716,
+          "corrected_endpoint_error_m": 0.0068262950782566716,
+          "corrected_path_error_maximum_m": 0.0068262950782566716
+        },
+        {
+          "frame": 4460,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00023662988922085068,
+            7.914696950018565e-05
+          ],
+          "raw_endpoint_error_m": 0.006975874538457862,
+          "corrected_endpoint_error_m": 0.006975874538457862,
+          "corrected_path_error_maximum_m": 0.006975874538457862
+        },
+        {
+          "frame": 4508,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            6.050010772252853e-05,
+            -0.00021916069365593026
+          ],
+          "raw_endpoint_error_m": 0.006988531448801882,
+          "corrected_endpoint_error_m": 0.006988531448801882,
+          "corrected_path_error_maximum_m": 0.006988531448801882
+        },
+        {
+          "frame": 4556,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0044399325068743755,
+            0.006727655696394348
+          ],
+          "raw_endpoint_error_m": 0.013542252421545692,
+          "corrected_endpoint_error_m": 0.013542252421545692,
+          "corrected_path_error_maximum_m": 0.013542252421545692
+        },
+        {
+          "frame": 4604,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.002990098219389473,
+            -0.006450385382479544
+          ],
+          "raw_endpoint_error_m": 0.007003935553507638,
+          "corrected_endpoint_error_m": 0.007003935553507638,
+          "corrected_path_error_maximum_m": 0.007003935553507638
+        },
+        {
+          "frame": 4652,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0002914547308497914,
+            -0.0003145099184907831
+          ],
+          "raw_endpoint_error_m": 0.006201204531715431,
+          "corrected_endpoint_error_m": 0.006201204531715431,
+          "corrected_path_error_maximum_m": 0.006201204531715431
+        },
+        {
+          "frame": 4700,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0003430593315709285,
+            0.00036739554126862005
+          ],
+          "raw_endpoint_error_m": 0.005851898175432106,
+          "corrected_endpoint_error_m": 0.005851898175432106,
+          "corrected_path_error_maximum_m": 0.005851898175432106
+        },
+        {
+          "frame": 4748,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0028255685851644964,
+            -0.0064283865292378796
+          ],
+          "raw_endpoint_error_m": 0.007019431186500788,
+          "corrected_endpoint_error_m": 0.007019431186500788,
+          "corrected_path_error_maximum_m": 0.007019431186500788
+        },
+        {
+          "frame": 4796,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00029450612874787395,
+            -0.0003268999600477041
+          ],
+          "raw_endpoint_error_m": 0.006163035825545917,
+          "corrected_endpoint_error_m": 0.006163035825545917,
+          "corrected_path_error_maximum_m": 0.006163035825545917
+        }
+      ],
+      "action_counts": {
+        "left_turn": 16,
+        "hold": 43,
+        "left_arc": 11,
+        "forward": 11,
+        "right_turn": 9,
+        "right_arc": 6
+      },
+      "window_sha256": "e5d9ec14b4165abe2b4386cddf29e564e92a129838c9885668bfedf4b5670af4",
+      "planning_sha256": "31e79267064e56960f148c481b869c148b624bf4d5053bd7d70ec6100ae34b41"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_03_current_pair_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "eligible": 404,
+      "excluded_short_history": 2,
+      "windows": [
+        {
+          "frame": 12,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0038906464095235737,
+            -0.008753529290199276
+          ],
+          "raw_endpoint_error_m": 0.008885321439427616,
+          "corrected_endpoint_error_m": 0.008885321439427616,
+          "corrected_path_error_maximum_m": 0.00900183436446156
+        },
+        {
+          "frame": 28,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00371951465727366,
+            -0.0036689464171236943
+          ],
+          "raw_endpoint_error_m": 0.005880450979061401,
+          "corrected_endpoint_error_m": 0.005880450979061401,
+          "corrected_path_error_maximum_m": 0.005880450979061401
+        },
+        {
+          "frame": 44,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0025120052651760264,
+            -6.632299644702417e-05
+          ],
+          "raw_endpoint_error_m": 0.01047627430901498,
+          "corrected_endpoint_error_m": 0.01047627430901498,
+          "corrected_path_error_maximum_m": 0.01047627430901498
+        },
+        {
+          "frame": 60,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0009948187484312824,
+            -0.00427971437563244
+          ],
+          "raw_endpoint_error_m": 0.0014519388193884727,
+          "corrected_endpoint_error_m": 0.0014519388193884727,
+          "corrected_path_error_maximum_m": 0.0014519388193884727
+        },
+        {
+          "frame": 76,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00976529315725697,
+            0.002379199391857465
+          ],
+          "raw_endpoint_error_m": 0.0021351768828998348,
+          "corrected_endpoint_error_m": 0.0021351768828998348,
+          "corrected_path_error_maximum_m": 0.003167096145052793
+        },
+        {
+          "frame": 96,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0038329093400210385,
+            -0.004242522544067523
+          ],
+          "raw_endpoint_error_m": 0.0059030188147543685,
+          "corrected_endpoint_error_m": 0.0059030188147543685,
+          "corrected_path_error_maximum_m": 0.0059030188147543685
+        },
+        {
+          "frame": 112,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0036457133647034216,
+            -0.006899102689484444
+          ],
+          "raw_endpoint_error_m": 0.002678950401866496,
+          "corrected_endpoint_error_m": 0.002678950401866496,
+          "corrected_path_error_maximum_m": 0.004423097118299515
+        },
+        {
+          "frame": 128,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0044888310019701805,
+            -0.0021964702335398275
+          ],
+          "raw_endpoint_error_m": 0.0034987066004520304,
+          "corrected_endpoint_error_m": 0.0034987066004520304,
+          "corrected_path_error_maximum_m": 0.005216905229496101
+        },
+        {
+          "frame": 148,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.010492011032255368,
+            -0.0019502894993089926
+          ],
+          "raw_endpoint_error_m": 0.009143621234092656,
+          "corrected_endpoint_error_m": 0.009143621234092656,
+          "corrected_path_error_maximum_m": 0.009143621234092656
+        },
+        {
+          "frame": 168,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            5.973511501541601e-05,
+            -0.0013375568081860196
+          ],
+          "raw_endpoint_error_m": 0.00493210820487486,
+          "corrected_endpoint_error_m": 0.00493210820487486,
+          "corrected_path_error_maximum_m": 0.005152327921722746
+        },
+        {
+          "frame": 184,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0022632395522803805,
+            -0.009548019938566903
+          ],
+          "raw_endpoint_error_m": 0.0017741970402242256,
+          "corrected_endpoint_error_m": 0.0017741970402242256,
+          "corrected_path_error_maximum_m": 0.005074919676098615
+        },
+        {
+          "frame": 200,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.004047665403734014,
+            -0.0014446377983220486
+          ],
+          "raw_endpoint_error_m": 0.004207346147405765,
+          "corrected_endpoint_error_m": 0.004207346147405765,
+          "corrected_path_error_maximum_m": 0.004207346147405765
+        },
+        {
+          "frame": 216,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.01105136783095765,
+            -0.0019517969901490153
+          ],
+          "raw_endpoint_error_m": 0.011181135092081023,
+          "corrected_endpoint_error_m": 0.011181135092081023,
+          "corrected_path_error_maximum_m": 0.011181135092081023
+        },
+        {
+          "frame": 236,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.009674321216988087,
+            -0.009475865851093786
+          ],
+          "raw_endpoint_error_m": 0.005103244360511028,
+          "corrected_endpoint_error_m": 0.005103244360511028,
+          "corrected_path_error_maximum_m": 0.009015696606238192
+        },
+        {
+          "frame": 252,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.004198914684016441,
+            -0.004600480437351421
+          ],
+          "raw_endpoint_error_m": 0.001736049806209603,
+          "corrected_endpoint_error_m": 0.001736049806209603,
+          "corrected_path_error_maximum_m": 0.003968343360718017
+        },
+        {
+          "frame": 268,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09179945652544003,
+            0.012434527545925118
+          ],
+          "raw_endpoint_error_m": 0.00935712094973379,
+          "corrected_endpoint_error_m": 0.00935712094973379,
+          "corrected_path_error_maximum_m": 0.00935712094973379
+        },
+        {
+          "frame": 284,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1390133124874184,
+            0.0033676308314238585
+          ],
+          "raw_endpoint_error_m": 0.012740488177853157,
+          "corrected_endpoint_error_m": 0.012740488177853157,
+          "corrected_path_error_maximum_m": 0.012740488177853157
+        },
+        {
+          "frame": 304,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13538769507261805,
+            0.0015155193950454387
+          ],
+          "raw_endpoint_error_m": 0.011419595743816836,
+          "corrected_endpoint_error_m": 0.011419595743816836,
+          "corrected_path_error_maximum_m": 0.011419595743816836
+        },
+        {
+          "frame": 320,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10915535928600813,
+            0.01812779726169868
+          ],
+          "raw_endpoint_error_m": 0.011528554513503085,
+          "corrected_endpoint_error_m": 0.011528554513503085,
+          "corrected_path_error_maximum_m": 0.011528554513503085
+        },
+        {
+          "frame": 344,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010332686185839081,
+            -0.0073724973056502685
+          ],
+          "raw_endpoint_error_m": 0.014594550753292204,
+          "corrected_endpoint_error_m": 0.014594550753292204,
+          "corrected_path_error_maximum_m": 0.014594550753292204
+        },
+        {
+          "frame": 360,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.002945995478204014,
+            -0.001967356407534115
+          ],
+          "raw_endpoint_error_m": 0.006529911082495008,
+          "corrected_endpoint_error_m": 0.006529911082495008,
+          "corrected_path_error_maximum_m": 0.006529911082495008
+        },
+        {
+          "frame": 400,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.025140357159746482,
+            0.011710971425461583
+          ],
+          "raw_endpoint_error_m": 0.019225405164881845,
+          "corrected_endpoint_error_m": 0.019225405164881845,
+          "corrected_path_error_maximum_m": 0.019225405164881845
+        },
+        {
+          "frame": 420,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.08734119956544315,
+            0.015011218697710476
+          ],
+          "raw_endpoint_error_m": 0.0036969617063458745,
+          "corrected_endpoint_error_m": 0.0036969617063458745,
+          "corrected_path_error_maximum_m": 0.0036969617063458745
+        },
+        {
+          "frame": 436,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1454952812674408,
+            0.0028700306162661084
+          ],
+          "raw_endpoint_error_m": 0.015476760303688582,
+          "corrected_endpoint_error_m": 0.015476760303688582,
+          "corrected_path_error_maximum_m": 0.015476760303688582
+        },
+        {
+          "frame": 452,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10924808505648993,
+            0.016846883388903756
+          ],
+          "raw_endpoint_error_m": 0.005592671640164141,
+          "corrected_endpoint_error_m": 0.005592671640164141,
+          "corrected_path_error_maximum_m": 0.005592671640164141
+        },
+        {
+          "frame": 472,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.019310234112277256,
+            0.0021967652420427906
+          ],
+          "raw_endpoint_error_m": 0.016479124300115312,
+          "corrected_endpoint_error_m": 0.016479124300115312,
+          "corrected_path_error_maximum_m": 0.018990404123749464
+        },
+        {
+          "frame": 488,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006016192887150345,
+            -0.002833129330777913
+          ],
+          "raw_endpoint_error_m": 0.008072917495049186,
+          "corrected_endpoint_error_m": 0.008072917495049186,
+          "corrected_path_error_maximum_m": 0.008072917495049186
+        },
+        {
+          "frame": 504,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0018428851780242833,
+            -0.003922433264591503
+          ],
+          "raw_endpoint_error_m": 0.004294530736323277,
+          "corrected_endpoint_error_m": 0.004294530736323277,
+          "corrected_path_error_maximum_m": 0.004294530736323277
+        },
+        {
+          "frame": 520,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.005071892149436421,
+            -0.005662220153970682
+          ],
+          "raw_endpoint_error_m": 0.0030580783721651217,
+          "corrected_endpoint_error_m": 0.0030580783721651217,
+          "corrected_path_error_maximum_m": 0.004363523241062991
+        },
+        {
+          "frame": 540,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0018536711523524621,
+            -0.0068576738052176745
+          ],
+          "raw_endpoint_error_m": 0.0035211362648768967,
+          "corrected_endpoint_error_m": 0.0035211362648768967,
+          "corrected_path_error_maximum_m": 0.004495288775615721
+        },
+        {
+          "frame": 556,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10707930722529854,
+            0.016302618555113575
+          ],
+          "raw_endpoint_error_m": 0.0045307234170263045,
+          "corrected_endpoint_error_m": 0.0045307234170263045,
+          "corrected_path_error_maximum_m": 0.0045307234170263045
+        },
+        {
+          "frame": 572,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1065235881920652,
+            -0.009683480373475611
+          ],
+          "raw_endpoint_error_m": 0.008836354905012021,
+          "corrected_endpoint_error_m": 0.008836354905012021,
+          "corrected_path_error_maximum_m": 0.008836354905012021
+        },
+        {
+          "frame": 588,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13063342182253995,
+            0.005030481972448598
+          ],
+          "raw_endpoint_error_m": 0.004467125620062023,
+          "corrected_endpoint_error_m": 0.004467125620062023,
+          "corrected_path_error_maximum_m": 0.006033822228304722
+        },
+        {
+          "frame": 604,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12254927146532386,
+            0.008603210030661798
+          ],
+          "raw_endpoint_error_m": 0.005568115254716076,
+          "corrected_endpoint_error_m": 0.005568115254716076,
+          "corrected_path_error_maximum_m": 0.005568115254716076
+        },
+        {
+          "frame": 628,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10203651720004499,
+            0.01313528635368147
+          ],
+          "raw_endpoint_error_m": 0.0034031147889142643,
+          "corrected_endpoint_error_m": 0.0034031147889142643,
+          "corrected_path_error_maximum_m": 0.0034031147889142643
+        },
+        {
+          "frame": 644,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1077832370721014,
+            0.017446701685072806
+          ],
+          "raw_endpoint_error_m": 0.00622215031223628,
+          "corrected_endpoint_error_m": 0.00622215031223628,
+          "corrected_path_error_maximum_m": 0.00622215031223628
+        },
+        {
+          "frame": 660,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0006694160480909858,
+            -0.006137638558755204
+          ],
+          "raw_endpoint_error_m": 0.006923662031203923,
+          "corrected_endpoint_error_m": 0.006923662031203923,
+          "corrected_path_error_maximum_m": 0.006923662031203923
+        },
+        {
+          "frame": 676,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00589935403017431,
+            -0.001074020241344374
+          ],
+          "raw_endpoint_error_m": 0.007818666700610027,
+          "corrected_endpoint_error_m": 0.007818666700610027,
+          "corrected_path_error_maximum_m": 0.007818666700610027
+        },
+        {
+          "frame": 696,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009215348186170019,
+            0.009922440219196508
+          ],
+          "raw_endpoint_error_m": 0.005416051462890113,
+          "corrected_endpoint_error_m": 0.005416051462890113,
+          "corrected_path_error_maximum_m": 0.005792354002678809
+        },
+        {
+          "frame": 712,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13177026012158088,
+            -0.0024334082361732053
+          ],
+          "raw_endpoint_error_m": 0.008559165426533639,
+          "corrected_endpoint_error_m": 0.008559165426533639,
+          "corrected_path_error_maximum_m": 0.008559165426533639
+        },
+        {
+          "frame": 728,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12747997217038143,
+            0.0058407701107097264
+          ],
+          "raw_endpoint_error_m": 0.010539235503874924,
+          "corrected_endpoint_error_m": 0.010539235503874924,
+          "corrected_path_error_maximum_m": 0.010539235503874924
+        },
+        {
+          "frame": 744,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.104835164417951,
+            0.015567415773245535
+          ],
+          "raw_endpoint_error_m": 0.0013461061537774534,
+          "corrected_endpoint_error_m": 0.0013461061537774534,
+          "corrected_path_error_maximum_m": 0.0023649985847355743
+        },
+        {
+          "frame": 764,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12093718353401474,
+            0.01707657817555795
+          ],
+          "raw_endpoint_error_m": 0.01474568981675357,
+          "corrected_endpoint_error_m": 0.01474568981675357,
+          "corrected_path_error_maximum_m": 0.01474568981675357
+        },
+        {
+          "frame": 784,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11808048929960163,
+            0.005318618860846392
+          ],
+          "raw_endpoint_error_m": 0.006908072732286843,
+          "corrected_endpoint_error_m": 0.006908072732286843,
+          "corrected_path_error_maximum_m": 0.006908072732286843
+        },
+        {
+          "frame": 800,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13281486833361458,
+            0.004136091287156367
+          ],
+          "raw_endpoint_error_m": 0.01196469076077384,
+          "corrected_endpoint_error_m": 0.01196469076077384,
+          "corrected_path_error_maximum_m": 0.01196469076077384
+        },
+        {
+          "frame": 816,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.010247829340174127,
+            -0.005094188877040485
+          ],
+          "raw_endpoint_error_m": 0.003563410100692578,
+          "corrected_endpoint_error_m": 0.003563410100692578,
+          "corrected_path_error_maximum_m": 0.005382898492723683
+        },
+        {
+          "frame": 848,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0021552589069853013,
+            -0.012754169835117903
+          ],
+          "raw_endpoint_error_m": 0.003751517327694382,
+          "corrected_endpoint_error_m": 0.003751517327694382,
+          "corrected_path_error_maximum_m": 0.003751517327694382
+        },
+        {
+          "frame": 864,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.013306535926408793,
+            0.009577092908286074
+          ],
+          "raw_endpoint_error_m": 0.01058772236772106,
+          "corrected_endpoint_error_m": 0.01058772236772106,
+          "corrected_path_error_maximum_m": 0.01058772236772106
+        },
+        {
+          "frame": 880,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11758073610128444,
+            -0.00717711545065147
+          ],
+          "raw_endpoint_error_m": 0.007065183059946484,
+          "corrected_endpoint_error_m": 0.007065183059946484,
+          "corrected_path_error_maximum_m": 0.00734003534432254
+        },
+        {
+          "frame": 896,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.14410846638022728,
+            0.0027495742649272254
+          ],
+          "raw_endpoint_error_m": 0.021929716718853475,
+          "corrected_endpoint_error_m": 0.021929716718853475,
+          "corrected_path_error_maximum_m": 0.021929716718853475
+        },
+        {
+          "frame": 916,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13009833329551077,
+            -0.0012919993975334305
+          ],
+          "raw_endpoint_error_m": 0.019226928446883666,
+          "corrected_endpoint_error_m": 0.019226928446883666,
+          "corrected_path_error_maximum_m": 0.019226928446883666
+        },
+        {
+          "frame": 932,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.14160995505606017,
+            0.0061303281671367975
+          ],
+          "raw_endpoint_error_m": 0.020598293856725715,
+          "corrected_endpoint_error_m": 0.020598293856725715,
+          "corrected_path_error_maximum_m": 0.020598293856725715
+        },
+        {
+          "frame": 952,
+          "action": "right_arc",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.04347740942892552,
+            0.0020573114232211188
+          ],
+          "raw_endpoint_error_m": 0.01549363822885211,
+          "corrected_endpoint_error_m": 0.01549363822885211,
+          "corrected_path_error_maximum_m": 0.021878736174014535
+        },
+        {
+          "frame": 972,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003664466078587786,
+            0.001703615000084346
+          ],
+          "raw_endpoint_error_m": 0.007277584977623723,
+          "corrected_endpoint_error_m": 0.007277584977623723,
+          "corrected_path_error_maximum_m": 0.007277584977623723
+        },
+        {
+          "frame": 1000,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0004431170531205928,
+            0.0006116198442576099
+          ],
+          "raw_endpoint_error_m": 0.00510780161723833,
+          "corrected_endpoint_error_m": 0.00510780161723833,
+          "corrected_path_error_maximum_m": 0.005126987963975311
+        },
+        {
+          "frame": 1024,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0005667505057875794,
+            0.00041106372794299774
+          ],
+          "raw_endpoint_error_m": 0.0051495475678072205,
+          "corrected_endpoint_error_m": 0.0051495475678072205,
+          "corrected_path_error_maximum_m": 0.005410146230024961
+        },
+        {
+          "frame": 1048,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0006009301905843228,
+            0.00020892237719578297
+          ],
+          "raw_endpoint_error_m": 0.005223160302656368,
+          "corrected_endpoint_error_m": 0.005223160302656368,
+          "corrected_path_error_maximum_m": 0.005767837527426032
+        },
+        {
+          "frame": 1080,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.005174364188721637,
+            -0.002354451503984076
+          ],
+          "raw_endpoint_error_m": 0.0059434605673912505,
+          "corrected_endpoint_error_m": 0.0059434605673912505,
+          "corrected_path_error_maximum_m": 0.0059434605673912505
+        },
+        {
+          "frame": 1136,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.002747858370577471,
+            0.0021217279941690105
+          ],
+          "raw_endpoint_error_m": 0.0006503853173497759,
+          "corrected_endpoint_error_m": 0.0006503853173497759,
+          "corrected_path_error_maximum_m": 0.0016735210978675332
+        },
+        {
+          "frame": 1152,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.005282267951628385,
+            0.004842674361888889
+          ],
+          "raw_endpoint_error_m": 0.0021052892283453997,
+          "corrected_endpoint_error_m": 0.0021052892283453997,
+          "corrected_path_error_maximum_m": 0.0021052892283453997
+        },
+        {
+          "frame": 1168,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.002433272588391282,
+            0.004322576079109728
+          ],
+          "raw_endpoint_error_m": 0.007790283247027347,
+          "corrected_endpoint_error_m": 0.007790283247027347,
+          "corrected_path_error_maximum_m": 0.008238911473304956
+        },
+        {
+          "frame": 1184,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006252509843300618,
+            -0.008996468500032863
+          ],
+          "raw_endpoint_error_m": 0.005982789350834742,
+          "corrected_endpoint_error_m": 0.005982789350834742,
+          "corrected_path_error_maximum_m": 0.005982789350834742
+        },
+        {
+          "frame": 1208,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.005525272770645737,
+            0.0043801801696637666
+          ],
+          "raw_endpoint_error_m": 0.004406729334377591,
+          "corrected_endpoint_error_m": 0.004406729334377591,
+          "corrected_path_error_maximum_m": 0.0054139466211786625
+        },
+        {
+          "frame": 1224,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.012348667846518462,
+            0.00896321788792317
+          ],
+          "raw_endpoint_error_m": 0.002759466590920573,
+          "corrected_endpoint_error_m": 0.002759466590920573,
+          "corrected_path_error_maximum_m": 0.002759466590920573
+        },
+        {
+          "frame": 1240,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1136885582912082,
+            -0.0014919178398571946
+          ],
+          "raw_endpoint_error_m": 0.005985446807328803,
+          "corrected_endpoint_error_m": 0.005985446807328803,
+          "corrected_path_error_maximum_m": 0.006982804454050687
+        },
+        {
+          "frame": 1256,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1361680090305391,
+            0.005128025728271066
+          ],
+          "raw_endpoint_error_m": 0.015397413019138875,
+          "corrected_endpoint_error_m": 0.015397413019138875,
+          "corrected_path_error_maximum_m": 0.015397413019138875
+        },
+        {
+          "frame": 1272,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13100387505398298,
+            0.003885655620168281
+          ],
+          "raw_endpoint_error_m": 0.0042296292859738,
+          "corrected_endpoint_error_m": 0.0042296292859738,
+          "corrected_path_error_maximum_m": 0.0042296292859738
+        },
+        {
+          "frame": 1292,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10085597900843335,
+            0.01781325634184079
+          ],
+          "raw_endpoint_error_m": 0.014255732787456904,
+          "corrected_endpoint_error_m": 0.014255732787456904,
+          "corrected_path_error_maximum_m": 0.014255732787456904
+        },
+        {
+          "frame": 1312,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0989701472615768,
+            0.016940330438236548
+          ],
+          "raw_endpoint_error_m": 0.006121526128345069,
+          "corrected_endpoint_error_m": 0.006121526128345069,
+          "corrected_path_error_maximum_m": 0.006121526128345069
+        },
+        {
+          "frame": 1328,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10616175980759243,
+            0.012295835587460677
+          ],
+          "raw_endpoint_error_m": 0.0031032399638603225,
+          "corrected_endpoint_error_m": 0.0031032399638603225,
+          "corrected_path_error_maximum_m": 0.0036484993881678593
+        },
+        {
+          "frame": 1348,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0375752421979959,
+            -0.00229639875899931
+          ],
+          "raw_endpoint_error_m": 0.01813039944488142,
+          "corrected_endpoint_error_m": 0.01813039944488142,
+          "corrected_path_error_maximum_m": 0.01813039944488142
+        },
+        {
+          "frame": 1372,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1092273928282034,
+            0.0028311315281389794
+          ],
+          "raw_endpoint_error_m": 0.0002699373331495621,
+          "corrected_endpoint_error_m": 0.0002699373331495621,
+          "corrected_path_error_maximum_m": 0.004137653365253547
+        },
+        {
+          "frame": 1388,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12701897070916462,
+            -0.0007289863317857682
+          ],
+          "raw_endpoint_error_m": 0.004571704182342316,
+          "corrected_endpoint_error_m": 0.004571704182342316,
+          "corrected_path_error_maximum_m": 0.004571704182342316
+        },
+        {
+          "frame": 1404,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1311441693154818,
+            0.0037378212009043605
+          ],
+          "raw_endpoint_error_m": 0.007673022662959356,
+          "corrected_endpoint_error_m": 0.007673022662959356,
+          "corrected_path_error_maximum_m": 0.007673022662959356
+        },
+        {
+          "frame": 1420,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13159133859296093,
+            -0.005066984915621597
+          ],
+          "raw_endpoint_error_m": 0.01397880120660217,
+          "corrected_endpoint_error_m": 0.01397880120660217,
+          "corrected_path_error_maximum_m": 0.01397880120660217
+        },
+        {
+          "frame": 1464,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0602179709792097,
+            -0.0019847691814517615
+          ],
+          "raw_endpoint_error_m": 0.010178910743529985,
+          "corrected_endpoint_error_m": 0.010178910743529985,
+          "corrected_path_error_maximum_m": 0.010178910743529985
+        },
+        {
+          "frame": 1480,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13283622586556512,
+            0.005181371283312936
+          ],
+          "raw_endpoint_error_m": 0.0036973599268555657,
+          "corrected_endpoint_error_m": 0.0036973599268555657,
+          "corrected_path_error_maximum_m": 0.004305281587581718
+        },
+        {
+          "frame": 1496,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.008404722665456702,
+            0.004949784407172278
+          ],
+          "raw_endpoint_error_m": 0.0015617301506827142,
+          "corrected_endpoint_error_m": 0.0015617301506827142,
+          "corrected_path_error_maximum_m": 0.002886928588453804
+        },
+        {
+          "frame": 1512,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13153242831478026,
+            0.0033120266133159076
+          ],
+          "raw_endpoint_error_m": 0.0061452779472154885,
+          "corrected_endpoint_error_m": 0.0061452779472154885,
+          "corrected_path_error_maximum_m": 0.0061452779472154885
+        },
+        {
+          "frame": 1532,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.024226982487137016,
+            0.003959901101308182
+          ],
+          "raw_endpoint_error_m": 0.010505959773150213,
+          "corrected_endpoint_error_m": 0.010505959773150213,
+          "corrected_path_error_maximum_m": 0.010571548344907008
+        },
+        {
+          "frame": 1548,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009725333367050035,
+            0.0009828457358414474
+          ],
+          "raw_endpoint_error_m": 0.004168411696675573,
+          "corrected_endpoint_error_m": 0.004168411696675573,
+          "corrected_path_error_maximum_m": 0.004722333077061574
+        },
+        {
+          "frame": 1564,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00428802175293086,
+            -0.008134844152505195
+          ],
+          "raw_endpoint_error_m": 0.008549837438012652,
+          "corrected_endpoint_error_m": 0.008549837438012652,
+          "corrected_path_error_maximum_m": 0.008549837438012652
+        },
+        {
+          "frame": 1580,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13391624955852954,
+            0.0010821800820364875
+          ],
+          "raw_endpoint_error_m": 0.006192982185813015,
+          "corrected_endpoint_error_m": 0.006192982185813015,
+          "corrected_path_error_maximum_m": 0.006555105142982649
+        },
+        {
+          "frame": 1604,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.011756751131535854,
+            -0.0037951239650559636
+          ],
+          "raw_endpoint_error_m": 0.006242421277711792,
+          "corrected_endpoint_error_m": 0.006242421277711792,
+          "corrected_path_error_maximum_m": 0.006242421277711792
+        },
+        {
+          "frame": 1620,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0044486324168607864,
+            -0.0048437931408813785
+          ],
+          "raw_endpoint_error_m": 0.005114077840614903,
+          "corrected_endpoint_error_m": 0.005114077840614903,
+          "corrected_path_error_maximum_m": 0.005114077840614903
+        },
+        {
+          "frame": 1636,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.01000801497023404,
+            0.007743739715985928
+          ],
+          "raw_endpoint_error_m": 0.0025799262226502773,
+          "corrected_endpoint_error_m": 0.0025799262226502773,
+          "corrected_path_error_maximum_m": 0.0037899333059738726
+        },
+        {
+          "frame": 1652,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00808145703143141,
+            0.0016807463082091204
+          ],
+          "raw_endpoint_error_m": 0.004978247663876109,
+          "corrected_endpoint_error_m": 0.004978247663876109,
+          "corrected_path_error_maximum_m": 0.004978247663876109
+        },
+        {
+          "frame": 1672,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.006644423009240064,
+            0.00658771662943767
+          ],
+          "raw_endpoint_error_m": 0.0025574983188425596,
+          "corrected_endpoint_error_m": 0.0025574983188425596,
+          "corrected_path_error_maximum_m": 0.003318933714435615
+        },
+        {
+          "frame": 1696,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00809473026145099,
+            -0.004346913664171232
+          ],
+          "raw_endpoint_error_m": 0.003954728531168721,
+          "corrected_endpoint_error_m": 0.003954728531168721,
+          "corrected_path_error_maximum_m": 0.004504005948279926
+        },
+        {
+          "frame": 1736,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.015604105945757486,
+            -0.0007160323388351685
+          ],
+          "raw_endpoint_error_m": 0.008103615352883706,
+          "corrected_endpoint_error_m": 0.008103615352883706,
+          "corrected_path_error_maximum_m": 0.009572558400986884
+        },
+        {
+          "frame": 1820,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.007243219532532084,
+            0.001605965781517572
+          ],
+          "raw_endpoint_error_m": 0.00872380313923041,
+          "corrected_endpoint_error_m": 0.00872380313923041,
+          "corrected_path_error_maximum_m": 0.00872380313923041
+        },
+        {
+          "frame": 2088,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": false,
+          "actual_endpoint_xy_m": [
+            0.002121954042374541,
+            0.008325083566778768
+          ],
+          "raw_endpoint_error_m": 0.010370118049732225,
+          "corrected_endpoint_error_m": 0.010370118049732225,
+          "corrected_path_error_maximum_m": 0.010370118049732225
+        },
+        {
+          "frame": 2112,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00279558809258163,
+            -0.0006583375688190131
+          ],
+          "raw_endpoint_error_m": 0.006735752360554878,
+          "corrected_endpoint_error_m": 0.006735752360554878,
+          "corrected_path_error_maximum_m": 0.006735752360554878
+        },
+        {
+          "frame": 2520,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00370684541807257,
+            0.003536254562157616
+          ],
+          "raw_endpoint_error_m": 0.013961448973332556,
+          "corrected_endpoint_error_m": 0.013961448973332556,
+          "corrected_path_error_maximum_m": 0.013961448973332556
+        },
+        {
+          "frame": 2536,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003988556244521052,
+            0.009153176896058452
+          ],
+          "raw_endpoint_error_m": 0.008806525656159808,
+          "corrected_endpoint_error_m": 0.008806525656159808,
+          "corrected_path_error_maximum_m": 0.008806525656159808
+        },
+        {
+          "frame": 3568,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003607544964074803,
+            0.002230564078457611
+          ],
+          "raw_endpoint_error_m": 0.013852733846211851,
+          "corrected_endpoint_error_m": 0.013852733846211851,
+          "corrected_path_error_maximum_m": 0.013852733846211851
+        }
+      ],
+      "action_counts": {
+        "left_turn": 26,
+        "hold": 8,
+        "right_turn": 20,
+        "forward": 22,
+        "left_arc": 11,
+        "right_arc": 9
+      },
+      "window_sha256": "b6252011a50999dc0bf1a5a937cd85caa9303b91adebbe9c7db743bb8932b49f",
+      "planning_sha256": "a20726cda7d437e2ae742208bf1ba5ae673173ac9fb7d820d90533b45498540f"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "eligible": 349,
+      "excluded_short_history": 2,
+      "windows": [
+        {
+          "frame": 12,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0038906464095235737,
+            -0.008753529290199276
+          ],
+          "raw_endpoint_error_m": 0.008885321439427616,
+          "corrected_endpoint_error_m": 0.008885321439427616,
+          "corrected_path_error_maximum_m": 0.00900183436446156
+        },
+        {
+          "frame": 24,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006743116180192868,
+            -0.0035988520808333925
+          ],
+          "raw_endpoint_error_m": 0.0021485270212208804,
+          "corrected_endpoint_error_m": 0.0021485270212208804,
+          "corrected_path_error_maximum_m": 0.0021485270212208804
+        },
+        {
+          "frame": 40,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008599751108041252,
+            0.00011804843378353632
+          ],
+          "raw_endpoint_error_m": 0.003891312071162659,
+          "corrected_endpoint_error_m": 0.003891312071162659,
+          "corrected_path_error_maximum_m": 0.0058569865300699304
+        },
+        {
+          "frame": 52,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.002200282247312931,
+            -0.007683961270589969
+          ],
+          "raw_endpoint_error_m": 0.00343165219294731,
+          "corrected_endpoint_error_m": 0.00343165219294731,
+          "corrected_path_error_maximum_m": 0.00343165219294731
+        },
+        {
+          "frame": 68,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.004119826839381477,
+            -0.0023406726774844104
+          ],
+          "raw_endpoint_error_m": 0.005078681741135456,
+          "corrected_endpoint_error_m": 0.005078681741135456,
+          "corrected_path_error_maximum_m": 0.005350988290398497
+        },
+        {
+          "frame": 84,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008912820088763903,
+            -0.002396438100856643
+          ],
+          "raw_endpoint_error_m": 0.0092234153365449,
+          "corrected_endpoint_error_m": 0.0092234153365449,
+          "corrected_path_error_maximum_m": 0.0092234153365449
+        },
+        {
+          "frame": 96,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0038329093400210385,
+            -0.004242522544067523
+          ],
+          "raw_endpoint_error_m": 0.0059030188147543685,
+          "corrected_endpoint_error_m": 0.0059030188147543685,
+          "corrected_path_error_maximum_m": 0.0059030188147543685
+        },
+        {
+          "frame": 112,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0036457133647034216,
+            -0.006899102689484444
+          ],
+          "raw_endpoint_error_m": 0.002678950401866496,
+          "corrected_endpoint_error_m": 0.002678950401866496,
+          "corrected_path_error_maximum_m": 0.004423097118299515
+        },
+        {
+          "frame": 128,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0044888310019701805,
+            -0.0021964702335398275
+          ],
+          "raw_endpoint_error_m": 0.0034987066004520304,
+          "corrected_endpoint_error_m": 0.0034987066004520304,
+          "corrected_path_error_maximum_m": 0.005216905229496101
+        },
+        {
+          "frame": 144,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.011063779538954564,
+            -0.0012609025737918228
+          ],
+          "raw_endpoint_error_m": 0.009308465927095092,
+          "corrected_endpoint_error_m": 0.009308465927095092,
+          "corrected_path_error_maximum_m": 0.009308465927095092
+        },
+        {
+          "frame": 160,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": false,
+          "actual_endpoint_xy_m": [
+            0.005167861807510073,
+            -0.003359942027298791
+          ],
+          "raw_endpoint_error_m": 0.008575435617453562,
+          "corrected_endpoint_error_m": 0.008575435617453562,
+          "corrected_path_error_maximum_m": 0.008575435617453562
+        },
+        {
+          "frame": 180,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.001988576756464408,
+            -0.004071111899835855
+          ],
+          "raw_endpoint_error_m": 0.006436010942321308,
+          "corrected_endpoint_error_m": 0.006436010942321308,
+          "corrected_path_error_maximum_m": 0.006747698499923137
+        },
+        {
+          "frame": 192,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006753292254517034,
+            -0.006202923478162036
+          ],
+          "raw_endpoint_error_m": 0.00035787525400264017,
+          "corrected_endpoint_error_m": 0.00035787525400264017,
+          "corrected_path_error_maximum_m": 0.0038174121186979122
+        },
+        {
+          "frame": 208,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0034985800964457726,
+            0.004055248691858056
+          ],
+          "raw_endpoint_error_m": 0.009189059150927612,
+          "corrected_endpoint_error_m": 0.009189059150927612,
+          "corrected_path_error_maximum_m": 0.009189059150927612
+        },
+        {
+          "frame": 224,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008457247556985428,
+            -0.0015070409778627607
+          ],
+          "raw_endpoint_error_m": 0.00663372977147725,
+          "corrected_endpoint_error_m": 0.00663372977147725,
+          "corrected_path_error_maximum_m": 0.00663372977147725
+        },
+        {
+          "frame": 236,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0011926724046168735,
+            -0.012065929329438148
+          ],
+          "raw_endpoint_error_m": 0.007422422367801497,
+          "corrected_endpoint_error_m": 0.007422422367801497,
+          "corrected_path_error_maximum_m": 0.008015574886089647
+        },
+        {
+          "frame": 256,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.00896569144376215,
+            -0.0037732599590561797
+          ],
+          "raw_endpoint_error_m": 0.010621549291393612,
+          "corrected_endpoint_error_m": 0.010621549291393612,
+          "corrected_path_error_maximum_m": 0.010621549291393612
+        },
+        {
+          "frame": 272,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11812497040088829,
+            0.007119684986010293
+          ],
+          "raw_endpoint_error_m": 0.008373121473958545,
+          "corrected_endpoint_error_m": 0.008373121473958545,
+          "corrected_path_error_maximum_m": 0.008373121473958545
+        },
+        {
+          "frame": 284,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10776230312390782,
+            -0.004278666076896001
+          ],
+          "raw_endpoint_error_m": 0.009246871624339778,
+          "corrected_endpoint_error_m": 0.009246871624339778,
+          "corrected_path_error_maximum_m": 0.009801052871359796
+        },
+        {
+          "frame": 304,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12308743881727617,
+            -0.0062249770973093225
+          ],
+          "raw_endpoint_error_m": 0.016186440263466596,
+          "corrected_endpoint_error_m": 0.016186440263466596,
+          "corrected_path_error_maximum_m": 0.016186440263466596
+        },
+        {
+          "frame": 320,
+          "action": "hold",
+          "group": "hold",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.06487263163387566,
+            0.0003939768210268842
+          ],
+          "raw_endpoint_error_m": 0.006207576207622587,
+          "corrected_endpoint_error_m": 0.006207576207622587,
+          "corrected_path_error_maximum_m": 0.006207576207622587
+        },
+        {
+          "frame": 332,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0025657464088196017,
+            -0.011562748529536374
+          ],
+          "raw_endpoint_error_m": 0.006109749155066253,
+          "corrected_endpoint_error_m": 0.006109749155066253,
+          "corrected_path_error_maximum_m": 0.007387276147175403
+        },
+        {
+          "frame": 356,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00812840252068889,
+            -0.004522920607722322
+          ],
+          "raw_endpoint_error_m": 0.005799208426880351,
+          "corrected_endpoint_error_m": 0.005799208426880351,
+          "corrected_path_error_maximum_m": 0.005799208426880351
+        },
+        {
+          "frame": 388,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0004161383724059568,
+            0.005465468944655792
+          ],
+          "raw_endpoint_error_m": 0.0057382108996162605,
+          "corrected_endpoint_error_m": 0.0057382108996162605,
+          "corrected_path_error_maximum_m": 0.006610217519723473
+        },
+        {
+          "frame": 400,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.005505212527429252,
+            0.0018632899097234534
+          ],
+          "raw_endpoint_error_m": 0.00505273133178946,
+          "corrected_endpoint_error_m": 0.00505273133178946,
+          "corrected_path_error_maximum_m": 0.00505273133178946
+        },
+        {
+          "frame": 416,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.026885468349087373,
+            -0.005589675823941031
+          ],
+          "raw_endpoint_error_m": 0.013287594423291502,
+          "corrected_endpoint_error_m": 0.013287594423291502,
+          "corrected_path_error_maximum_m": 0.013287594423291502
+        },
+        {
+          "frame": 432,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11589582399181957,
+            0.012015593846992849
+          ],
+          "raw_endpoint_error_m": 0.021448750436447627,
+          "corrected_endpoint_error_m": 0.021448750436447627,
+          "corrected_path_error_maximum_m": 0.021448750436447627
+        },
+        {
+          "frame": 444,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10578673734085921,
+            0.017730407870519303
+          ],
+          "raw_endpoint_error_m": 0.012622977825739118,
+          "corrected_endpoint_error_m": 0.012622977825739118,
+          "corrected_path_error_maximum_m": 0.013144637732304664
+        },
+        {
+          "frame": 460,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10400253050875617,
+            0.01720934663979882
+          ],
+          "raw_endpoint_error_m": 0.007074454056623464,
+          "corrected_endpoint_error_m": 0.007074454056623464,
+          "corrected_path_error_maximum_m": 0.007707241673222522
+        },
+        {
+          "frame": 476,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10996503388649118,
+            0.015749206476803102
+          ],
+          "raw_endpoint_error_m": 0.008423780226331837,
+          "corrected_endpoint_error_m": 0.008423780226331837,
+          "corrected_path_error_maximum_m": 0.008423780226331837
+        },
+        {
+          "frame": 488,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.06780157240451115,
+            -0.0004260412014471448
+          ],
+          "raw_endpoint_error_m": 0.012268659034373623,
+          "corrected_endpoint_error_m": 0.012268659034373623,
+          "corrected_path_error_maximum_m": 0.012268659034373623
+        },
+        {
+          "frame": 504,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.008417763046971699,
+            -0.0010822079440673395
+          ],
+          "raw_endpoint_error_m": 0.007924033323450933,
+          "corrected_endpoint_error_m": 0.007924033323450933,
+          "corrected_path_error_maximum_m": 0.007924033323450933
+        },
+        {
+          "frame": 524,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.00023379004498635082,
+            -0.01547157428472909
+          ],
+          "raw_endpoint_error_m": 0.010837160986469533,
+          "corrected_endpoint_error_m": 0.010837160986469533,
+          "corrected_path_error_maximum_m": 0.010837160986469533
+        },
+        {
+          "frame": 536,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0028792185051085863,
+            -0.00417142536728841
+          ],
+          "raw_endpoint_error_m": 0.005921987427249522,
+          "corrected_endpoint_error_m": 0.005921987427249522,
+          "corrected_path_error_maximum_m": 0.005921987427249522
+        },
+        {
+          "frame": 552,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.006155042451275012,
+            -0.002113036736609538
+          ],
+          "raw_endpoint_error_m": 0.006145402045953834,
+          "corrected_endpoint_error_m": 0.006145402045953834,
+          "corrected_path_error_maximum_m": 0.006145402045953834
+        },
+        {
+          "frame": 568,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10010123408860748,
+            0.01930607845676563
+          ],
+          "raw_endpoint_error_m": 0.007969997730266071,
+          "corrected_endpoint_error_m": 0.007969997730266071,
+          "corrected_path_error_maximum_m": 0.007969997730266071
+        },
+        {
+          "frame": 580,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10556601067449195,
+            0.01662973859930073
+          ],
+          "raw_endpoint_error_m": 0.005511561719949043,
+          "corrected_endpoint_error_m": 0.005511561719949043,
+          "corrected_path_error_maximum_m": 0.005511561719949043
+        },
+        {
+          "frame": 596,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12747028735904553,
+            -0.008648513711736536
+          ],
+          "raw_endpoint_error_m": 0.011173198677419694,
+          "corrected_endpoint_error_m": 0.011173198677419694,
+          "corrected_path_error_maximum_m": 0.011173198677419694
+        },
+        {
+          "frame": 612,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13495789841546427,
+            0.005785271907473176
+          ],
+          "raw_endpoint_error_m": 0.006826889268695922,
+          "corrected_endpoint_error_m": 0.006826889268695922,
+          "corrected_path_error_maximum_m": 0.006826889268695922
+        },
+        {
+          "frame": 624,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12709010579843846,
+            0.001168278999539504
+          ],
+          "raw_endpoint_error_m": 0.0009051147781954393,
+          "corrected_endpoint_error_m": 0.0009051147781954393,
+          "corrected_path_error_maximum_m": 0.0026954864890931934
+        },
+        {
+          "frame": 640,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13124018394152023,
+            0.012917887526953706
+          ],
+          "raw_endpoint_error_m": 0.013090750771846968,
+          "corrected_endpoint_error_m": 0.013090750771846968,
+          "corrected_path_error_maximum_m": 0.013090750771846968
+        },
+        {
+          "frame": 656,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10489075922192213,
+            0.019216660839603477
+          ],
+          "raw_endpoint_error_m": 0.009756646503756567,
+          "corrected_endpoint_error_m": 0.009756646503756567,
+          "corrected_path_error_maximum_m": 0.009756646503756567
+        },
+        {
+          "frame": 668,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.0003078815568432228,
+            -0.011569524029538179
+          ],
+          "raw_endpoint_error_m": 0.010344346718967884,
+          "corrected_endpoint_error_m": 0.010344346718967884,
+          "corrected_path_error_maximum_m": 0.010344346718967884
+        },
+        {
+          "frame": 684,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.009201608357450973,
+            -0.004163582685835528
+          ],
+          "raw_endpoint_error_m": 0.006494670489688757,
+          "corrected_endpoint_error_m": 0.006494670489688757,
+          "corrected_path_error_maximum_m": 0.007149795384694014
+        },
+        {
+          "frame": 700,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.004682281747454858,
+            -0.015269013186159097
+          ],
+          "raw_endpoint_error_m": 0.008786303074045538,
+          "corrected_endpoint_error_m": 0.008786303074045538,
+          "corrected_path_error_maximum_m": 0.008786303074045538
+        },
+        {
+          "frame": 712,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.010733589751498256,
+            0.00868503524618046
+          ],
+          "raw_endpoint_error_m": 0.006299129267060041,
+          "corrected_endpoint_error_m": 0.006299129267060041,
+          "corrected_path_error_maximum_m": 0.006299129267060041
+        },
+        {
+          "frame": 728,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12400305222815984,
+            -0.005708668274276632
+          ],
+          "raw_endpoint_error_m": 0.002573697665786233,
+          "corrected_endpoint_error_m": 0.002573697665786233,
+          "corrected_path_error_maximum_m": 0.002573697665786233
+        },
+        {
+          "frame": 752,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.020550922319828892,
+            0.00021508524720598618
+          ],
+          "raw_endpoint_error_m": 0.012199634008076832,
+          "corrected_endpoint_error_m": 0.012199634008076832,
+          "corrected_path_error_maximum_m": 0.012199634008076832
+        },
+        {
+          "frame": 764,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11596824156639914,
+            0.0049096779521036514
+          ],
+          "raw_endpoint_error_m": 0.0022407825587963575,
+          "corrected_endpoint_error_m": 0.0022407825587963575,
+          "corrected_path_error_maximum_m": 0.0023288730587838454
+        },
+        {
+          "frame": 784,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09907724698523655,
+            0.019480172567587203
+          ],
+          "raw_endpoint_error_m": 0.0034269550698843095,
+          "corrected_endpoint_error_m": 0.0034269550698843095,
+          "corrected_path_error_maximum_m": 0.004381758828626716
+        },
+        {
+          "frame": 800,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12857253709971433,
+            0.002311390542652147
+          ],
+          "raw_endpoint_error_m": 0.008232122865558116,
+          "corrected_endpoint_error_m": 0.008232122865558116,
+          "corrected_path_error_maximum_m": 0.008232122865558116
+        },
+        {
+          "frame": 812,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12867569888844585,
+            0.002704262161478472
+          ],
+          "raw_endpoint_error_m": 0.009454433034102218,
+          "corrected_endpoint_error_m": 0.009454433034102218,
+          "corrected_path_error_maximum_m": 0.009454433034102218
+        },
+        {
+          "frame": 840,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13144371875555427,
+            0.0051018819967020715
+          ],
+          "raw_endpoint_error_m": 0.01065537357544815,
+          "corrected_endpoint_error_m": 0.01065537357544815,
+          "corrected_path_error_maximum_m": 0.010760141863572072
+        },
+        {
+          "frame": 856,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.01302563402728878,
+            -0.004447903043583214
+          ],
+          "raw_endpoint_error_m": 0.006067171704321479,
+          "corrected_endpoint_error_m": 0.006067171704321479,
+          "corrected_path_error_maximum_m": 0.006574493393982618
+        },
+        {
+          "frame": 872,
+          "action": "left_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.003989443925901105,
+            -0.004292407545157182
+          ],
+          "raw_endpoint_error_m": 0.014973223077347867,
+          "corrected_endpoint_error_m": 0.014973223077347867,
+          "corrected_path_error_maximum_m": 0.014973223077347867
+        },
+        {
+          "frame": 888,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.045823751925000676,
+            -0.002693324483621519
+          ],
+          "raw_endpoint_error_m": 0.005764169664847202,
+          "corrected_endpoint_error_m": 0.005764169664847202,
+          "corrected_path_error_maximum_m": 0.006539486037559163
+        },
+        {
+          "frame": 904,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11896292252793444,
+            -0.004983189301870153
+          ],
+          "raw_endpoint_error_m": 0.008534719705449103,
+          "corrected_endpoint_error_m": 0.008534719705449103,
+          "corrected_path_error_maximum_m": 0.008534719705449103
+        },
+        {
+          "frame": 916,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12570447898446344,
+            0.0030935961223463215
+          ],
+          "raw_endpoint_error_m": 0.01338014917887141,
+          "corrected_endpoint_error_m": 0.01338014917887141,
+          "corrected_path_error_maximum_m": 0.01338014917887141
+        },
+        {
+          "frame": 932,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13042753147745553,
+            0.003896705627728409
+          ],
+          "raw_endpoint_error_m": 0.00816353731272446,
+          "corrected_endpoint_error_m": 0.00816353731272446,
+          "corrected_path_error_maximum_m": 0.00816353731272446
+        },
+        {
+          "frame": 948,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13067567342398792,
+            0.003990847999353109
+          ],
+          "raw_endpoint_error_m": 0.009911009560116982,
+          "corrected_endpoint_error_m": 0.009911009560116982,
+          "corrected_path_error_maximum_m": 0.009911009560116982
+        },
+        {
+          "frame": 968,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0425601909645027,
+            0.0028567724101383816
+          ],
+          "raw_endpoint_error_m": 0.0037457212609290705,
+          "corrected_endpoint_error_m": 0.0037457212609290705,
+          "corrected_path_error_maximum_m": 0.0047451320971749434
+        },
+        {
+          "frame": 984,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12502091155416772,
+            -0.010298864664037472
+          ],
+          "raw_endpoint_error_m": 0.012138184873524832,
+          "corrected_endpoint_error_m": 0.012138184873524832,
+          "corrected_path_error_maximum_m": 0.012138184873524832
+        },
+        {
+          "frame": 1012,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.007120004678541692,
+            -0.013836564959642843
+          ],
+          "raw_endpoint_error_m": 0.015214170573683667,
+          "corrected_endpoint_error_m": 0.015214170573683667,
+          "corrected_path_error_maximum_m": 0.015214170573683667
+        },
+        {
+          "frame": 1024,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.012060086611871823,
+            0.009831448841997324
+          ],
+          "raw_endpoint_error_m": 0.010439003575912658,
+          "corrected_endpoint_error_m": 0.010439003575912658,
+          "corrected_path_error_maximum_m": 0.010439003575912658
+        },
+        {
+          "frame": 1044,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            -0.002732082628392789,
+            0.004717468237865438
+          ],
+          "raw_endpoint_error_m": 0.008038162588054438,
+          "corrected_endpoint_error_m": 0.008038162588054438,
+          "corrected_path_error_maximum_m": 0.008126807320582526
+        },
+        {
+          "frame": 1060,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.009489672695149422,
+            0.0040304024248793285
+          ],
+          "raw_endpoint_error_m": 0.0019468771336639465,
+          "corrected_endpoint_error_m": 0.0019468771336639465,
+          "corrected_path_error_maximum_m": 0.002029175931788682
+        },
+        {
+          "frame": 1072,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11906235904217781,
+            -0.008201982088460423
+          ],
+          "raw_endpoint_error_m": 0.0030042016202647803,
+          "corrected_endpoint_error_m": 0.0030042016202647803,
+          "corrected_path_error_maximum_m": 0.0031146674102716537
+        },
+        {
+          "frame": 1088,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1195009658564184,
+            0.021318862091900776
+          ],
+          "raw_endpoint_error_m": 0.0092455095193247,
+          "corrected_endpoint_error_m": 0.0092455095193247,
+          "corrected_path_error_maximum_m": 0.0092455095193247
+        },
+        {
+          "frame": 1104,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13301847728469907,
+            0.0018841425799928243
+          ],
+          "raw_endpoint_error_m": 0.00831072650418653,
+          "corrected_endpoint_error_m": 0.00831072650418653,
+          "corrected_path_error_maximum_m": 0.00831072650418653
+        },
+        {
+          "frame": 1120,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11819165113583857,
+            0.007249862155054636
+          ],
+          "raw_endpoint_error_m": 0.004361465500941566,
+          "corrected_endpoint_error_m": 0.004361465500941566,
+          "corrected_path_error_maximum_m": 0.004762889320504544
+        },
+        {
+          "frame": 1136,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12411480321005965,
+            -0.0074101845954127705
+          ],
+          "raw_endpoint_error_m": 0.009126877184678599,
+          "corrected_endpoint_error_m": 0.009126877184678599,
+          "corrected_path_error_maximum_m": 0.009210897213375662
+        },
+        {
+          "frame": 1156,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10848618295478048,
+            0.0037435948006911152
+          ],
+          "raw_endpoint_error_m": 0.0007973250622159538,
+          "corrected_endpoint_error_m": 0.0007973250622159538,
+          "corrected_path_error_maximum_m": 0.003270873722702978
+        },
+        {
+          "frame": 1168,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11938659721171765,
+            0.016322439037350346
+          ],
+          "raw_endpoint_error_m": 0.01249611953002872,
+          "corrected_endpoint_error_m": 0.01249611953002872,
+          "corrected_path_error_maximum_m": 0.01249611953002872
+        },
+        {
+          "frame": 1184,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1327162008028066,
+            0.004600967706283085
+          ],
+          "raw_endpoint_error_m": 0.004735515868281092,
+          "corrected_endpoint_error_m": 0.004735515868281092,
+          "corrected_path_error_maximum_m": 0.004735515868281092
+        },
+        {
+          "frame": 1200,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13532382223912795,
+            0.00408162910489569
+          ],
+          "raw_endpoint_error_m": 0.008356353969128313,
+          "corrected_endpoint_error_m": 0.008356353969128313,
+          "corrected_path_error_maximum_m": 0.008356353969128313
+        },
+        {
+          "frame": 1212,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1302622140951803,
+            -0.0002357061909137297
+          ],
+          "raw_endpoint_error_m": 0.01250865523721217,
+          "corrected_endpoint_error_m": 0.01250865523721217,
+          "corrected_path_error_maximum_m": 0.01250865523721217
+        },
+        {
+          "frame": 1228,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11579478611908213,
+            -0.008601338645016094
+          ],
+          "raw_endpoint_error_m": 0.004053687539976491,
+          "corrected_endpoint_error_m": 0.004053687539976491,
+          "corrected_path_error_maximum_m": 0.0041642067313161545
+        },
+        {
+          "frame": 1244,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11165337914922013,
+            -0.007658869652065101
+          ],
+          "raw_endpoint_error_m": 0.00900331727151081,
+          "corrected_endpoint_error_m": 0.00900331727151081,
+          "corrected_path_error_maximum_m": 0.010133943382148177
+        },
+        {
+          "frame": 1256,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12300166650416214,
+            0.001404193624849841
+          ],
+          "raw_endpoint_error_m": 0.014800632670501005,
+          "corrected_endpoint_error_m": 0.014800632670501005,
+          "corrected_path_error_maximum_m": 0.014800632670501005
+        },
+        {
+          "frame": 1272,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.11851900904933589,
+            -0.0020495640297528545
+          ],
+          "raw_endpoint_error_m": 0.018701468374528886,
+          "corrected_endpoint_error_m": 0.018701468374528886,
+          "corrected_path_error_maximum_m": 0.018701468374528886
+        },
+        {
+          "frame": 1292,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.12426897420496952,
+            -0.006907830680333566
+          ],
+          "raw_endpoint_error_m": 0.007327541085517408,
+          "corrected_endpoint_error_m": 0.007327541085517408,
+          "corrected_path_error_maximum_m": 0.007327541085517408
+        },
+        {
+          "frame": 1304,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1284732225251142,
+            0.0026145013174559773
+          ],
+          "raw_endpoint_error_m": 0.009625526991981133,
+          "corrected_endpoint_error_m": 0.009625526991981133,
+          "corrected_path_error_maximum_m": 0.009625526991981133
+        },
+        {
+          "frame": 1320,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1146093333826165,
+            -0.004806672910286584
+          ],
+          "raw_endpoint_error_m": 0.01815880930355765,
+          "corrected_endpoint_error_m": 0.01815880930355765,
+          "corrected_path_error_maximum_m": 0.01815880930355765
+        },
+        {
+          "frame": 1336,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13836196992257893,
+            0.004621790227375693
+          ],
+          "raw_endpoint_error_m": 0.02285085232300719,
+          "corrected_endpoint_error_m": 0.02285085232300719,
+          "corrected_path_error_maximum_m": 0.02285085232300719
+        },
+        {
+          "frame": 1348,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.10425007651189067,
+            0.01889152606423697
+          ],
+          "raw_endpoint_error_m": 0.013427630395640622,
+          "corrected_endpoint_error_m": 0.013427630395640622,
+          "corrected_path_error_maximum_m": 0.013427630395640622
+        },
+        {
+          "frame": 1372,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.041326060283150154,
+            -0.0007879178841929896
+          ],
+          "raw_endpoint_error_m": 0.008969534059205694,
+          "corrected_endpoint_error_m": 0.008969534059205694,
+          "corrected_path_error_maximum_m": 0.008969534059205694
+        },
+        {
+          "frame": 1388,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13756914004805773,
+            0.0049770108924295335
+          ],
+          "raw_endpoint_error_m": 0.015618320481922238,
+          "corrected_endpoint_error_m": 0.015618320481922238,
+          "corrected_path_error_maximum_m": 0.015618320481922238
+        },
+        {
+          "frame": 1400,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.13244414193298853,
+            0.0033492691698170144
+          ],
+          "raw_endpoint_error_m": 0.010332208766200616,
+          "corrected_endpoint_error_m": 0.010332208766200616,
+          "corrected_path_error_maximum_m": 0.010332208766200616
+        },
+        {
+          "frame": 1416,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1197599430183654,
+            -0.0032974688767437367
+          ],
+          "raw_endpoint_error_m": 0.011892897345926782,
+          "corrected_endpoint_error_m": 0.011892897345926782,
+          "corrected_path_error_maximum_m": 0.011892897345926782
+        },
+        {
+          "frame": 1432,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1273635825750359,
+            0.00416356111247352
+          ],
+          "raw_endpoint_error_m": 0.01065301422603179,
+          "corrected_endpoint_error_m": 0.01065301422603179,
+          "corrected_path_error_maximum_m": 0.01065301422603179
+        },
+        {
+          "frame": 1444,
+          "action": "right_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1309516026676502,
+            0.004070285271996693
+          ],
+          "raw_endpoint_error_m": 0.01363502711592836,
+          "corrected_endpoint_error_m": 0.01363502711592836,
+          "corrected_path_error_maximum_m": 0.01363502711592836
+        },
+        {
+          "frame": 1460,
+          "action": "forward",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.1312485513220128,
+            0.004099337316981369
+          ],
+          "raw_endpoint_error_m": 0.011012721697312157,
+          "corrected_endpoint_error_m": 0.011012721697312157,
+          "corrected_path_error_maximum_m": 0.011012721697312157
+        },
+        {
+          "frame": 1476,
+          "action": "right_turn",
+          "group": "turn",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.0036760248641748345,
+            -0.0018243221251007878
+          ],
+          "raw_endpoint_error_m": 0.006334645375684504,
+          "corrected_endpoint_error_m": 0.006334645375684504,
+          "corrected_path_error_maximum_m": 0.007436269184559919
+        },
+        {
+          "frame": 1488,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.09509933108260082,
+            0.01915442224002948
+          ],
+          "raw_endpoint_error_m": 0.014865718577657212,
+          "corrected_endpoint_error_m": 0.014865718577657212,
+          "corrected_path_error_maximum_m": 0.014865718577657212
+        },
+        {
+          "frame": 1508,
+          "action": "left_arc",
+          "group": "translation",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.08102010224789412,
+            0.01838561561641845
+          ],
+          "raw_endpoint_error_m": 0.008543658461732365,
+          "corrected_endpoint_error_m": 0.008543658461732365,
+          "corrected_path_error_maximum_m": 0.008543658461732365
+        },
+        {
+          "frame": 1524,
+          "action": "forward",
+          "group": "translation_pulse",
+          "plan_on_time": true,
+          "actual_endpoint_xy_m": [
+            0.08207761189289543,
+            -0.008308617210544178
+          ],
+          "raw_endpoint_error_m": 0.0027935259649615784,
+          "corrected_endpoint_error_m": 0.0027935259649615784,
+          "corrected_path_error_maximum_m": 0.0072031860278441145
+        }
+      ],
+      "action_counts": {
+        "left_turn": 23,
+        "right_turn": 11,
+        "hold": 4,
+        "left_arc": 21,
+        "forward": 25,
+        "right_arc": 12
+      },
+      "window_sha256": "89bb831febce79eab98b23c5dd750bfbd8da166052f9bd3b8a26f18853a1d682",
+      "planning_sha256": "9d8dc7bc63935b288de96340edee3a18029efa8a98628ca68a0ed3e38e80bf65"
+    }
+  ],
+  "windows": 384,
+  "arms": [
+    "action",
+    "no_future_action",
+    "unchanged_rollout",
+    "persistence"
+  ],
+  "horizon_ms": 500,
+  "context_offsets_ms": [
+    -1000,
+    -500,
+    0
+  ],
+  "samples_per_recording": 96,
+  "selection": "96 evenly spaced eligible rows per recording, integer linspace including endpoints",
+  "source_sha256": "791665a1977d3536790c8dab7f8b6b6cb94f2833aca5bf932a6478779dcc64fd",
+  "fit_plan_sha256": "a769f68bdc005ebb4d24055369bdf120ec258e5d7c3208b938ee74a77511f3dc",
+  "all_four_recordings_including_failed_returns": true,
+  "selection_uses_prediction_errors": false,
+  "no_fitting": true,
+  "new_navigation": false,
+  "pooling": "equal sample count per recording; not natural-frequency all-window estimate",
+  "overlap_is_not_independent_replication": true,
+  "sensor_reads": "RGB and applied-command histories only"
+}

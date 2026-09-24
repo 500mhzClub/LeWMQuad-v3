@@ -1,0 +1,42 @@
+{
+  "schema": "visual_dynamics_training_command_coverage.v1",
+  "counts": {
+    "family": {
+      "contexts": 1664,
+      "draws": 2958,
+      "after_prefix_active_ticks_4_draws": 1759,
+      "full_700ms_plan_draws": 2639,
+      "after_prefix_active_ticks_3_draws": 51,
+      "after_prefix_active_ticks_2_draws": 46,
+      "after_prefix_active_ticks_1_draws": 50,
+      "after_prefix_active_ticks_0_draws": 1052,
+      "shorter_plan_draws": 319
+    },
+    "switch": {
+      "contexts": 2850,
+      "draws": 3342,
+      "after_prefix_active_ticks_4_draws": 2072,
+      "full_700ms_plan_draws": 3029,
+      "after_prefix_active_ticks_3_draws": 67,
+      "after_prefix_active_ticks_2_draws": 64,
+      "after_prefix_active_ticks_1_draws": 63,
+      "after_prefix_active_ticks_0_draws": 1076,
+      "shorter_plan_draws": 313
+    },
+    "short_pulse": {
+      "contexts": 180,
+      "draws": 900,
+      "after_prefix_active_ticks_2_draws": 60,
+      "full_700ms_plan_draws": 900,
+      "after_prefix_active_ticks_1_draws": 420,
+      "identical_history_branch_departure_draws": 90,
+      "branch_after_prefix_active_ticks_1_draws": 90,
+      "after_prefix_active_ticks_0_draws": 420
+    }
+  },
+  "definition": "Nonzero requested commands in indices 3:7 (400ms after first 300ms), regardless of future-image validity; draw-weighted",
+  "source": "original unchanged training-only rows and schedule; short_pulse frame13 is the verified identical-history branching population",
+  "preliminary_script_error": "First read-only aggregation assumed observation_frame existed for every source and stopped with KeyError before writing; corrected by scoping the field to short_pulse.",
+  "new_fitting": false,
+  "new_navigation": false
+}

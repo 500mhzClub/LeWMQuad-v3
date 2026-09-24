@@ -1,0 +1,51 @@
+{
+  "status": "PASS",
+  "records": [
+    {
+      "arm": "action",
+      "counts": [
+        1,
+        1,
+        1,
+        6,
+        6,
+        6,
+        6,
+        6
+      ],
+      "total_packed_rows": 33,
+      "maximum_absolute_motion_difference": 1.30385160446167e-08,
+      "sequential_cpu_s": 13.129866886185482,
+      "packed_cpu_s": 14.765453418949619,
+      "common_prefix_exact": true,
+      "action_blind_exact": false
+    },
+    {
+      "arm": "no_future_action",
+      "counts": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "total_packed_rows": 8,
+      "maximum_absolute_motion_difference": 1.4784745872020721e-08,
+      "sequential_cpu_s": 3.2152109660673887,
+      "packed_cpu_s": 3.3055918340105563,
+      "common_prefix_exact": true,
+      "action_blind_exact": true
+    }
+  ],
+  "training_only": true,
+  "no_gpu": true,
+  "live_navigation_unchanged": true,
+  "gpu_speedup_not_established": true,
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_batched_horizon_motion_development.py": "790625cde73027d7d4307246ab6798eccc049fa3ae1e794b2bc3241e3c1787ae",
+    "lewm/batched_horizon_motion_development.py": "837ef11f0e49c7e0fe0541d209991df01400d0fdf7951bcdf6eaba239407162d"
+  }
+}

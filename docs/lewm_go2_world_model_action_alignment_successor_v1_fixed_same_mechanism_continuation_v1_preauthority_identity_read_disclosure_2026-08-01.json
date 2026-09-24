@@ -1,0 +1,104 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preauthority_identity_read_disclosure_v1",
+  "status": "DISCLOSED_HASH_ONLY_RUNTIME_ARTIFACT_IDENTITY_READS_NO_TENSOR_DESERIALIZATION",
+  "date": "2026-08-01",
+  "timezone": "Europe/London",
+  "scope": "preauthority_source_design_and_terminal_review",
+  "sealed_or_heldout_or_protected_material_involved": false,
+  "continuation_attempt_reserved_or_executed": false,
+  "events": [
+    {
+      "actor": "/root",
+      "role": "primary_terminal_reviewer_and_continuation_designer",
+      "operations": [
+        "sha256sum",
+        "stat"
+      ],
+      "identity_read_paths": [
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/metrics.pt",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/baseline_update_000700.pt",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/alignment_update_000700.pt"
+      ],
+      "observed_fields": [
+        "path",
+        "file_sha256",
+        "byte_count"
+      ],
+      "tensor_deserialization_count": 0,
+      "semantic_tensor_fields_observed": [],
+      "recipients": [
+        "/root local tool transcript"
+      ]
+    },
+    {
+      "actor": "/root/continuation_runtime",
+      "role": "source_implementation_agent_ineligible_for_independent_review",
+      "operations": [
+        "jq on committed terminal review and published result JSON",
+        "sha256sum on result/checker/terminal and two u700 snapshots",
+        "stat on result/checker/terminal and two u700 snapshots"
+      ],
+      "identity_read_paths": [
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/baseline_update_000700.pt",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/alignment_update_000700.pt"
+      ],
+      "published_json_paths_parsed": [
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_integrity_replacement_v1_terminal_review_2026-08-01.json",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/result.json"
+      ],
+      "observed_snapshot_fields": [
+        "path",
+        "file_sha256",
+        "byte_count"
+      ],
+      "tensor_deserialization_count": 0,
+      "semantic_tensor_fields_observed": [],
+      "metric_bundle_read": false,
+      "pack_or_predecessor_checkpoint_or_rgb_read": false,
+      "recipients": [
+        "/root/continuation_runtime local tool transcript",
+        "/root via explicit disclosure message"
+      ]
+    },
+    {
+      "actor": "/root/localization_result_audit",
+      "role": "independent_predecessor_terminal_reviewer_ineligible_for_continuation_source_review",
+      "operations": [
+        "parse reservation/result/checker/terminal JSON",
+        "sha256sum and stat on predecessor snapshots and metric bundle"
+      ],
+      "identity_read_paths": [
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/metrics.pt",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/baseline_update_000700.pt",
+        "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/world_model_action_alignment_successor_v1_integrity_replacement_v1/attempt_v1/alignment_update_000700.pt"
+      ],
+      "observed_tensor_artifact_fields": [
+        "path",
+        "file_sha256",
+        "byte_count"
+      ],
+      "tensor_deserialization_count": 0,
+      "semantic_tensor_fields_observed": [],
+      "recipients": [
+        "/root/localization_result_audit local tool transcript",
+        "/root via terminal-audit message"
+      ]
+    }
+  ],
+  "material_modification_count": 0,
+  "scientific_selection_informed_by_tensor_payload": false,
+  "already_public_identity_values_only": true,
+  "governance_assessment": {
+    "sealed_custody_incident": false,
+    "internal_source_only_delegation_violated": true,
+    "scientific_attempt_invalidated": false,
+    "reason": "The files were byte-read only to recompute already-published identities; no tensor was deserialized, interpreted, selected, or modified, and the continuation attempt did not yet exist."
+  },
+  "resolution": {
+    "implementation_agent_excluded_from_independent_source_review": true,
+    "primary_agent_not_counted_as_independent_source_reviewer": true,
+    "future_independent_source_review_must_not_hash_read_or_deserialize_runtime_payloads": true,
+    "authorized_worker_is_still_the_only_process_permitted_to_deserialize_the_two_u700_snapshots_for_the_continuation": true,
+    "worker_snapshot_file_read_count_contract": "two reads within the reserved continuation attempt, one exact read per snapshot; historical identity-only reads are separately disclosed here"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "schema": "anchored_visual_dynamics.v1",
+  "arms": [
+    "action",
+    "no_future_action"
+  ],
+  "representation_fit_sha256": "9174970b55ef43903f6da2503b062a34bd70738537f81199e13957794976b1e6",
+  "schedule_sha256": "67e8de1669a05ca9e7306d323ed32570c296648565d10c71d467eb1b33c78a21",
+  "seed": 2026091001,
+  "contexts": 4694,
+  "draws": 7200,
+  "updates": 1200,
+  "batch_size": 6,
+  "learning_rate": 0.001,
+  "anchor": "frozen EMA visual representation of current RGB only",
+  "context": "four frozen online multimodal observations, trainable history GRU",
+  "prediction": "current visual state plus cumulative normalized innovations",
+  "initialization": "identical weights; final transition layer zero gives exact persistence",
+  "target": "same frozen visual target in both arms; no EMA or encoder changes",
+  "normalization": "training draw-weighted RMS innovation per coordinate, floor 1e-4; no mean subtraction",
+  "loss": "normalized latent MSE averaged per context over available future images",
+  "optimizer": "AdamW, zero weight decay, gradient norm clipping 1",
+  "no_motion_loss": true,
+  "no_checkpoint_selection": true,
+  "final_update_only": true,
+  "evaluation": "all fixed branch contexts; all horizons, 800ms transfer primary; persistence, no-action, target means",
+  "no_JEPA_training_superiority_inferred_from_predictor_fit": true,
+  "source_sha256": {
+    "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/train_go2_anchored_visual_dynamics_development.py": "d68581093a427cb5481679c18510902125f1b85163c7c72a37a0e283bbe21a65",
+    "lewm/anchored_visual_dynamics_development.py": "d2b8eba95ca6c481a7515808e462ee5cb64267ea597fe7203d8a401009026abc"
+  },
+  "resources": {
+    "cpu_core": 8,
+    "threads": 1,
+    "ram_available_gib": 72,
+    "output_free_gib": 4.4,
+    "both_gpus_idle": true,
+    "strategy": "encode once, release raw tensors, fit two small predictors sequentially with shared cache"
+  }
+}

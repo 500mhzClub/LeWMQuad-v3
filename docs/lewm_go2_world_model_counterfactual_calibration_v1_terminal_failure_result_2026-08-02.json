@@ -1,0 +1,95 @@
+{
+  "schema": "lewm_go2_world_model_counterfactual_calibration_terminal_failure_result_v1",
+  "status": "PASS_CONSUMED_TERMINAL_FAILURE_AUDIT_NO_RETRY_NO_RESUME",
+  "date": "2026-08-02",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "attempt": {
+    "attempt_id": "lewm-go2-wm-counterfactual-calibration-v1",
+    "output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1",
+    "attempt_consumed": true,
+    "retry_authorized": false,
+    "resume_authorized": false,
+    "refill_authorized": false,
+    "overwrite_authorized": false,
+    "artifact_reuse_for_successor_authorized": false
+  },
+  "bindings": {
+    "terminal_supervision": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1/terminal_supervision.json",
+      "file_sha256": "c5509f97c1d1cca27b7f283187ce7bf644579c4caa03eb1ccfcfda9c18e58315",
+      "byte_count": 3217
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1/physics_result.json",
+      "file_sha256": "34ba69825322e34ebec0ccbab5f1a21fdd4ac60f99cc4fe5f70b158a7aaaaaa3",
+      "byte_count": 25773
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-counterfactual-calibration-v1/reservation.json",
+      "file_sha256": "a91307145b181aca3c7301f8ad509bee601fd24e3929035c0694230b5591b674",
+      "byte_count": 1267
+    },
+    "exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_counterfactual_calibration_exact_plan_v1_2026-08-02.json",
+      "file_sha256": "9aaa7e13cb976bc98b93b6b39d7d225108f4a1ccb7a340a419440ea5108c65fc",
+      "byte_count": 28596
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_counterfactual_calibration_execution_authority_v1_2026-08-02.json",
+      "file_sha256": "89e60c02ede0b275dffd650ab8ef0452ddfc30599992f77bf7a0e5a1e40400e3",
+      "byte_count": 23785
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_counterfactual_calibration_source_review_v1_2026-08-02.json",
+      "file_sha256": "14dcac13457adf16a5c2a0d225881f87e6e5690690e262a1ab0bc942ed9776fa",
+      "byte_count": 26886
+    }
+  },
+  "terminal_evidence": {
+    "terminal_status": "CONSUMED_TERMINAL_FAILURE",
+    "terminal_failure": "CalibrationSupervisionError: supervised command exited with status 2",
+    "terminal_physics_result_binding_was_null": true,
+    "physics_result_status": "FAILED",
+    "physics_failure_type": "PilotContractError",
+    "physics_failure_message": "camera-invalid context frame calibration-local-0:context:0: ['near_forward_geometry', 'low_rgb_texture', 'near_wall_depth']",
+    "completed_scenes": 1,
+    "completed_states": 2,
+    "completed_candidate_branches": 18,
+    "completed_sentinel_branches": 2,
+    "completed_total_branches": 20,
+    "collection_wall_seconds": 80.07775408099405
+  },
+  "root_cause": {
+    "source_defect": true,
+    "model_or_data_fault": false,
+    "technical_rgb_corruption_observed": false,
+    "unresolved_camera_safety_observed": false,
+    "low_information_reason_names": [
+      "near_forward_geometry",
+      "low_rgb_texture",
+      "near_wall_depth"
+    ],
+    "reason_registry_source": "lewm_genesis/lewm_genesis/vision_quality.py:LOW_INFO_REASON_NAMES",
+    "diagnostic_safe_wall_clearance_m_approx": 0.127,
+    "diagnostic_safe_wall_clearance_is_receipt_bound": false,
+    "exact_fault": "The calibration collector treated every vision-quality reason as camera-invalid. Repository semantics classify all three observed reasons as recoverable low-information conditions, so a technically intact and camera-safe frame was incorrectly promoted to a terminal hard failure.",
+    "supervision_receipt_fault": "After the collector wrote a bound FAILED physics_result and exited 2, the supervisor raised before loading that result, leaving terminal physics_result_binding null.",
+    "minimal_successor_repair": "Retain and explicitly tag frames whose complete reason set is within LOW_INFO_REASON_NAMES; aggregate those tags for stratification; continue to hard-fail every technical-corruption or unresolved-safety reason; and bind an already-written FAILED physics_result in terminal supervision."
+  },
+  "successor_boundary": {
+    "v1_retry_authorized": false,
+    "v1_resume_authorized": false,
+    "v1_refill_authorized": false,
+    "v1_root_or_artifact_reuse_authorized": false,
+    "fresh_v2_successor_authorized_by_this_result": false,
+    "fresh_v2_requirements": [
+      "new attempt ID and fresh output root",
+      "new exact plan and execution authority",
+      "new source commit and independent source review",
+      "exact binding to this V1 terminal-failure result",
+      "unchanged 144 candidate plus 16 sentinel branch design",
+      "unchanged requested-candidate input and future executed-tape isolation"
+    ]
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "checkpoint": {
+    "bytes": 1678995,
+    "sha256": "3e556531a0442df214d0667ad42110e42806ec3aa7aa240c2b2746d7c304af31"
+  },
+  "claim_boundary": "SIMULATED_DISALLOWED_CONTACT_PROXY only; no material-hazard claim",
+  "classification": "WIDE_GEOMETRY_EMBODIED_CONTACT_PROXY_POSITIVE_TENDENCY",
+  "fresh_geometry_index": {
+    "content_digest": "674dcd9c8fac18011c45a633f90a10053074dcde9ec503c55224dc7f2c2e7f7c",
+    "sha256": "435f29e39d68674bc96789de9043c5a4a7bda51d937a25477a9c0885ccd740ef"
+  },
+  "fresh_panel": {
+    "calibration_identity_pattern": "wide-cal-{family_index}-{00..05}",
+    "content_digest": "2466d7e36bcd46cd06e4e08fad3e89c0242dd45406a75c53acb6e9cd61f60be4",
+    "heldout_identity_pattern": "wide-held-{family_index}-{00..05}",
+    "sha256": "808df7a7f9b6f4dbb47b16169d195ddbbc0fca44f8113e3594addc7e67d34bd3",
+    "states": 48
+  },
+  "fresh_sensor_index": {
+    "content_digest": "fcc0cd358d000814c74a0ac9a23f18ba49725156be5b55d3f02109bf750aafa5",
+    "sha256": "7446caad60433ed47fbf567c405d94ec678319daa4e4ba4c44f1477a99e6dadf"
+  },
+  "preserved_ontology_result": "CONTACT_HAZARD_ONTOLOGY_OR_INSTRUMENTATION_INSUFFICIENT",
+  "result": {
+    "content_digest": "cf67421439e235e3336d79f24c71513c7f78fcea9491f442b4d4f6eb7a62dbb9",
+    "sha256": "386b0fa7b71b089666bddf4d46c86f1d8f01ab265dcf41fbacf0884352fb75dd"
+  },
+  "row_level_evidence": {
+    "content_digest": "055d9c5581e3980919fbba6ec17aae288759557691891028691fd6f23eae83be",
+    "rows": 3456,
+    "sha256": "ab47eb7848b980947ced6ee6f10493ef12578ab7871ef8ebdb97b46122617e9c"
+  },
+  "schema": "lewm_wide_geometry_embodied_contact_proxy_v1_evidence_index",
+  "source_commit": "58d91deb37d41a129e64a6a0c17ae8b9b6f135d2",
+  "stage0": {
+    "classification": "WIDE_GEOMETRY_SCORE_FRONTIER_NO_GO",
+    "content_digest": "3fe96135179a80f8c5ab09d6cf72a43e735d9107d592d2f9230e72880a381ba8",
+    "heldout_frontier_pairs": 84100,
+    "heldout_frontier_sha256": "de9db88419c2e5dcf25243e2b326e561f86c64cab3cdbbf6800ac890b3df1746",
+    "sha256": "69cab3711a20c72635bbdfea8f637fcc6e19b25651ac4df47b39d10ce0171b86"
+  }
+}

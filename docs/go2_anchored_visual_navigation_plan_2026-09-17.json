@@ -1,0 +1,50 @@
+{
+  "schema": "anchored_visual_navigation.v1",
+  "roots": [
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_01_persistent_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "windows": 511,
+      "window_sha256": "4d7e1486f9508dfd9966171348ed77b3a9666ce2dffab970edc8b9c9bb69355a"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_02_current_pair_return_noise_2mm_native_layout00_4800_v1_attempt_001",
+      "windows": 1136,
+      "window_sha256": "e5d9ec14b4165abe2b4386cddf29e564e92a129838c9885668bfedf4b5670af4"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_03_current_pair_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "windows": 406,
+      "window_sha256": "b6252011a50999dc0bf1a5a937cd85caa9303b91adebbe9c7db743bb8932b49f"
+    },
+    {
+      "root": "/mnt/steam_drive/LeWMQuad-v3/navigation_development_artifacts_v1/go2_return_routing_memory_04_persistent_return_noise_2mm_native_layout01_4800_v1_attempt_001",
+      "windows": 351,
+      "window_sha256": "89bb831febce79eab98b23c5dd750bfbd8da166052f9bd3b8a26f18853a1d682"
+    }
+  ],
+  "arms": [
+    "action",
+    "no_future_action",
+    "persistence",
+    "original_visual_jepa"
+  ],
+  "primary": "700ms frozen visual target MSE; all 2404 matched executed windows",
+  "horizons_ms": [
+    100,
+    200,
+    300,
+    400,
+    500,
+    600,
+    700
+  ],
+  "all_four_runs_including_failures": true,
+  "source_sha256": "731b11bf0a6b5efdecf51ba47c09f39a701b86ecb88dc53dfe7410cb19599027",
+  "fit_sha256": "227069ce6a955db71ff52c0744f3f5b4c15ecc618b78af33c7e19f9ae869c731",
+  "no_fitting": true,
+  "targets_loaded_after_each_causal_forecast": true,
+  "common_frozen_target_space": true,
+  "new_navigation": false,
+  "overlapping_windows_not_independent": true,
+  "alternative_action_outcomes_not_measured": true
+}

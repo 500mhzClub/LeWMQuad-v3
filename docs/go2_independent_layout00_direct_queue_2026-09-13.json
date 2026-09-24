@@ -1,0 +1,18 @@
+{
+  "status": "INDEPENDENT_LAYOUT00_DIRECT_QUEUED",
+  "pid": 3149894,
+  "created": 1789261729.43,
+  "waiting_for_pid": 3149828,
+  "waiting_for_created": 1789261694.22,
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "preceding_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001",
+  "output": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_direct_v1_attempt_001",
+  "layout_index": 0,
+  "mode": "frozen_reference",
+  "model_name": "seed_2026091001_full_direct",
+  "expected_model_state_sha256": "8cf81bec6c67261df9d25b56d2f6546abd887735ab8977021bb54a3c1963f1df",
+  "start_requires_operational_completion": true,
+  "start_requires_scientific_success": false,
+  "automatic_retry": false,
+  "serial_native_and_audit_jobs": true
+}

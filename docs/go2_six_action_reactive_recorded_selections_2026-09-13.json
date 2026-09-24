@@ -1,0 +1,93 @@
+{
+  "status": "SIX_ACTION_REACTIVE_RECORDED_SELECTION_CHECK_COMPLETE",
+  "selections": 346,
+  "selected_action_counts": {
+    "forward": 47,
+    "left_arc": 163,
+    "right_arc": 44,
+    "right_turn": 80,
+    "None": 12
+  },
+  "changed_rankings": {
+    "forward -> left_arc": 62,
+    "left_turn -> left_arc": 101,
+    "right_turn -> right_arc": 28,
+    "forward -> right_arc": 16
+  },
+  "first_examples": [
+    {
+      "frame": 9,
+      "old_action": "forward",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.05199848409432243,
+      "desired": [
+        0.19972967668272734,
+        0.0,
+        0.23399317842445094
+      ]
+    },
+    {
+      "frame": 10,
+      "old_action": "forward",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.0552462042731721,
+      "desired": [
+        0.19969486331325506,
+        0.0,
+        0.24860791922927447
+      ]
+    },
+    {
+      "frame": 11,
+      "old_action": "left_turn",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.20152162078634198,
+      "desired": [
+        0.19595262879721653,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "frame": 12,
+      "old_action": "left_turn",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.45755413698613184,
+      "desired": [
+        0.17942713049919207,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "frame": 13,
+      "old_action": "left_turn",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.4277417100880929,
+      "desired": [
+        0.18198096923965826,
+        0.0,
+        0.45
+      ]
+    },
+    {
+      "frame": 14,
+      "old_action": "left_turn",
+      "new_action": "left_arc",
+      "heading_error_rad": 0.39778515274371584,
+      "desired": [
+        0.18438424725820304,
+        0.0,
+        0.45
+      ]
+    }
+  ],
+  "input": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_stop_conditioned_independent_00_reactive_no_model_v1_attempt_001/independent_00_reactive_no_model",
+  "input_result_sha256": "6e2be5c282b41e1dca52bf6966a8a9bc182b2f2d9f5e0b61273ec669c13003e0",
+  "controller_source_sha256": "06674b8fb3f269e193c8d589c2e3488a5cd0f77b83ae1ce80bd032a15157e7de",
+  "retrospective_only": true,
+  "source_reactive_run_had_strict_visibility_failure": true,
+  "new_trajectory_inferred": false,
+  "native_pose_used": false,
+  "new_native_navigation": false
+}

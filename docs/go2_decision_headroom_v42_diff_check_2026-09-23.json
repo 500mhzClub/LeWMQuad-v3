@@ -1,0 +1,161 @@
+{
+  "status": "PASS",
+  "baseline_sha256": "e7735ae9d98e6210d9e17f8301b5d6817826ce0b2a87d1971e5488cfa68fe190",
+  "protocol_sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+  "allowed_categories": [
+    "version metadata",
+    "converter and implementation bindings",
+    "GPU-owner allowance"
+  ],
+  "differences": [
+    {
+      "path": [
+        "authority"
+      ],
+      "before": "User approval of e30ced94 as V4.1 with listed amendments; exact text and this JSON SHA-256 are bound in the approval record",
+      "after": "Explicit user approval of V4.2 = identified V4.1 plus output converter, its implementation bindings, and 72-hour GPU-owner allowance; exact approval text bound separately."
+    },
+    {
+      "path": [
+        "entrypoint"
+      ],
+      "before": "scripts/run_go2_headroom_v41_development.py --approval docs/go2_decision_headroom_v41_approval_2026-09-23.json",
+      "after": "scripts/run_go2_headroom_v42_development.py --approval docs/go2_decision_headroom_v42_approval_2026-09-23.json"
+    },
+    {
+      "path": [
+        "execution_caps",
+        "compute_caps",
+        "gpu_owner_wall_seconds"
+      ],
+      "before": 172800,
+      "after": 259200
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "lewm/decision_headroom_json_v42_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "7a2fa4b7cc83cb8a34f5b12b167c00bbda2acd423b38d060cf6c6df973a6a599",
+        "bytes": 7615
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/check_go2_headroom_historical_rerender_v42_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "4cdac35aa4ee6e4f55c543b94112e4eb66a51829298da80669d63bf54075cfc4",
+        "bytes": 8397
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/check_go2_headroom_v42_owner_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "632795e8295e2c3e291c5527dce3e252979dbe42b25eccdc0be6fe222049d78c",
+        "bytes": 9493
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/freeze_go2_headroom_v42_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "75dce61533cd5c9757eab7123c824d8a9f57680422cbca98b067ea2e019fb0c2",
+        "bytes": 4532
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/read_go2_headroom_v42_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "8d942911ba63fc87db05cbb51c934b9d9e61677f2ba51ee69828093193723d03",
+        "bytes": 13475
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v42_branches_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "bf5607357bd345ec086829fd8ac974d98278cda11b280f52064617a3e7942536",
+        "bytes": 15578
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v42_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "68768d74db55933d8c8e438c8463fe1c990c8cc6428da384177ec0f053947fce",
+        "bytes": 6496
+      }
+    },
+    {
+      "path": [
+        "frozen_bindings",
+        "scripts/run_go2_headroom_v42_source_development.py"
+      ],
+      "before": null,
+      "after": {
+        "sha256": "fabaa26ab6190e3774c7b883762dea54c5f1456d206910b613315f3027281ad3",
+        "bytes": 13693
+      }
+    },
+    {
+      "path": [
+        "historical_rerender_execution",
+        "entrypoint"
+      ],
+      "before": "scripts/check_go2_headroom_historical_rerender_v41_development.py",
+      "after": "scripts/check_go2_headroom_historical_rerender_v42_development.py"
+    },
+    {
+      "path": [
+        "output_converter"
+      ],
+      "before": null,
+      "after": {
+        "path": "lewm/decision_headroom_json_v42_development.py",
+        "rule": "NumPy booleans, integers and floats via .item(); arrays via .tolist(); all other types unchanged",
+        "writes": "All JSON and JSONL audit output, including inherited collection/branch writers; complete-file or record readback with exact JSON structural/value equality",
+        "readback_mismatch": "mandatory stop",
+        "runtime_writer_failure": "mandatory stop; never a quantity-local exclusion",
+        "prelaunch": "Complete V4.2 owner on six already-qualified states in separate root, using retained traces when available; no comparative results retained as science; all written outputs read back and schema validated; full analysis, panel assembly and memo inputs",
+        "prelaunch_additional_numpy_serialization_failures": "Converter-only handling pre-authorized, each failure logged; any other defect stops for disposition",
+        "implementation_check_flag": "--implementation-check",
+        "implementation_check_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_headroom_v42_output_check_attempt_001",
+        "implementation_caps": "Unchanged execution caps; retained-trace check advances zero physics",
+        "schema": "Explicit required audit envelopes plus exact in-memory JSON structure and value checks; binary retained outputs hash-checked and format-validated",
+        "other_types": "Ordinary Python JSON semantics are preserved: tuples serialize as arrays and legal scalar keys use JSON key spellings; no rounding, masking, imputation, controller or scientific calculation changes"
+      }
+    },
+    {
+      "path": [
+        "schema"
+      ],
+      "before": "go2_decision_headroom_protocol.v4.1",
+      "after": "go2_decision_headroom_protocol.v4.2"
+    }
+  ],
+  "unlisted_differences": [],
+  "all_other_caps_identical": true,
+  "all_prior_bindings_preserved": true
+}

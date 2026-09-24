@@ -1,0 +1,29 @@
+{
+  "utc": "2026-09-11T17:33:10.243422+00:00",
+  "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73",
+  "owner": {
+    "pid": 2883977,
+    "created": 1789147987.36,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/check_go2_body_projection_external_profile_admission_v1.py"
+    ]
+  },
+  "explicit_source_sha256": {
+    "scripts/check_go2_body_projection_external_profile_admission_v1.py": "b5dc936ae3d639a5e15b828639941be9ff6eab0153f76c8ad4afa8eccb29eeb3",
+    "scripts/body_projection_external_profile_admission_development.py": "239f532cec6a7af0bf677c005a42ef293b3a5045b62bb576acd97ba9eac42dea",
+    "lewm/tests/test_body_projection_external_profile_admission_development.py": "1b799245ddd8c72b9358d2bc46e25c933e73169807fdfcf545d801b9d8437dda",
+    "docs/go2_body_projection_owned_profiler_admission_2026-09-11.md": "fbc8a6d55d0a5bf0fd80b875758bcdaec3eedf41e014b260b88a8fd398a47eb3"
+  },
+  "environment": {
+    "OMP_NUM_THREADS": "1",
+    "MKL_NUM_THREADS": "1",
+    "OPENBLAS_NUM_THREADS": "1",
+    "PYTHONHASHSEED": "0",
+    "OPENCV_OPENCL_RUNTIME": "disabled"
+  },
+  "reference_verification_sha256": "47c6e00d30f9b7e8c31b19dbeed511699d7565145e2b34273fe56e3c96eb25ab",
+  "controller_execution": false,
+  "profiler_execution": false
+}

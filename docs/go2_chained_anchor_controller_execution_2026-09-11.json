@@ -1,0 +1,25 @@
+{
+  "status": "CHAINED_ANCHOR_FULL_CONTROLLER_PREFIX_STARTED",
+  "owner": {
+    "pid": 2840884,
+    "created": 1789126982.74,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_chained_anchor_controller_prefix_v1.py",
+      "--observer-verification-sha256",
+      "3ba5a9cdf6bf2a1a4dbd46a95481872fd02aed1acbd7bea0a017612dc515575b"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "source_count": 2267,
+  "launch_sha256": "8eba2f8dfea706109f8cec4fcf55206f36fa3b9f588c0bb2c344b492e95269cd",
+  "preparation_sha256": "ef606453699553f7fb8398aa48d68cbf2ab475c5d3fb8953b56fe644f042438b",
+  "observer_verification_sha256": "3ba5a9cdf6bf2a1a4dbd46a95481872fd02aed1acbd7bea0a017612dc515575b",
+  "model_state_sha256": "fb6f1aba8830a53d67cd6c284fb24199966d5f0c63db3b2a107ab833c81c266f",
+  "tool_session": 17157,
+  "frame_zero_reported": true,
+  "controller_result_available": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

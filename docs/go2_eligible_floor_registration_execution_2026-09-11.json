@@ -1,0 +1,32 @@
+{
+  "status": "ELIGIBLE_FLOOR_REGISTRATION_PREFIX_STARTED",
+  "owner": {
+    "pid": 2847296,
+    "created": 1789129863.97,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/replay_go2_eligible_floor_registration_prefix_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "launch_sha256": "225bbae0406553217cb0eddd1ccccb0174ea588babfe4244e83fd7dae43aee04",
+  "source_count": 2273,
+  "tool_session": 86124,
+  "floor_index_tests": {
+    "passed": 32,
+    "wall_s": 2.5,
+    "session": 35029,
+    "exit_code": 0
+  },
+  "binding_tests": {
+    "passed": 2,
+    "wall_s": 0.18,
+    "exit_code": 0
+  },
+  "microbenchmark_sha256": "974d4e59ef64c6f7aaa8c783aef9c50ba2166aa9b55d11fdf9faaec4da8801d1",
+  "raw_observer_reexecuted": false,
+  "full_controller_reexecuted": false,
+  "native_execution": false,
+  "goal_achieved": false
+}

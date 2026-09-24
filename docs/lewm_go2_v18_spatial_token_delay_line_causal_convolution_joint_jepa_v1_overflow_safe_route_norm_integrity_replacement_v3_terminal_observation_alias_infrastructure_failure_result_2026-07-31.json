@@ -1,0 +1,196 @@
+{
+  "schema": "lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_terminal_observation_alias_infrastructure_failure_result_v1",
+  "status": "PASS_COMPLETE_TERMINAL_UPDATE100_OBSERVATION_ALIAS_INFRASTRUCTURE_FAILURE_AUDIT",
+  "date": "2026-07-31",
+  "classification": {
+    "attempt_terminal": true,
+    "attempt_consumed": true,
+    "training_numerical_correction_validated": true,
+    "learning_quality_determined": false,
+    "update_100_scientific_observation_completed": false,
+    "update_250_futility_gate_reached": false,
+    "failure_class": "unrelated_inherited_physical_observation_alias_bookkeeping_collision",
+    "retry_or_resume_v3_authorized": false
+  },
+  "lifecycle": {
+    "preregistration": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_preregistration_2026-07-31.md",
+      "commit": "68a9684568eeb6ce80751c17077abb1a3b62db87",
+      "file_sha256": "28355cb05a52e6e47a16a5d9b19087415f1fb5ecaf382745a440a68dde3410ff",
+      "byte_count": 6741
+    },
+    "implementation_commit": "08eb564f198bd5139008a9b9db62a8095a1b07e8",
+    "source_and_review_commit": "a7e139723c2bfd3384c63703a15c8728db7ecfa5",
+    "source_manifest": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_source_manifest_2026-07-31.json",
+      "file_sha256": "9a316e47a2e1977b2c9674ea5014d09884851072e8c78e86b9b8f04cf80717ff",
+      "byte_count": 43620,
+      "content_sha256": "b37761e60dd7eb9dfd7d79d2bc90672aee1c5594bce5a1ff9a36a35b374131eb"
+    },
+    "source_review": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_source_review_2026-07-31.json",
+      "file_sha256": "e2f10d3221ec2af99ec96dd694712a574d462fdda38741e2a9fb15d40666eecb",
+      "byte_count": 13774,
+      "content_sha256": "5814b94b3ffa83b9ff9107f6070f2836c5ec5e15165040fc5b826e78ff67f3c9"
+    },
+    "clean_export_certification": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_clean_export_certification_2026-07-31.json",
+      "commit": "8f8f06763a8d456397b2e0421304d7f3cfdcfc8a",
+      "file_sha256": "60dd5eb0e7c8ac72344d2e9c502aa2b609b07bfd775e696a1eb6c7d2d367c392",
+      "byte_count": 26321,
+      "content_sha256": "04b991a672f83ae4f05e9c295ec1531cafdd7a049dc23f33801830d43261214a"
+    },
+    "execution_authority": {
+      "path": "docs/lewm_go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3_execution_authorization_2026-07-31.json",
+      "commit": "5be273ffde19b4e7d5f862c36bd72fee1e05ca98",
+      "file_sha256": "59f7478cb4a5a1bb4dec458a955b24aa02634bfe55a9ea7aa1441e7a4b975550",
+      "byte_count": 6629,
+      "content_sha256": "918541f61e8d0a277be500f50e707b8867766b71bf142fe7ba27b78a61ac499c",
+      "canonical_authority_sha256": "39282610120c56100ec2b089eb3b09503cfea2060bbb47a3a62ed61042ebf3a5"
+    },
+    "output_root": ".generated/go2_v18_spatial_token_delay_line_causal_convolution_joint_jepa_v1_overflow_safe_route_norm_integrity_replacement_v3/attempt_v1"
+  },
+  "terminal_artifacts": {
+    "exact_file_count": 3,
+    "non_json_file_count": 0,
+    "checkpoint_or_snapshot_file_count": 0,
+    "reservation": {
+      "path": "reservation.json",
+      "byte_count": 673,
+      "file_sha256": "a3d8b01a571097970c915dd621796a6e00f16f0627f00ffc80a98c16845f2d6e",
+      "content_sha256": "d8fbf954cd4c1a89c8e0a519aa62f5b25af743e37b34fdf618745cd05873e33c",
+      "created_utc": "2026-07-31T05:04:59Z"
+    },
+    "update_zero": {
+      "path": "metrics/update_0.json",
+      "byte_count": 846318,
+      "file_sha256": "cfbf6d844d2ff7f0997ac078794784121449575a3161dc9a7f8282470b180ad6",
+      "content_sha256": "1102805a4efcef600b07c9a71c65be06885d362633ae5bf41528b5c78c775e2c"
+    },
+    "failure": {
+      "path": "failure.json",
+      "byte_count": 638,
+      "file_sha256": "00afbed1e3a3f209aa71409342df44a6c8a7df04628a6244122ab73faeb15537",
+      "content_sha256": "66a0e6a6e6a3909ef994b0a98d8109b450039f87c710c6c639a1ba8be60f6559",
+      "created_utc": "2026-07-31T05:11:21Z"
+    },
+    "all_canonical_content_hashes_valid": true
+  },
+  "update_zero": {
+    "integrity_pass": true,
+    "absolute_noncollapse_enforced": false,
+    "absolute_noncollapse_first_enforced_update": 250,
+    "target_effective_rank": 1.726039279386408,
+    "online_effective_rank": 1.7260392814385914,
+    "memory_effective_rank": 1.7260392829941273,
+    "nonzero_scale_all_three": true,
+    "target_place_rank": 2.6142773628234863,
+    "place_chance_multiple": 2.3986874311070916,
+    "place_scene_count_above_chance": 8,
+    "physical_passed_margin_count": 39,
+    "physical_causal_control_pass_count": 0,
+    "update_zero_max_control_prediction_delta": 0.000003635883331298828,
+    "future_rgb_online_access_count": 0,
+    "target_gradient_tensor_count": 0,
+    "diagnostic_noncollapse_false_is_expected_before_update_250": true
+  },
+  "training_accounting": {
+    "evidence_level": "source_established_from_frozen_stage_transition_not_separately_published_accounting_trace",
+    "proof": "stage observe_update_100 is assigned only after update 100 joint_training_update_v1 returned and validate_update_integrity_v1 passed",
+    "atomically_completed_updates": 100,
+    "memory_presentations": 1600,
+    "physical_presentations": 800,
+    "total_presentations": 2400,
+    "memory_microbatch_graphs": 800,
+    "physical_microbatch_graphs": 200,
+    "returned_autograd_calls": 1400,
+    "optimizer_steps": 100,
+    "ema_steps": 100,
+    "successful_named_route_normalizations": 600,
+    "successful_routes_per_update": 6,
+    "all_raw_route_gradients_finite_through_completed_updates": true,
+    "all_float64_route_norms_and_applied_scales_finite_through_completed_updates": true,
+    "exact_per_route_numeric_receipts_published": false,
+    "invented_per_route_values_count": 0
+  },
+  "failure": {
+    "receipt_status": "FAIL_TERMINAL_INFRASTRUCTURE",
+    "stage": "observe_update_100",
+    "error_type": "RuntimeError",
+    "error_message": "V19 comparison observation is not one-shot",
+    "failure_after_update_100_integrity_validation": true,
+    "failure_before_update_100_metric_publication": true,
+    "failure_during_training": false,
+    "failure_during_gradient_normalization": false,
+    "failure_during_optimizer_or_ema": false,
+    "infrastructure_recovery_available": false,
+    "registered_snapshot_available": false
+  },
+  "root_cause": {
+    "physical_observation_aliases": {
+      "0": 400,
+      "100": 400,
+      "250": 400,
+      "500": 400,
+      "750": 400,
+      "1000": 400
+    },
+    "inherited_hook": "launch_go2_rgb_object_space_height_volume_executed_successor_semantic_grounding_joint_jepa_v19._v12_observation_v19",
+    "inherited_diagnostic_store": "runtime.causal_comparisons_v19",
+    "sequence": [
+      "outer update 0 calls the inherited physical observer with alias 400",
+      "the inherited V19 hook performs the real scoring pass and stores its diagnostic under key 400",
+      "outer update 100 again calls the current model observer with required alias 400",
+      "the V19 pre-call one-shot guard finds the stale diagnostic key and fails before rescoring"
+    ],
+    "alias_is_required_for_frozen_physical_controls": true,
+    "V19_diagnostic_cache_is_not_consumed_by_the_V18_result": true,
+    "physical_scoring_or_returned_metrics_defect": false,
+    "model_data_gradient_or_loss_defect": false,
+    "downstream_role_place_repeated_alias_blocker_found": false,
+    "downstream_temporal_repeated_alias_blocker_found": false
+  },
+  "numerical_conclusion": {
+    "V2_float32_norm_overflow_mechanism_corrected": true,
+    "V3_overflow_safe_helper_crossed_first_update": true,
+    "V3_overflow_safe_helper_validated_through_update_100": true,
+    "delay_line_learning_mechanism_scientifically_passed_or_failed": null,
+    "reason_learning_quality_remains_open": "no post-training observation completed; the first absolute noncollapse gate is update 250"
+  },
+  "successor_recommendation": {
+    "permitted_by_V3_terminal_rules": true,
+    "classification": "fresh_unrelated_infrastructure_integrity_replacement_not_norm_only_replacement",
+    "exact_scope": "V18-local post-success validation and removal of only the inherited causal_comparisons_v19[400] diagnostic entry after each physical observation",
+    "preserve_alias_400": true,
+    "preserve_current_model_rescoring_every_observation": true,
+    "preserve_shared_V19_V25_sources": true,
+    "preserve_model_data_seed_schedule_optimizer_losses_thresholds_initialization_and_caps": true,
+    "fail_closed_on_preexisting_missing_or_malformed_inherited_cache_state": true,
+    "required_CPU_regression": "two and then all six outer observations reuse alias 400, perform distinct real calls, return distinct receipts, and leave no inherited alias entry",
+    "fresh_initialization_and_output_root_required": true,
+    "V3_checkpoint_recovery_or_resume_authorized": false
+  },
+  "access_and_authority": {
+    "probability_calibration_opened": false,
+    "G2_payload_opened": false,
+    "navigation_executed": false,
+    "held_out_or_sealed_opened": false,
+    "protected_checkpoint_opened_for_audit": false,
+    "runtime_tensor_or_checkpoint_opened_for_audit": false,
+    "result_document_grants_source_implementation_authority": false,
+    "result_document_grants_execution_authority": false
+  },
+  "independent_review": {
+    "reviewers": [
+      "/root/delay_line_independent_review",
+      "/root/v18_replacement_lifecycle_prep",
+      "/root/v18_v2_schema_fix_review"
+    ],
+    "terminal_artifact_hash_issue_count": 0,
+    "accounting_overclaim_issue_count": 0,
+    "root_cause_issue_count": 0,
+    "downstream_repeated_alias_blocker_count": 0,
+    "verdict": "PASS_COMPLETE_TERMINAL_AUDIT_AND_FRESH_UNRELATED_INFRASTRUCTURE_SUCCESSOR_JUSTIFIED"
+  },
+  "content_sha256": "539a068c809a6ad7b77ff0f0993ac8a0541cad876f21eb99e12e0ebb43d54fc0"
+}

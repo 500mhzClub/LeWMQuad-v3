@@ -17,6 +17,7 @@ Manifest parsing is pure Python — no Genesis import. The build step in
 from __future__ import annotations
 
 import json
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -116,6 +117,30 @@ class CameraMount:
     near_m: float
     far_m: float
     encoding: str
+
+
+def genesis_vertical_fov_deg(camera: CameraMount) -> float:
+    """Convert the manifest FOV contract to Genesis' vertical-FOV API.
+
+    Genesis names its argument ``fov`` but implements it as ``yfov``.  The
+    Go2 platform manifest deliberately records a horizontal FOV, so passing
+    that value through unchanged widens the rendered horizontal view.
+    """
+
+    width, height = camera.native_resolution
+    if width <= 0 or height <= 0:
+        raise ValueError("camera native resolution must be positive")
+    fov = float(camera.fov_deg)
+    if not math.isfinite(fov) or not 0.0 < fov < 180.0:
+        raise ValueError("camera FOV must lie in (0, 180) degrees")
+    if camera.fov_axis == "vertical":
+        return fov
+    if camera.fov_axis != "horizontal":
+        raise ValueError(f"unsupported camera FOV axis: {camera.fov_axis!r}")
+    aspect = float(width) / float(height)
+    return math.degrees(
+        2.0 * math.atan(math.tan(math.radians(fov) * 0.5) / aspect)
+    )
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,150 @@
+{
+  "schema": "lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_terminal_review_v1",
+  "status": "PASS_INDEPENDENT_TERMINAL_REVIEW_STOP_MECHANISM",
+  "review_date": "2026-08-04",
+  "artifact_bindings": {
+    "preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_preregistration_2026-08-04.md",
+      "sha256": "0c563e2dd6cd7fce4fa8b00958eed28148faf5eb981fe01a6f8dde5576704e74",
+      "byte_count": 8708
+    },
+    "source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_source_review_2026-08-04.json",
+      "sha256": "c64701b3831beacb8eaeb4e543e1adbe2bc570dda9d78a9932f3a7acb9c1d956",
+      "byte_count": 6494
+    },
+    "execution_authority": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1_execution_authority_2026-08-04.json",
+      "sha256": "2d1d2975c4d2299d9639972e83da6ff690930c970f312ee76bcfc327fbf24aac",
+      "byte_count": 12952
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1/attempt_v1/reservation.json",
+      "sha256": "dc9fd2399b6d5d4b959d972606999288aa9912ef4a5bbaf3ffb883543b7cb356",
+      "byte_count": 11476
+    },
+    "result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1/attempt_v1/result.json",
+      "sha256": "edeeb3ca1003f92fbe4e29bffd913f1a97994a4aee3f9d193a3b2a90522e8031",
+      "byte_count": 410076
+    },
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_grounded_dense_dino_joint_jepa_v1_evaluation_integrity_replacement_v1/attempt_v1/terminal.json",
+      "sha256": "7c60676f7b66ae714633cf2d1f792278eb37f73e6c2663f107df283d0c16f5ba",
+      "byte_count": 487
+    }
+  },
+  "artifact_integrity": {
+    "canonical_finite_json": true,
+    "terminal_binds_exact_result": true,
+    "reservation_and_result_embed_exact_authority": true,
+    "all_18_source_bindings_unchanged": true,
+    "preregistration_and_source_review_unchanged": true,
+    "result_and_terminal_status_consistent": true,
+    "retry_authorized": false
+  },
+  "access_and_runtime": {
+    "strict_deterministic_runtime": true,
+    "deterministic_prediction_repeat": true,
+    "train_receipt_opens": 128,
+    "evaluation_receipt_opens": 128,
+    "evaluation_context_rgb_opens": 384,
+    "train_context_rgb_opens": 0,
+    "train_successor_rgb_opens": 0,
+    "evaluation_successor_rgb_opens": 0,
+    "predecessor_checkpoint_reads_per_arm": 1,
+    "training_performed": false,
+    "optimizer_restored": false,
+    "checkpoint_written_or_mutated": false,
+    "state_scene_and_artifact_roles_disjoint": true,
+    "fresh_or_held_out_evaluation": false
+  },
+  "train_only_evidence": {
+    "update_400_futility_passed": true,
+    "joint_update_800_normalized_rank_regret": 0.023251488095238096,
+    "matched_update_800_normalized_rank_regret": 0.0576171875,
+    "joint_update_800_branch_retrieval_accuracy": 0.5442708414047956,
+    "joint_update_800_successor_cosine_error": 0.1246807286515832,
+    "joint_update_800_persistence_cosine_error": 0.22704052191693336,
+    "interpretation": "The joint objective learned action-discriminative successor structure and fit physical ranking on the training scenes without collapse."
+  },
+  "evaluation_summaries": {
+    "joint_jepa_grounded": {
+      "normalized_rank_regret": 0.17584635416666666,
+      "oracle_equivalent_selection_rate": 0.5234375,
+      "physical_target_progress_m": 0.061631169917171214
+    },
+    "physical_only_matched": {
+      "normalized_rank_regret": 0.16448102678571427,
+      "oracle_equivalent_selection_rate": 0.53125,
+      "physical_target_progress_m": 0.06315788637133248
+    },
+    "task_action_only": {
+      "normalized_rank_regret": 0.17441406250000002,
+      "oracle_equivalent_selection_rate": 0.46875,
+      "physical_target_progress_m": 0.06002022586594066
+    },
+    "privileged_physical_oracle": {
+      "normalized_rank_regret": 0.0,
+      "oracle_equivalent_selection_rate": 1.0,
+      "physical_target_progress_m": 0.07329987996631557
+    },
+    "random_expected": {
+      "normalized_rank_regret": 0.49541377314814816
+    }
+  },
+  "paired_comparisons": {
+    "joint_minus_task_action_only": {
+      "mean_delta": 0.0014322916666666668,
+      "lower_95": -0.02898065476190476,
+      "upper_95": 0.03193940662202379,
+      "required_maximum": -0.02,
+      "passed": false
+    },
+    "joint_minus_physical_only_matched": {
+      "mean_delta": 0.011365327380952382,
+      "lower_95": -0.018909272693452384,
+      "upper_95": 0.04151785714285715,
+      "required_maximum": -0.01,
+      "passed": false
+    }
+  },
+  "gate_recomputation": {
+    "exact_match_to_result": true,
+    "integrity_and_oracle": true,
+    "absolute_regret_at_most_0_13": false,
+    "joint_beats_task_action_only": false,
+    "joint_beats_physical_only_matched": false,
+    "joint_beats_random": true,
+    "overall_passed": false,
+    "terminal_status": "FAIL_STOP_GROUNDED_DENSE_DINO_MECHANISM",
+    "closed_loop_eligible": false
+  },
+  "first_principles_conclusion": {
+    "primary": "JEPA supervision improved training fit but did not establish scene-disjoint H1 planning utility; its advantage over the matched arm reversed from training to evaluation.",
+    "threshold_assessment": "The absolute 0.13 threshold is not the decisive issue. Relaxing it would leave both relative-control gates failed, with adverse point estimates and confidence intervals spanning zero.",
+    "surviving_claim": "The joint model learned non-random action-conditioned structure on training scenes and remained better than random on the development evaluation.",
+    "unsupported_claims": [
+      "incremental planning utility from JEPA successor supervision",
+      "closed-loop navigation usefulness",
+      "multi-step rollout composability",
+      "persistent memory",
+      "safety",
+      "held-out generalization"
+    ],
+    "mechanism_decision": "STOP the partially trainable DINO-tail plus dense predictor plus physical-head joint-JEPA mechanism; do not retry, extend, retune, relax gates, inspect evaluation successors, or planner-integrate either checkpoint."
+  },
+  "recommended_successor": {
+    "immediate": "Preregister one conventional task-coupled recurrent state-space or direct-dynamics comparator with a no-vision odometry/action ablation on the same H1 evaluator. Test blind 1/2/4-step rollout only if H1 passes.",
+    "jepa_successor_constraint": "A later V-JEPA 2.1 dense-spatial successor must address the observed generalization failure with substantially more scene-diverse matched counterfactual states and lower trainable capacity; a simple encoder swap under the same 128-state recipe is not justified.",
+    "data_role": "The large on-policy corpus can support self-supervised temporal and appearance pretraining, but it cannot replace within-state action contrast for counterfactual identifiability."
+  },
+  "reviewers": {
+    "artifact_custody": "PASS_NO_FINDINGS",
+    "scientific_recomputation": "PASS_NO_FINDINGS",
+    "protocol_interpretation": "PASS_DECISIVE_MECHANISM_STOP"
+  },
+  "raw_evaluation_inputs_opened_by_reviewers": false,
+  "protected_material_opened": false,
+  "findings": []
+}

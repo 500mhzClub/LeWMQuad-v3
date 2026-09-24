@@ -1,0 +1,149 @@
+{
+  "schema": "go2_shared_utility_scorer_v1_2_preoutcome_failure_receipt",
+  "status": "BLOCKED_PRE_OUTCOME_FROZEN_CONTRACT_INCONSISTENCY",
+  "recorded_at": "2026-08-11T21:42:08+01:00",
+  "stage": "candidate_allocation_preflight",
+  "requested_outcome_status": "NEITHER_SCORER_QUALIFICATION_OUTCOME_REACHED",
+  "scientific_contract_change_required": true,
+  "frozen_predictor_qualification": {
+    "commit": "ee47b47e7964c16360f265c4cfbe7f8181d16402",
+    "stage_a_identity_digest": "ce2cbbe8dab9a89ad6f85d16c56a9d712d791c8bbfd8925a8f01efc0c039705a",
+    "branch_corpus_digest": "f84eb3271f1a3b7052bbf2e84240453e84772b0a530e60ec47f723a44e2e10e9",
+    "target_latent_index_digest": "861285ec9c8fc6c92c6f3a31cade0f031172bf6818d76d1899634a60c7e5c291",
+    "direct_fidelity_and_retrieval_result_digest": "3b5c500b4b1326056ce18c6276d7842f4230faec36f8f29cc65945f54527bbcb",
+    "occupancy_result_digest": "09dc413d9ce30c2cb19c99e93eeaad410983a7f53575387bc6694f3844a070d6",
+    "occupancy_gate_digest": "4bf9a92144fa728d953c9dffebb235c9b476ded59d7462a107fe2e6ade0894e4",
+    "modified_or_rerun": false
+  },
+  "frozen_bindings": {
+    "candidate_bank_digest": "85471e44a0fe8f3c59fff258e9b23933e306f69b6d590c832e2b8da1f34a8cd9",
+    "continuous_progress_contract_digest": "840328d918f446bad1a5855e72f13f8937fc9a42eafd87818bf8cd94305e2c3d",
+    "graded_safety_contract_digest": "5cf4572be2490c1b6f748abc704fff3a3c15fb1ea8dc060e49314e2bbaf01e0f",
+    "oracle_v1_2_digest": "3ffbe1a87f7975c97e7ff42e50a6a00ca0f47d8840a434d0ff215c303bf6f0e4",
+    "textured_v03_renderer_wrapper_digest": "df70a0c16ad421ae93a93c4d9dda0fd4d6f154f42d9710c7fc2f0242c3e8cb1b",
+    "rendering_contract_digest": "2faa22e3b10a2c4199bdabdbc0ed0e1ff9c7c4ac48bb489daeb0fd70d5b65c17",
+    "centre_crop_and_preprocessing_contract_digest": "2688ca405ed7e8bb86e82f1d111b7b865466f4d497b973a04a52af846b5da6a9",
+    "preprocessing_identity_digest": "8e6aa177b094ea91d27b3c91bcd8f01835b8be5fc51796d145314982ea930fe5",
+    "target_encoder_binding_digest": "15ff78a0205ba138a740f12f6eb9bb3f78bce9c5ba8c2849f7e83489a6b2b6a5",
+    "target_encoder_checkpoint_sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6",
+    "scorer_architecture_and_training_baseline_digest": "d32118552b6fd373aefab143917bb04e63ffbe196129266a1546affc08f763ff",
+    "scorer_fit_allocation_design_digest": "a587b1de264dfb54176aa231e5183ae4b7b4229bbf65c02d62438f86af5e7116",
+    "implemented_allocator_contract_digest": "bb2d9956947be64985f15970dc30f9f0e37cda8012f7c7f5da8808c5d601de5e"
+  },
+  "failure": {
+    "summary": "The frozen bank has one reversing candidate. Requiring reversing behaviour in every one of 120 subsets forces that candidate to occur 120 times, while the same frozen allocation requires every candidate to occur exactly 60 times.",
+    "candidate_evidence": {
+      "candidate_count": 12,
+      "candidates_per_state": 6,
+      "state_count": 120,
+      "reversing_candidate_indices": [
+        10
+      ],
+      "reversing_candidate_name": "reverse_then_turn",
+      "reversing_primitive": "backward",
+      "other_candidates_with_reversing_primitive": []
+    },
+    "arithmetic_proof": {
+      "required_reverse_coverage_subsets": 120,
+      "minimum_reverse_candidate_appearances_if_every_subset_contains_reverse": 120,
+      "required_appearances_per_candidate": 60,
+      "frozen_allocator_reverse_candidate_appearances": 60,
+      "contradiction": "120 != 60"
+    },
+    "frozen_rotation_blocks": [
+      {"rotation": 0, "candidate_indices": [0, 1, 3, 5, 8, 10], "contains_reverse": true},
+      {"rotation": 1, "candidate_indices": [1, 2, 4, 6, 9, 11], "contains_reverse": false},
+      {"rotation": 2, "candidate_indices": [0, 2, 3, 5, 7, 10], "contains_reverse": true},
+      {"rotation": 3, "candidate_indices": [1, 3, 4, 6, 8, 11], "contains_reverse": false},
+      {"rotation": 4, "candidate_indices": [0, 2, 4, 5, 7, 9], "contains_reverse": false},
+      {"rotation": 5, "candidate_indices": [1, 3, 5, 6, 8, 10], "contains_reverse": true},
+      {"rotation": 6, "candidate_indices": [2, 4, 6, 7, 9, 11], "contains_reverse": false},
+      {"rotation": 7, "candidate_indices": [0, 3, 5, 7, 8, 10], "contains_reverse": true},
+      {"rotation": 8, "candidate_indices": [1, 4, 6, 8, 9, 11], "contains_reverse": false},
+      {"rotation": 9, "candidate_indices": [0, 2, 5, 7, 9, 10], "contains_reverse": true},
+      {"rotation": 10, "candidate_indices": [1, 3, 6, 8, 10, 11], "contains_reverse": true},
+      {"rotation": 11, "candidate_indices": [0, 2, 4, 7, 9, 11], "contains_reverse": false}
+    ],
+    "rotation_block_counts": {
+      "with_reverse": 6,
+      "without_reverse": 6
+    },
+    "criteria": [
+      {
+        "criterion": "every candidate appears exactly 60 times",
+        "frozen_allocator_status": "PASS_BY_CONSTRUCTION",
+        "requested_status": "REQUIRED"
+      },
+      {
+        "criterion": "every six-candidate subset contains reversing behaviour",
+        "frozen_allocator_status": "FAIL_60_OF_120_SUBSETS_LACK_REVERSE",
+        "requested_status": "REQUIRED"
+      },
+      {
+        "criterion": "conjunction of exact-60 and reverse-in-every-subset",
+        "frozen_allocator_status": "MATHEMATICALLY_INFEASIBLE",
+        "requested_status": "REQUIRED"
+      }
+    ]
+  },
+  "recovery": {
+    "valid_scorer_fit_corpus_found": false,
+    "valid_scorer_checkpoint_found": false,
+    "valid_scorer_qualification_found": false,
+    "paused_contract_artifact": {
+      "path": ".generated/go2_utility_scorer_v1_2/scorer_contract_v1_2.json",
+      "scorer_contract_v1_2_digest": "0fc7a3db0ca86ae206050ee6da2894208fa11707e840b112a8a6810e18ac3e21",
+      "contract_artifact_digest": "375d372b2196c89c5e9856128bcf15386ed2c6b79bca01ad070f4a146d6c9d24",
+      "raw_sha256": "c20967ade214b4815f288e811a5e53108171f8e3ed470b60cd4c71d75e12f43f",
+      "cryptographically_valid": true,
+      "eligible_for_this_command": false,
+      "ineligibility_reason": "Its bound branch selector does not exclude all 45 abandoned scorer-fit identities required by this command."
+    },
+    "invalid_45_state_set": {
+      "preserved": true,
+      "used": false,
+      "scene_count": 45,
+      "scene_ids_digest_default_json": "5d5c4fef96e5132ad443c4fbd2778ad7d13fb9190328a498ca56490d53e041fe",
+      "shards": [
+        {
+          "path": ".generated/go2_branch_corpus_v1_2_interrupted_a016cadb/scorer_fit/state_shard_large_enclosed_maze.json",
+          "sha256": "9504b507ecf55b0aa64976669035e5e687c45cbe72c0fe02366a7e8938f5cf0c"
+        },
+        {
+          "path": ".generated/go2_branch_corpus_v1_2_interrupted_a016cadb/scorer_fit/state_shard_loop_alias_stress.json",
+          "sha256": "689b5abb3d5a4edaf5d3247d0d46283afb4e5a8c425ac7442c49077d10c6f8c1"
+        },
+        {
+          "path": ".generated/go2_branch_corpus_v1_2_interrupted_a016cadb/scorer_fit/state_shard_medium_enclosed_maze.json",
+          "sha256": "69372c6c177d346e3c9c67a58066a357b6d5f334f39762fa5cd2efb5d6a5eaa2"
+        }
+      ],
+      "branches_or_outcomes_present": false
+    }
+  },
+  "operations": {
+    "new_scorer_contracts_issued": 0,
+    "new_state_identities_selected": 0,
+    "new_identity_manifests_issued": 0,
+    "branch_smoke_attempts": 0,
+    "branches_attempted": 0,
+    "frames_rendered": 0,
+    "target_latents_encoded": 0,
+    "scorer_training_runs": 0,
+    "qualification_evaluations": 0,
+    "predictor_checkpoints_opened": 0,
+    "development_transfer_rows_scored": 0,
+    "final_evaluation_states_generated": 0,
+    "final_evaluation_branches_generated": 0
+  },
+  "prohibited_automatic_resolutions": [
+    "change the frozen candidate bank",
+    "relax exact 60 appearances per candidate",
+    "relabel a non-reversing candidate as reversing",
+    "duplicate candidate 10 within a subset",
+    "mix allocations from two contracts",
+    "generate outcomes before resolving the frozen contradiction"
+  ],
+  "running_scientific_processes_at_freeze": 0,
+  "failure_receipt_digest": "550c52f9a3ff04f8a564f6f28e75e9d36fc8bc0f73da4795b95dedc3ad2e3cab"
+}

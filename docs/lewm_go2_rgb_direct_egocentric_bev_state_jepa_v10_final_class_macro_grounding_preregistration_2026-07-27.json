@@ -1,0 +1,337 @@
+{
+  "authority": {
+    "additional_copy_paste_user_authorization_required": false,
+    "basis": "standing_user_scope_permits_evidence_driven_scientific_iteration_within_RGB_only_learned_JEPA_perception_for_later_heldout_maze_navigation",
+    "execution_authorized_by_this_preregistration_alone": false,
+    "execution_requires_committed_source_freeze_independent_review_and_separate_exact_machine_authorization": true,
+    "one_fresh_v10_attempt_may_be_machine_authorized_only_after_all_preexecution_gates_pass": true,
+    "source_only_implementation_focused_testing_freeze_and_independent_review_authorized": true
+  },
+  "content_sha256": "341239f40885c5a55042cd88d49b4e6401a332fa066f3b7bb0d7062880105b83",
+  "date": "2026-07-27",
+  "diagnosis_and_hypothesis": {
+    "diagnostic_mechanism": "The frozen two-branch hard hierarchical objective's OCCUPIED-versus-pooled-nonOCCUPIED branch frequency-weights UNKNOWN and FREE inside the negative group. V9 learned useful UNKNOWN/OCCUPIED separation and RGB grounding while FREE recall collapsed. Equal per-raster final-class macro averaging removes that within-raster frequency weighting without changing the model, data, or labels.",
+    "evidence_not_absent_visual_learning": [
+      "V9_correct_RGB_won_8_of_8_scenes_at_updates_0_50_and_100",
+      "V9_G_NLL_and_balanced_accuracy_improved_through_update_100",
+      "V9_occupied_recall_reached_0.8571428571428571",
+      "only_the_update_100_three_class_balance_conjuncts_failed"
+    ],
+    "expected_signature": "FREE recall improves materially while OCCUPIED recall and RGB grounding remain strong enough to pass the frozen continuation and final perception gates.",
+    "not_a_threshold_schedule_architecture_or_data_tuning_attempt": true,
+    "scientific_question": "Does equal final-class influence in the RGB-to-BEV grounding objective prevent FREE collapse while retaining the learned geometry and RGB sensitivity demonstrated by V9?"
+  },
+  "execution_contract": {
+    "attempt_index": 1,
+    "fresh_initialization_required": true,
+    "gpu_active_minutes_maximum": 30,
+    "maximum_attempts": 1,
+    "maximum_presentations": 4000,
+    "maximum_updates": 250,
+    "observation_updates": [
+      0,
+      50,
+      100,
+      250
+    ],
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v10/rgb_direct_egocentric_bev_state_jepa_probe_v10_final_class_macro_grounding_v1",
+    "output_root_must_be_absent_before_mode_0700_reservation": true,
+    "reservation_consumes_the_sole_attempt": true,
+    "retry_resume_repair_recovery_extension_second_seed_or_second_attempt_authorized": false,
+    "runtime_checkpoints_and_training_trace_are_write_only": true,
+    "snapshot_updates": [
+      50,
+      100,
+      250
+    ],
+    "stop_at_first_failed_gate_or_cap": true,
+    "v9_output_root": ".generated/go2_shared_observable_camera_ray_jepa_v9/rgb_direct_egocentric_bev_state_jepa_probe_v9_checkpoint_semantic_registry_integrity_replacement_v1",
+    "v9_output_root_must_remain_terminal_sealed_immutable_and_unopened": true,
+    "v9_runtime_checkpoint_tensor_trace_receipt_parameter_optimizer_or_rng_state_reuse_authorized": false,
+    "v10_root_is_distinct_from_and_not_nested_under_v9_root": true
+  },
+  "gates": {
+    "comparators_are_frozen_and_may_not_be_relaxed_reinterpreted_or_recomputed_after_observation": true,
+    "stop_at_first_failure": true,
+    "update_0_integrity": {
+      "accounting": {
+        "ema_updates": 0,
+        "optimizer_updates": 0,
+        "predictor_backward_forward_objective_and_optimizer_updates": 0,
+        "presentations": 0
+      },
+      "all_required": true,
+      "checks": [
+        "fresh_V10_model_optimizer_and_target_with_exact_frozen_V9_initialization_and_zero_prior_runtime_reuse",
+        "exact_final_class_macro_NLL_present_class_row_mean_and_current_next_formula",
+        "exact_public_G_G_current_G_next_ln2_over_ln3_compatibility_scale_and_total_identity",
+        "literal_bit_equivalence_of_frozen_total_G_over_ln2_to_raw_G_macro_over_ln3",
+        "absent_final_classes_omitted_without_zero_term_NaN_or_denominator_change",
+        "finite_nonconstant_state_raw_macro_losses_public_G_fields_metrics_and_gradients",
+        "encoder_token_projection_row_and_column_queries_both_attention_FFN_blocks_and_all_three_prototypes_receive_finite_nonzero_intended_gradients",
+        "predictor_target_and_fixed_negative_RGB_optimizer_gradients_absent",
+        "predictor_forward_objective_backward_optimizer_membership_and_update_counts_all_zero",
+        "correct_RGB_macro_scene_win_count_exactly_8_of_8",
+        "all_forbidden_access_counters_zero"
+      ],
+      "on_failure": "terminal_close_V10_no_retry"
+    },
+    "update_50_health": {
+      "G_macro_strictly_less_than_update_0": true,
+      "absolute_free_minus_occupied_recall_gap_maximum_inclusive": 0.6,
+      "accounting": {
+        "ema_updates": 50,
+        "optimizer_updates": 50,
+        "predictor_backward_forward_objective_and_optimizer_updates": 0,
+        "presentations": 800
+      },
+      "aggregate_free_recall_minimum_inclusive": 0.25,
+      "aggregate_occupied_recall_minimum_inclusive": 0.75,
+      "aggregate_raster_balanced_accuracy_minimum_inclusive": 0.6,
+      "aggregate_raster_nll_maximum_inclusive": 0.8,
+      "all_registered_values_finite": true,
+      "correct_rgb_macro_scene_win_count_required": 8,
+      "rough_raster_balanced_accuracy_strictly_greater_than": 0.0,
+      "rough_raster_occupied_recall_strictly_greater_than": 0.0,
+      "state_nonconstant": true,
+      "on_failure": "terminal_close_V10_no_retry"
+    },
+    "update_100_continuation": {
+      "G_macro_strictly_less_than_update_0": true,
+      "absolute_free_minus_occupied_recall_gap_maximum_inclusive": 0.35,
+      "accounting": {
+        "ema_updates": 100,
+        "optimizer_updates": 100,
+        "predictor_backward_forward_objective_and_optimizer_updates": 0,
+        "presentations": 1600
+      },
+      "aggregate_free_recall_minimum_inclusive": 0.5,
+      "aggregate_occupied_recall_minimum_inclusive": 0.8,
+      "aggregate_raster_balanced_accuracy_minimum_inclusive": 0.7,
+      "aggregate_raster_nll_maximum_inclusive": 0.46,
+      "all_registered_values_finite": true,
+      "correct_rgb_macro_scene_win_count_required": 8,
+      "rough_improvement_required": [
+        "rough_raster_balanced_accuracy_update_100_strictly_greater_than_update_0",
+        "rough_raster_occupied_recall_update_100_strictly_greater_than_update_0"
+      ],
+      "state_nonconstant": true,
+      "on_failure": "terminal_close_V10_no_retry"
+    },
+    "update_250_qualification": {
+      "absolute_free_minus_occupied_recall_gap_maximum_inclusive": 0.25,
+      "accounting": {
+        "ema_updates": 250,
+        "optimizer_updates": 250,
+        "predictor_backward_forward_objective_and_optimizer_updates": 0,
+        "presentations": 4000
+      },
+      "aggregate_free_recall_minimum_inclusive": 0.68,
+      "aggregate_occupied_recall_minimum_inclusive": 0.88,
+      "aggregate_raster_balanced_accuracy_minimum_inclusive": 0.8,
+      "aggregate_raster_nll_maximum_inclusive": 0.42,
+      "aggregate_raster_nll_relative_to_update_100": "NLL_update_250<=NLL_update_100+0.01",
+      "all_prior_gates_passed": true,
+      "all_registered_values_finite": true,
+      "correct_rgb_macro_scene_win_count_required": 8,
+      "rough_raster_balanced_accuracy_minimum_inclusive": 0.7719525,
+      "rough_raster_occupied_recall_minimum_inclusive": 0.4319467,
+      "state_nonconstant": true,
+      "on_failure": "terminal_close_V10_no_retry",
+      "on_pass": "pass_perception_mechanism_only_no_checkpoint_predictor_or_downstream_qualification"
+    }
+  },
+  "governing_v9_evidence": {
+    "execution_authorization": {
+      "authorizer": "/root/v9_preregistration_author",
+      "byte_count": 58605,
+      "commit": "a4d31f688ccd05cea283db318fb73b988fbf087d",
+      "content_sha256": "f9f4c3acd33ff6de559c0815d980519e1f8e1d48f42e899747aca340715de498",
+      "file_sha256": "e61545300c9902cd9786f636049a143b945977e76f9fe5cc49abe7d84d02412e",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_execution_authorization_2026-07-27.json",
+      "status": "AUTHORIZED_ONE_EXACT_DIRECT_BEV_V9_CHECKPOINT_SEMANTIC_REGISTRY_INTEGRITY_REPLACEMENT"
+    },
+    "independent_source_review": {
+      "byte_count": 70484,
+      "commit": "c0c7d4c6d26dc284b521cf696e7718bfabe73062",
+      "content_sha256": "65cb9734019cd7f7d78a7e9d9ae2d442bde59115c0e22b18dba9dda64efe853b",
+      "file_sha256": "f7e45b7085696c20f472376b06020bec27623075e95acd7df8b1bb986708219f",
+      "finding_count": 0,
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_review_2026-07-27.json",
+      "reviewer": "/root/v8_contract_implementation",
+      "status": "PASS_SOURCE_SCIENCE_IDENTITY_CHECKPOINT_REGISTRY_ADAPTER_AND_COMPLETE_FAILURE_RECEIPTS"
+    },
+    "preregistration": {
+      "byte_count": 13511,
+      "commit": "ef37e850c5f7b03c31b24fb86680f5f4cb8bd95f",
+      "content_sha256": "9cbe395fe4b192517c0977c4c3842af06645842d1914c86f5cc216c591e10cc7",
+      "file_sha256": "b8139b980df66d5c6d5fd1f73d0656a18fb78b9bd9b9428342f7175fa6baa603",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_preregistration_2026-07-27.json",
+      "status": "PREREGISTERED_ONE_FRESH_SCIENCE_IDENTICAL_V9_CHECKPOINT_SEMANTIC_REGISTRY_INTEGRITY_REPLACEMENT_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION"
+    },
+    "source_manifest": {
+      "byte_count": 44703,
+      "commit": "2c349f8225e8525e691c77e2fb0fe5573d92cb89",
+      "content_sha256": "2003108a6a13a9532210f31839a632d44d7cd47e14965ad93a870d4633e5073a",
+      "file_sha256": "1da8e6fe8babac775ae6a977e2b480ecb852f4cd2edbefca49d9e3105c9ab474",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_source_manifest_2026-07-27.json",
+      "source_count": 127,
+      "status": "PASS_SOURCE_CLOSURE"
+    },
+    "terminal_audit": {
+      "byte_count": 18951,
+      "classification": "VALID_ONE_SHOT_TERMINAL_SCIENTIFIC_FAILURE_AT_UPDATE_100_AFTER_PASSED_UPDATE_ZERO_AND_UPDATE_50_GATES_ONLY_THREE_CLASS_BALANCE_THRESHOLDS_FAILED_V9_PERMANENTLY_CLOSED_NO_RETRY",
+      "commit": "7984c7749cc44c6444bf7229a809c6e9f01063bf",
+      "content_sha256": "f43745ae1329775f36a0b9ad01b34588e662387bca98c34430324cf09a0cd69c",
+      "file_sha256": "af5f82c809aae3f3954e64147b3a71af96286436e1790440fdd161bc86bd4c03",
+      "path": "docs/lewm_go2_rgb_direct_egocentric_bev_state_jepa_v9_checkpoint_semantic_registry_integrity_replacement_terminal_audit_2026-07-27.json",
+      "status": "PASS_VALID_TERMINAL_UPDATE_100_SCIENTIFIC_FAILURE_CLOSES_V9_NO_RETRY"
+    }
+  },
+  "objective_delta": {
+    "allowed_final_classes_in_order": [
+      "UNKNOWN",
+      "FREE",
+      "OCCUPIED"
+    ],
+    "absent_class_rule": "For each raster, average only final classes that have at least one valid pixel; an absent class contributes neither a zero-valued term nor a denominator entry. Every raster must contain at least one valid final-class pixel.",
+    "correct_vs_wrong_RGB_control": {
+      "correct": "final_class_macro_nll(O(next_rgb),same_true_next_raster_label)",
+      "fallback_rows_preserved": true,
+      "per_scene_win_comparator": "mean_correct_raw_macro_nll_strictly_less_than_mean_wrong_raw_macro_nll",
+      "population_mapping_scene_aggregation_and_tie_rule": "exact_frozen_V9",
+      "wrong": "final_class_macro_nll(O(fixed_mapped_wrong_rgb),same_true_next_raster_label)"
+    },
+    "forbidden_additional_objective_changes": [
+      "class_frequency_weights",
+      "focal_factor",
+      "label_smoothing",
+      "temperature",
+      "margin",
+      "auxiliary_loss",
+      "raster_label_transform",
+      "sample_filter_balance_or_resampling"
+    ],
+    "per_raster_raw_macro_nll": "For logits z with shape [3,H,W] and frozen final-class labels y, compute q=log_softmax(z,dim=class). For each c in {UNKNOWN,FREE,OCCUPIED} present among valid pixels, L_c=mean_{p:y_p=c}(-q[c,p]); L_raster=mean_{c present}(L_c).",
+    "row_and_endpoint_aggregation": {
+      "raw_G_macro": "0.5*(mean_rows(L_raster(current_rgb,current_label))+mean_rows(L_raster(next_rgb,next_label)))",
+      "raw_macro_current": "mean_rows(L_raster(current_rgb,current_label))",
+      "raw_macro_next": "mean_rows(L_raster(next_rgb,next_label))",
+      "row_weighting": "equal_after_each_rows_present_class_macro_is_formed"
+    },
+    "public_runner_compatibility_fields": {
+      "G": "raw_G_macro*ln(2)/ln(3)",
+      "G_current": "raw_macro_current*ln(2)/ln(3)",
+      "G_next": "raw_macro_next*ln(2)/ln(3)",
+      "reason": "preserve_the_frozen_reviewed_V8_V9_gradient_integrity_runner_without_copying_it",
+      "reporting_or_compatibility_only": true,
+      "required_bit_equivalent_total_identity": "frozen_total=G/ln(2)=raw_G_macro/ln(3)",
+      "scientific_loss_leaf_count_effect": 0
+    },
+    "scientific_delta_count": 1,
+    "sole_scientific_leaf_delta": "Replace the per-row two-branch hard hierarchical grounding function used by perception training and the correct-versus-wrong RGB control with the exact per-raster present-final-class macro NLL defined here; use total raw_G_macro/ln(3).",
+    "training_total": "raw_G_macro/ln(3)"
+  },
+  "preserved_exactly_from_frozen_v9": {
+    "architecture_and_parameters": "complete_RGB_only_N320_encoder_factorized_row_column_BEV_queries_two_cross_attention_FFN_blocks_normalized_UNKNOWN_FREE_OCCUPIED_prototypes_predictor_construction_and_all_parameter_buffer_module_forward_graph_and_gradient_routes_except_the_registered_grounding_loss_leaf",
+    "caps": {
+      "gpu_active_minutes_maximum": 30,
+      "maximum_attempts": 1,
+      "maximum_presentations": 4000,
+      "maximum_updates": 250
+    },
+    "data": "development_train_and_checkpoint_selection_roles_scenes_rows_RGB_endpoints_fixed_mapped_negatives_raster_labels.u1_class_ids_and_all_mappings_filters_order_and_counts",
+    "ema": "decay_0.996_one_target_update_after_every_optimizer_update_and_exact_initial_hard_sync",
+    "gates_and_metrics_except_registered_v10_additions": "frozen_final_class_NLL_balanced_accuracy_FREE_recall_OCCUPIED_recall_rough_metrics_scene_control_population_aggregation_ties_state_checks_accounting_and_stop_semantics",
+    "initialization": "base_seed_20260712_N320_encoder_only_migration_fresh_decoder_prototype_predictor_target_draw_order_values_RNG_preservation_and_no_prior_runtime_reuse",
+    "optimizer": "one_float32_AdamW_constructed_once_never_reset_encoder_lr_0.0001_decoder_state_lr_0.0003_betas_0.9_0.999_epsilon_1e-8_weight_decay_0.0001_joint_clip_1.0_predictor_and_target_excluded",
+    "predictor_scope": "freshly_constructed_then_frozen_excluded_and_zero_forward_objective_backward_optimizer_membership_and_update_counts",
+    "schedule": {
+      "effective_batch_size": 16,
+      "microbatch_size": 4,
+      "microbatches_per_update": 4,
+      "prefix_sha256": {
+        "100": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+        "250": "ee3bc0dcf4c36c8cc66daa2ea8cda6653072fb18c8cf6d6fe1fe3bb50ab1218e",
+        "50": "f7e06f741d96af1a3c7796096a38f616f40ee713b6258a217ffd5627afda0788"
+      },
+      "seed": 20260713
+    },
+    "v9_science_contract_sha256_before_the_one_registered_leaf_substitution": "bacb31b0eb2070821bbd37862e6f3b9a39d7ecb0ab14ed8d758894c36f06f728"
+  },
+  "required_preexecution_gates": [
+    "implement_only_the_exact_final_class_macro_grounding_leaf_fresh_V10_custody_identity_and_necessary_additive_wrapper_seams",
+    "prove_the_public_G_ln2_over_ln3_compatibility_fields_are_bit_equivalent_to_raw_G_macro_over_ln3_under_the_frozen_total_path",
+    "prove_present_class_only_aggregation_is_finite_differentiable_and_omits_absent_classes_from_both_sum_and_denominator",
+    "prove_training_and_correct_wrong_RGB_control_share_the_exact_registered_macro_NLL_leaf",
+    "prove_no_other_model_data_label_mapping_seed_initialization_schedule_optimizer_EMA_metric_gate_threshold_or_cap_leaf_changed",
+    "prove_predictor_target_and_fixed_negative_RGB_gradient_and_call isolation",
+    "run_accelerator_hidden_focused_source_and_synthetic_tests_without_opening_generated_runtime_or_protected_material",
+    "freeze_and_commit_an_exact_recursive_V10_source_manifest",
+    "obtain_an_independent_source_science_custody_gradient_and_single_leaf_delta_review_with_zero_findings",
+    "materialize_and_commit_a_separate_exact_machine_execution_authorization_binding_the_frozen_source_review_science_identity_new_root_and_one_attempt",
+    "fail_closed_if_the_V10_output_root_is_not_absent_before_reservation",
+    "execute_exactly_one_fresh_V10_attempt"
+  ],
+  "schema": "lewm_go2_rgb_direct_egocentric_bev_state_jepa_v10_final_class_macro_grounding_preregistration_v1",
+  "source_and_downstream_boundary": {
+    "checkpoint_or_perception_mechanism_qualified_by_this_document": false,
+    "deployment_authorized": false,
+    "g2_authorized": false,
+    "generated_input_runtime_checkpoint_tensor_trace_receipt_dataset_RGB_raster_GPU_or_training_access_authorized_before_exact_machine_authorization": false,
+    "heldout_authorized": false,
+    "navigation_authorized": false,
+    "predictor_training_or_evaluation_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "sealed_authorized": false,
+    "source_governance_only_by_this_preregistration": true,
+    "v4_legacy_sealed_role_remains_permanently_ineligible": true,
+    "v10_failure_creates_no_automatic_retry_resume_repair_recovery_or_further_replacement_authority": true,
+    "v10_pass_scope": "perception_mechanism_only_no_checkpoint_predictor_G2_navigation_heldout_production_promotion_or_deployment_qualification"
+  },
+  "status": "PREREGISTERED_ONE_FRESH_RGB_ONLY_V10_FINAL_CLASS_MACRO_GROUNDING_PERCEPTION_FALSIFICATION_PENDING_SOURCE_FREEZE_INDEPENDENT_REVIEW_AND_SEPARATE_MACHINE_AUTHORIZATION",
+  "v9_decisive_metrics": {
+    "failed_update_100_conjuncts_only": [
+      "aggregate_free_recall_at_least_0.50",
+      "aggregate_raster_balanced_accuracy_at_least_0.70",
+      "aggregate_raster_nll_at_most_0.46"
+    ],
+    "trajectory": [
+      {
+        "G": 0.6998085592732285,
+        "aggregate_free_recall": 0.9390318702617827,
+        "aggregate_occupied_recall": 0.2989404641775984,
+        "aggregate_raster_balanced_accuracy": 0.41963369748256985,
+        "aggregate_raster_nll": 1.1666669072256057,
+        "correct_rgb_scene_win_count": 8,
+        "gate_passed": true,
+        "update": 0
+      },
+      {
+        "G": 0.3883358774763165,
+        "aggregate_free_recall": 0.23569641060869992,
+        "aggregate_occupied_recall": 0.8315554274181923,
+        "aggregate_raster_balanced_accuracy": 0.6253017056273226,
+        "aggregate_raster_nll": 0.7351933152575567,
+        "correct_rgb_scene_win_count": 8,
+        "gate_passed": true,
+        "update": 50
+      },
+      {
+        "G": 0.2974271838713174,
+        "aggregate_free_recall": 0.15401097508116818,
+        "aggregate_occupied_recall": 0.8571428571428571,
+        "aggregate_raster_balanced_accuracy": 0.6292200074101383,
+        "aggregate_raster_nll": 0.5243744905949164,
+        "correct_rgb_scene_win_count": 8,
+        "gate_passed": false,
+        "update": 100
+      }
+    ],
+    "update_100_passed_conjuncts": {
+      "aggregate_occupied_recall_minimum_0.80_observed": 0.8571428571428571,
+      "correct_rgb_scene_win_count_required_8_observed": 8
+    }
+  }
+}

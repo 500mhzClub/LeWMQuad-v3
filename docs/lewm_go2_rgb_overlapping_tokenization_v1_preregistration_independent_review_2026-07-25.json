@@ -1,0 +1,153 @@
+{
+  "schema": "lewm_go2_rgb_overlapping_tokenization_v1_preregistration_independent_review_v1",
+  "status": "PASS_SOURCE_ONLY_PREREGISTRATION_NO_EXECUTION_AUTHORITY",
+  "date": "2026-07-25",
+  "reviewer": "/root/overlap_prereg_challenge",
+  "verdict": "PASS",
+  "preregistration": {
+    "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_preregistration_2026-07-25.md",
+    "file_sha256": "d7b9ae265efb54422ecb116d199cbfc4e8d36118da1c8924b3e0ede8e93c0086",
+    "byte_count": 19860
+  },
+  "review_scope": {
+    "kind": "independent_source_only_preregistration_review",
+    "implementation_reviewed": false,
+    "runtime_inputs_reviewed": false,
+    "execution_launcher_reviewed": false,
+    "execution_authorization_reviewed": false,
+    "scientific_result_reviewed": false
+  },
+  "verified_checks": {
+    "explicit_user_architecture_decision_bound": true,
+    "comparison_baseline_is_static_multiresolution_v3": true,
+    "terminated_temporal_and_motion_mechanisms_excluded": true,
+    "one_science_delta_literal": "overlapping_rgb_patch_tokenization_relative_to_static_multires_v3_only",
+    "one_materially_different_mechanism": true,
+    "materiality_reason": "changes_the_raw_pixel_dependency_graph_before_token_formation_and_adds_41472_trainable_cross_boundary_weights",
+    "conv2d_topology": {
+      "input_channels": 3,
+      "output_channels": 192,
+      "kernel_size": [
+        11,
+        11
+      ],
+      "stride": [
+        7,
+        7
+      ],
+      "padding": [
+        2,
+        2
+      ],
+      "dilation": [
+        1,
+        1
+      ],
+      "groups": 1,
+      "bias": true,
+      "padding_mode": "zeros"
+    },
+    "adjacent_overlap_pixels": 4,
+    "token_geometry_preserved": true,
+    "center_copy_slice": [
+      2,
+      9
+    ],
+    "central_weight_scalar_count": 28224,
+    "zero_outer_ring_scalar_count": 41472,
+    "patch_bias_scalar_count": 192,
+    "update_zero_algebraic_identity_required": true,
+    "parameter_counts": {
+      "online_encoder": 2788992,
+      "evidence_head": 352689,
+      "total_trainable": 3141681,
+      "complete_model": 7049460
+    },
+    "parameter_tensor_counts": {
+      "online_encoder": 78,
+      "evidence_head": 26,
+      "total_trainable": 104,
+      "complete_model": 232
+    },
+    "n320_migration": {
+      "exact_copy_entry_count": 83,
+      "transformed_entry_count": 1,
+      "n320_derived_entry_count": 84,
+      "transformed_entry": "encoder.patch_embed.weight",
+      "hard_sync_count": 1,
+      "fresh_optimizer_required": true,
+      "rejected_checkpoint_open_count": 0
+    },
+    "executed_static_v3_source_commit": "97824b29ce9f4789b18e7a0cb5bc36f2feac1704",
+    "baseline_git_object_hashes_verified": {
+      "contract_sha256": "3553810c79686f642a30fdfd0d2ff6ae047a97ea65c1366cae4cb3231e44e669",
+      "model_sha256": "a63da1137539953b2f40d184def1652ae05f63d7b434084b1a91787e1fc83d0b",
+      "tail_depth_loss_sha256": "6fc0a114386ee2fb0ae98704a970d38a7194db192283b904138015498fb02384"
+    },
+    "raw_v13_roles_and_counts_preserved": true,
+    "optimizer_loss_geometry_evaluator_and_thresholds_preserved": true,
+    "schedule_seed": 20260713,
+    "schedule_prefix_hashes_verified": true,
+    "maximum_optimizer_updates": 1000,
+    "maximum_pair_presentations": 16000,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ],
+    "strict_terminal_conjunction_preserved": true,
+    "fixed_compute_and_operation_cap_complete": true,
+    "reservation_consumes_attempt": true,
+    "post_reservation_failure_receipts_required": true,
+    "full_finalized_ledger_precedes_scientific_control": true,
+    "terminal_modes_and_no_symlink_contract_present": true,
+    "retry_resume_repair_second_seed_extension_or_nearby_variant_prohibited": true,
+    "future_jepa_family_and_architecture_binding_required": true,
+    "old_family_downcast_prohibited": true,
+    "mandatory_matched_no_jepa_development_arm_preserved": true,
+    "deployed_predictor_or_latent_rollout_must_causally_score_actions": true,
+    "encoder_update_requires_perception_requalification_before_g2": true,
+    "probe_pass_licenses_only_separate_perception_qualification_preregistration": true,
+    "authority_boundary_fail_closed": true
+  },
+  "findings": [],
+  "access_scope": {
+    "source_documents_and_tracked_source_blobs_only": true,
+    "generated_input_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "accelerator_query_or_hardware_operation_count": 0,
+    "output_root_inspection_reservation_or_mutation_count": 0,
+    "prior_runtime_output_open_count": 0,
+    "rejected_checkpoint_open_count": 0,
+    "protected_runtime_material_open_count": 0,
+    "calibration_role_open_count": 0,
+    "g2_navigation_or_production_operation_count": 0,
+    "heldout_or_sealed_open_count": 0
+  },
+  "authority": {
+    "source_only_implementation_under_bound_preregistration_confirmed": true,
+    "source_review_authorized_by_this_artifact": false,
+    "generated_input_or_dataset_open_authorized": false,
+    "rgb_open_authorized": false,
+    "checkpoint_or_tensor_open_authorized": false,
+    "accelerator_query_or_hardware_authorized": false,
+    "output_root_inspection_reservation_or_mutation_authorized": false,
+    "training_or_probe_execution_authorized": false,
+    "retry_resume_repair_second_seed_extension_or_replacement_authorized": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_or_sealed_authorized": false,
+    "production_authorized": false,
+    "promotion_authorized": false,
+    "deployment_authorized": false
+  },
+  "limitations": [
+    "This review covers only the exact bound preregistration and its cited tracked source evidence.",
+    "It does not review an implementation, tests, recursive source manifest, launcher, execution authorization, runtime inputs, output root, or scientific result.",
+    "PASS confirms that source-only implementation and later independent source review may proceed under the preregistration; it grants no generated-input, checkpoint, accelerator, execution, qualification, JEPA, G2, navigation, held-out, production, promotion, or deployment authority."
+  ],
+  "content_sha256": "bdf11948618ec07132e3b9986447ea50ead7bc04019c28b4760720fb3cd96710"
+}

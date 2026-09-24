@@ -1,0 +1,300 @@
+{
+  "schema": "lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_terminal_review_v1",
+  "review_date": "2026-08-05",
+  "status": "FAIL_CLOSED_NO_SCIENTIFIC_DECISION",
+  "protected_material_opened": false,
+  "review_scope": {
+    "description": "Independent read-only terminal, collection-closure, checkpoint, failure-localization, and access-boundary review of the consumed CPU-flat V3 development scientific attempt.",
+    "sealed_held_out_or_production_material_opened": false,
+    "experiment_rerun_or_resume_performed": false,
+    "model_evaluation_performed_by_review": false,
+    "runtime_artifact_modified_by_review": false,
+    "scientific_attempt_was_already_consumed_before_review": true
+  },
+  "bindings": {
+    "terminal": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/terminal.json",
+      "sha256": "a4da81177d77372923b72775f69cfe58b596a651017ef6ebc5988df05d390327",
+      "byte_count": 1273
+    },
+    "scientific_result": null,
+    "checkpoint": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/checkpoint.pt",
+      "sha256": "6c16f97ae5748e1d230244b4588f3efc11330a2673bd15e2ff83aa2f2392844e",
+      "byte_count": 167423
+    },
+    "physics_result": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/physics_result.json",
+      "sha256": "711b8722c11dbae663ad1b004268b77c64ff3d2e818f2c895851c547240e3ed0",
+      "byte_count": 369067
+    },
+    "reservation": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/reservation.json",
+      "sha256": "238c2996e4d92bdf022e2d981e92410e694a3cb1847bb916fe1e60b5ac6ba166",
+      "byte_count": 6160
+    },
+    "authorized_plan_receipt": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/authorized_plan.json",
+      "sha256": "0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29",
+      "byte_count": 359692
+    },
+    "scientific_exact_plan": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_exact_plan_2026-08-05.json",
+      "sha256": "0ad79cc46cead469d6532cd0be04c5d7623fffe18ddafc737c32855d6c9a8f29",
+      "byte_count": 359692
+    },
+    "scientific_preregistration": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_preregistration_2026-08-05.md",
+      "sha256": "ce99a5e1034288823f5e4cb92b65703ca5ca53d529010c0872571d2967613f80",
+      "byte_count": 10671
+    },
+    "independent_source_review": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific_source_review_2026-08-05.json",
+      "sha256": "43aad17a51cfcd4177de6e6c6f10b4eed0656836482f517668ab9a879ae2ce93",
+      "byte_count": 10544
+    },
+    "scientific_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3_scientific.py",
+      "sha256": "0472fb4bb58e275bf3ad31dcee34843547dac74d500297fe206a7940c8dcc770",
+      "byte_count": 97006
+    },
+    "frozen_replication_runner": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "4f3ab622e93570ac1567ccf6dad73c7aaa46089e533c3493de01c3cfa7cd8be5",
+      "byte_count": 46338
+    },
+    "frozen_replication_benchmark": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_scene_diversity_recurrent_replication_v1.py",
+      "sha256": "746598716f7f4dd8b655d58cca947c65ad547507ece3e1a0184810376f6e350a",
+      "byte_count": 22501
+    }
+  },
+  "terminal_chain": {
+    "terminal_status": "FAIL_INFRASTRUCTURE_NO_SCIENTIFIC_DECISION",
+    "terminal_failure_type": "CpuFlatScientificError",
+    "terminal_failure_message": "dense ranks are invalid",
+    "terminal_result_binding": null,
+    "scientific_result_file_present": false,
+    "authorizes_navigation_claim": false,
+    "authorizes_blind_rollout_preregistration": false,
+    "authorizes_retry_or_resume": false,
+    "qualification_payload_reuse_authorized": false,
+    "whole_run_wall_seconds": 786.152155503165,
+    "attempt_consumed_and_terminal": true
+  },
+  "collection_closure": {
+    "physics_result_status": "PHYSICS_COMPLETE",
+    "physics_result_failure": null,
+    "physics_validated_field": false,
+    "citable_as_scientific_evidence_field": false,
+    "interpretation_of_conservative_fields": "The bound loader requires these historical payload fields to remain false. Collection completion is established by PHYSICS_COMPLETE, exact counts, and the independently rehashed closure; the fields grant no scientific citation authority.",
+    "expected_and_observed_counts_equal": true,
+    "scenes": 64,
+    "states": 256,
+    "candidate_branches": 2304,
+    "context_frames": 768,
+    "target_frames": 2304,
+    "stored_rgb_frames": 3072,
+    "stored_rgb_bytes": 120372020,
+    "collection_wall_seconds": 771.9736611281987,
+    "rehashed_bound_files": {
+      "scene_results": 64,
+      "state_receipts": 256,
+      "render_receipts": 64,
+      "rgb_frames": 3072,
+      "derived_meshes": 245,
+      "source_files": 12,
+      "runtime_files": 9,
+      "authority_plan_and_reservation_files": 4
+    },
+    "binding_mismatch_count": 0,
+    "all_bound_collection_source_runtime_authority_and_plan_files_matched": true,
+    "independent_binding_inventory_sha256": "2b737e488315ac11ee307c8696da89a4235bcfd360542e99c844e4de8b1da2d4",
+    "all_256_prebranch_lane_synchronization_audits_passed": true,
+    "render_selected_device_vram": {
+      "ceiling_bytes": 16977405952,
+      "baseline_used_bytes": 2555998208,
+      "peak_used_bytes": 3592015872,
+      "peak_delta_above_baseline_bytes": 1036017664,
+      "read_errors": 0,
+      "sample_count": 38390
+    }
+  },
+  "checkpoint_review": {
+    "durable_checkpoint_present": true,
+    "checkpoint_round_trip_had_passed_before_evaluation_role_open": true,
+    "recorded_identity_sha256": "99bc60685ce26291cd25387e5914c202d7797b8e0e32ef7bd5eeace4cdf2d0a9",
+    "independently_recomputed_identity_sha256": "99bc60685ce26291cd25387e5914c202d7797b8e0e32ef7bd5eeace4cdf2d0a9",
+    "internal_identity_valid": true,
+    "train_role_identity_sha256": "b86936b3b601bbef37cfadb35f07b93ee0ea1bc24f7b40de21ea29c9d3d7ac8c",
+    "learned_arms": [
+      "no_vision_recurrent_direct",
+      "visual_recurrent_direct"
+    ],
+    "members_per_arm": 3,
+    "model_seeds": [
+      2026080411,
+      2026080412,
+      2026080413
+    ],
+    "updates_per_member": 800,
+    "all_six_members_completed_fixed_updates": true,
+    "checkpoint_is_not_an_evaluation_result": true,
+    "checkpoint_reuse_authorized": false
+  },
+  "failure_localization": {
+    "failing_phase": "evaluation_role_feature_plan_construction",
+    "failing_source_location": "lewm/benchmarks/go2_scene_diversity_recurrent_replication_v1.py:184-186",
+    "failing_predicate": "max(ranks) <= 0",
+    "rank_tolerance_m": 0.01,
+    "first_failing_group_index": 176,
+    "first_failing_state_id": "scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-0",
+    "rank_valid_states": 252,
+    "rank_invalid_all_tie_states": 4,
+    "rank_invalid_by_role": {
+      "train": 0,
+      "eval": 4
+    },
+    "affected_scene": {
+      "scene_index": 44,
+      "role": "eval",
+      "family": "medium_enclosed_maze",
+      "scene_id": "medium_enclosed_maze_2216888a451f",
+      "affected_state_group_indices": [
+        176,
+        177,
+        178,
+        179
+      ],
+      "affected_state_indices_in_scene": [
+        0,
+        1,
+        2,
+        3
+      ]
+    },
+    "affected_scene_result_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/scene_results/044.json",
+      "sha256": "75e671a8f78b48dcd4d16aecf102c7ae964d3f57450822a74ed064a8dde68169",
+      "byte_count": 7919
+    },
+    "affected_state_receipt_bindings": [
+      {
+        "state_id": "scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-0",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/scenes/eval/medium_enclosed_maze_2216888a451f/state_receipts/scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-0.json",
+        "sha256": "a1bc5c07821e5c8507ee0130e51e20e6d1bbe347f511755288d22af3e5b4cd97",
+        "byte_count": 425696,
+        "dense_ranks": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "unique_tolerance_key": [0, 0, 0, 0],
+        "physical_target_progress_range_m": [0.0017353242026563187, 0.003036264402589417],
+        "physical_path_length_range_m": [0.002568787895143032, 0.0035350106190890074]
+      },
+      {
+        "state_id": "scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-1",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/scenes/eval/medium_enclosed_maze_2216888a451f/state_receipts/scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-1.json",
+        "sha256": "557118af539f94c7df282f1f84780b26a00e5d03076b5a11530295dc72d04769",
+        "byte_count": 425379,
+        "dense_ranks": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "unique_tolerance_key": [0, 0, 0, 0],
+        "physical_target_progress_range_m": [0.0018128811396402877, 0.0030516322941918084],
+        "physical_path_length_range_m": [0.002545853378251195, 0.0034019912127405405]
+      },
+      {
+        "state_id": "scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-2",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/scenes/eval/medium_enclosed_maze_2216888a451f/state_receipts/scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-2.json",
+        "sha256": "2b24515e76841cfb4bb872283f577488e9545e52f9d214f2502d2cc5db572b9b",
+        "byte_count": 423666,
+        "dense_ranks": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "unique_tolerance_key": [0, 0, -1, 1],
+        "physical_target_progress_range_m": [0.007033468715536451, 0.007991351546217773],
+        "physical_path_length_range_m": [0.011430090293288231, 0.013438668102025986]
+      },
+      {
+        "state_id": "scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-3",
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/go2_scene_diversity_recurrent_replication_genesis_cpu_flat_development_v3/attempt_v1/collection/scenes/eval/medium_enclosed_maze_2216888a451f/state_receipts/scene-diversity-eval-medium_enclosed_maze_2216888a451f-state-3.json",
+        "sha256": "6ec0b14a8d7530195b55629e1d6faa7b7316434a5f274a140b373e41b77eeea8",
+        "byte_count": 425506,
+        "dense_ranks": [0, 0, 0, 0, 0, 0, 0, 0, 0],
+        "unique_tolerance_key": [0, 0, 0, 0],
+        "physical_target_progress_range_m": [0.0016965634668117957, 0.003069611338428313],
+        "physical_path_length_range_m": [0.002551833400502801, 0.003663406940177083]
+      }
+    ],
+    "affected_scene_source_bindings": {
+      "manifest": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_20260520T134109Z/train/medium_enclosed_maze/medium_enclosed_maze_2216888a451f/manifest.json",
+        "sha256": "02a429cbb9a6cab8518e48c91d2cb866da4ae441fcdb5fe24f74b136bcbde05f",
+        "byte_count": 26696
+      },
+      "genesis_scene": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/scene_corpus/minimum_20260520T134109Z/train/medium_enclosed_maze/medium_enclosed_maze_2216888a451f/genesis_scene.json",
+        "sha256": "dcfb26a386aad65975c4718d6206dfa2bf0ee67d361aaed60d4641f04e29b8f2",
+        "byte_count": 28474
+      }
+    },
+    "all_four_affected_lane_synchronization_audits_passed": true,
+    "all_four_affected_executed_tape_endpoint_pose_physical_outcome_and_physical_trajectory_audits_had_nine_unique_responses": true,
+    "interpretation": "The branch mechanism executed nine distinct command tapes and produced nine distinct exact endpoint and trajectory identities. The frozen one-centimetre progress/path quantizer nevertheless mapped each affected state's nine valid physical outcomes to one oracle key, so the dense-rank map was all zero. This is a scene/action discriminability-domain failure relative to the scorer contract, not evidence of receipt corruption, lane collapse, renderer failure, or checkpoint corruption.",
+    "scene_specific_immobilization_inference": {
+      "is_measurement": false,
+      "support": "All four histories ended near x=-0.058 m, y=-2.400 m with approximately 0.373-0.382 rad pitch, and every candidate path remained below 0.014 m. The spawn lies between two walls whose inner-edge separation is 0.5458 m.",
+      "limitation": "Direct body-wall contact was not recorded, so a collision or corridor-width cause is an inference and is not established by this review. No general claim that corpus corridors are too narrow is made."
+    }
+  },
+  "access_boundary": {
+    "basis": "Exact control flow in the bound frozen replication runner plus the existence of the durably reopened checkpoint and the failure location in evaluation role-plan construction.",
+    "train_state_receipts_opened": 128,
+    "train_render_receipts_opened": 32,
+    "train_context_rgb_opened": 384,
+    "train_successor_rgb_opened": 0,
+    "checkpoint_written_and_reopened_before_eval_receipt_access": true,
+    "eval_state_receipts_opened": 128,
+    "eval_role_plan_completed": false,
+    "eval_render_receipts_opened": 0,
+    "eval_context_rgb_opened": 0,
+    "eval_successor_rgb_opened": 0,
+    "model_evaluation_started": false,
+    "first_evaluation_completed": false,
+    "second_evaluation_completed": false,
+    "fixed_gate_report_emitted": false,
+    "persisted_finalized_access_ledger_present": false,
+    "access_boundary_is_control_flow_inference_not_a_finalized_ledger": true
+  },
+  "scientific_disposition": {
+    "collection_integrity_failure_established": false,
+    "checkpoint_integrity_failure_established": false,
+    "model_performance_failure_established": false,
+    "fixed_scientific_gate_pass_or_failure_established": false,
+    "navigation_or_planning_utility_established": false,
+    "scientific_conclusion_available": false,
+    "development_diagnostic_available": "The fixed corpus/action-horizon/scorer combination contains one evaluation scene whose four states are non-discriminative at the frozen one-centimetre oracle tolerance.",
+    "terminal_infrastructure_no_decision_classification_is_procedurally_correct": true,
+    "underlying_trigger_is_scene_action_discriminability_domain_not_generic_runtime_corruption": true,
+    "attempt_consumed": true,
+    "retry_resume_refill_overwrite_or_repair_authorized": false,
+    "checkpoint_collection_or_evaluation_payload_reuse_authorized": false,
+    "scientific_navigation_planning_representation_world_model_or_generalization_claim_authorized": false
+  },
+  "successor_recommendation": {
+    "authority_created_by_this_review": false,
+    "successor_execution_authorized": false,
+    "current_attempt_checkpoint_or_collection_reuse_authorized": false,
+    "recommended_only_if_separately_preregistered_reviewed_and_authorized": "Define a general evaluation-only all-tie domain rule before a fresh attempt: retain all states, treat every action in an all-zero dense-rank state as oracle-equivalent, assign normalized and uniform-random expected regret zero with a max(1, max_rank) denominator, and leave the model, seeds, data balance, one-centimetre tolerance, bootstrap, and gate thresholds unchanged.",
+    "why_this_is_narrower_than_scene_replacement": "It completes the scorer's mathematically valid tie domain without selecting away a hard scene, relaxing the tolerance, changing the action horizon, or moving any gate.",
+    "same_consumed_artifacts_could_only_support_post_hoc_diagnostic_not_preregistered_v3_decision": true,
+    "fresh_attempt_or_external_authority_required": true
+  },
+  "decision": {
+    "independent_terminal_review_complete": true,
+    "terminal_and_no_result_state_exact": true,
+    "collection_binding_closure_passed": true,
+    "checkpoint_identity_passed": true,
+    "four_all_tie_evaluation_states_exactly_localized": true,
+    "access_boundary_exactly_localized_from_bound_control_flow": true,
+    "attempt_consumed_and_fail_closed": true,
+    "scientific_decision": false,
+    "scientific_claim_authorized": false,
+    "retry_resume_refill_overwrite_repair_or_payload_reuse_authorized": false,
+    "successor_authority_created": false
+  }
+}

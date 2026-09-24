@@ -1,0 +1,28 @@
+{
+  "status": "CONFIRMED_TRACE_STOP_PROFILER_INTERRUPT",
+  "utc": "2026-09-11T18:04:00.423943+00:00",
+  "observation_sha256": "d6105050d16b3f21f740fcbdb5b3fe08857c37c422f48e8ec726883207a62351",
+  "profiler_owner": {
+    "pid": 2885638,
+    "created": 1789148732.81,
+    "command": [
+      "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/tools/go2_py_spy_0_4_2_v1/py-spy",
+      "record",
+      "--format",
+      "speedscope",
+      "--output",
+      "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_body_projected_external_sampling_v1_attempt_001/profile.json",
+      "--rate",
+      "100",
+      "--idle",
+      "--threads",
+      "--full-filenames",
+      "--pid",
+      "2885366"
+    ]
+  },
+  "signal": "SIGINT",
+  "reason": "Original tracee CPU and IO stationary with both threads stopped by the profiler while tracer consumes CPU",
+  "native_job_touched": false,
+  "partial_profile_success_claimed": false
+}

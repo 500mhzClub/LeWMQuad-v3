@@ -1,0 +1,66 @@
+{
+  "schema": "lewm_h1_candidate_bank_viability_successor_v1_evidence_index",
+  "source_commit": "4b655f054ffa1e7322d81a78a7920e260a8283bd",
+  "date": "2026-08-21",
+  "primary_classification": "LATERAL_RETREAT_CONTROLLER_AUTHORITY_NO_GO",
+  "candidate_bank_classification": "CANDIDATE_BANK_ONE_TICK_VIABILITY_NO_GO",
+  "bindings": {
+    "platform_manifest": {
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "primitive_registry": {
+      "path": "config/go2_primitive_registry.yaml",
+      "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+    },
+    "policy_config": {
+      "path": "models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+      "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+    },
+    "result": {
+      "path": ".generated/h1_candidate_bank_viability_successor_v1/controller_authority_result.json",
+      "sha256": "bb6fc76214e15fcc6fe220f338fb9dcf23bda81fd90b2ddb4144ea8e30814d9a",
+      "content_digest": "db491a4488a50cc5cfc0e4494bf1e49be219f5cd8a62228bd81a9129f4537398",
+      "bytes": 4906
+    },
+    "fixture_ledger": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/h1_candidate_bank_viability_successor_v1/training_fixture_command_adapter_ledger_v1.jsonl",
+      "sha256": "5df36a9aa54ca81778131ebfe20470e0a5144e980769b1179a7fcfd9e799a150",
+      "bytes": 17620,
+      "rows": 32
+    }
+  },
+  "controller_authority": {
+    "manifest_vy_range_m_s": [0.0, 0.0],
+    "manifest_max_delta_vy_m_s_per_tick": 0.0,
+    "policy_training_vy_range_m_s": [0.0, 0.0],
+    "policy_training_bank_vy_values_m_s": [0.0],
+    "registry_probe_magnitude_m_s": 0.2,
+    "scientific_magnitude_frozen": null,
+    "nonzero_lateral_supported": false
+  },
+  "fixtures": {
+    "contexts": 8,
+    "mirrored_instances": 2,
+    "repeats": 2,
+    "rows": 32,
+    "all_requests_clipped": true,
+    "nonzero_applied_lateral_rows": 0,
+    "byte_identical_reduction": true,
+    "environment_dynamics_entered": false
+  },
+  "scientific_execution": {
+    "frozen_states_touched": 0,
+    "branches_generated": 0,
+    "full_panel_after_augmentation": "not_evaluated"
+  },
+  "next_implementation": "DEPLOYMENT_VALID_LATERAL_LOCOMOTION_CONTROLLER_V1",
+  "prohibitions_observed": {
+    "model_training": false,
+    "learned_model_execution": false,
+    "jepa_access": false,
+    "predictor_contract_modification": false,
+    "memory": false,
+    "navigation": false
+  }
+}

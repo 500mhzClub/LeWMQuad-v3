@@ -1,0 +1,46 @@
+{
+  "status": "DIRECT_FLOW_CONTROLLER_PREFIX_COMPLETION_AUTHENTICATED",
+  "utc": "2026-09-10T21:57:20.059068+00:00",
+  "result_sha256": "152da30ba5c142d8150dacd5865278f81d5db46c7603bd637eb8ec2eee292fdf",
+  "source_count": 1947,
+  "artifact_sha256": {
+    "launch.json": "324dacf5bf45ca09faf83985a3f940e7999e40b6cf3688c15e249e88a60e0486",
+    "context_decisions.jsonl.gz": "2748089cb1e2ea48661e44595c042bdbeb1d081d506e8379990eb5483d70bc50",
+    "report.json": "77c335b55d3b0f225b26c925bf07b6ff9035d8cce9694582f599fe5614e639ff"
+  },
+  "earlier_boundary_receipt_check_sha256": "59079f6a32183244ba46982294a48bd2f39921550085817babcea861cb9bde05",
+  "earlier_checked_artifacts_unchanged": true,
+  "original_owner_ended": true,
+  "report": {
+    "frames": 860,
+    "exact_original_decisions": 859,
+    "original_forecasts_compared": 856,
+    "boundary_comparison": {
+      "stop": true,
+      "complete_original_decision_exact": false,
+      "original_forecast_compared": false,
+      "full_controller_recovered": true,
+      "requested_command_changed": true
+    },
+    "boundary_terminal": null,
+    "boundary_failure": null,
+    "boundary_selected_action": "right_turn",
+    "boundary_requested_command": [
+      0.0,
+      0.0,
+      -0.45
+    ],
+    "model_state_sha256": "fb6f1aba8830a53d67cd6c284fb24199966d5f0c63db3b2a107ab833c81c266f",
+    "model_state_unchanged": true,
+    "following_recorded_observations_consumed": false,
+    "actual_original_commands_before_intervention_exact": true,
+    "new_command_executed": false,
+    "original_failed_outcome_preserved": true,
+    "native_execution": false,
+    "navigation_qualified": false,
+    "goal_achieved": false
+  },
+  "verification_scope": "Source and terminal artifact authentication plus unchanged independently reconstructed boundary receipts; no independent neural replay or repeated full training input admission.",
+  "native_execution": false,
+  "goal_achieved": false
+}

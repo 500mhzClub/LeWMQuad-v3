@@ -1,0 +1,37 @@
+{
+  "status": "TERMINAL_EXTERNAL_PROFILE_V1_TRACER_LOCK_FAILURE_PRESERVED",
+  "utc": "2026-09-11T18:08:02.879990+00:00",
+  "artifact_sha256": {
+    "launch.json": "89192077c33ab33bd1eb147fa4877f6e5d2f801c22633071be1897fd2b35d207",
+    "child_execution.json": "e3f2a842b40f58c1101315a0cc7104694d6c0de2ea9753db0973f62dbc4f28e0",
+    "profiler_execution.json": "65d98f434d54d8c95629ec4b3d6493772db791f7dc0e007ef65f6998cd0cc900",
+    "child_ready.json": "28f456c1efa5ed49dd25cbc076d19b9ece7c8ea810a0d1fbca54b130275e4343",
+    "execution.json": "38285f61c0310e72e9b737f805320c4b1fe26601ccf3772822bc289c8af8e41a",
+    "failure.json": "7fcb85edd00e0d32500f9bd401e5788f88a88e75904bad7123c73f8c386fe825",
+    "comparison.jsonl": "c93f836535c9eb6af494b4638e156d8c3cb892e5bec312c8b2a65e5e0feb44e4",
+    "child_stdout.txt": "aaacd5ae95b03554947f0e124a7f84753c4d6182fbbde799c31b042e29c6c119",
+    "child_stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "profiler_stdout.txt": "a39ecc65cbe324642798f30d6987f99e24e9bf61edf2815520b80207ca89c091",
+    "profiler_stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "document_sha256": {
+    "docs/go2_external_profile_trace_stop_observation_2026-09-11.json": "d6105050d16b3f21f740fcbdb5b3fe08857c37c422f48e8ec726883207a62351",
+    "docs/go2_external_profile_trace_stop_interrupt_2026-09-11.json": "cfbbe8c69c7598202ed2c4076136a1f481ec9430fb77ca93049d3647a871c317",
+    "docs/go2_external_profile_trace_stop_termination_2026-09-11.json": "21655fe994d2bcc2e10a373e7236a651964430f565faf02f73f0dc5dd2379aee",
+    "docs/go2_body_projection_external_profile_completion_watch_execution_2026-09-11.json": "eb8179ca0b4f8ed267efd3b32bbd21e962eaaa7929731282e032d9b090a48a30",
+    "docs/go2_body_projection_external_profile_completion_watch_failure_2026-09-11.json": "9dee69fab689adcd81e3577f67056528bd745978cc1f3439b29b33dba795f071"
+  },
+  "original_source_count": 2391,
+  "original_source_bindings_rechecked": true,
+  "original_parent_child_profiler_and_watcher_ended": true,
+  "last_complete_comparison_frame": 1274,
+  "complete_profile_written": false,
+  "full_replay_completed": false,
+  "completion_checker_invoked": false,
+  "original_failure_preserved": true,
+  "full_cpu_replay_slot_free": true,
+  "automatic_retry": false,
+  "native_worker_touched": false,
+  "raw_model_inputs_reauthenticated_by_this_audit": false,
+  "goal_achieved": false
+}

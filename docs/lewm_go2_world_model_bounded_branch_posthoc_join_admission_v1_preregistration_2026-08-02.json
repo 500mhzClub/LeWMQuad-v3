@@ -1,0 +1,125 @@
+{
+  "schema": "lewm_go2_world_model_bounded_branch_posthoc_join_admission_preregistration_v1",
+  "status": "PREREGISTERED_POSTHOC_JOIN_ADMISSION_ONLY_PENDING_SOURCE_REVIEW_AND_AUTHORITY",
+  "authority_granted_by_this_document": false,
+  "scientific_claim_granted_by_this_document": false,
+  "motivation": {
+    "classification": "complete_checked_physics_corpus_with_post_collection_join_schema_failure",
+    "terminal_failure": "CalibrationSupervisionError: supervised command exited with status 1",
+    "root_cause": "the frozen joiner dereferenced collection.document.output_root although the complete bounded physics-result schema intentionally has no output_root field",
+    "generation_result": "all preregistered observations were persisted and the frozen physics receipt checker passed before the join command failed",
+    "scientific_data_invalidated": false,
+    "original_attempt_completed_successfully": false
+  },
+  "consumed_source_attempt": {
+    "attempt_id": "lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1",
+    "root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1",
+    "terminal_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/terminal_supervision.json",
+      "file_sha256": "f7d2796139645892d22ad6bb99d26caffc2b5c3dcac2a655b1883b299d22bff4",
+      "byte_count": 12949
+    },
+    "physics_result_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_result.json",
+      "file_sha256": "25caf0a5d4c69e99559a663aa4cae96fb23ef191ccf34486804c3f2243553314",
+      "byte_count": 183320
+    },
+    "physics_receipt_check_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-experiment-integrity-replacement-v1/physics_receipt_check.json",
+      "file_sha256": "faeb50293bc684e35b6d725b027983ad0110e739db2d7b1aca1926e89a547dc6",
+      "byte_count": 892
+    },
+    "plan_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_exact_plan_2026-08-02.json",
+      "file_sha256": "8fe34054bb9ae709b6a8ecfea5fdae55c742d1b2e22af3c289d27a77f11c66ef",
+      "byte_count": 343973
+    },
+    "calibration_gate_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_calibration_gate_2026-08-02.json",
+      "file_sha256": "4f9490405591fdf7b161249d37a7f26d4503cbddc5391337811698139bf20d71",
+      "byte_count": 222867
+    },
+    "source_review_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_source_review_2026-08-02.json",
+      "file_sha256": "d40f5306fa299edac66bd0b68dfd118c67e35e968bffb164df355443006f419c",
+      "byte_count": 35586
+    },
+    "execution_authority_binding": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_bounded_branch_integrity_replacement_v1_execution_authority_2026-08-02.json",
+      "file_sha256": "e369ae9cb97f6990dcffa3236cb3da4ccd7398395bd8c86ea655ff7270e7fce0",
+      "byte_count": 273159
+    }
+  },
+  "verified_source_facts": {
+    "physics_status": "PHYSICS_COMPLETE",
+    "physics_failure": null,
+    "physics_checker_status": "PASS",
+    "scenes": 32,
+    "states": 256,
+    "candidate_branches": 2304,
+    "context_frames": 768,
+    "target_frames": 2304,
+    "rgb_artifacts": 3072,
+    "train_states": 128,
+    "eval_states": 128,
+    "train_scenes": 16,
+    "eval_scenes": 16,
+    "decoded_pixel_verification": "PASS_ALL_3072",
+    "collector_exit_code": 0,
+    "physics_checker_exit_code": 0,
+    "joined_manifest_binding_in_consumed_terminal": null,
+    "joined_receipt_check_binding_in_consumed_terminal": null,
+    "peak_vram_bytes": 15191449600,
+    "vram_ceiling_bytes": 16977405952
+  },
+  "fixed_posthoc_derivation": {
+    "fresh_output_root": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/dev/lewm-go2-wm-bounded-branch-posthoc-join-admission-v1",
+    "output_root_must_be_absent": true,
+    "source_attempt_root_is_read_only": true,
+    "derivation": "frozen decoded-pixel collection loader followed by frozen pure build_joined_documents_v1",
+    "source_root_derivation": "physics_result_path_parent_must_equal_frozen_plan_output_root",
+    "generated_files": [
+      "manifest.json",
+      "rgb_manifest.json",
+      "train.jsonl",
+      "eval.jsonl",
+      "terminal.json"
+    ],
+    "expected_outputs": {
+      "rgb_manifest": {
+        "byte_count": 1880307,
+        "sha256": "5e03afa7665ffef54a1cab5e37135a18d42761bc844ecefacaa433f75a1b1f7e"
+      },
+      "train_jsonl": {
+        "byte_count": 30432624,
+        "sha256": "edc6f88bb105c39575477fbfbb0224bf0312cf5ee3e90551f86a9c11c2ebb447"
+      },
+      "eval_jsonl": {
+        "byte_count": 30411588,
+        "sha256": "531debbc431f2f8afc83a491b491b8822134c831b16ca4d283fe1e7f4ba07768"
+      }
+    },
+    "independent_source_review_required": true,
+    "separate_one_shot_authority_required": true,
+    "independent_terminal_review_required": true
+  },
+  "prohibited_actions": [
+    "retry_or_resume_the_consumed_generation_attempt",
+    "rerender_or_resimulate_any_branch",
+    "write_under_or_mutate_the_consumed_attempt_root",
+    "modify_or_replace_any_source_receipt_or_rgb_leaf",
+    "represent_the_consumed_terminal_as_success",
+    "reuse_the_old_success_terminal_validator_without_an_explicit_posthoc_admission_gate",
+    "open_held_out_or_sealed_material",
+    "adapt_models_thresholds_checkpoints_panel_members_or_evaluation_gates",
+    "deployment_promotion_or_navigation_execution"
+  ],
+  "scientific_identity": {
+    "data": "exact_immutable_checked_32_scene_256_state_2304_branch_corpus",
+    "join_semantics": "unchanged_frozen_pure_join_logic",
+    "model_panel": "unchanged_fixed_4_arms_x_3_seeds_update_700",
+    "evaluation_contract": "unchanged_preregistered_bounded_branch_contract",
+    "only_change": "split_root_metadata_admission_for_a_schema_field_that_is_absent_from_the_complete_physics_result"
+  },
+  "protected_material_opened": false
+}

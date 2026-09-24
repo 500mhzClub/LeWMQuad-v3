@@ -1,0 +1,119 @@
+{
+  "schema": "lewm_go2_rgb_causal_motion_alignment_v1_preregistration_independent_review_v2",
+  "date": "2026-07-24",
+  "reviewer": "/root/execution_readiness_audit",
+  "status": "PASS_SOURCE_ONLY_PREREGISTRATION_NO_EXECUTION_AUTHORITY",
+  "verdict": "PASS",
+  "preregistration_binding": {
+    "path": "docs/lewm_go2_rgb_causal_motion_alignment_v1_preregistration_2026-07-24.md",
+    "file_sha256": "500362b928b009d6c79487a3842441fff5e1708f6e2e5d7e0d0a39c698db3293",
+    "byte_count": 15309
+  },
+  "historical_block_binding": {
+    "path": "docs/lewm_go2_rgb_causal_motion_alignment_v1_preregistration_independent_review_2026-07-24.json",
+    "file_sha256": "225b23be7d38427670e690f3fa0d6486d51d6cf29af7e25e7016ba2c9f0e0f60",
+    "content_sha256": "7d5d8a5a21f2bb90a929c9e7d9a4f2a94db0a7098b19fe48906ef6cde329e554",
+    "reviewed_preregistration_file_sha256": "7435dc653d8ef0b1f2630c8298e68e65fe328961677dc1f9761662774fef6bdc",
+    "preserved_unchanged": true
+  },
+  "review_scope": {
+    "source_only_preregistration_review": true,
+    "implementation_source_reviewed": false,
+    "generated_content_open_count": 0,
+    "dataset_or_rgb_open_count": 0,
+    "checkpoint_or_tensor_open_count": 0,
+    "gpu_or_hardware_operation_count": 0,
+    "training_run_count": 0,
+    "sealed_protected_or_heldout_open_count": 0
+  },
+  "historical_blocker_closure": {
+    "dense_warp_convention_and_initialization": {
+      "closed": true,
+      "evidence": "The amended preregistration fixes identity-grid row/column layout, x/y channel order, additive sign, positive-offset meaning, 2/15 conversion, border bilinear align_corners=True sampling, construction order, Xavier gain and generator use, exact-zero bias, and exact-zero output projection."
+    },
+    "causal_condition_binding_and_basis_validation": {
+      "closed": true,
+      "evidence": "Training uses its row's issued five-tick command; warm selection uses only predecessor_by_target[current_endpoint][primitive], explicitly forbids an outgoing primitive, fixes cold inputs, and freezes finite, orthonormal, handedness, determinant, angle, stream, reset, and timing validation."
+    },
+    "schedule_identity": {
+      "closed": true,
+      "evidence": "The amended preregistration binds the 607373-byte schedule by file and canonical-content SHA-256 and requires the established 1600, 6400, and 16000 ordered-index prefix SHA-256 values before model construction."
+    },
+    "full_parser_terminal_requirement": {
+      "closed": true,
+      "evidence": "The complete finalized real ledger, including runtime loads, terminal rehashes, and terminal record, must pass the source-frozen corrected parse_partial_access_ledger before integrity_pass or any scientifically admissible result; failure consumes the attempt as contract-invalid with no retry."
+    }
+  },
+  "checks": {
+    "preregistration_path_sha256_and_byte_count_exact": true,
+    "historical_block_artifact_preserved_unchanged": true,
+    "exactly_one_materially_different_integrated_alignment_mechanism": true,
+    "encoder_architecture_unchanged_and_encoder_weights_trainable": true,
+    "not_jepa_training": true,
+    "five_value_condition_is_causal_and_deployment_equivalent_in_semantics": true,
+    "per_sample_realized_se2_exact_pose_future_motion_and_oracles_excluded": true,
+    "incoming_prior_command_binding_exact_and_outgoing_command_forbidden": true,
+    "roll_pitch_formula_matches_yaw_aligned_forward_right_up_basis": true,
+    "basis_handedness_orthonormality_finiteness_angle_and_timing_validation_exact": true,
+    "cold_history_zero_condition_and_exact_residual_bypass_frozen": true,
+    "dense_warp_grid_axis_order_sign_base_grid_and_sampling_equation_exact": true,
+    "alignment_topology_initialization_parameter_counts_and_rng_restoration_frozen": true,
+    "encoder_evidence_head_and_total_parameter_counts_arithmetically_correct": true,
+    "n320_is_only_tensor_initialization_and_rejected_or_prior_probe_checkpoints_are_forbidden": true,
+    "raw_roles_data_order_losses_optimizer_and_clip_boundaries_preserved": true,
+    "schedule_file_content_and_three_prefix_identities_exact": true,
+    "checkpoint_updates_100_400_1000_and_16000_presentation_cap_exact": true,
+    "primary_population_924_endpoints_495_warm_429_cold_9_scopes_189_margins_preserved": true,
+    "wrong_rgb_replaces_complete_visual_history_and_retains_target_condition": true,
+    "six_part_terminal_gate_exact_and_equality_fails": true,
+    "one_attempt_no_retry_resume_second_seed_extension_search_or_second_topology": true,
+    "receipt_validator_change_is_non_scientific_and_render_rgb_pattern_is_narrowly_anchored": true,
+    "finalized_real_ledger_full_parser_success_required_for_admissibility": true,
+    "pass_does_not_overattribute_gain_specifically_to_motion_channels": true,
+    "authority_remains_source_only": true
+  },
+  "verified_capacity_and_schedule": {
+    "alignment_parameter_count": 12832,
+    "alignment_parameter_tensor_count": 4,
+    "retained_temporal_parameter_count": 3160,
+    "retained_temporal_parameter_tensor_count": 5,
+    "evidence_head_parameter_count": 368681,
+    "evidence_head_parameter_tensor_count": 35,
+    "encoder_parameter_count": 2747520,
+    "encoder_parameter_tensor_count": 78,
+    "total_trainable_parameter_count": 3116201,
+    "total_trainable_parameter_tensor_count": 113,
+    "maximum_optimizer_updates": 1000,
+    "maximum_pair_presentations": 16000,
+    "checkpoint_updates": [
+      100,
+      400,
+      1000
+    ],
+    "schedule_prefix_sha256": {
+      "1600": "9000f08c11dd5fb4feef72370e9fbcd2ae9b9858162529fa118eb289d9645c51",
+      "6400": "6e7e5cc766c0a768b5771181cfaf2583598c1c22e5d4fc19e6ff1b245a5c8f92",
+      "16000": "3f7b5799e855c3d218dcc62428f26ae0f9577c0dd4b04af5156d439a6f81e528"
+    }
+  },
+  "findings": [],
+  "limitations": [
+    "This artifact reviews only the amended source-only preregistration and relevant tracked contracts; it does not review an implementation, tests, source closure, execution authorization, runtime inputs, launcher, or results.",
+    "No generated content, dataset, RGB, checkpoint, tensor, GPU, hardware, navigation, held-out, protected, or sealed material was opened or operated by this review.",
+    "PASS confirms that source-only implementation and later independent source review may proceed under the preregistration. It does not authorize generated-input access, output-root reservation, accelerator use, experiment execution, qualification, JEPA, G2, navigation, held-out, production, promotion, or deployment."
+  ],
+  "authority": {
+    "source_only_implementation_authority_in_preregistration_confirmed": true,
+    "generated_input_or_dataset_open_authorized": false,
+    "rgb_open_authorized": false,
+    "checkpoint_or_tensor_open_authorized": false,
+    "gpu_or_hardware_authorized": false,
+    "training_or_probe_execution_authorized": false,
+    "output_root_inspection_reservation_or_mutation_authorized": false,
+    "retry_resume_repair_second_seed_extension_or_replacement_authorized": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_navigation_heldout_production_promotion_or_deployment_authorized": false
+  },
+  "content_sha256": "daf18364b1d965d8f5f9739bbe65f940b7f6ec70fb6aa2afe9deabe8245a42f9"
+}

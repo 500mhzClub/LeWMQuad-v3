@@ -1,0 +1,355 @@
+{
+  "original_native_result_sha256": "163e92d630d92f9f8633cd3823c7cbf282a92c81bde5d3db998e3a5a8c8b1849",
+  "artifact_files": 24124,
+  "artifact_bytes": 12402149312,
+  "artifact_groups": [
+    {
+      "group": "auxiliary_depth_FRAME.npz",
+      "files": 4014,
+      "bytes": 5563227000,
+      "fraction_of_bytes": 0.44856958741959063
+    },
+    {
+      "group": "depth_FRAME.npz",
+      "files": 4014,
+      "bytes": 2888138169,
+      "fraction_of_bytes": 0.23287400404101827
+    },
+    {
+      "group": "native_depth_FRAME.npz",
+      "files": 4014,
+      "bytes": 2885178815,
+      "fraction_of_bytes": 0.23263538782010754
+    },
+    {
+      "group": "context_decisions.jsonl.gz",
+      "files": 1,
+      "bytes": 609591253,
+      "fraction_of_bytes": 0.04915206531259668
+    },
+    {
+      "group": "rgb_FRAME.png",
+      "files": 4014,
+      "bytes": 125341555,
+      "fraction_of_bytes": 0.010106438154128877
+    },
+    {
+      "group": "auxiliary_rgb_FRAME.png",
+      "files": 4014,
+      "bytes": 103025172,
+      "fraction_of_bytes": 0.008307041739959983
+    },
+    {
+      "group": "native_guard_rows.json",
+      "files": 1,
+      "bytes": 34443256,
+      "fraction_of_bytes": 0.002777200558831653
+    },
+    {
+      "group": "physics_trace.npz",
+      "files": 1,
+      "bytes": 31151704,
+      "fraction_of_bytes": 0.002511798819407731
+    },
+    {
+      "group": "renderer_capture_witnesses.json",
+      "files": 1,
+      "bytes": 24177267,
+      "fraction_of_bytes": 0.001949441696900609
+    },
+    {
+      "group": "contact_events.json",
+      "files": 1,
+      "bytes": 22731286,
+      "fraction_of_bytes": 0.0018328505348670326
+    },
+    {
+      "group": "native_contacts.npz",
+      "files": 1,
+      "bytes": 20739411,
+      "fraction_of_bytes": 0.0016722432925342287
+    },
+    {
+      "group": "launch.json",
+      "files": 1,
+      "bytes": 16090148,
+      "fraction_of_bytes": 0.001297367705808185
+    },
+    {
+      "group": "no_rgb_direct_measured_plane_chained_maze_02_audit.json",
+      "files": 1,
+      "bytes": 14324277,
+      "fraction_of_bytes": 0.0011549834338907853
+    },
+    {
+      "group": "auxiliary_camera_audit.json",
+      "files": 1,
+      "bytes": 12341301,
+      "fraction_of_bytes": 0.0009950937284764726
+    },
+    {
+      "group": "friction_checks.json",
+      "files": 1,
+      "bytes": 6611020,
+      "fraction_of_bytes": 0.000533054379018268
+    },
+    {
+      "group": "ground_visual.ply",
+      "files": 1,
+      "bytes": 5898542,
+      "fraction_of_bytes": 0.0004756064333375444
+    },
+    {
+      "group": "fast_gyro_samples.npz",
+      "files": 1,
+      "bytes": 5866786,
+      "fraction_of_bytes": 0.0004730459094153502
+    },
+    {
+      "group": "fast_gyro_histories.npz",
+      "files": 1,
+      "bytes": 5863778,
+      "fraction_of_bytes": 0.0004728033708097966
+    },
+    {
+      "group": "depth_camera_audit.json",
+      "files": 1,
+      "bytes": 4512969,
+      "fraction_of_bytes": 0.00036388603994900846
+    },
+    {
+      "group": "raster_FRAME.json",
+      "files": 4014,
+      "bytes": 3907458,
+      "fraction_of_bytes": 0.0003150629702723579
+    },
+    {
+      "group": "policy_histories.npz",
+      "files": 1,
+      "bytes": 3849225,
+      "fraction_of_bytes": 0.0003103675744554687
+    },
+    {
+      "group": "no_rgb_direct_measured_plane_chained_maze_02_worker_terminal.json",
+      "files": 1,
+      "bytes": 3374535,
+      "fraction_of_bytes": 0.000272092757078395
+    },
+    {
+      "group": "camera_audit.json",
+      "files": 1,
+      "bytes": 3166156,
+      "fraction_of_bytes": 0.00025529091130490657
+    },
+    {
+      "group": "ideal_sensor_samples.npz",
+      "files": 1,
+      "bytes": 3104313,
+      "fraction_of_bytes": 0.0002503044369088789
+    },
+    {
+      "group": "depth_observations.json",
+      "files": 1,
+      "bytes": 2169384,
+      "fraction_of_bytes": 0.0001749200034143243
+    },
+    {
+      "group": "command_tape.json",
+      "files": 1,
+      "bytes": 984281,
+      "fraction_of_bytes": 0.00007936374375428902
+    },
+    {
+      "group": "resource_monitor.jsonl",
+      "files": 1,
+      "bytes": 692755,
+      "fraction_of_bytes": 0.00005585765681192921
+    },
+    {
+      "group": "wall_union_visual.ply",
+      "files": 1,
+      "bytes": 643800,
+      "fraction_of_bytes": 0.00005191035713278147
+    },
+    {
+      "group": "policy_observations.json",
+      "files": 1,
+      "bytes": 453965,
+      "fraction_of_bytes": 0.00003660373606055163
+    },
+    {
+      "group": "decision_stream_timing.jsonl",
+      "files": 1,
+      "bytes": 427314,
+      "fraction_of_bytes": 0.000034454834339604505
+    },
+    {
+      "group": "static_objects.json",
+      "files": 1,
+      "bytes": 19908,
+      "fraction_of_bytes": 0.0000016052056380854512
+    },
+    {
+      "group": "terminal_environment_identity.json",
+      "files": 1,
+      "bytes": 18241,
+      "fraction_of_bytes": 0.000001470793452095475
+    },
+    {
+      "group": "floor_visual_collision_identity.json",
+      "files": 1,
+      "bytes": 18241,
+      "fraction_of_bytes": 0.000001470793452095475
+    },
+    {
+      "group": "startup_native_robot_geometry.json",
+      "files": 1,
+      "bytes": 17743,
+      "fraction_of_bytes": 0.0000014306391217877316
+    },
+    {
+      "group": "terminal_native_robot_geometry.json",
+      "files": 1,
+      "bytes": 17663,
+      "fraction_of_bytes": 0.0000014241886269591785
+    },
+    {
+      "group": "specification.json",
+      "files": 1,
+      "bytes": 10922,
+      "fraction_of_bytes": 8.806538064682188e-7
+    },
+    {
+      "group": "setup_checks.json",
+      "files": 1,
+      "bytes": 4138,
+      "fraction_of_bytes": 3.336518450069117e-7
+    },
+    {
+      "group": "no_rgb_direct_measured_plane_chained_maze_02_worker.log",
+      "files": 1,
+      "bytes": 3904,
+      "fraction_of_bytes": 3.147841476333937e-7
+    },
+    {
+      "group": "no_rgb_direct_measured_plane_chained_maze_02_readout.json",
+      "files": 1,
+      "bytes": 3379,
+      "fraction_of_bytes": 2.7245277532101367e-7
+    },
+    {
+      "group": "result.json",
+      "files": 1,
+      "bytes": 3193,
+      "fraction_of_bytes": 2.5745537484462756e-7
+    },
+    {
+      "group": "contact_topology.json",
+      "files": 1,
+      "bytes": 2173,
+      "fraction_of_bytes": 1.7521156578057493e-7
+    },
+    {
+      "group": "no_rgb_direct_measured_plane_chained_maze_02_prefix_comparison.json",
+      "files": 1,
+      "bytes": 1415,
+      "fraction_of_bytes": 1.1409312728003383e-7
+    },
+    {
+      "group": "actuator_identity.json",
+      "files": 1,
+      "bytes": 904,
+      "fraction_of_bytes": 7.28905915626506e-8
+    },
+    {
+      "group": "terminal_actuator_gains.json",
+      "files": 1,
+      "bytes": 259,
+      "fraction_of_bytes": 2.0883477007440823e-8
+    },
+    {
+      "group": "floor_roles.json",
+      "files": 1,
+      "bytes": 173,
+      "fraction_of_bytes": 1.3949195066746185e-8
+    },
+    {
+      "group": "public_mission.json",
+      "files": 1,
+      "bytes": 161,
+      "fraction_of_bytes": 1.2981620842463212e-8
+    }
+  ],
+  "artifact_free_bytes": 568014176256,
+  "metadata_only": true,
+  "artifact_contents_rehashed": false,
+  "native_execution": false,
+  "files_modified_or_deleted": false,
+  "extrapolation_not_an_upper_bound": {
+    "twice_current_case_bytes": 24804298624,
+    "thirty_two_cases_at_twice_current_bytes": 793737555968,
+    "thirty_two_case_guard_allowance_plus_reserve_bytes": 1554778161152
+  },
+  "depth_archive_inspection": {
+    "original_native_result_sha256": "163e92d630d92f9f8633cd3823c7cbf282a92c81bde5d3db998e3a5a8c8b1849",
+    "archive_groups": {
+      "depth": {
+        "files": 4014,
+        "archive_bytes": 2888138169,
+        "members": {
+          "depth_m.npy": {
+            "compressed_bytes": 2884684586,
+            "uncompressed_bytes": 4932916992
+          },
+          "valid.npy": {
+            "compressed_bytes": 2434027,
+            "uncompressed_bytes": 1233614592
+          }
+        }
+      },
+      "native_depth": {
+        "files": 4014,
+        "archive_bytes": 2885178815,
+        "members": {
+          "optical_depth_m.npy": {
+            "compressed_bytes": 2884552631,
+            "uncompressed_bytes": 4932916992
+          }
+        }
+      },
+      "auxiliary_depth": {
+        "files": 4014,
+        "archive_bytes": 5563227000,
+        "members": {
+          "native_optical_depth_m.npy": {
+            "compressed_bytes": 2770727949,
+            "uncompressed_bytes": 4932916992
+          },
+          "depth_m.npy": {
+            "compressed_bytes": 2770727949,
+            "uncompressed_bytes": 4932916992
+          },
+          "valid.npy": {
+            "compressed_bytes": 1605600,
+            "uncompressed_bytes": 1233614592
+          },
+          "diagnostic_segmentation.npy": {
+            "compressed_bytes": 17949774,
+            "uncompressed_bytes": 9865320192
+          }
+        }
+      }
+    },
+    "archives_rehashed_before_and_after": 12042,
+    "array_payloads_decoded": false,
+    "files_modified_or_deleted": false,
+    "native_execution": false
+  },
+  "derived_depth_and_mask_compressed_payload_bytes": 5659452162,
+  "derived_payload_fraction": 0.4563283362928118,
+  "prospective_same_other_bytes_estimate": 6742697150,
+  "prospective_same_other_bytes_is_measured_new_format": false,
+  "existing_archive_deletion_supported": false,
+  "depth_archive_inspection_session": 26837,
+  "depth_archive_inspection_exit_code": 0
+}

@@ -1,0 +1,296 @@
+{
+  "schema": "lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_independent_source_review_v1",
+  "status": "PASS_SOURCE_ONLY_NOT_AUTHORITY",
+  "authority_granted_by_this_document": false,
+  "route": "FIXED_SAME_MECHANISM_CONTINUATION_V1",
+  "reviewed_source_commit": "c82338e7e91dff2e19d2f267b3ff64612745a4d6",
+  "reviewer": {
+    "identity": "/root/continuation_code_audit",
+    "role": "independent_source_only_reviewer",
+    "excluded_implementation_or_runtime_read_identities": [
+      "/root",
+      "/root/continuation_runtime",
+      "/root/localization_result_audit"
+    ]
+  },
+  "reviewed_preregistration_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preregistration_2026-08-01.md",
+    "file_sha256": "028858d4bae0c700ce0957d7623c1208d31bcab2cab86c78362ed306fdcfaa63",
+    "byte_count": 14150
+  },
+  "reviewed_plan_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_plan_2026-08-01.json",
+    "file_sha256": "cf821963442fa8b5f054407472ad021ed4e5ef4541a9663c849e2f5f26413c9f",
+    "byte_count": 10592
+  },
+  "reviewed_preauthority_identity_read_disclosure_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_preauthority_identity_read_disclosure_2026-08-01.json",
+    "file_sha256": "a602a28b0cf4d9af34318dad98507a911e576cfdbd41e655c3e851bf1dbccc7c",
+    "byte_count": 5303
+  },
+  "reviewed_governance_correction_binding": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/lewm_go2_world_model_action_alignment_successor_v1_fixed_same_mechanism_continuation_v1_governance_correction_2026-08-01.json",
+    "file_sha256": "1a13d90b567c0e25bb459848bdc5b818568226160f5b1b80467d9df5e15cb341",
+    "byte_count": 3431
+  },
+  "reviewed_source_bindings": {
+    "alignment_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_action_alignment_successor_v1.py",
+      "file_sha256": "19281d889b7b67ebc3a68558d085afb4ead0ac0765ffa24902e9646f9a6acc41",
+      "byte_count": 17310
+    },
+    "authorized_device_guard": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_existing_pool_three_arm_authorized_v1.py",
+      "file_sha256": "345d7fbbf36b7f765f0521f5f27e6cd98c7b6965c5b80a80b23644b622e7499d",
+      "byte_count": 79809
+    },
+    "base_base_predictor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/predictor.py",
+      "file_sha256": "cc7fd43fc7554a94d603d13fc630a02b2b3990ddc298948257f671b69723a305",
+      "byte_count": 14275
+    },
+    "base_base_world_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/lewm.py",
+      "file_sha256": "0378bb5334fa7b40e801405d6d20c5a05ecb543ee9820efbd20acf83946e8b2a",
+      "byte_count": 13068
+    },
+    "base_benchmarks_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/__init__.py",
+      "file_sha256": "edc7a30d5bf35c1bc9e099621e8f5bbe6d757180d0a6e4771c36ae5d06b81fed",
+      "byte_count": 362
+    },
+    "base_counterfactual_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/counterfactual.py",
+      "file_sha256": "3d20b87560aa14e3ce672baec1077c7b2919a8679e89dfb88352b59a762d70df",
+      "byte_count": 10300
+    },
+    "base_datasets_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/__init__.py",
+      "file_sha256": "d920ca2534ea4698f30ac2608b4754cb3cf2b4baae53e4cd59148bedfe9495e3",
+      "byte_count": 73
+    },
+    "base_encoders": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/encoders.py",
+      "file_sha256": "5eed7bbe424d5ddd293ea67ed1596e74504c68dd8da93f8420795f216cb7599d",
+      "byte_count": 7028
+    },
+    "base_experiment_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_existing_pool_three_arm_v1.py",
+      "file_sha256": "f9689a4e6f5f8755fcc4e70e84ff1c234ce7c41f667f9cfaa3b3bd38a3a86dc0",
+      "byte_count": 60526
+    },
+    "base_h6_dataset": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_explicit_plan_discounted_successor_state_v27.py",
+      "file_sha256": "c773d739a67159fe82ed3bc539f139f6b8feea019f9a9d2e2e00b418dd8fe056",
+      "byte_count": 33483
+    },
+    "base_h6_main_pool_census": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_recurrent_jepa_main_pool_census.py",
+      "file_sha256": "b594ca7ccc9f398df5d71298340662e2b62492fd837295b8a1e8630603f03f7e",
+      "byte_count": 38981
+    },
+    "base_h6_sequence_contract_v1": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences.py",
+      "file_sha256": "3f8c2a89af2934e8225dd98447b952d9e5ce8bedac99a7f834118263957652e6",
+      "byte_count": 27386
+    },
+    "base_h6_sequence_contract_v2": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_recurrent_h4_rgb_sequences_v2.py",
+      "file_sha256": "3d49e710304ad685f9d161a84586229a6036b652f84df877772afe5b827c51ea",
+      "byte_count": 21001
+    },
+    "base_lewm_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/__init__.py",
+      "file_sha256": "bb1cde303806503e494c6a2c4c53877de8db1f29460022e3e4f189b22f051e9c",
+      "byte_count": 313
+    },
+    "base_models_package": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/__init__.py",
+      "file_sha256": "9ee35fa5531413081219069ba2ef67d3cedb3643cda8d20544a189e329331b36",
+      "byte_count": 2210
+    },
+    "base_packer": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_pack_h6_temporal_frames.py",
+      "file_sha256": "5804de935d03f09d728242092e7218e9c4182ac9d0362ef208e1a5ddd3bd43b4",
+      "byte_count": 15951
+    },
+    "base_phase2d_spatial_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/phase2d_spatial_lewm.py",
+      "file_sha256": "5c64535cc8933bae4a4f5008354afc19e85d3ed3705dbd98e37231d2641f0987",
+      "byte_count": 37610
+    },
+    "base_place_data": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/datasets/go2_memory_role_place_triplets_v1.py",
+      "file_sha256": "47a6e8b52148548846a8c391c4b8eb9570743f90cf62c60d7644f5e30d7229aa",
+      "byte_count": 18890
+    },
+    "base_primitive_affordance": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/primitive_affordance.py",
+      "file_sha256": "540fa027307e69c3ff5b93f321dbc2e2d30dbf46090fbc557ab0044b35d83c8e",
+      "byte_count": 17334
+    },
+    "base_scaled_runtime": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/dev_train_temporal_jepa_scaled.py",
+      "file_sha256": "97154b693d3ca2b96e7e0d88c378c07b349c1d77e0db05548e48823834a35037",
+      "byte_count": 35478
+    },
+    "base_sigreg": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/sigreg.py",
+      "file_sha256": "7ea956e8a62ee36aeddb8a26cca77a98d266778be2d999846dead7755eb677ae",
+      "byte_count": 3045
+    },
+    "base_source_action_utility": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/source_action_utility.py",
+      "file_sha256": "40485d9d3d9670ae0529a606d34021308abd34d0716b694f41a6742e440b3ee1",
+      "byte_count": 12899
+    },
+    "base_spatial_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "file_sha256": "54b925ff65a79b59f034dcc265776eeaea94be28b02bb2bb514f756fc7b17313",
+      "byte_count": 24653
+    },
+    "base_spatial_lewm": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_lewm.py",
+      "file_sha256": "36890539ec79e170174bdcc86815e79e2e383a5c8874029d4a4e11935bf69983",
+      "byte_count": 11337
+    },
+    "base_spatial_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "file_sha256": "ae2480106d535264e8520d26be8e5cdfe92299fdd605a695ae1cefd5f6d87dc7",
+      "byte_count": 30969
+    },
+    "base_spatial_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_single_frame_multiblock_masked_spatial_jepa_v1.py",
+      "file_sha256": "c4dafa5fcf5fbecb6077a435e57e5ee61bfefd327ba0955720d329f8217cb5d2",
+      "byte_count": 18942
+    },
+    "base_spatial_predictor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/spatial_predictor.py",
+      "file_sha256": "f7a2d179697c49d0476ff32079ffded6bc40fbe07372d6894e1b9b423a28d04c",
+      "byte_count": 5543
+    },
+    "base_temporal_evaluator": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/evaluate_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "file_sha256": "249158c654da3502de57dc9dcd9b0dd7574ced1f1ed5afdc4ec6e0ef64c2b6c3",
+      "byte_count": 78825
+    },
+    "base_temporal_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "file_sha256": "cec018dade02e4c8217d74792f8fdc6afba84f414d094f4879e353d78fee4f84",
+      "byte_count": 44605
+    },
+    "base_temporal_model": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/models/rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "file_sha256": "324bd76eb0f8285dac01ccba0741e38546fe93506f5afd51facfaa71826346c3",
+      "byte_count": 17480
+    },
+    "base_temporal_training_core": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_rgb_recurrent_patch_memory_temporal_jepa_v1.py",
+      "file_sha256": "761da9e4e9b72e8e96780fc874d887c906b6c2aa8ffaef58c98c92c45f46b53d",
+      "byte_count": 22015
+    },
+    "base_three_arm_worker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_existing_pool_three_arm_v1.py",
+      "file_sha256": "b0ca02d706b0108885e51b32353b8af6e440259a0108fa934ad8bd9e70366d7d",
+      "byte_count": 103001
+    },
+    "checker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/check_go2_world_model_action_alignment_successor_v1.py",
+      "file_sha256": "8337e5a02cbfb45056d87992487ba69e310aa7b887752a13bd3bab4a4fdf6aa8",
+      "byte_count": 29147
+    },
+    "continuation_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_action_alignment_continuation_v1.py",
+      "file_sha256": "371a70e0c7708401a75a4667c371645bc02782a1d877c563d548699a73930021",
+      "byte_count": 28590
+    },
+    "external_supervisor": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/run_go2_world_model_action_alignment_successor_authorized_v1.py",
+      "file_sha256": "49a4074eeafb8cac666b90edee8214490038c5260dff934664829ca0fbbbf95b",
+      "byte_count": 14872
+    },
+    "localization_custody_worker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/extract_go2_world_model_existing_pool_three_arm_v1_action_localization_v1.py",
+      "file_sha256": "91a4eb75ddf067debf537c906169af0f419816233e5cbb1fa15f50bed1aae40c",
+      "byte_count": 43960
+    },
+    "localization_metrics": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/benchmarks/go2_world_model_v3_action_localization_v1.py",
+      "file_sha256": "e874939d3641f70b3f4b53d89d68b0bdc4061f31559e6890e98aaf4625b49bbb",
+      "byte_count": 27312
+    },
+    "worker": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/scripts/execute_go2_world_model_action_alignment_successor_v1.py",
+      "file_sha256": "be0690c3b049c261a7c2f7938efa2881669190857fa6e57e62a7e04c81f0f61e",
+      "byte_count": 106876
+    }
+  },
+  "reviewed_test_bindings": {
+    "alignment_metric_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_action_alignment_successor_v1.py",
+      "file_sha256": "d427b2bf7523354fc5103ad928a0e3b6e7e3265f937d7b495c9e10dac98b1379",
+      "byte_count": 4004
+    },
+    "alignment_supervisor_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_run_go2_world_model_action_alignment_successor_authorized_v1.py",
+      "file_sha256": "ac166a500bd51fedfd41af5e215aabf25d7b701c2c418cba615a99f00312fddc",
+      "byte_count": 3309
+    },
+    "alignment_worker_checker_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_execute_go2_world_model_action_alignment_successor_v1.py",
+      "file_sha256": "fd47dbd830a29c6b86edb26b2e19b4b6f1b14756e5bcb556869a4638e6b7f4b0",
+      "byte_count": 17867
+    },
+    "continuation_metric_tests": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/lewm/tests/test_go2_world_model_action_alignment_continuation_v1.py",
+      "file_sha256": "ec1c432a292635d1501c87a75cb61e1f6ce68ef64099c917587284fa72bae71e",
+      "byte_count": 14402
+    }
+  },
+  "verification": {
+    "all_focused_tests_passed": true,
+    "focused_tests": {
+      "passed": 41,
+      "failed": 0,
+      "elapsed_seconds": 60.97
+    },
+    "primary_agent_broader_regression": {
+      "passed": 131,
+      "failed": 0,
+      "elapsed_seconds": 89.93
+    },
+    "plan_validator_passed": true,
+    "scoped_diff_check_passed": true,
+    "restoration_contract_reviewed": true,
+    "absolute_progress_decision_reviewed": true,
+    "schedule_prefix_and_absolute_update_reviewed": true,
+    "rank_covariance_and_checker_eigendecomposition_reviewed": true,
+    "contract_train_fit_runtime_and_access_accounting_reviewed": true,
+    "preauthority_identity_read_disclosure_and_exclusions_reviewed": true,
+    "governance_correction_reviewed": true,
+    "reviewer_identity_exclusion_machine_enforcement_reviewed": true,
+    "no_real_runtime_payload_opened": true
+  },
+  "resolved_findings": [
+    "supervisor and checker access receipts now distinguish byte or hash reads from tensor or array deserialization",
+    "checker independently recomputes all decision-relevant rank ratios from covariance sufficient statistics",
+    "checker enforces exact contract and train-fit inventories and validates runtime, accounting, and finality",
+    "the independent reviewer identity and preauthority exclusions are machine-enforced",
+    "the prospective governance correction reconciles meaningful-progress routing with the bound predecessor review"
+  ],
+  "remaining_findings": [],
+  "custody": {
+    "runtime_payloads_opened": false,
+    "runtime_payloads_hash_read": false,
+    "runtime_tensors_deserialized": false,
+    "pack_or_rgb_opened": false,
+    "sealed_or_heldout_opened": false,
+    "source_and_documents_only": true
+  },
+  "claim_boundary": {
+    "source_review_only": true,
+    "execution_authority": false,
+    "scientific_result": false,
+    "planning_usefulness_evidence": false
+  }
+}

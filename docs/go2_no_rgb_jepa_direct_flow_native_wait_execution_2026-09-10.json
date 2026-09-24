@@ -1,0 +1,36 @@
+{
+  "status": "DIRECT_FLOW_ANCHORED_NATIVE_WAITER_RUNNING_NO_CHILD_STARTED",
+  "recorded_utc": "2026-09-10T21:47:05.126779+00:00",
+  "launch_sha256": "eb6c5b8b5e2f26c1ff70c03c17b3aa6761fdca5693c907b034df938447fbb68e",
+  "source_count": 2124,
+  "preparation_sha256": "4861cd2863d7a05e99a0ab8599b7b3e721071af9226a7cc5579bfa7f3cde84f8",
+  "owner": {
+    "pid": 2753911,
+    "created": 1789076672.54,
+    "command": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "-B",
+      "scripts/await_go2_no_rgb_jepa_direct_flow_maze02_native_v1.py"
+    ],
+    "boot_id": "1264d80f-6e46-4fcd-b2fd-2a5d7b964c73"
+  },
+  "last_event": {
+    "status": "WAITING_FOR_ORIGINAL_REPLAY_AND_NATIVE_QUEUE",
+    "elapsed_s": 120.00701250997372,
+    "original_processes_live": {
+      "prefix": false,
+      "batch": true,
+      "frontier": true,
+      "hold": true,
+      "contact": true
+    },
+    "completed_result_sha256": {
+      "prefix": "152da30ba5c142d8150dacd5865278f81d5db46c7603bd637eb8ec2eee292fdf"
+    }
+  },
+  "native_output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_no_rgb_jepa_direct_flow_maze02_pilot_v1_attempt_001",
+  "native_output_created": false,
+  "native_child_started": false,
+  "native_scene_started": false,
+  "goal_achieved": false
+}

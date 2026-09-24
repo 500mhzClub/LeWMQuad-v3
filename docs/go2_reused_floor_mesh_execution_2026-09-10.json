@@ -1,0 +1,22 @@
+{
+  "status": "REUSED_FLOOR_MESH_REPLAY_PROCESS_STARTED",
+  "owner": {
+    "pid": 2726828,
+    "create_time": 1789062313.09,
+    "cmdline": [
+      ".generated/venvs/genesis_rocm_0_4_6_v1/bin/python",
+      "scripts/replay_go2_reused_floor_mesh_prefix_v1.py",
+      "--profile-result-sha256",
+      "c636eb55c13f02624b73680295ab3f70d7faac00680d7e66dd820b870cfb9866"
+    ]
+  },
+  "tool_session": 52230,
+  "preparation_path": "docs/go2_reused_floor_mesh_execution_preparation_2026-09-10.json",
+  "preparation_sha256": "d3cbb8a236ce5c136bf97a823b73302c4c9e9f67593eaa9ea74768a285869979",
+  "source_count": 2017,
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_reused_floor_mesh_prefix_v1_attempt_001",
+  "optimized_profile_result_sha256": "c636eb55c13f02624b73680295ab3f70d7faac00680d7e66dd820b870cfb9866",
+  "native_execution": false,
+  "model_training": false,
+  "goal_achieved": false
+}

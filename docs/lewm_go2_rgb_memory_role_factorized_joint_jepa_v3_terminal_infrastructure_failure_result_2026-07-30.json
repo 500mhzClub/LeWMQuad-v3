@@ -1,0 +1,75 @@
+{
+  "access": {
+    "authorized_runtime_composition_started": true,
+    "heldout_or_sealed_opened": false,
+    "local_rgb_open_attempt_count": 0,
+    "navigation_executed": false,
+    "place_rgb_reference_attempt_count": 0,
+    "probability_calibration_opened": false,
+    "rejected_v3_state_opened": false
+  },
+  "accounting": {
+    "completed_observations": [],
+    "completed_updates": 0,
+    "ema_steps": 0,
+    "optimizer_steps": 0,
+    "presentations": 0,
+    "private_restart_states": 0,
+    "promoted_checkpoints": 0,
+    "rgb_decodes": 0
+  },
+  "attempt_artifacts": {
+    "failure": {
+      "byte_count": 2283,
+      "content_sha256": "b7c9dfaf27209833aa1410d8d8a84a09d990b8bc467801b38e000f178308070d",
+      "file_sha256": "809db07b4f92092961de195c9cec61031113bfaf2218722703c637e3cdcd5a97",
+      "path": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v3/attempt_v1/failure.json"
+    },
+    "reservation": {
+      "byte_count": 469,
+      "content_sha256": "0dea203ee99bed46c59222f75c6f2b3c0872db37810cd8f77f5437ad6554d52a",
+      "file_sha256": "747136c00849f2af1bb56278a6ea886467ba6a5acdd22db49fd4ec88ef1ecf96",
+      "path": ".generated/go2_rgb_memory_role_factorized_joint_jepa_v3/attempt_v1/reservation.json"
+    }
+  },
+  "attempt_consumed": true,
+  "content_sha256": "f022225a963e34c8cc2c150eac9f7ba455c1e0583ef5fab2e4feb3a680836550",
+  "date": "2026-07-30",
+  "decision": {
+    "heldout_or_sealed_access_authorized": false,
+    "scientific_conclusion_about_place_mechanism": null,
+    "successor_must_use_fresh_initialization": true,
+    "successor_permitted_delta": "one science-identical fresh lifecycle adding only the missing inherited module-level runtime adapter export and a regression test",
+    "v3_closed": true,
+    "v3_resume_authorized": false,
+    "v3_retry_authorized": false
+  },
+  "exception_message_sha256": "a5e7856675f9b2c7a7682425cc709c8a0bd785c394f7aeb1262a077156edb33d",
+  "exception_type": "AttributeError",
+  "lifecycle": {
+    "authority_commit": "a27626c243b64939bc8bb4f4889e99da7a0aa4b2",
+    "certification_commit": "98a5f4fb9cfc4a23e2388dd1ed5ae1cc61ee7f9d",
+    "implementation_commit": "935de69b98e05ec4a67eb499b1373e604f4b662c",
+    "manifest_commit": "11b787dbb1db26d83ed15d13a7afa6a4c318290e",
+    "preregistration_commit": "8c719c2ba9458faa824eccbe7eb660f4adb56cbc",
+    "source_review_commit": "057dde308fe4f66e41cde24cdfcf2b113fdc6667"
+  },
+  "pre_reservation_denial": {
+    "attempt_consumed": false,
+    "count": 1,
+    "reason": "python_isolated_I_B_flags_required",
+    "reservation_created": false,
+    "scientific_payload_opened": false
+  },
+  "root_cause": {
+    "kind": "model_module_runtime_adapter_export_omission",
+    "missing_attribute": "PROJECTION_INITIALIZATION_SEED_V13",
+    "model_tensor_or_scientific_mechanism_reached": false,
+    "module": "lewm.models.memory_role_spatial_contrastive_joint_jepa_v3",
+    "required_value": 20260729,
+    "source_only_reproduction_sha256": "a5e7856675f9b2c7a7682425cc709c8a0bd785c394f7aeb1262a077156edb33d"
+  },
+  "schema": "lewm_go2_rgb_memory_role_factorized_joint_jepa_v3_terminal_infrastructure_failure_result_v1",
+  "status": "FAIL_INFRASTRUCTURE_INITIALIZE_TERMINAL_NO_RETRY_NO_RESUME",
+  "terminal_stage": "initialize"
+}

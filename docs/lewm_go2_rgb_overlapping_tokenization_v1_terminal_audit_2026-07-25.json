@@ -1,0 +1,226 @@
+{
+  "schema": "lewm_go2_rgb_overlapping_tokenization_v1_terminal_audit_v1",
+  "status": "PASS_COMPLETE_SEALED_TERMINAL_OPERATIONAL_FAILURE_NO_SCIENTIFIC_RESULT_NO_RETRY",
+  "date": "2026-07-25",
+  "auditor": "/root/overlap_terminal_audit",
+  "audit_scope": {
+    "output_root": ".generated/go2_shared_observable_camera_ray_jepa_v5/rgb_overlapping_tokenization_probe_v1",
+    "receipt_and_safe_source_only": true,
+    "other_runtime_root_open_count": 0,
+    "runtime_input_open_count_by_auditor": 0,
+    "checkpoint_or_tensor_open_count_by_auditor": 0,
+    "dataset_or_rgb_open_count_by_auditor": 0,
+    "accelerator_query_or_use_count_by_auditor": 0,
+    "protected_sealed_or_heldout_open_count_by_auditor": 0,
+    "terminal_root_mutation_count": 0
+  },
+  "frozen_authority": {
+    "preregistration_commit": "c88eadf269d9acc8c4ca87576fea48ce14721ee5",
+    "implementation_commit": "b3d80222c126e80572d00faa919a60a1d2fc7be2",
+    "source_review_commit": "97bb66d9ff2fb3b3a81ad9bab84b38153bf5410f",
+    "execution_authorization_commit": "9b752b264807c5f49c7e2f7e0db43c7fa22e9985",
+    "source_review": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_source_review_2026-07-25.json",
+      "byte_count": 21897,
+      "file_sha256": "42f7e42dab4c85bb744fae5808ca70134b27854a8e06c9521de9ac2215de0e7f",
+      "content_sha256": "1fe64411bd84bbe5ac39b450963cb6aacf4534477e38bc84bf2fb79d29f7d76e",
+      "contract_valid": true
+    },
+    "execution_authorization": {
+      "path": "docs/lewm_go2_rgb_overlapping_tokenization_v1_execution_authorization_2026-07-25.json",
+      "byte_count": 13853,
+      "file_sha256": "c73e89a5389187a64e1b7a6ac5e91be18662908c9a296c25af5a90a20e1166db",
+      "content_sha256": "1ef6a3e25c47a58e98b66f50dd58d42540de68e719ab87e02fc0e1d116fa96a1",
+      "contract_valid": true
+    }
+  },
+  "terminal_inventory": {
+    "receipt_driven_exact_file_count": 3,
+    "unexpected_path_count": 0,
+    "symlink_path_count": 0,
+    "all_files_regular": true,
+    "all_files_mode_0444": true,
+    "root_mode": "0555",
+    "bindings": [
+      {
+        "path": "failed.json",
+        "byte_count": 5854,
+        "file_sha256": "cdd16d78e7b759efe53aacb03046ae8d54fd288de1ba1f909cb93501898cf646",
+        "content_sha256": "8da5adf7bcbc2268c2b4612fdfd8440d006c7f834bf5ac59ef2aef9324903b87",
+        "mode": "0444"
+      },
+      {
+        "path": "partial_access.jsonl",
+        "byte_count": 5672,
+        "file_sha256": "b80abfc20fece1ca1ab8e2810c6c315a7487f2c36761b6abfd579c3e71aa06d1",
+        "mode": "0444"
+      },
+      {
+        "path": "reservation.json",
+        "byte_count": 21669,
+        "file_sha256": "f12a52a610379fb6423525935920e8a8c6f91edb7332a54afe2ff22232ccea08",
+        "content_sha256": "ff9f8a0d94dac9236e667e397e941b35a9e5e161f21321cd9a7093c45f8f8073",
+        "mode": "0444"
+      }
+    ]
+  },
+  "reservation": {
+    "attempt_identity": "c7a26e139bc3192baa9ebd119ba0a02b782ce2915a4087ac2d37bc8fedf49c6c",
+    "binding": {
+      "path": "reservation.json",
+      "byte_count": 21669,
+      "file_sha256": "f12a52a610379fb6423525935920e8a8c6f91edb7332a54afe2ff22232ccea08",
+      "content_sha256": "ff9f8a0d94dac9236e667e397e941b35a9e5e161f21321cd9a7093c45f8f8073"
+    },
+    "reviewed_source_binding_count": 72,
+    "source_review_binding_matches_committed_bytes": true,
+    "execution_authorization_binding_matches_committed_bytes": true,
+    "science_and_lifecycle_contracts_match_frozen_source": true,
+    "preflight_passed": true,
+    "preflight_tensor_allocation_count": 0,
+    "preflight_payload_open_count": 0,
+    "output_root_absent_before_reservation": true,
+    "output_root_initial_mode": "0700",
+    "torch_imported_before_reservation": false,
+    "runtime_input_opened_before_reservation": false,
+    "reservation_consumed_attempt": true,
+    "retry_authorized": false
+  },
+  "ledger": {
+    "binding": {
+      "path": "partial_access.jsonl",
+      "byte_count": 5672,
+      "file_sha256": "b80abfc20fece1ca1ab8e2810c6c315a7487f2c36761b6abfd579c3e71aa06d1"
+    },
+    "record_count": 6,
+    "records_content_sha256": "8e7d77355995aaca803971605d4c06746235fe4d49f3449a1caa88a03828c8a1",
+    "last_record_content_sha256": "7f4b20bb98ecf3be963bd4e3dfe633e2dcfb8abfc91ce81b2e9505ded20fedff",
+    "attempted_open_count": 2,
+    "descriptor_opened_count": 2,
+    "read_completed_count": 2,
+    "accepted_open_count": 1,
+    "rejected_or_failed_open_count": 1,
+    "runtime_opens_sha256": "79f50903abf97781a351949471ae62f2ccadb277e8a40d8d59696a5ba583b334",
+    "canonical_hash_chain_valid": true,
+    "attempt_outcome_pairs_complete": true,
+    "frozen_parser_passed": true,
+    "terminal_record_type": "ATTEMPT_TERMINATING",
+    "finalized_scientific_admission": false,
+    "finalized_scientific_admission_error": "scientific admissibility requires a finalized access ledger",
+    "opens": [
+      {
+        "open_id": 1,
+        "stage": "schedule_phase_a",
+        "kind": "bound_schedule",
+        "outcome": "ACCEPTED",
+        "expected_byte_count": 607373,
+        "observed_byte_count": 607373,
+        "file_sha256": "08f54578febbc182d936a999d6cf86263b8cd03a5f640da064c1538dd53dc270"
+      },
+      {
+        "open_id": 2,
+        "stage": "raw_authority_and_index_validation",
+        "kind": "raw_authority_manifest",
+        "outcome": "REJECTED_BINDING",
+        "expected_byte_count": 1,
+        "observed_byte_count": 311598,
+        "expected_and_observed_file_sha256": "e102b3c64e99029f118597353966edaaaddbc11efe49b9081d5d7a9c9d974360"
+      }
+    ]
+  },
+  "failure_receipt": {
+    "binding": {
+      "path": "failed.json",
+      "byte_count": 5854,
+      "file_sha256": "cdd16d78e7b759efe53aacb03046ae8d54fd288de1ba1f909cb93501898cf646",
+      "content_sha256": "8da5adf7bcbc2268c2b4612fdfd8440d006c7f834bf5ac59ef2aef9324903b87"
+    },
+    "canonical_self_hash_valid": true,
+    "contract_validation_with_reservation_passed": true,
+    "schema": "lewm_go2_rgb_overlapping_tokenization_v1_failure_v1",
+    "status": "TERMINAL_OVERLAPPING_TOKENIZATION_V1_OPERATIONAL_OR_INTEGRITY_FAILURE_NO_RETRY",
+    "failure_stage": {
+      "name": "raw_authority_and_index_validation",
+      "role": "authority",
+      "update": null,
+      "microbatch": null,
+      "checkpoint_update": null
+    },
+    "error": {
+      "type": "PermissionError",
+      "message": "runtime input binding changed: .generated/go2_shared_observable_camera_ray_jepa_v5/development_raw_supervision_v1/manifest.json",
+      "message_sha256": "3e39d7991ca5c5d43b8c99e6b7a162009e8d6c82dbbb821132f0c6c41d5c00ef"
+    },
+    "scientific_result": null,
+    "scientific_result_status": "NOT_OBSERVED_TERMINAL_OPERATIONAL_OR_INTEGRITY_FAILURE",
+    "g2_navigation_or_heldout_attempted": false,
+    "prior_runtime_output_open_count": 0,
+    "retry_authorized": false,
+    "terminalization": {
+      "failure_publication": "exclusive_atomic_fsync",
+      "terminal_file_mode": "0444",
+      "terminal_directory_mode": "0555",
+      "seal_after_publication": true
+    }
+  },
+  "operation_accounting": {
+    "training_entered": false,
+    "all_model_training_and_science_operation_counts_zero": true,
+    "optimizer_construction_attempt_count": 0,
+    "microbatch_attempt_count": 0,
+    "pair_index_presentations_attempted": 0,
+    "camera_objective_attempt_count": 0,
+    "backward_attempt_count": 0,
+    "optimizer_update_attempt_count": 0,
+    "optimizer_step_attempt_count": 0,
+    "complete_optimizer_updates": 0,
+    "checkpoint_snapshot_completion_count": 0,
+    "checkpoint_selection_evaluation_attempt_count": 0,
+    "checkpoint_selection_evaluation_updates_attempted": [],
+    "metric_sidecar_publication_count": 0,
+    "jepa_objective_count": 0,
+    "jepa_backward_count": 0,
+    "ema_update_count_after_initial_hard_sync": 0,
+    "observer_evaluation_rerun_count": 0,
+    "probability_calibration_open_count": 0,
+    "prior_runtime_output_open_count": 0
+  },
+  "root_cause": {
+    "classification": "AUTHORIZATION_SCHEMA_ACCEPTED_UNBOUND_RAW_BYTE_COUNT_AND_AUTHORIZATION_USED_SENTINEL_ONE",
+    "not_a_model_encoder_data_or_science_failure": true,
+    "facts": [
+      "The frozen predecessor source binds the raw manifest file and content SHA-256 values but omits the raw manifest and raw audit paths from RUNTIME_BYTE_COUNTS.",
+      "The inherited runtime-leaf validator therefore requires only a positive byte_count for those two raw authority leaves.",
+      "The committed execution authorization supplied byte_count=1 for both the raw manifest and raw audit and nevertheless passed the frozen authorization validator.",
+      "At execution, the fail-closed ledger reader read 311598 bytes for the manifest and reproduced the authorized file SHA-256, then rejected only the 1-versus-311598 byte-count mismatch.",
+      "The raw audit was not opened, so this audit does not claim its observed byte count."
+    ],
+    "source_locations": [
+      "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py:220",
+      "lewm/benchmarks/go2_shared_jepa_v5_multires_probe_v3.py:244",
+      "lewm/benchmarks/go2_rgb_causal_temporal_perception_v1.py:800",
+      "lewm/benchmarks/go2_rgb_causal_temporal_perception_v1.py:1484",
+      "lewm/benchmarks/go2_rgb_overlapping_tokenization_v1.py:511",
+      "scripts/run_go2_rgb_causal_temporal_perception_v1.py:512"
+    ]
+  },
+  "scientific_disposition": {
+    "overlapping_tokenization_v1_scientific_outcome": "NOT_OBSERVED",
+    "mechanism_supported_or_falsified": false,
+    "probe_checkpoint_qualified": false,
+    "perception_qualification_authorized": false,
+    "jepa_training_authorized": false,
+    "g2_authorized": false,
+    "navigation_authorized": false,
+    "heldout_authorized": false,
+    "promotion_production_or_deployment_authorized": false
+  },
+  "authority_implications": {
+    "v1_attempt_consumed": true,
+    "retry_resume_repair_second_seed_extension_or_replacement_authorized": false,
+    "existing_authority_can_launch_another_v1_attempt": false,
+    "science_identical_v2_integrity_replacement_authorized": false,
+    "compliant_next_step": "Record this terminal audit. Do not scale, qualify, reuse a checkpoint, or rerun V1. Any versioned science-identical integrity replacement requires a new governing decision that explicitly supersedes the V1 no-replacement boundary, corrected exact raw byte-count bindings, a frozen source review, and separate execution authority; otherwise select and preregister a materially different successor."
+  },
+  "content_sha256": "70c1abf887567a59962484e5897092c27c18e9b54cb3e057acee476e7c8d5491"
+}

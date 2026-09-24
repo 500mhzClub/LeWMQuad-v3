@@ -1,0 +1,36 @@
+{
+  "calibration_frontiers": {
+    "H1": {
+      "sha256": "f0a09d602072c7d9c243154d232adf533492fe6694957e66baf8d52bbf3a1cba"
+    },
+    "H2": {
+      "sha256": "8449c391f4b9a3d00c803840e67db90da9754ce8b0a3256a5ff5c77105c53c9c"
+    }
+  },
+  "checkpoint": {
+    "executed": false,
+    "sha256": "3e556531a0442df214d0667ad42110e42806ec3aa7aa240c2b2746d7c304af31"
+  },
+  "claim_boundary": "SIMULATED_DISALLOWED_CONTACT_PROXY only; no material-hazard, human-safety, injury, property-damage, or closed-loop guarantee",
+  "classification": "CONTACT_SCORE_NO_GO_ACROSS_CONTROL_HORIZONS",
+  "committed_horizon": {
+    "blocks": 1,
+    "command_ticks": 5,
+    "duration_s": 0.5,
+    "label": "H1"
+  },
+  "result": {
+    "bytes": 175128,
+    "content_digest": "7f927c71effe1b2c7a9e35b0ec2116418c511eda9009fb1eb1d8f4d38ab3279e",
+    "sha256": "9e7ce543150804fc3071e02e8db9536e1059dfaf3904af6c83ea8c681105d6fc"
+  },
+  "row_ledger": {
+    "rows": 3456,
+    "sha256": "ab47eb7848b980947ced6ee6f10493ef12578ab7871ef8ebdb97b46122617e9c"
+  },
+  "schema": "lewm_control_commitment_aligned_contact_filter_v1_evidence_index",
+  "secondary_classification": "CONTINUATION_RISK_RANKING_NO_SIGNAL",
+  "source_commit": "f720e2274aaa4c72961ba634731b57a0f2a97c4c",
+  "stopping_horizon_status": "CONSERVATIVE_UNVALIDATED_STOPPING_PROXY"
+}
+

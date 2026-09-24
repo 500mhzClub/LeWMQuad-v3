@@ -34,7 +34,7 @@ import time
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterable, Protocol
+from typing import Any, Callable, Iterable, Protocol
 
 import numpy as np
 
@@ -505,6 +505,7 @@ class GenesisGo2PPOPolicy:
     policy_dof_indices: tuple[int, ...] = GENESIS_GO2_POLICY_DOF_INDICES
     device: str | None = None
     simulate_action_latency: bool = True
+    deduplicate_exact_observation_rows: bool = False
 
     def __post_init__(self) -> None:
         self.checkpoint_path = Path(self.checkpoint_path)
@@ -558,6 +559,12 @@ class GenesisGo2PPOPolicy:
 
         self._device = self.device or self._default_torch_device()
         self._policy = self._load_policy()
+        if self.deduplicate_exact_observation_rows and bool(
+            getattr(self._policy, "is_recurrent", False)
+        ):
+            raise ValueError(
+                "exact observation-row deduplication requires a non-recurrent policy"
+            )
         self._last_actions: np.ndarray | None = None
 
     @classmethod
@@ -681,10 +688,48 @@ class GenesisGo2PPOPolicy:
             self._last_actions = np.zeros((n_envs, len(self.policy_joint_names)), dtype=np.float32)
 
         obs_np = self._build_policy_observation(observation)
-        obs_tensor = torch.as_tensor(obs_np, dtype=torch.float32, device=self._device)
-        obs_dict = TensorDict({"policy": obs_tensor}, batch_size=[n_envs])
-        with torch.no_grad():
-            actions = self._policy(obs_dict).detach().cpu().numpy().astype(np.float32, copy=False)
+        if self.deduplicate_exact_observation_rows:
+            # Counterfactual lanes with byte-identical histories must receive
+            # byte-identical policy outputs.  Evaluate each distinct row as a
+            # one-row batch so CPU kernel rounding cannot depend on lane index.
+            unique_rows: list[np.ndarray] = []
+            inverse: list[int] = []
+            index_by_bytes: dict[bytes, int] = {}
+            for row in np.ascontiguousarray(obs_np, dtype=np.float32):
+                key = row.tobytes(order="C")
+                unique_index = index_by_bytes.get(key)
+                if unique_index is None:
+                    unique_index = len(unique_rows)
+                    index_by_bytes[key] = unique_index
+                    unique_rows.append(row.copy())
+                inverse.append(unique_index)
+            unique_actions: list[np.ndarray] = []
+            with torch.no_grad():
+                for row in unique_rows:
+                    row_tensor = torch.as_tensor(
+                        row[None, :], dtype=torch.float32, device=self._device
+                    )
+                    row_dict = TensorDict({"policy": row_tensor}, batch_size=[1])
+                    row_actions = self._policy(
+                        row_dict, stochastic_output=False
+                    ).detach().cpu().numpy().astype(np.float32, copy=False)
+                    if row_actions.shape != (1, len(self.policy_joint_names)):
+                        raise ValueError(
+                            "PPO policy returned a malformed one-row action"
+                        )
+                    unique_actions.append(row_actions[0].copy())
+            actions = np.stack(
+                [unique_actions[index] for index in inverse], axis=0
+            ).astype(np.float32, copy=False)
+        else:
+            obs_tensor = torch.as_tensor(
+                obs_np, dtype=torch.float32, device=self._device
+            )
+            obs_dict = TensorDict({"policy": obs_tensor}, batch_size=[n_envs])
+            with torch.no_grad():
+                actions = self._policy(
+                    obs_dict, stochastic_output=False
+                ).detach().cpu().numpy().astype(np.float32, copy=False)
         if actions.shape != self._last_actions.shape:
             raise ValueError(f"PPO policy returned {actions.shape}; expected {self._last_actions.shape}")
 
@@ -866,6 +911,44 @@ class RolloutRunner:
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
+
+    def execute_requested_block(
+        self,
+        requested_block: np.ndarray,
+        *,
+        after_policy_step: Callable[[int, int], None] | None = None,
+    ) -> _BlockTrajectory:
+        """Execute one caller-supplied block through the production contract.
+
+        This is the narrow public primitive needed by synchronized physical
+        branch experiments.  It preserves the runner's rate-limit history,
+        uses the configured locomotion policy and all physics decimation, and
+        updates ``_last_executed`` exactly once at block completion.  The
+        optional callback runs after each policy step as
+        ``callback(command_tick_index, policy_step_index)`` so a caller can
+        record trajectories without reimplementing the controller loop.
+
+        The method deliberately provides no snapshot/restore fallback.  A
+        counterfactual collector that needs a common causal prefix must create
+        parallel environments, establish their equality, and then call this
+        method once with one requested tape per environment.
+        """
+
+        requested = np.asarray(requested_block, dtype=np.float32)
+        expected = (self.n_envs, self._block_size, 3)
+        if requested.shape != expected:
+            raise ValueError(
+                f"requested block has shape {requested.shape}; expected {expected}"
+            )
+        block = self._clip_block(requested)
+        for tick_idx in range(self._block_size):
+            target_cmd = block.executed[:, tick_idx]
+            for policy_step_idx in range(self._policy_steps_per_command_tick):
+                self._step_policy_step(target_cmd)
+                if after_policy_step is not None:
+                    after_policy_step(tick_idx, policy_step_idx)
+        self._last_executed = block.executed[:, -1, :].copy()
+        return block
 
     def run(self, writer: Any) -> dict[str, Any]:
         """Run the configured number of command blocks, streaming to ``writer``.
@@ -1175,12 +1258,17 @@ class RolloutRunner:
         """Run ``policy_steps_per_command_tick`` policy steps for one 100 ms tick."""
 
         for _ in range(self._policy_steps_per_command_tick):
-            obs = self._build_observation(target_cmd)
-            joint_targets = self.policy.act(obs)
-            self._apply_joint_targets(joint_targets)
-            for _step in range(self._physics_steps_per_policy):
-                self.build.scene.step()
-            self._sim_time_ns += self._policy_dt_ns
+            self._step_policy_step(target_cmd)
+
+    def _step_policy_step(self, target_cmd: np.ndarray) -> None:
+        """Execute one policy step and its configured physics decimation."""
+
+        obs = self._build_observation(target_cmd)
+        joint_targets = self.policy.act(obs)
+        self._apply_joint_targets(joint_targets)
+        for _step in range(self._physics_steps_per_policy):
+            self.build.scene.step()
+        self._sim_time_ns += self._policy_dt_ns
 
     def _build_observation(self, target_cmd: np.ndarray) -> dict[str, np.ndarray]:
         robot = self.build.robot

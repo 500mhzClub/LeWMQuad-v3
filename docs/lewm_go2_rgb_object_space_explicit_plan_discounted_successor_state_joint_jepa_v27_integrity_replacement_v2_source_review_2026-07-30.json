@@ -1,0 +1,57 @@
+{
+  "access": {
+    "dataset_payload_or_rgb_open_count": 0,
+    "generated_or_runtime_artifact_open_count": 0,
+    "heldout_or_sealed_open_count": 0,
+    "navigation_run_count": 0,
+    "scientific_gpu_or_training_run_count": 0,
+    "tensor_checkpoint_open_count": 0
+  },
+  "content_sha256": "56b89a63dcfc5f6b7c60da3f1f7c26d753082944536a837ab3794596fc78ee91",
+  "implementation_commit": "ce0b7c30aba0faf12075adb90916bc7666f978d2",
+  "independent_reviews": [
+    {
+      "finding": "complete_22_name_facade_and_byte_identical_scientific_bodies_lifecycle_delta_only",
+      "reviewer": "/root/v27r_v2_diff_audit",
+      "scope": "science_identity_full_builder_dependency_chain_and_lifecycle",
+      "status": "PASS"
+    },
+    {
+      "finding": "exact_117_path_closure_preserved_three_source_blobs_changed_and_all_bindings_rehashed",
+      "reviewer": "/root/v27r_cert_inventory",
+      "scope": "recursive_source_closure_and_training_body_identity",
+      "status": "PASS"
+    }
+  ],
+  "manifest": {
+    "byte_count": 36349,
+    "content_sha256": "b607643def876e5c5832d93e8740e49fca05d90de85273fd6f7ac746c25bb2a5",
+    "file_sha256": "8cc2ea53d2a211597f00317e451db7838e99dc9eecb1ac1394caf59b0e8853ec",
+    "path": "docs/lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v2_source_manifest_2026-07-30.json",
+    "source_bindings_sha256": "43114f0bacf606393bee993d1eecf650510854825cf3474424aa6b122fb3be9b",
+    "source_count": 117,
+    "source_paths_sha256": "1dfe0f87fc1514e240b72c5a2b0af83498ff8152059351dc396686036af214ad"
+  },
+  "predecessor_implementation_commit": "6d7c10c2aa7394cfe5a2d367278f7a6c8a2d130c",
+  "preregistration_commit": "7975f1894108a883d45a31109695e3a474997397",
+  "reviewed_source_commit": "1f43d2ef2766907d058036d4f6217edd0584a8d7",
+  "schema": "lewm_go2_rgb_object_space_explicit_plan_discounted_successor_state_joint_jepa_v27_integrity_replacement_v2_source_review_v1",
+  "science_identity": {
+    "complete_physical_builder_facade_name_count": 22,
+    "dataset_model_and_evaluator_byte_identical": true,
+    "facade_names_restored": 19,
+    "maximum_presentations": 12800,
+    "maximum_updates": 400,
+    "schedule_seed_losses_thresholds_initialization_gates_and_engine_unchanged": true,
+    "training_function_and_method_body_count_ast_identical": 15,
+    "training_scientific_function_body_change_count": 0
+  },
+  "source_only": true,
+  "status": "PASS_SOURCE_ONLY_SCIENCE_IDENTICAL_FULL_PHYSICAL_BUILDER_FACADE_REPLACEMENT",
+  "tests": {
+    "command_scope": "six_focused_v27_test_files_warnings_as_errors_cpu_only",
+    "failed": 0,
+    "passed": 59,
+    "runtime_selected_training_facade_test_present": true
+  }
+}

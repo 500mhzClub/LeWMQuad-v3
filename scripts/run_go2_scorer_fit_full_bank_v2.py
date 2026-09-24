@@ -1,0 +1,3437 @@
+#!/usr/bin/env python3
+"""Issue and execute the prospective full-bank scorer-fit corpus V2.
+
+This runner is deliberately narrow.  It never invokes a MILP, CP-SAT model,
+candidate-subset allocator, or performance benchmark.  Its public stages are:
+
+* ``issue-design``: issue the rotation-mask classification, then the design;
+* ``issue-source-correction``: bind the post-install manifest-replay repair;
+* ``freeze-manifests``: reopen and replay the five installed pre-outcome files;
+* ``issue-scorer-contract``: issue the successor contract before a branch;
+* ``issue-encoder-import-correction``: bind the post-smoke, pre-latent import
+  compatibility repair without replacing the issued scorer contract;
+* ``issue-encoder-compute-dtype-correction``: bind the first-forward FP32
+  compatibility repair while preserving the import correction and contract;
+* ``issue-encoder-path-projection-correction``: bind the post-base-smoke
+  logical-path metadata repair while preserving both predecessor corrections
+  and the issued scorer contract;
+* ``issue-branch-redrive-projection-correction``: bind the post-partial-corpus
+  structural-redrive projection repair without changing any manifest or row;
+* ``issue-optional-smoke-partial-corpus-resume-correction``: bind the
+  metadata-only resume-gate repair after the strict producer retained a
+  state-aligned partial branch corpus;
+* ``run``: execute the registered smoke/recovery/corpus/training pipeline; and
+* ``status``: assemble a read-only metadata report.
+
+Importing this module opens no generated artifact and starts no simulator,
+encoder, trainer, predictor, or solver.  Heavy-runtime validation is delegated
+to closed JSON subprocess stages in the already frozen Genesis and ROCm
+interpreters.
+"""
+from __future__ import annotations
+
+import argparse
+import hashlib
+from importlib import metadata
+import json
+import os
+from pathlib import Path
+import platform
+import stat
+import subprocess
+import sys
+from typing import Any, Callable, Mapping, Protocol, Sequence
+
+
+ROOT = Path(__file__).resolve().parents[1]
+for extra in (ROOT, ROOT / "scripts"):
+    if str(extra) not in sys.path:
+        sys.path.insert(0, str(extra))
+
+from scripts import build_go2_branch_corpus_v1_2 as BUILDER  # noqa: E402
+from lewm.oracle import (  # noqa: E402
+    go2_scorer_fit_corpus_v2_design as DESIGN,
+)
+from lewm.oracle import (  # noqa: E402
+    go2_scorer_fit_corpus_v2_scorer_contract as SCORER_CONTRACT,
+)
+from lewm.oracle import (  # noqa: E402
+    go2_small_completion_global_execution_amendment_v1 as RUNTIME_AUTHORITY,
+)
+
+
+STATUS = "DEVELOPMENT_ONLY_NOT_CLAIM_BEARING"
+RUNNER_RELATIVE_PATH = Path("scripts/run_go2_scorer_fit_full_bank_v2.py")
+SCORER_FIT_RELATIVE_PATH = Path(
+    ".generated/go2_branch_corpus_v1_2/scorer_fit")
+UTILITY_V2_RELATIVE_PATH = Path(
+    ".generated/go2_utility_scorer_fit_corpus_v2")
+FEASIBILITY_FAILURE_RELATIVE_PATH = (
+    SCORER_FIT_RELATIVE_PATH /
+    BUILDER.SCORER_FIT_V2_FEASIBILITY_FAILURE_NAME)
+
+FEASIBILITY_FAILURE_SCHEMA = (
+    "go2_scorer_fit_corpus_v2_full_bank_preoutcome_feasibility_failure_v1")
+FEASIBILITY_FAILURE_STATUS = (
+    "FAIL_PRE_OUTCOME_FULL_BANK_FOUR_FIT_ONE_CALIBRATION_UNAVAILABLE")
+FEASIBILITY_FAILURE_SELF_KEY = "preoutcome_feasibility_failure_digest"
+
+RUNTIME_PROBE_SCHEMA = "go2_scorer_fit_corpus_v2_runtime_probe_v1"
+RUNTIME_PROBE_STATUS = "PASS_EXACT_FROZEN_RUNTIME"
+RUNTIME_PROBE_SELF_KEY = "runtime_probe_digest"
+RUN_REPORT_SCHEMA = "go2_scorer_fit_corpus_v2_orchestrator_report_v1"
+
+_RUNTIME_ROLES = ("genesis", "rocm")
+_MANIFEST_SPECS = (
+    ("selection", BUILDER.SCORER_FIT_V2_SELECTION_NAME,
+     "full_bank_small_completion_selection_digest"),
+    ("revalidation", BUILDER.SCORER_FIT_V2_REVALIDATION_NAME,
+     "full_bank_preoutcome_state_revalidation_digest"),
+    ("small_shard", BUILDER.SCORER_FIT_V2_SMALL_SHARD_NAME,
+     "state_shard_digest"),
+    ("assignment_manifest", BUILDER.SCORER_FIT_V2_ASSIGNMENT_MANIFEST_NAME,
+     "full_bank_assignment_manifest_digest"),
+    # Install the complete state manifest last.  Its presence is the terminal
+    # marker for the resumable five-file pre-outcome transaction.
+    ("state_manifest", BUILDER.SCORER_FIT_V2_STATE_MANIFEST_NAME,
+     "state_manifest_digest"),
+)
+
+_V2_RUNTIME_STAGE_ROLES = {
+    "branch_smoke": "genesis",
+    "branch_smoke_zero_new": "genesis",
+    "smoke_encoding": "rocm",
+    "smoke_encoding_zero_new": "rocm",
+    "smoke_single_shard_regeneration": "rocm",
+    "full_branch_corpus": "genesis",
+    "full_latent_encoding": "rocm",
+    "scorer_training_and_qualification": "rocm",
+    "development_transfer": "rocm",
+}
+
+_SMOKE_REGENERATION_INCOMPLETE_TRANSACTION_STATES = frozenset({
+    "UNSTARTED",
+    "PREPARED_MOVE_PENDING",
+    "MOVED_REGENERATION_PENDING",
+    "RESTORED_COMPLETE_PENDING",
+    "COMPLETE_SMOKE_PUBLICATION_PENDING",
+})
+_SMOKE_REGENERATION_TRANSACTION_STATES = frozenset({
+    *_SMOKE_REGENERATION_INCOMPLETE_TRANSACTION_STATES,
+    "COMPLETE",
+})
+
+
+class FullBankV2RunnerError(RuntimeError):
+    """An exact-path, stage-order, runtime, or terminal gate failed."""
+
+
+CommandRunner = Callable[[Sequence[str], Path], int]
+RuntimeProbeInvoker = Callable[[str, Path, Path, Any], Mapping[str, Any]]
+ValidationInvoker = Callable[[str, Path, Path], Mapping[str, Any]]
+
+
+class _DesignAuthority(Protocol):
+    DESIGN_SELF_KEY: str
+    MASK_CLASSIFICATION_SELF_KEY: str
+    SOURCE_CORRECTION_SCHEMA: str
+    SOURCE_CORRECTION_SELF_KEY: str
+    IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST: str
+    IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST: str
+    IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST: str
+    MANIFEST_REPLAY_CORRECTION_SCHEMA: str
+    MANIFEST_REPLAY_CORRECTION_SELF_KEY: str
+
+    def issue_rotation_mask_classification(
+            self, *, root: Path) -> Mapping[str, Any]: ...
+
+    def issue_design_amendment(
+            self, *, root: Path) -> Mapping[str, Any]: ...
+
+    def issue_manifest_replay_correction(
+            self, *, root: Path) -> Mapping[str, Any]: ...
+
+
+def _require_final_source_correction_authority(
+        authority: Mapping[str, Any], *, design: Any) -> dict[str, Any]:
+    """Reject historical repairs at every scientific-lineage boundary."""
+
+    if not isinstance(authority, Mapping):
+        raise FullBankV2RunnerError("active V2 design authority is malformed")
+    correction = authority.get("source_correction")
+    if (not isinstance(correction, Mapping)
+            or correction.get("schema") != design.SOURCE_CORRECTION_SCHEMA
+            or correction.get("structural_validation_correction_version") != 1
+            or correction.get(
+                "immutable_preselection_source_correction_v2_digest")
+            != design.IMMUTABLE_SOURCE_CORRECTION_V2_DIGEST
+            or correction.get(
+                "transitive_immutable_preselection_source_correction_v1_digest")
+            != design.IMMUTABLE_SOURCE_CORRECTION_V1_DIGEST
+            or authority.get("source_correction_digest")
+            != correction.get(design.SOURCE_CORRECTION_SELF_KEY)
+            or authority.get("source_correction_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or authority.get("candidate_outcomes_consumed") is not False):
+        raise FullBankV2RunnerError(
+            "final preselection structural-validation correction is required")
+    return dict(correction)
+
+
+def _require_manifest_replay_correction_authority(
+        authority: Mapping[str, Any], *, design: Any) -> dict[str, Any]:
+    """Require the operational wrapper while retaining 5206 manifest lineage."""
+
+    _require_final_source_correction_authority(authority, design=design)
+    correction = authority.get("manifest_replay_correction")
+    if (not isinstance(correction, Mapping)
+            or correction.get("schema")
+            != design.MANIFEST_REPLAY_CORRECTION_SCHEMA
+            or correction.get("manifest_replay_correction_version") != 1
+            or correction.get(
+                "immutable_active_preselection_source_correction_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or correction.get("preserved_scientific_manifest_lineage_digest")
+            != design.IMMUTABLE_ACTIVE_PRESELECTION_SOURCE_CORRECTION_DIGEST
+            or authority.get("manifest_replay_correction_digest")
+            != correction.get(design.MANIFEST_REPLAY_CORRECTION_SELF_KEY)):
+        raise FullBankV2RunnerError(
+            "post-install manifest-replay correction is required")
+    return dict(correction)
+
+
+def _json_bytes(value: Any, *, pretty: bool = False) -> bytes:
+    options: dict[str, Any] = {
+        "sort_keys": True, "ensure_ascii": True, "allow_nan": False,
+    }
+    if pretty:
+        options["indent"] = 2
+    else:
+        options["separators"] = (",", ":")
+    return (json.dumps(value, **options) + ("\n" if pretty else "")).encode(
+        "utf-8")
+
+
+def canonical_digest(value: Any) -> str:
+    return hashlib.sha256(_json_bytes(value)).hexdigest()
+
+
+def _encoder_default_json_digest(value: Any) -> str:
+    """Match the encoder's historical spaced/default JSON self digests."""
+
+    return hashlib.sha256(json.dumps(
+        value, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def _builder_default_json_digest(value: Any) -> str:
+    """Match branch/corpus producer digests, never runner compact digests."""
+
+    return BUILDER.canonical_digest(value)
+
+
+def _encoder_pretty_json_bytes(value: Any) -> bytes:
+    """Match the encoder's historical and migration metadata serialization."""
+
+    return (json.dumps(value, indent=2, sort_keys=True) + "\n").encode(
+        "utf-8")
+
+
+def file_sha256(path: Path, block_size: int = 8 << 20) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as source:
+        for block in iter(lambda: source.read(block_size), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _without(value: Mapping[str, Any], key: str) -> dict[str, Any]:
+    return {name: item for name, item in value.items() if name != key}
+
+
+def _signed(value: Mapping[str, Any], self_key: str) -> dict[str, Any]:
+    payload = dict(value)
+    if self_key in payload:
+        raise FullBankV2RunnerError("self-digest key already exists")
+    payload[self_key] = canonical_digest(payload)
+    return payload
+
+
+def _is_hex(value: Any, length: int = 64) -> bool:
+    return bool(isinstance(value, str) and len(value) == length
+                and all(character in "0123456789abcdef" for character in value))
+
+
+def _forbidden_component(value: str) -> bool:
+    return (value == "sealed" or value == "sealed_test.json"
+            or value.startswith("sealed_"))
+
+
+def _pin_relative(root: Path, relative: str | Path, *, label: str) -> Path:
+    """Pin one named path; permit only the repository's managed aliases."""
+
+    repository = Path(root).resolve(strict=True)
+    rel = Path(relative)
+    if (rel.is_absolute() or not rel.parts or any(
+            part in {"", ".", ".."} or _forbidden_component(part)
+            for part in rel.parts)):
+        raise FullBankV2RunnerError(f"{label} is not a safe relative path")
+    managed = []
+    for generated_root in DESIGN.MANAGED_GENERATED_ROOTS:
+        try:
+            rel.relative_to(generated_root)
+            managed.append(generated_root)
+        except ValueError:
+            pass
+    if managed:
+        if len(managed) != 1:
+            raise FullBankV2RunnerError(
+                f"{label} matches multiple managed generated roots")
+        try:
+            return DESIGN._pin_generated(repository, rel, label=label)
+        except Exception as exc:
+            raise FullBankV2RunnerError(
+                f"{label} managed generated path is invalid") from exc
+    cursor = repository
+    for component in rel.parts[:-1]:
+        cursor /= component
+        if cursor.exists() and cursor.is_symlink():
+            raise FullBankV2RunnerError(f"{label} parent is symlinked")
+    return repository / rel
+
+
+def _load_json(path: Path, *, label: str) -> tuple[dict[str, Any], bytes]:
+    if not path.is_file() or path.is_symlink():
+        raise FullBankV2RunnerError(f"{label} is unavailable")
+    raw = path.read_bytes()
+    try:
+        value = json.loads(raw)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise FullBankV2RunnerError(f"{label} is invalid JSON") from exc
+    if not isinstance(value, dict):
+        raise FullBankV2RunnerError(f"{label} is not a JSON object")
+    return value, raw
+
+
+def _install_or_require_exact_json(
+        path: Path, payload: Mapping[str, Any], *, label: str) -> dict[str, Any]:
+    """Install one read-only JSON object without overwrite; replay is exact."""
+
+    expected = dict(payload)
+    encoded = _json_bytes(expected, pretty=True)
+    if path.exists() or path.is_symlink():
+        if path.is_symlink() or not path.is_file():
+            raise FullBankV2RunnerError(f"{label} existing path is not regular")
+        if path.read_bytes() != encoded or json.loads(encoded) != expected:
+            raise FullBankV2RunnerError(f"{label} differs from deterministic replay")
+        if stat.S_IMODE(path.stat().st_mode) & 0o222:
+            raise FullBankV2RunnerError(f"{label} is not read-only")
+        return expected
+    if not path.parent.is_dir() or path.parent.is_symlink():
+        raise FullBankV2RunnerError(f"{label} parent is unavailable")
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+    if hasattr(os, "O_NOFOLLOW"):
+        flags |= os.O_NOFOLLOW
+    try:
+        descriptor = os.open(path, flags, 0o444)
+    except OSError as exc:
+        raise FullBankV2RunnerError(f"cannot exclusively create {label}") from exc
+    try:
+        with os.fdopen(descriptor, "wb", closefd=True) as sink:
+            descriptor = -1
+            sink.write(encoded)
+            sink.flush()
+            os.fsync(sink.fileno())
+        os.chmod(path, 0o444, follow_symlinks=False)
+        directory = os.open(
+            path.parent, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
+        try:
+            os.fsync(directory)
+        finally:
+            os.close(directory)
+    finally:
+        if descriptor >= 0:
+            os.close(descriptor)
+    reopened, raw = _load_json(path, label=label)
+    if (reopened != expected or raw != encoded
+            or stat.S_IMODE(path.stat().st_mode) & 0o222):
+        raise FullBankV2RunnerError(f"{label} durable reopen changed")
+    return reopened
+
+
+def issue_design(*, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
+    """Issue exactly the source classification followed by the V2 design."""
+
+    classification = design.issue_rotation_mask_classification(root=root)
+    amendment = design.issue_design_amendment(root=root)
+    if (not isinstance(classification, Mapping)
+            or not isinstance(amendment, Mapping)
+            or amendment.get("rotation_mask_classification", {}).get(
+                "self_digest")
+            != classification.get(design.MASK_CLASSIFICATION_SELF_KEY)):
+        raise FullBankV2RunnerError(
+            "issued design does not bind the exact mask classification")
+    return {
+        "stage": "issue-design",
+        "status": "PASS_CLASSIFICATION_THEN_DESIGN_ISSUED",
+        "rotation_mask_classification_digest": classification[
+            design.MASK_CLASSIFICATION_SELF_KEY],
+        "scorer_fit_corpus_v2_design_digest": amendment[
+            design.DESIGN_SELF_KEY],
+        "classification": "ALL_OLD_ROTATION_CONDITIONS_"
+                          "PARTIAL_SUBSET_ALLOCATION_ONLY",
+        "old_rotation_related_condition_count": classification["counts"][
+            "old_rotation_related_condition_count"],
+        "true_branch_execution_requirement_count": classification["counts"][
+            "true_branch_execution_requirement_count"],
+        "candidate_outcomes_consumed": False,
+        "solver_or_optimisation_used": False,
+    }
+
+
+def issue_source_correction(
+        *, root: Path = ROOT, design: Any = DESIGN) -> dict[str, Any]:
+    """Issue the operational replay bridge without changing manifest lineage."""
+
+    replay_correction = design.issue_manifest_replay_correction(root=root)
+    active = design.load_active_design_authority(root=root)
+    correction = _require_final_source_correction_authority(
+        active, design=design)
+    active_replay_correction = _require_manifest_replay_correction_authority(
+        active, design=design)
+    if (not isinstance(replay_correction, Mapping)
+            or active_replay_correction != dict(replay_correction)):
+        raise FullBankV2RunnerError(
+            "issued manifest-replay correction changed on active replay")
+    return {
+        "stage": "issue-source-correction",
+        "status": (
+            "PASS_POST_INSTALL_MANIFEST_REPLAY_CORRECTION_V1_ISSUED"),
+        "scorer_fit_corpus_v2_design_digest": active["design_amendment"][
+            design.DESIGN_SELF_KEY],
+        "immutable_preselection_source_correction_v2_digest": correction[
+            "immutable_preselection_source_correction_v2_digest"],
+        "transitive_immutable_preselection_source_correction_v1_digest":
+            correction[
+                "transitive_immutable_preselection_source_correction_v1_digest"],
+        "scorer_fit_corpus_v2_source_correction_digest": correction[
+            design.SOURCE_CORRECTION_SELF_KEY],
+        "scorer_fit_corpus_v2_manifest_lineage_digest": correction[
+            design.SOURCE_CORRECTION_SELF_KEY],
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest":
+            replay_correction[design.MANIFEST_REPLAY_CORRECTION_SELF_KEY],
+        "candidate_outcomes_consumed": False,
+        "selection_started": True,
+        "selection_already_completed_preoutcome": True,
+        "all_five_preoutcome_manifests_already_installed": True,
+        "manifest_written_or_rewritten": False,
+        "solver_or_optimisation_used": False,
+    }
+
+
+def _manifest_paths(root: Path) -> dict[str, Path]:
+    return {
+        key: _pin_relative(
+            root, SCORER_FIT_RELATIVE_PATH / name,
+            label=f"full-bank V2 {key}")
+        for key, name, _self_key in _MANIFEST_SPECS
+    }
+
+
+def _build_feasibility_failure(
+        failure: BUILDER.FullBankV2FeasibilityFailure,
+        *, authority: Mapping[str, Any]) -> dict[str, Any]:
+    design = authority.get("design_amendment")
+    classification = authority.get("rotation_mask_classification")
+    if not isinstance(design, Mapping) or not isinstance(classification, Mapping):
+        raise FullBankV2RunnerError("full-bank V2 design authority is incomplete")
+    ordered = list(failure.ordered_scene_ids)
+    if (len(ordered) != 17 or len(set(ordered)) != 17
+            or failure.fit_count < 0 or failure.calibration_count < 0):
+        raise FullBankV2RunnerError(
+            "pre-outcome feasibility failure details are malformed")
+    return _signed({
+        "schema": FEASIBILITY_FAILURE_SCHEMA,
+        "status": FEASIBILITY_FAILURE_STATUS,
+        "complete": True,
+        "source_repository_commit": authority[
+            "active_source_repository_commit"],
+        "scorer_fit_corpus_v2_design_digest": design[DESIGN.DESIGN_SELF_KEY],
+        "scorer_fit_corpus_v2_source_correction_digest": authority[
+            "source_correction_digest"],
+        "rotation_mask_classification_digest": classification[
+            DESIGN.MASK_CLASSIFICATION_SELF_KEY],
+        "active_global_exact_amendment_digest":
+            DESIGN.ACTIVE_GLOBAL_AMENDMENT_DIGEST,
+        "global_exact_model_digest": DESIGN.GLOBAL_EXACT_MODEL_DIGEST,
+        "exact_six_of_twelve_infeasibility_digest":
+            DESIGN.EXACT_INFEASIBILITY_DIGEST,
+        "terminal_six_of_twelve_infeasibility_receipt_digest":
+            DESIGN.TERMINAL_RECEIPT_DIGEST,
+        "failure_reason": failure.reason,
+        "passing_fit_scene_count": failure.fit_count,
+        "passing_calibration_scene_count": failure.calibration_count,
+        "required_fit_scene_count": 4,
+        "required_calibration_scene_count": 1,
+        "ordered_eligible_scene_count": 17,
+        "ordered_scene_ids": ordered,
+        "old_rotation_condition_classification": {
+            "partial_subset_allocation_only": 18,
+            "true_branch_execution_requirement": 0,
+        },
+        "selected_state_manifest_issued": False,
+        "assignment_manifest_issued": False,
+        "branch_execution_started": False,
+        "candidate_outcomes_consumed": False,
+        "frames_or_latents_generated": False,
+        "scorer_training_started": False,
+        "predictor_checkpoint_opened": False,
+        "final_200_state_corpus_generated": False,
+        "milp_cp_sat_or_optimisation_used": False,
+        "six_of_twelve_model_retried_or_reinterpreted": False,
+        "nothing_running": True,
+    }, FEASIBILITY_FAILURE_SELF_KEY)
+
+
+def _validate_feasibility_failure(
+        value: Mapping[str, Any], *, authority: Mapping[str, Any]) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError("feasibility failure is not a mapping")
+    payload = dict(value)
+    if (payload.get("schema") != FEASIBILITY_FAILURE_SCHEMA
+            or payload.get("status") != FEASIBILITY_FAILURE_STATUS
+            or payload.get("complete") is not True
+            or payload.get(FEASIBILITY_FAILURE_SELF_KEY)
+            != canonical_digest(_without(payload, FEASIBILITY_FAILURE_SELF_KEY))
+            or payload.get("scorer_fit_corpus_v2_design_digest")
+            != authority["design_amendment"][DESIGN.DESIGN_SELF_KEY]
+            or payload.get("source_repository_commit")
+            != authority["active_source_repository_commit"]
+            or payload.get("scorer_fit_corpus_v2_source_correction_digest")
+            != authority["source_correction_digest"]
+            or payload.get("rotation_mask_classification_digest")
+            != authority["rotation_mask_classification"][
+                DESIGN.MASK_CLASSIFICATION_SELF_KEY]
+            or payload.get("ordered_eligible_scene_count") != 17
+            or len(payload.get("ordered_scene_ids", [])) != 17
+            or len(set(payload.get("ordered_scene_ids", []))) != 17
+            or payload.get("required_fit_scene_count") != 4
+            or payload.get("required_calibration_scene_count") != 1
+            or payload.get("candidate_outcomes_consumed") is not False
+            or payload.get("branch_execution_started") is not False
+            or payload.get("milp_cp_sat_or_optimisation_used") is not False
+            or payload.get("nothing_running") is not True):
+        raise FullBankV2RunnerError(
+            "immutable full-bank V2 feasibility failure changed")
+    return payload
+
+
+def freeze_manifests(
+        *, root: Path = ROOT, builder: Any = BUILDER,
+        design_authority: Any = DESIGN,
+        ) -> tuple[int, dict[str, Any]]:
+    """Reopen the five installed pre-outcome artifacts without rewriting."""
+
+    authority = design_authority.load_active_design_authority(root=root)
+    replay_correction = _require_manifest_replay_correction_authority(
+        authority, design=design_authority)
+    paths = _manifest_paths(root)
+    failure_path = _pin_relative(
+        root, FEASIBILITY_FAILURE_RELATIVE_PATH,
+        label="full-bank V2 pre-outcome feasibility failure")
+    if failure_path.exists() or failure_path.is_symlink():
+        if any(path.exists() or path.is_symlink() for path in paths.values()):
+            raise FullBankV2RunnerError(
+                "terminal feasibility failure conflicts with success manifests")
+        payload, _raw = _load_json(
+            failure_path, label="full-bank V2 pre-outcome feasibility failure")
+        terminal = _validate_feasibility_failure(payload, authority=authority)
+        return 2, {
+            "stage": "freeze-manifests", "status": terminal["status"],
+            "terminal_failure_digest": terminal[FEASIBILITY_FAILURE_SELF_KEY],
+            "candidate_outcomes_consumed": False, "nothing_running": True,
+        }
+
+    absence_before = design_authority.audit_v2_runtime_outputs_absent(
+        root=root, phase="successor_contract")
+    loaded = builder.load_scorer_fit_v2_preoutcome_inputs(
+        out=root / SCORER_FIT_RELATIVE_PATH)
+    if (loaded.get("design_authority") != authority
+            or loaded.get("candidate_outcomes_consumed") is not False
+            or loaded.get("solver_or_optimisation_used") is not False):
+        raise FullBankV2RunnerError(
+            "full-bank V2 pre-outcome producer boundary changed")
+    try:
+        bundle = builder.build_scorer_fit_v2_full_bank_bundle(
+            design=authority["design_amendment"],
+            classification=authority["rotation_mask_classification"],
+            source_correction=authority["source_correction"],
+            source_correction_binding=authority[
+                "source_correction_binding"],
+            source_correction_digest=authority["source_correction_digest"],
+            predecessor_inputs=loaded["predecessor_inputs"],
+            allowed_scene_ids_by_family=loaded[
+                "allowed_scene_ids_by_family"],
+            exclusion_authority=loaded["exclusion_authority"],
+            preserved_vectors=loaded["preserved_vectors"],
+            exclusion_binding=loaded["exclusion_authority"][
+                "predecessor_exclusion_binding"],
+            verify_scene_files=True,
+        )
+    except builder.FullBankV2FeasibilityFailure as failure:
+        if any(path.exists() or path.is_symlink() for path in paths.values()):
+            raise FullBankV2RunnerError(
+                "cannot issue failure after any success artifact exists") from failure
+        terminal = _build_feasibility_failure(failure, authority=authority)
+        if (absence_before
+                != design_authority.audit_v2_runtime_outputs_absent(
+                    root=root, phase="successor_contract")
+                or authority
+                != design_authority.load_active_design_authority(root=root)):
+            raise FullBankV2RunnerError(
+                "authority or runtime absence changed before failure install")
+        _install_or_require_exact_json(
+            failure_path, terminal,
+            label="full-bank V2 pre-outcome feasibility failure")
+        return 2, {
+            "stage": "freeze-manifests", "status": terminal["status"],
+            "terminal_failure_digest": terminal[FEASIBILITY_FAILURE_SELF_KEY],
+            "passing_fit_scene_count": terminal["passing_fit_scene_count"],
+            "passing_calibration_scene_count": terminal[
+                "passing_calibration_scene_count"],
+            "candidate_outcomes_consumed": False, "nothing_running": True,
+        }
+
+    builder.validate_scorer_fit_v2_full_bank_bundle(
+        bundle,
+        predecessor_inputs=loaded["predecessor_inputs"],
+        allowed_scene_ids_by_family=loaded["allowed_scene_ids_by_family"],
+        exclusion_authority=loaded["exclusion_authority"],
+        preserved_vectors=loaded["preserved_vectors"],
+        exclusion_binding=loaded["exclusion_authority"][
+            "predecessor_exclusion_binding"],
+        verify_scene_files=True,
+    )
+    if (bundle.get("candidate_outcomes_consumed") is not False
+            or bundle.get("solver_or_optimisation_used") is not False
+            or failure_path.exists() or failure_path.is_symlink()
+            or absence_before
+            != design_authority.audit_v2_runtime_outputs_absent(
+                root=root, phase="successor_contract")
+            or authority
+            != design_authority.load_active_design_authority(root=root)):
+        raise FullBankV2RunnerError(
+            "full-bank authority changed before manifest installation")
+
+    bindings: dict[str, dict[str, Any]] = {}
+    for key, _name, self_key in _MANIFEST_SPECS:
+        payload = bundle.get(key)
+        if (not isinstance(payload, Mapping)
+                or not _is_hex(payload.get(self_key))):
+            raise FullBankV2RunnerError(
+                f"full-bank V2 {key} producer payload is malformed")
+        installed = _install_or_require_exact_json(
+            paths[key], payload, label=f"full-bank V2 {key}")
+        bindings[key] = {
+            "path": str(SCORER_FIT_RELATIVE_PATH / dict(
+                (row_key, name) for row_key, name, _ in _MANIFEST_SPECS)[key]),
+            "self_digest_key": self_key,
+            "self_digest": installed[self_key],
+            "raw_sha256": file_sha256(paths[key]),
+            "byte_count": paths[key].stat().st_size,
+        }
+
+    replay = builder.load_and_validate_full_bank_v2_manifests_for_consumption(
+        out=root / SCORER_FIT_RELATIVE_PATH)
+    if any(replay.get(key) != bundle[key] for key, _name, _self in _MANIFEST_SPECS):
+        raise FullBankV2RunnerError(
+            "installed full-bank V2 manifests differ from producer replay")
+    state_manifest = replay["state_manifest"]
+    return 0, {
+        "stage": "freeze-manifests",
+        "status": "PASS_FULL_BANK_V2_MANIFESTS_FROZEN",
+        "scorer_fit_corpus_v2_source_correction_digest": authority[
+            "source_correction_digest"],
+        "scorer_fit_corpus_v2_manifest_lineage_digest": authority[
+            "source_correction_digest"],
+        "scorer_fit_corpus_v2_manifest_replay_correction_digest":
+            replay_correction[
+                design_authority.MANIFEST_REPLAY_CORRECTION_SELF_KEY],
+        "selected_small_completion_scene_ids": list(
+            replay["selection"]["selected_scene_ids"]),
+        "state_count": len(state_manifest["states"]),
+        "assignment_count": replay["assignment_manifest"]["assignment_count"],
+        "state_manifest_digest": state_manifest["state_manifest_digest"],
+        "assignment_manifest_digest": replay["assignment_manifest"][
+            "full_bank_assignment_manifest_digest"],
+        "artifact_bindings": bindings,
+        "preexisting_manifest_count_reopened": len(bindings),
+        "manifest_written_or_rewritten": False,
+        "candidate_outcomes_consumed": False,
+        "solver_or_optimisation_used": False,
+    }
+
+
+def issue_scorer_contract(
+        *, root: Path = ROOT, contract_authority: Any = SCORER_CONTRACT,
+        ) -> dict[str, Any]:
+    artifact = contract_authority.issue_contract(root=root)
+    # This historical issuance stage predates both encoder-runtime
+    # corrections.  Validate the artifact that was just issued and its exact
+    # installed bytes without invoking the later runtime-consumption gate.
+    validated = contract_authority.validate_contract_artifact(artifact)
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued successor scorer contract changed on exact replay")
+    binding = contract_authority.contract_artifact_binding(
+        validated, root=root)
+    if (binding.get("self_digest")
+            != artifact[contract_authority.ARTIFACT_SELF_KEY]):
+        raise FullBankV2RunnerError(
+            "issued successor scorer contract bytes changed on exact replay")
+    return {
+        "stage": "issue-scorer-contract",
+        "status": "PASS_SUCCESSOR_SCORER_CONTRACT_ISSUED",
+        "scorer_fit_corpus_v2_scorer_contract_digest": artifact[
+            contract_authority.CONTRACT_SELF_KEY],
+        "contract_artifact_digest": artifact[
+            contract_authority.ARTIFACT_SELF_KEY],
+        "branch_execution_started": False,
+        "candidate_outcomes_consumed": False,
+    }
+
+
+def issue_encoder_import_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue historically, or replay through the newest immutable lineage."""
+
+    replayed_from_dtype_lineage = False
+    replayed_from_path_projection_lineage = False
+    replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
+    path_relative = getattr(
+        design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
+        None)
+    path_correction_path = (
+        None if path_relative is None else _pin_relative(
+            root, Path(path_relative),
+            label="encoder-path-projection correction"))
+    dtype_relative = getattr(
+        design_authority, "ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH",
+        None)
+    dtype_path = (None if dtype_relative is None else _pin_relative(
+        root, Path(dtype_relative), label="encoder-compute-dtype correction"))
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+    elif (path_correction_path is not None
+            and (path_correction_path.exists()
+                 or path_correction_path.is_symlink())):
+        path_correction = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(
+                root=root))
+        dtype_correction, _dtype_digest = (
+            _immutable_dtype_from_path_projection_correction(
+                path_correction, design_authority=design_authority))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+        replayed_from_path_projection_lineage = True
+    elif (dtype_path is not None
+            and (dtype_path.exists() or dtype_path.is_symlink())):
+        dtype_correction = (
+            design_authority
+            .load_encoder_compute_dtype_correction_for_consumption(root=root))
+        immutable = design_authority.validate_immutable_encoder_import_correction(
+            dtype_correction.get("immutable_encoder_import_correction", {}))
+        artifact = immutable["payload"]
+        validated = artifact
+        _immutable_import_digest_from_dtype_correction(
+            dtype_correction, design_authority=design_authority)
+        replayed_from_dtype_lineage = True
+    else:
+        artifact = design_authority.issue_encoder_import_correction(root=root)
+        validated = (
+            design_authority
+            .load_encoder_import_correction_for_consumption(root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued encoder-import correction changed on exact replay")
+    digest = artifact.get(design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY)
+    if (not _is_hex(digest)
+            or digest
+            != design_authority.IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST):
+        raise FullBankV2RunnerError(
+            "encoder-import correction digest is malformed")
+    immutable = artifact.get("immutable_successor_scorer_contract_binding")
+    if (not isinstance(immutable, Mapping)
+            or immutable.get("self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST
+            or immutable.get("embedded_contract_self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST):
+        raise FullBankV2RunnerError(
+            "encoder-import correction changed the immutable scorer contract")
+    return {
+        "stage": "issue-encoder-import-correction",
+        "status": design_authority.ENCODER_IMPORT_CORRECTION_STATUS,
+        "scorer_fit_corpus_v2_encoder_import_correction_digest": digest,
+        "immutable_scorer_contract_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "immutable_scorer_contract_artifact_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "scorer_contract_reissued_or_rewritten": False,
+        "preoutcome_manifests_reissued_or_rewritten": False,
+        "latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_dtype_correction_lineage":
+            replayed_from_dtype_lineage,
+        "replayed_from_immutable_path_projection_correction_lineage":
+            replayed_from_path_projection_lineage,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
+    }
+
+
+def _immutable_import_digest_from_dtype_correction(
+        correction: Mapping[str, Any], *, design_authority: Any = DESIGN,
+        ) -> str:
+    digest = correction.get("immutable_encoder_import_correction_digest")
+    immutable = correction.get("immutable_encoder_import_correction")
+    payload = (immutable.get("payload")
+               if isinstance(immutable, Mapping) else None)
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or payload.get(design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY)
+            != digest
+            or digest
+            != design_authority.IMMUTABLE_ENCODER_IMPORT_CORRECTION_DIGEST):
+        raise FullBankV2RunnerError(
+            "dtype correction changed the immutable import correction")
+    return digest
+
+
+def _immutable_dtype_from_path_projection_correction(
+        correction: Mapping[str, Any], *, design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the exact immutable dtype payload embedded by the live gate."""
+
+    digest = correction.get(
+        "immutable_encoder_compute_dtype_correction_digest")
+    immutable = correction.get("immutable_encoder_compute_dtype_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "path-projection correction lacks the immutable dtype correction")
+    validated = design_authority.validate_immutable_encoder_compute_dtype_correction(
+        immutable)
+    payload = validated.get("payload")
+    expected = getattr(
+        design_authority, "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST",
+        None)
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or payload.get(
+                design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+            != digest
+            or not _is_hex(expected)
+            or digest != expected):
+        raise FullBankV2RunnerError(
+            "path-projection correction changed the immutable dtype correction")
+    return dict(payload), str(digest)
+
+
+def _immutable_path_from_branch_redrive_projection_correction(
+        correction: Mapping[str, Any], *, root: Path = ROOT,
+        design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the historical path correction nested by the live redrive gate."""
+
+    digest = correction.get(
+        "immutable_encoder_path_projection_correction_digest")
+    immutable = correction.get("immutable_encoder_path_projection_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "redrive-projection correction lacks the immutable path correction")
+    validated_immutable = (
+        design_authority.validate_immutable_encoder_path_projection_correction(
+            immutable))
+    payload = validated_immutable.get("payload")
+    binding = validated_immutable.get("binding")
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or not isinstance(binding, Mapping)
+            or payload.get(
+                design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != digest
+            or binding.get("self_digest") != digest):
+        raise FullBankV2RunnerError(
+            "redrive-projection correction changed the immutable path "
+            "correction")
+    return dict(payload), str(digest)
+
+
+def _immutable_redrive_from_optional_smoke_resume_correction(
+        correction: Mapping[str, Any], *, root: Path = ROOT,
+        design_authority: Any = DESIGN,
+        ) -> tuple[dict[str, Any], str]:
+    """Return the historical redrive correction nested by the live gate."""
+
+    digest = correction.get(
+        "immutable_branch_redrive_projection_correction_digest")
+    immutable = correction.get(
+        "immutable_branch_redrive_projection_correction")
+    if not isinstance(immutable, Mapping):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction lacks the immutable redrive "
+            "correction")
+    validated_immutable = (
+        design_authority.validate_immutable_branch_redrive_projection_correction(
+            immutable))
+    payload = validated_immutable.get("payload")
+    binding = validated_immutable.get("binding")
+    if (not _is_hex(digest) or not isinstance(payload, Mapping)
+            or not isinstance(binding, Mapping)
+            or payload.get(
+                design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+            != digest
+            or binding.get("self_digest_key")
+            != design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY
+            or binding.get("self_digest") != digest):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction changed the immutable redrive "
+            "correction")
+    return dict(payload), str(digest)
+
+
+def _installed_optional_smoke_resume_correction(
+        *, root: Path, design_authority: Any) -> Mapping[str, Any] | None:
+    """Load the newest authority only when its exact registered path exists."""
+
+    relative = getattr(
+        design_authority,
+        "OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH",
+        None)
+    if relative is None:
+        return None
+    path = _pin_relative(
+        root, Path(relative), label="optional-smoke partial-corpus correction")
+    if not path.exists() and not path.is_symlink():
+        return None
+    return (
+        design_authority
+        .load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+
+
+def issue_encoder_compute_dtype_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue historically, or replay immutably through its path successor."""
+
+    replayed_from_path_projection_lineage = False
+    replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
+    path_relative = getattr(
+        design_authority, "ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH",
+        None)
+    path_correction_path = (
+        None if path_relative is None else _pin_relative(
+            root, Path(path_relative),
+            label="encoder-path-projection correction"))
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        path_correction, _path_digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+        replayed_from_redrive_lineage = True
+    elif (path_correction_path is not None
+            and (path_correction_path.exists()
+                 or path_correction_path.is_symlink())):
+        path_correction = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(
+                root=root))
+        artifact, _digest = _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority)
+        validated = artifact
+        replayed_from_path_projection_lineage = True
+    else:
+        artifact = design_authority.issue_encoder_compute_dtype_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_encoder_compute_dtype_correction_for_consumption(root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued encoder-compute-dtype correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY)
+    if (not _is_hex(digest)
+            or digest != getattr(
+                design_authority,
+                "IMMUTABLE_ENCODER_COMPUTE_DTYPE_CORRECTION_DIGEST", digest)):
+        raise FullBankV2RunnerError(
+            "encoder-compute-dtype correction digest is malformed")
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        artifact, design_authority=design_authority)
+    immutable_contract = artifact.get(
+        "immutable_successor_scorer_contract_binding")
+    if (not isinstance(immutable_contract, Mapping)
+            or immutable_contract.get("self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST
+            or immutable_contract.get("embedded_contract_self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST):
+        raise FullBankV2RunnerError(
+            "dtype correction changed the immutable scorer contract")
+    return {
+        "stage": "issue-encoder-compute-dtype-correction",
+        "status": design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_STATUS,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY: digest,
+        "encoder_compute_dtype_correction_digest": digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "immutable_scorer_contract_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "immutable_scorer_contract_artifact_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "encoder_import_correction_reissued_or_rewritten": False,
+        "scorer_contract_reissued_or_rewritten": False,
+        "preoutcome_manifests_reissued_or_rewritten": False,
+        "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_path_projection_correction_lineage":
+            replayed_from_path_projection_lineage,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
+    }
+
+
+def issue_encoder_path_projection_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue historically, or replay through the installed redrive gate."""
+
+    replayed_from_redrive_lineage = False
+    replayed_from_resume_lineage = False
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
+    redrive_relative = getattr(
+        design_authority,
+        "BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH", None)
+    redrive_path = (None if redrive_relative is None else _pin_relative(
+        root, Path(redrive_relative), label="branch-redrive correction"))
+    if newest is not None:
+        redrive, _redrive_digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        artifact, _digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        validated = artifact
+        replayed_from_redrive_lineage = True
+        replayed_from_resume_lineage = True
+    elif (redrive_path is not None
+            and (redrive_path.exists() or redrive_path.is_symlink())):
+        redrive = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+        artifact, _digest = (
+            _immutable_path_from_branch_redrive_projection_correction(
+                redrive, root=root, design_authority=design_authority))
+        validated = artifact
+        replayed_from_redrive_lineage = True
+    else:
+        artifact = design_authority.issue_encoder_path_projection_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_encoder_path_projection_correction_for_consumption(root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued encoder-path-projection correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "encoder-path-projection correction digest is malformed")
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            artifact, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    immutable_contract = artifact.get(
+        "immutable_successor_scorer_contract_binding")
+    if (not isinstance(immutable_contract, Mapping)
+            or immutable_contract.get("self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST
+            or immutable_contract.get("embedded_contract_self_digest")
+            != SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST):
+        raise FullBankV2RunnerError(
+            "path-projection correction changed the immutable scorer contract")
+    return {
+        "stage": "issue-encoder-path-projection-correction",
+        "status": design_authority.ENCODER_PATH_PROJECTION_CORRECTION_STATUS,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY: digest,
+        "encoder_path_projection_correction_digest": digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "immutable_scorer_contract_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_CONTRACT_DIGEST,
+        "immutable_scorer_contract_artifact_digest":
+            SCORER_CONTRACT.IMMUTABLE_ISSUED_ARTIFACT_DIGEST,
+        "encoder_compute_dtype_correction_reissued_or_rewritten": False,
+        "encoder_import_correction_reissued_or_rewritten": False,
+        "scorer_contract_reissued_or_rewritten": False,
+        "preoutcome_manifests_reissued_or_rewritten": False,
+        "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_branch_redrive_correction_lineage":
+            replayed_from_redrive_lineage,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
+    }
+
+
+def issue_branch_redrive_projection_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue historically, or replay through the installed resume gate."""
+
+    newest = _installed_optional_smoke_resume_correction(
+        root=root, design_authority=design_authority)
+    replayed_from_resume_lineage = newest is not None
+    if newest is not None:
+        artifact, _digest = (
+            _immutable_redrive_from_optional_smoke_resume_correction(
+                newest, root=root, design_authority=design_authority))
+        validated = artifact
+    else:
+        artifact = design_authority.issue_branch_redrive_projection_correction(
+            root=root)
+        validated = (
+            design_authority
+            .load_branch_redrive_projection_correction_for_consumption(
+                root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued branch-redrive correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "branch-redrive projection correction digest is malformed")
+    path_correction, path_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            artifact, root=root, design_authority=design_authority))
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    return {
+        "stage": "issue-branch-redrive-projection-correction",
+        "status": design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_STATUS,
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY: digest,
+        "branch_redrive_projection_correction_digest": digest,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            path_digest,
+        "encoder_path_projection_correction_digest": path_digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "retained_valid_branch_count": 120,
+        "retained_invalid_attempt_receipt_count": 12,
+        "manifest_or_identity_replaced": False,
+        "completed_branch_reissued_or_rewritten": False,
+        "candidate_outcome_or_label_value_read_for_correction": False,
+        "branch_latent_or_scorer_runtime_started_by_issue_stage": False,
+        "replayed_from_immutable_optional_smoke_partial_corpus_resume_"
+        "correction_lineage": replayed_from_resume_lineage,
+    }
+
+
+def issue_optional_smoke_partial_corpus_resume_correction(
+        *, root: Path = ROOT, design_authority: Any = DESIGN,
+        ) -> dict[str, Any]:
+    """Issue the source-only post-redrive optional-smoke resume authority."""
+
+    artifact = (
+        design_authority
+        .issue_optional_smoke_partial_corpus_resume_correction(root=root))
+    validated = (
+        design_authority
+        .load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+    if artifact != validated:
+        raise FullBankV2RunnerError(
+            "issued partial-corpus resume correction changed on exact replay")
+    digest = artifact.get(
+        design_authority.
+        OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY)
+    if not _is_hex(digest):
+        raise FullBankV2RunnerError(
+            "partial-corpus resume correction digest is malformed")
+    redrive_correction, redrive_digest = (
+        _immutable_redrive_from_optional_smoke_resume_correction(
+            artifact, root=root, design_authority=design_authority))
+    path_correction, path_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            redrive_correction, root=root,
+            design_authority=design_authority))
+    dtype_correction, dtype_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            path_correction, design_authority=design_authority))
+    import_digest = _immutable_import_digest_from_dtype_correction(
+        dtype_correction, design_authority=design_authority)
+    return {
+        "stage": "issue-optional-smoke-partial-corpus-resume-correction",
+        "status": design_authority.
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_STATUS,
+        design_authority.
+            OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY: digest,
+        "optional_smoke_partial_corpus_resume_correction_digest": digest,
+        design_authority.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            redrive_digest,
+        "branch_redrive_projection_correction_digest": redrive_digest,
+        design_authority.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            path_digest,
+        "encoder_path_projection_correction_digest": path_digest,
+        design_authority.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            dtype_digest,
+        "encoder_compute_dtype_correction_digest": dtype_digest,
+        design_authority.ENCODER_IMPORT_CORRECTION_SELF_KEY: import_digest,
+        "encoder_import_correction_digest": import_digest,
+        "retained_valid_branch_count": 120,
+        "retained_invalid_attempt_receipt_count": 12,
+        "retained_smoke_transaction_complete": True,
+        "manifest_or_identity_replaced": False,
+        "completed_branch_reissued_or_rewritten": False,
+        "branch_or_latent_runtime_started_by_issue_stage": False,
+        "candidate_outcome_or_label_value_read_for_correction": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _runtime_contract(authority: Any, role: str) -> dict[str, Any]:
+    contracts = getattr(authority, "DOWNSTREAM_RUNTIME_CONTRACTS", None)
+    if (not isinstance(contracts, Mapping)
+            or set(contracts) != set(_RUNTIME_ROLES)
+            or role not in contracts
+            or not isinstance(contracts[role], Mapping)):
+        raise FullBankV2RunnerError("downstream runtime contract surface changed")
+    return json.loads(_json_bytes(contracts[role]))
+
+
+def _runtime_observation_from_contract(
+        contract: Mapping[str, Any]) -> dict[str, Any]:
+    keys = {
+        "python_version", "torch_version", "torch_cuda_runtime",
+        "torch_hip_runtime", "accelerator_available",
+        "accelerator_device_count", "accelerator_devices",
+    }
+    if contract.get("role") == "genesis_branch_generation":
+        keys.add("genesis_version")
+    if not keys.issubset(contract):
+        raise FullBankV2RunnerError("runtime observation contract is incomplete")
+    return {key: json.loads(_json_bytes(contract[key])) for key in sorted(keys)}
+
+
+def _bound_interpreters(
+        *, root: Path, authority: Any = RUNTIME_AUTHORITY) -> dict[str, Path]:
+    roles = getattr(authority, "DOWNSTREAM_STAGE_RUNTIME_ROLES", None)
+    expected_projection = {
+        "six_branch_smoke": "genesis",
+        "smoke_encoding": "rocm",
+        "full_720_branch_corpus": "genesis",
+        "full_latent_encoding": "rocm",
+        "scorer_training_and_qualification": "rocm",
+        "development_transfer": "rocm",
+        "qualification_validation": "rocm",
+        "development_validation": "rocm",
+    }
+    if roles != expected_projection:
+        raise FullBankV2RunnerError(
+            "frozen downstream stage/runtime routing changed")
+    result: dict[str, Path] = {}
+    for role in _RUNTIME_ROLES:
+        contract = _runtime_contract(authority, role)
+        interpreter = _pin_relative(
+            root, contract["interpreter_relative_path"],
+            label=f"bound {role} interpreter")
+        config = _pin_relative(
+            root, contract["pyvenv_config_relative_path"],
+            label=f"bound {role} pyvenv config")
+        if (not interpreter.exists() or interpreter.is_dir()
+                or not os.access(interpreter, os.X_OK)
+                or not config.is_file() or config.is_symlink()
+                or config.stat().st_size != contract["pyvenv_config_byte_count"]
+                or file_sha256(config) != contract["pyvenv_config_sha256"]):
+            raise FullBankV2RunnerError(
+                f"bound {role} runtime custody changed")
+        result[role] = interpreter
+    return result
+
+
+def build_runtime_probe_receipt(
+        *, runtime_role: str, observation: Mapping[str, Any], authority: Any,
+        ) -> dict[str, Any]:
+    contract = _runtime_contract(authority, runtime_role)
+    if dict(observation) != _runtime_observation_from_contract(contract):
+        raise FullBankV2RunnerError(
+            f"{runtime_role} runtime identity differs from frozen contract")
+    return _signed({
+        "schema": RUNTIME_PROBE_SCHEMA,
+        "status": RUNTIME_PROBE_STATUS,
+        "runtime_role": runtime_role,
+        "runtime_contract_digest": canonical_digest(contract),
+        "interpreter_relative_path": contract["interpreter_relative_path"],
+        "pyvenv_config_sha256": contract["pyvenv_config_sha256"],
+        "observed_runtime_identity": dict(observation),
+    }, RUNTIME_PROBE_SELF_KEY)
+
+
+def validate_runtime_probe_receipt(
+        receipt: Mapping[str, Any], *, runtime_role: str, authority: Any,
+        ) -> dict[str, Any]:
+    if not isinstance(receipt, Mapping):
+        raise FullBankV2RunnerError("runtime probe is not a mapping")
+    payload = dict(receipt)
+    expected = build_runtime_probe_receipt(
+        runtime_role=runtime_role,
+        observation=payload.get("observed_runtime_identity", {}),
+        authority=authority)
+    if payload != expected:
+        raise FullBankV2RunnerError("runtime probe receipt changed")
+    return expected
+
+
+def _observe_current_runtime(runtime_role: str) -> dict[str, Any]:
+    import torch
+
+    devices: list[dict[str, Any]] = []
+    count = int(torch.cuda.device_count())
+    for index in range(count):
+        properties = torch.cuda.get_device_properties(index)
+        gcn = getattr(properties, "gcnArchName", None)
+        if gcn is None:
+            gcn = getattr(properties, "gcn_arch_name", None)
+        devices.append({
+            "index": index,
+            "name": str(torch.cuda.get_device_name(index)),
+            "capability": list(torch.cuda.get_device_capability(index)),
+            "gcn_arch_name": gcn,
+            "multi_processor_count": int(properties.multi_processor_count),
+        })
+    observation: dict[str, Any] = {
+        "python_version": platform.python_version(),
+        "torch_version": str(torch.__version__),
+        "torch_cuda_runtime": torch.version.cuda,
+        "torch_hip_runtime": torch.version.hip,
+        "accelerator_available": bool(torch.cuda.is_available()),
+        "accelerator_device_count": count,
+        "accelerator_devices": devices,
+    }
+    if runtime_role == "genesis":
+        observation["genesis_version"] = str(metadata.version("genesis-world"))
+    elif runtime_role != "rocm":
+        raise FullBankV2RunnerError("unknown runtime probe role")
+    return observation
+
+
+def _emit_runtime_probe(
+        runtime_role: str, *, root: Path = ROOT,
+        authority: Any = RUNTIME_AUTHORITY) -> int:
+    contract = _runtime_contract(authority, runtime_role)
+    expected = _pin_relative(
+        root, contract["interpreter_relative_path"],
+        label=f"bound {runtime_role} interpreter")
+    config = _pin_relative(
+        root, contract["pyvenv_config_relative_path"],
+        label=f"bound {runtime_role} pyvenv config")
+    if (Path(sys.executable).absolute() != expected.absolute()
+            or not config.is_file() or config.is_symlink()
+            or config.stat().st_size != contract["pyvenv_config_byte_count"]
+            or file_sha256(config) != contract["pyvenv_config_sha256"]):
+        raise FullBankV2RunnerError(
+            f"runtime probe is not using the bound {runtime_role} interpreter")
+    print(json.dumps(build_runtime_probe_receipt(
+        runtime_role=runtime_role,
+        observation=_observe_current_runtime(runtime_role),
+        authority=authority), sort_keys=True), flush=True)
+    return 0
+
+
+def _default_runtime_probe_invoker(
+        runtime_role: str, root: Path, interpreter: Path,
+        authority: Any) -> Mapping[str, Any]:
+    completed = subprocess.run(
+        [str(interpreter), str(root / RUNNER_RELATIVE_PATH),
+         "--stage", f"internal-probe-{runtime_role}"],
+        cwd=root, check=False, capture_output=True, text=True, timeout=60)
+    if completed.returncode != 0:
+        raise FullBankV2RunnerError(
+            f"bound {runtime_role} runtime probe failed")
+    try:
+        payload = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise FullBankV2RunnerError(
+            f"bound {runtime_role} runtime probe output is not closed JSON") from exc
+    return validate_runtime_probe_receipt(
+        payload, runtime_role=runtime_role, authority=authority)
+
+
+def downstream_command_sequence(
+        *, root: Path = ROOT,
+        interpreters: Mapping[str, Path] | None = None,
+        authority: Any = RUNTIME_AUTHORITY,
+        ) -> dict[str, list[str]]:
+    """Return the exact V2 commands, with no solver or final-eval route."""
+
+    selected = (_bound_interpreters(root=root, authority=authority)
+                if interpreters is None else {
+                    role: Path(interpreters[role]) for role in _RUNTIME_ROLES})
+    if set(selected) != set(_RUNTIME_ROLES):
+        raise FullBankV2RunnerError("downstream interpreter set changed")
+    build = str(root / "scripts/build_go2_branch_corpus_v1_2.py")
+    encode = str(root / "scripts/encode_go2_branch_corpus_v1_2.py")
+    train = str(root / "scripts/train_go2_utility_scorer_v1_2.py")
+    apply = str(root /
+                "scripts/apply_go2_utility_scorer_to_counterfactual_"
+                "development_v1_2.py")
+    commands = {
+        "branch_smoke": [str(selected["genesis"]), build, "--pool",
+                         "scorer_fit", "--stage", "smoke", "--backend", "cpu"],
+        "branch_smoke_zero_new": [str(selected["genesis"]), build, "--pool",
+                                  "scorer_fit", "--stage", "smoke",
+                                  "--backend", "cpu"],
+        "smoke_encoding": [str(selected["rocm"]), encode, "--pool",
+                           "scorer_fit", "--corpus-design", "full-bank-v2",
+                           "--smoke"],
+        "smoke_encoding_zero_new": [str(selected["rocm"]), encode, "--pool",
+                                    "scorer_fit", "--corpus-design",
+                                    "full-bank-v2", "--smoke"],
+        "smoke_single_shard_regeneration": [
+            str(selected["rocm"]), encode, "--pool", "scorer_fit",
+            "--corpus-design", "full-bank-v2", "--smoke",
+            "--single-shard-regeneration-transaction"],
+        "full_branch_corpus": [str(selected["genesis"]), build, "--pool",
+                               "scorer_fit", "--stage", "branches",
+                               "--backend", "cpu"],
+        "full_latent_encoding": [str(selected["rocm"]), encode, "--pool",
+                                 "scorer_fit", "--corpus-design",
+                                 "full-bank-v2"],
+        "scorer_training_and_qualification": [
+            str(selected["rocm"]), train, "--pool", "scorer_fit",
+            "--corpus-design", "full-bank-v2"],
+        "development_transfer": [str(selected["rocm"]), apply,
+                                 "--scorer-corpus-design", "full-bank-v2"],
+    }
+    if set(commands) != set(_V2_RUNTIME_STAGE_ROLES):
+        raise FullBankV2RunnerError("full-bank V2 command surface changed")
+    for stage, command in commands.items():
+        if Path(command[0]) != selected[_V2_RUNTIME_STAGE_ROLES[stage]]:
+            raise FullBankV2RunnerError(f"{stage} escaped its bound runtime")
+        lowered = " ".join(command).lower()
+        if ("final_eval" in lowered or "final-eval" in lowered
+                or "milp" in lowered or "cp-sat" in lowered
+                or "small-completion-search" in lowered):
+            raise FullBankV2RunnerError(
+                f"forbidden execution route appeared in {stage}")
+    return commands
+
+
+def _default_command_runner(command: Sequence[str], root: Path) -> int:
+    return int(subprocess.run(
+        [str(part) for part in command], cwd=root, check=False).returncode)
+
+
+def _ensure_final_eval_absent(*, root: Path = ROOT) -> None:
+    for relative in DESIGN.V2_ALWAYS_ABSENT_PATHS:
+        path = _pin_relative(root, relative, label="future final-evaluation absence")
+        if path.exists() or path.is_symlink():
+            raise FullBankV2RunnerError(
+                "final 200-state evaluation corpus is not authorised in this pass")
+
+
+def _run_command(
+        stage: str, commands: Mapping[str, Sequence[str]], *, root: Path,
+        command_runner: CommandRunner) -> int:
+    result = command_runner(commands[stage], root)
+    if type(result) is not int:
+        raise FullBankV2RunnerError(f"{stage} returned a non-integer status")
+    _ensure_final_eval_absent(root=root)
+    return result
+
+
+def _require_projection(
+        value: Mapping[str, Any], *, kind: str) -> dict[str, Any]:
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError(f"{kind} validator did not return a mapping")
+    projection = dict(value)
+    if (projection.get("validation_kind") != kind
+            or projection.get("pass") is not True
+            or projection.get("candidate_outcomes_used_for_selection") is not False
+            or projection.get("final_200_state_corpus_generated") is not False):
+        raise FullBankV2RunnerError(f"{kind} validation projection changed")
+    return projection
+
+
+def _validate_zero_new_encoding(
+        first: Mapping[str, Any], replay: Mapping[str, Any]) -> None:
+    if (first.get("registered_smoke_shard_inventory_digest")
+            != replay.get("registered_smoke_shard_inventory_digest")
+            or first.get("registered_smoke_stable_artifact_inventory_digest")
+            != replay.get(
+                "registered_smoke_stable_artifact_inventory_digest")
+            or replay.get("invocation_new_context_shards") != 0
+            or replay.get("invocation_new_horizon_shards") != 0
+            or replay.get("zero_new_resume_verified") is not True):
+        raise FullBankV2RunnerError(
+            "zero-new smoke encoding changed a completed artifact")
+
+
+def _validate_single_shard_recovery(
+        before: Mapping[str, Any], after: Mapping[str, Any]) -> None:
+    target_before = before.get("single_shard_regeneration_target")
+    target_after = after.get("single_shard_regeneration_target")
+    if (not isinstance(target_before, Mapping)
+            or target_after != target_before
+            or before.get("registered_smoke_shard_inventory_digest")
+            != after.get("registered_smoke_shard_inventory_digest")
+            or before.get(
+                "registered_smoke_stable_artifact_inventory_digest")
+            != after.get(
+                "registered_smoke_stable_artifact_inventory_digest")
+            or after.get("invocation_new_context_shards") != 0
+            or after.get("invocation_new_horizon_shards") != 1
+            or after.get("single_registered_shard_regenerated") is not True
+            or after.get("only_registered_missing_shard_changed") is not True
+            or after.get("single_shard_regeneration_transaction_state")
+            != "COMPLETE"
+            or after.get(
+                "single_shard_regeneration_transaction_complete") is not True
+            or not _is_hex(after.get(
+                "single_shard_regeneration_prepared_digest"))
+            or not _is_hex(after.get(
+                "single_shard_regeneration_complete_digest"))
+            or after.get("single_shard_regeneration_target_exact") is not True
+            or after.get("single_shard_regeneration_backup_exact") is not True):
+        raise FullBankV2RunnerError(
+            "single-shard smoke regeneration proof failed")
+
+
+def _require_complete_strict_smoke_transaction(
+        projection: Mapping[str, Any]) -> None:
+    """Require the encoder's immutable COMPLETE transaction aliases."""
+
+    if (projection.get("single_shard_regeneration_transaction_state")
+            != "COMPLETE"
+            or projection.get(
+                "single_shard_regeneration_transaction_complete") is not True
+            or not _is_hex(projection.get(
+                "single_shard_regeneration_prepared_digest"))
+            or not _is_hex(projection.get(
+                "single_shard_regeneration_complete_digest"))
+            or projection.get(
+                "single_shard_regeneration_target_exact") is not True
+            or projection.get(
+                "single_shard_regeneration_backup_exact") is not True
+            or projection.get("zero_new_resume_verified") is not True
+            or projection.get(
+                "single_registered_shard_regenerated") is not True
+            or projection.get(
+                "only_registered_missing_shard_changed") is not True):
+        raise FullBankV2RunnerError(
+            "encoder smoke lacks the exact COMPLETE transaction proof")
+
+
+def _optional_smoke_transaction_complete(
+        projection: Mapping[str, Any]) -> bool:
+    """Return true only for COMPLETE plus its exact bound PASS smoke."""
+
+    return bool(
+        projection.get("transaction_state") == "COMPLETE"
+        and projection.get("prepared_present") is True
+        and _is_hex(projection.get("prepared_receipt_digest"))
+        and projection.get("target_state") == "EXACT"
+        and projection.get("backup_state") == "EXACT"
+        and projection.get("complete_present") is True
+        and _is_hex(projection.get("complete_receipt_digest"))
+        and projection.get("pass_smoke_state") in {
+            "EXACT_BOUND_PROTOCOL_PASS",
+            "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE"}
+        and projection.get("next_action") == "NO_TRANSACTION_MUTATION")
+
+
+def _require_current_encoding_path_correction(
+        projection: Mapping[str, Any], *, expected_digest: str) -> None:
+    if (not _is_hex(expected_digest)
+            or projection.get("encoder_path_projection_correction_digest")
+            != expected_digest):
+        raise FullBankV2RunnerError(
+            "encoder validation used another path-projection correction")
+
+
+def _training_stop_report(
+        terminal: Mapping[str, Any], *, completed: Sequence[str],
+        runtime_probe_digests: Mapping[str, str],
+        encoder_import_correction_digest: str,
+        encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
+        branch_redrive_projection_correction_digest: str,
+        optional_smoke_partial_corpus_resume_correction_digest: str,
+        ) -> tuple[int, dict[str, Any]]:
+    terminal_kind = terminal.get("terminal_kind")
+    if terminal_kind == "COMPLETION_DEGENERACY_FAILURE":
+        status = "STOP_FROZEN_COMPLETION_DEGENERACY_FAILURE"
+    elif terminal_kind == "QUALIFICATION_FAILURE":
+        status = "STOP_FROZEN_SCORER_QUALIFICATION_FAILURE"
+    else:
+        raise FullBankV2RunnerError("requested stop is not a failure terminal")
+    return 2, {
+        "schema": RUN_REPORT_SCHEMA,
+        "status": status,
+        "completed_stages": list(completed),
+        "qualified": False,
+        "development_transfer_started": False,
+        "predictor_access_before_qualification": False,
+        "final_200_state_corpus_generated": False,
+        "runtime_probe_digests": dict(runtime_probe_digests),
+        "encoder_import_correction_digest":
+            encoder_import_correction_digest,
+        DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY:
+            encoder_import_correction_digest,
+        "encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest,
+        DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            encoder_compute_dtype_correction_digest,
+        "encoder_path_projection_correction_digest":
+            encoder_path_projection_correction_digest,
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            encoder_path_projection_correction_digest,
+        "branch_redrive_projection_correction_digest":
+            branch_redrive_projection_correction_digest,
+        DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            branch_redrive_projection_correction_digest,
+        "optional_smoke_partial_corpus_resume_correction_digest":
+            optional_smoke_partial_corpus_resume_correction_digest,
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY:
+            optional_smoke_partial_corpus_resume_correction_digest,
+        "terminal_digest": terminal["terminal_digest"],
+        "nothing_running": True,
+    }
+
+
+def _development_complete_report(
+        *, terminal: Mapping[str, Any], development: Mapping[str, Any],
+        completed: Sequence[str], runtime_probe_digests: Mapping[str, str],
+        encoder_import_correction_digest: str,
+        encoder_compute_dtype_correction_digest: str,
+        encoder_path_projection_correction_digest: str,
+        branch_redrive_projection_correction_digest: str,
+        optional_smoke_partial_corpus_resume_correction_digest: str,
+        ) -> tuple[int, dict[str, Any]]:
+    if (development.get("qualified_scorer_bound") is not True
+            or development.get("development_state_count") != 20
+            or development.get("development_branch_count") != 240):
+        raise FullBankV2RunnerError("development transfer terminal changed")
+    return 0, {
+        "schema": RUN_REPORT_SCHEMA,
+        "status": "COMPLETE_AUTHORISED_EXPLORATORY_DEVELOPMENT_TRANSFER",
+        "completed_stages": list(completed),
+        "qualified": True,
+        "qualification_report_digest": terminal["terminal_digest"],
+        "development_transfer_result_digest": development["terminal_digest"],
+        "predictor_access_before_qualification": False,
+        "final_200_state_corpus_generated": False,
+        "runtime_probe_digests": dict(runtime_probe_digests),
+        "encoder_import_correction_digest":
+            encoder_import_correction_digest,
+        DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY:
+            encoder_import_correction_digest,
+        "encoder_compute_dtype_correction_digest":
+            encoder_compute_dtype_correction_digest,
+        DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY:
+            encoder_compute_dtype_correction_digest,
+        "encoder_path_projection_correction_digest":
+            encoder_path_projection_correction_digest,
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY:
+            encoder_path_projection_correction_digest,
+        "branch_redrive_projection_correction_digest":
+            branch_redrive_projection_correction_digest,
+        DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY:
+            branch_redrive_projection_correction_digest,
+        "optional_smoke_partial_corpus_resume_correction_digest":
+            optional_smoke_partial_corpus_resume_correction_digest,
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY:
+            optional_smoke_partial_corpus_resume_correction_digest,
+        "nothing_running": True,
+    }
+
+
+def _run_smoke_protocol(
+        *, root: Path, commands: Mapping[str, Sequence[str]],
+        interpreters: Mapping[str, Path], command_runner: CommandRunner,
+        validation_invoker: ValidationInvoker,
+        encoder_path_projection_correction_digest: str,
+        ) -> list[str]:
+    """Run the one authorised smoke and its two durability checks exactly once."""
+
+    completed: list[str] = []
+    if _run_command("branch_smoke", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("twelve-branch smoke failed")
+    first_branch = _require_projection(
+        validation_invoker("branch-smoke", root, interpreters["genesis"]),
+        kind="branch-smoke")
+    if (first_branch.get("branch_count") != 12
+            or first_branch.get("candidate_indices") != list(range(12))
+            or first_branch.get("rendered_horizon_frame_count") != 48):
+        raise FullBankV2RunnerError("full-bank branch smoke cardinality changed")
+    completed.append("branch_smoke")
+
+    if _run_command("branch_smoke_zero_new", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("zero-new branch smoke failed")
+    replay_branch = _require_projection(
+        validation_invoker("branch-smoke", root, interpreters["genesis"]),
+        kind="branch-smoke")
+    if (first_branch.get("registered_smoke_artifact_inventory_digest")
+            != replay_branch.get("registered_smoke_artifact_inventory_digest")):
+        raise FullBankV2RunnerError(
+            "zero-new branch replay changed a completed artifact")
+    completed.append("branch_smoke_zero_new")
+
+    if _run_command("smoke_encoding", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("full-bank smoke encoding failed")
+    first_encoding = _require_projection(
+        validation_invoker("encoding-smoke", root, interpreters["rocm"]),
+        kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        first_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
+    if (first_encoding.get("horizon_latent_count") != 12
+            or first_encoding.get("horizon_shape") != [4, 768, 1024]):
+        raise FullBankV2RunnerError("full-bank smoke latent shape/count changed")
+    completed.append("smoke_encoding")
+
+    if _run_command("smoke_encoding_zero_new", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("zero-new smoke encoding failed")
+    replay_encoding = _require_projection(
+        validation_invoker("encoding-smoke", root, interpreters["rocm"]),
+        kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        replay_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
+    _validate_zero_new_encoding(first_encoding, replay_encoding)
+    completed.append("smoke_encoding_zero_new")
+
+    if _run_command("smoke_single_shard_regeneration", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("single-shard smoke regeneration failed")
+    recovered_encoding = _require_projection(
+        validation_invoker("encoding-smoke", root, interpreters["rocm"]),
+        kind="encoding-smoke")
+    _require_current_encoding_path_correction(
+        recovered_encoding, expected_digest=
+        encoder_path_projection_correction_digest)
+    _validate_single_shard_recovery(replay_encoding, recovered_encoding)
+    _require_complete_strict_smoke_transaction(recovered_encoding)
+    completed.append("smoke_single_shard_regeneration")
+    return completed
+
+
+def run_pipeline(
+        *, root: Path = ROOT, command_runner: CommandRunner,
+        runtime_probe_invoker: RuntimeProbeInvoker,
+        validation_invoker: ValidationInvoker,
+        authority: Any = RUNTIME_AUTHORITY,
+        resume: bool = False,
+        ) -> tuple[int, dict[str, Any]]:
+    """Execute the fail-closed post-contract sequence using injected effects."""
+
+    # The optional-smoke partial-corpus resume correction is the sole live
+    # source authority.  It immutably embeds the redrive, path, FP32 and import
+    # corrections and must validate before probes or any runtime command.  The
+    # historical path object is passed unchanged to the contract loader.  No
+    # manifest, existing branch row, latent shard, PREPARED, or COMPLETE
+    # transaction lineage is rewritten.  The existing producers retain their
+    # frozen one-time branch-smoke and encoding-smoke/index rebinds only after
+    # the corpus reaches all 1,440 assignments.
+    partial_resume_correction = (
+        DESIGN.load_optional_smoke_partial_corpus_resume_correction_for_consumption(
+            root=root))
+    partial_resume_correction_digest = partial_resume_correction.get(
+        DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY)
+    if not _is_hex(partial_resume_correction_digest):
+        raise FullBankV2RunnerError(
+            "optional-smoke partial-corpus resume correction is missing "
+            "before runtime")
+    branch_redrive_projection_correction, branch_redrive_correction_digest = (
+        _immutable_redrive_from_optional_smoke_resume_correction(
+            partial_resume_correction, root=root))
+    if not _is_hex(branch_redrive_correction_digest):
+        raise FullBankV2RunnerError(
+            "branch-redrive projection correction is missing before runtime")
+    encoder_path_projection_correction, path_correction_digest = (
+        _immutable_path_from_branch_redrive_projection_correction(
+            branch_redrive_projection_correction, root=root))
+    path_correction_digest = encoder_path_projection_correction.get(
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if not _is_hex(path_correction_digest):
+        raise FullBankV2RunnerError(
+            "encoder-path-projection correction is missing before runtime")
+    encoder_compute_dtype_correction, dtype_correction_digest = (
+        _immutable_dtype_from_path_projection_correction(
+            encoder_path_projection_correction))
+    import_correction_digest = _immutable_import_digest_from_dtype_correction(
+        encoder_compute_dtype_correction)
+    SCORER_CONTRACT.load_contract_for_consumption(
+        root=root, encoder_path_projection_correction=
+        encoder_path_projection_correction)
+    BUILDER.load_and_validate_full_bank_v2_manifests_for_consumption(
+        out=root / SCORER_FIT_RELATIVE_PATH)
+    if not resume:
+        DESIGN.audit_v2_runtime_outputs_absent(
+            root=root, phase="post_contract_pre_branch")
+    _ensure_final_eval_absent(root=root)
+
+    interpreters = _bound_interpreters(root=root, authority=authority)
+    probes = {
+        role: validate_runtime_probe_receipt(
+            runtime_probe_invoker(role, root, interpreters[role], authority),
+            runtime_role=role, authority=authority)
+        for role in _RUNTIME_ROLES
+    }
+    probe_digests = {
+        role: probes[role][RUNTIME_PROBE_SELF_KEY] for role in _RUNTIME_ROLES}
+    commands = downstream_command_sequence(
+        root=root, interpreters=interpreters, authority=authority)
+    completed: list[str] = []
+    smoke_protocol_complete = False
+
+    if resume:
+        # A frozen scorer terminal dominates every upstream resumable stage.
+        # Its producer validator replays the complete corpus/encoder lineage,
+        # so opening it here neither skips validation nor accesses a predictor.
+        retained_terminal = _require_projection(
+            validation_invoker(
+                "training-terminal-optional", root, interpreters["rocm"]),
+            kind="training-terminal-optional")
+        if retained_terminal.get("terminal_present") is True:
+            completed.append("retained_existing_scorer_training_terminal")
+            if retained_terminal.get("terminal_kind") in {
+                    "COMPLETION_DEGENERACY_FAILURE",
+                    "QUALIFICATION_FAILURE"}:
+                if retained_terminal.get("qualified") is not False:
+                    raise FullBankV2RunnerError(
+                        "retained failure terminal has a passing verdict")
+                return _training_stop_report(
+                    retained_terminal, completed=completed,
+                    runtime_probe_digests=probe_digests,
+                    encoder_import_correction_digest=
+                    import_correction_digest,
+                    encoder_compute_dtype_correction_digest=
+                    dtype_correction_digest,
+                    encoder_path_projection_correction_digest=
+                    path_correction_digest,
+                    branch_redrive_projection_correction_digest=
+                    branch_redrive_correction_digest,
+                    optional_smoke_partial_corpus_resume_correction_digest=
+                    partial_resume_correction_digest)
+            if (retained_terminal.get("terminal_kind") != "QUALIFICATION_PASS"
+                    or retained_terminal.get("qualified") is not True):
+                raise FullBankV2RunnerError(
+                    "retained training terminal has no exact verdict")
+            retained_development = _require_projection(
+                validation_invoker(
+                    "development-terminal-optional", root,
+                    interpreters["rocm"]),
+                kind="development-terminal-optional")
+            if retained_development.get("terminal_present") is True:
+                completed.append(
+                    "retained_existing_development_transfer_terminal")
+                return _development_complete_report(
+                    terminal=retained_terminal,
+                    development=retained_development,
+                    completed=completed, runtime_probe_digests=probe_digests,
+                    encoder_import_correction_digest=
+                    import_correction_digest,
+                    encoder_compute_dtype_correction_digest=
+                    dtype_correction_digest,
+                    encoder_path_projection_correction_digest=
+                    path_correction_digest,
+                    branch_redrive_projection_correction_digest=
+                    branch_redrive_correction_digest,
+                    optional_smoke_partial_corpus_resume_correction_digest=
+                    partial_resume_correction_digest)
+            if retained_development.get("terminal_present") is not False:
+                raise FullBankV2RunnerError(
+                    "optional development-terminal presence verdict is missing")
+            if _run_command(
+                    "development_transfer", commands, root=root,
+                    command_runner=command_runner) != 0:
+                raise FullBankV2RunnerError("development transfer failed")
+            development = _require_projection(
+                validation_invoker(
+                    "development-terminal", root, interpreters["rocm"]),
+                kind="development-terminal")
+            completed.append("development_transfer")
+            return _development_complete_report(
+                terminal=retained_terminal, development=development,
+                completed=completed, runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=import_correction_digest,
+                encoder_compute_dtype_correction_digest=
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
+        if retained_terminal.get("terminal_present") is not False:
+            raise FullBankV2RunnerError(
+                "optional training-terminal presence verdict is missing")
+
+        retained_smoke = _require_projection(
+            validation_invoker(
+                "encoding-smoke-optional", root, interpreters["rocm"]),
+            kind="encoding-smoke-optional")
+        transaction = _normalise_optional_smoke_transaction_status({
+            key: retained_smoke.get(key)
+            for key in _SMOKE_TRANSACTION_STATUS_FIELDS
+        })
+        transaction_contract_digest = encoder_path_projection_correction.get(
+            "single_shard_regeneration_transaction_contract_digest")
+        transaction_state = transaction["transaction_state"]
+        if (transaction_state not in _SMOKE_REGENERATION_TRANSACTION_STATES
+                or retained_smoke.get(
+                    "encoder_path_projection_correction_digest")
+                != path_correction_digest
+                or not _is_hex(transaction_contract_digest)
+                or retained_smoke.get(
+                    "single_shard_regeneration_transaction_contract_digest")
+                != transaction_contract_digest):
+            raise FullBankV2RunnerError(
+                "optional smoke transaction state changed")
+        if retained_smoke.get("terminal_present") is True:
+            smoke_protocol_complete = (
+                _optional_smoke_transaction_complete(retained_smoke)
+                and retained_smoke.get("smoke_protocol_complete") is True
+                and retained_smoke.get("zero_new_resume_verified") is True
+                and retained_smoke.get(
+                    "single_registered_shard_regenerated") is True)
+            if (smoke_protocol_complete
+                    and retained_smoke.get(
+                        "requires_full_encoder_refresh") is not True):
+                # The optional classifier routes crash recovery.  A normal
+                # retained COMPLETE shortcut must additionally pass the
+                # encoder's strict consumer, which replays the live
+                # PREPARED/COMPLETE lineage and exact active index/smoke
+                # relationship before this runner can open the full corpus.
+                retained_encoding = _require_projection(
+                    validation_invoker(
+                        "encoding-smoke", root, interpreters["rocm"]),
+                    kind="encoding-smoke")
+                _require_current_encoding_path_correction(
+                    retained_encoding,
+                    expected_digest=path_correction_digest)
+                _require_complete_strict_smoke_transaction(
+                    retained_encoding)
+                completed.append("retained_strict_completed_smoke_protocol")
+            if not smoke_protocol_complete:
+                if transaction_state == "COMPLETE":
+                    raise FullBankV2RunnerError(
+                        "COMPLETE transaction lacks its exact bound PASS smoke")
+                # If the original base pass had not yet been replayed with
+                # zero new shards, establish that proof before entering the
+                # separately flagged exact-once regeneration transaction.
+                if (transaction_state == "UNSTARTED"
+                        and retained_smoke.get(
+                            "zero_new_resume_verified") is not True):
+                    if retained_smoke.get(
+                            "prepared_staged_state") != "ABSENT":
+                        raise FullBankV2RunnerError(
+                            "staged PREPARED recovery lost its zero-new proof")
+                    if _run_command(
+                            "smoke_encoding_zero_new", commands, root=root,
+                            command_runner=command_runner) != 0:
+                        raise FullBankV2RunnerError(
+                            "resumed zero-new smoke encoding failed")
+                    replay_encoding = _require_projection(
+                        validation_invoker(
+                            "encoding-smoke", root, interpreters["rocm"]),
+                        kind="encoding-smoke")
+                    _require_current_encoding_path_correction(
+                        replay_encoding,
+                        expected_digest=path_correction_digest)
+                    if (replay_encoding.get("invocation_new_context_shards")
+                            != 0
+                            or replay_encoding.get(
+                                "invocation_new_horizon_shards") != 0
+                            or replay_encoding.get(
+                                "zero_new_resume_verified") is not True):
+                        raise FullBankV2RunnerError(
+                            "resumed zero-new smoke proof changed")
+                    completed.append("resumed_smoke_encoding_zero_new")
+                if _run_command(
+                        "smoke_single_shard_regeneration", commands,
+                        root=root, command_runner=command_runner) != 0:
+                    raise FullBankV2RunnerError(
+                        "resumed exact-once shard transaction failed")
+                recovered_encoding = _require_projection(
+                    validation_invoker(
+                        "encoding-smoke", root, interpreters["rocm"]),
+                    kind="encoding-smoke")
+                _require_current_encoding_path_correction(
+                    recovered_encoding,
+                    expected_digest=path_correction_digest)
+                _require_complete_strict_smoke_transaction(
+                    recovered_encoding)
+                # The strict smoke projection deliberately retains the
+                # immutable COMPLETE transaction's original regeneration
+                # evidence.  A metadata-only resume can therefore still
+                # report one new horizon shard even though this invocation
+                # performed no regeneration.  Exact-once execution is
+                # established by the pre-command crash state, the single
+                # flagged command invocation, and the producer's strict
+                # COMPLETE custody/lineage validation above.
+                if (recovered_encoding.get(
+                        "invocation_new_context_shards") != 0
+                        or recovered_encoding.get(
+                            "invocation_new_horizon_shards") not in {0, 1}):
+                    raise FullBankV2RunnerError(
+                        "resumed transaction evidence changed")
+                completed.append(
+                    "resumed_smoke_single_shard_regeneration")
+                smoke_protocol_complete = True
+        elif retained_smoke.get("terminal_present") is not False:
+            raise FullBankV2RunnerError(
+                "optional encoding-smoke presence verdict is missing")
+        elif transaction_state != "UNSTARTED":
+            raise FullBankV2RunnerError(
+                "started smoke transaction lacks resumable terminal metadata")
+
+    if smoke_protocol_complete:
+        completed.append("retained_completed_smoke_protocol")
+    else:
+        completed.extend(_run_smoke_protocol(
+            root=root, commands=commands, interpreters=interpreters,
+            command_runner=command_runner,
+            validation_invoker=validation_invoker,
+            encoder_path_projection_correction_digest=
+            path_correction_digest))
+        smoke_protocol_complete = True
+    if not smoke_protocol_complete:
+        raise FullBankV2RunnerError(
+            "full corpus is gated on COMPLETE plus its exact bound PASS smoke")
+
+    if _run_command("full_branch_corpus", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("1,440-branch corpus generation failed")
+    branch_corpus = _require_projection(
+        validation_invoker("branch-corpus", root, interpreters["genesis"]),
+        kind="branch-corpus")
+    if (branch_corpus.get("state_count") != 120
+            or branch_corpus.get("branch_count") != 1_440):
+        raise FullBankV2RunnerError("full branch corpus cardinality changed")
+    completed.append("full_branch_corpus")
+
+    if _run_command("full_latent_encoding", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("full target-latent encoding failed")
+    encoded = _require_projection(
+        validation_invoker("encoded-corpus", root, interpreters["rocm"]),
+        kind="encoded-corpus")
+    _require_current_encoding_path_correction(
+        encoded, expected_digest=path_correction_digest)
+    _require_complete_strict_smoke_transaction(encoded)
+    if (encoded.get("state_count") != 120
+            or encoded.get("horizon_latent_count") != 1_440):
+        raise FullBankV2RunnerError("encoded corpus cardinality changed")
+    completed.append("full_latent_encoding")
+
+    # Reuse an exact immutable terminal before invoking the trainer.  This is
+    # stricter than relying on the trainer's own reuse path, which necessarily
+    # materialises the corpus and features before it reaches that check.
+    prior_terminal = _require_projection(
+        validation_invoker(
+            "training-terminal-optional", root, interpreters["rocm"]),
+        kind="training-terminal-optional")
+    if prior_terminal.get("terminal_present") is True:
+        terminal = prior_terminal
+        completed.append("retained_existing_scorer_training_terminal")
+        if terminal.get("terminal_kind") in {
+                "COMPLETION_DEGENERACY_FAILURE", "QUALIFICATION_FAILURE"}:
+            if terminal.get("qualified") is not False:
+                raise FullBankV2RunnerError(
+                    "retained failure terminal has a passing verdict")
+            return _training_stop_report(
+                terminal, completed=completed,
+                runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=import_correction_digest,
+                encoder_compute_dtype_correction_digest=
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
+        if (terminal.get("terminal_kind") != "QUALIFICATION_PASS"
+                or terminal.get("qualified") is not True):
+            raise FullBankV2RunnerError(
+                "retained training terminal has no exact verdict")
+    elif prior_terminal.get("terminal_present") is False:
+        training_return = _run_command(
+            "scorer_training_and_qualification", commands, root=root,
+            command_runner=command_runner)
+        terminal = _require_projection(
+            validation_invoker(
+                "training-terminal", root, interpreters["rocm"]),
+            kind="training-terminal")
+        terminal_kind = terminal.get("terminal_kind")
+        completed.append("scorer_training_and_qualification")
+        if terminal_kind in {
+                "COMPLETION_DEGENERACY_FAILURE", "QUALIFICATION_FAILURE"}:
+            if training_return != 1 or terminal.get("qualified") is not False:
+                raise FullBankV2RunnerError(
+                    "training failure did not produce its exact terminal status")
+            return _training_stop_report(
+                terminal, completed=completed,
+                runtime_probe_digests=probe_digests,
+                encoder_import_correction_digest=import_correction_digest,
+                encoder_compute_dtype_correction_digest=
+                dtype_correction_digest,
+                encoder_path_projection_correction_digest=
+                path_correction_digest,
+                branch_redrive_projection_correction_digest=
+                branch_redrive_correction_digest,
+                optional_smoke_partial_corpus_resume_correction_digest=
+                partial_resume_correction_digest)
+        if (terminal_kind != "QUALIFICATION_PASS" or training_return != 0
+                or terminal.get("qualified") is not True):
+            raise FullBankV2RunnerError(
+                "scorer training produced no exact frozen terminal verdict")
+    else:
+        raise FullBankV2RunnerError(
+            "optional training-terminal presence verdict is missing")
+
+    # This is the first point at which any predictor package may be opened.
+    prior_development = _require_projection(
+        validation_invoker(
+            "development-terminal-optional", root, interpreters["rocm"]),
+        kind="development-terminal-optional")
+    if prior_development.get("terminal_present") is True:
+        completed.append("retained_existing_development_transfer_terminal")
+        return _development_complete_report(
+            terminal=terminal, development=prior_development,
+            completed=completed, runtime_probe_digests=probe_digests,
+            encoder_import_correction_digest=import_correction_digest,
+            encoder_compute_dtype_correction_digest=
+            dtype_correction_digest,
+            encoder_path_projection_correction_digest=
+            path_correction_digest,
+            branch_redrive_projection_correction_digest=
+            branch_redrive_correction_digest,
+            optional_smoke_partial_corpus_resume_correction_digest=
+            partial_resume_correction_digest)
+    if prior_development.get("terminal_present") is not False:
+        raise FullBankV2RunnerError(
+            "optional development-terminal presence verdict is missing")
+    if _run_command("development_transfer", commands, root=root,
+                    command_runner=command_runner) != 0:
+        raise FullBankV2RunnerError("development transfer failed")
+    development = _require_projection(
+        validation_invoker("development-terminal", root, interpreters["rocm"]),
+        kind="development-terminal")
+    completed.append("development_transfer")
+    return _development_complete_report(
+        terminal=terminal, development=development, completed=completed,
+        runtime_probe_digests=probe_digests,
+        encoder_import_correction_digest=import_correction_digest,
+        encoder_compute_dtype_correction_digest=dtype_correction_digest,
+        encoder_path_projection_correction_digest=path_correction_digest,
+        branch_redrive_projection_correction_digest=
+        branch_redrive_correction_digest,
+        optional_smoke_partial_corpus_resume_correction_digest=
+        partial_resume_correction_digest)
+
+
+def _default_validation_invoker(
+        validation_kind: str, root: Path, interpreter: Path) -> Mapping[str, Any]:
+    command = [
+        str(interpreter), str(root / RUNNER_RELATIVE_PATH), "--stage",
+        f"internal-validate-{validation_kind}",
+    ]
+    completed = subprocess.run(
+        command, cwd=root, check=False, capture_output=True, text=True)
+    if completed.returncode != 0:
+        raise FullBankV2RunnerError(
+            f"bound {validation_kind} validator failed")
+    try:
+        value = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise FullBankV2RunnerError(
+            f"bound {validation_kind} validator output is not closed JSON") from exc
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError(
+            f"bound {validation_kind} validator returned no object")
+    return dict(value)
+
+
+def run_authorised(
+        *, root: Path = ROOT, resume: bool = False,
+        command_runner: CommandRunner = _default_command_runner,
+        runtime_probe_invoker: RuntimeProbeInvoker =
+            _default_runtime_probe_invoker,
+        validation_invoker: ValidationInvoker = _default_validation_invoker,
+        authority: Any = RUNTIME_AUTHORITY,
+        ) -> tuple[int, dict[str, Any]]:
+    return run_pipeline(
+        root=root, command_runner=command_runner,
+        runtime_probe_invoker=runtime_probe_invoker,
+        validation_invoker=validation_invoker,
+        authority=authority, resume=resume)
+
+
+def _binding_if_present(
+        root: Path, relative: Path, *, self_key: str | None = None,
+        ) -> dict[str, Any] | None:
+    path = _pin_relative(root, relative, label=f"status {relative.name}")
+    if not path.exists() and not path.is_symlink():
+        return None
+    if not path.is_file() or path.is_symlink():
+        raise FullBankV2RunnerError(f"status path is not regular: {relative}")
+    row: dict[str, Any] = {
+        "path": str(relative), "raw_sha256": file_sha256(path),
+        "byte_count": path.stat().st_size,
+    }
+    if self_key is not None:
+        payload, _raw = _load_json(path, label=f"status {relative.name}")
+        digest = payload.get(self_key)
+        if not _is_hex(digest):
+            raise FullBankV2RunnerError(
+                f"status artifact lacks {self_key}: {relative}")
+        row["self_digest_key"] = self_key
+        row["self_digest"] = digest
+    return row
+
+
+def assemble_status_report(*, root: Path = ROOT) -> dict[str, Any]:
+    """Return metadata only; never read a row, frame, latent, weight or shard."""
+
+    artifacts: dict[str, Any] = {
+        "rotation_mask_classification": _binding_if_present(
+            root, DESIGN.MASK_CLASSIFICATION_RELATIVE_PATH,
+            self_key=DESIGN.MASK_CLASSIFICATION_SELF_KEY),
+        "design_amendment": _binding_if_present(
+            root, DESIGN.DESIGN_RELATIVE_PATH, self_key=DESIGN.DESIGN_SELF_KEY),
+        "preselection_source_correction": _binding_if_present(
+            root, DESIGN.SOURCE_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.SOURCE_CORRECTION_SELF_KEY),
+        "manifest_replay_correction": _binding_if_present(
+            root, DESIGN.MANIFEST_REPLAY_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.MANIFEST_REPLAY_CORRECTION_SELF_KEY),
+        "feasibility_failure": _binding_if_present(
+            root, FEASIBILITY_FAILURE_RELATIVE_PATH,
+            self_key=FEASIBILITY_FAILURE_SELF_KEY),
+        "successor_scorer_contract": _binding_if_present(
+            root, SCORER_CONTRACT.ARTIFACT_RELATIVE_PATH,
+            self_key=SCORER_CONTRACT.ARTIFACT_SELF_KEY),
+        "encoder_import_correction": _binding_if_present(
+            root, DESIGN.ENCODER_IMPORT_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.ENCODER_IMPORT_CORRECTION_SELF_KEY),
+        "encoder_compute_dtype_correction": _binding_if_present(
+            root, DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.ENCODER_COMPUTE_DTYPE_CORRECTION_SELF_KEY),
+        "encoder_path_projection_correction": _binding_if_present(
+            root, DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY),
+        "branch_redrive_projection_correction": _binding_if_present(
+            root, DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_RELATIVE_PATH,
+            self_key=DESIGN.BRANCH_REDRIVE_PROJECTION_CORRECTION_SELF_KEY),
+        "optional_smoke_partial_corpus_resume_correction":
+            _binding_if_present(
+                root,
+                DESIGN.OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_RELATIVE_PATH,
+                self_key=DESIGN.
+                OPTIONAL_SMOKE_PARTIAL_CORPUS_RESUME_CORRECTION_SELF_KEY),
+        "branch_smoke": _binding_if_present(
+            root, SCORER_FIT_RELATIVE_PATH /
+            BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME,
+            self_key="smoke_branch_receipt_digest"),
+        "encoding_smoke": _binding_if_present(
+            root, SCORER_FIT_RELATIVE_PATH /
+            BUILDER.SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME,
+            self_key="smoke_receipt_digest"),
+        "corpus_receipt": _binding_if_present(
+            root, SCORER_FIT_RELATIVE_PATH /
+            BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME),
+        "qualification": _binding_if_present(
+            root, UTILITY_V2_RELATIVE_PATH / "qualification_v2.json",
+            self_key="qualification_report_digest"),
+        "development_transfer": _binding_if_present(
+            root, UTILITY_V2_RELATIVE_PATH /
+            "counterfactual_development_transfer_v2/result_v2.json",
+            self_key="development_transfer_result_digest"),
+    }
+    for key, name, self_key in _MANIFEST_SPECS:
+        artifacts[key] = _binding_if_present(
+            root, SCORER_FIT_RELATIVE_PATH / name, self_key=self_key)
+    final_eval = _pin_relative(
+        root, DESIGN.V2_ALWAYS_ABSENT_PATHS[0],
+        label="status future final evaluation")
+    return {
+        "schema": "go2_scorer_fit_corpus_v2_read_only_status_v1",
+        "status": STATUS,
+        "artifacts": artifacts,
+        "final_200_state_corpus_absent": not (
+            final_eval.exists() or final_eval.is_symlink()),
+        "scientific_payload_rows_read": 0,
+        "frame_latent_weight_or_predictor_shards_read": 0,
+        "state_changed": False,
+    }
+
+
+# Heavy-runtime validation emitters are defined below the pure orchestrator so
+# importing this module never imports the encoder, trainer, or development
+# consumer.  Each emitter produces a deliberately small closed projection.
+def _emit_validation(validation_kind: str, *, root: Path = ROOT) -> int:
+    if validation_kind in {"branch-smoke", "branch-corpus"}:
+        projection = _branch_validation_projection(
+            validation_kind, root=root)
+    elif validation_kind in {"encoding-smoke", "encoded-corpus"}:
+        projection = _encoding_validation_projection(
+            validation_kind, root=root)
+    elif validation_kind == "encoding-smoke-optional":
+        projection = _optional_encoding_smoke_projection(root=root)
+    elif validation_kind == "training-terminal":
+        projection = _training_terminal_projection(root=root)
+    elif validation_kind == "training-terminal-optional":
+        projection = _optional_training_terminal_projection(root=root)
+    elif validation_kind == "development-terminal":
+        projection = _development_terminal_projection(root=root)
+    elif validation_kind == "development-terminal-optional":
+        projection = _optional_development_terminal_projection(root=root)
+    else:
+        raise FullBankV2RunnerError("unknown internal validation kind")
+    print(json.dumps(projection, sort_keys=True), flush=True)
+    return 0
+
+
+def _registered_file_binding(path: Path, *, root: Path) -> dict[str, Any]:
+    if not path.is_file() or path.is_symlink():
+        raise FullBankV2RunnerError(f"registered file is unavailable: {path}")
+    try:
+        relative = path.relative_to(root)
+    except ValueError as exc:
+        raise FullBankV2RunnerError("registered file escaped repository") from exc
+    return {
+        "path": str(relative), "sha256": file_sha256(path),
+        "byte_count": path.stat().st_size,
+    }
+
+
+def _branch_validation_projection(
+        validation_kind: str, *, root: Path) -> dict[str, Any]:
+    out = root / SCORER_FIT_RELATIVE_PATH
+    full = validation_kind == "branch-corpus"
+    value = BUILDER.load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+        out=out, allow_partial=not full)
+    rows = value["rows"]
+    smoke = value.get("branch_smoke")
+    expected_count = 1_440 if full else 12
+    if (len(rows) != expected_count or not isinstance(smoke, Mapping)
+            or smoke.get("pass") is not True):
+        raise FullBankV2RunnerError(
+            f"{validation_kind} exact branch output count changed")
+    if not full:
+        smoke_state = str(smoke["state_id"])
+        rows = [row for row in rows if str(row["state_id"]) == smoke_state]
+        if len(rows) != 12:
+            raise FullBankV2RunnerError("branch smoke does not contain twelve rows")
+    registered: list[dict[str, Any]] = []
+    for row in rows:
+        row_path = out / BUILDER.SCORER_FIT_V2_ROW_RECORDS_NAME / (
+            f"{row['branch_identity_digest']}.json")
+        registered.append(_registered_file_binding(row_path, root=root))
+        for frame in [*row["context_frames"], *row["horizon_frames"]]:
+            frame_path = out / str(frame["path"])
+            binding = _registered_file_binding(frame_path, root=root)
+            if (binding["sha256"] != frame["sha256"]
+                    or binding["byte_count"] != frame["byte_count"]):
+                raise FullBankV2RunnerError("registered frame binding changed")
+            registered.append(binding)
+    for path in (
+            out / BUILDER.SCORER_FIT_V2_BRANCH_ROWS_NAME,
+            out / BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME,
+            out / BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME):
+        registered.append(_registered_file_binding(path, root=root))
+    # Context frames are intentionally shared by twelve branches.  Deduplicate
+    # by exact path before hashing the zero-new inventory.
+    unique = {row["path"]: row for row in registered}
+    ordered = [unique[key] for key in sorted(unique)]
+    return {
+        "validation_kind": validation_kind,
+        "pass": True,
+        "state_count": 120 if full else 1,
+        "branch_count": expected_count,
+        "candidate_indices": list(range(12)),
+        "rendered_horizon_frame_count": 48 if not full else 5_760,
+        "registered_smoke_artifact_inventory_digest": canonical_digest(ordered),
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _encoding_validation_projection(
+        validation_kind: str, *, root: Path) -> dict[str, Any]:
+    from scripts import encode_go2_branch_corpus_v1_2 as encoder
+
+    out = root / SCORER_FIT_RELATIVE_PATH
+    if validation_kind == "encoding-smoke":
+        value = encoder.load_and_validate_full_bank_v2_encoding_smoke_for_consumption(
+            out=out, require_protocol_complete=False)
+        return _normalise_encoding_projection(value, kind=validation_kind)
+    value = encoder.load_and_validate_full_bank_v2_encoded_corpus_for_consumption(
+        out=out)
+    return _normalise_encoding_projection(value, kind=validation_kind)
+
+
+def _matches_immutable_pre_path_projection_base_smoke(
+        *, root: Path, smoke: Mapping[str, Any], smoke_raw: bytes,
+        correction: Mapping[str, Any]) -> bool:
+    """Recognize the exact base or its invertible index-first transition."""
+
+    bundle = correction.get("immutable_base_smoke_artifact_bundle")
+    correction_digest = correction.get(
+        DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+    if (not isinstance(bundle, Mapping)
+            or not _is_hex(correction_digest)
+            or correction.get("base_smoke_artifact_bundle_digest")
+            != DESIGN.canonical_digest(bundle)):
+        return False
+
+    def bound_raw(
+            key: str, *, expected_relative: Path,
+            expected_self_key: str | None = None,
+            supplied_raw: bytes | None = None,
+            ) -> tuple[Mapping[str, Any], bytes] | None:
+        binding = bundle.get(key)
+        expected_keys = {
+            "path", "schema", "raw_sha256", "byte_count"}
+        if expected_self_key is not None:
+            expected_keys.update({"self_digest_key", "self_digest"})
+        if (not isinstance(binding, Mapping)
+                or set(binding) != expected_keys
+                or not isinstance(binding.get("path"), str)
+                or binding.get("path") != str(expected_relative)
+                or not isinstance(binding.get("schema"), str)
+                or not _is_hex(binding.get("raw_sha256"))
+                or isinstance(binding.get("byte_count"), bool)
+                or not isinstance(binding.get("byte_count"), int)
+                or binding["byte_count"] <= 0
+                or (expected_self_key is not None
+                    and (binding.get("self_digest_key")
+                         != expected_self_key
+                         or not _is_hex(binding.get("self_digest"))))):
+            return None
+        try:
+            path = _pin_relative(
+                root, Path(binding["path"]),
+                label=f"immutable pre-refresh {key}")
+        except FullBankV2RunnerError:
+            return None
+        if not path.is_file() or path.is_symlink():
+            return None
+        raw = path.read_bytes()
+        if supplied_raw is not None and supplied_raw != raw:
+            return None
+        return binding, raw
+
+    # The smoke and invocation summary must remain the exact historical bytes
+    # in both the untouched base and the sole recoverable half-transition.
+    smoke_bound = bound_raw(
+        "base_smoke_receipt_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH /
+        BUILDER.SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME,
+        expected_self_key="smoke_receipt_digest", supplied_raw=smoke_raw)
+    summary_bound = bound_raw(
+        "encoding_invocation_summary_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH /
+        "encoding_invocation_summary_v2.json")
+    index_bound = bound_raw(
+        "latent_index_binding",
+        expected_relative=SCORER_FIT_RELATIVE_PATH / "latents_index_v2.json",
+        expected_self_key="latents_index_digest")
+    if smoke_bound is None or summary_bound is None or index_bound is None:
+        return False
+    smoke_binding, observed_smoke_raw = smoke_bound
+    summary_binding, observed_summary_raw = summary_bound
+    index_binding, observed_index_raw = index_bound
+    if (len(observed_smoke_raw) != smoke_binding["byte_count"]
+            or hashlib.sha256(observed_smoke_raw).hexdigest()
+            != smoke_binding["raw_sha256"]
+            or len(observed_summary_raw) != summary_binding["byte_count"]
+            or hashlib.sha256(observed_summary_raw).hexdigest()
+            != summary_binding["raw_sha256"]
+            or "encoder_path_projection_correction_digest" in smoke
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in smoke):
+        return False
+    smoke_self_key = smoke_binding.get("self_digest_key")
+    if (not isinstance(smoke_self_key, str)
+            or smoke.get(smoke_self_key) != smoke_binding.get("self_digest")
+            or smoke.get(smoke_self_key)
+            != _encoder_default_json_digest(_without(smoke, smoke_self_key))):
+        return False
+
+    try:
+        index = json.loads(observed_index_raw)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return False
+    if not isinstance(index, Mapping):
+        return False
+    index = dict(index)
+    index_self_key = index_binding.get("self_digest_key")
+    if not isinstance(index_self_key, str):
+        return False
+
+    historical_index: dict[str, Any]
+    exact_historical_index = bool(
+        len(observed_index_raw) == index_binding["byte_count"]
+        and hashlib.sha256(observed_index_raw).hexdigest()
+        == index_binding["raw_sha256"])
+    if exact_historical_index:
+        historical_index = index
+        if ("encoder_path_projection_correction_digest" in historical_index
+                or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY
+                in historical_index):
+            return False
+    else:
+        # Mirror the encoder's inverse exactly.  No mutation besides the one
+        # active lineage field and its resulting self digest can enter this
+        # crash window.
+        if (index.get("encoder_path_projection_correction_digest")
+                != correction_digest
+                or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in index
+                or index.get(index_self_key)
+                != _encoder_default_json_digest(
+                    _without(index, index_self_key))):
+            return False
+        historical_index = _without(index, index_self_key)
+        historical_index.pop(
+            "encoder_path_projection_correction_digest", None)
+        historical_index[index_self_key] = _encoder_default_json_digest(
+            historical_index)
+        expected_migrated = {
+            **_without(historical_index, index_self_key),
+            "encoder_path_projection_correction_digest": correction_digest,
+        }
+        expected_migrated[index_self_key] = _encoder_default_json_digest(
+            expected_migrated)
+        if (index != expected_migrated
+                or observed_index_raw
+                != _encoder_pretty_json_bytes(expected_migrated)
+                or len(_encoder_pretty_json_bytes(historical_index))
+                != index_binding["byte_count"]
+                or hashlib.sha256(
+                    _encoder_pretty_json_bytes(historical_index)).hexdigest()
+                != index_binding["raw_sha256"]):
+            return False
+
+    return bool(
+        historical_index.get("schema") == index_binding.get("schema")
+        and historical_index.get(index_self_key)
+        == index_binding.get("self_digest")
+        and historical_index.get(index_self_key)
+        == _encoder_default_json_digest(
+            _without(historical_index, index_self_key))
+        and smoke.get("latent_index_digest")
+        == historical_index.get(index_self_key))
+
+
+def _classify_current_path_projection_metadata(
+        *, root: Path, smoke: Mapping[str, Any], smoke_raw: bytes,
+        correction_digest: str,
+        ) -> tuple[str, dict[str, Any]] | None:
+    """Classify current/current or the complete-index-ahead crash window."""
+
+    if (not _is_hex(correction_digest)
+            or smoke.get("encoder_path_projection_correction_digest")
+            != correction_digest
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in smoke
+            or smoke_raw != _encoder_pretty_json_bytes(smoke)
+            or smoke.get("smoke_receipt_digest")
+            != _encoder_default_json_digest(
+                _without(smoke, "smoke_receipt_digest"))):
+        return None
+    try:
+        index_path = _pin_relative(
+            root, SCORER_FIT_RELATIVE_PATH / "latents_index_v2.json",
+            label="current path-projection latent index")
+    except FullBankV2RunnerError:
+        return None
+    if not index_path.is_file() or index_path.is_symlink():
+        return None
+    index_raw = index_path.read_bytes()
+    try:
+        index = json.loads(index_raw)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return None
+    if not isinstance(index, Mapping):
+        return None
+    index = dict(index)
+    if (index_raw != _encoder_pretty_json_bytes(index)
+            or index.get("encoder_path_projection_correction_digest")
+            != correction_digest
+            or DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY in index
+            or index.get("latents_index_digest")
+            != _encoder_default_json_digest(
+                _without(index, "latents_index_digest"))):
+        return None
+    if smoke.get("latent_index_digest") == index.get("latents_index_digest"):
+        return "current", index
+
+    contexts = index.get("context_records")
+    horizons = index.get("horizon_records")
+    if (not _is_hex(smoke.get("latent_index_digest"))
+            or index.get("schema")
+            != "go2_scorer_fit_corpus_v2_latents_index_v1"
+            or index.get("status") != STATUS
+            or index.get("pool") != "scorer_fit_v2"
+            or index.get("corpus_design") != "full-bank-v2"
+            or index.get("complete") is not True
+            or index.get("context_shape") != [120, 3, 768, 1024]
+            or index.get("horizon_shape") != [1_440, 4, 768, 1024]
+            or not isinstance(contexts, list) or len(contexts) != 120
+            or not isinstance(horizons, list) or len(horizons) != 1_440):
+        return None
+    return "complete_index_ahead", index
+
+
+_SMOKE_TRANSACTION_STATUS_FIELDS = frozenset({
+    "transaction_state", "prepared_present", "prepared_receipt_digest",
+    "target_state", "backup_state", "complete_present",
+    "complete_receipt_digest", "pass_smoke_state", "next_action",
+    "encoder_path_projection_correction_digest",
+    "single_shard_regeneration_transaction_contract_digest",
+    "prepared_staged_state", "complete_staged_state", "target_exact",
+    "backup_exact", "target_backup_custody_exact",
+    "regenerated_target_custody_exact",
+    "candidate_outcomes_used_for_selection",
+    "final_200_state_corpus_generated",
+})
+
+
+def _normalise_optional_smoke_transaction_status(
+        value: Mapping[str, Any]) -> dict[str, Any]:
+    """Accept only the authority's exact resumable transaction states."""
+
+    if (not isinstance(value, Mapping)
+            or set(value) != _SMOKE_TRANSACTION_STATUS_FIELDS):
+        raise FullBankV2RunnerError(
+            "optional smoke transaction projection changed")
+    status = dict(value)
+    if (status.get("transaction_state")
+            not in _SMOKE_REGENERATION_TRANSACTION_STATES
+            or not _is_hex(status.get(
+                "encoder_path_projection_correction_digest"))
+            or not _is_hex(status.get(
+                "single_shard_regeneration_transaction_contract_digest"))
+            or status.get("prepared_staged_state") not in {
+                "ABSENT", "EXACT", "PARTIAL_REGULAR"}
+            or status.get("complete_staged_state") not in {
+                "ABSENT", "EXACT", "PARTIAL_REGULAR"}
+            or any(type(status.get(key)) is not bool for key in {
+                "prepared_present", "complete_present", "target_exact",
+                "backup_exact", "target_backup_custody_exact",
+                "regenerated_target_custody_exact"})
+            or status.get("candidate_outcomes_used_for_selection") is not False
+            or status.get("final_200_state_corpus_generated") is not False):
+        raise FullBankV2RunnerError(
+            "optional smoke transaction projection changed")
+
+    state = status["transaction_state"]
+    prepared_digest = status["prepared_receipt_digest"]
+    complete_digest = status["complete_receipt_digest"]
+    prepared_stage = status["prepared_staged_state"]
+    complete_stage = status["complete_staged_state"]
+    common_unfinished = bool(
+        status["pass_smoke_state"] == "ABSENT_OR_PRETRANSACTION"
+        and not status["complete_present"]
+        and complete_digest is None)
+    exact = False
+    if state == "UNSTARTED":
+        exact = bool(
+            not status["prepared_present"] and prepared_digest is None
+            and status["target_state"] in {"NOT_APPLICABLE", "EXACT"}
+            and status["target_exact"]
+            is (status["target_state"] == "EXACT")
+            and status["backup_state"] == "ABSENT"
+            and not status["backup_exact"]
+            and not status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"]
+            == "RUN_OR_RESUME_BASE_AND_ZERO_NEW_BEFORE_PREPARED"
+            and complete_stage == "ABSENT")
+    elif state == "PREPARED_MOVE_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "ABSENT"
+            and not status["backup_exact"]
+            and not status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"] == "ATOMIC_MOVE_ONCE"
+            and prepared_stage in {"ABSENT", "EXACT"}
+            and complete_stage == "ABSENT")
+    elif state == "MOVED_REGENERATION_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "ABSENT"
+            and not status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["target_backup_custody_exact"]
+            and not status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"] == "RUN_REGENERATION_ENCODER_ONCE"
+            and prepared_stage == complete_stage == "ABSENT")
+    elif state == "RESTORED_COMPLETE_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and common_unfinished
+            and status["next_action"]
+            == "CREATE_COMPLETE_WITHOUT_SECOND_MOVE_OR_REGENERATION"
+            and prepared_stage == "ABSENT")
+    elif state == "COMPLETE_SMOKE_PUBLICATION_PENDING":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["complete_present"] and _is_hex(complete_digest)
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and status["pass_smoke_state"] == "ABSENT_OR_PRETRANSACTION"
+            and status["next_action"]
+            == "PUBLISH_COMPLETE_BOUND_PASS_SMOKE_ONLY"
+            and prepared_stage == "ABSENT"
+            and complete_stage in {"ABSENT", "EXACT"})
+    elif state == "COMPLETE":
+        exact = bool(
+            status["prepared_present"] and _is_hex(prepared_digest)
+            and status["target_state"] == "EXACT" and status["target_exact"]
+            and status["backup_state"] == "EXACT" and status["backup_exact"]
+            and status["complete_present"] and _is_hex(complete_digest)
+            and status["target_backup_custody_exact"]
+            and status["regenerated_target_custody_exact"]
+            and status["pass_smoke_state"] in {
+                "EXACT_BOUND_PROTOCOL_PASS",
+                "VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_ARCHIVE"}
+            and status["next_action"] == "NO_TRANSACTION_MUTATION"
+            and prepared_stage == complete_stage == "ABSENT")
+    if not exact:
+        raise FullBankV2RunnerError(
+            "optional smoke transaction state is not an authorised crash state")
+    return status
+
+
+def _optional_smoke_transaction_status(*, root: Path) -> dict[str, Any]:
+    """Inspect the transaction before testing whether its smoke is present."""
+
+    from scripts import encode_go2_branch_corpus_v1_2 as encoder
+
+    value = (
+        encoder
+        .load_and_validate_full_bank_v2_single_shard_regeneration_transaction_status(
+            out=root / SCORER_FIT_RELATIVE_PATH))
+    return _normalise_optional_smoke_transaction_status(value)
+
+
+def _optional_encoding_smoke_projection(*, root: Path) -> dict[str, Any]:
+    transaction = _optional_smoke_transaction_status(root=root)
+    path = root / SCORER_FIT_RELATIVE_PATH / (
+        BUILDER.SCORER_FIT_V2_ENCODING_SMOKE_RECEIPT_NAME)
+    if not path.exists() and not path.is_symlink():
+        started = bool(
+            transaction["transaction_state"] != "UNSTARTED"
+            or transaction["prepared_staged_state"] != "ABSENT")
+        return {
+            "validation_kind": "encoding-smoke-optional", "pass": True,
+            "terminal_present": started,
+            "smoke_protocol_complete": False,
+            "zero_new_resume_verified": started,
+            "single_registered_shard_regenerated": False,
+            "only_registered_missing_shard_changed": False,
+            "requires_full_encoder_refresh": False,
+            **transaction,
+            "candidate_outcomes_used_for_selection": False,
+            "final_200_state_corpus_generated": False,
+        }
+    # This is intentionally receipt-only.  A resume may arrive in the narrow
+    # window after the registered candidate-0 shard was atomically moved into
+    # its retained backup and before its exact regeneration, or after an
+    # unrelated full-index shard became invalid.  The strict producer replay
+    # would reject both before the encoder got its authorised chance to
+    # complete the registered transaction or repair missing/invalid shards.
+    # Exact shard validation remains mandatory immediately after recovery and
+    # again for the complete corpus.
+    smoke, smoke_raw = _load_json(
+        path, label="optional V2 encoding smoke receipt")
+    manifests = BUILDER.load_and_validate_full_bank_v2_manifests_for_consumption(
+        out=root / SCORER_FIT_RELATIVE_PATH)
+    contract = SCORER_CONTRACT.load_contract_for_consumption(root=root)
+    branch_smoke_path = root / SCORER_FIT_RELATIVE_PATH / (
+        BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_RECEIPT_NAME)
+    branch_smoke, _branch_raw = _load_json(
+        branch_smoke_path, label="optional V2 branch smoke receipt")
+    state_manifest = manifests.get("state_manifest")
+    assignment_manifest = manifests.get("assignment_manifest")
+    design_authority = manifests.get("design_authority")
+    dtype_correction_digest = (
+        design_authority.get("encoder_compute_dtype_correction_digest")
+        if isinstance(design_authority, Mapping) else None)
+    path_correction_digest = (
+        design_authority.get("encoder_path_projection_correction_digest")
+        if isinstance(design_authority, Mapping) else None)
+    path_correction = (
+        design_authority.get("encoder_path_projection_correction")
+        if isinstance(design_authority, Mapping) else None)
+    transaction_contract_digest = (
+        path_correction.get(
+            "single_shard_regeneration_transaction_contract_digest")
+        if isinstance(path_correction, Mapping) else None)
+    legacy_pre_refresh = bool(
+        isinstance(path_correction, Mapping)
+        and _matches_immutable_pre_path_projection_base_smoke(
+            root=root, smoke=smoke, smoke_raw=smoke_raw,
+            correction=path_correction))
+    current_metadata = (
+        _classify_current_path_projection_metadata(
+            root=root, smoke=smoke, smoke_raw=smoke_raw,
+            correction_digest=path_correction_digest)
+        if _is_hex(path_correction_digest) else None)
+    if (not isinstance(state_manifest, Mapping)
+            or not isinstance(assignment_manifest, Mapping)
+            or not _is_hex(dtype_correction_digest)
+            or not _is_hex(path_correction_digest)
+            or not isinstance(path_correction, Mapping)
+            or path_correction.get(
+                DESIGN.ENCODER_PATH_PROJECTION_CORRECTION_SELF_KEY)
+            != path_correction_digest
+            or transaction.get(
+                "encoder_path_projection_correction_digest")
+            != path_correction_digest
+            or not _is_hex(transaction_contract_digest)
+            or transaction.get(
+                "single_shard_regeneration_transaction_contract_digest")
+            != transaction_contract_digest
+            or not (legacy_pre_refresh or current_metadata is not None)
+            or not isinstance(contract, Mapping)
+            or branch_smoke.get("schema")
+            != BUILDER.SCORER_FIT_V2_BRANCH_SMOKE_SCHEMA
+            or branch_smoke.get("status") != STATUS
+            or branch_smoke.get("state_manifest_digest")
+            != state_manifest.get("state_manifest_digest")
+            or branch_smoke.get("full_bank_assignment_manifest_digest")
+            != assignment_manifest.get(
+                "full_bank_assignment_manifest_digest")
+            or branch_smoke.get(
+                "scorer_fit_corpus_v2_scorer_contract_digest")
+            != contract.get(SCORER_CONTRACT.CONTRACT_SELF_KEY)
+            or branch_smoke.get(
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+            != contract.get(SCORER_CONTRACT.ARTIFACT_SELF_KEY)):
+        raise FullBankV2RunnerError(
+            "optional V2 smoke authority projection changed")
+    branch_receipt_matches = (
+        smoke.get("branch_smoke_receipt_digest")
+        == branch_smoke.get("smoke_branch_receipt_digest"))
+    branch_receipt_lag_after_partial_corpus = False
+    branch_receipt_lag_after_complete_corpus = False
+    advanced_corpus: Mapping[str, Any] | None = None
+    transaction_complete = _optional_smoke_transaction_complete(transaction)
+    # A state-aligned partial corpus deliberately leaves the original
+    # twelve-row branch-smoke receipt unchanged.  Inspect the advancing corpus
+    # receipt only after the immutable transaction is COMPLETE; unfinished
+    # transaction recovery remains coupled to its original strict live inputs.
+    if not branch_receipt_matches or transaction_complete:
+        corpus_path = root / SCORER_FIT_RELATIVE_PATH / (
+            BUILDER.SCORER_FIT_V2_CORPUS_RECEIPT_NAME)
+        corpus, _corpus_raw = _load_json(
+            corpus_path, label="optional V2 advanced branch corpus receipt")
+        corpus_payload = corpus.get("corpus_digest_payload")
+        branch_receipt_lag_after_complete_corpus = bool(
+            not branch_receipt_matches
+            and isinstance(corpus_payload, Mapping)
+            and corpus.get("corpus_digest")
+            == _builder_default_json_digest(corpus_payload)
+            and corpus.get("status") == STATUS
+            and corpus.get("complete") is True
+            and corpus.get("states") == 120
+            and corpus.get("state_count") == 120
+            and corpus.get("completed_states") == 120
+            and corpus.get("expected_branches") == 1_440
+            and corpus.get("attempted_branches") == 1_440
+            and corpus.get("attempted_count") == 1_440
+            and corpus.get("rows") == 1_440
+            and corpus.get("valid_branches") == 1_440
+            and corpus.get("valid_count") == 1_440
+            and corpus.get("invalid_branches") == 0
+            and corpus.get("invalid_count") == 0
+            and corpus.get("state_manifest_digest")
+            == state_manifest.get("state_manifest_digest")
+            and corpus.get("full_bank_assignment_manifest_digest")
+            == assignment_manifest.get(
+                "full_bank_assignment_manifest_digest")
+            and corpus_payload.get("state_count") == 120
+            and corpus_payload.get("attempted_branch_count") == 1_440
+            and corpus_payload.get("valid_branch_count") == 1_440
+            and corpus_payload.get("invalid_branch_count") == 0
+            and corpus_payload.get("complete") is True
+            and corpus_payload.get("state_manifest_digest")
+            == state_manifest.get("state_manifest_digest")
+            and corpus_payload.get("full_bank_assignment_manifest_digest")
+            == assignment_manifest.get(
+                "full_bank_assignment_manifest_digest")
+            and _is_hex(corpus.get("branch_rows_sha256"))
+            and smoke.get("state_id") == branch_smoke.get("state_id")
+            and smoke.get("branch_identity_digests")
+            == branch_smoke.get("branch_identity_digests")
+            and smoke.get("branch_row_digests")
+            == branch_smoke.get("branch_row_digests"))
+        if branch_receipt_lag_after_complete_corpus:
+            advanced_corpus = corpus
+        elif (transaction_complete
+              and corpus.get("complete") is False
+              and isinstance(corpus.get("attempted_branches"), int)
+              and not isinstance(corpus.get("attempted_branches"), bool)
+              and 12 < corpus["attempted_branches"] < 1_440):
+            # Only the state-aligned partial-corpus transition needs the
+            # strict builder producer replay.  Keep the previously reviewed
+            # complete-corpus interruption proof independent of unrelated
+            # missing rows so the full encoder can repair those rows/shards.
+            producer = (
+                BUILDER
+                .load_and_validate_full_bank_v2_branch_outputs_for_consumption(
+                    out=root / SCORER_FIT_RELATIVE_PATH,
+                    allow_partial=True))
+            producer_corpus = producer.get("receipt")
+            producer_rows = producer.get("rows")
+            producer_smoke = producer.get("branch_smoke")
+            row_count = (
+                len(producer_rows) if isinstance(producer_rows, list) else -1)
+            completed_states = (
+                producer_corpus.get("completed_states")
+                if isinstance(producer_corpus, Mapping) else None)
+            rows_by_state: dict[str, list[int]] = {}
+            if isinstance(producer_rows, list):
+                for row in producer_rows:
+                    if isinstance(row, Mapping):
+                        rows_by_state.setdefault(
+                            str(row.get("state_id")), []).append(
+                                int(row.get("candidate_index", -1)))
+            state_aligned = bool(
+                isinstance(completed_states, int)
+                and not isinstance(completed_states, bool)
+                and row_count == completed_states * 12
+                and len(rows_by_state) == completed_states
+                and all(sorted(indices) == list(range(12))
+                        for indices in rows_by_state.values()))
+            branch_receipt_lag_after_partial_corpus = bool(
+                isinstance(producer_corpus, Mapping)
+                and producer_corpus == corpus
+                and producer_smoke == branch_smoke
+                and branch_receipt_matches
+                and isinstance(producer_rows, list)
+                and all(isinstance(row, Mapping)
+                        and row.get("valid") is True for row in producer_rows)
+                and state_aligned
+                and 12 < row_count < 1_440
+                and producer_corpus.get("status") == STATUS
+                and producer_corpus.get("complete") is False
+                and producer_corpus.get("state_count") == 120
+                and producer_corpus.get("states") == 120
+                and producer_corpus.get("expected_branches") == 1_440
+                and producer_corpus.get("attempted_branches") == row_count
+                and producer_corpus.get("attempted_count") == row_count
+                and producer_corpus.get("rows") == row_count
+                and producer_corpus.get("valid_branches") == row_count
+                and producer_corpus.get("valid_count") == row_count
+                and producer_corpus.get("invalid_branches") == 0
+                and producer_corpus.get("invalid_count") == 0
+                and producer_corpus.get("state_manifest_digest")
+                == state_manifest.get("state_manifest_digest")
+                and producer_corpus.get("full_bank_assignment_manifest_digest")
+                == assignment_manifest.get(
+                    "full_bank_assignment_manifest_digest")
+                and _is_hex(producer_corpus.get("branch_rows_sha256"))
+                and smoke.get("state_id") == branch_smoke.get("state_id")
+                and smoke.get("branch_identity_digests")
+                == branch_smoke.get("branch_identity_digests")
+                and smoke.get("branch_row_digests")
+                == branch_smoke.get("branch_row_digests"))
+            if not branch_receipt_lag_after_partial_corpus:
+                raise FullBankV2RunnerError(
+                    "optional V2 partial-corpus resume proof changed")
+            advanced_corpus = producer_corpus
+
+    metadata_state = current_metadata[0] if current_metadata is not None else None
+    if metadata_state == "complete_index_ahead":
+        index_ahead = current_metadata[1]
+        if (not branch_receipt_lag_after_complete_corpus
+                or advanced_corpus is None
+                or smoke.get("pass") is not True
+                or smoke.get("zero_new_resume_verified") is not True
+                or smoke.get("single_shard_deletion_regeneration_verified")
+                is not True
+                or smoke.get("smoke_protocol_complete") is not True
+                or index_ahead.get("encoder_compute_dtype") != "float32"
+                or index_ahead.get(
+                    "encoder_compute_dtype_correction_digest")
+                != dtype_correction_digest
+                or index_ahead.get("state_manifest_digest")
+                != state_manifest.get("state_manifest_digest")
+                or index_ahead.get("full_bank_assignment_manifest_digest")
+                != assignment_manifest.get(
+                    "full_bank_assignment_manifest_digest")
+                or index_ahead.get(
+                    "scorer_fit_corpus_v2_scorer_contract_digest")
+                != contract.get(SCORER_CONTRACT.CONTRACT_SELF_KEY)
+                or index_ahead.get(
+                    "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+                != contract.get(SCORER_CONTRACT.ARTIFACT_SELF_KEY)
+                or index_ahead.get("corpus_digest")
+                != advanced_corpus.get("corpus_digest")
+                or index_ahead.get("branch_rows_sha256")
+                != advanced_corpus.get("branch_rows_sha256")):
+            raise FullBankV2RunnerError(
+                "complete index-ahead smoke recovery proof changed")
+    transaction_smoke_binding_valid = bool(
+        transaction["transaction_state"] != "COMPLETE"
+        or (smoke.get(
+                "single_shard_regeneration_transaction_contract_digest")
+            == transaction_contract_digest
+            and smoke.get("single_shard_regeneration_prepared_digest")
+            == transaction["prepared_receipt_digest"]
+            and smoke.get(
+                "single_shard_regeneration_transaction_complete") is True
+            and (
+                (transaction["pass_smoke_state"]
+                 == "EXACT_BOUND_PROTOCOL_PASS"
+                 and "single_shard_regeneration_complete_digest"
+                 not in smoke)
+                or (transaction["pass_smoke_state"]
+                    == ("VALID_REFRESHED_PASS_WITH_EXACT_PROTOCOL_PASS_"
+                        "ARCHIVE")
+                    and smoke.get(
+                        "single_shard_regeneration_complete_digest")
+                    == transaction["complete_receipt_digest"]))))
+    incomplete_transaction_smoke_valid = bool(
+        transaction["transaction_state"] == "COMPLETE"
+        or (smoke.get("pass") is False
+            and smoke.get(
+                "single_shard_deletion_regeneration_verified") is False
+            and smoke.get("smoke_protocol_complete") is False
+            and (smoke.get(
+                    "single_shard_regeneration_transaction_complete") is None
+                 or smoke.get(
+                    "single_shard_regeneration_transaction_complete")
+                 is False)
+            and "single_shard_regeneration_complete_digest" not in smoke))
+    if (smoke.get("smoke_receipt_digest")
+            != _encoder_default_json_digest(
+                _without(smoke, "smoke_receipt_digest"))
+            or smoke.get("schema")
+            != "go2_scorer_fit_corpus_v2_end_to_end_smoke_receipt_v1"
+            or smoke.get("status") != STATUS
+            or smoke.get("base_end_to_end_pass") is not True
+            or branch_smoke.get("smoke_branch_receipt_digest")
+            != _builder_default_json_digest(_without(
+                branch_smoke, "smoke_branch_receipt_digest"))
+            or branch_smoke.get("pass") is not True
+            or not (branch_receipt_matches
+                    or branch_receipt_lag_after_partial_corpus
+                    or branch_receipt_lag_after_complete_corpus)
+            or smoke.get("candidate_indices") != list(range(12))
+            or smoke.get("branch_count") != 12
+            or smoke.get("rendered_horizon_frame_count") != 48
+            or smoke.get("true_latent_trajectory_count") != 12
+            or smoke.get("true_latent_trajectory_shape") != [4, 768, 1024]
+            or smoke.get("encoder_compute_dtype") != "float32"
+            or smoke.get("encoder_compute_dtype_correction_digest")
+            != dtype_correction_digest
+            or not transaction_smoke_binding_valid
+            or not incomplete_transaction_smoke_valid
+            or (not legacy_pre_refresh
+                and smoke.get("encoder_path_projection_correction_digest")
+                != path_correction_digest)
+            or smoke.get("state_manifest_digest")
+            != state_manifest.get("state_manifest_digest")
+            or smoke.get("full_bank_assignment_manifest_digest")
+            != assignment_manifest.get(
+                "full_bank_assignment_manifest_digest")
+            or smoke.get("scorer_fit_corpus_v2_scorer_contract_digest")
+            != contract.get(SCORER_CONTRACT.CONTRACT_SELF_KEY)
+            or smoke.get(
+                "scorer_fit_corpus_v2_scorer_contract_artifact_digest")
+            != contract.get(SCORER_CONTRACT.ARTIFACT_SELF_KEY)
+            or not _is_hex(smoke.get("latent_index_digest"))
+            or not isinstance(smoke.get("zero_new_resume_verified"), bool)
+            or not isinstance(smoke.get(
+                "single_shard_deletion_regeneration_verified"), bool)
+            or not isinstance(smoke.get("smoke_protocol_complete"), bool)):
+        raise FullBankV2RunnerError(
+            "optional V2 encoding smoke receipt changed")
+    refresh_required = bool(
+        branch_receipt_lag_after_partial_corpus
+        or branch_receipt_lag_after_complete_corpus
+        or legacy_pre_refresh)
+    complete = bool(
+        not legacy_pre_refresh
+        and _optional_smoke_transaction_complete(transaction)
+        and smoke["zero_new_resume_verified"]
+        and smoke["single_shard_deletion_regeneration_verified"]
+        and smoke["smoke_protocol_complete"])
+    return {
+        "validation_kind": "encoding-smoke-optional",
+        "pass": True,
+        "terminal_present": True,
+        "smoke_protocol_complete": complete,
+        "zero_new_resume_verified": smoke["zero_new_resume_verified"],
+        "single_registered_shard_regenerated": smoke[
+            "single_shard_deletion_regeneration_verified"],
+        "only_registered_missing_shard_changed": smoke[
+            "single_shard_deletion_regeneration_verified"],
+        "requires_full_encoder_refresh":
+            refresh_required,
+        **transaction,
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _normalise_encoding_projection(
+        value: Mapping[str, Any], *, kind: str) -> dict[str, Any]:
+    """Normalize the encoder's closed producer projection for orchestration."""
+
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError("encoder validation result is not a mapping")
+    fields = {
+        "state_count", "horizon_latent_count", "horizon_shape",
+        "encoder_path_projection_correction_digest",
+        "registered_smoke_shard_inventory_digest",
+        "invocation_new_context_shards", "invocation_new_horizon_shards",
+        "zero_new_resume_verified", "single_registered_shard_regenerated",
+        "only_registered_missing_shard_changed",
+        "single_shard_regeneration_target",
+        "single_shard_regeneration_transaction_state",
+        "single_shard_regeneration_transaction_complete",
+        "single_shard_regeneration_prepared_digest",
+        "single_shard_regeneration_complete_digest",
+        "single_shard_regeneration_target_exact",
+        "single_shard_regeneration_backup_exact",
+        "registered_smoke_artifact_inventory",
+    }
+    if not fields.issubset(value):
+        raise FullBankV2RunnerError(
+            "encoder validation projection lacks runner protocol fields")
+    if not _is_hex(value.get("encoder_path_projection_correction_digest")):
+        raise FullBankV2RunnerError(
+            "encoder validation projection lacks the current path correction")
+    target = value.get("single_shard_regeneration_target")
+    if (not isinstance(target, Mapping)
+            or set(target) != {"path", "sha256", "byte_count", "shape"}
+            or target.get("shape") != [4, 768, 1024]):
+        raise FullBankV2RunnerError("encoder regeneration target changed")
+    inventory = value.get("registered_smoke_artifact_inventory")
+    if not isinstance(inventory, list) or not inventory:
+        raise FullBankV2RunnerError(
+            "encoder registered smoke artifact inventory changed")
+    advancing_names = {
+        "smoke_encoding_receipt_v2.json",
+        "encoding_invocation_summary_v2.json",
+    }
+    stable_inventory: list[dict[str, Any]] = []
+    observed_advancing: set[str] = set()
+    for item in inventory:
+        if (not isinstance(item, Mapping)
+                or set(item) != {"path", "raw_sha256", "byte_count"}
+                or not isinstance(item.get("path"), str)
+                or not _is_hex(item.get("raw_sha256"))
+                or isinstance(item.get("byte_count"), bool)
+                or not isinstance(item.get("byte_count"), int)
+                or item["byte_count"] <= 0):
+            raise FullBankV2RunnerError(
+                "encoder registered smoke artifact binding changed")
+        name = Path(item["path"]).name
+        if name in advancing_names:
+            observed_advancing.add(name)
+        else:
+            stable_inventory.append(dict(item))
+    if observed_advancing != advancing_names or not stable_inventory:
+        raise FullBankV2RunnerError(
+            "encoder advancing smoke metadata inventory changed")
+    stable_inventory.sort(key=lambda item: str(item["path"]))
+    return {
+        "validation_kind": kind, "pass": True,
+        **{key: value[key] for key in fields
+           if key != "registered_smoke_artifact_inventory"},
+        "registered_smoke_stable_artifact_inventory_digest":
+            canonical_digest(stable_inventory),
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _training_terminal_projection(*, root: Path) -> dict[str, Any]:
+    from scripts import train_go2_utility_scorer_v1_2 as trainer
+
+    value = trainer.load_and_validate_full_bank_v2_training_terminal_for_consumption(
+        verify_encoder_checkpoint=True)
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError("training terminal validator returned no mapping")
+    terminal = value.get("terminal")
+    terminal_kind = value.get("terminal_kind")
+    if (not isinstance(terminal, Mapping)
+            or terminal_kind not in {
+                "COMPLETION_DEGENERACY_FAILURE", "QUALIFICATION_FAILURE",
+                "QUALIFICATION_PASS"}
+            or not _is_hex(value.get("terminal_digest"))):
+        raise FullBankV2RunnerError("training terminal projection changed")
+    return {
+        "validation_kind": "training-terminal", "pass": True,
+        "terminal_kind": terminal_kind,
+        "qualified": value["qualified"],
+        "terminal_digest": value["terminal_digest"],
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _optional_training_terminal_projection(*, root: Path) -> dict[str, Any]:
+    paths = (
+        root / UTILITY_V2_RELATIVE_PATH /
+        "completion_degeneracy_failure_v2.json",
+        root / UTILITY_V2_RELATIVE_PATH / "qualification_v2.json",
+    )
+    present = [path for path in paths if path.exists() or path.is_symlink()]
+    if not present:
+        return {
+            "validation_kind": "training-terminal-optional", "pass": True,
+            "terminal_present": False,
+            "candidate_outcomes_used_for_selection": False,
+            "final_200_state_corpus_generated": False,
+        }
+    projection = _training_terminal_projection(root=root)
+    return {
+        **projection,
+        "validation_kind": "training-terminal-optional",
+        "terminal_present": True,
+    }
+
+
+def _development_terminal_projection(*, root: Path) -> dict[str, Any]:
+    from scripts import (
+        apply_go2_utility_scorer_to_counterfactual_development_v1_2 as apply,
+    )
+
+    value = apply.load_and_validate_full_bank_v2_development_terminal_for_consumption(
+        root=root)
+    if not isinstance(value, Mapping):
+        raise FullBankV2RunnerError(
+            "development terminal validator returned no mapping")
+    if (not _is_hex(value.get("terminal_digest"))
+            or value.get("qualified_scorer_bound") is not True
+            or value.get("development_state_count") != 20
+            or value.get("development_branch_count") != 240):
+        raise FullBankV2RunnerError("development terminal binding changed")
+    return {
+        "validation_kind": "development-terminal", "pass": True,
+        "terminal_digest": value["terminal_digest"],
+        "qualified_scorer_bound": value["qualified_scorer_bound"],
+        "development_state_count": value["development_state_count"],
+        "development_branch_count": value["development_branch_count"],
+        "candidate_outcomes_used_for_selection": False,
+        "final_200_state_corpus_generated": False,
+    }
+
+
+def _optional_development_terminal_projection(*, root: Path) -> dict[str, Any]:
+    path = root / UTILITY_V2_RELATIVE_PATH / (
+        "counterfactual_development_transfer_v2/result_v2.json")
+    if not path.exists() and not path.is_symlink():
+        return {
+            "validation_kind": "development-terminal-optional", "pass": True,
+            "terminal_present": False,
+            "candidate_outcomes_used_for_selection": False,
+            "final_200_state_corpus_generated": False,
+        }
+    projection = _development_terminal_projection(root=root)
+    return {
+        **projection,
+        "validation_kind": "development-terminal-optional",
+        "terminal_present": True,
+    }
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--stage", required=True, choices=(
+        "issue-design", "issue-source-correction", "freeze-manifests",
+        "issue-scorer-contract", "issue-encoder-import-correction",
+        "issue-encoder-compute-dtype-correction",
+        "issue-encoder-path-projection-correction",
+        "issue-branch-redrive-projection-correction",
+        "issue-optional-smoke-partial-corpus-resume-correction", "run",
+        "status", "internal-probe-genesis", "internal-probe-rocm",
+        "internal-validate-branch-smoke", "internal-validate-encoding-smoke",
+        "internal-validate-encoding-smoke-optional",
+        "internal-validate-branch-corpus", "internal-validate-encoded-corpus",
+        "internal-validate-training-terminal",
+        "internal-validate-training-terminal-optional",
+        "internal-validate-development-terminal",
+        "internal-validate-development-terminal-optional",
+    ))
+    parser.add_argument(
+        "--resume", action="store_true",
+        help="resume registered V2 outputs after an infrastructure interruption")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = _parser().parse_args(argv)
+    if args.resume and args.stage != "run":
+        raise SystemExit("--resume is valid only with --stage run")
+    if args.stage == "internal-probe-genesis":
+        return _emit_runtime_probe("genesis")
+    if args.stage == "internal-probe-rocm":
+        return _emit_runtime_probe("rocm")
+    if args.stage.startswith("internal-validate-"):
+        return _emit_validation(args.stage.removeprefix("internal-validate-"))
+    if args.stage == "issue-design":
+        report = issue_design()
+        code = 0
+    elif args.stage == "issue-source-correction":
+        report = issue_source_correction()
+        code = 0
+    elif args.stage == "freeze-manifests":
+        code, report = freeze_manifests()
+    elif args.stage == "issue-scorer-contract":
+        report = issue_scorer_contract()
+        code = 0
+    elif args.stage == "issue-encoder-import-correction":
+        report = issue_encoder_import_correction()
+        code = 0
+    elif args.stage == "issue-encoder-compute-dtype-correction":
+        report = issue_encoder_compute_dtype_correction()
+        code = 0
+    elif args.stage == "issue-encoder-path-projection-correction":
+        report = issue_encoder_path_projection_correction()
+        code = 0
+    elif args.stage == "issue-branch-redrive-projection-correction":
+        report = issue_branch_redrive_projection_correction()
+        code = 0
+    elif args.stage == "issue-optional-smoke-partial-corpus-resume-correction":
+        report = issue_optional_smoke_partial_corpus_resume_correction()
+        code = 0
+    elif args.stage == "run":
+        code, report = run_authorised(resume=args.resume)
+    else:
+        report = assemble_status_report()
+        code = 0
+    print(json.dumps(report, indent=2, sort_keys=True), flush=True)
+    return code
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

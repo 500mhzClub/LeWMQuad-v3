@@ -1,0 +1,97 @@
+{
+  "schema": "lewm_supported_vx_yaw_viability_authority_search_v1_evidence_index",
+  "source_commit": "11a0c258e479f79a640ab237841f52ec0e6b6ecc",
+  "date": "2026-08-21",
+  "primary_classification": "SUPPORTED_VX_YAW_CONTROL_AUTHORITY_NO_GO",
+  "candidate_bank_classification": "CANDIDATE_BANK_ONE_TICK_VIABILITY_NO_GO",
+  "bindings": {
+    "platform_manifest": {
+      "path": "config/go2_platform_manifest.yaml",
+      "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+    },
+    "primitive_registry": {
+      "path": "config/go2_primitive_registry.yaml",
+      "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+    },
+    "policy_config": {
+      "path": "models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+      "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+    },
+    "grid": {
+      "path": ".generated/supported_vx_yaw_viability_authority_search_v1/frozen_requested_grid.json",
+      "sha256": "360d0640ba7ee22a08200bf55ee0a4a1666ed2381f2d725112e982ff7b5ab3f1",
+      "content_digest": "64c139fc6a792019f2e7d6d2b33c9df241fbff6a26b3ce559c03584bd5732d04",
+      "bytes": 6482
+    },
+    "fixtures": {
+      "path": ".generated/supported_vx_yaw_viability_authority_search_v1/training_fixture_result.json",
+      "sha256": "5fc5ae5355a0ed5f370063e9e2b4da509d8afc9c15e38f85419fb095f6ee00ed",
+      "content_digest": "58a3f1fad0469ffb6b498d4a1d783a08393ebd0ddbbcf1d4af12a0df5359f370",
+      "bytes": 594264
+    },
+    "search_index": {
+      "path": ".generated/supported_vx_yaw_viability_authority_search_v1/search_index.json",
+      "sha256": "970105327632b5f3788f6df1477c618ef5952d223d785dad4861a39606b39535",
+      "content_digest": "23f3e5e19536d3d33a5b07da4066c0f89154329012286f5b985a65870796790b",
+      "bytes": 4478231
+    },
+    "development_result": {
+      "path": ".generated/supported_vx_yaw_viability_authority_search_v1/development_result.json",
+      "sha256": "87fba3981572d40bc28b190d76f8d2ed763f3b2f0fb2cec5c7669e11c23326f4",
+      "bytes": 15873
+    },
+    "row_ledger": {
+      "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/supported_vx_yaw_viability_authority_search_v1/row_level_evidence_v1.jsonl",
+      "sha256": "42d6b59491539e3d61e3832c76aed9f95db7a4da0d210200b137f4496a416cee",
+      "bytes": 2059422,
+      "rows": 3139
+    }
+  },
+  "grid": {
+    "requested_commands": 21,
+    "requested_rows_across_scientific_states": 336,
+    "unique_applied_commands": 235,
+    "within_grid_duplicates": 101,
+    "historical_duplicates": 54,
+    "genuinely_new_applied_commands": 181,
+    "vy_m_s": 0.0
+  },
+  "fixtures": {
+    "contexts": 9,
+    "branches": 378,
+    "deterministic": true,
+    "finite": true,
+    "obstacle_free_contacts": 0,
+    "falls_or_unsafe": 0,
+    "maximum_reverse_response_m": 0.000551232090951646,
+    "maximum_yaw_response_rad": 0.07823237655386883
+  },
+  "scientific_search": {
+    "states": 16,
+    "current_branches": 235,
+    "successor_branches": 2904,
+    "failure_states_with_viable_command": 0,
+    "failure_safe_prefix_commands": 14,
+    "failure_viable_commands": 0,
+    "matched_control_first_tick_contacts": 0,
+    "matched_control_viable_commands": 119,
+    "mechanism_selected": null,
+    "conditional_multi_cycle_ran": false
+  },
+  "full_panel": {
+    "historical_viable_states": 40,
+    "augmented_viable_states": 40,
+    "states": 48,
+    "non_preexisting_viable_fraction": 0.8695652173913043
+  },
+  "next_specification": "DEPLOYMENT_VALID_LATERAL_LOCOMOTION_CONTROLLER_V1",
+  "prohibitions_observed": {
+    "model_training": false,
+    "jepa_access_or_execution": false,
+    "low_level_controller_retraining": false,
+    "predictor_contract_change": false,
+    "macro_route_bank_change": false,
+    "memory": false,
+    "navigation": false
+  }
+}
