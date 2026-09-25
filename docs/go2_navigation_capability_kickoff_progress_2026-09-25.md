@@ -27,6 +27,8 @@ Both the existing initial-frame physical arrival criteria and distance to the ge
 
 The oracle uses only true candidate motion in the prediction slot. The unchanged controller receives its ordinary sensor packets, measured pose, observed map and mission instruction. Matching-prefix checks compare every native sample under the same applied tape; an override or subsequent command change terminates that matching prefix.
 
+An executed-command coverage check confirms that all 5,460 admitted 20-ms intervals, from 276 actually admitted plans, fall inside the corresponding selected branch's verified prefix. Of 278 selected plans, 268 matched through 700 ms and nine through 800 ms. One selected turn matched only the common 300-ms prefix because dispatch vetoed it before execution. Thus the 1,668 all-candidate comparisons include common pre-dispatch prefixes; they should not be read as 1,668 executed alternative actions. See `oracle_execution_coverage.json`.
+
 Runtime evidence is under:
 
 `/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_pilot_C0_dev00_ep0_attempt002`
