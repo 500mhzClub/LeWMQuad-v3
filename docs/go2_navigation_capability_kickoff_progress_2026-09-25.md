@@ -41,6 +41,14 @@ The source RGB and depth hashes were retained successfully for this episode. The
 
 Evidence is in `runs/v0_pilot_C1_dev00_ep0_attempt001` under the same fresh output root. This is a development pilot, not a capability estimate or a completed ten-episode harness screen.
 
+### Replay and throughput optimisation
+
+The complete C1 source replay matched all 2,226 original RGB images bitwise, all 270 selected actions, all 5,561 final command steps, and every native physics field exactly. The fitted command-history predictions also matched exactly with the unused neural workload omitted. This supports that omission for C1 only; C2 requires its own check. The source recording and baseline timing remain unchanged.
+
+The first pipeline video contains 3,337 frames at 1920×1080, 30 fps, H.264/yuv420p. Its separate chase replay had zero position and yaw error. Visual review identified frequent robot occlusion with the original low chase offset; a steeper fixed camera offset is prepared for a separate render pass, without changing simulator or controller code. The prototype is a pipeline test, not an official capability video. Its files are under `videos/pipeline_test_attempt001`.
+
+A read-only lossless RGB archive check reproduced all 2,226 pixels-per-frame hashes, but saved only about 7.6% against the existing PNG recordings (88,378,315 versus 95,683,985 bytes). It is not adopted as a storage solution. The original images and this measured check are preserved.
+
 ## Preserved implementation issues
 
 The first oracle attempt stopped after settling, before any mission command or branch, because its new `nn.Module` retained the default training flag. The evaluation-mode correction and fresh attempt were recorded in [adapter revision 1](go2_navigation_capability_harness_v0_adapter_r1_2026-09-25.json). This changed no controller algorithm.
