@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "preregistration_preparation",
+  "stage": "throughput_pilot_and_fixed_C4_fit",
   "new_physics_runs": 0,
   "new_training_runs": 0,
   "thread_goal_tracker": {
@@ -32,5 +32,30 @@
     "recovery_reserve_gib": 12,
     "workspace_reserve_gib": 4,
     "per_device_vram_reserve_gib": 2
-  }
+  },
+  "completed": {
+    "preregistration_commit": "bb9ab232",
+    "set_and_initial_harness_commit": "523005c1",
+    "sets": {
+      "dev_tune": 10,
+      "validation": 20,
+      "sealed_test": 60
+    },
+    "oracle_pilot": "114.82 s successful native round trip; 1668 exact matching-prefix comparisons; zero contacts/hard/operating violations",
+    "C4_data_inventory": "8414 training contexts, all causal inputs present"
+  },
+  "limitations": [
+    "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
+    "One oracle startup failure preserved before mission commands",
+    "One C4 metadata-writer startup failure preserved before encoding/fitting"
+  ],
+  "remaining": [
+    "C4 fixed fit",
+    "C1-C4 throughput pilots",
+    "C1 pipeline video and replay verification",
+    "concurrency/equivalence and budget projection",
+    "C1 dev-tune iteration and 20-episode oracle gate",
+    "capability qualification",
+    "official videos and E1 proposal"
+  ]
 }
