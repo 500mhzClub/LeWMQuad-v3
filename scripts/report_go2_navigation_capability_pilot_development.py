@@ -81,6 +81,7 @@ def main():
             full_480s_recording_and_video_bytes=retained,
             pilot_length_science_recording_bytes=pilot_length)
     chosen = 2 if scenarios['2']['within_120h_projection'] else 1
+    validation_ids = [f'{maze:02d}/{episode}' for maze in range(10,30) for episode in range(chosen)]
     free = shutil.disk_usage(base).free
     available = free-protocol['caps']['recovery_reserve_bytes']-128*1024**2
     report = dict(schema='navigation_capability_pilot_budget.v1', pilots=pilots,
@@ -88,6 +89,9 @@ def main():
         native_reader_wall_per_sim_s=native_ratios, allocated_storage_bytes_per_sim_s=storage_rates,
         programme_elapsed_h=elapsed_h, scenarios=scenarios,
         time_rule_selected_validation_episodes_per_maze=chosen,
+        fixed_validation_episode_ids=validation_ids,
+        fixed_C0_validation_episode_ids=validation_ids[:10],
+        validation_reduction_choice='Retain episode 0 in every maze if the pre-registered time rule reduces the design; C0 uses the lowest ten IDs in that paired set. No validation outcomes inspected.',
         time_rule_stop=not scenarios[str(chosen)]['within_120h_projection'],
         recovery_free_bytes=free, recovery_available_after_reserve_and_closeout_bytes=available,
         workspace_free_bytes=shutil.disk_usage(REPO).free,
