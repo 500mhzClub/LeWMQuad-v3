@@ -223,9 +223,10 @@ def chase_pass(source_root,root,budget,spec,episode,trace,requests):
     sheet_frames=set(np.linspace(0,math.ceil(duration*30-1e-8)-1,12).astype(int).tolist())
     def render_frame(pose):
         nonlocal count,position
-        Q=rotation_xyzw(pose[3:]);desired=pose[:3]-1.8*Q[:,0]+np.array([0.,0.,1.5])
+        # Steeper fixed chase offset keeps 1.4-m maze walls from hiding Go2.
+        Q=rotation_xyzw(pose[3:]);desired=pose[:3]-.6*Q[:,0]+np.array([0.,0.,3.])
         position=desired if position is None else .2*desired+.8*position
-        camera=session.ctx.build.camera;camera.set_pose(pos=position,lookat=pose[:3]+Q[:,0]*.5,up=[0.,0.,1.])
+        camera=session.ctx.build.camera;camera.set_pose(pos=position,lookat=pose[:3],up=[0.,0.,1.])
         rendered=camera.render(rgb=True,depth=False,segmentation=False,normal=False)
         rgb=np.asarray(session.ctx.runner._extract_rgb(rendered)).reshape(480,640,3)
         frame=canvas.draw(rgb,pose,count/30)
@@ -236,7 +237,7 @@ def chase_pass(source_root,root,budget,spec,episode,trace,requests):
     def sampled(requested,applied,stamp):
         value=original(requested,applied,stamp)
         if count/30<duration and stamp-epoch/1e9+1e-9>=count/30:
-            render_frame(session.samples[-1]['base_pose_world'])
+            render_frame(value['base_pose_world'])
         return value
     session._sample=sampled
     try:
