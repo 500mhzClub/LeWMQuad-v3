@@ -201,10 +201,11 @@ class Canvas:
         canvas[720:,:640]=map_image
         index=min(int(elapsed/.02),len(self.requests)-1);request=self.requests[index]
         action_index=bisect_right(self.action_times,request['now_ns'])-1
-        action=self.actions[self.action_times[action_index]] if action_index>=0 else 'hold'
+        action=self.actions[self.action_times[action_index]] if action_index>=0 else 'waiting for context'
         lines=[f'PIPELINE TEST - {self.controller} - harness v0',f'Maze {self.episode["maze_id"]:02d}, episode {self.episode["episode_index"]} | {elapsed:.2f} simulated seconds',
             f'Phase: {state["phase"]} | action: {action}',
-            f'Hold: {not any(request["requested_command"])} | beacon: {any(r["phase"]=="OUTBOUND" for r in state["arrivals"])} | home: {any(r["phase"]=="RETURN" for r in state["arrivals"])}',
+            f'Stall (plan hold): {action=="hold"} | beacon: {any(r["phase"]=="OUTBOUND" for r in state["arrivals"])} | home: {any(r["phase"]=="RETURN" for r in state["arrivals"])}',
+            f'Final command: {tuple(round(v,3) for v in request["requested_command"])}',
             'Development pilot; validation success rate not yet available',
             'Left: actual received RGB at 10 Hz | right: separate replay chase pass']
         for row,line in enumerate(lines):cv2.putText(canvas,line,(675,770+row*48),cv2.FONT_HERSHEY_SIMPLEX,.74,(240,240,240),1,cv2.LINE_AA)
