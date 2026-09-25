@@ -96,6 +96,8 @@ def main():
         recovery_free_bytes=free, recovery_available_after_reserve_and_closeout_bytes=available,
         workspace_free_bytes=shutil.disk_usage(REPO).free,
         next_source_existing_3GiB_admission_passes=available >= 3*1024**3,
+        remaining_C1_screen_full_budget_recording_bytes=9*480*storage_rates['C1'],
+        remaining_C1_screen_full_budget_storage_fits=9*480*storage_rates['C1'] <= available,
         projected_storage_fits=scenarios[str(chosen)]['full_480s_recording_and_video_bytes'] <= available,
         retained_existing_artifacts_unchanged=True,
         limitations=['One paired development episode per controller; no population capability inference.',
