@@ -158,7 +158,8 @@ def verify(source_root, root, budget, spec, episode, expected_trace, requests, f
             controller.finish()
             return dict(passed=True,bitwise_source_rgb_matches=image_count,identical_selected_actions=decision_count,
                 identical_final_command_steps=len(requests),maximum_position_error_m=max_position,maximum_yaw_error_degrees=max_yaw,
-                prediction_slot='Unchanged fitted C1 command predictions; unused neural workload omitted and actual used forecasts checked exactly' if arm=='C1' else 'Recorded outputs / unchanged reactive selector',
+                prediction_slot=('Unchanged fitted C1 command predictions; unused neural workload omitted and actual used forecasts checked exactly' if arm=='C1'
+                    else 'Unchanged reactive selector; unused neural workload omitted' if arm=='C2' else 'Recorded prediction outputs'),
                 exact_native_pose_values=bool(exact_native_poses),
                 exact_native_trace_values=bool(exact_native_trace),
                 unused_workload_equivalence_passed=bool(exact_native_trace) if arm in ('C1','C2') else None,
