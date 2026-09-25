@@ -13,15 +13,17 @@ from lewm.navigation_capability_unused_workload_development import UnusedNeuralW
 from lewm_genesis.lewm_contract import SafetyLimits
 from scripts import run_go2_navigation_capability_development as owner
 
-FREEZE=owner.REPO/'docs/go2_navigation_capability_harness_v0_adapter_r3_2026-09-25.json'
+FREEZE=owner.REPO/'docs/go2_navigation_capability_harness_v0_adapter_r4_2026-09-25.json'
 
 
 def run(arm,maze,episode,assignment,omit_unused=False):
     protocol=json.loads(owner.PROTOCOL.read_text());base=Path(protocol['output_root'])
     evidence=None
     if omit_unused:
-        if arm!='C1':raise ValueError('only C1 has completed unused-workload equivalence')
-        path=base/'videos/pipeline_test_attempt001/replay_verification.json'
+        paths={'C1':'videos/pipeline_test_attempt001/replay_verification.json',
+            'C2':'equivalence/C2_unused_workload_serial_attempt001/result.json'}
+        if arm not in paths:raise ValueError('only C1 and C2 omit unused neural computation')
+        path=base/paths[arm]
         evidence=json.loads(path.read_text())
         if not evidence['unused_workload_equivalence_passed'] or not evidence['exact_native_trace_values']:
             raise ValueError('complete exact source replay required')
@@ -30,7 +32,8 @@ def run(arm,maze,episode,assignment,omit_unused=False):
     if arm=='C4':
         path=base/'c4_fit_attempt002/direct_final.pt'
         result=json.loads((path.parent/'result.json').read_text())
-        if result['status']!='COMPLETE' or owner.sha(path)!=result['checkpoint_sha256']:
+        expected=json.loads(FREEZE.read_text())['C4_final_binding']['sha256']
+        if result['status']!='COMPLETE' or owner.sha(path)!=result['checkpoint_sha256'] or result['checkpoint_sha256']!=expected:
             raise ValueError('fixed final C4 checkpoint required')
         direct_identity=dict(path=str(path),sha256=result['checkpoint_sha256'],
             plan_sha256=owner.sha(path.parent/'plan.json'),training_render_provenance='unverified')
