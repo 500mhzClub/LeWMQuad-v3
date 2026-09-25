@@ -15,6 +15,10 @@ def main():
     source=base/'runs/v0_pilot_C1_dev00_ep0_attempt001'
     original=base/'videos/pipeline_test_attempt001/replay_verification.json'
     assert json.loads(original.read_text())['unused_workload_equivalence_passed']
+    pilots={arm:base/f'runs/v0_pilot_{arm}_dev00_ep0_attempt{2 if arm=="C0" else 1:03d}/result.json'
+        for arm in ['C0','C1','C2','C3','C4']}
+    if not all(p.exists() for p in pilots.values()):
+        raise ValueError('Complete the one-per-controller serial pilots before the concurrency checks')
     root=base/'concurrency_C1_v0_attempt001';root.mkdir(exist_ok=False)
     budget=Budget(base,protocol);budget.admit_persist(512*1024**2)
     script='scripts/check_go2_navigation_capability_replay_development.py'
@@ -22,6 +26,7 @@ def main():
         source_config_sha256=sha(source/'config.json'),serial_equivalence_sha256=sha(original),
         assignments={str(n):[f'C1_concurrent_{n}_{i}_attempt001' for i in range(n)] for n in [2,4]},
         levels=[2,4],all_six_checks_fixed_before_execution=True,
+        completed_serial_pilots={arm:dict(path=str(p),sha256=sha(p)) for arm,p in pilots.items()},
         devices=dict(physics='CPU',renderer='existing integrated Radeon / renderD129',motion_model='CPU fitted command history'),
         concurrent_C4_training='Allowed only on its unchanged discrete cuda:0 device; no shared GPU compute',
         unchanged_programme_caps=protocol['caps'],admission='Every owner must reproduce all original RGB, decisions, commands and native physics exactly',
