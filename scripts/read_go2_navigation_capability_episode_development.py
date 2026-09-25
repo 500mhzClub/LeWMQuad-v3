@@ -151,7 +151,8 @@ def report(root):
         else:taxonomy['insufficient retained evidence']+=1
     if result['policy_steps']>=24000 and 'RETURN' not in passed:
         taxonomy['budget exhaustion despite progress' if outbound['actual_path_m']>.02 else 'budget exhaustion without movement']+=1
-    record=dict(schema='navigation_capability_episode_evaluation.v1',controller=json.loads((root/'config.json').read_text())['controller'],
+    record=dict(schema='navigation_capability_episode_evaluation.v2',controller=json.loads((root/'config.json').read_text())['controller'],
+        leg_boundaries='Logged phase arrivals, including physically rejected arrivals',reader_sha256=sha(__file__),
         episode_id=episode['episode_id'],role=episode['role'],beacon_success='OUTBOUND' in passed,
         home_success='RETURN' in passed,round_trip_success=all(k in passed for k in ('OUTBOUND','RETURN')),
         source_error=result['error'],arrivals=arrivals,original_arrival_reader=native,outbound=outbound,return_leg=home,
