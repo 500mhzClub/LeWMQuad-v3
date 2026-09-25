@@ -33,6 +33,14 @@ Runtime evidence is under:
 
 See `episode_evaluation.json`, `oracle_prefix_check.json`, `native/physics_trace.npz`, `native_clearance_summary_arrays.npz`, `planning.json`, `requests.json` and `result.json`.
 
+## First command-history development pilot
+
+C1 also completed development episode 00/0 on the unchanged v0 stack. Beacon arrival was at 68.5 simulated seconds and home arrival at 111.2 seconds. The complete recording took 905.59 wall seconds (8.14 wall seconds per simulated second). Outbound/return SPL were 0.821/0.928. There were zero disallowed contacts, zero hard or operating-margin violations, and no unresolved sampled-clearance intervals; the minimum articulated separation lower bound was 0.15585 m. Hold decisions were 2/166 outbound and 2/104 on return. Median/p95 planning latency was 2.607/2.668 wall seconds.
+
+The source RGB and depth hashes were retained successfully for this episode. The original recording occupies approximately 176 MiB. Its replay pipeline test also tests prospective omission of the neural workload that the deployed C1 selector does not use; that optimisation requires identical command-model predictions, decisions, commands and native physics records before admission. The full original neural workload remains the measured baseline above.
+
+Evidence is in `runs/v0_pilot_C1_dev00_ep0_attempt001` under the same fresh output root. This is a development pilot, not a capability estimate or a completed ten-episode harness screen.
+
 ## Preserved implementation issues
 
 The first oracle attempt stopped after settling, before any mission command or branch, because its new `nn.Module` retained the default training flag. The evaluation-mode correction and fresh attempt were recorded in [adapter revision 1](go2_navigation_capability_harness_v0_adapter_r1_2026-09-25.json). This changed no controller algorithm.
