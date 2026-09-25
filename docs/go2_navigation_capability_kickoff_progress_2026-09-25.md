@@ -65,6 +65,12 @@ C4's first startup stopped before encoder calls or optimiser updates: `torch.__v
 
 ## C4 and remaining work
 
+The first reactive C2 pilot also completed episode 00/0: beacon at 85.3 s, home at 125.2 s, and 1,009.90 wall seconds (8.07 wall seconds per simulated second). Outbound/return SPL were 0.763/0.946. It had no selected holds, disallowed contacts, hard/operating-margin violations or unresolved sampled clearances. Minimum articulated clearance lower bound was 0.11676 m. Its baseline still includes the original unused neural workload; its omission is being checked separately against all original source inputs and outputs.
+
+These are three paired development pilots on one episode, not three validation capability estimates. No harness change has been made.
+
+The simulator's existing EGL renderer uses the integrated Radeon device (`renderD129`, PCI `7b:00.0`), whereas C4 encoding/fitting explicitly uses the discrete R9700 (`cuda:0`, PCI `03:00.0`). C4 can therefore continue during CPU-motion replay checks without competing for their rendering GPU. New neural source pilots still require the discrete GPU exclusively. Device memory reserves count all users.
+
 All 8,414 prescribed training contexts have their causal RGB and command histories: 5,966 original/heading contexts and 2,448 maze contexts, from 156 training-role recordings. There are 9,948 unique causal image paths. No new development, validation or sealed material enters fitting. The direct model has 17,397,283 trainable parameters; a synthetic CPU check verified its candidate/horizon interface. Training-render provenance remains unverified.
 
 The fixed fit is in progress under its 12-GPU-hour cap, with no simultaneous navigation GPU owner. Next come the remaining serial pilots, verified C1 pipeline video, concurrency/equivalence checks and measured budget projection. Harness iteration, the full oracle gate, validation capability results, official videos and the E1 proposal remain outstanding.
