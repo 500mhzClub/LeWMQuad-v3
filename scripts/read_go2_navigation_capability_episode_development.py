@@ -9,7 +9,7 @@ import numpy as np
 from lewm import decision_headroom_json_v42_development as output
 from lewm.decision_headroom_v4_development import ArticulatedSteps
 from lewm.physical_execution_development import rotation_xyzw
-from scripts.analyse_go2_stage_a_holds_readonly_development import classify
+from lewm.navigation_capability_hold_taxonomy_development import classify, override_label
 from scripts.evaluate_continuous_native_arrivals_development import evaluate as original_arrivals
 from scripts.run_go2_navigation_capability_development import Budget, PROTOCOL, save, sha
 
@@ -135,7 +135,7 @@ def report(root):
         error=json.loads((root/'failure.json').read_text())['reason']
         taxonomy['pose loss' if any(s in error.lower() for s in ('pose','tracking','registration')) else 'technical failure']+=1
     for row in holds:
-        if row['category']=='explicit_override':taxonomy['blocked recovery/override']+=1
+        if row['category']=='explicit_override':taxonomy[override_label(row)]+=1
         elif row['category']=='no_eligible_movement':
             for flag,label in (('observation_action_space_exclusions','observation/view restriction'),
                                ('motion_clearance_exclusions','memory clearance'),

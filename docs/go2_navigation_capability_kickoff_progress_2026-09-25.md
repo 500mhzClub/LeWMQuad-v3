@@ -49,6 +49,8 @@ The first pipeline video contains 3,337 frames at 1920×1080, 30 fps, H.264/yuv4
 
 A read-only lossless RGB archive check reproduced all 2,226 pixels-per-frame hashes, but saved only about 7.6% against the existing PNG recordings (88,378,315 versus 95,683,985 bytes). It is not adopted as a storage solution. The original images and this measured check are preserved.
 
+Read-only final-rule accounting resolves the holds that the reused historical classifier initially left unexplained. C0 had two holds from predicted-footprint observation coverage and one intended quiet-arrival hold; C1 had three coverage holds and one intended quiet-arrival hold. Coverage uses both the observed floor and the motion forecast, so these are not observation-only exclusions. Neither successful episode supplies evidence of a sustained stall. Per-run `hold_analysis_v2.json` addenda preserve the original evaluations; the closed Stage A report is unchanged.
+
 ## Preserved implementation issues
 
 The first oracle attempt stopped after settling, before any mission command or branch, because its new `nn.Module` retained the default training flag. The evaluation-mode correction and fresh attempt were recorded in [adapter revision 1](go2_navigation_capability_harness_v0_adapter_r1_2026-09-25.json). This changed no controller algorithm.

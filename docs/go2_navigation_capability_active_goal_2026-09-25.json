@@ -10,8 +10,6 @@
     "closed V4.2 decision-headroom programme"
   ],
   "stage": "throughput_pilot_and_fixed_C4_fit",
-  "new_physics_runs": 0,
-  "new_training_runs": 0,
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -42,7 +40,10 @@
       "sealed_test": 60
     },
     "oracle_pilot": "114.82 s successful native round trip; 1668 exact matching-prefix comparisons; zero contacts/hard/operating violations",
-    "C4_data_inventory": "8414 training contexts, all causal inputs present"
+    "C4_data_inventory": "8414 training contexts, all causal inputs present",
+    "C1_pilot": "111.22 s successful native round trip; zero contacts/hard/operating violations",
+    "C1_unused_workload_equivalence": "2226 source RGB matches, 270 identical actions, 5561 identical commands and all native physics values identical",
+    "pipeline_video": "Original pipeline test encoded and replay verified; higher chase offset prepared after visual review"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -51,11 +52,12 @@
   ],
   "remaining": [
     "C4 fixed fit",
-    "C1-C4 throughput pilots",
-    "C1 pipeline video and replay verification",
+    "C2-C4 throughput pilots",
+    "higher chase-camera pipeline pass",
     "concurrency/equivalence and budget projection",
     "C1 dev-tune iteration and 20-episode oracle gate",
     "capability qualification",
     "official videos and E1 proposal"
-  ]
+  ],
+  "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately"
 }
