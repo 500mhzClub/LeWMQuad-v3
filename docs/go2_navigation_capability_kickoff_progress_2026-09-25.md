@@ -67,6 +67,10 @@ C4's first startup stopped before encoder calls or optimiser updates: `torch.__v
 
 The first reactive C2 pilot also completed episode 00/0: beacon at 85.3 s, home at 125.2 s, and 1,009.90 wall seconds (8.07 wall seconds per simulated second). Outbound/return SPL were 0.763/0.946. It had no selected holds, disallowed contacts, hard/operating-margin violations or unresolved sampled clearances. Minimum articulated clearance lower bound was 0.11676 m. Its baseline still includes the original unused neural workload; its omission is being checked separately against all original source inputs and outputs.
 
+That C2 omission check has now passed: 2,506 bitwise RGB matches, 304 identical selections, 6,261 identical commands and every native physics field identical. The whole checked replay took 258.08 wall seconds for 125.22 simulated seconds, including its verification overhead. The C2 result's inherited generic prediction-slot label should be read as “unchanged reactive selector, unused neural computation omitted”; no recorded learned forecast was used by this check.
+
+The higher-camera pipeline video also passed: 3,337 frames, zero replay pose error, the required 1080p/30-fps/H.264/yuv420p format, and a contact-sheet visual review. Its directory is `videos/pipeline_test_chase_revision002`, including `metadata.json` and `visual_review.json`. It reuses the already-verified C1 decision replay and adds only a separate chase pass. Neither controller nor simulator code changed.
+
 These are three paired development pilots on one episode, not three validation capability estimates. No harness change has been made.
 
 The simulator's existing EGL renderer uses the integrated Radeon device (`renderD129`, PCI `7b:00.0`), whereas C4 encoding/fitting explicitly uses the discrete R9700 (`cuda:0`, PCI `03:00.0`). C4 can therefore continue during CPU-motion replay checks without competing for their rendering GPU. New neural source pilots still require the discrete GPU exclusively. Device memory reserves count all users.
