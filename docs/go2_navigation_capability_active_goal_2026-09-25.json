@@ -1,0 +1,36 @@
+{
+  "schema": "navigation_capability_goal.v1",
+  "status": "active",
+  "approved_start": "2026-09-25",
+  "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
+  "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
+  "current_goal": "Establish a validated Go2 simulation navigation testbed; determine C0-C4 capability for paired unseen-maze beacon retrieval and return, report the preregistered capability criterion, produce example videos and an E1 proposal, then stop.",
+  "supersedes": [
+    "7 September 2026 navigation goal",
+    "closed V4.2 decision-headroom programme"
+  ],
+  "stage": "preregistration_preparation",
+  "new_physics_runs": 0,
+  "new_training_runs": 0,
+  "thread_goal_tracker": {
+    "status": "legacy goal remains blocked",
+    "replacement_attempt": "rejected: unfinished goal exists",
+    "old_goal_achieved": false,
+    "repository_record_is_authoritative": true
+  },
+  "milestones": [
+    "preregistration_committed",
+    "throughput_budget_and_pipeline_video",
+    "harness_versions",
+    "oracle_gate",
+    "capability_and_videos"
+  ],
+  "limits": {
+    "harness_versions": 6,
+    "runs_and_videos_wall_hours": 120,
+    "c4_training_gpu_hours": 12,
+    "recovery_reserve_gib": 12,
+    "workspace_reserve_gib": 4,
+    "per_device_vram_reserve_gib": 2
+  }
+}
