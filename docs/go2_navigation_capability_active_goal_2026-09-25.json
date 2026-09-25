@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "C3_C4_serial_pilots_then_concurrency_and_budget",
+  "stage": "C4_serial_pilot_then_C3_concurrency_and_budget",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -46,7 +46,8 @@
     "pipeline_video": "Higher chase pass: 3337 frames, 1080p/30fps/H.264/yuv420p, zero pose error; contact-sheet review passed; pipeline test only",
     "C2_pilot": "125.22 s successful native round trip; zero holds, contacts and hard/operating violations",
     "C2_unused_workload_equivalence": "2506 source RGB matches, 304 identical actions, 6261 identical commands and every native physics value identical; 258.08 wall s for 125.22 simulated s",
-    "C4_fit": "Fixed final checkpoint d491584b17ee4321d65daf883460ccf3b626fe8d735b986473d2ecc477064013; 1760 updates, 4869.74 s conservative GPU-owner accounting"
+    "C4_fit": "Fixed final checkpoint d491584b17ee4321d65daf883460ccf3b626fe8d735b986473d2ecc477064013; 1760 updates, 4869.74 s conservative GPU-owner accounting",
+    "C3_pilot": "238.72 s successful native round trip; zero contacts/hard/operating violations; 150 holds in 588 decisions"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -54,8 +55,8 @@
     "One C4 metadata-writer startup failure preserved before encoding/fitting"
   ],
   "remaining": [
-    "C3-C4 serial throughput pilots",
-    "two/four C1 concurrent replay checks and budget projection",
+    "C4 serial throughput pilot",
+    "two/four C3 concurrent replay checks and measured budget projection",
     "C1 dev-tune iteration and 20-episode oracle gate",
     "capability qualification",
     "official videos and E1 proposal"
