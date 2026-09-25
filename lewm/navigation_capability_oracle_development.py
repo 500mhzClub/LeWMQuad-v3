@@ -27,6 +27,7 @@ class OracleMotionModel(nn.Module):
         self.physical_predictions = []
         self.readout_identity = dict(arm='C0_oracle', training_horizons_ms=list(range(100,801,100)),
                                     prediction_slot_only=True)
+        self.eval()
 
     def set_native_context(self, packets, *, observed_ns):
         if self.pending_context is not None:

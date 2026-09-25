@@ -37,6 +37,7 @@ from scripts.run_go2_headroom_v42_source_development import AuditSession
 REPO = Path(__file__).resolve().parents[1]
 PROTOCOL = REPO/'docs/go2_navigation_capability_preregistration_v1_2026-09-25.json'
 PROTOCOL_SHA = 'b6a84db2f304282d9d7ec9327ac21420d6e8c3e262de20178c7f243791a887d6'
+FREEZE = REPO/'docs/go2_navigation_capability_harness_v0_adapter_r1_2026-09-25.json'
 
 
 def sha(path):
@@ -147,7 +148,7 @@ def run(arm, maze, episode, assignment):
     protocol = json.loads(PROTOCOL.read_text())
     root = Path(protocol['output_root'])
     output_json.install(root)
-    freeze = json.loads((REPO/'docs/go2_navigation_capability_harness_v0_2026-09-25.json').read_text())
+    freeze = json.loads(FREEZE.read_text())
     for name, binding in freeze['implementation_bindings'].items():
         if sha(REPO/name) != binding['sha256']:
             raise ValueError('frozen implementation changed: '+name)
@@ -161,7 +162,7 @@ def run(arm, maze, episode, assignment):
     budget.admit_persist(3*1024**3)
     config = dict(schema='navigation_capability_run.v1',controller=arm,maze=maze,episode=episode,
         assignment=assignment,protocol_sha256=PROTOCOL_SHA,harness='v0',
-        harness_sha256=sha(REPO/'docs/go2_navigation_capability_harness_v0_2026-09-25.json'),
+        harness_sha256=sha(FREEZE),
         episode_packet_sha256=sha(root/f'sets/dev_tune/episode_{maze:02d}_{episode}.json'),
         policy_budget_s=480, policy_steps_cap=24000, settle_s=1.5,
         recording_allocation_bytes=3*1024**3,implementation_check=arm=='C0',
