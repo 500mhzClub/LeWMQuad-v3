@@ -29,10 +29,11 @@ def main():
     for arm in ['C0', 'C1', 'C2', 'C3', 'C4']:
         root = base/f'runs/v0_pilot_{arm}_dev00_ep0_attempt{2 if arm == "C0" else 1:03d}'
         result = json.loads((root/'result.json').read_text())
-        evaluation = json.loads((root/'episode_evaluation.json').read_text())
+        evaluation_name = 'episode_evaluation_leg_accounting_v2.json'
+        evaluation = json.loads((root/evaluation_name).read_text())
         pilots[arm] = dict(root=str(root), result=result,
             evaluation={k:v for k,v in evaluation.items() if k not in ['hold_details', 'original_arrival_reader', 'arrivals']},
-            storage=storage(root), bindings={n:sha(root/n) for n in ['config.json', 'result.json', 'episode_evaluation.json']})
+            storage=storage(root), bindings={n:sha(root/n) for n in ['config.json', 'result.json', 'episode_evaluation.json', evaluation_name]})
     concurrency_path = base/'concurrency_C3_v0_attempt001/result.json'
     concurrency = json.loads(concurrency_path.read_text())
     c2_check = json.loads((base/'equivalence/C2_unused_workload_serial_attempt001/result.json').read_text())

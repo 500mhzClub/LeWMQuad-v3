@@ -118,17 +118,23 @@ def report(root):
         np.savez_compressed(stream,timestamp_s=trace['timestamp_s'][first:],separation_lower_m=low,
             separation_upper_m=high,interval_robust_lower_m=np.asarray(robust))
     def leg(start,end,success,shortest):
+        if end < start:raise ValueError('Non-monotone logged leg boundaries')
         length=float(np.linalg.norm(np.diff(trace['base_pose_world'][start:end+1,:2],axis=0),axis=1).sum())
         return dict(success=success,actual_path_m=length,shortest_path_m=shortest,
             spl=float(shortest/max(length,shortest)) if success else 0.,
             elapsed_s=float(trace['timestamp_s'][end]-trace['timestamp_s'][start]))
-    outbound_end=frame_lookup[passed['OUTBOUND']['frame']]['physical_sample_index'] if 'OUTBOUND' in passed else len(trace['timestamp_s'])-1
+    # A physically rejected arrival still marks the recorded phase transition.
+    # Keep phase segmentation separate from each leg's success criterion.
+    logged_arrivals={r['phase']:r for r in arrivals}
+    outbound_end=frame_lookup[logged_arrivals['OUTBOUND']['frame']]['physical_sample_index'] if 'OUTBOUND' in logged_arrivals else len(trace['timestamp_s'])-1
     outbound=leg(first,outbound_end,'OUTBOUND' in passed,episode['shortest_outbound_m'])
-    return_end=frame_lookup[passed['RETURN']['frame']]['physical_sample_index'] if 'RETURN' in passed else len(trace['timestamp_s'])-1
+    return_end=frame_lookup[logged_arrivals['RETURN']['frame']]['physical_sample_index'] if 'RETURN' in logged_arrivals else len(trace['timestamp_s'])-1
     home=leg(outbound_end,return_end,'RETURN' in passed,episode['shortest_return_m'])
     timing=json.loads((root/'stage_timings.json').read_text())
     latencies=[r['wall_ns']/1e9 for r in timing if r.get('stage')=='planning']
     taxonomy=Counter()
+    failed_arrivals=sum(not r['passed'] for r in arrivals)
+    if failed_arrivals:taxonomy['observed arrival rejected by physical verification']=failed_arrivals
     if native['disallowed_contact_samples']:taxonomy['contact']+=1
     if safety['hard']['confirmed_violation_samples']:taxonomy['hard-clearance violation']+=1
     if (root/'failure.json').exists():
