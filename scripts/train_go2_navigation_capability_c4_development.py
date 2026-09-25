@@ -34,7 +34,7 @@ def main():
     prepared=json.loads((data_root/'result.json').read_text())
     assert prepared['all_inputs_present'] and prepared['all_roles_train'] and prepared['exact_readout_population']
     assert prepared['preregistration_sha256']==PROTOCOL_SHA
-    root=base/'c4_fit_attempt001';root.mkdir(exist_ok=False);output.install(base)
+    root=base/'c4_fit_attempt002';root.mkdir(exist_ok=False);output.install(base)
     budget=Budget(base,protocol);budget.admit_persist(128*1024**2)
     save(root/'plan.json',dict(schema='navigation_capability_c4_fit.v1',preregistration_sha256=PROTOCOL_SHA,
         configuration=cfg,source_sha256={p:sha(p) for p in (__file__,'lewm/navigation_capability_supervised_development.py')},
@@ -46,16 +46,21 @@ def main():
     samples=json.loads((data_root/'samples.json').read_text())
     if psutil.virtual_memory().available < len(paths)*192*1024*2+10*1024**3:
         raise RuntimeError('RAM unavailable for fixed training feature cache')
+    predecessor=json.loads((base/'c4_fit_attempt001/failure.json').read_text())
+    prior_gpu_s=predecessor['gpu_owner_wall_s']
+    save(root/'predecessor.json',dict(path=str(base/'c4_fit_attempt001'),failure_sha256=sha(base/'c4_fit_attempt001/failure.json'),
+        reason='TorchVersion str subclass must be explicitly recorded as a native str; converter remains unchanged',
+        encoder_calls=0,optimizer_updates=0,prior_gpu_owner_wall_s=prior_gpu_s))
     started=time.monotonic();error=None
     def check():
         budget.check()
-        if time.monotonic()-started >= 43200-60:
+        if prior_gpu_s+time.monotonic()-started >= 43200-60:
             raise RuntimeError('12-GPU-hour C4 cap closeout boundary')
     try:
         torch.set_num_threads(4);torch.manual_seed(cfg['seed']);np.random.seed(cfg['seed'])
         assert torch.cuda.is_available()
         device=torch.device('cuda:0')
-        save(root/'device.json',dict(name=torch.cuda.get_device_name(0),torch=torch.__version__,hip=torch.version.hip,
+        save(root/'device.json',dict(name=str(torch.cuda.get_device_name(0)),torch=str(torch.__version__),hip=str(torch.version.hip),
             total_vram_bytes=torch.cuda.get_device_properties(0).total_memory,encoder_sha256=protocol['controllers']['C3']['encoder_binding']['sha256']))
         encoder=VJepa21Arm();encoder.build(device,torch.float32)
         features=torch.empty(len(paths),192,1024,dtype=torch.float16)
@@ -111,11 +116,11 @@ def main():
                 torch.save(dict(model_state_dict={k:v.detach().cpu() for k,v in model.state_dict().items()},
                     updates=cfg['optimizer']['updates'],plan_sha256=sha(root/'plan.json'),parameter_count=count),stream)
             save(root/'result.json',dict(status='COMPLETE',checkpoint_sha256=sha(path),parameter_count=count,
-                updates=cfg['optimizer']['updates'],gpu_owner_wall_s=time.monotonic()-started,
+                updates=cfg['optimizer']['updates'],gpu_owner_wall_s=prior_gpu_s+time.monotonic()-started,
                 training_render_provenance='unverified',validation_used=False,selection='fixed final'))
     except BaseException as exc:
         error=exc
-        save(root/'failure.json',dict(reason=repr(exc),traceback=traceback.format_exc(),gpu_owner_wall_s=time.monotonic()-started,
+        save(root/'failure.json',dict(reason=repr(exc),traceback=traceback.format_exc(),gpu_owner_wall_s=prior_gpu_s+time.monotonic()-started,
             failed_attempt_preserved=True,automatic_retry=False))
     if error is not None:raise error
 

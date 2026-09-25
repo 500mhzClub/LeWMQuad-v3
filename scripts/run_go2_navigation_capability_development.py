@@ -37,7 +37,7 @@ from scripts.run_go2_headroom_v42_source_development import AuditSession
 REPO = Path(__file__).resolve().parents[1]
 PROTOCOL = REPO/'docs/go2_navigation_capability_preregistration_v1_2026-09-25.json'
 PROTOCOL_SHA = 'b6a84db2f304282d9d7ec9327ac21420d6e8c3e262de20178c7f243791a887d6'
-FREEZE = REPO/'docs/go2_navigation_capability_harness_v0_adapter_r1_2026-09-25.json'
+FREEZE = REPO/'docs/go2_navigation_capability_harness_v0_adapter_r2_2026-09-25.json'
 
 
 def sha(path):
@@ -261,6 +261,7 @@ def run(arm, maze, episode, assignment):
                 # Conservatively use the admitted original recording path.
                 budget.admit_persist(3*1024**3)
                 session.persist(directory)
+                session.persist_observations(directory)
                 if isinstance(model,OracleMotionModel) and requests:
                     check=model.verify_executed(requests,session.samples)
                     save(destination/'oracle_prefix_check.json',check)

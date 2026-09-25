@@ -14,6 +14,33 @@ from scripts.evaluate_continuous_native_arrivals_development import evaluate as 
 from scripts.run_go2_navigation_capability_development import Budget, PROTOCOL, save, sha
 
 
+def retained_physical_arrivals(root,frames,trace,mission,requests):
+    """Existing physical criteria from retained timestamps when RGB was omitted.
+
+    This fallback restores no image or sensor evidence and cannot qualify video.
+    """
+    lookup={r['frame']:r for r in frames}
+    physics=trace['base_pose_world'];origin=physics[frames[0]['physical_sample_index']]
+    R=rotation_xyzw(origin[3:]);commands={r['simulator_ns']:r['requested_command'] for r in requests}
+    rows=[]
+    for arrival in mission[-1]['arrivals']:
+        end=arrival['frame'];start=end-10
+        a,b=lookup[start],lookup[end]
+        assert b['measured_ns']-a['measured_ns']==1_000_000_000
+        positions=(physics[a['physical_sample_index']:b['physical_sample_index']+1,:3]-origin[:3])@R
+        distances=np.linalg.norm(positions[:,:2]-np.asarray(arrival['target_initial_body_xy_m']),axis=1)
+        boundaries=(physics[[lookup[f]['physical_sample_index'] for f in range(start,end+1)],:3]-origin[:3])@R
+        speeds=np.linalg.norm(np.diff(boundaries,axis=0),axis=1)/.1
+        zero=all(t in commands and np.array_equal(commands[t],[0.,0.,0.]) for t in range(a['measured_ns'],b['measured_ns'],20_000_000))
+        rows.append(dict(phase=arrival['phase'],frame=end,physical_radius_m=.04,dwell_seconds=1.,
+            native_maximum_distance_m=float(distances.max()),native_maximum_100ms_speed_m_s=float(speeds.max()),
+            all_requested_intervals_zero=zero,arrival_checks_passed=bool(np.all(distances<=.04) and np.all(speeds<=.05) and zero)))
+    return dict(arrivals=rows,disallowed_contact_samples=int(np.count_nonzero(trace['physics_contact'])),
+        mission_terminal=mission[-1]['terminal'],source_rgb_retained=False,video_qualified=False,
+        frame_physics_indices='Exact timestamp join of retained acquisitions and native physics; no image reconstruction',
+        criteria_source_sha256=sha('scripts/evaluate_continuous_native_arrivals_development.py'))
+
+
 def report(root):
     protocol=json.loads(PROTOCOL.read_text());base=Path(protocol['output_root'])
     if not root.resolve().is_relative_to((base/'runs').resolve()):raise ValueError('new capability run root required')
@@ -26,10 +53,20 @@ def report(root):
     spec=json.loads((root/'specification.json').read_text());episode=json.loads((root/'episode.json').read_text())
     planning=json.loads((root/'planning.json').read_text());mission=json.loads((root/'mission.json').read_text())
     requests=json.loads((root/'requests.json').read_text())
-    frames=json.loads((root/'native/in_memory_camera_observations.json').read_text())['frames']
     with np.load(root/'native/physics_trace.npz',allow_pickle=False) as archive:
         trace={key:archive[key].copy() for key in ('base_pose_world','joint_position','physics_contact','timestamp_s')}
-    native=original_arrivals(root)
+    metadata=root/'native/in_memory_camera_observations.json'
+    if metadata.exists():
+        frames=json.loads(metadata.read_text())['frames']
+        native=original_arrivals(root)
+    else:
+        stamps=np.rint(trace['timestamp_s']*1e9).astype(np.int64)
+        frames=[]
+        for row in json.loads((root/'acquisitions.json').read_text()):
+            index=int(np.searchsorted(stamps,row['measured_ns']))
+            assert stamps[index]==row['measured_ns']
+            frames.append(row|dict(physical_sample_index=index))
+        native=retained_physical_arrivals(root,frames,trace,mission,requests)
     frame_lookup={r['frame']:r for r in frames}
     first=frames[0]['physical_sample_index']
     # Keep the existing dwell/speed/zero-command rules, and also require arrival

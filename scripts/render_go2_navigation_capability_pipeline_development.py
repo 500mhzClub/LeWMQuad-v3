@@ -151,6 +151,7 @@ def verify(source_root, root, budget, spec, episode, expected_trace, requests, f
 class Canvas:
     def __init__(self, source_root, spec, episode, requests, mission):
         self.source_root=source_root;self.spec=spec;self.episode=episode;self.requests=requests
+        self.controller=json.loads((source_root/'config.json').read_text())['controller']
         self.mission={r['frame']:r for r in mission};self.ego_frame=-1;self.ego=None;self.path=[]
 
     def draw(self, chase, pose, elapsed):
@@ -174,7 +175,7 @@ class Canvas:
         Q=rotation_xyzw(pose[3:]);cv2.arrowedLine(map_image,point(pose[:2]),point(pose[:2]+Q[:2,0]*.3),(220,30,30),2)
         canvas[720:,:640]=map_image
         index=min(int(elapsed/.02),len(self.requests)-1);request=self.requests[index]
-        lines=['PIPELINE TEST - C0 oracle - harness v0',f'Maze {self.episode["maze_id"]:02d}, episode {self.episode["episode_index"]} | {elapsed:.2f} simulated seconds',
+        lines=[f'PIPELINE TEST - {self.controller} - harness v0',f'Maze {self.episode["maze_id"]:02d}, episode {self.episode["episode_index"]} | {elapsed:.2f} simulated seconds',
             f'Phase: {state["phase"]} | command: {request["requested_command"]}',
             f'Hold: {not any(request["requested_command"])} | arrivals: {len(state["arrivals"])}',
             'Development pilot; validation success rate not yet available',
@@ -236,7 +237,7 @@ def chase_pass(source_root,root,budget,spec,episode,trace,requests):
 def main(source_root):
     protocol=json.loads(PROTOCOL.read_text());base=Path(protocol['output_root'])
     assert source_root.resolve().is_relative_to((base/'runs').resolve())
-    assert json.loads((source_root/'config.json').read_text())['controller']=='C0','initial pipeline test is C0 only'
+    assert json.loads((source_root/'config.json').read_text())['controller']=='C1','pipeline video fixed to first C1 pilot before its run'
     root=base/'videos/pipeline_test_attempt001';root.mkdir(parents=True,exist_ok=False);output.install(base)
     budget=Budget(base,protocol);budget.admit_persist(512*1024**2)
     spec=json.loads((source_root/'specification.json').read_text());episode=json.loads((source_root/'episode.json').read_text())
