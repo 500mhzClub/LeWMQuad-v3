@@ -1,6 +1,6 @@
 {
   "schema": "navigation_capability_goal.v1",
-  "status": "active",
+  "status": "stopped_at_storage_admission",
   "approved_start": "2026-09-25",
   "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
   "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "C3_concurrency_then_measured_budget",
+  "stage": "pilot_complete_before_remaining_C1_development_screen",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -49,7 +49,9 @@
     "C4_fit": "Fixed final checkpoint d491584b17ee4321d65daf883460ccf3b626fe8d735b986473d2ecc477064013; 1760 updates, 4869.74 s conservative GPU-owner accounting",
     "C3_pilot": "238.72 s successful native round trip; zero contacts/hard/operating violations; 150 holds in 588 decisions",
     "C4_pilot": "188.42 s; home passed, beacon dwell rejected at 43.894 mm versus 40 mm; round trip failed; zero contacts/hard/operating violations",
-    "leg_accounting_erratum": "Failed arrival still defines phase boundary; all outcomes unchanged; first four pilots leg metrics identical; original C4 report preserved"
+    "leg_accounting_erratum": "Failed arrival still defines phase boundary; all outcomes unchanged; first four pilots leg metrics identical; original C4 report preserved",
+    "C3_concurrency": "All six full replays at two/four owners passed exact RGB, predictions, decisions, commands and native values; measured throughput gains 1.351x / 1.396x",
+    "pilot_budget": "149.35 h full design; 96.20 h reduced design; one validation episode per maze fixed before validation"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -57,10 +59,37 @@
     "One C4 metadata-writer startup failure preserved before encoding/fitting"
   ],
   "remaining": [
-    "two/four C3 concurrent replay checks and measured budget projection",
-    "C1 dev-tune iteration and 20-episode oracle gate",
-    "capability qualification",
-    "official videos and E1 proposal"
+    "Storage admission for the remaining C1 development screen",
+    "C1 development screen and any authorised shared-harness iteration",
+    "20-episode oracle gate",
+    "Fixed reduced capability qualification",
+    "Official videos and E1 proposal"
   ],
-  "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately"
+  "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately",
+  "blockers": [
+    {
+      "schema": "navigation_capability_storage_stop.v1",
+      "recorded_unix_s": 1790350968.69569,
+      "status": "STOPPED_BEFORE_COHORT_STORAGE_ADMISSION",
+      "goal_complete": false,
+      "pilot_complete": true,
+      "all_six_concurrency_checks_passed": true,
+      "budget_result_sha256": "03343cc7a9487bf44c1ed7432cceadd1598d2a1241cb4b890849976914888dca",
+      "next_assignment_group": "C1 v0 development screen: 01/0 through 09/0",
+      "usable_recovery_gib": 3.0537338256835938,
+      "next_screen_full_budget_gib": 6.861614850844609,
+      "next_screen_shortfall_gib": 3.8078810251610156,
+      "selected_remaining_programme_gib": 86.11108828271081,
+      "selected_programme_shortfall_gib": 83.05735445702722,
+      "validation_episodes_per_maze": 1,
+      "cohorts_launched": false,
+      "oracle_gate_passed": false,
+      "validation_runs": 0,
+      "sealed_test_runs": 0,
+      "existing_artifacts_retired": false,
+      "reason": "The planned next cohort cannot be admitted at full mission duration while preserving the filesystem reserve. The current reserve has not been breached.",
+      "resume": "Recheck capacity and remaining wall budget; reuse completed pilots and C4 checkpoint. Continue the prescribed C1 screen, then dominant-mechanism iteration and the unchanged oracle gate. Do not repeat completed trials."
+    }
+  ],
+  "result_report": "docs/go2_navigation_capability_result_2026-09-25.md"
 }
