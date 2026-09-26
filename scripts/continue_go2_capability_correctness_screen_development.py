@@ -19,7 +19,7 @@ def run(stage):
     assert root.is_dir() and not (root/'result.json').exists()
     assignments=[(i,j,f'v0_task_c1_{stage}_{arm}_dev{i:02d}_ep{j}_attempt001')
         for i in range(10) for j in ((0,) if stage=='screen' else (0,1))]
-    owner.save(root/'continuation_config.json',dict(assignments=assignments,harness_sha256=owner.sha(owner.FREEZE),
+    owner.save(root/'continuation2_config.json',dict(assignments=assignments,harness_sha256=owner.sha(owner.FREEZE),
         owner_sha256=owner.sha(__file__),protocol_sha256=owner.sha(owner.PROTOCOL),automatic_retry=False))
     completed=[];rows=[];started=time.monotonic()
     for maze,episode,assignment in assignments:
@@ -39,8 +39,10 @@ def run(stage):
             faults=destination/'pipeline_faults.json'
             controller_failure=faults.exists() and bool(json.loads(faults.read_text())) and not (destination/'closeout_failure.json').exists()
             failure=json.loads((destination/'result.json').read_text())['error'] or ''
-            if not controller_failure or not failure.startswith('RuntimeError('):
+            constructor_rejected=failure=="ValueError('finite initial-frame mission point within map bounds required')"
+            if not ((controller_failure and failure.startswith('RuntimeError(')) or constructor_rejected):
                 raise RuntimeError('Technical/resource/fidelity stop: '+assignment+' '+failure)
+            controller_failure=True
         if not (destination/'episode_evaluation.json').exists():
             with (root/f'{assignment}_reader_continuation.log').open('x') as log:
                 subprocess.run([sys.executable,('scripts/read_go2_capability_controller_failure_development.py' if controller_failure
