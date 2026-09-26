@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "grid_c3_screen_complete_failure_diagnosis",
+  "stage": "paired_floor_v1_frozen_before_first_tuning_screen",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -55,7 +55,9 @@
     "target_reference_reread": "All five pre-fix pilots reread with fixed world targets; no verdict changed",
     "structural_reference_check": "180 registered episodes pass geometry; uncorrected settling reference contract fails; no replacements",
     "sensor_regeneration": "C1-C4: 13,278 exact RGB and noisy-depth packet matches from commands/seed; all five native traces exact; C0 original sensor evidence missing",
-    "settled_task_contract": "Both targets, all 180 episodes, zero-physics 1-nm test passed; no episode replacements"
+    "settled_task_contract": "Both targets, all 180 episodes, zero-physics 1-nm test passed; no episode replacements",
+    "grid_c3_screen": "3/10 round trips; 4 timeouts, 3 pose losses; all five original planning recordings exactly contained; zero safety violations.",
+    "grid_c3_failure_diagnosis": "All four timeouts diagnosed by minute; all three pose failures reproduced exactly; all five auxiliary starts have fixed map floor 23\u201329 cm above qualified paired depth plane."
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -108,33 +110,27 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-26",
-    "stage": "Correctness containment passed; navigation3/10; diagnose pose losses and timeouts",
-    "new_harness": "v0_grid_c3",
-    "outcome_iteration_versions_consumed": 1,
+    "stage": "One paired-plane floor-initialisation change frozen; next C1 screen admitted",
+    "new_harness": "v1_paired_floor",
+    "outcome_iteration_versions_consumed": 2,
     "containment_pending": false,
     "oracle_gate_pending": true,
     "capability_pending": true,
     "official_videos_pending": true,
     "wall_cap_hours": 160,
-    "source_harness_sha256": "8ec038a87878f5d4c4da2ba5ab841f8b452563420c4389ac5946c1db4eacf6c9",
-    "projected_total_wall_hours": 76.59238740891581,
+    "source_harness_sha256": "e069986cac21a61dad268d211d55c122712f1556898dfc7e6a9842bae3169654",
+    "projected_total_wall_hours": 80.34003704930271,
     "correctness_version_increment": 0,
-    "projection_excludes_next_iteration": true
+    "projection_excludes_next_iteration": false
   },
   "current_cohort": {
-    "root": "cohorts/v0_grid_c3_C1_screen",
-    "source_harness_commit": "f904a9b5",
-    "completed_episodes": 10,
+    "root": "cohorts/v1_paired_floor_C1_screen",
+    "completed_episodes": 0,
     "current_episode": null,
-    "diagnostic_only": false,
+    "complete": false,
+    "launched": false,
     "retries": 0,
-    "stop_on_refined_containment_failure": true,
-    "successes": 3,
-    "completed_containment": "All five original planning episodes: entire recordings identical",
-    "disallowed_contacts": 0,
-    "hard_violations": 0,
-    "complete": true,
-    "passed": false
+    "successes": 0
   },
-  "latest_progress": "docs/go2_navigation_capability_grid_c3_progress_2026-09-26.md"
+  "latest_progress": "docs/go2_navigation_capability_grid_c3_failure_diagnosis_2026-09-26.md"
 }
