@@ -1,0 +1,93 @@
+{
+  "schema": "navigation_capability_resume_budget.v1",
+  "date": "2026-09-26",
+  "elapsed_conservative_wall_hours": 24.321769358581967,
+  "remaining_science_episodes": {
+    "C0": 30,
+    "C1": 30,
+    "C2": 20,
+    "C3": 20,
+    "C4": 20
+  },
+  "pre_fix_pilots_not_counted_in_corrected_harness_screen_or_gate": true,
+  "validation_episodes_per_maze": 1,
+  "validation_ids": [
+    "10/0",
+    "11/0",
+    "12/0",
+    "13/0",
+    "14/0",
+    "15/0",
+    "16/0",
+    "17/0",
+    "18/0",
+    "19/0",
+    "20/0",
+    "21/0",
+    "22/0",
+    "23/0",
+    "24/0",
+    "25/0",
+    "26/0",
+    "27/0",
+    "28/0",
+    "29/0"
+  ],
+  "future_runs_and_native_analysis_hours": 77.63181953054128,
+  "video_hours": 3.1853871377104603,
+  "contingency_fraction": 0.15,
+  "extra_replay_and_capture_allowance_hours": 1.0,
+  "projected_total_wall_hours": 118.26155702707146,
+  "wall_cap_hours": 120,
+  "time_fits": true,
+  "retention": {
+    "C0": "full_frames",
+    "C1": "hashes_only",
+    "C2": "hashes_only",
+    "C3": "hashes_only",
+    "C4": "hashes_only"
+  },
+  "non_image_log_allocated_bytes_per_sim_s": {
+    "C0": 474703.64048075245,
+    "C1": 547999.2807049092,
+    "C2": 518950.96629931324,
+    "C3": 509735.1206434316,
+    "C4": 518554.20868273004
+  },
+  "extra_hash_metadata_bytes_per_sim_s": 81920,
+  "full_retention_rgb_bytes_per_sim_s": 902246.9340046755,
+  "fallback_depth_measurement": {
+    "controller": "C4",
+    "arrays": 3770,
+    "format": "ZIP_LZMA native_optical_depth_m.npy",
+    "total_bytes": 1180246082,
+    "maximum_bytes_per_camera_frame": 494151,
+    "mean_bytes_per_camera_frame": 313062.62122015917,
+    "inference": "Sizing evidence for full-depth fallback; not a guarantee about unseen views",
+    "arrays_retained": false,
+    "physics_or_acceptance_changed": false
+  },
+  "full_retention_depth_bytes_per_sim_s": 9883020,
+  "remaining_storage_bytes_by_controller": {
+    "C0": 163323224272.59015,
+    "C1": 9070837642.150694,
+    "C2": 5768361276.473407,
+    "C3": 5679889158.176943,
+    "C4": 5764552403.354209
+  },
+  "video_storage_allowance_bytes": 4294967296,
+  "additional_storage_with_contingency_bytes": 222342861761.6572,
+  "recovery_usable_bytes": 108788469760,
+  "storage_fits": false,
+  "assumptions": [
+    "All future missions use the full 480-s budget.",
+    "One corrected C1 screen and one complete C0 gate; later harness versions require re-projection.",
+    "Only previously verified C3 concurrency contributes a speedup.",
+    "C4 maximum observed depth archive size sizes C0 fallback; it is an estimate, not an upper bound on all unseen views.",
+    "Future recording writes remain subject to live reserve admission.",
+    "The pending initialization choice may add compute; re-project before launch if it does."
+  ],
+  "cohort_launch_authorized_by_this_report": false,
+  "blocker": "Full C0 RGB-D fallback for the remaining programme exceeds usable RecoveryStorage; shared visual-start anchoring and its post-fix check remain unfinished. No new cohort launched.",
+  "initialization_choice": "Use measured visual anchoring before settling; preserve no true current pose in the deployed harness. Not yet implemented."
+}

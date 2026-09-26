@@ -1,0 +1,103 @@
+{
+  "schema": "navigation_capability_sensor_regeneration_summary.v1",
+  "controllers": {
+    "C0": {
+      "controller": "C0",
+      "status": "UNQUALIFIED_MISSING_SOURCE_FRAMES",
+      "frame_pairs": 1149,
+      "bitwise_rgb_matches": 0,
+      "bitwise_depth_packet_matches": 0,
+      "bitwise_native_depth_matches": 0,
+      "native_trace_exact": true,
+      "source_snapshot_used": false,
+      "retention": "full_frames",
+      "reason": "C0 pilot did not retain source images or sensor hashes; exact physics cannot establish image fidelity.",
+      "wall_s": 93.18423622497357,
+      "simulated_s": 114.82000000000001,
+      "source_frames_unchanged": true,
+      "verification_from_commands_and_seed": true
+    },
+    "C1": {
+      "controller": "C1",
+      "status": "PASS",
+      "frame_pairs": 1113,
+      "bitwise_rgb_matches": 2226,
+      "bitwise_depth_packet_matches": 2226,
+      "bitwise_native_depth_matches": 2226,
+      "native_trace_exact": true,
+      "source_snapshot_used": false,
+      "retention": "hashes_only",
+      "reason": null,
+      "wall_s": 95.48955996701261,
+      "simulated_s": 111.22,
+      "source_frames_unchanged": true,
+      "verification_from_commands_and_seed": true
+    },
+    "C2": {
+      "controller": "C2",
+      "status": "PASS",
+      "frame_pairs": 1253,
+      "bitwise_rgb_matches": 2506,
+      "bitwise_depth_packet_matches": 2506,
+      "bitwise_native_depth_matches": 2506,
+      "native_trace_exact": true,
+      "source_snapshot_used": false,
+      "retention": "hashes_only",
+      "reason": null,
+      "wall_s": 107.13190799497534,
+      "simulated_s": 125.22,
+      "source_frames_unchanged": true,
+      "verification_from_commands_and_seed": true
+    },
+    "C3": {
+      "controller": "C3",
+      "status": "PASS",
+      "frame_pairs": 2388,
+      "bitwise_rgb_matches": 4776,
+      "bitwise_depth_packet_matches": 4776,
+      "bitwise_native_depth_matches": 4776,
+      "native_trace_exact": true,
+      "source_snapshot_used": false,
+      "retention": "hashes_only",
+      "reason": null,
+      "wall_s": 195.03112933400553,
+      "simulated_s": 238.72,
+      "source_frames_unchanged": true,
+      "verification_from_commands_and_seed": true
+    },
+    "C4": {
+      "controller": "C4",
+      "status": "PASS",
+      "frame_pairs": 1885,
+      "bitwise_rgb_matches": 3770,
+      "bitwise_depth_packet_matches": 3770,
+      "bitwise_native_depth_matches": 3770,
+      "native_trace_exact": true,
+      "source_snapshot_used": false,
+      "retention": "hashes_only",
+      "reason": null,
+      "wall_s": 590.5617757759755,
+      "simulated_s": 188.42000000000002,
+      "source_frames_unchanged": true,
+      "verification_from_commands_and_seed": true
+    }
+  },
+  "complete_source_rgb_matches": 13278,
+  "complete_source_depth_packet_matches": 13278,
+  "source_snapshots_used": false,
+  "all_five_native_traces_exact": true,
+  "hash_only_qualified_controllers": [
+    "C1",
+    "C2",
+    "C3",
+    "C4"
+  ],
+  "full_frame_fallback_controllers": [
+    "C0"
+  ],
+  "original_pilots_unchanged": true,
+  "environment_pin_sha256": "985fef588ea9aefa045be6d12dd870f0b0626b57e94d388d74b6035404d5efe8",
+  "retention_adapter_tests": "2 passed; live packet identity/bytes preserved and single-pixel changes detected",
+  "retention_adapter_wired_into_new_owner": false,
+  "cohort_launched": false
+}

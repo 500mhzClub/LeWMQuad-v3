@@ -1,6 +1,6 @@
 {
   "schema": "navigation_capability_goal.v1",
-  "status": "stopped_at_storage_admission",
+  "status": "stopped_before_cohort_full_C0_retention_storage_projection",
   "approved_start": "2026-09-25",
   "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
   "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "pilot_complete_before_remaining_C1_development_screen",
+  "stage": "pilot_reference_reread_and_sensor_regeneration_complete_correctness_harness_unfinished",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -51,7 +51,10 @@
     "C4_pilot": "188.42 s; home passed, beacon dwell rejected at 43.894 mm versus 40 mm; round trip failed; zero contacts/hard/operating violations",
     "leg_accounting_erratum": "Failed arrival still defines phase boundary; all outcomes unchanged; first four pilots leg metrics identical; original C4 report preserved",
     "C3_concurrency": "All six full replays at two/four owners passed exact RGB, predictions, decisions, commands and native values; measured throughput gains 1.351x / 1.396x",
-    "pilot_budget": "149.35 h full design; 96.20 h reduced design; one validation episode per maze fixed before validation"
+    "pilot_budget": "149.35 h full design; 96.20 h reduced design; one validation episode per maze fixed before validation",
+    "target_reference_reread": "All five pre-fix pilots reread with fixed world targets; no verdict changed",
+    "structural_reference_check": "180 registered episodes pass geometry; uncorrected settling reference contract fails; no replacements",
+    "sensor_regeneration": "C1-C4: 13,278 exact RGB and noisy-depth packet matches from commands/seed; all five native traces exact; C0 original sensor evidence missing"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -59,14 +62,27 @@
     "One C4 metadata-writer startup failure preserved before encoding/fitting"
   ],
   "remaining": [
-    "Storage admission for the remaining C1 development screen",
-    "C1 development screen and any authorised shared-harness iteration",
-    "20-episode oracle gate",
-    "Fixed reduced capability qualification",
-    "Official videos and E1 proposal"
+    "Shared visual tracking anchor before settling; zero-physics post-fix reference test; freeze correctness version",
+    "Resolve full C0 retention storage projection; no cohort launched",
+    "Enable the tested consumed-frame hash/full-fallback retention and environment pin in the corrected owner",
+    "Corrected C1 development screen and authorised harness iteration",
+    "20-episode C0 oracle gate",
+    "Reduced capability qualification, official videos and E1 proposal"
   ],
   "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately",
-  "blockers": [
+  "result_report": "docs/go2_navigation_capability_result_2026-09-25.md",
+  "storage_resolution": {
+    "date": "2026-09-26",
+    "authority": "User: do depth",
+    "receipt": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/depth_retirement_historical_references_2026-09-26/result.json",
+    "reclaimed_allocated_bytes": 105985282048,
+    "recovery_free_bytes_after": 121851113472,
+    "next_screen_storage_fits": true,
+    "current_programme_storage_projection_fits": true,
+    "cohorts_launched": false,
+    "remaining_resume_check": "Remaining wall budget and current resource admission before execution"
+  },
+  "historical_blockers": [
     {
       "schema": "navigation_capability_storage_stop.v1",
       "recorded_unix_s": 1790350968.69569,
@@ -91,5 +107,13 @@
       "resume": "Recheck capacity and remaining wall budget; reuse completed pilots and C4 checkpoint. Continue the prescribed C1 screen, then dominant-mechanism iteration and the unchanged oracle gate. Do not repeat completed trials."
     }
   ],
-  "result_report": "docs/go2_navigation_capability_result_2026-09-25.md"
+  "blockers": [
+    {
+      "kind": "projected_storage",
+      "required_gib": 207.07292646324,
+      "usable_gib": 101.31715774536133,
+      "reason": "C0 sensor replay is unqualified because original pilot frames/hashes were not retained; full RGB-D fallback retained in projection"
+    }
+  ],
+  "latest_checkpoint": "docs/go2_navigation_capability_reference_retention_erratum_2026-09-26.md"
 }

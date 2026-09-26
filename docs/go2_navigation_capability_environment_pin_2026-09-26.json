@@ -1,0 +1,541 @@
+{
+  "schema": "navigation_capability_environment_pin.v1",
+  "interpreter": "/usr/bin/python3.12",
+  "python": "3.12.3 (main, Jun 19 2026, 12:46:00) [GCC 13.3.0]",
+  "kernel": "7.0.11-76070011-generic",
+  "machine": "x86_64",
+  "torch": "2.12.0+rocm7.2",
+  "rocm": "7.2.53211",
+  "genesis": {
+    "version": "0.4.6",
+    "module": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/__init__.py",
+    "module_sha256": "35a956c8be7dc836063d2848005896bb7017c29bde758292f6415f047bad395c"
+  },
+  "distributions": [
+    {
+      "name": "Deprecated",
+      "version": "1.3.1"
+    },
+    {
+      "name": "DracoPy",
+      "version": "2.0.0"
+    },
+    {
+      "name": "GitPython",
+      "version": "3.1.58"
+    },
+    {
+      "name": "ImageIO",
+      "version": "2.37.4"
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6"
+    },
+    {
+      "name": "Markdown",
+      "version": "3.10.3"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.3"
+    },
+    {
+      "name": "OpenEXR",
+      "version": "3.4.13"
+    },
+    {
+      "name": "PyGEL3D",
+      "version": "0.6.1"
+    },
+    {
+      "name": "PyOpenGL",
+      "version": "3.1.10"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3"
+    },
+    {
+      "name": "Pygments",
+      "version": "2.20.0"
+    },
+    {
+      "name": "Werkzeug",
+      "version": "3.1.8"
+    },
+    {
+      "name": "absl-py",
+      "version": "2.5.0"
+    },
+    {
+      "name": "annotated-types",
+      "version": "0.8.0"
+    },
+    {
+      "name": "cffi",
+      "version": "2.1.1"
+    },
+    {
+      "name": "cloudpickle",
+      "version": "3.1.2"
+    },
+    {
+      "name": "coacd",
+      "version": "1.0.11"
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6"
+    },
+    {
+      "name": "contourpy",
+      "version": "1.3.3"
+    },
+    {
+      "name": "cycler",
+      "version": "0.12.1"
+    },
+    {
+      "name": "dataclasses-json",
+      "version": "0.6.7"
+    },
+    {
+      "name": "decorator",
+      "version": "5.3.1"
+    },
+    {
+      "name": "dill",
+      "version": "0.4.1"
+    },
+    {
+      "name": "einops",
+      "version": "0.8.2"
+    },
+    {
+      "name": "etils",
+      "version": "1.14.0"
+    },
+    {
+      "name": "fast_simplification",
+      "version": "0.1.13"
+    },
+    {
+      "name": "filelock",
+      "version": "3.32.2"
+    },
+    {
+      "name": "fonttools",
+      "version": "4.63.0"
+    },
+    {
+      "name": "freetype-py",
+      "version": "2.5.1"
+    },
+    {
+      "name": "frozendict",
+      "version": "2.4.7"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.7.0"
+    },
+    {
+      "name": "genesis-world",
+      "version": "0.4.6"
+    },
+    {
+      "name": "gitdb",
+      "version": "4.0.12"
+    },
+    {
+      "name": "glfw",
+      "version": "2.10.2"
+    },
+    {
+      "name": "grpcio",
+      "version": "1.83.0"
+    },
+    {
+      "name": "gs-madrona",
+      "version": "0.0.7.post2"
+    },
+    {
+      "name": "imageio-ffmpeg",
+      "version": "0.6.0"
+    },
+    {
+      "name": "importlib_metadata",
+      "version": "9.0.0"
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.3.0"
+    },
+    {
+      "name": "kiwisolver",
+      "version": "1.5.0"
+    },
+    {
+      "name": "lazy-loader",
+      "version": "0.5"
+    },
+    {
+      "name": "libigl",
+      "version": "2.6.1"
+    },
+    {
+      "name": "llvmlite",
+      "version": "0.48.0"
+    },
+    {
+      "name": "markdown-it-py",
+      "version": "4.2.0"
+    },
+    {
+      "name": "marshmallow",
+      "version": "3.26.2"
+    },
+    {
+      "name": "matplotlib",
+      "version": "3.11.1"
+    },
+    {
+      "name": "mdurl",
+      "version": "0.1.2"
+    },
+    {
+      "name": "ml_dtypes",
+      "version": "0.5.4"
+    },
+    {
+      "name": "moviepy",
+      "version": "2.2.1"
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0"
+    },
+    {
+      "name": "mujoco",
+      "version": "3.11.0"
+    },
+    {
+      "name": "mypy_extensions",
+      "version": "1.1.0"
+    },
+    {
+      "name": "networkx",
+      "version": "3.6.1"
+    },
+    {
+      "name": "numba",
+      "version": "0.66.0"
+    },
+    {
+      "name": "numpy",
+      "version": "2.4.6"
+    },
+    {
+      "name": "onnx",
+      "version": "1.22.0"
+    },
+    {
+      "name": "onnx-ir",
+      "version": "0.2.1"
+    },
+    {
+      "name": "onnxscript",
+      "version": "0.7.1"
+    },
+    {
+      "name": "opencv-python",
+      "version": "5.0.0.93"
+    },
+    {
+      "name": "orjson",
+      "version": "3.11.9"
+    },
+    {
+      "name": "packaging",
+      "version": "26.2"
+    },
+    {
+      "name": "pillow",
+      "version": "11.3.0"
+    },
+    {
+      "name": "pip",
+      "version": "24.0"
+    },
+    {
+      "name": "pip",
+      "version": "26.2"
+    },
+    {
+      "name": "plotly",
+      "version": "5.24.1"
+    },
+    {
+      "name": "pluggy",
+      "version": "1.6.0"
+    },
+    {
+      "name": "proglog",
+      "version": "0.1.12"
+    },
+    {
+      "name": "protobuf",
+      "version": "7.35.1"
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2"
+    },
+    {
+      "name": "py-cpuinfo",
+      "version": "9.0.0"
+    },
+    {
+      "name": "pycollada",
+      "version": "0.9.3"
+    },
+    {
+      "name": "pycparser",
+      "version": "3.0"
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.4"
+    },
+    {
+      "name": "pydantic_core",
+      "version": "2.46.4"
+    },
+    {
+      "name": "pyglet",
+      "version": "2.1.16"
+    },
+    {
+      "name": "pygltflib",
+      "version": "1.16.0"
+    },
+    {
+      "name": "pymeshlab",
+      "version": "2025.7.post1"
+    },
+    {
+      "name": "pyparsing",
+      "version": "3.3.2"
+    },
+    {
+      "name": "pysplashsurf",
+      "version": "0.14.1.0"
+    },
+    {
+      "name": "pytest",
+      "version": "9.1.1"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "2.9.0.post0"
+    },
+    {
+      "name": "python-dotenv",
+      "version": "1.2.2"
+    },
+    {
+      "name": "pyvers",
+      "version": "0.2.3"
+    },
+    {
+      "name": "quadrants",
+      "version": "0.6.2"
+    },
+    {
+      "name": "rich",
+      "version": "15.0.0"
+    },
+    {
+      "name": "rsl-rl-lib",
+      "version": "5.4.1"
+    },
+    {
+      "name": "rtree",
+      "version": "1.4.1"
+    },
+    {
+      "name": "scikit-image",
+      "version": "0.26.0"
+    },
+    {
+      "name": "scipy",
+      "version": "1.17.1"
+    },
+    {
+      "name": "setuptools",
+      "version": "78.1.0"
+    },
+    {
+      "name": "six",
+      "version": "1.17.0"
+    },
+    {
+      "name": "smmap",
+      "version": "5.0.3"
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0"
+    },
+    {
+      "name": "tenacity",
+      "version": "9.1.4"
+    },
+    {
+      "name": "tensorboard",
+      "version": "2.21.0"
+    },
+    {
+      "name": "tensorboard-data-server",
+      "version": "0.7.2"
+    },
+    {
+      "name": "tensordict",
+      "version": "0.13.0"
+    },
+    {
+      "name": "tetgen",
+      "version": "0.8.2"
+    },
+    {
+      "name": "tifffile",
+      "version": "2026.7.31"
+    },
+    {
+      "name": "torch",
+      "version": "2.12.0+rocm7.2"
+    },
+    {
+      "name": "torchvision",
+      "version": "0.27.0+rocm7.2"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.0"
+    },
+    {
+      "name": "trimesh",
+      "version": "5.0.0"
+    },
+    {
+      "name": "triton",
+      "version": "3.5.1+rocm7.2.1.gita272dfa8"
+    },
+    {
+      "name": "triton-rocm",
+      "version": "3.7.0"
+    },
+    {
+      "name": "typing-inspect",
+      "version": "0.9.0"
+    },
+    {
+      "name": "typing-inspection",
+      "version": "0.4.2"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    },
+    {
+      "name": "vtk",
+      "version": "9.6.2"
+    },
+    {
+      "name": "wheel",
+      "version": "0.47.0"
+    },
+    {
+      "name": "wrapt",
+      "version": "2.3.0"
+    },
+    {
+      "name": "xacro",
+      "version": "2.1.1"
+    },
+    {
+      "name": "z3-solver",
+      "version": "4.15.4.0"
+    },
+    {
+      "name": "zipp",
+      "version": "4.1.0"
+    }
+  ],
+  "driver_packages": {
+    "returncode": 0,
+    "stdout": "hip-runtime-amd\t7.1.52802.70101-38~24.04\nlibdrm-amdgpu1:amd64\t2.4.125-1ubuntu0.1~24.04.2\nlibdrm-amdgpu1:i386\t2.4.125-1ubuntu0.1~24.04.2\nlibegl-mesa0:amd64\t25.2.8-0ubuntu0.24.04.2\nlibegl-mesa0:i386\t25.2.8-0ubuntu0.24.04.2\nlibgl1-mesa-dri:amd64\t25.2.8-0ubuntu0.24.04.2\nlibgl1-mesa-dri:i386\t25.2.8-0ubuntu0.24.04.2\nrocm-core\t7.1.1.70101-38~24.04\n",
+    "stderr": ""
+  },
+  "amdgpu_module": {
+    "returncode": 0,
+    "stdout": "5BD87B40104BB7B5005A1C2\n",
+    "stderr": ""
+  },
+  "render_environment": {
+    "PYOPENGL_PLATFORM": "egl",
+    "EGL_DEVICE_ID": "0",
+    "PYTHONPATH": ".:lewm_genesis:lewm_worlds"
+  },
+  "model_and_harness_code_bindings": {
+    "scripts/run_go2_navigation_capability_development.py": {
+      "sha256": "0ee68c788a45559f50f27836f2f10982811a34860d07b08ea0b1bf9fec3beeef",
+      "bytes": 16275
+    },
+    "lewm/navigation_capability_oracle_development.py": {
+      "sha256": "c32f7e7b7e035e8e1fd4a46eac3a4196533101a301abbfa25ca56b7ee437c553",
+      "bytes": 8014
+    },
+    "scripts/generate_go2_navigation_capability_sets_development.py": {
+      "sha256": "3ecf7445b92b0a6b6fcba335f8a33dfe83dd02f4bdec7508d079555ff5cc2ab2",
+      "bytes": 8343
+    },
+    "scripts/run_go2_navigation_capability_slots_development.py": {
+      "sha256": "5e55d1759bc6eff21e3cdb4a5af212afb70685bdefa8ca806d1fe6cd32399857",
+      "bytes": 3685
+    },
+    "lewm/navigation_capability_direct_slot_development.py": {
+      "sha256": "e034fcfc57b56c5829376f23b34e5d08b305ffe874a0842186958da1bdb19cc9",
+      "bytes": 4715
+    },
+    "lewm/navigation_capability_unused_workload_development.py": {
+      "sha256": "6b9e9d78a7043953d5833bcef61d79937217f336c2323dcd147f1902fd05810c",
+      "bytes": 2505
+    },
+    "lewm/navigation_capability_supervised_development.py": {
+      "sha256": "3c6c975a88ab1c6889675c6fded6a6aaf06e352e08059510a587df60dc5d4bfc",
+      "bytes": 1360
+    }
+  },
+  "model_reference_freeze_sha256": "66035127916eabf7f8838cd490e361d15223fb48b9e652de1243bd82ad3b9ecf",
+  "policy": "No software/driver/ROCm/PyTorch/model change for remaining programme. Any unavoidable change requires a recorded successor and one complete pilot replay verification before navigation resumes.",
+  "source_corrections": "Authorized target-reference and retention code are separately versioned; frozen model code and weights unchanged.",
+  "loaded_amdgpu_srcversion": "5BD87B40104BB7B5005A1C2",
+  "drm_devices": [
+    {
+      "card": "card0",
+      "pci_path": "/sys/devices/pci0000:00/0000:00:08.1/0000:7b:00.0",
+      "vendor": "0x1002",
+      "device": "0x13c0",
+      "driver": "/sys/bus/pci/drivers/amdgpu"
+    },
+    {
+      "card": "card1",
+      "pci_path": "/sys/devices/pci0000:00/0000:00:01.1/0000:01:00.0/0000:02:00.0/0000:03:00.0",
+      "vendor": "0x1002",
+      "device": "0x7551",
+      "driver": "/sys/bus/pci/drivers/amdgpu"
+    }
+  ]
+}

@@ -10,6 +10,7 @@ from lewm import decision_headroom_json_v42_development as output
 from lewm.decision_headroom_v4_development import ArticulatedSteps
 from lewm.physical_execution_development import rotation_xyzw
 from lewm.navigation_capability_hold_taxonomy_development import classify, override_label
+from lewm.navigation_capability_target_reference_development import fixed_world_arrivals
 from scripts.evaluate_continuous_native_arrivals_development import evaluate as original_arrivals
 from scripts.run_go2_navigation_capability_development import Budget, PROTOCOL, save, sha
 
@@ -69,17 +70,9 @@ def report(root):
         native=retained_physical_arrivals(root,frames,trace,mission,requests)
     frame_lookup={r['frame']:r for r in frames}
     first=frames[0]['physical_sample_index']
-    # Keep the existing dwell/speed/zero-command rules, and also require arrival
-    # at the generated fixed beacon/home rather than an accidentally shifted
-    # initial-frame target after settling.
-    arrivals=[]
-    for row in native['arrivals']:
-        target=episode['beacon_xy_world'] if row['phase']=='OUTBOUND' else episode['home_se2_world'][:2]
-        a,b=[frame_lookup[f]['physical_sample_index'] for f in (row['frame']-10,row['frame'])]
-        error=np.linalg.norm(trace['base_pose_world'][a:b+1,:2]-np.asarray(target),axis=1)
-        arrivals.append(row|dict(generated_target_maximum_distance_m=float(error.max()),
-            generated_target_distance_passed=bool(np.all(error<=.04)),
-            passed=row['arrival_checks_passed'] and bool(np.all(error<=.04))))
+    # One fixed world reference. The legacy initial-body-distance gate is
+    # retained as a diagnostic above, not an additional acceptance condition.
+    arrivals=fixed_world_arrivals(episode,mission,frames,trace,requests)
     passed={r['phase']:r for r in arrivals if r['passed']}
     selected=[r for r in planning if 'selection' in r]
     phases={r['frame']:r['phase'] for r in mission}
@@ -151,7 +144,8 @@ def report(root):
         else:taxonomy['insufficient retained evidence']+=1
     if result['policy_steps']>=24000 and 'RETURN' not in passed:
         taxonomy['budget exhaustion despite progress' if outbound['actual_path_m']>.02 else 'budget exhaustion without movement']+=1
-    record=dict(schema='navigation_capability_episode_evaluation.v2',controller=json.loads((root/'config.json').read_text())['controller'],
+    record=dict(schema='navigation_capability_episode_evaluation.v3',controller=json.loads((root/'config.json').read_text())['controller'],
+        physical_target_reference='Registered fixed world beacon/home; initial-body distance is diagnostic only',
         leg_boundaries='Logged phase arrivals, including physically rejected arrivals',reader_sha256=sha(__file__),
         episode_id=episode['episode_id'],role=episode['role'],beacon_success='OUTBOUND' in passed,
         home_success='RETURN' in passed,round_trip_success=all(k in passed for k in ('OUTBOUND','RETURN')),
