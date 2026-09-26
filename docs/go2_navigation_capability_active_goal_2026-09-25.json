@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "paired_floor_v1_frozen_before_first_tuning_screen",
+  "stage": "paired_floor_v1_C1_screen_running",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -110,7 +110,7 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-26",
-    "stage": "One paired-plane floor-initialisation change frozen; next C1 screen admitted",
+    "stage": "Paired-plane floor-initialisation screen running; first acquisition completed",
     "new_harness": "v1_paired_floor",
     "outcome_iteration_versions_consumed": 2,
     "containment_pending": false,
@@ -126,11 +126,13 @@
   "current_cohort": {
     "root": "cohorts/v1_paired_floor_C1_screen",
     "completed_episodes": 0,
-    "current_episode": null,
+    "current_episode": "00/0",
     "complete": false,
-    "launched": false,
+    "launched": true,
     "retries": 0,
-    "successes": 0
+    "successes": 0,
+    "source_harness_commit": "2469bb79",
+    "screen_session_id": 10914
   },
   "latest_progress": "docs/go2_navigation_capability_grid_c3_failure_diagnosis_2026-09-26.md"
 }
