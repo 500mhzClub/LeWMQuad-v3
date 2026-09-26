@@ -1,5 +1,28 @@
 # Development artifact retention
 
+September 26: the user approved the eight depth-only candidates in
+`docs/go2_storage_cleanup_review_2026-09-26.md` with "do depth". This ends the
+full-depth pins for both pair-local-plane layout-3 arms, both plane-consensus
+layout-0 arms, and the progress-rejoining learned / fixed-transfer reactive
+layout-5/6 pairs, solely for this exact retirement. It also supplies a bounded
+exception to the navigation preregistration's no-existing-retirement rule;
+the frozen preregistration is unchanged.
+
+Completed: 63,050 exact primary/auxiliary depth NPZ leaves retired,
+105,985,282,048 allocated bytes (98.71 GiB). All
+63,342 original non-depth file hashes matched before and after.
+Every root has a `depth_retention.json` marker. Exact paths, sizes, pre-change
+file identities and preserved hashes were saved before deletion in
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/depth_retirement_historical_references_2026-09-26/`.
+RecoveryStorage free space afterward was 113.48 GiB.
+
+All results and failure records, RGB, physics, commands, trajectories and
+models remain. Historical full-depth replay of these eight recordings is no
+longer available; regeneration is not guaranteed to reproduce the original
+closed-loop trajectories. No current pilot, checkpoint, other artifact family
+or sealed material was retired. Current readout frame-path inputs contain no
+depth-leaf references; no navigation/replay owner was running.
+
 September 22: lossless RGB deduplication completed over 120 completed
 historical training scenes in `datagen_full/rollout/train/large_enclosed_maze`
 chunks 0000, 0040 and 0080 and their exactly bound `render_textured_v03` outputs.
