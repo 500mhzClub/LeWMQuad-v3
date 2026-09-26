@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "correctness_harness_frozen_before_corrected_C1_screen",
+  "stage": "corrected_v0_C1_screen_running",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -106,5 +106,20 @@
     }
   ],
   "blockers": [],
-  "latest_checkpoint": "docs/go2_navigation_capability_task_transform_erratum_2026-09-26.md"
+  "latest_checkpoint": "docs/go2_navigation_capability_task_transform_erratum_2026-09-26.md",
+  "current_cohort": {
+    "root": "cohorts/v0_task_c1_C1_screen",
+    "source_harness_commit": "13ebc8e2",
+    "accounting_continuation_commit": "75cfd038",
+    "completed_episodes": 3,
+    "successes": 1,
+    "failed_episodes": {
+      "01/0": "Initial measured floor unavailable",
+      "02/0": "Registered task cue outside deployed map bound"
+    },
+    "next_episode": "03/0",
+    "retries": 0,
+    "gate_not_eligible": true,
+    "all_ten_assignments_required_for_failure_taxonomy": true
+  }
 }
