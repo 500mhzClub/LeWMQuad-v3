@@ -2,6 +2,52 @@
 import numpy as np
 
 
+def settled_task_cues(episode, position_world, rotation_world_from_body):
+    """Task-layer-only, one-time cues in the tracker's initial-body XY plane.
+
+    The tracker estimates full initial-body-relative translation, then navigation
+    uses its first two coordinates. Lift the XY-only task targets to the initial
+    body-origin height and use that same projection, not a yaw-only rotation.
+    Neither the pose nor the transform is included in the returned public cues.
+    """
+    p=np.asarray(position_world,dtype=float)
+    R=np.asarray(rotation_world_from_body,dtype=float)
+    if p.shape!=(3,) or R.shape!=(3,3) or not np.isfinite(p).all() or not np.isfinite(R).all():
+        raise ValueError('Finite settled rigid pose required by task layer')
+    if not np.allclose(R.T@R,np.eye(3),atol=1e-7,rtol=0) or np.linalg.det(R)<.999999:
+        raise ValueError('Proper settled rotation required')
+    A=R[:2,:2].T
+    if np.linalg.cond(A)>2:
+        raise ValueError('Task XY projection ill-conditioned at start')
+    return dict(goal_initial_body_xy_m=(A@(world_target(episode,'OUTBOUND')-p[:2])).tolist(),
+        return_initial_body_xy_m=(A@(world_target(episode,'RETURN')-p[:2])).tolist(),
+        require_return_after_goal=True)
+
+
+def cue_world_xy(cue, position_world, rotation_world_from_body):
+    """Evaluator inverse of the declared planar projection."""
+    return np.asarray(position_world)[:2]+np.linalg.solve(
+        np.asarray(rotation_world_from_body)[:2,:2].T,np.asarray(cue))
+
+
+def install_task_cues(controller,cues):
+    """Supply both cues through the unchanged mission class before observations.
+
+    The legacy runtime convenience constructor hard-codes a zero home. Replace
+    its not-yet-started mission with the same class and limits, using both public
+    task cues. No controller/tracker method or selection rule is replaced.
+    """
+    old=controller.mission
+    if old.frame!=-1 or controller.mission_rows:
+        raise ValueError('Task cues may only be installed once before mission start')
+    if getattr(controller,'_task_cues_installed',False):
+        raise ValueError('Task transform is one-time only')
+    controller.mission=type(old)(cues,navigation_ticks=old.navigation_ticks,
+        arrival_radius_m=old.arrival_radius_m)
+    np.testing.assert_array_equal(controller.goal,cues['goal_initial_body_xy_m'])
+    controller._task_cues_installed=True
+
+
 def nominal_targets(episode):
     x, y, yaw = episode['home_se2_world']
     c, s = np.cos(yaw), np.sin(yaw)

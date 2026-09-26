@@ -1,0 +1,48 @@
+{
+  "schema": "navigation_capability_reference_structural_check.v1",
+  "physics_steps": 0,
+  "counts": {
+    "dev_tune": {
+      "episodes": 20,
+      "structural_pass": 20,
+      "nominal_reference_pass": 20,
+      "pre_fix_settling_contract_failures": 20,
+      "post_fix_target_checks": 80,
+      "post_fix_failures": 0
+    },
+    "validation": {
+      "episodes": 40,
+      "structural_pass": 40,
+      "nominal_reference_pass": 40,
+      "pre_fix_settling_contract_failures": 40,
+      "post_fix_target_checks": 160,
+      "post_fix_failures": 0
+    },
+    "sealed_test": {
+      "episodes": 120,
+      "structural_pass": 120,
+      "nominal_reference_pass": 120,
+      "pre_fix_settling_contract_failures": 120,
+      "post_fix_target_checks": 480,
+      "post_fix_failures": 0
+    }
+  },
+  "all_registered_episode_geometry_valid": true,
+  "replacements_needed": 0,
+  "tolerance_m": 1e-09,
+  "pre_fix_reference_contract_passed": false,
+  "pre_fix_settling_test": "Same source initialization displacement expressed under each registered start transform; a contract test, not measured dynamics of unrun episodes.",
+  "maxima": {
+    "home_translation_m": 0.015197161517212022,
+    "goal_instruction_difference_m": 0.04895653996802504,
+    "post_fix_world_error_m": 1.4895204919483639e-15
+  },
+  "confirmed_affected_runs": "All five pilots on 00/0 share this origin displacement",
+  "potentially_affected_episodes": "All 180; actual settling displacement outside pilot 00/0 is not measured",
+  "sealed_access": "Explicit user-authorized structural check only; aggregate counts only retained",
+  "post_fix_test_pending": false,
+  "post_fix_passed": true,
+  "controller_and_tracker_code_unchanged": true,
+  "task_transform": "One-time settled-pose task initialization; both cues only; no online pose feed",
+  "task_transform_sha256": "b7f0ed8238f5fb9bfc5754f9ba450eb872e9734f209e810422d66cbf81759c74"
+}
