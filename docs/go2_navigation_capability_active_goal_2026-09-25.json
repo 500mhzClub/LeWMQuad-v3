@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "grid_c3_frozen_ready_for_C1_screen",
+  "stage": "grid_c3_C1_screen_running",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -108,7 +108,7 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-26",
-    "stage": "Grid correction frozen; all five exposure replays exact; 99 contract cases plus native-dtype supplement pass",
+    "stage": "Grid correction committed and full ten-episode C1 screen running",
     "new_harness": "v0_grid_c3",
     "outcome_iteration_versions_consumed": 1,
     "containment_pending": true,
@@ -120,12 +120,17 @@
     "projected_total_wall_hours": 76.93874499407052
   },
   "current_cohort": {
-    "root": "cohorts/v0_startup_c2_C1_screen",
-    "completed_episodes": 10,
-    "successes": 3,
-    "diagnostic_only": true,
-    "gate_not_eligible": true,
-    "retries": 0
+    "root": "cohorts/v0_grid_c3_C1_screen",
+    "source_harness_commit": "f904a9b5",
+    "completed_episodes": 1,
+    "current_episode": "01/0",
+    "diagnostic_only": false,
+    "retries": 0,
+    "stop_on_refined_containment_failure": true,
+    "successes": 1,
+    "completed_containment": "00/0 entire recording identical",
+    "disallowed_contacts": 0,
+    "hard_violations": 0
   },
   "latest_progress": "docs/go2_navigation_capability_grid_c3_progress_2026-09-26.md"
 }

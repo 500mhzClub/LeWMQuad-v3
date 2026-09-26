@@ -71,8 +71,12 @@ of 03/0, 04/0 and 05/0 found no clipping, so their corrected missions must repro
 the whole original recording. 07/0 first clipped floor and obstacle observations at frame 1816 (181.6 s).
 All five checked prefixes reproduced native arrays and consumed sensor hashes bitwise.
 
-The corrected screen is frozen for commit and launch of all ten C1 assignments
-in fresh roots. Configuration SHA-256: `a869a3ec8ff4b79d189218c48efc9dfc74d166fcd8883d3d0c8c742ab41f9d54`.
+The corrected screen was committed as `f904a9b5` and launched all ten fixed C1
+assignments serially in fresh roots. 00/0 passed in 130.42 simulated seconds,
+with zero disallowed contacts, hard or operating violations and unresolved
+clearance. Its entire native recording, full requests and consumed sensor
+hashes are exactly identical to the original, beyond the required 31.2-s
+prefix. 01/0 is now running; the remaining containment cases are pending. Configuration SHA-256: `a869a3ec8ff4b79d189218c48efc9dfc74d166fcd8883d3d0c8c742ab41f9d54`.
 Harness SHA-256: `8ec038a87878f5d4c4da2ba5ab841f8b452563420c4389ac5946c1db4eacf6c9`.
 The measured projection is 76.94/160 wall-hours including 15% contingency,
 with 46.88 GiB additional output against 99.17 GiB usable after reserves. It
