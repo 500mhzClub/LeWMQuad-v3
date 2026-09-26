@@ -1,4 +1,6 @@
 """Observed same-cell arrival bookkeeping; retired targets remain traversable."""
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_COUNT
+
 from copy import deepcopy
 import hashlib
 import json
@@ -57,7 +59,7 @@ class ReachedFrontierState:
             if tuple(map(int, np.floor(p/CELL_M))) == cell:
                 if cell not in floor or cell in occupied:
                     raise ValueError('reached frontier must remain observed floor without an occupied cell')
-                if len(self.retired) >= 40000:
+                if len(self.retired) >= COARSE_CELL_COUNT:
                     raise ValueError('bounded frontier ledger exhausted')
                 self.retired[cell] = local_classification(cell, floor, occupied)
                 reached = cell

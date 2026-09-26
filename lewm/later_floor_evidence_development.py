@@ -4,6 +4,8 @@ All source returns remain in their original partitions. This is conditional
 geometry under the fixed observed pose/floor model, not calibrated uncertainty
 or a physical support certificate.
 """
+from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, COARSE_HALF_CELLS, COARSE_CELL_COUNT
+
 from copy import deepcopy
 import re
 import numpy as np
@@ -40,11 +42,11 @@ def floor_squares(bounds_map, floor_height):
     inside = bool(box[0, 2] >= np.nextafter(floor_height-.01, np.inf)
         and box[1, 2] <= np.nextafter(floor_height+.01, -np.inf))
     if not inside: return None, 'enclosure_outside_original_floor_height_band'
-    if np.any(box[:, :2] < -5.) or np.any(box[:, :2] >= 5.):
+    if np.any(box[:, :2] < -MAP_HALF_WIDTH_M) or np.any(box[:, :2] >= MAP_HALF_WIDTH_M):
         return None, 'outside_observed_floor_grid_domain'
     a = np.floor(np.nextafter(box[0, :2]/CELL_M, -np.inf)).astype(np.int64)
     b = np.floor(np.nextafter(box[1, :2]/CELL_M, np.inf)).astype(np.int64)
-    if np.any(a < -100) or np.any(b >= 100): return None, 'outside_observed_floor_grid_domain'
+    if np.any(a < -COARSE_HALF_CELLS) or np.any(b >= COARSE_HALF_CELLS): return None, 'outside_observed_floor_grid_domain'
     if int(np.prod(b-a+1)) > 16: return None, 'enclosure_spans_more_than_sixteen_floor_squares'
     return [(i, j) for i in range(int(a[0]), int(b[0])+1)
         for j in range(int(a[1]), int(b[1])+1)], None
@@ -79,7 +81,7 @@ class LaterFloorEvidence:
             if p.shape != (3,) or not np.isfinite(p).all(): raise ValueError('finite observed camera reference position required')
             cells = np.asarray(observation['cells'])
             if (cells.ndim != 2 or cells.shape[1:] != (2,) or cells.dtype.kind not in 'iu'
-                    or len(cells) > 40000 or np.any(cells < -100) or np.any(cells >= 100)):
+                    or len(cells) > COARSE_CELL_COUNT or np.any(cells < -COARSE_HALF_CELLS) or np.any(cells >= COARSE_HALF_CELLS)):
                 raise ValueError('bounded actually covered floor cells required')
             keys = {tuple(map(int, row)) for row in cells}
             if len(keys) != len(cells): raise ValueError('unique measured floor cells required')

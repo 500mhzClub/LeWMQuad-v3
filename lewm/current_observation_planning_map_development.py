@@ -1,4 +1,6 @@
 """Current paired-observation planning cells with persistent contact history intact."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS
+
 from copy import deepcopy
 import hashlib
 import json
@@ -22,7 +24,7 @@ def occupied_cells(points_map, floor_height):
         raise SensorContractError('finite current measured map points required')
     above = points[(points[:,2] > floor_height+.03) & (points[:,2] < floor_height+.65)]
     keys = np.floor(above[:,:2]/CELL_M).astype(int)
-    return {tuple(map(int,c)) for c in np.unique(keys,axis=0) if np.all(c >= -100) and np.all(c < 100)}
+    return {tuple(map(int,c)) for c in np.unique(keys,axis=0) if np.all(c >= -COARSE_HALF_CELLS) and np.all(c < COARSE_HALF_CELLS)}
 
 
 class CurrentObservationPlanningView:

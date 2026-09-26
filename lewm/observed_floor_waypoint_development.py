@@ -1,12 +1,12 @@
 """Floor-route proposals with explicit unknown start connectors, not motion grants."""
-from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, POINT_BOUND_M, COARSE_HALF_CELLS, COARSE_CELL_COUNT
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_M, MAP_HALF_WIDTH_M, POINT_BOUND_M, COARSE_HALF_CELLS, COARSE_CELL_COUNT
 
 from collections import deque
 import math
 import numpy as np
 from functools import lru_cache
 
-CELL_M = .05
+CELL_M = COARSE_CELL_M
 NEIGHBOURS = ((-1, 0), (0, -1), (0, 1), (1, 0))
 
 

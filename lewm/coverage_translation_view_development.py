@@ -1,5 +1,5 @@
 """Request measured coverage before extending a translating footprint into unknown."""
-from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, COARSE_HALF_CELLS
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_M, MAP_HALF_WIDTH_M, COARSE_HALF_CELLS
 
 from copy import deepcopy
 import itertools
@@ -22,8 +22,8 @@ def footprint_extension(prediction, position, rotation, floor):
         raise ValueError('complete finite candidate forecasts required')
     paths = np.asarray(position)[:2]+np.concatenate((np.zeros((6,1,2)),
         prediction[:,:,:2]),axis=1)@np.asarray(rotation)[:2,:2].T
-    low = np.floor((paths.min(axis=(0,1))-.48)/.05).astype(int)
-    high = np.floor((paths.max(axis=(0,1))+.48)/.05).astype(int)
+    low = np.floor((paths.min(axis=(0,1))-.48)/COARSE_CELL_M).astype(int)
+    high = np.floor((paths.max(axis=(0,1))+.48)/COARSE_CELL_M).astype(int)
     # The retained floor grid is bounded; extension outside it is unobserved.
     bounded_low = np.maximum(low, -COARSE_HALF_CELLS); bounded_high = np.minimum(high, COARSE_HALF_CELLS-1)
     cells = np.array(list(itertools.product(range(bounded_low[0],bounded_high[0]+1),

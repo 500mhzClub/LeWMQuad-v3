@@ -3,6 +3,8 @@
 Only small pose/query arrays are stacked. Historical pixel-prefix images stay
 in their original storage and are queried in the original observation order.
 """
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M
+
 from copy import deepcopy
 import numpy as np
 from lewm.retained_floor_patch_development import RetainedFloorPatches, T, FOCAL
@@ -47,7 +49,7 @@ class BatchedRetainedFloorPatches(RetainedFloorPatches):
     def coverage(self, centres, radius=.022):
         xy = np.asarray(centres, float)
         if (xy.ndim != 2 or xy.shape[1:] != (2,) or len(xy) > 128 or not np.isfinite(xy).all()
-                or (xy.size and np.max(np.abs(xy)) > 4.9) or not np.isfinite(radius) or not 0 < radius <= .1):
+                or (xy.size and np.max(np.abs(xy)) > POINT_BOUND_M) or not np.isfinite(radius) or not 0 < radius <= .1):
             raise ValueError('bounded nominal foot centres and radius required')
         found = [None]*len(xy)
         for start in range(0, len(self.frames), FRAME_BATCH):

@@ -1,0 +1,711 @@
+{
+  "schema": "navigation_capability_grid_callsite_audit.v1",
+  "scope": "Every map-domain constant/conversion site in the loaded shared controller stack, including inherited implementations and route/coverage modules; optical coordinates and local sensor ranges are excluded with reasons.",
+  "files": [
+    {
+      "path": "lewm/auxiliary_depth_floor_map_development.py",
+      "sha256": "f796d97f8d4a28986bf4e546bcdc1329ef155f16e0f2f1061547fe75003ab203",
+      "call_sites": [
+        {
+          "function": "observe_auxiliary",
+          "line": 24,
+          "conversion_or_bound_lines": [
+            44,
+            46
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/auxiliary_downward45_floor_map_development.py",
+      "sha256": "b4fb0416800b833db5e2a91daa37dc348d2ec4af87691bda015c9ae24d9f3bbf",
+      "call_sites": [
+        {
+          "function": "observe_auxiliary",
+          "line": 16,
+          "conversion_or_bound_lines": [
+            36,
+            38
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/auxiliary_only_turn_recovery_development.py",
+      "sha256": "d1aa80ecca853b2cc56a6972b8110e55544a3b02294b2b586a55d7ca856ea0b4",
+      "call_sites": [
+        {
+          "function": "auxiliary_only_obstacles",
+          "line": 17,
+          "conversion_or_bound_lines": [
+            34
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/axis_aligned_fine_connectivity_development.py",
+      "sha256": "305b6ac61a423db46ae9d192abc4f3bdaaee141c0f59b6b96206bd847caface2",
+      "call_sites": [
+        {
+          "function": "_calculate",
+          "line": 37,
+          "conversion_or_bound_lines": [
+            40
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/batched_retained_floor_patch_development.py",
+      "sha256": "584607d82f89cdab7ffaf9c37103da9625a02d31ad965438728d17c57bf87731",
+      "call_sites": [
+        {
+          "function": "coverage",
+          "line": 49,
+          "conversion_or_bound_lines": [
+            52
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/body_projected_floor_geometry_development.py",
+      "sha256": "2e8ec9acc6e30208d12c938c6b8305b750c05527575f45d74d102554f2329d3d",
+      "call_sites": [
+        {
+          "function": "floor_coverage",
+          "line": 36,
+          "conversion_or_bound_lines": [
+            49,
+            58
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/cached_fine_connectivity_development.py",
+      "sha256": "53cb586fa220b82dfdecb3aeb8f77d5ee4540f388ec58feef70ffcf675672f32",
+      "call_sites": [
+        {
+          "function": "floor_index",
+          "line": 19,
+          "conversion_or_bound_lines": [
+            21
+          ]
+        },
+        {
+          "function": "search_graph",
+          "line": 37,
+          "conversion_or_bound_lines": [
+            51
+          ]
+        },
+        {
+          "function": "fine_goal_route",
+          "line": 64,
+          "conversion_or_bound_lines": [
+            66
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/camera_frontier_viewpoint_development.py",
+      "sha256": "9129bb91c49e68829ae5f2ab5b6b189bcb53d35c51ceb0b729c848366b9c69bf",
+      "call_sites": [
+        {
+          "function": "floor_cell_projection",
+          "line": 16,
+          "conversion_or_bound_lines": [
+            25
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/clearance_preferred_route_development.py",
+      "sha256": "6f7e9f290a98dfb6bf3212a0318d49fca1c4c08fb16a39152bd615f421d99dff",
+      "call_sites": [
+        {
+          "function": "clearance_costs",
+          "line": 17,
+          "conversion_or_bound_lines": [
+            18,
+            20,
+            21,
+            25
+          ]
+        },
+        {
+          "function": "preferred_path",
+          "line": 30,
+          "conversion_or_bound_lines": [
+            52
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/continuous_connector_waypoint_development.py",
+      "sha256": "b22653c3eaffc0099926483d6cea09fad4ed46924ee06764eafd0216772bc3e0",
+      "call_sites": [
+        {
+          "function": "propose",
+          "line": 10,
+          "conversion_or_bound_lines": [
+            20,
+            21,
+            54,
+            60
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/coverage_translation_view_development.py",
+      "sha256": "7bc7d1a75f959554f24087402938189e8c0318f40d107cbc75b0553209efb8b3",
+      "call_sites": [
+        {
+          "function": "footprint_extension",
+          "line": 19,
+          "conversion_or_bound_lines": [
+            25,
+            26,
+            28,
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/current_observation_planning_map_development.py",
+      "sha256": "2da4286048776c49182fd9236f2571288dd3121b804ca5adca052c8dabb9af66",
+      "call_sites": [
+        {
+          "function": "occupied_cells",
+          "line": 21,
+          "conversion_or_bound_lines": [
+            26,
+            27
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/current_position_coverage_view_development.py",
+      "sha256": "2d10a1e95360c1b156c3bd9eaa36d213201d06266a5d9e7eddc3c1a9b71471a0",
+      "call_sites": [
+        {
+          "function": "_choose",
+          "line": 16,
+          "conversion_or_bound_lines": [
+            26
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/exact_mission_target_development.py",
+      "sha256": "acc19dc5b012730850eb9242931b130c01cfd6c2d4f90e5cfc10f01f8007ea47",
+      "call_sites": [
+        {
+          "function": "terminal_target",
+          "line": 9,
+          "conversion_or_bound_lines": [
+            12,
+            13,
+            21
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/fine_goal_route_development.py",
+      "sha256": "8019553a7ae48c32940f52e48a65f84ff99b2dcd89954dc21e0bc16b0dc17243",
+      "call_sites": [
+        {
+          "function": "fine_goal_route",
+          "line": 14,
+          "conversion_or_bound_lines": [
+            16,
+            52
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/fine_obstacle_round_trip_development.py",
+      "sha256": "27383183254a9d6cc205b76fb2138e01ed16c622c6cd4834aec3907d777c3352",
+      "call_sites": [
+        {
+          "function": "connector",
+          "line": 43,
+          "conversion_or_bound_lines": [
+            46
+          ]
+        },
+        {
+          "function": "observe",
+          "line": 23,
+          "conversion_or_bound_lines": [
+            28,
+            29
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/fine_stored_obstacle_routing_development.py",
+      "sha256": "1cd38ffeeda62cb76d122858b818f6a5d7c4e67935a564abbc5cae24d1acd021",
+      "call_sites": [
+        {
+          "function": "proposer",
+          "line": 58,
+          "conversion_or_bound_lines": [
+            71
+          ]
+        },
+        {
+          "function": "__init__",
+          "line": 19,
+          "conversion_or_bound_lines": [
+            21,
+            23,
+            25
+          ]
+        },
+        {
+          "function": "minimum",
+          "line": 27,
+          "conversion_or_bound_lines": [
+            29,
+            39
+          ]
+        },
+        {
+          "function": "propose",
+          "line": 67,
+          "conversion_or_bound_lines": [
+            71
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/frame_cached_floor_geometry_development.py",
+      "sha256": "39af2dfad2a3bc275e6aeea835bd96bb8c8c373cac8eade8b4d0e5db2bf2cf8c",
+      "call_sites": [
+        {
+          "function": "floor_coverage",
+          "line": 18,
+          "conversion_or_bound_lines": [
+            31,
+            42
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/frame_cached_floor_map_development.py",
+      "sha256": "15c7c5582ec801326843ae8038edbc5b9e373b2e7f358cb442c623d2d6563691",
+      "call_sites": [
+        {
+          "function": "_observe_auxiliary_original",
+          "line": 61,
+          "conversion_or_bound_lines": [
+            81,
+            83
+          ]
+        },
+        {
+          "function": "_observe_primary",
+          "line": 141,
+          "conversion_or_bound_lines": [
+            171,
+            173
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/fresh_obstacle_dispatch_development.py",
+      "sha256": "dc730cf9e42ed71542e81f764e69087d1f60861744ddde4cccd6bd576a8eda1f",
+      "call_sites": [
+        {
+          "function": "observe_body_obstacles",
+          "line": 35,
+          "conversion_or_bound_lines": [
+            61
+          ]
+        },
+        {
+          "function": "observe_obstacles",
+          "line": 67,
+          "conversion_or_bound_lines": [
+            83,
+            84
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/independent_depth_obstacle_development.py",
+      "sha256": "9a1c79ef9bfb2d729c9dc86533c8da16418bde6b5105ba14ca8021c8004579d1",
+      "call_sites": [
+        {
+          "function": "_observe",
+          "line": 30,
+          "conversion_or_bound_lines": [
+            61
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/joint_visual_floor_map_development.py",
+      "sha256": "fec05363641d501cd1d69262a449637e1dd583027c08bb1e3627b52c91c39e26",
+      "call_sites": [
+        {
+          "function": "floor_coverage",
+          "line": 15,
+          "conversion_or_bound_lines": [
+            28,
+            39
+          ]
+        },
+        {
+          "function": "observe",
+          "line": 65,
+          "conversion_or_bound_lines": [
+            95,
+            97
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/later_floor_evidence_development.py",
+      "sha256": "77f994370faef930ba19f537978770e3f1a3dde25537628a95a947d686390949",
+      "call_sites": [
+        {
+          "function": "floor_squares",
+          "line": 36,
+          "conversion_or_bound_lines": [
+            45,
+            47,
+            48,
+            49
+          ]
+        },
+        {
+          "function": "record_pair",
+          "line": 61,
+          "conversion_or_bound_lines": [
+            84
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/measured_floor_partition_development.py",
+      "sha256": "d424827d0b788f4d8efbc86311266f7086655bf31935f93cd6961c66bf23f06f",
+      "call_sites": [
+        {
+          "function": "foot_projection_coverage",
+          "line": 28,
+          "conversion_or_bound_lines": [
+            31,
+            33
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/multirate_routing_map_development.py",
+      "sha256": "ee1ae5f682ec2d984dfa631e5aefda4bbccdebb60141dad8711d2ba3931b3092",
+      "call_sites": [
+        {
+          "function": "update",
+          "line": 67,
+          "conversion_or_bound_lines": [
+            123,
+            125,
+            127,
+            129
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/observed_floor_waypoint_development.py",
+      "sha256": "b4f47b9691992c8ec0f86577a142ef825775ea133920b3df83877206d9e30258",
+      "call_sites": [
+        {
+          "function": "centre",
+          "line": 13,
+          "conversion_or_bound_lines": [
+            14
+          ]
+        },
+        {
+          "function": "segment_cells",
+          "line": 17,
+          "conversion_or_bound_lines": [
+            20,
+            22,
+            23,
+            27
+          ]
+        },
+        {
+          "function": "_inflated_cells_cached",
+          "line": 48,
+          "conversion_or_bound_lines": [
+            50,
+            52
+          ]
+        },
+        {
+          "function": "propose",
+          "line": 66,
+          "conversion_or_bound_lines": [
+            76,
+            77,
+            107,
+            114
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/observed_geometry_refinement_development.py",
+      "sha256": "9f577c690404e4ee9866ca2b148dc586a142e42e11184d20ff382ae8c30c84fb",
+      "call_sites": [
+        {
+          "function": "segment_cell_distances",
+          "line": 16,
+          "conversion_or_bound_lines": [
+            19,
+            22,
+            25,
+            28
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/observed_round_trip_mission_development.py",
+      "sha256": "35841c1f12b2873b0453b0308812b93ccbce875d037caffcaa2272d232976ea4",
+      "call_sites": [
+        {
+          "function": "point",
+          "line": 16,
+          "conversion_or_bound_lines": [
+            18
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/progressive_batched_retained_floor_patch_development.py",
+      "sha256": "6462236a03e0d497e32e67a6540142a75a61e4dd8087b2b6311a154b8d41ccbc",
+      "call_sites": [
+        {
+          "function": "coverage",
+          "line": 17,
+          "conversion_or_bound_lines": [
+            20
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/projected_polygon_floor_coverage_development.py",
+      "sha256": "64d09d90ec3489f2eb823425b3d9ba830655136047540a4b8b2ac8259fddffa5",
+      "call_sites": [
+        {
+          "function": "floor_coverage",
+          "line": 74,
+          "conversion_or_bound_lines": [
+            79
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/retained_floor_patch_development.py",
+      "sha256": "62e6a0dc319a2c692da9b8724a42d244ff9ed2bef5b6509290eb3a812d4d9880",
+      "call_sites": [
+        {
+          "function": "coverage",
+          "line": 38,
+          "conversion_or_bound_lines": [
+            41
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/vectorized_connector_routing_development.py",
+      "sha256": "0cbb9d8fed314b636c90be59efe0352659596a9ce4d122ddbb4193a35347fd72",
+      "call_sites": [
+        {
+          "function": "segment_cells",
+          "line": 9,
+          "conversion_or_bound_lines": [
+            11,
+            13,
+            14,
+            17
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lewm/visibility_batched_retained_floor_patch_development.py",
+      "sha256": "3d3534f6d1b1c1f100a14bb16226e746c11785fbb8a11804542a1278a4f32017",
+      "call_sites": [
+        {
+          "function": "coverage",
+          "line": 10,
+          "conversion_or_bound_lines": [
+            13
+          ]
+        }
+      ]
+    }
+  ],
+  "exemptions": [
+    "Camera intrinsics/pixel indices including 320/240/640/480 are optical-image coordinates, unchanged.",
+    "0.2\u20135-m optical depth limits and 4.98-m depth-evaluation interiors are sensor ranges, unchanged.",
+    "100 floor points, 100-ms clocks and 4096-frame capacities are not map dimensions.",
+    "FineDepthObstacles has a separate 1-m local crop, unchanged in metres; cell count now derived from shared fine resolution.",
+    "Five-metre relative motion limits in historical surface-memory ingestion are displacement checks, not global map coordinates."
+  ],
+  "fixed": "All identified global-domain validators/clipping/storage offsets use shared constants. The two fine-route cost consumers now use the same origin as clearance_costs.",
+  "contract": "lewm/tests/test_navigation_capability_full_grid_contract_development.py",
+  "before_first_extension": {
+    "failed": 17,
+    "passed": 1
+  },
+  "after_expansion": {
+    "grid_contract_cases": 81,
+    "combined_focused_cases": 99,
+    "result": "PASS"
+  },
+  "startup_observations": "All10 diagnostic C2 episodes initialized at frame0; primary5 and auxiliary5; no further startup defect discovered.",
+  "remaining": "Frozen and ready for corrected C1 screen; containment measured prospectively.",
+  "file_count": 33,
+  "function_site_count": 47,
+  "additional_correctness": "Internal route-cell centres use the storage extent (8 m); task cues retain the 7.9-m guard. Boundary target cell 158 has centre 7.925 m. Before fix five of nine terminal corner cases failed.",
+  "checks": {
+    "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/grid_c3_contract_checks/result.json",
+    "sha256": "f1b628da705a3b9d82cfdfcff0fc49d48de92f305f576829be546b405eac2286"
+  },
+  "domain_exemptions": {
+    "body_local_only": [
+      "auxiliary_only_turn_recovery.auxiliary_only_obstacles",
+      "fresh_obstacle_dispatch.observe_body_obstacles",
+      "independent_depth_obstacle._observe",
+      "fine_obstacle_round_trip.connector",
+      "fine_obstacle_round_trip.FineDepthObstacles.observe"
+    ],
+    "reason": "Body-relative obstacle crops/connectors are invariant to global map translation and retain their existing local extent; they must not be expanded to the mission map extent."
+  },
+  "native_dtype_supplement": {
+    "passed": 6,
+    "unique_new_case": 1,
+    "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/grid_c3_contract_checks/go2_c3_containment_dtype_final_20260926.txt",
+    "sha256": "2b0629437046edf89a33cc088f4cc22685d44b1e154e6d9af02a0954cba3ac22"
+  },
+  "first_exposure_results": [
+    {
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev00_ep0_attempt001",
+      "first_exposure": {
+        "frame": 312,
+        "measured_ns": 32700000000,
+        "mission_s": 31.200000000000003,
+        "events": [
+          {
+            "kind": "floor_observation",
+            "old_storage_half_width_m": 5.0,
+            "count": 1,
+            "first_cell": [
+              -46,
+              100
+            ],
+            "cell_m": 0.05
+          }
+        ]
+      },
+      "verified_frame_pairs": 313,
+      "full_source_checked": false,
+      "wall_s": 46.863349682011176
+    },
+    {
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev03_ep0_attempt001",
+      "first_exposure": null,
+      "verified_frame_pairs": 4632,
+      "full_source_checked": true,
+      "wall_s": 553.3509626970044
+    },
+    {
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev04_ep0_attempt001",
+      "first_exposure": null,
+      "verified_frame_pairs": 1328,
+      "full_source_checked": true,
+      "wall_s": 167.11675576702692
+    },
+    {
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev05_ep0_attempt001",
+      "first_exposure": null,
+      "verified_frame_pairs": 4800,
+      "full_source_checked": true,
+      "wall_s": 582.0976574379602
+    },
+    {
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev07_ep0_attempt001",
+      "first_exposure": {
+        "frame": 1816,
+        "measured_ns": 183100000000,
+        "mission_s": 181.60000000000002,
+        "events": [
+          {
+            "kind": "floor_observation",
+            "old_storage_half_width_m": 5.0,
+            "count": 9,
+            "first_cell": [
+              -102,
+              -43
+            ],
+            "cell_m": 0.05
+          },
+          {
+            "kind": "obstacle_observation",
+            "old_storage_half_width_m": 5.0,
+            "count": 15,
+            "first_cell": [
+              -104,
+              -42
+            ],
+            "cell_m": 0.05
+          },
+          {
+            "kind": "fine_obstacle_observation",
+            "old_storage_half_width_m": 5.0,
+            "count": 71,
+            "first_cell": [
+              -517,
+              -205
+            ],
+            "cell_m": 0.01
+          }
+        ]
+      },
+      "verified_frame_pairs": 1817,
+      "full_source_checked": false,
+      "wall_s": 224.46420250902884
+    }
+  ]
+}

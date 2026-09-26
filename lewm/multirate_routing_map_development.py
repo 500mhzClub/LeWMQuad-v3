@@ -4,7 +4,7 @@ This map proposes routes only. It supplies no robot-volume/contact check and
 does not authorize a command. Updates may skip observations; pose estimation
 and the actuation loop must keep their own clocks and freshness requirements.
 """
-from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS, FINE_HALF_CELLS
+from lewm.navigation_capability_map_domain_development import FINE_CELL_M, COARSE_HALF_CELLS, FINE_HALF_CELLS
 
 from dataclasses import dataclass
 import hashlib
@@ -124,7 +124,7 @@ class MultirateRoutingMap:
                 new_occupied.update(tuple(map(int, cell)) for cell in keys
                     if np.all(cell >= -COARSE_HALF_CELLS) and np.all(cell < COARSE_HALF_CELLS))
                 if self.retain_fine_obstacles:
-                    fine_keys = np.unique(np.floor(above[:, :2]/.01).astype(int), axis=0)
+                    fine_keys = np.unique(np.floor(above[:, :2]/FINE_CELL_M).astype(int), axis=0)
                     self.fine_occupied.update(tuple(map(int, cell)) for cell in fine_keys
                         if np.all(cell >= -FINE_HALF_CELLS) and np.all(cell < FINE_HALF_CELLS))
             self.floor.update(new_floor); self.occupied.update(new_occupied)

@@ -10,7 +10,10 @@ from lewm import stopping_margin_dispatch_development as stopping
 from lewm.paced_multirate_controller_development import PacedMultirateController
 from lewm.veto_view_round_trip_development import VetoViewRoundTripRuntime
 
-CELL_M=.01
+from lewm.navigation_capability_map_domain_development import FINE_CELL_M
+CELL_M=FINE_CELL_M
+LOCAL_OBSTACLE_HALF_EXTENT_M=1.
+LOCAL_HALF_CELLS=round(LOCAL_OBSTACLE_HALF_EXTENT_M/CELL_M)
 FRAME='current_body_1cm_grid'
 
 
@@ -22,8 +25,8 @@ class FineDepthObstacles(IndependentDepthObstacles):
         if current is None:return None
         # Cells outside this two-metre square cannot intersect the supported
         # origin-to-endpoint (<=0.5 m) connector plus its 0.45 m radius.
-        cells=frozenset(k for k in current.occupied if all(-100<=v<100 for v in k))
-        self.receipts[-1].update(obstacle_cell_m=CELL_M,obstacle_crop_half_extent_m=1.,
+        cells=frozenset(k for k in current.occupied if all(-LOCAL_HALF_CELLS<=v<LOCAL_HALF_CELLS for v in k))
+        self.receipts[-1].update(obstacle_cell_m=CELL_M,obstacle_crop_half_extent_m=LOCAL_OBSTACLE_HALF_EXTENT_M,
             retained_obstacle_cells=len(cells))
         return replace(current,occupied=cells,coordinate_frame=FRAME)
 

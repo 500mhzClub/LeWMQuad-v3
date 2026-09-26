@@ -1,4 +1,6 @@
 """Recover observed goal connectivity lost to coarse obstacle inflation."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS, COARSE_CELL_M
+
 import heapq
 import time
 import numpy as np
@@ -11,7 +13,7 @@ from lewm.terminal_position_priority_development import ProgressRejoiningTermina
 
 def fine_goal_route(snapshot,position,goal,route):
     if route['status']=='OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL':return route
-    target=tuple(map(int,np.floor(np.asarray(goal)/.05)))
+    target=tuple(map(int,np.floor(np.asarray(goal)/COARSE_CELL_M)))
     if target not in snapshot.floor:return route
     began=time.perf_counter();geometry=cached_clearance(snapshot.fine_occupied)
     radius=route['nominal_radius_m']
@@ -47,7 +49,7 @@ def fine_goal_route(snapshot,position,goal,route):
         for dx,dy in NEIGHBOURS:
             nxt=(cell[0]+dx,cell[1]+dy)
             if nxt not in snapshot.floor:continue
-            step=.5*(costs[cell[0]+100,cell[1]+100]+costs[nxt[0]+100,nxt[1]+100])
+            step=.5*(costs[cell[0]+COARSE_HALF_CELLS,cell[1]+COARSE_HALF_CELLS]+costs[nxt[0]+COARSE_HALF_CELLS,nxt[1]+COARSE_HALF_CELLS])
             candidate=cost+step
             if candidate>=distance.get(nxt,float('inf')):continue
             edge=tuple(sorted((cell,nxt)))

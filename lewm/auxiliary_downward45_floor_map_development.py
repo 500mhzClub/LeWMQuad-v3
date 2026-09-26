@@ -1,4 +1,6 @@
 """Same complete observed map and collision checks with explicit 45-degree depth."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS
+
 from copy import deepcopy
 import hashlib
 import numpy as np
@@ -33,7 +35,7 @@ class AuxiliaryDownward45SurfaceMemory(AuxiliaryDepthSurfaceMemory):
         mapped=points@B.T;above=mapped[(mapped[:,2]>floor_height+.03)&(mapped[:,2]<floor_height+.65)]
         keys=np.floor(above[:,:2]/CELL_M).astype(int)
         for cell in np.unique(keys,axis=0):
-            if np.all(cell>=-100) and np.all(cell<100):occupied.setdefault(tuple(map(int,cell)),witness['frame'])
+            if np.all(cell>=-COARSE_HALF_CELLS) and np.all(cell<COARSE_HALF_CELLS):occupied.setdefault(tuple(map(int,cell)),witness['frame'])
         self.auxiliary_ns=now_ns
         self.auxiliary_receipt=dict(**witness,current_returns=len(points),current_floor_returns=int(mask.sum()),
             current_other_returns=int((~mask).sum()),total_returns=self.auxiliary_partition.total_returns,

@@ -1,5 +1,5 @@
 """Keep 1 cm stored obstacle cells for continuous entry into the coarse floor route."""
-from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, FINE_HALF_CELLS, COARSE_CELL_COUNT
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_M, FINE_CELL_M, MAP_HALF_WIDTH_M, FINE_HALF_CELLS, COARSE_CELL_COUNT
 
 import numpy as np
 from functools import lru_cache
@@ -11,7 +11,7 @@ from lewm.vectorized_connector_routing_development import propose as grid_propos
 from lewm.observed_geometry_refinement_development import segment_cell_distances
 from lewm import process_mapped_runtime_development as mapping_process
 
-fine_distances=bind(segment_cell_distances,CELL_M=.01)
+fine_distances=bind(segment_cell_distances,CELL_M=FINE_CELL_M)
 
 
 class FineCellClearance:
@@ -20,9 +20,9 @@ class FineCellClearance:
         self.cells=np.asarray(sorted(cells),dtype=int).reshape(-1,2)
         if len(self.cells)>COARSE_CELL_COUNT or np.any(self.cells < -FINE_HALF_CELLS) or np.any(self.cells>=FINE_HALF_CELLS):
             raise ValueError('bounded integer observed cells required')
-        self.low=self.cells*.01;self.high=self.low+.01
+        self.low=self.cells*FINE_CELL_M;self.high=self.low+FINE_CELL_M
         self.tree=cKDTree((self.low+self.high)*.5) if len(self.cells) else None
-        self.coarse_cells=frozenset(tuple(map(int,k)) for k in self.cells//5)
+        self.coarse_cells=frozenset(tuple(map(int,k)) for k in self.cells//round(COARSE_CELL_M/FINE_CELL_M))
 
     def minimum(self,start,end):
         a,b=np.asarray(start,float),np.asarray(end,float)
@@ -36,7 +36,7 @@ class FineCellClearance:
         # The midpoint-to-square distance bounds the segment minimum above.
         # Every closer square's centre is within half the segment length,
         # that upper bound, and the square's half diagonal of the midpoint.
-        radius=float(np.linalg.norm(b-a))*.5+upper+np.sqrt(2.)*.005+1e-12
+        radius=float(np.linalg.norm(b-a))*.5+upper+np.sqrt(2.)*(FINE_CELL_M/2)+1e-12
         indices=self.tree.query_ball_point(midpoint,radius)
         return float(fine_distances(a,b,self.cells[indices]).min())
 
@@ -68,7 +68,7 @@ def proposer(snapshot):
         result=grid_propose(floor,occupied,position,goal,radius_m=radius_m,connector_clear=clear,
             excluded_frontiers=excluded_frontiers)
         return result|dict(start_connector_geometry='continuous_disk_against_stored_1cm_cells',
-            stored_obstacle_cell_m=.01,coarse_route_inflation_unchanged=True)
+            stored_obstacle_cell_m=FINE_CELL_M,coarse_route_inflation_unchanged=True)
     return propose
 
 
