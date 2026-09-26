@@ -111,15 +111,16 @@
     "root": "cohorts/v0_task_c1_C1_screen",
     "source_harness_commit": "13ebc8e2",
     "accounting_continuation_commit": "75cfd038",
-    "completed_episodes": 3,
-    "successes": 1,
+    "completed_episodes": 4,
+    "successes": 2,
     "failed_episodes": {
       "01/0": "Initial measured floor unavailable",
       "02/0": "Registered task cue outside deployed map bound"
     },
-    "next_episode": "03/0",
+    "next_episode": "04/0",
     "retries": 0,
     "gate_not_eligible": true,
     "all_ten_assignments_required_for_failure_taxonomy": true
-  }
+  },
+  "latest_progress": "docs/go2_navigation_capability_corrected_screen_progress_2026-09-26.md"
 }
