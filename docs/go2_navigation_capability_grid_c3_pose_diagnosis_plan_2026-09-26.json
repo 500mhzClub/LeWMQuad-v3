@@ -1,0 +1,52 @@
+{
+  "schema": "navigation_capability_pose_loss_diagnosis.v1",
+  "authority": "User next-version guidance: after clean containment diagnose each pose loss from regenerated frames; unchanged tracker estimation",
+  "base": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001",
+  "root_name": "grid_c3_pose_loss_diagnosis_attempt001",
+  "episodes": [
+    1,
+    2,
+    7
+  ],
+  "sources": [
+    {
+      "maze": 1,
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_grid_c3_screen_C1_dev01_ep0_attempt001",
+      "source_config_sha256": "2f82897a8e2fc8836fa42b77dbd6af4aea52c6851aeb51f668f8ff845db87c22",
+      "maximum_simulated_s": 342.5
+    },
+    {
+      "maze": 2,
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_grid_c3_screen_C1_dev02_ep0_attempt001",
+      "source_config_sha256": "9e34e50ef783cba103ede65d98981c75184854a2eee9c8df0d192bee96adeb12",
+      "maximum_simulated_s": 60.0
+    },
+    {
+      "maze": 7,
+      "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_grid_c3_screen_C1_dev07_ep0_attempt001",
+      "source_config_sha256": "d5588f458f145bce2aaf23ec344a1c1fc1ad87ce9b0326c552c96414774e2aa5",
+      "maximum_simulated_s": 250.5
+    }
+  ],
+  "script_sha256": "d1c1748273ad5f44d43ed45b760e0e0de8d2fe1142db158ef4766d074a6f6e5e",
+  "wall_cap_s": 3600,
+  "maximum_total_simulated_s": 653.0,
+  "retained_cap_bytes": 67108864,
+  "temporary_image_directory": "/dev/shm/go2_grid_c3_pose_diagnosis_attempt001",
+  "temporary_image_cap_bytes": 33554432,
+  "programme_wall_cap_h": 160,
+  "per_device_vram_reserve_bytes": 2147483648,
+  "recovery_reserve_bytes": 12884901888,
+  "workspace_reserve_bytes": 4294967296,
+  "no_retries": true,
+  "no_new_navigation_trials": true,
+  "physics": "Original settling and exact logged command tapes only, ending at each original failure",
+  "comparisons": "Every consumed RGB-D hash, every native state and every recorded raw pose must reproduce exactly; otherwise stop",
+  "retained_sensor_frames": false,
+  "temporary_visuals": "Three paired-camera frames per failure, RAM-only inspection sheets, remove after inspection",
+  "tracker_unchanged": true,
+  "controller_unchanged": true,
+  "models_fitted": false,
+  "alternative_tracker_candidates_computed": false,
+  "budget": "At most one additional hour inside existing160h; next changed harness screen needs its own measured projection"
+}

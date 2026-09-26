@@ -86,3 +86,26 @@ further changes. Passing containment makes this successor a correctness
 version with no additional harness-version charge. Only after a clean screen
 will regenerated-frame diagnosis guide a single recovery change; changes to
 tracker estimation require approval.
+
+
+## Completed corrected screen
+
+All ten assignments completed in 9,291.21 wall seconds (2 h 35 min), including
+the physical readers. Corrected results: successes 00/0,03/0,04/0; pose losses
+01/0 (341 s),02/0 (58.5 s),07/0 (249 s); timeouts 05/0,06/0,08/0,09/0 (480 s).
+All trajectories have zero disallowed contacts, hard and operating violations,
+and unresolved sampled clearance. Every required containment case reproduces
+its entire original native arrays, requests and consumed sensor hashes, even
+where only a prefix was required. There is no divergence to explain in C3.
+
+The correctness increment is zero; total outcome-driven versions consumed
+remains one. Navigation success is 3/10, below9/10: no oracle gate is admitted.
+The completed cohort budget projection is76.59/160 h with15% contingency,
+43.64 GiB additional output against97.75 GiB usable after reserves. This
+projection does not yet include another harness iteration; revise it before
+launching the next changed screen.
+
+Next: regenerate the three pose-loss events using the original logged command
+tapes and frozen tracker, verify consumed frame hashes and recorded raw poses,
+then inspect the primary view, executed action and failed admission criterion.
+No tracker estimation or controller change has been made.
