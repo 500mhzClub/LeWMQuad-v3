@@ -19,7 +19,7 @@ def test_unobserved_floor_is_not_added_to_reach_a_cheaper_route():
     occupied={(x,0) for x in range(61)}
     path,_=preferred_path(floor,occupied,(5,11),(55,11))
     assert path==[[x,11] for x in range(5,56)]
-    np.testing.assert_array_equal(clearance_costs(frozenset()),np.ones((200,200)))
+    np.testing.assert_array_equal(clearance_costs(frozenset()),np.ones((320,320)))
 
 
 def test_runtime_preserves_frontier_exclusion_and_connector_receipt():

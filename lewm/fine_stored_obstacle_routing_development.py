@@ -1,4 +1,6 @@
 """Keep 1 cm stored obstacle cells for continuous entry into the coarse floor route."""
+from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, FINE_HALF_CELLS, COARSE_CELL_COUNT
+
 import numpy as np
 from functools import lru_cache
 from scipy.spatial import cKDTree
@@ -16,7 +18,7 @@ class FineCellClearance:
     """Exact segment/cell distance after a conservative spatial-index query."""
     def __init__(self,cells):
         self.cells=np.asarray(sorted(cells),dtype=int).reshape(-1,2)
-        if len(self.cells)>40000 or np.any(self.cells < -500) or np.any(self.cells>=500):
+        if len(self.cells)>COARSE_CELL_COUNT or np.any(self.cells < -FINE_HALF_CELLS) or np.any(self.cells>=FINE_HALF_CELLS):
             raise ValueError('bounded integer observed cells required')
         self.low=self.cells*.01;self.high=self.low+.01
         self.tree=cKDTree((self.low+self.high)*.5) if len(self.cells) else None
@@ -24,7 +26,7 @@ class FineCellClearance:
 
     def minimum(self,start,end):
         a,b=np.asarray(start,float),np.asarray(end,float)
-        if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>5.:
+        if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>MAP_HALF_WIDTH_M:
             raise ValueError('bounded finite segment required')
         if not len(self.cells):return None
         midpoint=(a+b)*.5

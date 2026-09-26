@@ -1,0 +1,141 @@
+{
+  "status": "PASS",
+  "all_consumed_frame_hash_fields_match": true,
+  "primary_measured_floor_quads": 91,
+  "auxiliary_measured_floor_quads": 615,
+  "required_quads": 100,
+  "current_paired_plane_available": true,
+  "source_first_planning_decision_exists": false,
+  "cause": "Primary-only map initialization cannot measure 100 floor quads; paired sensors evaluated separately.",
+  "primary_depth_valid_pixels": 307200,
+  "auxiliary_depth_valid_pixels": 307200,
+  "frame_hash_record": {
+    "frame": 0,
+    "measured_ns": 1500000000,
+    "physical_sample_index": 749,
+    "transforms": [
+      [
+        [
+          -0.577252003864932,
+          -0.033800996750646975,
+          0.8158661757007599,
+          2.8760116506418996
+        ],
+        [
+          -0.8158993703613598,
+          -0.016490989543739613,
+          -0.5779587050194892,
+          2.4248367271188123
+        ],
+        [
+          0.03299002088294394,
+          -0.9992925196770618,
+          -0.0180587552065999,
+          0.3563738965837596
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ],
+      [
+        [
+          -0.577252003864932,
+          -0.6008054193919894,
+          0.5530035913654957,
+          2.8968430757384915
+        ],
+        [
+          -0.8158993703613598,
+          0.39701762903022153,
+          -0.4203394100999311,
+          2.4115758848114632
+        ],
+        [
+          0.03299002088294394,
+          -0.6938370487862673,
+          -0.7193759853190165,
+          0.39291430968685254
+        ],
+        [
+          0.0,
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    ],
+    "acquisition_wall_ms": 37.613033,
+    "pixel_sha256": {
+      "primary": {
+        "rgb_sha256": "0ba1f7cb8eeb9c7237c2808ecd4c9ea4ff3a1132d3cd92fb407ed0cbd2747350",
+        "native_depth_sha256": "10d7be7b424fe70514b48dacb27e5999bf3bfc4d4079d7bbb3a1bc248a38bc72",
+        "derived_packet_sha256": "23430215094f12be7a9eb64d53e9737e9b2b6383172787c3fb56f583f7aff2dd"
+      },
+      "auxiliary": {
+        "rgb_sha256": "643ba68833a990b3230f8fc32b97ce06ccc56124b3e111e71ef7217d246df1db",
+        "native_depth_sha256": "723bb61e4a19f70820daa6dc25b2db7c4bf0a6f254b016321690ee74faa8f856",
+        "derived_packet_sha256": "c6ad3b8aabf7078b2ca33cead46666d30d31a7c43ea1bdf5a27a3a739088e7c5"
+      }
+    },
+    "arrays": {
+      "primary": {
+        "rgb": {
+          "sha256": "0ba1f7cb8eeb9c7237c2808ecd4c9ea4ff3a1132d3cd92fb407ed0cbd2747350",
+          "shape": [
+            480,
+            640,
+            3
+          ],
+          "dtype": "|u1"
+        },
+        "native_depth": {
+          "sha256": "10d7be7b424fe70514b48dacb27e5999bf3bfc4d4079d7bbb3a1bc248a38bc72",
+          "shape": [
+            480,
+            640
+          ],
+          "dtype": "<f4"
+        }
+      },
+      "auxiliary": {
+        "rgb": {
+          "sha256": "643ba68833a990b3230f8fc32b97ce06ccc56124b3e111e71ef7217d246df1db",
+          "shape": [
+            480,
+            640,
+            3
+          ],
+          "dtype": "|u1"
+        },
+        "native_depth": {
+          "sha256": "723bb61e4a19f70820daa6dc25b2db7c4bf0a6f254b016321690ee74faa8f856",
+          "shape": [
+            480,
+            640
+          ],
+          "dtype": "<f4"
+        }
+      }
+    },
+    "live_depth_noise": {
+      "seed": 2026091414,
+      "layout_index": 1,
+      "sigma_mm": 2,
+      "primary_sha256": "29584752215ce1a5b99757a81e467331a1f5ec6d26fff04209777051162f505a",
+      "auxiliary_sha256": "528517a496c05c66741281642e83dae4a4f89602f35f55f6502c56f0b0fb86e5"
+    },
+    "consumed_packet_sha256": {
+      "primary_rgb": "08cd25efa251f4b217c1fbe191d98bbde408be3d9d188decfbe100a7de2c4d17",
+      "primary_depth": "29584752215ce1a5b99757a81e467331a1f5ec6d26fff04209777051162f505a",
+      "auxiliary_rgb": "876cb163ae00f4e6af0eb5c843acb3b8dffb9c49431bff295ef84c2c0a03bebc",
+      "auxiliary_depth": "528517a496c05c66741281642e83dae4a4f89602f35f55f6502c56f0b0fb86e5"
+    },
+    "recording": "hashes_only",
+    "frames_retained": false
+  },
+  "wall_s": 9.834173961018678,
+  "mission_commands_executed": 0
+}

@@ -106,7 +106,21 @@
     }
   ],
   "blockers": [],
-  "latest_checkpoint": "docs/go2_navigation_capability_task_transform_erratum_2026-09-26.md",
+  "latest_checkpoint": {
+    "date": "2026-09-26",
+    "stage": "Combined startup correctness screen ready",
+    "old_screen_successes": 3,
+    "old_screen_episodes": 10,
+    "old_screen_contacts": 0,
+    "new_harness": "v0_startup_c2",
+    "startup_structural_check_complete": true,
+    "initial_frame_hash_reproduction": true,
+    "containment_pending": true,
+    "oracle_gate_pending": true,
+    "capability_pending": true,
+    "official_videos_pending": true,
+    "wall_cap_hours": 160
+  },
   "current_cohort": {
     "root": "cohorts/v0_task_c1_C1_screen",
     "source_harness_commit": "13ebc8e2",

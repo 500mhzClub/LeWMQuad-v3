@@ -1,4 +1,6 @@
 """Prefer room around the robot while preserving the observed route target."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS
+
 from functools import lru_cache
 import heapq
 import math
@@ -13,10 +15,10 @@ CLEARANCE_WEIGHT=2.
 
 @lru_cache(maxsize=2)
 def clearance_costs(occupied):
-    mask=np.ones((200,200),dtype=bool)
+    mask=np.ones((2*COARSE_HALF_CELLS,2*COARSE_HALF_CELLS),dtype=bool)
     for x,y in occupied:
-        if not -100<=x<100 or not -100<=y<100:raise ValueError('bounded observed obstacle cells required')
-        mask[x+100,y+100]=False
+        if not -COARSE_HALF_CELLS<=x<COARSE_HALF_CELLS or not -COARSE_HALF_CELLS<=y<COARSE_HALF_CELLS:raise ValueError('bounded observed obstacle cells required')
+        mask[x+COARSE_HALF_CELLS,y+COARSE_HALF_CELLS]=False
     if not occupied:return np.ones_like(mask,dtype=float)
     # Centre-to-square lower bound, used only as a soft routing preference.
     # The original inflated graph and exact fine-cell action checks remain.
@@ -47,7 +49,7 @@ def preferred_path(floor,occupied,start,target,*,radius_m=.45):
         for dx,dy in NEIGHBOURS:
             nxt=(cell[0]+dx,cell[1]+dy)
             if nxt not in available:continue
-            step=.5*(cost[cell[0]+100,cell[1]+100]+cost[nxt[0]+100,nxt[1]+100])
+            step=.5*(cost[cell[0]+COARSE_HALF_CELLS,cell[1]+COARSE_HALF_CELLS]+cost[nxt[0]+COARSE_HALF_CELLS,nxt[1]+COARSE_HALF_CELLS])
             candidate=value+step
             if candidate<distance.get(nxt,float('inf')):
                 distance[nxt]=candidate;parent[nxt]=cell

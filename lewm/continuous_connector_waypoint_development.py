@@ -1,4 +1,6 @@
 """Continuous nominal entry connectors with unchanged conservative floor-grid routes."""
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M, COARSE_HALF_CELLS, COARSE_CELL_COUNT
+
 from collections import deque
 import numpy as np
 from lewm.observed_floor_waypoint_development import CELL_M,NEIGHBOURS,centre,segment_cells,inflated_cells
@@ -14,9 +16,9 @@ def propose(floor, occupied, position, goal, *, radius_m=.45):
     """
     floor, occupied = set(floor), set(occupied)
     p, g = np.asarray(position, float), np.asarray(goal, float)
-    if (len(floor) > 40000 or len(occupied) > 40000 or p.shape != (2,) or g.shape != (2,)
-            or not np.isfinite([p, g]).all() or np.max(np.abs([p, g])) > 4.9
-            or any(len(c) != 2 or any(type(v) is not int or not -100 <= v < 100 for v in c) for c in floor | occupied)):
+    if (len(floor) > COARSE_CELL_COUNT or len(occupied) > COARSE_CELL_COUNT or p.shape != (2,) or g.shape != (2,)
+            or not np.isfinite([p, g]).all() or np.max(np.abs([p, g])) > POINT_BOUND_M
+            or any(len(c) != 2 or any(type(v) is not int or not -COARSE_HALF_CELLS <= v < COARSE_HALF_CELLS for v in c) for c in floor | occupied)):
         raise ValueError('bounded registered map cells and finite mission points required')
     blocked = inflated_cells(occupied, radius_m)
     available = floor-blocked
