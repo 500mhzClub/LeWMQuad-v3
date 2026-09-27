@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "live_turn_v3_C1_screen_running",
+  "stage": "live_turn_v3c1_frozen_before_screen",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -116,28 +116,25 @@
   "latest_checkpoint": {
     "date": "2026-09-27",
     "stage": "V3 frozen: blocked visual-turn latch release",
-    "new_harness": "v3_live_turn",
+    "new_harness": "v3c1_live_turn",
     "outcome_iteration_versions_consumed": 4,
     "containment_pending": false,
     "oracle_gate_pending": true,
     "capability_pending": true,
     "official_videos_pending": true,
     "wall_cap_hours": 160,
-    "source_harness_sha256": "7c458c5a1d02bc591799bd6c2c31ce398b6c846e687e8fd96b257a647cefaf9d",
+    "source_harness_sha256": "0c87318d7e06f43215faaee1b94279ae36ea88b5b95258dad5b591f42900bd1b",
     "projected_total_wall_hours": 104.5755966545478,
     "correctness_version_increment": 0,
     "projection_excludes_next_iteration": false,
     "projection_excludes_second_episode_amendment": false
   },
   "current_cohort": {
-    "root": "cohorts/v3_live_turn_C1_screen",
+    "root": "cohorts/v3c1_live_turn_C1_screen",
     "completed_episodes": 0,
     "complete": false,
-    "launched": true,
-    "retries": 0,
-    "source_harness_commit": "8c825807",
-    "screen_session_id": 37657,
-    "current_episode": "00/0"
+    "launched": false,
+    "fresh_after_preserved_constructor_failure": true
   },
   "latest_progress": "docs/go2_navigation_capability_v2_turn_diagnosis_2026-09-27.md",
   "pending_startup_output_contract": {
@@ -175,5 +172,14 @@
     "expanded_20_episode_screen_active": false,
     "C0_gate_blocked_until_amended_C1_requirements_pass": true
   },
-  "session_execution_instruction": "Wait in-session for jobs, continue at milestones; stop only at authorised cap/resource/safety/containment/approval conditions."
+  "session_execution_instruction": "Wait in-session for jobs, continue at milestones; stop only at authorised cap/resource/safety/containment/approval conditions.",
+  "preserved_implementation_failures": [
+    {
+      "assignment": "v3_live_turn_screen_C1_dev00_ep0_attempt001",
+      "cause": "Incorrect route-memory constructor type binding",
+      "policy_steps": 0,
+      "planning_decisions": 0,
+      "erratum": "docs/go2_navigation_capability_live_turn_binding_erratum_2026-09-27.md"
+    }
+  ]
 }
