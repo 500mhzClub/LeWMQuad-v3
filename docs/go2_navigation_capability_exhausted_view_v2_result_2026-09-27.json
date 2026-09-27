@@ -1,0 +1,128 @@
+{
+  "schema": "navigation_capability_exhausted_view_v2_result.v1",
+  "complete": true,
+  "passed": false,
+  "successes": 8,
+  "beacons": 10,
+  "rows": [
+    {
+      "episode_id": "00/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 130.42000000000002,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "01/0",
+      "beacon": true,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "02/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 159.62,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "03/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 463.12,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "04/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 132.72,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "05/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 165.72,
+      "references_retired": 1,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "06/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 160.92000000000002,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "07/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 187.72,
+      "references_retired": 1,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "08/0",
+      "beacon": true,
+      "round_trip": true,
+      "simulated_s": 301.62,
+      "references_retired": 2,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    },
+    {
+      "episode_id": "09/0",
+      "beacon": true,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "references_retired": 0,
+      "pose_loss": false,
+      "contacts": 0,
+      "hard_violations": 0,
+      "operating_violations": 0
+    }
+  ],
+  "wall_s": 7748.79463941796,
+  "source_result": {
+    "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/cohorts/v2_exhausted_view_C1_screen/result.json",
+    "sha256": "5ff7a1e7dff3f68963050c3fb56f47b50f917c22459922f2fd12b25af34aec4c"
+  },
+  "harness_sha256": "83382ac945a192d04c43c264e8fc1dbaf507d1fb9927f75b7b92ce0e79ef0629",
+  "outcome_versions_consumed": 3,
+  "second_episode_check_started": false,
+  "oracle_gate_started": false
+}

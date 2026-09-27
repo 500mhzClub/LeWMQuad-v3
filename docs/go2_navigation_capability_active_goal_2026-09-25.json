@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "exhausted_view_v2_C1_screen_running",
+  "stage": "exhausted_view_v2_complete_remaining_failure_diagnosis",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -60,7 +60,8 @@
     "grid_c3_failure_diagnosis": "All four timeouts diagnosed by minute; all three pose failures reproduced exactly; all five auxiliary starts have fixed map floor 23\u201329 cm above qualified paired depth plane.",
     "paired_floor_v1": "5/10 round trips, 9/10 beacon; zero safety violations; 20/20 startup outputs within frozen2mm tolerance; all five normal recordings exact.",
     "paired_floor_v1_screen": "5/10 round trips, 9/10 beacons; zero safety violations; startup-output contract20/20 and five normal recordings exact",
-    "paired_floor_leg_diagnosis": "01/05/09 return timeouts, 08 outbound timeout, 07 return pose loss; persistent map retained, no return re-exploration; attained-view deadlock chosen for V2"
+    "paired_floor_leg_diagnosis": "01/05/09 return timeouts, 08 outbound timeout, 07 return pose loss; persistent map retained, no return re-exploration; attained-view deadlock chosen for V2",
+    "exhausted_view_v2_screen": "8/10 round trips; 10/10 beacons; no pose loss or safety violations; 05/07/08 newly succeed; 01/09 return timeouts"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -114,7 +115,7 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-27",
-    "stage": "V2 C1 screen launched after leg-specific diagnosis",
+    "stage": "V2 complete8/10; two return timeouts remain",
     "new_harness": "v2_exhausted_view",
     "outcome_iteration_versions_consumed": 3,
     "containment_pending": false,
@@ -125,20 +126,23 @@
     "source_harness_sha256": "83382ac945a192d04c43c264e8fc1dbaf507d1fb9927f75b7b92ce0e79ef0629",
     "projected_total_wall_hours": 94.64219384915768,
     "correctness_version_increment": 0,
-    "projection_excludes_next_iteration": false
+    "projection_excludes_next_iteration": true,
+    "projection_excludes_second_episode_amendment": true
   },
   "current_cohort": {
     "root": "cohorts/v2_exhausted_view_C1_screen",
-    "completed_episodes": 0,
-    "current_episode": "00/0",
-    "complete": false,
+    "completed_episodes": 10,
+    "current_episode": null,
+    "complete": true,
     "launched": true,
     "retries": 0,
     "source_harness_commit": "bad3883a",
     "screen_session_id": 4579,
-    "owner_pid": 659174
+    "owner_pid": 659174,
+    "successes": 8,
+    "passed": false
   },
-  "latest_progress": "docs/go2_navigation_capability_paired_floor_leg_diagnosis_2026-09-27.md",
+  "latest_progress": "docs/go2_navigation_capability_exhausted_view_v2_result_2026-09-27.md",
   "pending_startup_output_contract": {
     "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
     "root": "paired_floor_output_contract_attempt001",
