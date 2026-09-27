@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "live_turn_v3c1_C1_screen_running",
+  "stage": "v3_complete_support_replay_diagnosis",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -126,20 +126,22 @@
     "source_harness_sha256": "0c87318d7e06f43215faaee1b94279ae36ea88b5b95258dad5b591f42900bd1b",
     "projected_total_wall_hours": 104.5755966545478,
     "correctness_version_increment": 0,
-    "projection_excludes_next_iteration": false,
+    "projection_excludes_next_iteration": true,
     "projection_excludes_second_episode_amendment": false
   },
   "current_cohort": {
     "root": "cohorts/v3c1_live_turn_C1_screen",
-    "completed_episodes": 1,
-    "complete": false,
+    "completed_episodes": 10,
+    "complete": true,
     "launched": true,
     "fresh_after_preserved_constructor_failure": true,
     "source_harness_commit": "4f503906",
     "screen_session_id": 98850,
-    "current_episode": "01/0"
+    "current_episode": null,
+    "successes": 8,
+    "passed": false
   },
-  "latest_progress": "docs/go2_navigation_capability_v2_turn_diagnosis_2026-09-27.md",
+  "latest_progress": "docs/go2_navigation_capability_live_turn_v3_result_2026-09-27.md",
   "pending_startup_output_contract": {
     "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
     "root": "paired_floor_output_contract_attempt001",
