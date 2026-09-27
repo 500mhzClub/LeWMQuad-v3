@@ -1,0 +1,1600 @@
+{
+  "schema": "navigation_capability_exhausted_view_v2.v1",
+  "prepared_at": "2026-09-25T11:36:12.796912+01:00",
+  "status": "FROZEN_BEFORE_GENERATION_AND_RUNS",
+  "authority": {
+    "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
+    "sha256": "237fa3ae600c542ee6a3307685a19eb1a4d6c4c330195e3970e9acd666374397",
+    "bytes": 14948
+  },
+  "explicit_start": "User kick-off 25 September 2026; sections 4\u20139 and ordered steps approved.",
+  "output_root": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001",
+  "generator": {
+    "module": "lewm.independent_round_trip_layouts_development",
+    "construction_seed": 2026092501,
+    "maximum_candidates": 10000,
+    "layout_count": 90,
+    "cells": [
+      [
+        -1,
+        -1
+      ],
+      [
+        -1,
+        0
+      ],
+      [
+        -1,
+        1
+      ],
+      [
+        -1,
+        2
+      ],
+      [
+        0,
+        -1
+      ],
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        1,
+        -1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        -1
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        2,
+        2
+      ]
+    ],
+    "pitch_m": 1.3,
+    "wall_thickness_m": 0.08,
+    "wall_height_m": 1.4,
+    "connected_tree_edges": 15,
+    "world_bounds_xy_m": [
+      [
+        -2.1,
+        -2.1
+      ],
+      [
+        3.4,
+        3.4
+      ]
+    ],
+    "friction_mu": 1.0,
+    "appearance_arm": "distinctive",
+    "render_near_m": 0.005,
+    "original_structural_acceptance": "Existing generator: original canonical START-to-farthest route at least 7 cells and at least 2 turns; unique abstract topology and metric embedding.",
+    "duplicate_registry": "Existing explicit pure-source registry through maze-view transfer, plus all eight V4 audit specifications; deduplicate identical named registry entries.",
+    "audit_layouts_excluded": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/go2_decision_headroom_v4_layouts_2026-09-23.json",
+      "sha256": "45da609b86eed739e87eb1c05d7a3869b8b368e7c14403662b8b124db07acf62",
+      "bytes": 302053
+    },
+    "assignment": "First ten accepted layouts dev-tune, next twenty validation, final sixty sealed test; no outcome-dependent sampling.",
+    "physics_seed_base": 2026112500,
+    "appearance_seed_base": 2026112600,
+    "episode_seed_base": 2026093000
+  },
+  "sets": [
+    {
+      "role": "dev_tune",
+      "maze_ids": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "episode_count_per_maze": 2,
+      "episode_seeds": [
+        2026093000,
+        2026093001,
+        2026093002,
+        2026093003,
+        2026093004,
+        2026093005,
+        2026093006,
+        2026093007,
+        2026093008,
+        2026093009,
+        2026093010,
+        2026093011,
+        2026093012,
+        2026093013,
+        2026093014,
+        2026093015,
+        2026093016,
+        2026093017,
+        2026093018,
+        2026093019
+      ]
+    },
+    {
+      "role": "validation",
+      "maze_ids": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29
+      ],
+      "episode_count_per_maze": 2,
+      "episode_seeds": [
+        2026093020,
+        2026093021,
+        2026093022,
+        2026093023,
+        2026093024,
+        2026093025,
+        2026093026,
+        2026093027,
+        2026093028,
+        2026093029,
+        2026093030,
+        2026093031,
+        2026093032,
+        2026093033,
+        2026093034,
+        2026093035,
+        2026093036,
+        2026093037,
+        2026093038,
+        2026093039,
+        2026093040,
+        2026093041,
+        2026093042,
+        2026093043,
+        2026093044,
+        2026093045,
+        2026093046,
+        2026093047,
+        2026093048,
+        2026093049,
+        2026093050,
+        2026093051,
+        2026093052,
+        2026093053,
+        2026093054,
+        2026093055,
+        2026093056,
+        2026093057,
+        2026093058,
+        2026093059
+      ]
+    },
+    {
+      "role": "sealed_test",
+      "maze_ids": [
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61,
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        89
+      ],
+      "episode_count_per_maze": 2,
+      "episode_seeds": [
+        2026093060,
+        2026093061,
+        2026093062,
+        2026093063,
+        2026093064,
+        2026093065,
+        2026093066,
+        2026093067,
+        2026093068,
+        2026093069,
+        2026093070,
+        2026093071,
+        2026093072,
+        2026093073,
+        2026093074,
+        2026093075,
+        2026093076,
+        2026093077,
+        2026093078,
+        2026093079,
+        2026093080,
+        2026093081,
+        2026093082,
+        2026093083,
+        2026093084,
+        2026093085,
+        2026093086,
+        2026093087,
+        2026093088,
+        2026093089,
+        2026093090,
+        2026093091,
+        2026093092,
+        2026093093,
+        2026093094,
+        2026093095,
+        2026093096,
+        2026093097,
+        2026093098,
+        2026093099,
+        2026093100,
+        2026093101,
+        2026093102,
+        2026093103,
+        2026093104,
+        2026093105,
+        2026093106,
+        2026093107,
+        2026093108,
+        2026093109,
+        2026093110,
+        2026093111,
+        2026093112,
+        2026093113,
+        2026093114,
+        2026093115,
+        2026093116,
+        2026093117,
+        2026093118,
+        2026093119,
+        2026093120,
+        2026093121,
+        2026093122,
+        2026093123,
+        2026093124,
+        2026093125,
+        2026093126,
+        2026093127,
+        2026093128,
+        2026093129,
+        2026093130,
+        2026093131,
+        2026093132,
+        2026093133,
+        2026093134,
+        2026093135,
+        2026093136,
+        2026093137,
+        2026093138,
+        2026093139,
+        2026093140,
+        2026093141,
+        2026093142,
+        2026093143,
+        2026093144,
+        2026093145,
+        2026093146,
+        2026093147,
+        2026093148,
+        2026093149,
+        2026093150,
+        2026093151,
+        2026093152,
+        2026093153,
+        2026093154,
+        2026093155,
+        2026093156,
+        2026093157,
+        2026093158,
+        2026093159,
+        2026093160,
+        2026093161,
+        2026093162,
+        2026093163,
+        2026093164,
+        2026093165,
+        2026093166,
+        2026093167,
+        2026093168,
+        2026093169,
+        2026093170,
+        2026093171,
+        2026093172,
+        2026093173,
+        2026093174,
+        2026093175,
+        2026093176,
+        2026093177,
+        2026093178,
+        2026093179
+      ]
+    }
+  ],
+  "sealed_custody": {
+    "new_generation_only": true,
+    "structural_checks_only": true,
+    "no_runtime_or_rendering": true,
+    "no_training_or_selection": true,
+    "contents_never_printed": true,
+    "public_registry": "Opaque hashes, counts and construction/episode seeds only; sealed geometry and episode packets remain under a new sealed_test_* directory.",
+    "test_episode_note": "Kick-off requests episode registration for all sets; reserve two paired test episodes per maze now, with no E1 execution authority."
+  },
+  "episodes": {
+    "minimum_start_beacon_geodesic_m": 5.2,
+    "distance_rule": "Strictly greater on the declared true inflated 20-mm grid.",
+    "minimum_endpoint_wall_clearance_m": 0.5,
+    "selection": "Per-episode seeded permutation of distinct ordered cell-centre home/beacon pairs; first pair satisfying clearance, inflated-grid connectivity/distance and wall-occluded line of sight. Heading uniform in [-pi,pi), drawn after pair acceptance; fixed independent simulation seed per episode.",
+    "visibility": "Require a maze wall to occlude the straight home-to-beacon segment; no rendering or dependence on initial camera heading.",
+    "source_instruction": "Existing mission coordinate instruction in initial body frame; no true map, route or current native pose is supplied. Beacon is the instructed positional destination, as in V4.2; no new visual detector or sensor.",
+    "pairing": "Identical geometry, home, heading, beacon and simulation seed for all controllers; episode IDs ordered global_maze_id/episode_index."
+  },
+  "definitions": {
+    "mission_policy_budget_s": 480.0,
+    "settling_s": 1.5,
+    "observed_arrival_radius_m": 0.02,
+    "physical_arrival_radius_m": 0.04,
+    "arrival_dwell_s": 1.0,
+    "maximum_100ms_arrival_speed_m_s": 0.05,
+    "arrival_requires_zero_requested_commands": true,
+    "arrival_reader": {
+      "path": "scripts/evaluate_continuous_native_arrivals_development.py",
+      "sha256": "52a3b058a31bd16f126d4765128ffb1e45ecad9aff9c8eca6d625cd07640a17d",
+      "bytes": 4368
+    },
+    "round_trip": "Both OUTBOUND and RETURN pass the existing native physical reader; any source failure remains a failure.",
+    "spl": {
+      "inflation_radius_m": 0.46,
+      "additional_clearance_m": 0.005,
+      "grid_resolution_m": 0.02,
+      "shortest_path": "True static wall geometry; shortest grid path under declared inflation, diagonal corner crossing forbidden.",
+      "actual_path": "Native 2-ms base-centre XY path length per leg; failed leg SPL zero; no attempt of return means return SPL zero."
+    },
+    "stall": "Number of planning decisions whose final selected action is hold divided by planning decisions with a selection, separately by mission phase; report overrides separately.",
+    "latency": "Measured wall duration of each complete planning decision with physics paused; median/p95; retain episode wall time.",
+    "safety": {
+      "disallowed_contacts": "Existing native physical-reader contact identity; ordinary support-ground excluded, maze-foot and disallowed body/ground contact included.",
+      "hard_clearance_m": 0.005,
+      "operating_margin_m": 0.02,
+      "all_27_primitives": true,
+      "native_step_ms": 2
+    }
+  },
+  "controllers": {
+    "C0": "Oracle prediction-slot adapter only: six qualified restored 800-ms candidate branches; no map/pose privileges to harness.",
+    "C1": "Existing frozen fitted command-history motion model.",
+    "C2": "Existing reactive selector; no future-motion model.",
+    "C3": {
+      "head": "maze_data",
+      "head_binding": {
+        "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/maze_data_final.pt",
+        "bytes": 3413949,
+        "sha256": "aa853c6f16d7f78e01ade2bb91c1dfceebda2b1a12b0657a223b184fe2005fb8"
+      },
+      "justification": "Existing V4.2 point estimates show lower regret for the maze-data head in both exposure strata; this fixes a choice, not a claim of superiority.",
+      "encoder_binding": {
+        "path": "/home/andrewknowles/.cache/vjepa2_1_vitl_dist_vitG_384.pt",
+        "bytes": 5151198524,
+        "sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6"
+      },
+      "predictor_binding": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_horizon_dense_predictor_v1_attempt_001/action_final.pt",
+        "bytes": 68847259,
+        "sha256": "5d39753fbdc7714c60bf8c24c1757fd0ffbbdfe9485d776d65b5c3caa9fbb7ca"
+      },
+      "provenance": "Training rendering remains unverified."
+    },
+    "C4": {
+      "source": "One new direct supervised predictor under the fixed training plan below; the completed source/interface inventory found no compatible existing direct predictor.",
+      "inventory_evidence": [
+        "Historical supervised rollout uses the older rollout interface; not the current frozen V-JEPA dense 100\u2013800-ms slot.",
+        "Existing DenseVisualMotionReadout requires actual/predicted future features and is not a direct command-conditioned predictor."
+      ],
+      "data_bindings": {
+        "samples.json": {
+          "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/samples.json",
+          "sha256": "8635f38a502a18be51185e49c5d04b92dad6ebf34fc3fc8988c74a9ad0165d1b",
+          "bytes": 10502007
+        },
+        "frame_paths.json": {
+          "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/frame_paths.json",
+          "sha256": "79944dbc6b6c20b01e4fda8df246366e2e89a888af22cbe278957ec064b6a246",
+          "bytes": 1605631
+        },
+        "schedule.json": {
+          "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/schedule.json",
+          "sha256": "acbe22742e800f81b288b6942207de336fecc80c47fd5f17d205db24419445a8",
+          "bytes": 775153
+        },
+        "plan.json": {
+          "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/plan.json",
+          "sha256": "1bd7203cf20f7aea5a9f60ebe6a96a1adc36690af5bf017f400f6df48980ede8",
+          "bytes": 1902
+        }
+      },
+      "training_data": "Exactly the selected maze-data readout training populations: 5,966 original/heading contexts and 2,448 maze contexts, targets at every 100\u2013800-ms horizon. No audit, new dev-tune, validation or sealed data used for fitting.",
+      "input": "Same frozen V-JEPA encoder and native resize/colour/layer-normalisation/spatial-pooling path; causal current/context RGB and past commands, plus candidate applied command tape and requested horizon. No actual future RGB at inference. Recover commands/context from the original training-role recordings only; never impute from new runs.",
+      "architecture": {
+        "token_projection": "1024->32 shared across 192 pooled spatial tokens for each of 3 causal context positions",
+        "flattened_visual_features": 18432,
+        "conditioning_features": 47,
+        "mlp_hidden_width": 896,
+        "hidden_layers": 2,
+        "activation": "GELU",
+        "outputs": 3,
+        "estimated_trainable_parameters": 17397283,
+        "comparison_c3_state_tensor_elements": 18057129,
+        "parameter_ratio_acceptance": [
+          0.8,
+          1.2
+        ]
+      },
+      "optimizer": {
+        "name": "AdamW",
+        "learning_rate": 0.0003,
+        "weight_decay": 0.0001,
+        "gradient_clip": 1.0,
+        "batch_size": 64,
+        "updates": 1760
+      },
+      "seed": 2026092513,
+      "schedule": "32 old/heading plus 32 maze contexts per batch, fixed seeded shuffled cycles; uniform fixed 100\u2013800-ms horizon schedule.",
+      "targets": "Same body-relative dx, dy and yaw, same readout target normalisation.",
+      "checkpoint": "Fixed final update; no outcome-based checkpoint selection or tuning. If a selection diagnostic is run, only existing selection-role data is admissible; new validation mazes are never used.",
+      "gpu_hours_cap": 12.0,
+      "cap_scope": "Includes training feature encoding and fitting; no concurrent harness owner on that GPU.",
+      "provenance": "Historical training rendering remains unverified; no regeneration authorized by this selection."
+    }
+  },
+  "harness_v0": {
+    "definition": "Controller stack exactly as deployed in V4.2 source runs; changes for episode binding, prediction-slot adapters, output accounting and replay recording do not change controller algorithms.",
+    "original_protocol": {
+      "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/docs/go2_decision_headroom_protocol_v42_2026-09-23.json",
+      "sha256": "78b9b7d0ff79d7328cfc0511126e440a9bc467e9fdee08cdaa3378cc2c95acba",
+      "bytes": 67205
+    },
+    "bindings": {
+      "scripts/run_go2_decision_headroom_pilot_development.py": {
+        "sha256": "803497e83d86f2c8d4a4c1db466906e508e97e631f4f7dd52404f6c037d11958",
+        "bytes": 18560
+      },
+      "scripts/run_go2_decision_headroom_source_development.py": {
+        "sha256": "4f2f9336d55b8838c88b60d725f57843bd204d72a0138d8ebbe90de530d43bb6",
+        "bytes": 14699
+      },
+      "scripts/run_go2_decision_headroom_branches_development.py": {
+        "sha256": "2ccf66a39842034ae0148a8a1e575b981333c5602f7153ff665a6ccb264c0d8a",
+        "bytes": 14066
+      },
+      "scripts/qualify_go2_decision_headroom_reference_development.py": {
+        "sha256": "bc61ec6f238edfdf54dbddbcbccab424019933f3178f8f2789956a83ed93c6a7",
+        "bytes": 6363
+      },
+      "lewm/decision_headroom_packet_development.py": {
+        "sha256": "529e3a9c734c439d55b2fba83bd0e28a66a64d9216f66aeb249a987427c546c7",
+        "bytes": 6000
+      },
+      "lewm/decision_headroom_snapshot_development.py": {
+        "sha256": "676e57c7dd8b41a6b5b229d62c8042255761a362bd665f7300c06de42394d54a",
+        "bytes": 5190
+      },
+      "lewm/decision_headroom_reference_development.py": {
+        "sha256": "b9f08da08704893aff9299a9b57ded142dd1831d4edd1289c46cefd5c6a6e81d",
+        "bytes": 12083
+      },
+      "scripts/check_go2_decision_headroom_pilot_development.py": {
+        "sha256": "a9d7543d7d9e3b6dad08ed2c0ce3b871e20e374008e6085213d045d2d173ebcb",
+        "bytes": 6674
+      },
+      "scripts/time_go2_decision_headroom_components_development.py": {
+        "sha256": "94e605e5a2b6674d01f9e970cf26bcd96e1fdaa6728287362566afc0f7718f05",
+        "bytes": 4065
+      },
+      "scripts/read_go2_decision_headroom_pilot_development.py": {
+        "sha256": "fbe01c9822ea58e70feb1b41c72f22f418e052e90eea7d70acd08126d2080799",
+        "bytes": 7622
+      },
+      "scripts/run_go2_dense_horizon_navigation_development.py": {
+        "sha256": "519fdc0b0f1e170bb93b0b98663d5984b404fce840df2f20738b97c3d443e37e",
+        "bytes": 17745
+      },
+      "lewm/dense_horizon_navigation_development.py": {
+        "sha256": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+        "bytes": 10120
+      },
+      "lewm/dense_native_observation_development.py": {
+        "sha256": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+        "bytes": 2638
+      },
+      "scripts/paced_native_session_development.py": {
+        "sha256": "223c65fea3efcc2870f9f470afc954ccb0ff28f3e2501d27f239b3c873321898",
+        "bytes": 2161
+      },
+      "scripts/whole_task_physics_session_development.py": {
+        "sha256": "0a118879d6e890f0b262902eafc90dd7a969128bac5ead43de226ba0b02f48bd",
+        "bytes": 6610
+      },
+      "scripts/rgb_navigation_retention_development.py": {
+        "sha256": "e4f9957bf240047048179f4a46c5ba25e8a0470f6b74fdf821d94fda43aaff99",
+        "bytes": 2667
+      },
+      "lewm/dense_world_model_maze_layouts_development.py": {
+        "sha256": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8",
+        "bytes": 1641
+      },
+      "scripts/continue_go2_decision_headroom_prephysics_development.py": {
+        "sha256": "f23b3c48f19cf0b3849e3ba316bb8cd1980c2e1d839162f206b9d5247be03f68",
+        "bytes": 7508
+      },
+      "scripts/run_go2_decision_headroom_rgb_recheck_development.py": {
+        "sha256": "fe397738ae12410a1560c3a81e40c3af9eef69fc253658723559fc8c6b7494eb",
+        "bytes": 17500
+      },
+      "scripts/in_memory_paired_camera_session_development.py": {
+        "sha256": "dd825899993b68cc98d43421730fd89ae92c07aeecbec48375150315b8aa021e",
+        "bytes": 9935
+      },
+      "scripts/dev_frozen_dense_representation_encoders_v1.py": {
+        "sha256": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2",
+        "bytes": 15564
+      },
+      "scripts/run_go2_sparse_corner_completion_development.py": {
+        "sha256": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484",
+        "bytes": 5942
+      },
+      "lewm/sparse_corner_completion_runtime_development.py": {
+        "sha256": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+        "bytes": 2043
+      },
+      "scripts/run_go2_route_turn_memory_transfer_development.py": {
+        "sha256": "023ff1e54ce2c182822423973259410f2827d17891f327bfb1c9cc0f1ab2669e",
+        "bytes": 6869
+      },
+      "lewm/axis_aligned_fine_connectivity_development.py": {
+        "sha256": "fa5240471920784649e0b6cdf8ac6f55a8bb55c9330970ebcf76c79b40da2d99",
+        "bytes": 2790
+      },
+      "scripts/run_go2_interrupted_route_turn_memory_development.py": {
+        "sha256": "12933ffee8406c8c3fc0551eb5e69949b288a95e3d4a017021cb41eb310b8a10",
+        "bytes": 4784
+      },
+      "lewm/interrupted_route_turn_memory_development.py": {
+        "sha256": "936ef19bc1e2c75aa034521c80c8b440f448a96e906094e8940e88bfeb719a5f",
+        "bytes": 5498
+      },
+      "scripts/run_go2_interrupted_view_replan_development.py": {
+        "sha256": "6d43307d9a795e338ff1dc31410e5e8009db62bbe466b06906b0c6233eeb1a8a",
+        "bytes": 3766
+      },
+      "lewm/interrupted_view_replan_development.py": {
+        "sha256": "d0bd0d77a469a433c301d559dc7e5662565add76fa025de0b27a60c3b84b87a8",
+        "bytes": 2957
+      },
+      "scripts/run_go2_cached_fine_connectivity_development.py": {
+        "sha256": "1a2583300af17cf6d39400d83841f123fbc8e79b0d9bff7811d00f1c8fc4cae3",
+        "bytes": 4621
+      },
+      "scripts/run_go2_current_position_coverage_view_development.py": {
+        "sha256": "e64a8c04fb6e3fbb2180f9b8e25f441249ab081c0f873cc68751dadf50e45446",
+        "bytes": 4228
+      },
+      "lewm/current_position_coverage_view_development.py": {
+        "sha256": "df266825f0e922a1d53ae731da57fb9e2e335fb95bcf7e7eae470537adbb62ec",
+        "bytes": 2435
+      },
+      "scripts/run_go2_coverage_translation_view_development.py": {
+        "sha256": "807187ff52c49fa73bd5196c40ece7090cb64c81acbbed0ad18485c3229e278b",
+        "bytes": 4018
+      },
+      "lewm/coverage_translation_view_development.py": {
+        "sha256": "8e48e798d95c3d3080b0fa7bf213e2ccada1890e4f98a6916bbfcd0c92622275",
+        "bytes": 7934
+      },
+      "scripts/run_go2_view_arc_no_early_release_development.py": {
+        "sha256": "f4c6db4e9a6147097026c5610af017ad1d19c9b35611523c4b3d937b9e74ea5f",
+        "bytes": 4006
+      },
+      "scripts/run_go2_measured_view_arc_recovery_development.py": {
+        "sha256": "f1729ad14d9ef07ad83d04513a05982527e5731ce9806a15d492fe2b9060771e",
+        "bytes": 7352
+      },
+      "lewm/measured_view_arc_recovery_development.py": {
+        "sha256": "7e1b8f4ec4d0d3b861049b581682280cf1f322f4eba677e0784094ae532410de",
+        "bytes": 4831
+      },
+      "scripts/run_go2_publication_repaired_navigation_replication_development.py": {
+        "sha256": "0e5e784b50461c50004f0c5c65232a92aef01ebdf63376520f25853db3b63e82",
+        "bytes": 14179
+      },
+      "lewm/measured_recovery_publication_development.py": {
+        "sha256": "b701f273a86b58a9d7c2eee244d4a6ae4d5d84c567c310a6e18e3bc223e9e039",
+        "bytes": 2344
+      },
+      "scripts/run_go2_nogil_recovery_hold_development.py": {
+        "sha256": "874bd0263732ad5a4612fe380e77d97dae75ef30425df2686a6919fcf2835bec",
+        "bytes": 6567
+      },
+      "lewm/visual_recovery_dispatch_hold_development.py": {
+        "sha256": "15cf34e3be63016b618ab9f9ab8de239d2d5648a86d67dce388cf5e5fa379a9b",
+        "bytes": 3338
+      },
+      "lewm/live_planning_stage_profile_development.py": {
+        "sha256": "d690739b3b2cd2fb8b6d041b151d359b1d3151f441c94bda4e65aa99d3d5995e",
+        "bytes": 1200
+      },
+      "lewm/live_planning_profile_development.py": {
+        "sha256": "7c7ac97289350aec50569e7e3186652a958b22c9004fc80a4c100484251337a3",
+        "bytes": 1856
+      },
+      "lewm/persistent_local_visual_recovery_development.py": {
+        "sha256": "46aa53afd6d9c00bfe80279300804b0aa8bdb9bb1acdccd12fb03d545d42c252",
+        "bytes": 474
+      },
+      "lewm/framewise_visual_support_recovery_development.py": {
+        "sha256": "27316417408522fa44c66e6c5d1fe88de76fb52955f393238881aa9b3ce6000a",
+        "bytes": 2529
+      },
+      "lewm/prefix_aware_terminal_approach_development.py": {
+        "sha256": "e381280cd759609b1348492d81ccbf04f249ef29546a4b6b15c0bde7ce82c63b",
+        "bytes": 2519
+      },
+      "lewm/visual_support_recovery_development.py": {
+        "sha256": "ff664ced1f7d7c614aa228b1c03d0eddc649810b417c0a6dc23c5727791bf206",
+        "bytes": 4521
+      },
+      "lewm/pipeline_age_dispatch_development.py": {
+        "sha256": "9c0e91305d7ad22ba9e01e999ff2b528dc013577db5f1dcdf9e7918e0bda64d0",
+        "bytes": 1747
+      },
+      "lewm/short_pulse_navigation_runtime_development.py": {
+        "sha256": "b13a78260a482c38ebfa1f242db66d982ee0e4f1add13c8bcb0ae24dabc95cdc",
+        "bytes": 6421
+      },
+      "lewm/neural_input_treatment_development.py": {
+        "sha256": "f32abe2d34c41b873ad175dbec97abcae2091d87159d736fec62ee0d624737e5",
+        "bytes": 1385
+      },
+      "lewm/signed_veto_view_recovery_development.py": {
+        "sha256": "122245801f8ec58c54666cf125c19c61dbc600a2e72fb641c75236ea173aeb7b",
+        "bytes": 632
+      },
+      "scripts/run_go2_auxiliary_turn_recovery_development.py": {
+        "sha256": "8e9fdc32495cbe29230c5960b8f4720ef94670734c3ec080661b4c398578c273",
+        "bytes": 4271
+      },
+      "lewm/floor_reacquisition_development.py": {
+        "sha256": "e64929ce351c99a5e41b9dc01bc59978b8368ba138f5226366932d3c6335206e",
+        "bytes": 7710
+      },
+      "scripts/run_go2_planned_stopping_projection_development.py": {
+        "sha256": "92b795dd674c7240742d0c2ceb495852d48f5e7fc1a801a33fde303099124e2d",
+        "bytes": 3800
+      },
+      "lewm/planned_stopping_projection_development.py": {
+        "sha256": "ef4f136f799d279cdbf93b3db29affa4d2968566891060fa1f6e6c6b3f10fe95",
+        "bytes": 4633
+      },
+      "scripts/run_go2_committed_camera_view_development.py": {
+        "sha256": "178f04faec59482f7535b47857c877e09c9b7d000552e7ffb072f8d3d1a4af98",
+        "bytes": 4440
+      },
+      "lewm/combined_motion_source_development.py": {
+        "sha256": "48d25137c9b53897b52569172a59ba132070cc53f9f43484ab8b312806ad37af",
+        "bytes": 2086
+      },
+      "lewm/committed_camera_frontier_view_development.py": {
+        "sha256": "1ddb7097fe56b0fed86b233202bdc0a9753ec6936bc034afea275613bd2ff011",
+        "bytes": 3124
+      },
+      "lewm/camera_frontier_visits_development.py": {
+        "sha256": "7c1798ebaf8681951f5fd52f5ce93f44801b07cd9d95642b582ea9b87608fb35",
+        "bytes": 7685
+      },
+      "scripts/run_go2_contact_score_ablation_development.py": {
+        "sha256": "e2ed0f04b2e8175647d09a51e8c5c8669687fdd7aa6a16188ea9654865ea6f24",
+        "bytes": 4325
+      },
+      "lewm/contact_score_ablation_development.py": {
+        "sha256": "0a5d5c8df9f3174fc6fc65e975d6a313a7e36923d06ebd226fb8c9a1f0936780",
+        "bytes": 1756
+      },
+      "scripts/run_go2_pose_command_xy_ablation_development.py": {
+        "sha256": "d42419a630a69d94d526372231abad55f2b26941d3028441680b6d957f57956f",
+        "bytes": 4720
+      },
+      "lewm/pose_command_xy_control_development.py": {
+        "sha256": "9eb73ab0972bb3f0d160864eceb2fbaa963b3061a43e3d529c1c9294c9643996",
+        "bytes": 4317
+      },
+      "scripts/run_go2_routing_memory_scope_development.py": {
+        "sha256": "8bde0b310c851997939f4221254670064265093a937436094540df29409efb17",
+        "bytes": 4748
+      },
+      "lewm/current_pair_routing_memory_development.py": {
+        "sha256": "32954a8a46314338f0ae90360b3524e4e3afb734e0b0941e59254b5378bdba1b",
+        "bytes": 4422
+      },
+      "scripts/run_go2_hold_relative_heading_recovery_development.py": {
+        "sha256": "21e69d547a01be7fd09134d3c564e8125882a26b23cb5de13c05e1c793e1cb4f",
+        "bytes": 4049
+      },
+      "lewm/hold_relative_heading_recovery_development.py": {
+        "sha256": "8bfa928e99a78b1b242a83056ad389311f2795f5967e1b62cd3b51a6af446c89",
+        "bytes": 3176
+      },
+      "scripts/run_go2_nearby_panorama_comparison_development.py": {
+        "sha256": "421d378cf70c38634de7aab396b573bd4e73fe159bc05ed974498d812b1ef309",
+        "bytes": 6019
+      },
+      "lewm/nearby_panorama_directed_view_development.py": {
+        "sha256": "9895c56a8c4541955ed79c9061aaef9f6c35e91935b09abb3e76caa054b1c836",
+        "bytes": 3167
+      },
+      "scripts/run_go2_survey_reposition_native_development.py": {
+        "sha256": "71d24987b28888218b663cb5cbaa2435d3084b2d751306447b225d35af044d66",
+        "bytes": 4781
+      },
+      "lewm/survey_clearance_reposition_development.py": {
+        "sha256": "57165d317eb04243fe8b8049ed50764ff9852f6d40e92ffd9c26ba1d8ce33944",
+        "bytes": 2697
+      },
+      "lewm/no_early_heading_release_development.py": {
+        "sha256": "c3e776795e6288bfe6b31b93d8c9ead84c0ef91c68bcb1fd7358a54d11d71f64",
+        "bytes": 1164
+      },
+      "lewm/full_reserve_heading_release_development.py": {
+        "sha256": "909bf94eeb45c5f91842a92e05731565bdd965e2d3ef7f349c64aeb18b3ecdff",
+        "bytes": 2790
+      },
+      "lewm/matched_motion_residual_runtime_development.py": {
+        "sha256": "f0bd5e6bc4556a8d919e447207746cbcfde1124faa6572208c8bcc1e82a9d71c",
+        "bytes": 2439
+      },
+      "lewm/arrival_entry_terminal_priority_development.py": {
+        "sha256": "9f62525dc63c41963d0e2ecbad5ce037ae94b59a8357e409e6dd73f4d1dd01d3",
+        "bytes": 2235
+      },
+      "lewm/cached_fine_connectivity_development.py": {
+        "sha256": "74f66142fb91f057fce037fd25a46daa51437cb410351ab4736728955c9f13c2",
+        "bytes": 4852
+      },
+      "lewm/cached_fine_goal_route_development.py": {
+        "sha256": "e98704d701dba3579d0a1173f6950f7536c64bb30859010fb949a920c2d66bbb",
+        "bytes": 1407
+      },
+      "lewm/hold_relative_clearance_recovery_development.py": {
+        "sha256": "154984396da44bbd05751369b54775a3dda19c49d3a6eaabe3befa43039e6400",
+        "bytes": 2701
+      },
+      "lewm/terminal_translation_pulse_development.py": {
+        "sha256": "a7caae5459107c3776acd477b0d38c35db82102da9bb6c695c76b6cee5df69a0",
+        "bytes": 5670
+      },
+      "lewm/predictive_arrival_hold_development.py": {
+        "sha256": "b6d632f5a2c0e315b6e6da586199aced6fedef80466b4eebc87e605bf537ba9a",
+        "bytes": 2360
+      },
+      "lewm/fine_goal_route_development.py": {
+        "sha256": "82b08774bc0f0c33dc770422ece71e1e9a4ed0e655ac559f6027ff1275a813be",
+        "bytes": 3766
+      },
+      "lewm/terminal_position_priority_development.py": {
+        "sha256": "9a010ca496af4c3ef203aa285770ab443c9799abfca76c882bd396c77ad43237",
+        "bytes": 3002
+      },
+      "lewm/clearance_preferred_route_development.py": {
+        "sha256": "a772c6510364f3ee910a483ebb91def2bdc0c746436a6480675494ac5328e096",
+        "bytes": 3591
+      },
+      "lewm/clearance_turn_recovery_development.py": {
+        "sha256": "7906735616b98d755cf93b27854e902c3fb26830f13313290590f5dcf386e9d0",
+        "bytes": 8058
+      },
+      "lewm/initial_panorama_development.py": {
+        "sha256": "2156c544ed2f36216e42130fcc6b0a85237f87b1bde55dcffdd7cd4df39efe79",
+        "bytes": 2540
+      },
+      "lewm/recovery_limited_initial_survey_development.py": {
+        "sha256": "1fa5b5ac771dd41a51d8216a2a33c9281c81e7dc31771b1633f0149c70e58806",
+        "bytes": 2137
+      },
+      "lewm/closed_loop_motion_residual_development.py": {
+        "sha256": "97ed2f008a5b984e969f124da880894a74aecb3a2e92d29a7205505663361997",
+        "bytes": 3135
+      },
+      "lewm/clearance_lookahead_development.py": {
+        "sha256": "45c0911f4c7efb1b02ec982a245558b2912f70a2ebef3f64592684f5ed8aa207",
+        "bytes": 2785
+      },
+      "lewm/memory_forecast_clearance_development.py": {
+        "sha256": "3bf94dd8bb69f3bc312a03252ecb2f0e45b4596fbf728189193a4ca949633cca",
+        "bytes": 4229
+      },
+      "lewm/frontier_visit_runtime_development.py": {
+        "sha256": "898932c536f340554ae2c1dbc1ea7a4f0a20157887fa790097f37ecd21b04b5a",
+        "bytes": 6280
+      },
+      "lewm/fine_stored_obstacle_routing_development.py": {
+        "sha256": "9042e9ee6b805b190f3ddf3a9c74927a9b05a6cb07e1a9e55c05596acc947301",
+        "bytes": 3660
+      },
+      "lewm/continuous_start_connector_development.py": {
+        "sha256": "a399ba3610bf7c8a849f19bc557f471edd71f958dadc32c463ee562ec25624a2",
+        "bytes": 893
+      },
+      "lewm/waypoint_alignment_planning_development.py": {
+        "sha256": "3ff9f9d2182c4a98906951ab573c0b217d045fd6459a7d429af74e0ae46fc76d",
+        "bytes": 2230
+      },
+      "lewm/partial_height_round_trip_development.py": {
+        "sha256": "d97ac509a425dd00418d8802e9d56e70d7b38359710d27101dd5a5c68a37c84d",
+        "bytes": 1742
+      },
+      "lewm/fine_obstacle_round_trip_development.py": {
+        "sha256": "5b814a1c5c09dd7200d6365e6e93f39eb8ff1b14007ab4e813e760372b225ea1",
+        "bytes": 2628
+      },
+      "lewm/veto_view_round_trip_development.py": {
+        "sha256": "1590ce5ad303fbfda9760c33196a392e3caa84b219c08616153ee49e9a3d71a1",
+        "bytes": 2570
+      },
+      "lewm/stopping_margin_dispatch_development.py": {
+        "sha256": "38bef757a98bbfceb2045c086dc8b0dd098b5e40a98a1a92d912b792b84f618c",
+        "bytes": 1707
+      },
+      "lewm/process_registered_round_trip_development.py": {
+        "sha256": "75c8d43de6545862f2f506167dfec010e96b69bb84e4848b3f0217a1817c100e",
+        "bytes": 1682
+      },
+      "lewm/continuous_round_trip_runtime_development.py": {
+        "sha256": "3f6b4312bc71e5ed1ae98aead16213b7017e995d8da09a63236b5a5e9c2e6177",
+        "bytes": 4874
+      },
+      "lewm/continuous_commitment_runtime_development.py": {
+        "sha256": "705269f64407782066324278707560d3dc23867c8cb35e3e278f30847c90d5ee",
+        "bytes": 1769
+      },
+      "lewm/independent_depth_process_development.py": {
+        "sha256": "e1b5c0dec31e3ee03d1010d5d292f95d480632d74f29c41bacf12393a2fdbbdb",
+        "bytes": 1254
+      },
+      "lewm/independent_depth_runtime_development.py": {
+        "sha256": "e893888e0dc24cec1055584d3a08819fcb44efd4d691482a9e1fd79fff197c34",
+        "bytes": 1557
+      },
+      "lewm/measured_latency_simulation_development.py": {
+        "sha256": "e8f605e83e5e08788940871cfbfcf35d82da113dd0a96c4be320b5a9b8618a77",
+        "bytes": 3548
+      },
+      "lewm/process_mapped_runtime_development.py": {
+        "sha256": "12157a39bc97e0c1a87650cc4d595268b3d0b2d19a86c1f0866a83dad704bdb8",
+        "bytes": 4694
+      },
+      "lewm/auxiliary_only_turn_recovery_development.py": {
+        "sha256": "d1aa80ecca853b2cc56a6972b8110e55544a3b02294b2b586a55d7ca856ea0b4",
+        "bytes": 3610
+      },
+      "lewm/paced_multirate_controller_development.py": {
+        "sha256": "710c103dce529a30cf1f993ea271950f7e04d96bd0b5a55f3aa6d5213ac8f757",
+        "bytes": 15065
+      },
+      "lewm/sparse_corner_comparison_development.py": {
+        "sha256": "b933808886125849a230f95ec02f0b6bc5dfb07c942fc2cc8c48ccfeab4ff175",
+        "bytes": 1161
+      },
+      "lewm/persistent_visual_baselines_development.py": {
+        "sha256": "6c5856f5d00b4b5ee0367ab23e354fdbc5945bddd5426467ae7a84a3bb55b1a5",
+        "bytes": 3263
+      },
+      "scripts/qualify_go2_source_decision_packet_development.py": {
+        "sha256": "8507c6e01e040618908ba69beae90ae74501e73e949332f0df2c52681c398a37",
+        "bytes": 6851
+      },
+      "scripts/qualify_go2_articulated_clearance_development.py": {
+        "sha256": "b2e724af577c4fe796651ec4a5621e37392bbd2c4b3e1ff01397adaf67670b8c",
+        "bytes": 6200
+      },
+      "scripts/run_go2_remaining_phase1_qualification_development.py": {
+        "sha256": "eb4628dfd5a534279381aeefad80df1e9947e67efe64d2dcabe0b5b2597f6944",
+        "bytes": 11396
+      },
+      "lewm/articulated_collision_geometry_development.py": {
+        "sha256": "abd59e2960ae59a496904e39bbb16f5827b0ec9e57ac7b1da11d9a4947c6c61f",
+        "bytes": 7670
+      },
+      "lewm/native_collision_grouping_development.py": {
+        "sha256": "0128eeb5838c316c077450165c90f95a82ce144ea8fd37dd9f4d1a4d58d0a8d6",
+        "bytes": 1363
+      },
+      "lewm/decision_headroom_v4_development.py": {
+        "sha256": "4787ee960b3ef67daa98075642946897559a04dc4c075e2a698e78318c04d12b",
+        "bytes": 24073
+      },
+      "lewm/decision_headroom_v4_collection_development.py": {
+        "sha256": "c40982715a7e39b6eda4013b76f3f9790f01047f24d8c82ef5c17b1c026a1520",
+        "bytes": 4408
+      },
+      "lewm/decision_headroom_v4_layout_runtime_development.py": {
+        "sha256": "2a810020a787861ceb91c5695d9f95b0bf8d59166cabb90d52381f33af7c93a3",
+        "bytes": 631
+      },
+      "scripts/freeze_go2_headroom_v4_layouts_development.py": {
+        "sha256": "cc42bfdf4f6420e759edc9b34b26d7c8b9e588a50ee224c075545424b529094b",
+        "bytes": 2372
+      },
+      "scripts/check_go2_headroom_v4_adapters_development.py": {
+        "sha256": "e404363a410e6f800e8571e38c678bee2c570687212b194d2fec6b6f932b8d1d",
+        "bytes": 5687
+      },
+      "scripts/check_go2_headroom_v4_final_development.py": {
+        "sha256": "a574b1f76e101432daf286429697d060fa0be84ce387daf6a3196eccdb9051d7",
+        "bytes": 3066
+      },
+      "scripts/run_go2_headroom_v4_development.py": {
+        "sha256": "a0076211745e1f1bce83c560912429857c14c20634d2eeae21ef2405f4822884",
+        "bytes": 4446
+      },
+      "scripts/run_go2_headroom_v4_source_development.py": {
+        "sha256": "353506316e7b0754ba293deaf39bc0037e3e2ba63c9e7e0dd70046e72d934893",
+        "bytes": 13691
+      },
+      "scripts/run_go2_headroom_v4_branches_development.py": {
+        "sha256": "b9c853ebf72c1618826b9ceb231f6f854a5a81ca9c85b06d69651adc1532d696",
+        "bytes": 13421
+      },
+      "scripts/read_go2_headroom_v4_development.py": {
+        "sha256": "22171a92b60dbaa71b31370b32cf7f5d1923f723a11a0e0e3cd7c7eef74e2bf2",
+        "bytes": 9741
+      },
+      "docs/go2_decision_headroom_protocol_v4_2026-09-23.md": {
+        "sha256": "5bdb260a93c7ed91e504a50a18a79f07c597c94b422d85ded6329230e21cd6bd",
+        "bytes": 25992
+      },
+      "docs/go2_decision_headroom_v4_layouts_2026-09-23.json": {
+        "sha256": "45da609b86eed739e87eb1c05d7a3869b8b368e7c14403662b8b124db07acf62",
+        "bytes": 302053
+      },
+      "docs/go2_decision_headroom_v4_component_checks_2026-09-23.json": {
+        "sha256": "cf5507c9fd1d09f5e490ffc4582df7e6fa79b697c9f4531b16707563099a933d",
+        "bytes": 5177
+      },
+      "docs/go2_decision_headroom_v4_final_checks_2026-09-23.json": {
+        "sha256": "82d3131b73b47c8fdda129e10aec1346892f942fc685b6d276eb680a02c50ef9",
+        "bytes": 2661
+      },
+      "docs/go2_decision_headroom_v4_adapter_checks_2026-09-23.json": {
+        "sha256": "59f5f24cd23a1a04214d0a37c7b2d80a4d5858817301223bcf21354e792ab366",
+        "bytes": 2377
+      },
+      "docs/go2_decision_headroom_v4_adapter_check_initial_failure_2026-09-23.json": {
+        "sha256": "a4047a6ac497be37945d739717ce4002dd3e3ef9e8c132aa155fd5b5ffce69fe",
+        "bytes": 348
+      },
+      "docs/go2_remaining_phase1_provenance_addendum_2026-09-23.md": {
+        "sha256": "fa4cb00ee137b6f390fd7963a6414439e0a07680167a1d446ba015dbbae43c2a",
+        "bytes": 7046
+      },
+      "docs/go2_stage_a_holds_exploratory_2026-09-23.md": {
+        "sha256": "947424ea078cdde3a37fc5d47057b9258dd09103f95a10c0a903553e3f453893",
+        "bytes": 4343
+      },
+      "docs/go2_decision_headroom_reference_sanity_v1_2026-09-23.json": {
+        "sha256": "1503fd7360cdf527bd2ff2f26422ea68557ff1e5e1c5755a8d00435b89914964",
+        "bytes": 22188
+      },
+      "docs/go2_decision_headroom_clearance_boundary_result_v2_2026-09-23.json": {
+        "sha256": "8206245a0f47eda5e396295bb673428f876d8fd907276f1f6c8e6570c761f961",
+        "bytes": 15216
+      },
+      "lewm/maze_view_training_layouts_development.py": {
+        "sha256": "0e5df128e855f0b58f6ee1590ca9cb2558cebd8bf84522b7046aec9f7bbf99e8",
+        "bytes": 3439
+      },
+      "lewm/maze_view_transfer_layouts_development.py": {
+        "sha256": "2fcfcfe30ac57c7b7356bba5f94bfe52d8f612bddb8261bb7a0bca45e3747c39",
+        "bytes": 2563
+      },
+      "lewm/independent_round_trip_layouts_development.py": {
+        "sha256": "138efde8fd944c66d47eb66b43a6867a115ad0f561201439e86ff8bef3e97708",
+        "bytes": 8517
+      },
+      "scripts/live_depth_noise_session_development.py": {
+        "sha256": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+        "bytes": 3792
+      },
+      "scripts/compact_depth_retention_session_development.py": {
+        "sha256": "32942d2559ae52ef22f471cb7c8cdd726e421a46594d069fbe813feb466c86df",
+        "bytes": 1573
+      },
+      "lewm/decision_headroom_v41_development.py": {
+        "sha256": "19fbdf48a261870748b23a7ab1bbc40349b5d8cf29a43c2dd18632780bbf61b6",
+        "bytes": 7482
+      },
+      "scripts/run_go2_headroom_v41_development.py": {
+        "sha256": "a9a869e83fdc8ad6a98911e8a0b037f083862fa12c994427a771b02925e13878",
+        "bytes": 5398
+      },
+      "scripts/run_go2_headroom_v41_source_development.py": {
+        "sha256": "96a4353d71224ece3900f6928cfe3bccca2ddfcd83b06010cab696f012302e4a",
+        "bytes": 13693
+      },
+      "scripts/run_go2_headroom_v41_branches_development.py": {
+        "sha256": "8a4859a347d48e6e5a09a2450e9ba92bbf23bf376e03e1f685f0a8e842aa9ca4",
+        "bytes": 15471
+      },
+      "scripts/read_go2_headroom_v41_development.py": {
+        "sha256": "e3dc19a6e7ee29675b873ad3dc792133fb6c9df15a4429037e3db18cf4bbcff9",
+        "bytes": 13475
+      },
+      "scripts/check_go2_headroom_v41_development.py": {
+        "sha256": "12b85691eecec4fd43fb289c3af5a31e14eb0fb25d7c05a394fdcc3445d54ffc",
+        "bytes": 5718
+      },
+      "scripts/check_go2_headroom_historical_rerender_v41_development.py": {
+        "sha256": "1606ba3003ad5dd6d7c14b81cbb6c13595899831154965805630def5d92abdaa",
+        "bytes": 8300
+      },
+      "lewm/decision_headroom_json_v42_development.py": {
+        "sha256": "7a2fa4b7cc83cb8a34f5b12b167c00bbda2acd423b38d060cf6c6df973a6a599",
+        "bytes": 7615
+      },
+      "scripts/run_go2_headroom_v42_development.py": {
+        "sha256": "68768d74db55933d8c8e438c8463fe1c990c8cc6428da384177ec0f053947fce",
+        "bytes": 6496
+      },
+      "scripts/run_go2_headroom_v42_source_development.py": {
+        "sha256": "fabaa26ab6190e3774c7b883762dea54c5f1456d206910b613315f3027281ad3",
+        "bytes": 13693
+      },
+      "scripts/run_go2_headroom_v42_branches_development.py": {
+        "sha256": "bf5607357bd345ec086829fd8ac974d98278cda11b280f52064617a3e7942536",
+        "bytes": 15578
+      },
+      "scripts/read_go2_headroom_v42_development.py": {
+        "sha256": "8d942911ba63fc87db05cbb51c934b9d9e61677f2ba51ee69828093193723d03",
+        "bytes": 13475
+      },
+      "scripts/check_go2_headroom_v42_owner_development.py": {
+        "sha256": "632795e8295e2c3e291c5527dce3e252979dbe42b25eccdc0be6fe222049d78c",
+        "bytes": 9493
+      },
+      "scripts/check_go2_headroom_historical_rerender_v42_development.py": {
+        "sha256": "4cdac35aa4ee6e4f55c543b94112e4eb66a51829298da80669d63bf54075cfc4",
+        "bytes": 8397
+      },
+      "scripts/freeze_go2_headroom_v42_development.py": {
+        "sha256": "75dce61533cd5c9757eab7123c824d8a9f57680422cbca98b067ea2e019fb0c2",
+        "bytes": 4532
+      }
+    },
+    "shared_model_and_sensor_bindings": {
+      "vjepa_checkpoint": {
+        "path": "/home/andrewknowles/.cache/vjepa2_1_vitl_dist_vitG_384.pt",
+        "bytes": 5151198524,
+        "sha256": "7ea9b7cb4a75d10644a8a8d42cff9e177b10dca8f02173f0eaf2b0bed82838c6"
+      },
+      "gait_checkpoint": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/model_500.pt",
+        "bytes": 4547691,
+        "sha256": "e0a20545cdccac6b60a4587c96d2de9a169dfacf520b178f51709596a6f789ff"
+      },
+      "gait_config": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/models/tier_a_go2_locomotion/20260516_contract_ppo/cfgs.pkl",
+        "bytes": 2409,
+        "sha256": "bc3e68c18252475199e57b30c8ac49d813e3c784a3983e0e8b1a762490dde24f"
+      },
+      "predictor": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_horizon_dense_predictor_v1_attempt_001/action_final.pt",
+        "bytes": 68847259,
+        "sha256": "5d39753fbdc7714c60bf8c24c1757fd0ffbbdfe9485d776d65b5c3caa9fbb7ca"
+      },
+      "readout_old": {
+        "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/old_data_final.pt",
+        "bytes": 3413935,
+        "sha256": "97b3972cf6e1283d8825e7e900c0d504ef88ce3f495690d8b8ac284cee2fb19f"
+      },
+      "readout_maze": {
+        "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_maze_view_readout_v1_attempt_003/maze_data_final.pt",
+        "bytes": 3413949,
+        "sha256": "aa853c6f16d7f78e01ade2bb91c1dfceebda2b1a12b0657a223b184fe2005fb8"
+      },
+      "normalization": {
+        "path": "/home/andrewknowles/.cache/lewm_go2_temporal_v03/proprio_v1/proprio_norm_stats.json",
+        "bytes": 2329,
+        "sha256": "9380b4c6d9b59099e43bba9898e1417c273f88075d1ed122401cbb3272e18f94"
+      },
+      "command_history_fit": {
+        "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_short_pulse_command_control_v1_attempt_001/command_only.npz",
+        "bytes": 31698,
+        "sha256": "46a74b8473d35b66b28c6bb6361efe0a70dbf0b57a0c0c98d055c962c0f79da2"
+      },
+      "urdf": {
+        "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/genesis_rocm_0_4_6_v1/lib/python3.12/site-packages/genesis/assets/urdf/go2/urdf/go2.urdf",
+        "bytes": 24170,
+        "sha256": "4f306754e9b3d73930ac8362aa456eb8912f2e886665618e7eced9627c1704a4"
+      },
+      "platform": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_platform_manifest.yaml",
+        "bytes": 4613,
+        "sha256": "5ac4a08b17cfaa3552f3c3ccd45930b8a929ac5ca31eb1f9440923f037c78189"
+      },
+      "primitive_registry": {
+        "path": "/home/andrewknowles/Workspace/LeWMQuad-v3/config/go2_primitive_registry.yaml",
+        "bytes": 2454,
+        "sha256": "cb83acf61d0e958b90d5dcd98e2ad11c630426bf480bd948aeb77242d84293f8"
+      }
+    },
+    "candidate_bank_unchanged": true,
+    "physics_backend": "cpu",
+    "episode_policy_step_ms": 20,
+    "camera_cadence_ms": 100,
+    "planning_cadence_ms": 400,
+    "committed_prefix_ms": 300,
+    "forecast_horizon_ms": 800,
+    "depth_noise_sigma_mm": 2
+  },
+  "oracle_check": {
+    "episode": "dev_tune/00/0",
+    "executed_prefix_tolerances": {
+      "position_m": 0.001,
+      "yaw_degrees": 0.1
+    },
+    "requirements": "Compare every actually executed candidate prefix against its branch prediction under the matching command tape, including the committed prefix and post-dispatch segment. Physical branch work must restore all source session, recorder and RNG state and leave live controller time unadvanced."
+  },
+  "throughput": {
+    "pilot_episode": "dev_tune/00/0",
+    "controllers": [
+      "C0",
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "pilot_C4": "Run after the fixed C4 instance is ready; early C0 check serves as its serial pilot, without an unlogged repeat.",
+    "concurrency": [
+      2,
+      4
+    ],
+    "equivalence": "Identical decisions and native trajectories on recorded episodes, same device, before using each optimisation; no implicit V4 single-owner restriction.",
+    "pipeline_test_video": "One pilot episode; deterministic replay, same decision/pose fidelity checks; clearly labelled pipeline test, excluded from capability statistics.",
+    "projection": "Measured per-controller episode and video costs, conservative full-budget source duration, declared harness/gate counts; reduce validation to one episode per maze first if >120 hours; if still over, stop. No post-result trimming."
+  },
+  "harness_iteration": {
+    "maximum_versions": 6,
+    "version_ids": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5
+    ],
+    "initial_C1_episodes": "First episode of each dev-tune maze.",
+    "C1_trigger_successes": 9,
+    "C0_gate_successes": 19,
+    "C0_gate_episodes": 20,
+    "zero_disallowed_contacts": true,
+    "zero_hard_violations": true,
+    "one_change_per_version": true,
+    "allowed_changes": "Brief section 5 only; shared identically by every controller.",
+    "failure_taxonomy": [
+      "observation/view restriction",
+      "memory clearance",
+      "stopping projection",
+      "blocked recovery",
+      "pose loss",
+      "invalid/unreachable target",
+      "contact/hard violation",
+      "budget exhaustion despite progress"
+    ]
+  },
+  "qualification": {
+    "controllers": [
+      "C1",
+      "C2",
+      "C3",
+      "C4"
+    ],
+    "validation_episodes": 40,
+    "C0_validation": "Lowest ten episode IDs, fixed before outcomes.",
+    "criterion": {
+      "round_trip_success": 0.8,
+      "disallowed_contacts": 0,
+      "classification": "point estimate"
+    },
+    "inference": {
+      "unit": "maze average across its paired episodes",
+      "bootstrap": "paired resampling of maze IDs within validation",
+      "replicates": 10000,
+      "seed": 2026092519,
+      "confidence": 0.95,
+      "report_raw_counts": true
+    },
+    "label": "Capability qualification, not paper benchmark results."
+  },
+  "videos": {
+    "selection": "Lowest-ID common successful validation episode; else lowest success per controller; else lowest episode labelled failure. Fixed before viewing.",
+    "replay_position_tolerance_m": 0.001,
+    "replay_yaw_tolerance_degrees": 0.1,
+    "identical_decisions": true,
+    "format": "1920x1080,30fps,H.264,yuv420p",
+    "accelerated_cut": "4x with visible label for missions >120 simulated seconds",
+    "panels": [
+      "native-cadence actual received RGB",
+      "separate-pass fixed-offset smoothed chase camera",
+      "true-maze minimap with both legs",
+      "HUD with capability rate and episode/harness/controller identity"
+    ],
+    "contact_sheets": true,
+    "metadata_hashes": true,
+    "composite_if_common_episode": true
+  },
+  "caps": {
+    "maximum_versions": 6,
+    "runs_and_videos_wall_hours": 160,
+    "C4_gpu_hours": 12,
+    "per_device_vram_reserve_bytes": 2147483648,
+    "recovery_reserve_bytes": 12884901888,
+    "workspace_reserve_bytes": 4294967296,
+    "no_silent_retries": true,
+    "no_existing_artifact_retirement": true
+  },
+  "source_bindings": {
+    "lewm/independent_round_trip_layouts_development.py": {
+      "path": "lewm/independent_round_trip_layouts_development.py",
+      "sha256": "138efde8fd944c66d47eb66b43a6867a115ad0f561201439e86ff8bef3e97708",
+      "bytes": 8517
+    },
+    "lewm/novel_maze_round_trip_scene_development.py": {
+      "path": "lewm/novel_maze_round_trip_scene_development.py",
+      "sha256": "7077e6d16862e87f5eb7312116c545ed98b02f401f53863e2da0808477cc654a",
+      "bytes": 5646
+    },
+    "lewm/independent_layout_identity_development.py": {
+      "path": "lewm/independent_layout_identity_development.py",
+      "sha256": "ea7c408060013579df11c2cc3a9e077c19e531719287f6fe63a8e4c016363810",
+      "bytes": 6448
+    },
+    "scripts/freeze_go2_headroom_v4_layouts_development.py": {
+      "path": "scripts/freeze_go2_headroom_v4_layouts_development.py",
+      "sha256": "cc42bfdf4f6420e759edc9b34b26d7c8b9e588a50ee224c075545424b529094b",
+      "bytes": 2372
+    },
+    "scripts/evaluate_continuous_native_arrivals_development.py": {
+      "path": "scripts/evaluate_continuous_native_arrivals_development.py",
+      "sha256": "52a3b058a31bd16f126d4765128ffb1e45ecad9aff9c8eca6d625cd07640a17d",
+      "bytes": 4368
+    },
+    "lewm/dense_horizon_navigation_development.py": {
+      "path": "lewm/dense_horizon_navigation_development.py",
+      "sha256": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+      "bytes": 10120
+    },
+    "lewm/dense_native_observation_development.py": {
+      "path": "lewm/dense_native_observation_development.py",
+      "sha256": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+      "bytes": 2638
+    },
+    "lewm/dense_visual_motion_readout_development.py": {
+      "path": "lewm/dense_visual_motion_readout_development.py",
+      "sha256": "4325ff97dfad3b75648896940089347509e9dad773dfdef0cd841c522383dba5",
+      "bytes": 1588
+    },
+    "scripts/train_go2_maze_view_readout_development.py": {
+      "path": "scripts/train_go2_maze_view_readout_development.py",
+      "sha256": "390bfae2caba4977d88cb9abd618549a592210e982f426d73e7b6b398bb7259a",
+      "bytes": 8855
+    }
+  },
+  "new_runs_before_freeze": 0,
+  "stop": "Stop at brief limits, failed six-version gate, or completion of capability report/videos/E1 proposal. E1 execution, moving obstacles, RL, C3 fitting, sensors and hardware remain unauthorized.",
+  "predecessor": {
+    "path": "docs/go2_navigation_capability_paired_floor_v1_2026-09-26.json",
+    "sha256": "1b8cba2cc382dd70a64258455f45ee3aabf367179bc68e9f81b237bf87924b2d",
+    "bytes": 58596
+  },
+  "first_corrected_C0_assignment": "v2_exhausted_view_gate_C0_dev00_ep0_attempt001",
+  "correction": {
+    "harness": "v2_exhausted_view",
+    "outcome_iteration_versions_consumed": 3,
+    "outcome_version_increment": 1,
+    "correctness_version_increment": 0,
+    "single_change": "Retire and consume an attained measured-view recovery reference after one second of continuous accepted-pose alignment without inherited strong-support release.",
+    "alignment_tolerance_rad": 0.1,
+    "dwell_ns": 1000000000,
+    "maximum_observation_gap_ns": 100000000,
+    "rationale": "05 return and 08 outbound spend 306.4/318.8 seconds holding; 569/578 recovery holds are already aligned within 0.1 rad with a clearance-eligible turn.",
+    "expected_effect": "End futile attained-reference holding and permit ordinary routing; no claim that other recorded turn-memory or pose-loss mechanisms are fixed.",
+    "unchanged": [
+      "tracker estimation and pose admission",
+      "sensors and feature selection",
+      "models",
+      "candidate bank",
+      "mapping",
+      "routing cost",
+      "clearance and stopping rules",
+      "dispatch guards",
+      "480-second mission budget",
+      "arrival rules"
+    ],
+    "predecessor_containment_passed": true,
+    "assignments": {
+      "screen": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          9,
+          0
+        ]
+      ],
+      "gate": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ]
+      ]
+    },
+    "gate_condition": "C1 >=9/10, zero contacts/hard violations and all sampled hard clearance qualified; then unchanged C0 >=19/20 gate.",
+    "safety": "Any disallowed contact or hard violation disqualifies this version; preserve failures, no automatic retries."
+  },
+  "retention": {
+    "C1": "hashes_only",
+    "C2": "hashes_only",
+    "C3": "hashes_only",
+    "C4": "hashes_only",
+    "C0": "First corrected gate episode full RGB-D, then hash-only after bitwise command replay. Mismatch stops for possible validity problem.",
+    "per_decision_snapshots": false,
+    "initial_snapshot": false,
+    "environment_pin": "docs/go2_navigation_capability_environment_pin_2026-09-26.json",
+    "hashes": "Every primary and auxiliary RGB array and depth packet actually consumed, typed packet SHA-256; native depth SHA-256 and recipe additionally logged."
+  },
+  "fixed_validation": {
+    "episodes_per_maze": 1,
+    "ids": [
+      "10/0",
+      "11/0",
+      "12/0",
+      "13/0",
+      "14/0",
+      "15/0",
+      "16/0",
+      "17/0",
+      "18/0",
+      "19/0",
+      "20/0",
+      "21/0",
+      "22/0",
+      "23/0",
+      "24/0",
+      "25/0",
+      "26/0",
+      "27/0",
+      "28/0",
+      "29/0"
+    ],
+    "C0_ids": [
+      "10/0",
+      "11/0",
+      "12/0",
+      "13/0",
+      "14/0",
+      "15/0",
+      "16/0",
+      "17/0",
+      "18/0",
+      "19/0"
+    ],
+    "unchanged_reduction": true
+  },
+  "reprojection": {
+    "after_every_cohort": true,
+    "basis": "Measured wall time per complete mission for each controller, including failures; 15% contingency",
+    "cap_hours": 160,
+    "no_assumed_full_480s_future_durations": true
+  },
+  "approval": "Approved brief sections 4\u20139; user 27 September: leg-split timeouts/pose loss, inspect turnaround and outbound-route reuse, flag budget pressure without changing budget, then choose the next change from evidence."
+}
