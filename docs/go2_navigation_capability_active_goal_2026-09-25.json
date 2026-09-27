@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "live_turn_v3_frozen_before_screen",
+  "stage": "live_turn_v3_C1_screen_running",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -133,8 +133,11 @@
     "root": "cohorts/v3_live_turn_C1_screen",
     "completed_episodes": 0,
     "complete": false,
-    "launched": false,
-    "retries": 0
+    "launched": true,
+    "retries": 0,
+    "source_harness_commit": "8c825807",
+    "screen_session_id": 37657,
+    "current_episode": "00/0"
   },
   "latest_progress": "docs/go2_navigation_capability_v2_turn_diagnosis_2026-09-27.md",
   "pending_startup_output_contract": {
