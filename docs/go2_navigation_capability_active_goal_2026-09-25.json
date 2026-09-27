@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "v3_complete_support_replay_diagnosis",
+  "stage": "completed_support_v4_frozen_before_screen",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -61,7 +61,9 @@
     "paired_floor_v1": "5/10 round trips, 9/10 beacon; zero safety violations; 20/20 startup outputs within frozen2mm tolerance; all five normal recordings exact.",
     "paired_floor_v1_screen": "5/10 round trips, 9/10 beacons; zero safety violations; startup-output contract20/20 and five normal recordings exact",
     "paired_floor_leg_diagnosis": "01/05/09 return timeouts, 08 outbound timeout, 07 return pose loss; persistent map retained, no return re-exploration; attained-view deadlock chosen for V2",
-    "exhausted_view_v2_screen": "8/10 round trips; 10/10 beacons; no pose loss or safety violations; 05/07/08 newly succeed; 01/09 return timeouts"
+    "exhausted_view_v2_screen": "8/10 round trips; 10/10 beacons; no pose loss or safety violations; 05/07/08 newly succeed; 01/09 return timeouts",
+    "V3_corrected_binding_screen": "8/10 safe;01 stale holds removed but oscillates;09 beacon266.8s but return timeout",
+    "V3_support_replay": "5602 frame pairs and raw poses exact; actual tracker has85\u2013150 selected features on197 frames called weak by original subset"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -115,33 +117,27 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-27",
-    "stage": "V3 frozen: blocked visual-turn latch release",
-    "new_harness": "v3c1_live_turn",
-    "outcome_iteration_versions_consumed": 4,
+    "stage": "V4 frozen: actual tracker feature counts for recovery",
+    "new_harness": "v4_completed_support",
+    "outcome_iteration_versions_consumed": 5,
     "containment_pending": false,
     "oracle_gate_pending": true,
     "capability_pending": true,
     "official_videos_pending": true,
     "wall_cap_hours": 160,
-    "source_harness_sha256": "0c87318d7e06f43215faaee1b94279ae36ea88b5b95258dad5b591f42900bd1b",
-    "projected_total_wall_hours": 104.5755966545478,
+    "source_harness_sha256": "82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871",
+    "projected_total_wall_hours": 107.11325074857368,
     "correctness_version_increment": 0,
-    "projection_excludes_next_iteration": true,
+    "projection_excludes_next_iteration": false,
     "projection_excludes_second_episode_amendment": false
   },
   "current_cohort": {
-    "root": "cohorts/v3c1_live_turn_C1_screen",
-    "completed_episodes": 10,
-    "complete": true,
-    "launched": true,
-    "fresh_after_preserved_constructor_failure": true,
-    "source_harness_commit": "4f503906",
-    "screen_session_id": 98850,
-    "current_episode": null,
-    "successes": 8,
-    "passed": false
+    "root": "cohorts/v4_completed_support_C1_screen",
+    "completed_episodes": 0,
+    "complete": false,
+    "launched": false
   },
-  "latest_progress": "docs/go2_navigation_capability_live_turn_v3_result_2026-09-27.md",
+  "latest_progress": "docs/go2_navigation_capability_v3_support_diagnosis_2026-09-27.md",
   "pending_startup_output_contract": {
     "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
     "root": "paired_floor_output_contract_attempt001",
@@ -158,15 +154,14 @@
     "status": "COMPLETE_PASS_20_OF_20"
   },
   "previous_cohort": {
-    "root": "cohorts/v2_exhausted_view_C1_screen",
+    "root": "cohorts/v3c1_live_turn_C1_screen",
     "completed_episodes": 10,
-    "current_episode": null,
     "complete": true,
     "launched": true,
-    "retries": 0,
-    "source_harness_commit": "bad3883a",
-    "screen_session_id": 4579,
-    "owner_pid": 659174,
+    "fresh_after_preserved_constructor_failure": true,
+    "source_harness_commit": "4f503906",
+    "screen_session_id": 98850,
+    "current_episode": null,
     "successes": 8,
     "passed": false
   },
