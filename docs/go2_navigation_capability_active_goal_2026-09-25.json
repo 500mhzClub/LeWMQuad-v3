@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "exhausted_view_v2_complete_remaining_failure_diagnosis",
+  "stage": "live_turn_v3_frozen_before_screen",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -115,34 +115,28 @@
   "blockers": [],
   "latest_checkpoint": {
     "date": "2026-09-27",
-    "stage": "V2 complete8/10; two return timeouts remain",
-    "new_harness": "v2_exhausted_view",
-    "outcome_iteration_versions_consumed": 3,
+    "stage": "V3 frozen: blocked visual-turn latch release",
+    "new_harness": "v3_live_turn",
+    "outcome_iteration_versions_consumed": 4,
     "containment_pending": false,
     "oracle_gate_pending": true,
     "capability_pending": true,
     "official_videos_pending": true,
     "wall_cap_hours": 160,
-    "source_harness_sha256": "83382ac945a192d04c43c264e8fc1dbaf507d1fb9927f75b7b92ce0e79ef0629",
-    "projected_total_wall_hours": 94.64219384915768,
+    "source_harness_sha256": "7c458c5a1d02bc591799bd6c2c31ce398b6c846e687e8fd96b257a647cefaf9d",
+    "projected_total_wall_hours": 104.5755966545478,
     "correctness_version_increment": 0,
-    "projection_excludes_next_iteration": true,
-    "projection_excludes_second_episode_amendment": true
+    "projection_excludes_next_iteration": false,
+    "projection_excludes_second_episode_amendment": false
   },
   "current_cohort": {
-    "root": "cohorts/v2_exhausted_view_C1_screen",
-    "completed_episodes": 10,
-    "current_episode": null,
-    "complete": true,
-    "launched": true,
-    "retries": 0,
-    "source_harness_commit": "bad3883a",
-    "screen_session_id": 4579,
-    "owner_pid": 659174,
-    "successes": 8,
-    "passed": false
+    "root": "cohorts/v3_live_turn_C1_screen",
+    "completed_episodes": 0,
+    "complete": false,
+    "launched": false,
+    "retries": 0
   },
-  "latest_progress": "docs/go2_navigation_capability_exhausted_view_v2_result_2026-09-27.md",
+  "latest_progress": "docs/go2_navigation_capability_v2_turn_diagnosis_2026-09-27.md",
   "pending_startup_output_contract": {
     "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
     "root": "paired_floor_output_contract_attempt001",
@@ -159,15 +153,16 @@
     "status": "COMPLETE_PASS_20_OF_20"
   },
   "previous_cohort": {
-    "root": "cohorts/v1_paired_floor_C1_screen",
+    "root": "cohorts/v2_exhausted_view_C1_screen",
     "completed_episodes": 10,
     "current_episode": null,
     "complete": true,
     "launched": true,
     "retries": 0,
-    "successes": 5,
-    "source_harness_commit": "2469bb79",
-    "screen_session_id": 10914,
+    "source_harness_commit": "bad3883a",
+    "screen_session_id": 4579,
+    "owner_pid": 659174,
+    "successes": 8,
     "passed": false
   },
   "gate_sequence_amendment": {
@@ -176,5 +171,6 @@
     "second_episode_check_status": "PENDING_FIRST_SCREEN_PASS",
     "expanded_20_episode_screen_active": false,
     "C0_gate_blocked_until_amended_C1_requirements_pass": true
-  }
+  },
+  "session_execution_instruction": "Wait in-session for jobs, continue at milestones; stop only at authorised cap/resource/safety/containment/approval conditions."
 }
