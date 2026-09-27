@@ -68,7 +68,8 @@
     "One C4 metadata-writer startup failure preserved before encoding/fitting"
   ],
   "remaining": [
-    "Corrected C1 development screen and authorised harness iteration",
+    "C1 development screen and authorised harness iteration",
+    "After first C1 9/10, same-harness second-episode C1 check >=9/10; if it fails, future versions screen all20 >=18/20",
     "First corrected C0 full-RGB-D gate episode and strict bitwise command replay; then remaining oracle gate",
     "Reduced capability qualification, official videos and E1 proposal"
   ],
@@ -164,5 +165,12 @@
     "source_harness_commit": "2469bb79",
     "screen_session_id": 10914,
     "passed": false
+  },
+  "gate_sequence_amendment": {
+    "path": "docs/go2_navigation_capability_second_episode_gate_amendment_2026-09-27.json",
+    "sha256": "125ad2e32fa1558f3ec95a0698a8df876ca73a48c5db4039e070f50db86117de",
+    "second_episode_check_status": "PENDING_FIRST_SCREEN_PASS",
+    "expanded_20_episode_screen_active": false,
+    "C0_gate_blocked_until_amended_C1_requirements_pass": true
   }
 }

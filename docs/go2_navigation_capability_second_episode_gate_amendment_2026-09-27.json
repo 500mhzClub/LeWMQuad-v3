@@ -1,0 +1,199 @@
+{
+  "schema": "navigation_capability_second_episode_gate_amendment.v1",
+  "approved_date": "2026-09-27",
+  "authority": "User: One addition to the gate sequence, for when C1 first reaches 9/10 on the ten-episode screen",
+  "running_screen_unchanged": true,
+  "first_episode_screen": {
+    "assignments": [
+      [
+        0,
+        0
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        8,
+        0
+      ],
+      [
+        9,
+        0
+      ]
+    ],
+    "minimum_successes": 9
+  },
+  "second_episode_check": {
+    "status": "PENDING_FIRST_SCREEN_PASS",
+    "assignments": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        9,
+        1
+      ]
+    ],
+    "minimum_successes": 9,
+    "same_harness_as_first_screen": true,
+    "new_harness_version_charge": 0
+  },
+  "after_second_episode_failure": {
+    "permanent_for_remaining_versions": true,
+    "assignments": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        0
+      ],
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        2,
+        1
+      ],
+      [
+        3,
+        0
+      ],
+      [
+        3,
+        1
+      ],
+      [
+        4,
+        0
+      ],
+      [
+        4,
+        1
+      ],
+      [
+        5,
+        0
+      ],
+      [
+        5,
+        1
+      ],
+      [
+        6,
+        0
+      ],
+      [
+        6,
+        1
+      ],
+      [
+        7,
+        0
+      ],
+      [
+        7,
+        1
+      ],
+      [
+        8,
+        0
+      ],
+      [
+        8,
+        1
+      ],
+      [
+        9,
+        0
+      ],
+      [
+        9,
+        1
+      ]
+    ],
+    "minimum_successes": 18,
+    "threshold_is_aggregate": true,
+    "diagnose_failures_before_one_change": true
+  },
+  "oracle_gate": {
+    "episodes": 20,
+    "minimum_successes": 19,
+    "requires_both_initial_C1_halves_or_later_18_of_20": true,
+    "first_corrected_full_RGBD_replay_required": true
+  },
+  "unchanged_safety_and_resource_caps": true,
+  "automatic_retry": false,
+  "controller_changes": false,
+  "pre_affected_cohort": "Freeze updated orchestration and assignments enforcing this rule; re-project measured time/storage with 15% contingency; do not use the previous gate entry point without these checks.",
+  "report_sha256": "abfa458a8631aa3dc017d2b7b75cb70e9d0c9f3d3d70003b0546f2b283de4cea",
+  "incremental_C1_wall_hours_with_contingency": 2.934841764721256
+}
