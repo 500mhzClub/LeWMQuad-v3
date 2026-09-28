@@ -89,7 +89,30 @@ def diagnose(root):
         longest = max(longest, run)
     final = remaining(active, end)
     earlier = remaining(active, max(legs[active]['start_s'], end-FINAL_WINDOW_S))
+    # Fixed mechanism rules (from the diagnosed V4 validation failures), applied to the final 120 s.
+    late = [r for r in plans if 'selection' in r and r['measured_ns']/1e9-1.5 >= end-FINAL_WINDOW_S]
+    late_routes = Counter(r.get('route_status') for r in late)
+    late_holds = [h for h in ev['hold_details'] if h.get('frame', 0)*.1 >= end-FINAL_WINDOW_S]
+    late_overrides = Counter(h.get('override_reason') for h in late_holds if h['category'] == 'explicit_override')
+    late_no_eligible = sum(h['category'] == 'no_eligible_movement' for h in late_holds)
+    late_turns = sum(r['action'] in ('left_turn', 'right_turn') for r in late)
+    if final <= .1 and late_turns >= .5*max(1, len(late)):
+        mechanism = 'terminal heading limit cycle at the goal (arrival never confirmed)'
+    elif late_overrides.get('LATCHED_RECOVERY_TURN_BLOCKED', 0) >= .5*max(1, len(late)):
+        mechanism = 'latched recovery turn blocked by forecast clearance'
+    elif late_no_eligible >= .5*max(1, len(late)) and late_routes.get('ADDITIONAL_VIEW_REQUIRED', 0) >= .5*max(1, len(late)):
+        mechanism = 'no eligible movement under the view requirement (translations view-restricted, turns clearance-blocked)'
+    elif late_no_eligible >= .5*max(1, len(late)):
+        mechanism = 'no eligible movement (other route state)'
+    elif late_turns >= .5*max(1, len(late)):
+        mechanism = 'turn oscillation without progress'
+    elif earlier-final >= PROGRESS_M:
+        mechanism = 'slow but progressing at budget end'
+    else:
+        mechanism = 'other stall'
     return dict(assignment=root.name, episode_id=ep['episode_id'], controller=read('config.json')['controller'],
+        mechanism=mechanism, final_120s=dict(decisions=len(late), routes=dict(late_routes), overrides=dict(late_overrides),
+            no_eligible_holds=late_no_eligible, turn_selections=late_turns),
         beacon_reached_s=None if beacon is None else float(beacon), terminal_s=end, active_leg=active,
         shortest_outbound_m=ep['shortest_outbound_m'], shortest_return_m=ep['shortest_return_m'],
         remaining_shortest_path_at_480s_m=final, remaining_shortest_path_120s_before_end_m=earlier,
@@ -119,7 +142,7 @@ def main(out):
             json.dump(record, stream, indent=1)
             stream.write('\n')
     for r in rows:
-        print(r['controller'], r['episode_id'], r['active_leg'], 'remaining', round(r['remaining_shortest_path_at_480s_m'], 2),
+        print(r['controller'], r['episode_id'], r['mechanism'], '|', r['active_leg'], 'remaining', round(r['remaining_shortest_path_at_480s_m'], 2),
               '(120 s earlier', round(r['remaining_shortest_path_120s_before_end_m'], 2), ')', r['classification'], 'longest no-progress', r['longest_no_progress_s'],
               'hold time', round(r['whole_mission_hold_time_fraction'], 3), 'selected holds', round(r['whole_mission_selected_hold_fraction'], 3))
 

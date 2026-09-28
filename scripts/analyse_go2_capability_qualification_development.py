@@ -64,7 +64,11 @@ def summarise(episodes, draws_by_maze):
         if not rows:
             continue
         mazes = [e['maze'] for e in rows]
-        draws = draws_by_maze[tuple(mazes)]
+        # Pre-registered draws for the full 20 (C1-C4) and 10 (C0) maze sets; an incomplete set
+        # (only while a cohort is unfinished) uses the same seed over its own mazes.
+        draws = draws_by_maze.get(tuple(mazes))
+        if draws is None:
+            draws = np.random.default_rng(2026092519).integers(0, len(mazes), size=(10000, len(mazes)))
 
         def metric(key):
             values = np.array([np.nan if e[key] is None else float(e[key]) for e in rows])
@@ -132,8 +136,14 @@ def main(out):
     protocol = json.loads(PROTOCOL.read_text())
     base = Path(protocol['output_root'])
     cohort = base/'cohorts/v4_completed_support_validation'
-    result = json.loads((cohort/'result.json').read_text())
-    episodes = load(base, result['rows'])
+    config = json.loads((cohort/'config.json').read_text())
+    results = sorted(cohort.glob('result*.json'))
+    result = json.loads(results[-1].read_text()) if results else dict(harness_sha256=config['harness_sha256'], complete=False, stops=[])
+    # Rows from every closed assignment (original owner and resumptions), controller from the fixed plan.
+    rows = [json.loads((cohort/f'{a}_result.json').read_text()) | dict(controller=arm)
+            for arm, maze, a in config['assignments'] if (cohort/f'{a}_result.json').exists()]
+    result['complete'] = len(rows) == len(config['assignments'])
+    episodes = load(base, rows)
     boot = protocol['qualification']['inference']
     rng = np.random.default_rng(boot['seed'])
     draws20 = rng.integers(0, 20, size=(boot['replicates'], 20))
