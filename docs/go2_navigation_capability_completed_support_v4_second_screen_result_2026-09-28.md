@@ -1,5 +1,7 @@
 # V4 second-episode C1 screen
 
+> **Version-ledger correction (28 September 2026):** the six-version cap counts V0 (the pre-registration governs). Read this record's "N of six" as N+1 of six, including V0. V4 is the sixth and last version. See [the version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+
 **10/10 second-episode round trips; 20/20 across both C1 screens. Zero disallowed contacts, hard/operating-margin violations or unresolved native clearance samples.** Both amended C1 gates pass on the same frozen harness. No further tuning was made; five of six outcome versions remain consumed.
 
 | Episode | Beacon time (s) | Return duration (s) | Total (s) | Round trip |

@@ -1,5 +1,7 @@
 # V4 completed-support first-episode screen
 
+> **Version-ledger correction (28 September 2026):** the six-version cap counts V0 (the pre-registration governs). Read this record's "N of six" as N+1 of six, including V0. V4 is the sixth and last version. See [the version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+
 **10/10 beacon retrievals and returns. Zero disallowed contacts, hard-clearance violations, operating-margin violations or unresolved native clearance samples.** The first C1 screen passes; the same frozen harness is now running the ten second-episode checks. Five of six outcome versions have been used.
 
 The single change makes visual recovery use the complete selected feature counts already used by the unchanged tracker, retaining its 48/96 thresholds. Tracking estimation, sensors, models, candidates and safety rules are unchanged. Exact pre-change command replays motivated the change; this is a development result, not a held-out capability estimate.

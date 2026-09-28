@@ -1,5 +1,7 @@
 # Exhausted-view V2 development screen result
 
+> **Version-ledger correction (28 September 2026):** the six-version cap counts V0 (the pre-registration governs). Read this record's "N of six" as N+1 of six, including V0. V4 is the sixth and last version. See [the version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+
 **8/10 round trips and 10/10 beacon retrievals**, compared with V1’s 5/10 and 9/10. No pose losses, disallowed contacts, hard-clearance violations or operating-margin violations. The 9/10 first-episode threshold is not met.
 
 | Episode | Beacon | Round trip | Simulated seconds | References retired |

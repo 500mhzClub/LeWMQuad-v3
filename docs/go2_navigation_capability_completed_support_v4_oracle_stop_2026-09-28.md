@@ -1,5 +1,7 @@
 # V4 oracle gate stop — 28 September 2026
 
+> **Version-ledger correction (28 September 2026):** the six-version cap counts V0 (the pre-registration governs). Read this record's "N of six" as N+1 of six, including V0. V4 is the sixth and last version. See [the version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+
 **C1 passed both screens, 20/20 safely. C0 passed its first four missions safely, then stopped on the fifth assignment, 02/0, at closeout because oracle prefix qualification failed. The gate is incomplete. No validation runs or official videos have started.**
 
 | Stage | Result | Status |

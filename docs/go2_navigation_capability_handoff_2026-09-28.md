@@ -13,6 +13,13 @@ This handoff was written from the reports the previous agent sent Andrew, not fr
 
 Items marked **(confirm)** could not be checked from the reports; resolve them from the records.
 
+> **Corrections, 28 September 2026** (after [the orientation note](go2_navigation_capability_orientation_2026-09-28.md), approved by Andrew Knowles):
+> - **§2 and §3.** 02/0 had **one** decision without a matching branch (six branch rows), not six decisions. At the 119.9-s boundary the current observation was missing on the first tick, and vetoes followed. The committed forward prefix shared by all six branches therefore never executed, and the plan was then held without motion.
+> - **§2 and §7.** Five changes are charged: startup_c2, V1, V2, V3 and V4. V3 (`live_turn`) was the turn-memory change (8/10). V4 (`completed_support`) is the recovery change that uses the tracker's actual feature count (10/10 on both screens).
+> - **§4 and §5.2.** The pre-registration governs the cap: six versions **including V0**. V4 is the last version. If the gate fails, stop and report; Andrew decides whether to allow another change. Earlier records that say "five of six consumed" are corrected by the [version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+> - **Further rulings.** Causes of no-match decisions are dispatch-layer substitutions (missing current observation, veto or override); see [the erratum](go2_navigation_capability_oracle_prefix_erratum_2026-09-28.md). From the orientation stop onwards, wall time counts only while jobs run (§5.7). All large outputs and temporary files go on RecoveryStorage, including video render intermediates (§5.7).
+> - **Confirmed items** are resolved in the orientation note.
+
 ---
 
 ## 1. Goal
@@ -37,12 +44,12 @@ A JEPA loss is an acceptable result. An unvalidated testbed is not.
 |---|---|
 | C1 screen, first dev-tune episodes | 10/10 round trips, safe |
 | Second-episode C1 check | 10/10, safe |
-| C0 oracle gate (all 20 dev-tune episodes) | Stopped: 4 qualified successes; 5th attempt (02/0) unqualified (section 3) |
+| C0 oracle gate (all 20 dev-tune episodes) | Stopped: 4 qualified successes; 5th attempt (02/0) unqualified, with one decision (six branch rows) lacking a matching executed prefix (section 3) |
 | Capability qualification | Not started |
 | Example videos | Not started; renderer prepared, pipeline-test video done |
 | Capability report, E1 proposal | Not started |
 
-- **Harness:** `completed_support_v4`, per the C0 stop report. At least four of the six harness versions are charged **(confirm from the version ledger)**.
+- **Harness:** `completed_support_v4` (`82b7b604…`, frozen at `7da82b23`). Five changes are charged (startup_c2, V1–V4). With V0 that makes six versions, which is the cap under the pre-registration. **V4 is the last version.**
 - **Safety:** zero disallowed contacts and zero clearance violations in every run of this programme.
 - **Throughput:** C1 runs at about 2 wall-seconds per simulated second, and a ten-episode C1 screen takes 2–3 hours. C0 is much slower, because it branches the physics at every decision.
 - **Budget and storage:** hours used against the 160-hour cap are in the latest budget re-projection **(confirm)**. About 100 GiB was usable on RecoveryStorage at the last check.
@@ -51,7 +58,7 @@ A JEPA loss is an acceptable result. An unvalidated testbed is not.
 
 ## 3. Immediate task: resolve the C0 stop and resume the gate
 
-**What happened.** In C0 episode 02/0, a dispatch veto in the shared harness stopped movement at decisions where C0 had selected a forward candidate. C0's physics branches assumed that forward tape would execute. So for six decisions there was no executed prefix with the same commands to compare against.
+**What happened.** In C0 episode 02/0, at one decision (the 119.9-s source boundary), all six of C0's physics branches began with the same committed forward prefix. That prefix was carried over from the 119.5-s selection. On the first tick the shared harness's dispatch layer substituted a hold, because the current observation was missing (`CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE`), and 14 vetoed ticks followed (`COMMAND_WINDOW_VETO_LATCHED`). So that one decision had no executed prefix with the same commands to compare against, which gave six branch rows. The harness then held that plan for 20 ticks (`COMMITTED_PREFIX_NOT_EXECUTED`), so it produced no motion. The same sequence occurs in C1 runs.
 
 All 2,322 comparable prefixes matched exactly, with no pose discrepancy. The agent preserved the attempt and stopped, as its rule required.
 
@@ -88,7 +95,7 @@ Before resuming, confirm from the records that:
   3. Screen C1 on all 20 dev-tune episodes; at least 18 of 20 must pass.
   4. Rerun the full C0 gate on the new version.
 
-  If the six-version cap is reached without a pass, stop and report.
+  If the six-version cap is reached without a pass, stop and report. **V4 is already the sixth version, counting V0**, so a failed gate means stop and report. Andrew then decides whether to allow another change.
 
 ---
 
@@ -128,7 +135,7 @@ These are the brief plus every amendment approved since.
   - privileged information in the deployed harness;
   - per-controller special cases;
   - the mission budget.
-- **Six-version cap.** Stop and report if the cap is reached without passing the gate.
+- **Six-version cap.** Stop and report if the cap is reached without passing the gate. The pre-registration governs: six versions **including V0** (IDs 0–5). V0 plus five charged changes means V4 is the last.
 - **Correctness fixes don't count toward the cap** when both of these hold:
   - an outcome-independent test fails before the fix and passes after it (for example, a contract on geometry, indexing or initialisation, checked against ground truth);
   - containment passes: episodes the defect couldn't affect reproduce exactly (native arrays, requests and consumed sensor hashes) up to the first frame at which the defect could have mattered.
@@ -196,7 +203,8 @@ All controllers run on one frozen harness: simulated RGB, depth with the existin
 
 ### 5.7 Budget and resources
 
-- **Wall time:** the cap for this brief is 160 hours. After each cohort, re-project from the measured wall time per mission for each controller, with 15% contingency.
+- **Wall time:** the cap for this brief is 160 hours. After each cohort, re-project from the measured wall time per mission for each controller, with 15% contingency. From the orientation stop (28 September, 10:00 BST, 70.19 h) onwards, wall time counts only while jobs run; concurrent jobs count once. The ledger is `wall_active_ledger_2026-09-28.jsonl` under the programme artifact root. The frozen run owner still enforces its calendar 160-h closeout, about 2 October 03:47 BST.
+- **Workspace headroom:** keep every large output and temporary file on RecoveryStorage, including video render intermediates.
 - **C4 training,** if it's ever needed: at most 12 GPU-hours.
 - **VRAM:** device capacity minus a 2-GiB reserve, counting all users.
 - **Filesystem reserves:** at least 12 GiB free on RecoveryStorage and 4 GiB on the workspace. Recheck before each cohort.
@@ -277,7 +285,8 @@ Make one video per controller type: C1–C4, with C0 optional.
 | `grid_c3` (`f904a9b5`) | Grid-index correction across all call sites | No: correctness, all five containment checks exact | 3/10: three pose losses, four timeouts |
 | `paired_floor_v1` (`2469bb79`) | Floor height taken from the paired-camera plane; the fallback path had set it 23–29 cm too high | Yes: normal-start code changed, though outputs were identical | 5/10; beacon reached 9/10 |
 | `exhausted_view_v2` | Retire an unsuccessful recovery reference after 1 s of continuously accepted, aligned poses | Yes | 8/10; beacon reached 10/10; no pose losses |
-| `completed_support_v4` | Turn-selection correction for the last two failures **(confirm details, and whether a v3 existed)** | Yes **(confirm)** | 10/10 on first episodes; 10/10 on second episodes |
+| `v3_live_turn` (`8c825807`) | Release the visual turn-memory latch when its chosen direction becomes ineligible (turn-memory change) | Yes | 8/10; beacon reached 10/10; no pose losses. The `v3c1_live_turn` implementation erratum (`4f503906`) re-bound the deployed memory class after a zero-decision startup failure and was not charged. |
+| `completed_support_v4` (`7da82b23`) | Recovery uses the tracker's actual selected-feature count, including sparse corner completion, instead of only the original strong-corner subset | Yes (fifth charged change; sixth version counting V0, which is the cap) | 10/10 on first episodes; 10/10 on second episodes |
 
 What the iterations showed:
 

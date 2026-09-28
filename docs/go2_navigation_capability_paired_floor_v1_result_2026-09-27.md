@@ -1,5 +1,7 @@
 # Paired-floor V1 development result
 
+> **Version-ledger correction (28 September 2026):** the six-version cap counts V0 (the pre-registration governs). Read this record's "N of six" as N+1 of six, including V0. V4 is the sixth and last version. See [the version ledger](go2_navigation_capability_version_ledger_2026-09-28.md).
+
 **5/10 round trips and 9/10 beacon retrievals**, versus 3/10 and 5/10 in C3. The 9/10 screen threshold is not met; the oracle gate remains unstarted.
 
 | Episode | Beacon | Round trip | Outcome | Simulated seconds |
