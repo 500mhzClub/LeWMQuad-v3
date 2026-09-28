@@ -1,6 +1,8 @@
 # Current research brief
 
-The authoritative reference is [LeWMQuad-v3 agent brief: navigation testbed and controller capability, 25 September 2026](go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md).
+**Start here:** [the 28 September handoff](go2_navigation_capability_handoff_2026-09-28.md). It sets the goal, current state, rules in force and immediate task, and it overrides older instructions where they conflict. Where it disagrees with the records on a fact, the records win.
+
+The authoritative reference is [LeWMQuad-v3 agent brief: navigation testbed and controller capability, 25 September 2026](go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md), as amended by the handoff.
 
 It supersedes the decision-headroom programme. V4.2 is closed; its recommended study-design revision is not pursued. Follow the new brief's authorised scope, gates, budgets and stop conditions. Earlier protocols and results remain historical records.
 
@@ -10,7 +12,7 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 
 **Current goal:** establish a validated Go2 simulation navigation testbed. For each controller type (C0 oracle, C1 command history, C2 reactive, C3 JEPA, C4 supervised predictor), determine whether it completes beacon retrieval and return in unseen mazes, report against the pre-registered capability criterion, and produce one example video per controller (C0 optional under the brief).
 
-**Status:** STOPPED for oracle-prefix fidelity disposition. V4 C1 passed20/20 safely; C0 first four missions passed, but02/0 has six no-matching-prefix checks at a dispatch-veto decision. All2,322 comparable prefixes in that attempt match exactly. It is unqualified; no retry or further gate/validation physics is authorised by this stop record. First corrected C0 sensor replay passed bitwise. Five of six outcome versions used. See [the stop report](go2_navigation_capability_completed_support_v4_oracle_stop_2026-09-28.md).
+**Status (28 September, after the handoff):** STOPPED before running anything, under the handoff's discrepancy rule. The handoff says 02/0 had six decisions without a matching executed prefix. The records show one decision (119.9 s) with six candidate rows. At that decision a stale-observation dispatch veto hit the shared committed prefix, and the plan was then held as `COMMITTED_PREFIX_NOT_EXECUTED`, so it produced no motion. The attempt reached a terminal `OBSERVED_ROUND_TRIP_CANDIDATE`, but its physical reader has not run. The version-cap count also needs a ruling (V0 included or not). The C0 gate stands at 4/4 qualified, 02/0 unqualified and 15 unstarted, on `v4_completed_support` (`82b7b604…`). Five versions are charged, and 70.1/160 wall-hours are used. See [the orientation note](go2_navigation_capability_orientation_2026-09-28.md) and [the stop report](go2_navigation_capability_completed_support_v4_oracle_stop_2026-09-28.md).
 
 This replaces the 7 September navigation goal and the closed decision-headroom programme; neither is to be resumed. Machine-readable active-goal state is in [go2_navigation_capability_active_goal_2026-09-25.json](go2_navigation_capability_active_goal_2026-09-25.json). The thread goal tool refuses to replace its unfinished legacy goal; it must not be falsely marked achieved to bypass that limitation. This repository record is the current task tracker.
 

@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "completed_support_v4_oracle_prefix_fidelity_stop",
+  "stage": "handoff_orientation_discrepancy_stop",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -196,5 +196,21 @@
       "planning_decisions": 0,
       "erratum": "docs/go2_navigation_capability_live_turn_binding_erratum_2026-09-27.md"
     }
-  ]
+  ],
+  "handoff": {
+    "path": "docs/go2_navigation_capability_handoff_2026-09-28.md",
+    "role": "Current instructions; overrides older instructions where they conflict; records win on facts."
+  },
+  "orientation": {
+    "path": "docs/go2_navigation_capability_orientation_2026-09-28.md",
+    "status": "STOPPED_BEFORE_RUNNING_FOR_HANDOFF_RECORD_DISCREPANCY",
+    "discrepancies": [
+      "Handoff: six unmatched decisions in C0 02/0; records: one decision (simulator 119.9 s) with six candidate rows, the stale-observation veto on the shared committed prefix, then 20 COMMITTED_PREFIX_NOT_EXECUTED holds (no motion).",
+      "Six-version cap: preregistration counts V0 among six (IDs 0-5), making V4 the sixth; later records count five of six charged changes. Ruling needed before any post-gate iteration."
+    ],
+    "fifth_attempt": "Terminal OBSERVED_ROUND_TRIP_CANDIDATE at 160.0 s simulator time; closeout prefix check raised; physical reader not run.",
+    "elapsed_conservative_wall_hours": 70.1,
+    "recovery_usable_gib": 91.11,
+    "workspace_free_gib": 5.47
+  }
 }
