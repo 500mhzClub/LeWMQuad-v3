@@ -1,0 +1,255 @@
+{
+  "schema": "navigation_capability_fidelity_stop.v1",
+  "date": "2026-09-28",
+  "status": "STOPPED_FOR_ORACLE_PREFIX_DISPOSITION",
+  "goal_complete": false,
+  "source_commit": "7da82b23",
+  "harness_sha256": "82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871",
+  "C1": {
+    "first_screen": 10,
+    "second_screen": 10,
+    "episodes": 20,
+    "round_trips": 20,
+    "zero_contact_hard_operating": true
+  },
+  "qualified_C0": [
+    {
+      "episode": "00/0",
+      "round_trip": true,
+      "contact_samples": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.1652942986820467,
+        "minimum_separation_upper_m": 0.16529429868204673,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "oracle_prefix_passed": true
+    },
+    {
+      "episode": "00/1",
+      "round_trip": true,
+      "contact_samples": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.1448253047014718,
+        "minimum_separation_upper_m": 0.14482530470147184,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "oracle_prefix_passed": true
+    },
+    {
+      "episode": "01/0",
+      "round_trip": true,
+      "contact_samples": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.14007805928500705,
+        "minimum_separation_upper_m": 0.14007805928500708,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "oracle_prefix_passed": true
+    },
+    {
+      "episode": "01/1",
+      "round_trip": true,
+      "contact_samples": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.1385108845874487,
+        "minimum_separation_upper_m": 0.14983344384896322,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "oracle_prefix_passed": true
+    }
+  ],
+  "failed_assignment": "v4_completed_support_gate_C0_dev02_ep0_attempt001",
+  "owner_result": {
+    "status": "FAILED_ATTEMPT_PRESERVED",
+    "error": "RuntimeError('oracle executed-prefix fidelity check failed')",
+    "frames": 1586,
+    "policy_steps": 7926,
+    "simulated_s": 158.52,
+    "wall_s": 989.5541488989838,
+    "peak_process_tree_rss_bytes": 8588259328,
+    "peak_device_used_bytes": 69206016,
+    "oracle_branches": 2328,
+    "capability_classification_pending": true,
+    "automatic_retry": false
+  },
+  "failed_comparisons": [
+    {
+      "observed_ns": 119900000000,
+      "candidate": 0,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    },
+    {
+      "observed_ns": 119900000000,
+      "candidate": 1,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    },
+    {
+      "observed_ns": 119900000000,
+      "candidate": 2,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    },
+    {
+      "observed_ns": 119900000000,
+      "candidate": 3,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    },
+    {
+      "observed_ns": 119900000000,
+      "candidate": 4,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    },
+    {
+      "observed_ns": 119900000000,
+      "candidate": 5,
+      "matched_prefix_ms": 0,
+      "passed": false,
+      "reason": "NO_MATCHING_EXECUTED_PREFIX"
+    }
+  ],
+  "matching_comparisons": 2322,
+  "matching_maximum_position_error_m": 0.0,
+  "matching_maximum_yaw_error_deg": 0.0,
+  "mismatch_origin_simulator_ns": 119900000000,
+  "mission_elapsed_s": 118.4,
+  "executed_at_origin": {
+    "requested_command": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "applied_command": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "reason": "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE",
+    "command_observation_ns": null
+  },
+  "branch_first_applied_commands": [
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ],
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ],
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ],
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ],
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ],
+    [
+      0.20000000298023224,
+      0.0,
+      0.0
+    ]
+  ],
+  "later_requests_labelled_with_origin": 20,
+  "physical_evaluation_of_failed_assignment": "not run: cohort stopped before physical reader; observed round-trip candidate is not a verified success",
+  "first_C0_replay": {
+    "status": "PASS",
+    "harness_sha256": "82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871",
+    "source_config_sha256": "79fe82e56d714765405cb1e128039f67f22295befdacb57068c615f12fc5c2a6",
+    "source": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev00_ep0_attempt001",
+    "frame_pairs": 1128,
+    "bitwise_rgb_matches": 2256,
+    "bitwise_depth_packet_matches": 2256,
+    "full_typed_packet_matches": 4512,
+    "native_trace_exact": true,
+    "verification_from_commands_and_seed": true,
+    "wall_s": 99.51069309195736
+  },
+  "evidence": {
+    "result.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/result.json",
+      "sha256": "a03d212770d0db10b474c8e766112b4e7a72c33caa625d017d8cee7014ec875e",
+      "bytes": 354
+    },
+    "oracle_prefix_check.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/oracle_prefix_check.json",
+      "sha256": "6ef522c8b32200582772d2aea048d24bc311199d8a03d89dd6ed7d1e4e655f10",
+      "bytes": 389477
+    },
+    "config.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/config.json",
+      "sha256": "3f3b2a3c7d1daf91812842eb2f8d7a08ce86d5a8daa679143c57c1fe3fb933f8",
+      "bytes": 1699
+    },
+    "model_calls.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/model_calls.json",
+      "sha256": "ab4733af02f87550c6e47c3d9b5462a29b4a6051e039bc9f33defe1913a0a544",
+      "bytes": 2507138
+    },
+    "requests.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/requests.json",
+      "sha256": "07f5c64163fbe4313bd6e437890d8c01094b5ecdc633bf8b4be481271999e522",
+      "bytes": 11063619
+    },
+    "mission.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/mission.json",
+      "sha256": "2e763c36fd5c9bb23f970bb94642f3a07e398a9455806494fb8a4e642a1009ac",
+      "bytes": 2999198
+    },
+    "pipeline_faults.json": {
+      "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_gate_C0_dev02_ep0_attempt001/pipeline_faults.json",
+      "sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "bytes": 3
+    }
+  },
+  "no_retry": true,
+  "no_source_change": true,
+  "no_new_physics_after_stop": true,
+  "gate_passed": false,
+  "validation_runs": 0,
+  "official_videos": 0,
+  "outcome_versions_consumed": 5,
+  "proposed_next_step": "Obtain disposition for bounded command-prefix/dispatch diagnosis and any consequent checker or oracle correction; preserve this failed attempt and do not simply skip its unmatched rows.",
+  "interpretation": "No measured physical divergence among matching prefixes. One origin has no matching prefix because dispatch veto changes the assumed prefix from its first tick; its later served prediction lacks executed-path qualification. Cause of observation-unavailable veto is not established by this narrow read-only inspection."
+}

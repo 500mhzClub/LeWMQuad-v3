@@ -1,6 +1,6 @@
 {
   "schema": "navigation_capability_goal.v1",
-  "status": "active",
+  "status": "blocked",
   "approved_start": "2026-09-25",
   "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
   "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "completed_support_v4_C0_gate_running",
+  "stage": "completed_support_v4_oracle_prefix_fidelity_stop",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -65,7 +65,9 @@
     "V3_corrected_binding_screen": "8/10 safe;01 stale holds removed but oscillates;09 beacon266.8s but return timeout",
     "V3_support_replay": "5602 frame pairs and raw poses exact; actual tracker has85\u2013150 selected features on197 frames called weak by original subset",
     "completed_support_v4_first_screen": "10/10 round trips; zero contacts, hard/operating violations, unresolved native clearance or pose loss",
-    "completed_support_v4_second_screen": "10/10 safe round trips; 20/20 across both C1 screens"
+    "completed_support_v4_second_screen": "10/10 safe round trips; 20/20 across both C1 screens",
+    "corrected_C0_sensor_replay": "PASS:2256 RGB and2256 depth packets bitwise; native trace exact",
+    "completed_support_v4_partial_C0_gate": "4/4 qualified safe round trips; fifth attempt02/0 unqualified;15 assignments unstarted"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -116,10 +118,16 @@
       "resume": "Recheck capacity and remaining wall budget; reuse completed pilots and C4 checkpoint. Continue the prescribed C1 screen, then dominant-mechanism iteration and the unchanged oracle gate. Do not repeat completed trials."
     }
   ],
-  "blockers": [],
+  "blockers": [
+    {
+      "kind": "oracle_prefix_fidelity",
+      "report": "docs/go2_navigation_capability_completed_support_v4_oracle_stop_2026-09-28.md",
+      "requires_disposition": true
+    }
+  ],
   "latest_checkpoint": {
     "date": "2026-09-28",
-    "stage": "C1 20/20; C0 gate running",
+    "stage": "STOP:oracle prefix qualification in02/0",
     "new_harness": "v4_completed_support",
     "outcome_iteration_versions_consumed": 5,
     "containment_pending": false,
@@ -135,14 +143,17 @@
   },
   "current_cohort": {
     "root": "cohorts/v4_completed_support_C0_gate",
-    "completed_episodes": 0,
+    "completed_episodes": 4,
     "complete": false,
     "launched": true,
     "source_harness_commit": "7da82b23",
     "screen_session_id": 46793,
-    "current_episode": "00/0"
+    "current_episode": null,
+    "failed_assignment": "v4_completed_support_gate_C0_dev02_ep0_attempt001",
+    "stopped": true,
+    "stop_reason": "Oracle prefix fidelity: six no-matching-prefix rows at one dispatch-veto decision"
   },
-  "latest_progress": "docs/go2_navigation_capability_completed_support_v4_second_screen_result_2026-09-28.md",
+  "latest_progress": "docs/go2_navigation_capability_completed_support_v4_oracle_stop_2026-09-28.md",
   "pending_startup_output_contract": {
     "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
     "root": "paired_floor_output_contract_attempt001",
