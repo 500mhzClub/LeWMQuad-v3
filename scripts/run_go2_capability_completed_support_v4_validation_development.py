@@ -38,6 +38,21 @@ def assignments(protocol):
     return rows
 
 
+REACTIVE_READER = 'scripts/read_go2_capability_v4_reactive_holds_development.py'
+
+
+def reactive_reader(base, root, arm, assignment):
+    """Reactive-hold reader erratum (28 September): score C2 episodes with the wrapper before closeout."""
+    destination = base/'runs'/assignment
+    if arm != 'C2' or (destination/'episode_evaluation.json').exists() or not (destination/'result.json').exists():
+        return
+    if json.loads((destination/'result.json').read_text())['frames'] == 0:
+        return
+    with (root/f'{assignment}_reader_reactive_erratum.log').open('x') as log:
+        subprocess.run([sys.executable, REACTIVE_READER, '--root', str(destination)], stdout=log, stderr=subprocess.STDOUT,
+                       check=True, env=os.environ | ENVIRONMENT)
+
+
 def run(workers, resume):
     assert Path.cwd().resolve() == owner.REPO and all(os.environ.get(k) == v for k, v in ENVIRONMENT.items())
     protocol = json.loads(owner.PROTOCOL.read_text())
@@ -65,6 +80,7 @@ def run(workers, resume):
             rows[assignment] = json.loads((root/f'{assignment}_result.json').read_text()) | dict(controller=arm)
         elif (base/'runs'/assignment).exists():
             code = 0 if json.loads((base/'runs'/assignment/'result.json').read_text())['error'] is None else 1
+            reactive_reader(base, root, arm, assignment)
             rows[assignment] = closeout(base, root, assignment, code) | dict(controller=arm)
         else:
             pending.append((arm, maze, assignment))
@@ -74,6 +90,7 @@ def run(workers, resume):
             with (root/f'{assignment}.log').open('x') as log:
                 code = subprocess.run([sys.executable, RUN_OWNER, '--controller', arm, '--maze', str(maze), '--episode', '0',
                     '--assignment', assignment], stdout=log, stderr=subprocess.STDOUT, env=os.environ | ENVIRONMENT).returncode
+            reactive_reader(base, root, arm, assignment)
             row = closeout(base, root, assignment, code) | dict(controller=arm)
             with lock:
                 rows[assignment] = row
