@@ -1,6 +1,6 @@
 {
   "schema": "navigation_capability_goal.v1",
-  "status": "blocked",
+  "status": "active",
   "approved_start": "2026-09-25",
   "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
   "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "handoff_orientation_discrepancy_stop",
+  "stage": "capability_qualification_running",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -67,7 +67,8 @@
     "completed_support_v4_first_screen": "10/10 round trips; zero contacts, hard/operating violations, unresolved native clearance or pose loss",
     "completed_support_v4_second_screen": "10/10 safe round trips; 20/20 across both C1 screens",
     "corrected_C0_sensor_replay": "PASS:2256 RGB and2256 depth packets bitwise; native trace exact",
-    "completed_support_v4_partial_C0_gate": "4/4 qualified safe round trips; fifth attempt02/0 unqualified;15 assignments unstarted"
+    "completed_support_v4_partial_C0_gate": "4/4 qualified safe round trips; fifth attempt02/0 unqualified;15 assignments unstarted",
+    "completed_support_v4_C0_gate": "PASSED 20/20; zero contacts/hard; 1 no-match decision (02/0) requalified under the prefix erratum; 35 vetoed selections, none causing failure"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -203,7 +204,7 @@
   },
   "orientation": {
     "path": "docs/go2_navigation_capability_orientation_2026-09-28.md",
-    "status": "STOPPED_BEFORE_RUNNING_FOR_HANDOFF_RECORD_DISCREPANCY",
+    "status": "RESOLVED: Andrew approved proceeding 28 September; handoff corrected; ledger fixed",
     "discrepancies": [
       "Handoff: six unmatched decisions in C0 02/0; records: one decision (simulator 119.9 s) with six candidate rows, the stale-observation veto on the shared committed prefix, then 20 COMMITTED_PREFIX_NOT_EXECUTED holds (no motion).",
       "Six-version cap: preregistration counts V0 among six (IDs 0-5), making V4 the sixth; later records count five of six charged changes. Ruling needed before any post-gate iteration."
@@ -212,5 +213,6 @@
     "elapsed_conservative_wall_hours": 70.1,
     "recovery_usable_gib": 91.11,
     "workspace_free_gib": 5.47
-  }
+  },
+  "gate_result": "docs/go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md"
 }

@@ -14,4 +14,4 @@ Every harness version from V0 to the frozen `v4_completed_support`, with its dif
 | `v3c1_live_turn` | `4f503906` | `0c87318d…` | New `navigation_capability_live_turn_binding_c1` (the same change, bound to the deployed `InterruptedRouteTurnMemory`) | Implementation erratum | 8/10; 10/10 beacons (0 contacts) |
 | `v4_completed_support` | `7da82b23` | `82b7b604…` | New `navigation_capability_completed_support` (recovery uses the tracker's actual selected-feature count, including sparse corner completion) | **Charged** (6, the last) | 10/10 first, 10/10 second (0 contacts) |
 
-The C0 gate on V4 and its outcome are recorded in the gate result document.
+**V4 C0 gate: passed, 20/20** with zero contacts or hard violations. See [the gate result](go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md). V4 is the frozen passing version used for capability qualification.
