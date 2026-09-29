@@ -3,7 +3,8 @@
 Run-time path (three-frame encoder batch, frozen predictor with the executed applied tape,
 readout) on the held-out rest/turn recordings and on the 240-window development transfer
 population. C3-v1 and C3-v2 share the predicted features; only the readout differs.
-C4-v1 and C4-v2 are reported on the same windows and do not gate.
+C4-v1 and C4-v2 are scored with the same measures on the same windows (C4-v2 against C4-v1,
+Amendment 1): reported only, never gating.
 """
 import hashlib
 import json
@@ -113,40 +114,43 @@ def main():
                 tcache.setdefault(directory, Recording.training_case(directory))
                 index[key] = len(tcontexts)
                 tcontexts.append((tcache[directory], w['frame']))
-        tmotions = evaluate_contexts(model, readouts, {}, tcontexts)
+        tmotions = evaluate_contexts(model, readouts, c4s, tcontexts)
         transfer = {}
         for ms in (500, 700):
             sel = [w for w in windows if w['horizon_ms'] == ms]
             t = np.asarray([w['actual'] for w in sel], np.float32)
             transfer[f'{ms}ms'] = {}
-            for name in readouts:
+            for name in tmotions:
                 p = np.asarray([tmotions[name][index[(w['case'], w['frame'])], ms//100-1] for w in sel])
                 transfer[f'{ms}ms'][name] = dict(xy_rmse_m=rmse(p, t, [0, 1]), yaw_rmse_deg=yaw_rmse(p, t))
                 for maze in (0, 1):
                     for group in ('translation', 'turn'):
                         m = np.asarray([w['maze'] == maze and w['group'] == group for w in sel])
                         transfer[f'{ms}ms'][name][f'maze{maze}_{group}_xy_rmse_mm'] = 1000*rmse(p[m], t[m], [0, 1])
-        v1, v2 = 'C3_v1', 'C3_v2'
         g = groups
 
         def at(group, name, ms, key):
             return g[group]['metrics'][name][f'{ms}ms'][key]
-        criteria = {
-            'A1_rest_translation_ratio_in_0.75_1.25': 0.75 <= at('rest_start', v2, 800, 'median_translation_ratio') <= 1.25,
-            'A2_rest_xy_rmse_at_most_half_v1': at('rest_start', v2, 800, 'xy_rmse_m') <= .5*at('rest_start', v1, 800, 'xy_rmse_m'),
-            'B1_turn_xy_rmse_at_most_v1': at('in_place_turn', v2, 800, 'xy_rmse_m') <= at('in_place_turn', v1, 800, 'xy_rmse_m'),
-            'B2_turn_excess_translation_at_most_10mm': at('in_place_turn', v2, 800, 'median_excess_translation_m') <= .010,
-            'B3_turn_yaw_rmse_at_most_1.05_v1': at('in_place_turn', v2, 800, 'yaw_rmse_deg') <= 1.05*at('in_place_turn', v1, 800, 'yaw_rmse_deg'),
-            'C1_other_no_loss': all(at('other', v2, ms, k) <= 1.05*at('other', v1, ms, k) for ms in (500, 800) for k in ('xy_rmse_m', 'yaw_rmse_deg')),
-            'C2_transfer_no_loss': all(transfer[f'{ms}ms'][v2][k] <= 1.05*transfer[f'{ms}ms'][v1][k] for ms in (500, 700) for k in ('xy_rmse_m', 'yaw_rmse_deg')),
-        }
-        result = dict(schema='c3v2_offline_acceptance.v1', passed=all(criteria.values()), criteria=criteria, heldout_groups=groups,
+
+        def measures(v1, v2):
+            return {
+                'A1_rest_translation_ratio_in_0.75_1.25': 0.75 <= at('rest_start', v2, 800, 'median_translation_ratio') <= 1.25,
+                'A2_rest_xy_rmse_at_most_half_v1': at('rest_start', v2, 800, 'xy_rmse_m') <= .5*at('rest_start', v1, 800, 'xy_rmse_m'),
+                'B1_turn_xy_rmse_at_most_v1': at('in_place_turn', v2, 800, 'xy_rmse_m') <= at('in_place_turn', v1, 800, 'xy_rmse_m'),
+                'B2_turn_excess_translation_at_most_10mm': at('in_place_turn', v2, 800, 'median_excess_translation_m') <= .010,
+                'B3_turn_yaw_rmse_at_most_1.05_v1': at('in_place_turn', v2, 800, 'yaw_rmse_deg') <= 1.05*at('in_place_turn', v1, 800, 'yaw_rmse_deg'),
+                'C1_other_no_loss': all(at('other', v2, ms, k) <= 1.05*at('other', v1, ms, k) for ms in (500, 800) for k in ('xy_rmse_m', 'yaw_rmse_deg')),
+                'C2_transfer_no_loss': all(transfer[f'{ms}ms'][v2][k] <= 1.05*transfer[f'{ms}ms'][v1][k] for ms in (500, 700) for k in ('xy_rmse_m', 'yaw_rmse_deg')),
+            }
+        criteria = measures('C3_v1', 'C3_v2')
+        c4_report = dict(gating=False, comparison='C4-v2 against C4-v1 with the §5 measures', measures=measures('C4_v1', 'C4_v2'))
+        result = dict(schema='c3v2_offline_acceptance.v1', passed=all(criteria.values()), criteria=criteria, c4_report_only=c4_report, heldout_groups=groups,
             transfer=transfer, transfer_v1_reference_progress_report_mm=dict(maze0_700_translation=46.62, maze1_700_translation=52.15),
             predeclaration_sha256=sha('docs/go2_navigation_c3v2_readout_fix_predeclaration_2026-09-29.md'),
             readout_v2_sha256=sha(BASE/'c3v2_readout_fit_v1/readout_v2_final.pt'), c4_v2_sha256=sha(BASE/'c4v2_fit_v1/direct_v2_final.pt'),
             evaluator_sha256=sha(__file__), heldout_contexts=len(rows), transfer_windows=len(windows))
         owner.save(OUT/'result.json', result)
-        print(json.dumps(dict(passed=result['passed'], criteria=criteria)), flush=True)
+        print(json.dumps(dict(passed=result['passed'], criteria=criteria, c4_report_only=c4_report['measures'])), flush=True)
 
 
 if __name__ == '__main__':

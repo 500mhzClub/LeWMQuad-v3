@@ -1,0 +1,47 @@
+# Harness `v4_completed_support`: known limitations (shared traps), 29 September 2026
+
+**Decision (Andrew, 29 September 2026).** The three shared traps are not fixed now. The harness stays frozen for E1 (sha256 `82b7b604…`, commit 7da82b23). The traps will be revisited with the E2 harness work, which needs its own oracle gate. Until then, every E1 result measures each controller together with these traps, and E1 reports must say so.
+
+## Counts by controller (capability validation, 20 episodes per controller)
+
+The source is the preserved validation records, read with the fixed mechanism rules in `scripts/diagnose_go2_capability_validation_timeouts_development.py` (`analysis/qualification_v4_2026-09-28/timeout_diagnosis.json`). Every failure was a 480-s timeout with zero contacts. Nothing was re-run.
+
+| Trap | C1 | C2 | C3 | C4 | Episodes |
+|---|---:|---:|---:|---:|---|
+| **1. No eligible movement under the view requirement.** Translations are view-restricted, turns are clearance-blocked, and the robot holds. | 0 | 6 | 4 | 0 | C2 15, 17, 18, 20, 26 (return), 28; C3 12, 13, 14, 15 |
+| **2. Terminal heading limit cycle at the goal.** The robot turns in place 3–5 cm from the target, and arrival never confirms. | 1 | 3 | 0 | 0 | C1 10 (home); C2 14, 27, 29 |
+| **3. Latched clearance (recovery) turn with its preferred direction blocked by forecast clearance** | 1 | 0 | 1 | 1* | C1 13; C3 17; C4 22* |
+| **All trap failures** | **2** | **9** | **5** | **1** | |
+| *Validation failures in total* | *2* | *9* | *7* | *1* | |
+
+**Not harness traps.** C3's two remaining failures (27/0 and 29/0) are its own "hold outscores every movement" stalls. They come from C3's collapsed translation predictions, not from the harness.
+
+**C0.** The oracle met traps 1 and 3 but always escaped. For example, 19/0 had 67 no-eligible holds and 16/0 had 489 view-restriction holds.
+
+## \*Which category C4's oscillation falls in
+
+**It is trap 3, the latched clearance turn, in a turning form rather than a holding form.**
+
+The fixed rules label C4 22/0 "turn oscillation without progress". That rule keys on the `LATCHED_RECOVERY_TURN_BLOCKED` hold override, which never fired here, because the harness substituted the opposite turn instead of a hold. The logged decisions show it is the same machinery:
+
+**The stuck period (30–450 s, 1,050 decisions):**
+- The harness's latched clearance turn was active in 997 decisions (95%). Its preferred direction was blocked by forecast clearance: right turn blocked 792 times, left turn 205.
+- The clearance-memory filter replaced C4's own choice in 642 decisions (61%).
+- The early heading release was suppressed 424 times.
+- The robot alternated left and right turns in place (519 and 524) with no translation for 420 s. The remaining path grew from 8.5 m to 9.6 m.
+
+**The escape:**
+- At about 450 s the latch released, and the clearance turn was active in 0 of the next 75 decisions.
+- C4 translated at once, covering 4.5 m in 30 s, and the budget ran out 5.1 m from the beacon.
+
+**The holding form, for comparison.** C1 13/0 and C3 17/0 had the latch active in 100% of their final-window decisions, with the filter replacing every choice and 0 turns. There the substitute was a hold.
+
+**The rules stay frozen.** This attribution is a reading of the logged records; the rules and their labels are unchanged. For E1, the trap-3 count is reported both ways: the frozen-rule label, and the latch-active fraction in the final window.
+
+**Only C4 hit this on 22/0.** C1, C2 and C3 all completed round trips on the same episode (RT 175, 193 and 315 s).
+
+## What each trap means for E1 comparisons
+
+- **Trap 1 mostly hits controllers that hold or predict little translation.** C2 has no motion predictor, and C3 predicts collapsed translation. So part of C3's E1 deficit against C1 and C4 will be this trap and not the representation alone. E1 reports it per controller.
+- **Trap 2 is a goal-settling artefact.** It turns a completed approach into a timeout. It hits C1 and C2 and not the learned predictors, so it slightly favours C3 and C4.
+- **Trap 3 is rare,** with one failure each for C1, C3 and C4, and it is controller-agnostic.
