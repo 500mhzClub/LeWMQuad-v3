@@ -118,8 +118,12 @@ def main(out):
     protocol = json.loads(owner.PROTOCOL.read_text())
     base = Path(protocol['output_root'])
     output.install(base)
-    others = [p.info['cmdline'] for p in psutil.process_iter(['cmdline']) if p.info['cmdline'] and any(
-        'completed_support_v4_development.py' in c or 'render_go2_capability' in c for c in p.info['cmdline'])]
+    import os
+    def busy(cmd):
+        # A Python process running a mission owner or renderer (not a shell whose text mentions them).
+        return (cmd and 'python' in os.path.basename(cmd[0]) and any(
+            a.endswith('completed_support_v4_development.py') or 'render_go2_capability' in a for a in cmd[1:]))
+    others = [p.info['cmdline'] for p in psutil.process_iter(['cmdline', 'pid']) if p.info['pid'] != os.getpid() and busy(p.info['cmdline'])]
     assert not others, 'isolation required: another mission or render is running'
     import cv2
     cv2.setNumThreads(1)

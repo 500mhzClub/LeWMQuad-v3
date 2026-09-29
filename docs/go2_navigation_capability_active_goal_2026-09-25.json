@@ -1,6 +1,6 @@
 {
   "schema": "navigation_capability_goal.v1",
-  "status": "active",
+  "status": "complete_awaiting_approval",
   "approved_start": "2026-09-25",
   "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
   "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
     "7 September 2026 navigation goal",
     "closed V4.2 decision-headroom programme"
   ],
-  "stage": "capability_qualification_running",
+  "stage": "capability_report_and_e1_proposal_delivered",
   "thread_goal_tracker": {
     "status": "legacy goal remains blocked",
     "replacement_attempt": "rejected: unfinished goal exists",
@@ -68,7 +68,11 @@
     "completed_support_v4_second_screen": "10/10 safe round trips; 20/20 across both C1 screens",
     "corrected_C0_sensor_replay": "PASS:2256 RGB and2256 depth packets bitwise; native trace exact",
     "completed_support_v4_partial_C0_gate": "4/4 qualified safe round trips; fifth attempt02/0 unqualified;15 assignments unstarted",
-    "completed_support_v4_C0_gate": "PASSED 20/20; zero contacts/hard; 1 no-match decision (02/0) requalified under the prefix erratum; 35 vetoed selections, none causing failure"
+    "completed_support_v4_C0_gate": "PASSED 20/20; zero contacts/hard; 1 no-match decision (02/0) requalified under the prefix erratum; 35 vetoed selections, none causing failure",
+    "capability_qualification": "Validation 10/0-29/0: C1 18/20, C2 11/20, C3 13/20, C4 19/20, C0 10/10 (10/0-19/0); zero contacts/hard/operating violations; C1 and C4 capable",
+    "videos": "C1-C4 on 11/0 replay-verified exactly + 2x2 composite + 4x cuts + contact sheets",
+    "report": "docs/go2_navigation_capability_qualification_result_2026-09-29.md",
+    "e1_proposal": "docs/go2_navigation_e1_proposal_2026-09-29.md"
   },
   "limitations": [
     "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
@@ -76,10 +80,7 @@
     "One C4 metadata-writer startup failure preserved before encoding/fitting"
   ],
   "remaining": [
-    "C1 development screen and authorised harness iteration",
-    "After first C1 9/10, same-harness second-episode C1 check >=9/10; if it fails, future versions screen all20 >=18/20",
-    "First corrected C0 full-RGB-D gate episode and strict bitwise command replay; then remaining oracle gate",
-    "Reduced capability qualification, official videos and E1 proposal"
+    "Andrew decisions: E1 approval and design; the single proposed C3 readout-recalibration intervention; whether to fix shared-harness traps as a new version (cap reached); held-out set for any post-intervention check; declaring the ideal accelerometer"
   ],
   "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately",
   "result_report": "docs/go2_navigation_capability_result_2026-09-25.md",
