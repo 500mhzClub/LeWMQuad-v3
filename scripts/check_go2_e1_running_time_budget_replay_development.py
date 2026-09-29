@@ -10,6 +10,13 @@
    and wall-clock fields in ALLOWED may differ, after replacing the assignment name in paths.
    Everything else must be bitwise identical: decisions, dispatch commands, model calls, native
    trace arrays, consumed packet hashes, mission rows and the episode evaluation.
+
+Attempt 1 (`e1_budget_replay_check_v1`) failed as declared: its allow-list missed four
+wall-clock measurement fields (routing compute time, camera acquisition wall time, decision
+latency, and the evaluator's hash of the planning file that carries the routing time) and the
+log order of parallel service stages finishing at the same simulated time. It is preserved.
+Attempt 2 adds exactly those, declared before its run; stage timings are compared as a
+multiset without wall time.
 """
 import argparse
 import hashlib
@@ -30,7 +37,8 @@ from scripts import run_go2_navigation_capability_completed_support_v4_developme
 from scripts.run_go2_capability_completed_support_v4_gate_erratum_continuation_development import ENVIRONMENT, closeout
 
 SOURCE = 'v4_completed_support_screen_C1_dev00_ep0_attempt001'
-ASSIGNMENT = 'e1_budget_replay_C1_dev00_ep0_attempt001'
+ASSIGNMENT = 'e1_budget_replay_C1_dev00_ep0_attempt002'
+CHECK = 'e1_budget_replay_check_v2'
 ARM, MAZE, EPISODE = 'C1', 0, 0
 REPLAY_CAP_HOURS = 2.
 ALLOWED = {
@@ -38,11 +46,15 @@ ALLOWED = {
     'process.json': {('pid',), ('created',)},
     'pose_worker_identity.json': {('pid',)},
     'result.json': {('wall_s',), ('peak_process_tree_rss_bytes',), ('peak_device_used_bytes',)},
-    'stage_timings.json': {('*', 'wall_ns')},
+    'native/in_memory_camera_observations.json': {('frames', '*', 'acquisition_wall_ms')},
+    'planning.json': {('*', 'clearance_preferred_route', 'added_routing_s')},
     'progress.jsonl': {('*', 'wall_s')},
     'episode_evaluation.json': {('wall_s',), ('wall_seconds_per_simulated_second',), ('articulated_reader_wall_s',),
-                                ('input_sha256', 'config.json'), ('input_sha256', 'result.json')},
+                                ('decision_latency_s', 'median'), ('decision_latency_s', 'p95'),
+                                ('input_sha256', 'config.json'), ('input_sha256', 'result.json'), ('input_sha256', 'planning.json')},
 }
+UNORDERED = {'stage_timings.json': 'wall_ns'}  # parallel service stages; compared as a multiset without wall time
+DECISION_RECORDS = ('requests.json', 'model_calls.json', 'mission.json', 'poses.json', 'acquisitions.json', 'planning.json')
 NOT_COMPARED = {'worker.log'}  # free-text log of the owner process
 
 
@@ -91,10 +103,20 @@ def compare(original, replay):
             failures.append(dict(file=name, reason='present in only one run'))
             continue
         a, b = original/name, replay/name
-        if a.suffix in ('.json', '.jsonl'):
+        if name in UNORDERED:
+            def strip(rows):
+                return sorted(json.dumps({k: v for k, v in r.items() if k != UNORDERED[name]}, sort_keys=True) for r in rows)
+            x, y = load(a), load(b)
+            same = strip(x) == strip(y)
+            order = sum(json.dumps({k: v for k, v in r.items() if k != UNORDERED[name]}, sort_keys=True) !=
+                        json.dumps({k: v for k, v in q.items() if k != UNORDERED[name]}, sort_keys=True) for r, q in zip(x, y))
+            rows.append(dict(file=name, multiset_identical_without=UNORDERED[name], entries=len(x), order_differences=order))
+            if not same:
+                failures.append(dict(file=name, reason='entries differ beyond order and wall time'))
+        elif a.suffix in ('.json', '.jsonl'):
             diffs = [list(p) for p in differences(load(a), load(b))]
             bad = [d for d in diffs if not allowed(name, tuple(d))]
-            rows.append(dict(file=name, identical=not diffs, allowed_differences=len(diffs)-len(bad), disallowed=bad[:20]))
+            rows.append(dict(file=name, identical=not diffs, allowed_differences=len(diffs)-len(bad), disallowed=bad[:20], disallowed_count=len(bad)))
             if bad:
                 failures.append(dict(file=name, disallowed=bad[:20], count=len(bad)))
         elif a.suffix == '.npz':
@@ -143,13 +165,14 @@ def main():
     assert Path.cwd().resolve() == owner.REPO and all(os.environ.get(k) == v for k, v in ENVIRONMENT.items())
     base = Path(json.loads(owner.PROTOCOL.read_text())['output_root'])
     output.install(base)
-    root = base/'e1_budget_replay_check_v1'
+    root = base/CHECK
     root.mkdir(exist_ok=False)
     original = base/'runs'/SOURCE
     assert json.loads((original/'config.json').read_text())['harness_sha256'] == owner.sha(owner.FREEZE)
     owner.save(root/'plan.json', dict(schema='e1_budget_replay_check.v1', source=SOURCE, assignment=ASSIGNMENT,
         source_role='dev_tune (V4 C1 screen)', swapped=['Budget'], replay_cap_hours=REPLAY_CAP_HOURS,
         allowed_differences={k: sorted(map(list, v)) for k, v in ALLOWED.items()}, not_compared=sorted(NOT_COMPARED),
+        unordered=UNORDERED, previous_attempt='e1_budget_replay_check_v1 (failed as declared; preserved)',
         script_sha256=sha(__file__), budget_module_sha256=sha('lewm/e1_running_time_budget_development.py'),
         harness_sha256=owner.sha(owner.FREEZE), original_result_sha256=sha(original/'result.json')))
     behaviour = stop_behaviour(base, root/'scratch_root')
@@ -160,7 +183,9 @@ def main():
                                   env=os.environ | ENVIRONMENT).returncode
         row = closeout(base, root, ASSIGNMENT, code)
         rows, failures = compare(original, base/'runs'/ASSIGNMENT)
-    result = dict(passed=behaviour['passed'] and code == 0 and not failures, stop_behaviour=behaviour, replay_exit_code=code,
+    decisions = {name: dict(entries=len(load(original/name)), allowed_differences=next(r['allowed_differences'] for r in rows if r['file'] == name),
+                            disallowed=next(r['disallowed_count'] for r in rows if r['file'] == name)) for name in DECISION_RECORDS}
+    result = dict(passed=behaviour['passed'] and code == 0 and not failures, stop_behaviour=behaviour, replay_exit_code=code, decision_records=decisions,
                   replay_row=row, files=rows, failures=failures, compared_files=sum(r.get('compared', True) for r in rows))
     owner.save(root/'result.json', result)
     print(json.dumps(dict(passed=result['passed'], stop_behaviour=behaviour['passed'], failures=failures[:5],
