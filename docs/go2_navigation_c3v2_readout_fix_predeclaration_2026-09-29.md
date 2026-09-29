@@ -62,5 +62,26 @@ Recordings run the maze-view collector with a fixed 19-s tape: nine 1.2-s holds,
 
 - **The check.** If C3-v2 passes §5, C1, C3-v2 and C4-v2 each run once on the 10 fresh-check episodes. They use the frozen V4 harness (only the prediction-slot model files change), the frozen readers and the prefix/reader errata.
 - **The E1 rule for C3:** C3-v2 enters E1 **only if** it passes every §5 criterion **and** has zero disallowed contacts and zero hard-clearance violations in the closed-loop check. Otherwise C3-v1 enters E1. Round-trip counts from the check are reported but do not select: 10 episodes cannot rank versions reliably.
-- **The E1 rule for C4:** C4-v2 enters E1, per Andrew's decision. A contact or hard violation in the check is a stop for his decision.
+- ~~**The E1 rule for C4:** C4-v2 enters E1, per Andrew's decision. A contact or hard violation in the check is a stop for his decision.~~ Superseded by Amendment 1 (§7).
 - **Model versions.** C3-v2 and C4-v2 are recorded as new model versions with checkpoint hashes. Andrew confirms before E1 launches, and the sealed set is untouched.
+
+## 7. Amendment 1: C4 follows C3 into E1 (Andrew's decision, 29 September 2026)
+
+**When this was committed.** After both fits had started and before any C3-v2 or C4-v2 acceptance number was computed. Both fits recorded the original text of this document (sha256 `96227b55…`, commit b72b76b9) in their `plan.json`. The amendment changes no fit setting and no §5 criterion.
+
+**The pairing rule.** The C4 that enters E1 is the one trained on the same data as the C3 that enters. The pairs are C3-v2 with C4-v2, and C3-v1 with C4-v1.
+
+1. **If C3-v2 fails §5, or fails the check's safety bar** (any disallowed contact or hard-clearance violation), C3-v1 and C4-v1 enter E1.
+   - Both already have closed-loop validation results, so no C1 + C4-v2 check is run.
+   - C4-v2 is recorded as a model version that does not enter E1.
+2. **If C3-v2 passes both, and C4-v2 has any disallowed contact or hard-clearance violation in the check**, the report flags it and Andrew decides.
+3. **Otherwise** C3-v2 and C4-v2 enter E1.
+
+**Reason.** C4 was refit only to keep it on exactly the data C3's readout uses. C4-v2 alongside C3-v1 would give the supervised model data that the JEPA readout isn't using, which would confound the C3–C4 comparison.
+
+**E1 training seeds.**
+- E1's additional training seeds use the selected pair's data and training procedure.
+- Every seed enters E1 whatever its offline numbers: acceptance selects the version, not seeds.
+- Each seed's §5 acceptance measures are reported.
+
+**C4 scoring (reported, not gating).** C4-v1 and C4-v2 are scored with the same §5 measures as C3 on the same windows: held-out groups A, B and C1, plus the C2 transfer population. C4-v2 is compared with C4-v1. None of these numbers selects a version.
