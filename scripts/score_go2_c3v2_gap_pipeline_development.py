@@ -100,6 +100,10 @@ def score_run(run, models, rows, divergences):
     arm = json.loads((run/'config.json').read_text())['controller']
     deployed = 'C3_v2' if arm == 'C3' else 'C4_v2'
     replay = REPLAYS/run.name
+    while not (replay/'replay_verification.json').exists():  # a replay still running
+        if (replay/'failure.json').exists():
+            raise RuntimeError('replay failed: '+run.name)
+        time.sleep(30)
     assert json.loads((replay/'replay_verification.json').read_text())['passed']
     n = run/'native'
     recording = Recording(n/'policy_histories.npz', n/'policy_observations.json', lambda i: replay/'ego_frames'/f'{i:04d}.png', n/'physics_trace.npz')
@@ -183,8 +187,8 @@ def summarise(rows):
 def main(only, out):
     output.install(BASE)
     models = load_models()
-    runs = [BASE/'runs'/d.name for d in sorted(REPLAYS.iterdir()) if d.is_dir() and (d/'replay_verification.json').exists()
-            and (not only or d.name in only)]
+    runs = [d for pattern in ('c3v2_check_C3_chk*_ep0_attempt001', 'c3v2_check_C4_chk*_ep0_attempt001')
+            for d in sorted((BASE/'runs').glob(pattern)) if not only or d.name in only]
     rows, divergences, per_run = [], [], []
     started = time.monotonic()
     with wall.job(BASE, 'C3-v2 gap diagnosis: pipeline test and like-for-like'):
