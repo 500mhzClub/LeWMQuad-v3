@@ -32,9 +32,16 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
   4. one full run of all 60 sealed test mazes on every controller (C0 on a subset) as **preliminary results**, plus validation and videos.
   The sealed mazes are not run before the freeze. Afterwards that set is relabelled **"preliminary test"**.
 - **The rigorous phase will use a freshly generated sealed set.**
-- **Before the preliminary sealed run:**
-  - That set lives in a `sealed_*` directory, which `AGENTS.md` forbids the model-facing account to open. Andrew either declassifies and relabels it (rename plus an `AGENTS.md` exception) or sets up the custody launcher (`docs/go2_navigation_e1_sealed_custody_launcher_proposal_2026-09-30.md`).
-  - The development feature cache (about 50 GB) must be deleted or shrunk first, to keep the 12-GiB reserve. Andrew is told before anything else is cleared.
+- **Preliminary-test set (Andrew, 1 October):** Andrew declassified the 60 capability test mazes (layouts 30–89). They are renamed `sets/prelim_test_v1`, with an `AGENTS.md` exception (commit 657ca4c8), and are run through the dev entry's `prelim_test` set (hash-verified against the capability registry). Every result from them is labelled **preliminary**.
+- **Rigorous-phase sealed set generated (1 October):** `sets/sealed_test_v2`, 60 mazes × 2 episodes. It uses the same generator and exclusions, extended to all 257 earlier graphs, and random seeds that were never displayed. Structural checks only; all passed. Sealed and untouched until the rigorous phase. See [the registration note](go2_navigation_sealed_test_v2_registration_2026-10-01.md) (public receipt sha256 `45460286…`).
+- **Preliminary run, as approved by Andrew (1 October):**
+  - **Recovery on:** all 60 preliminary mazes (IDs 30–89, episode 0), C1–C4, with the drive-test-chosen C3 decoder and its matched C4.
+  - **Recovery off:** the first 20 of those (IDs 30–49), C1–C4.
+  - **C0:** 10 mazes (IDs 30–39), recovery on.
+  - **No validation or round mazes;** validation was used for tuning, so its numbers would be optimistic.
+  - **Sequence:** first a 3-maze trial on all controllers, then the full run. A short progress report at about 25%, and keep going unless something is broken.
+  - **Beforehand:** the 1-versus-2 concurrency identity check, and deletion of the feature cache once the decoder is chosen (authorised).
+  - **Results:** per controller, success, SPL, times, recovery counts per mission, stall rates, contacts and clearance, plus recovery on versus off on the 20 mazes. All labelled preliminary.
 - **Decoder inputs per controller (current system):**
   - C1: command history plus the candidate tape (kinematic forecast; no images).
   - C2: reactive, no motion predictor.
