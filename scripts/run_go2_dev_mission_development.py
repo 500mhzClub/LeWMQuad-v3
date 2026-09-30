@@ -54,6 +54,12 @@ def model_loader(c3_decoder, c4_weights):
         model = owner.load_model(arm, protocol, root)
         if arm == 'C3' and c3_decoder:
             state = torch.load(c3_decoder, map_location='cpu', weights_only=False)
+            if 'model_state_dict' in state and 'readout' not in state:
+                # A deployed DenseVisualMotionReadout checkpoint (for example C3-v3, 85ab19ec).
+                model.readout.load_state_dict(state['model_state_dict'])
+                model.readout.eval().requires_grad_(False)
+                model.readout_identity = dict(model.readout_identity, arm='deployed_checkpoint', path=str(c3_decoder), sha256=sha(c3_decoder))
+                return model
             variant = state.get('variant', 'base')
             config = state.get('readout_config', {})
             readout = ReadoutVariant(model.readout.cpu(), past_frames=variant == 'past_frames', history=variant == 'history', **config)
