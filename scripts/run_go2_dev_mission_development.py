@@ -20,7 +20,7 @@ from pathlib import Path
 import torch
 
 from lewm import decision_headroom_json_v42_development as output
-from lewm.dev_harness_fixes_development import compose
+from lewm.dev_harness_fixes_development import check_track_override, compose
 from lewm.dev_readout_variants_development import ReadoutVariant
 from lewm.eligible_floor_registration_development import bind
 from lewm.navigation_capability_completed_support_development import CompletedSupportRuntimeMixin
@@ -74,7 +74,11 @@ def model_loader(c3_decoder, c4_weights):
 def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights, allow_final_round):
     protocol = json.loads(owner.PROTOCOL.read_text())
     root = Path(protocol['output_root'])
+    # Hash the code at start: a later edit must not relabel a run that loaded the earlier file.
+    code_sha = dict(fixes_module_sha256=sha('lewm/dev_harness_fixes_development.py'), entry_sha256=sha(__file__))
     runtime_mixin = compose(fixes, CompletedSupportRuntimeMixin)
+    base_runtime = owner.source.DenseReactiveNavigationRuntime if arm == 'C2' else owner.source.DenseNavigationRuntime
+    check_track_override(type('Checked', (runtime_mixin, base_runtime), {}))
     try:
         bind(owner.run, episode_inputs=loader_for(set_name, maze, allow_final_round), load_model=model_loader(c3_decoder, c4_weights),
              StartupRecoveryRuntimeMixin=runtime_mixin)(arm, maze, episode, assignment)
@@ -84,8 +88,7 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
             output.install(root)
             owner.save(destination/'dev_run.json', dict(mode='development', controller=arm, set=set_name, maze=maze, episode=episode,
                 fixes=sorted(fixes), c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
-                c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None,
-                fixes_module_sha256=sha('lewm/dev_harness_fixes_development.py'), entry_sha256=sha(__file__)))
+                c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None, **code_sha))
 
 
 if __name__ == '__main__':

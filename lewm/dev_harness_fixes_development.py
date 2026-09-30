@@ -26,7 +26,15 @@ is edited; the development owner swaps the composed mixin in through `bind`.
     radius ESCAPE_FLOOR_M is clear. The frozen check uses 0.45 m; 0.42 m still clears the Go2's
     turning sweep of about 0.39 m.
   Translations are never relaxed, and unobserved floor is never entered.
+- `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
+  and every downstream consumer (registration, map, routing) re-derives the pose from the
+  tracker's own evidence chain, so re-anchoring means re-plumbing those validators. The one
+  pose loss seen on this harness (C1 fresh-check 09) came at the end of a flipping latched
+  turn, facing a featureless wall, so `latch` targets its cause. This fix prints the
+  tracker's failure chain to worker.log and then faults exactly as before.
 """
+from dataclasses import replace
+import json
 import math
 
 import numpy as np
@@ -35,6 +43,7 @@ from lewm.clearance_turn_recovery_development import choose, wrap
 from lewm.observed_geometry_refinement_development import nominal_connector
 from lewm.geometry_progress_pilot_development import ACTIONS, candidate_commands
 from lewm.mission_coordinate_metric_development import position_distance
+from lewm.process_mapped_runtime_development import pose_update
 
 TERMINAL_RADIUS_M = .10
 
@@ -165,7 +174,21 @@ class DeadlockEscapeMixin:
                                  frozen_reason=result['reason'], disk_radius_m=ESCAPE_FLOOR_M, connector=check))
 
 
-FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, 'deadlock': DeadlockEscapeMixin}
+class PoseLossRecordMixin:
+    """MeasuredLatencyRuntime._track, plus a worker.log record of the tracker failure chain."""
+
+    def _track(self, packet):
+        raw = self.pose_executor.submit(pose_update, replace(packet, history=())).result()
+        if raw.get('current_pose') is None or raw.get('failure') is not None:
+            print(json.dumps(dict(dev_pose_loss=dict(frame=packet.frame, measured_ns=packet.measured_ns, status=raw.get('status'),
+                                                     failure=raw.get('failure'), contact=raw.get('contact')), default=str)), flush=True)
+            raise ValueError('measured visual pose unavailable')
+        self.clock_ns()
+        self.queues['registration'].put_nowait((packet, raw))
+
+
+FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, 'deadlock': DeadlockEscapeMixin,
+         'pose': PoseLossRecordMixin}
 
 
 def compose(fixes, base):
@@ -175,3 +198,10 @@ def compose(fixes, base):
         raise ValueError(f'unknown fixes: {sorted(unknown)}')
     bases = tuple(FIXES[f] for f in sorted(fixes))+(base,)
     return type('DevStartupRecoveryRuntimeMixin', bases, {})
+
+
+def check_track_override(runtime):
+    """`pose` replaces MeasuredLatencyRuntime._track; refuse if anything else sits between them."""
+    owners = [k for k in runtime.__mro__ if '_track' in k.__dict__]
+    if owners and owners[0] is PoseLossRecordMixin and owners[1].__name__ != 'MeasuredLatencyRuntime':
+        raise TypeError(f'pose fix would shadow {owners[1].__module__}.{owners[1].__name__}._track')
