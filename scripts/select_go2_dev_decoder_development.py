@@ -6,13 +6,17 @@ Rule (docs/CURRENT_RESEARCH_BRIEF.md, commit 54944c4d, fixed before any phase-1 
   better; scores within 1 mm are split by the mean |log(median ratio)| over the moving types;
 - between input variants, (a) past_frames is preferred if within 3 mm of (b) history;
 - report on eval_transfer (700 ms), eval_offline and eval_fresh_c3, never used for choosing;
-- C4 is reported alongside and plays no part in the choice.
+- C4 is reported alongside and plays no part in the choice;
+- each candidate is scored by its mean over seeds (brief, commit a8d0b618): fits named
+  NAME_s<seed> are grouped with NAME, and report tables show seed means.
 
 Usage: select_go2_dev_decoder_development.py NAME [NAME ...]
 """
 import argparse
+from collections import defaultdict
 import json
 import math
+import re
 from pathlib import Path
 
 from scripts.fit_go2_dev_decoder_development import CATEGORIES, OUT
@@ -28,6 +32,29 @@ def score(result, model='C3'):
     errors = [cells[c]['median_xy_mm'] for c in CATEGORIES if c in cells]
     ratios = [abs(math.log(cells[c]['median_ratio'])) for c in MOVING if c in cells and cells[c]['median_ratio']]
     return dict(score_mm=sum(errors)/len(errors), types_scored=len(errors), mean_abs_log_ratio=sum(ratios)/len(ratios) if ratios else None)
+
+
+def group(results):
+    """{candidate: [fit, ...]}: NAME and NAME_s<seed> are seeds of one candidate."""
+    groups = defaultdict(list)
+    for r in results:
+        groups[re.sub(r'_s\d{10}$', '', r['name'])].append(r)
+    return groups
+
+
+def mean_result(name, fits):
+    """Seed-mean of every per-type metric, in the single-fit layout."""
+    out = dict(name=name, seeds=len(fits), eval={})
+    for key in fits[0]['eval']:
+        out['eval'][key] = {}
+        for cat, cell in fits[0]['eval'][key].items():
+            cells = [f['eval'][key][cat] for f in fits]
+            merged = dict(n=cell['n'])
+            for m in ('median_ratio', 'median_xy_mm', 'rmse_xy_mm', 'rmse_yaw_deg', 'median_excess_mm', 'median_true_mm'):
+                values = [c[m] for c in cells if c.get(m) is not None]
+                merged[m] = sum(values)/len(values) if values else None
+            out['eval'][key][cat] = merged
+    return out
 
 
 def choose(results):
@@ -51,13 +78,16 @@ def row(result, key, model):
 
 
 def main(names):
-    results = [json.loads((OUT/f'{n}.json').read_text()) for n in names]
+    fits = [json.loads((OUT/f'{n}.json').read_text()) for n in names]
+    results = [mean_result(name, members) for name, members in group(fits).items()]
+    spread = {name: [score(f)['score_mm'] for f in members] for name, members in group(fits).items()}
     chosen, scored = choose(results)
-    print(f'Choice set {CHOICE_KEY} (C3): mean over movement types of median XY error (mm)')
+    print(f'Choice set {CHOICE_KEY} (C3): mean over movement types of median XY error (mm), seed means')
     for s, name in scored:
         tag = '  <- chosen' if name == chosen else ''
         ratio = '-' if s['mean_abs_log_ratio'] is None else f"{s['mean_abs_log_ratio']:.3f}"
-        print(f"  {name:32s} {s['score_mm']:6.1f} mm  (types {s['types_scored']}, mean|log ratio| {ratio}){tag}")
+        seeds = ', '.join(f'{v:.1f}' for v in spread[name])
+        print(f"  {name:28s} {s['score_mm']:6.1f} mm  (seeds: {seeds}; mean|log ratio| {ratio}){tag}")
     print('\nReport sets (not used for choosing): median ratio · median XY error (mm) by movement type')
     for key in (CHOICE_KEY,)+REPORT_KEYS:
         print(f'\n{key}')
