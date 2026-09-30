@@ -8,6 +8,12 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   dominates, and in-place turns win even though they never bring an in-footprint target round
   (the terminal limit cycle; for example C1 validation 10/0 chose 99 right turns in a row, 4.5 cm
   from home). The arrival definition (2 cm observed, 4 cm physical, 1-s dwell) is unchanged.
+  C2's reactive terminal rule (turn to face the target within 0.1 rad, then pulse forward)
+  has its own limit cycle: on validation 14, 27 and 29 it turns the same way for ~1,000
+  decisions 2-5 cm from the goal, because the target sits near the Go2's turning centre and
+  turning in place carries it round. After TERMINAL_SPIN_TURNS consecutive same-direction
+  terminal turns, one existing 100-ms forward pulse is taken instead, which moves the robot
+  off that point; the heading-first rule then resumes.
 - `latch`: time out the clearance-turn recovery latch. The frozen latch releases only when the
   measured heading reaches its target. When the latched direction is blocked by forecast
   clearance it holds forever (C1 val 13, C3 val 17, C3-v2 fresh 01 and 06), or it flips direction
@@ -87,7 +93,31 @@ class TerminalPositionScoringMixin:
                       terminal_radius_m=TERMINAL_RADIUS_M)
         return result
 
+    def __init__(self, *args, **kwargs):
+        self._terminal_spin = (None, 0)
+        super().__init__(*args, **kwargs)
 
+    def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+        result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+        if result.get('rule') != 'terminal_measured_heading_then_existing_forward_pulse' or result['action'] not in ('left_turn', 'right_turn'):
+            self._terminal_spin = (None, 0)
+            return result
+        direction, count = self._terminal_spin
+        count = count+1 if direction == result['action'] else 1
+        self._terminal_spin = (result['action'], count)
+        forward = next(r for r in result['candidates'] if r['action'] == 'forward')
+        if count < TERMINAL_SPIN_TURNS or not forward['eligible']:
+            return result
+        result.update(action='forward', action_index=ACTIONS.index('forward'), requested_command=candidate_commands('forward')[0],
+                      command_duration_ns=TERMINAL_PULSE_NS)
+        result['terminal_translation_pulse'] = dict(result['terminal_translation_pulse'], selected_translation_pulse=True)
+        result['dev_terminal_spin_break'] = dict(consecutive_same_direction_turns=count, turn_direction=direction,
+                                                 waypoint_body_xy_m=result['waypoint_body_xy_m'])
+        self._terminal_spin = (None, 0)
+        return result
+
+
+TERMINAL_SPIN_TURNS, TERMINAL_PULSE_NS = 15, 100_000_000
 LATCH_STALL_DECISIONS, LATCH_MAX_SWITCHES, LATCH_COOLDOWN = 10, 3, 15
 
 
