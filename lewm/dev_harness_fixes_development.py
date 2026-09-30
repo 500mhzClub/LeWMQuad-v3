@@ -54,7 +54,10 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   unknown pocket: at C1 fresh-check 09, retiring 0.3 m around the viewpoint only moved the
   choice to the neighbouring frontier cell, served from the same viewpoint, and control was
   bit-identical. The exclusion survives the visit logic's clear-on-new-map rule.
-  Exclusion only changes which frontier is selected; no cell is marked free or blocked.
+  Exclusion only changes which frontier is selected; no cell is marked free or blocked. An
+  exclusion that leaves neither a frontier nor a goal route is undone at once (C1 validation
+  13: excluding the only frontier left the robot spinning for the 90-s exclusion, and the
+  mission ran out of budget; without `stall` it succeeds).
 - `backup`: a scripted short back-up inside the escape rules (Andrew, 30 September evening).
   Reverse is not added to the candidate bank, because no predictor is trained on it. The
   deadlock escape requests it when no turn or move qualifies; the stall watchdog requests it
@@ -405,10 +408,18 @@ class StallWatchdogMixin:
         event = dict(measured_ns=measured_ns, stalled_since_ns=window['start_ns'], position_map_xy_m=q.tolist(),
                      frontier_cell=list(target), excluded_cells=len(cells), abandoned_visit=abandoned,
                      exclusion_until_ns=measured_ns+STALL_EXCLUSION_NS, remedy='frontier_exclusion')
-        self.dev_stall_events.append(event)
-        print(json.dumps(plain(dict(dev_stall=event))), flush=True)
         self._stall_window = dict(start_ns=measured_ns, start_xy=q)
         rerouted = super()._route(snapshot, evidence, goal, measured_ns=measured_ns)
+        if rerouted.get('status') not in ('OBSERVED_FLOOR_ROUTE_TO_FRONTIER', 'OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL'):
+            # Never retire the last reachable frontier (C1 validation 13: the exclusion left no
+            # frontier, and the robot spun for the 90-s exclusion instead of exploring).
+            for cell in cells:
+                visits.excluded.sticky.pop(cell, None)
+                visits.excluded.discard(cell)
+            event.update(remedy='exclusion_undone_no_other_route', status_after_exclusion=rerouted.get('status'))
+            rerouted = super()._route(snapshot, evidence, goal, measured_ns=measured_ns)
+        self.dev_stall_events.append(event)
+        print(json.dumps(plain(dict(dev_stall=event))), flush=True)
         rerouted['dev_stall_reroute'] = plain(event)
         return rerouted
 

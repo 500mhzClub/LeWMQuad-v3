@@ -47,7 +47,8 @@ def interventions(run):
     log = run/'worker.log'
     events = [json.loads(line)['dev_stall'] for line in log.read_text(errors='replace').splitlines()
               if line.startswith('{"dev_stall"')] if log.exists() else []
-    stalls = sum(1 for e in events if e.get('remedy') != 'backup')  # stall answered by a back-up is counted under back-ups
+    # A stall answered by a back-up is counted under back-ups; an undone exclusion is not a reroute.
+    stalls = sum(1 for e in events if e.get('remedy') not in ('backup', 'exclusion_undone_no_other_route'))
     return dict(decisions=len(rows), deadlock_escapes=sum(kinds.values()), escape_kinds=dict(kinds), stall_reroutes=stalls,
                 latch_timeouts=latch['timeouts'], latch_cooldown_suppressions=latch['cooldown_suppressions'], terminal_spin_breaks=spin,
                 backups=backups['episodes'], backup_steps=backups['steps'], backups_aborted=backups['aborted'])
