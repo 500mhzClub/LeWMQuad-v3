@@ -26,6 +26,17 @@ is edited; the development owner swaps the composed mixin in through `bind`.
     radius ESCAPE_FLOOR_M is clear. The frozen check uses 0.45 m; 0.42 m still clears the Go2's
     turning sweep of about 0.39 m.
   Translations are never relaxed, and unobserved floor is never entered.
+  C2's reactive selector deadlocks the same way, only more often: 6 of its 11 validation
+  failures end in about 1,000 consecutive holds at a stored clearance of 0.41-0.44 m. It
+  gates every action on the current stored clearance exceeding 0.45 m, so in-place turns
+  cannot free it. After ESCAPE_AFTER such holds, provided the clearance is at least
+  REACTIVE_ESCAPE_FLOOR_M:
+  - selection picks the forward/arc move closest to C2's own desired command whose 400-ms
+    requested path keeps the stored-map clearance at least (current - ESCAPE_SLACK_M) and ends
+    at least REACTIVE_ESCAPE_GAIN_M further from stored obstacles; if none exists, it turns
+    toward the heading with the most clearance 0.1 m away;
+  - dispatch allows that move if the currently observed connector clears
+    REACTIVE_ESCAPE_FLOOR_M and does not end closer to an observed obstacle than it starts.
 - `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
   and every downstream consumer (registration, map, routing) re-derives the pose from the
   tracker's own evidence chain, so re-anchoring means re-plumbing those validators. The one
@@ -40,7 +51,8 @@ import math
 import numpy as np
 
 from lewm.clearance_turn_recovery_development import choose, wrap
-from lewm.observed_geometry_refinement_development import nominal_connector
+from lewm.fine_stored_obstacle_routing_development import cached_clearance
+from lewm.observed_geometry_refinement_development import nominal_connector, segment_cell_distances
 from lewm.geometry_progress_pilot_development import ACTIONS, candidate_commands
 from lewm.mission_coordinate_metric_development import position_distance
 from lewm.process_mapped_runtime_development import pose_update
@@ -118,23 +130,42 @@ class LatchTimeoutMixin:
 
 
 ESCAPE_AFTER, ESCAPE_FLOOR_M, ESCAPE_SLACK_M = 5, .42, .003
+REACTIVE_ESCAPE_FLOOR_M, REACTIVE_ESCAPE_GAIN_M, REACTIVE_ESCAPE_SECONDS = .40, .005, .4
+
+
+def requested_endpoint(p, yaw, command, seconds, steps=20):
+    """Unicycle integration of one constant requested command, map frame."""
+    x, y, heading = float(p[0]), float(p[1]), yaw
+    dt = seconds/steps
+    for _ in range(steps):
+        x += (command[0]*math.cos(heading)-command[1]*math.sin(heading))*dt
+        y += (command[0]*math.sin(heading)+command[1]*math.cos(heading))*dt
+        heading += command[2]*dt
+    return np.array([x, y])
+
+
+def observed_distance(point, cells):
+    distances = segment_cell_distances(point, point, cells)
+    return float(distances.min()) if len(distances) else math.inf
 
 
 class DeadlockEscapeMixin:
     def __init__(self, *args, **kwargs):
-        self._deadlock_holds, self._escape_armed = 0, False
+        self._deadlock_holds, self._escape_armed = 0, None
         super().__init__(*args, **kwargs)
 
     def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
         result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+        if 'memory_forecast_candidates' not in result and 'current_nominal_disk_clear' in result:
+            return self._reactive_escape(result, snapshot, position, rotation)
         rows = result.get('memory_forecast_candidates')
         if not rows or result['action'] != 'hold':
-            self._deadlock_holds, self._escape_armed = 0, False
+            self._deadlock_holds, self._escape_armed = 0, None
             return result
         utilities = {r['action']: r['utility_m'] for r in result.get('scan_utilities', result['candidates'])}
         movable = [r for r in rows if r['action'] != 'hold' and r['action'] in utilities and r['nominal_predicted_path_clear']]
         if movable or (result.get('clearance_turn') or {}).get('active'):
-            self._deadlock_holds, self._escape_armed = 0, False
+            self._deadlock_holds, self._escape_armed = 0, None
             return result
         self._deadlock_holds += 1
         if self._deadlock_holds < ESCAPE_AFTER:
@@ -149,9 +180,48 @@ class DeadlockEscapeMixin:
         side = 'left_turn' if goal is None or math.atan2(goal[1], goal[0]) > 0 else 'right_turn'
         index = max(options, key=lambda i: (rows[i]['action'] == side, rows[i]['minimum_predicted_path_clearance_m']))
         choose(result, index)
-        self._escape_armed = True
+        self._escape_armed = 'turn'
         result['dev_deadlock_escape'] = dict(consecutive_no_eligible_holds=self._deadlock_holds, current_clearance_m=current,
                                              clearance_floor_m=floor, action=rows[index]['action'], dispatch_disk_radius_m=ESCAPE_FLOOR_M)
+        return result
+
+    def _reactive_escape(self, result, snapshot, position, rotation):
+        """C2: move away from stored obstacles when the 0.45-m current-clearance gate holds forever."""
+        if result['action'] != 'hold' or result['current_nominal_disk_clear'] is not False:
+            self._deadlock_holds, self._escape_armed = 0, None
+            return result
+        self._deadlock_holds += 1
+        current = result.get('current_stored_clearance_m')
+        if self._deadlock_holds < ESCAPE_AFTER or current is None or current < REACTIVE_ESCAPE_FLOOR_M:
+            return result
+        clearance = cached_clearance(snapshot.fine_occupied)
+        p = np.asarray(position, float)[:2]
+        yaw = math.atan2(rotation[1][0], rotation[0][0])
+        desired = {r['action']: r['normalized_command_distance_squared'] for r in result['candidates']}
+        moves = []
+        for action in ('forward', 'left_arc', 'right_arc'):
+            end = requested_endpoint(p, yaw, candidate_commands(action)[0], REACTIVE_ESCAPE_SECONDS)
+            path, final = clearance.minimum(p, end), clearance.minimum(end, end)
+            if path is not None and path >= current-ESCAPE_SLACK_M and final >= current+REACTIVE_ESCAPE_GAIN_M:
+                moves.append((desired[action], action, path, final))
+        if moves:
+            _, action, path, final = min(moves)
+            detail = dict(kind='translation', path_clearance_m=path, end_clearance_m=final)
+        else:
+            headings = np.linspace(-math.pi, math.pi, 16, endpoint=False)
+            probes = [p+.1*np.array([math.cos(yaw+h), math.sin(yaw+h)]) for h in headings]
+            gains = [clearance.minimum(q, q) for q in probes]
+            best = int(np.argmax(gains))
+            if gains[best] < current+REACTIVE_ESCAPE_GAIN_M:
+                return result
+            action = 'left_turn' if headings[best] > 0 else 'right_turn'
+            detail = dict(kind='turn_toward_clearance', relative_heading_rad=float(headings[best]), clearance_there_m=float(gains[best]))
+        index = ACTIONS.index(action)
+        result.update(action=action, action_index=index, requested_command=candidate_commands(action)[0],
+                      command_duration_ns=int(REACTIVE_ESCAPE_SECONDS*1e9))
+        self._escape_armed = 'reactive'
+        result['dev_deadlock_escape'] = dict(consecutive_no_eligible_holds=self._deadlock_holds, current_clearance_m=current,
+                                             action=action, dispatch_disk_radius_m=REACTIVE_ESCAPE_FLOOR_M, **detail)
         return result
 
     def request(self, *, now_ns):
@@ -161,17 +231,28 @@ class DeadlockEscapeMixin:
         with self.lock:
             live = [q for q in self.plans if q.dispatch_ns <= now_ns < q.expires_ns]
             plan, current = (live[-1] if live else None), self.latest_obstacles
-        if plan is None or current is None or any(plan.command[:2]) or not plan.command[2]:
+        if plan is None or current is None or not any(plan.command):
             return result
-        p = np.asarray(current.position_map)
-        check = nominal_connector(p[:2], p[:2], sorted(current.occupied), radius_m=ESCAPE_FLOOR_M)
-        if not check['nominal_disk_connector_clear']:
+        translating = any(plan.command[:2])
+        if translating and self._escape_armed != 'reactive':
+            return result
+        radius = REACTIVE_ESCAPE_FLOOR_M if self._escape_armed == 'reactive' else ESCAPE_FLOOR_M
+        p, R = np.asarray(current.position_map), np.asarray(current.rotation_map_from_body)
+        cells = sorted(current.occupied)
+        endpoint = p
+        if translating:
+            seconds = (plan.expires_ns-now_ns)/1e9
+            endpoint = p+R@np.array([plan.command[0]*seconds, plan.command[1]*seconds, 0.])
+        check = nominal_connector(p[:2], endpoint[:2], cells, radius_m=radius)
+        away = not translating or observed_distance(endpoint[:2], cells) >= observed_distance(p[:2], cells)
+        if not check['nominal_disk_connector_clear'] or not away:
             return result
         with self.lock:
             self.rejected_windows.pop(plan.observed_ns, None)
         return result | dict(requested_command=plan.request(now_ns=now_ns, fresh_observation_allows_motion=True),
-                             reason='CURRENT_NOMINAL_OBSTACLE_TEST_PASSED', dev_escape_turn_dispatch=dict(
-                                 frozen_reason=result['reason'], disk_radius_m=ESCAPE_FLOOR_M, connector=check))
+                             reason='CURRENT_NOMINAL_OBSTACLE_TEST_PASSED', dev_escape_dispatch=dict(
+                                 kind=self._escape_armed, frozen_reason=result['reason'], disk_radius_m=radius,
+                                 moves_away_from_observed=away, connector=check))
 
 
 class PoseLossRecordMixin:
