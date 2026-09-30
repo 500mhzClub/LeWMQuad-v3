@@ -20,7 +20,7 @@ from pathlib import Path
 import torch
 
 from lewm import decision_headroom_json_v42_development as output
-from lewm.dev_harness_fixes_development import check_track_override, compose
+from lewm.dev_harness_fixes_development import check_track_override, compose, fixes_for
 from lewm.dev_readout_variants_development import ReadoutVariant, install
 from lewm.eligible_floor_registration_development import bind
 from lewm.navigation_capability_completed_support_development import CompletedSupportRuntimeMixin
@@ -72,7 +72,7 @@ def model_loader(c3_decoder, c4_weights):
     return load_model
 
 
-def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights, allow_final_round):
+def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights, allow_final_round, recovery=None):
     protocol = json.loads(owner.PROTOCOL.read_text())
     root = Path(protocol['output_root'])
     # Hash the code at start: a later edit must not relabel a run that loaded the earlier file.
@@ -88,7 +88,7 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
         if destination.exists():
             output.install(root)
             owner.save(destination/'dev_run.json', dict(mode='development', controller=arm, set=set_name, maze=maze, episode=episode,
-                fixes=sorted(fixes), c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
+                fixes=sorted(fixes), recovery=recovery, c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
                 c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None, **code_sha))
 
 
@@ -100,9 +100,14 @@ if __name__ == '__main__':
     p.add_argument('--episode', type=int, default=0)
     p.add_argument('--assignment', required=True)
     p.add_argument('--fixes', default='')
+    p.add_argument('--recovery', choices=('on', 'off'), help='named fix set: on = all development fixes, off = pose record only')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
     p.add_argument('--allow-final-round', action='store_true')
     a = p.parse_args()
-    main(a.controller, a.set, a.maze, a.episode, a.assignment, [f for f in a.fixes.split(',') if f], a.c3_decoder, a.c4_weights,
-         a.allow_final_round)
+    fixes = [f for f in a.fixes.split(',') if f]
+    if a.recovery:
+        if fixes:
+            p.error('--recovery and --fixes are exclusive')
+        fixes = fixes_for(a.recovery)
+    main(a.controller, a.set, a.maze, a.episode, a.assignment, fixes, a.c3_decoder, a.c4_weights, a.allow_final_round, a.recovery)

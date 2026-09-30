@@ -537,6 +537,21 @@ FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, '
          'pose': PoseLossRecordMixin, 'stall': StallWatchdogMixin, 'backup': ScriptedBackupMixin}
 
 
+# Andrew (30 Sep evening): the preliminary run drives every controller twice, recovery on (the
+# full development system) and recovery off (the controller's own choices on the frozen V4
+# harness). Every behavioural fix overrides a controller choice, so all of them are recovery;
+# `pose` only records the tracker failure chain and stays on in both.
+RECOVERY_FIXES = ('backup', 'deadlock', 'latch', 'stall', 'terminal')
+DIAGNOSTIC_FIXES = ('pose',)
+
+
+def fixes_for(recovery):
+    """The fix list for --recovery on|off."""
+    if recovery not in ('on', 'off'):
+        raise ValueError('recovery must be on or off')
+    return sorted(DIAGNOSTIC_FIXES+(RECOVERY_FIXES if recovery == 'on' else ()))
+
+
 def compose(fixes, base):
     """The frozen startup mixin with the requested fixes ahead of it."""
     unknown = set(fixes)-set(FIXES)

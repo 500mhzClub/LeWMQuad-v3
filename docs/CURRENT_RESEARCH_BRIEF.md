@@ -52,6 +52,12 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - `eval_fresh_c3` (C3-v2's own fresh-check decisions).
   - The matched C4 refit is reported alongside and plays no part in the choice.
 - **Recovery reporting (Andrew, 30 September evening):** every table reports, per mission and per controller, deadlock escapes, stall reroutes, latch timeouts and terminal spin breaks next to success, contacts and clearance (`scripts/summarise_go2_dev_cohorts_development.py`). Recovery must not hide weak prediction.
+- **Recovery on/off (Andrew, 30 September evening):** the preliminary run drives every controller twice: recovery on (the full development system) and recovery off (the controller's own choices on the frozen V4 harness). Otherwise recovery can flatten the differences between controllers; for example C2 reached 30/30 with recovery in 17 missions.
+  - Switch: `--recovery on|off` on the dev mission and cohort entries (`fixes_for` in `lewm/dev_harness_fixes_development.py`).
+  - **Recovery** means all behavioural fixes: terminal, latch, deadlock, stall and back-up. Each overrides a controller choice. `pose` only records the tracker failure chain and stays on in both.
+  - `scripts/test_go2_dev_recovery_switch_development.py` checks that recovery-on composes exactly the runtime of the full explicit fix list (same classes, same order).
+- **Pose corrections (Andrew, 30 September evening):** tables also report, per mission, jumps in the published pose between consecutive 100-ms frames beyond the Go2's physical limits (more than 0.05 m or 0.15 rad), and the frames in floor-transport re-anchoring mode.
+  - Correction: C1 validation 13 had **no** pose corrections. Its earlier success came from about 0.45 m of creep during 125 s of in-place oscillation, which made a route feasible, not from a pose correction.
 - **Reverse motion:** a scripted short back-up may be used inside the escape rule (for the narrow-corridor turnaround). Reverse is **not** added to the candidate bank, because no predictor is trained on it.
 
 **Previous status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
