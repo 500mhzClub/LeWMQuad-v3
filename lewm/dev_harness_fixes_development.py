@@ -37,6 +37,15 @@ is edited; the development owner swaps the composed mixin in through `bind`.
     toward the heading with the most clearance 0.1 m away;
   - dispatch allows that move if the currently observed connector clears
     REACTIVE_ESCAPE_FLOOR_M and does not end closer to an observed obstacle than it starts.
+- `stall`: retire a frontier the robot cannot make progress toward. C1 fresh-check 09 spends
+  160+ s at one spot, turning back and forth toward a frontier route point 0.38 m away that
+  its clearance-limited turns never face. Latch releases do not help: it re-latches, and it
+  never holds, so `deadlock` does not fire. On the outbound leg, while routing to a frontier,
+  if the robot moves less than STALL_RADIUS_M over STALL_NS, the active camera-frontier visit
+  is abandoned (its viewpoint recorded as tried) and the frontier cell and its neighbours
+  within STALL_EXCLUSION_RADIUS_M are excluded from target selection for
+  STALL_EXCLUSION_NS. The exclusion survives the visit logic's clear-on-new-map rule.
+  Exclusion only changes which frontier is selected; no cell is marked free or blocked.
 - `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
   and every downstream consumer (registration, map, routing) re-derives the pose from the
   tracker's own evidence chain, so re-anchoring means re-plumbing those validators. The one
@@ -131,6 +140,19 @@ class LatchTimeoutMixin:
 
 ESCAPE_AFTER, ESCAPE_FLOOR_M, ESCAPE_SLACK_M = 5, .42, .003
 REACTIVE_ESCAPE_FLOOR_M, REACTIVE_ESCAPE_GAIN_M, REACTIVE_ESCAPE_SECONDS = .40, .005, .4
+
+
+def plain(value):
+    """JSON-safe copy (the installed strict JSON writer rejects repr fallbacks)."""
+    if isinstance(value, dict):
+        return {str(k): plain(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [plain(v) for v in value]
+    if value is None or isinstance(value, (bool, int, str)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else repr(value)
+    return repr(value)
 
 
 def requested_endpoint(p, yaw, command, seconds, steps=20):
@@ -255,21 +277,98 @@ class DeadlockEscapeMixin:
                                  moves_away_from_observed=away, connector=check))
 
 
+STALL_NS, STALL_RADIUS_M = 30_000_000_000, .15
+STALL_EXCLUSION_NS, STALL_EXCLUSION_RADIUS_M = 90_000_000_000, .30
+
+
+class StickyExclusions(set):
+    """The visit logic clears its exclusions on new map evidence; watchdog exclusions persist until expiry."""
+
+    def __init__(self, items=()):
+        super().__init__(items)
+        self.sticky = {}
+
+    def clear(self):
+        super().clear()
+        self.update(self.sticky)
+
+    def expire(self, now_ns):
+        for cell in [c for c, until in self.sticky.items() if until <= now_ns]:
+            del self.sticky[cell]
+            self.discard(cell)
+
+
+class StallWatchdogMixin:
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._stall_window = None
+        self.dev_stall_events = []
+
+    def _route(self, snapshot, evidence, goal, *, measured_ns):
+        from lewm.observed_floor_waypoint_development import centre
+        route = super()._route(snapshot, evidence, goal, measured_ns=measured_ns)
+        visits = getattr(self, 'frontier_visits', None)
+        if visits is None:
+            return route
+        if not isinstance(visits.excluded, StickyExclusions):
+            visits.excluded = StickyExclusions(visits.excluded)
+        visits.excluded.expire(measured_ns)
+        outbound = self.mission_latest is None or self.mission_latest['phase'] == 'OUTBOUND'
+        if not outbound or route.get('status') != 'OBSERVED_FLOOR_ROUTE_TO_FRONTIER':
+            self._stall_window = None
+            return route
+        p, _, _ = self._pose(evidence, identity=(0, 0, 0), now_ns=measured_ns)
+        q = (np.asarray(snapshot.map_from_initial)@p)[:2]
+        window = self._stall_window
+        if window is None or np.linalg.norm(q-window['start_xy']) > STALL_RADIUS_M:
+            self._stall_window = dict(start_ns=measured_ns, start_xy=q)
+            return route
+        if measured_ns-window['start_ns'] < STALL_NS:
+            return route
+        target = tuple(route['route_cells'][-1])
+        cells = {c for c in snapshot.floor if np.linalg.norm(centre(c)-centre(target)) <= STALL_EXCLUSION_RADIUS_M} | {target}
+        abandoned = None
+        if visits.visit is not None:
+            v = visits.visit
+            abandoned = dict(target_cell=v.get('target_cell'), unknown_neighbour=v.get('unknown_neighbour'))
+            viewpoint = v.get('camera_viewpoint', {}).get('viewpoint_map_xy_m')
+            if viewpoint is not None and v.get('unknown_neighbour') is not None:
+                tried = visits.attempted.setdefault(tuple(v['unknown_neighbour']), set())
+                tried.update(c for c in snapshot.floor if np.linalg.norm(centre(c)-np.asarray(viewpoint)) <= .10)
+            cells |= {tuple(v['target_cell'])} if v.get('target_cell') is not None else set()
+            visits._finish(snapshot, measured_ns, 'DEV_NO_PROGRESS_STALL', False)
+        for cell in cells:
+            visits.excluded.sticky[cell] = measured_ns+STALL_EXCLUSION_NS
+        visits.excluded.update(cells)
+        event = dict(measured_ns=measured_ns, stalled_since_ns=window['start_ns'], position_map_xy_m=q.tolist(),
+                     frontier_cell=list(target), excluded_cells=len(cells), abandoned_visit=abandoned,
+                     exclusion_until_ns=measured_ns+STALL_EXCLUSION_NS)
+        self.dev_stall_events.append(event)
+        print(json.dumps(plain(dict(dev_stall=event))), flush=True)
+        self._stall_window = dict(start_ns=measured_ns, start_xy=q)
+        rerouted = super()._route(snapshot, evidence, goal, measured_ns=measured_ns)
+        rerouted['dev_stall_reroute'] = plain(event)
+        return rerouted
+
+
 class PoseLossRecordMixin:
     """MeasuredLatencyRuntime._track, plus a worker.log record of the tracker failure chain."""
 
     def _track(self, packet):
         raw = self.pose_executor.submit(pose_update, replace(packet, history=())).result()
         if raw.get('current_pose') is None or raw.get('failure') is not None:
-            print(json.dumps(dict(dev_pose_loss=dict(frame=packet.frame, measured_ns=packet.measured_ns, status=raw.get('status'),
-                                                     failure=raw.get('failure'), contact=raw.get('contact')), default=str)), flush=True)
+            try:
+                print(json.dumps(plain(dict(dev_pose_loss=dict(frame=packet.frame, measured_ns=packet.measured_ns, status=raw.get('status'),
+                                                               failure=raw.get('failure'), contact=raw.get('contact'))))), flush=True)
+            except Exception as error:  # the record must never replace the pose-loss fault
+                print(f'dev_pose_loss frame={packet.frame} record failed: {error!r}', flush=True)
             raise ValueError('measured visual pose unavailable')
         self.clock_ns()
         self.queues['registration'].put_nowait((packet, raw))
 
 
 FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, 'deadlock': DeadlockEscapeMixin,
-         'pose': PoseLossRecordMixin}
+         'pose': PoseLossRecordMixin, 'stall': StallWatchdogMixin}
 
 
 def compose(fixes, base):

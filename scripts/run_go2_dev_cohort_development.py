@@ -27,6 +27,21 @@ from scripts.run_go2_capability_completed_support_v4_gate_erratum_continuation_d
 GIB = 1024**3
 MEMORY_GIB = dict(C0=10, C1=9, C2=9, C3=13, C4=12)
 ENTRY = 'scripts/run_go2_dev_mission_development.py'
+# C2 holds need the reactive-hold reader erratum (28 Sep), as the original C2 validation used.
+REACTIVE_READER = 'scripts/read_go2_capability_v4_reactive_holds_development.py'
+
+
+def read_reactive(base, root, assignment):
+    """Read a completed C2 mission with the reactive-hold reader before the shared closeout."""
+    destination = base/'runs'/assignment
+    faults = destination/'pipeline_faults.json'
+    if (destination/'episode_evaluation.json').exists() or not (destination/'result.json').exists():
+        return
+    if faults.exists() and json.loads(faults.read_text()):
+        return  # controller failures keep the frozen failure reader
+    with (root/f'{assignment}_reactive_reader.log').open('x') as log:
+        subprocess.run([sys.executable, REACTIVE_READER, '--root', str(destination)], stdout=log, stderr=subprocess.STDOUT,
+                       check=True, env=os.environ | ENVIRONMENT)
 
 
 def row_for(base, assignment, arm, code):
@@ -64,6 +79,8 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
             with (root/f'{assignment}.log').open('x') as log:
                 code = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, env=os.environ | ENVIRONMENT).returncode
             try:
+                if arm == 'C2':
+                    read_reactive(base, root, assignment)
                 closeout(base, root, assignment, code)
                 row = row_for(base, assignment, arm, code)
             except Exception as exc:  # development: record and continue
@@ -96,10 +113,35 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
     owner.save(root/'result.json', dict(mode='development', rows=ordered))
 
 
+def reread(name):
+    """Re-read a finished cohort's C2 rows that the frozen reader could not classify."""
+    protocol = json.loads(owner.PROTOCOL.read_text())
+    base = Path(protocol['output_root'])
+    output.install(base)
+    root = base/'dev_cohorts'/name
+    rows = []
+    exits = {r['assignment']: r.get('exit') for r in json.loads((root/'result.json').read_text())['rows']}
+    for arm, set_name, maze, episode, assignment in json.loads((root/'config.json').read_text())['plan']:
+        code = exits.get(assignment)
+        if code is None:
+            rows.append(dict(assignment=assignment, controller=arm, error='no recorded exit code'))
+            continue
+        if arm == 'C2':
+            read_reactive(base, root, assignment)
+        try:
+            closeout(base, root, assignment, code)
+            rows.append(row_for(base, assignment, arm, code))
+        except Exception as exc:
+            rows.append(dict(assignment=assignment, controller=arm, error=repr(exc)[:500]))
+        print(json.dumps(rows[-1]), flush=True)
+    owner.save(root/'result_reread.json', dict(mode='development', rows=rows))
+
+
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
+    p.add_argument('--reread', action='store_true', help='re-read an existing cohort (C2 reactive reader) and stop')
     p.add_argument('--name', required=True)
-    p.add_argument('--plan', required=True, help='JSON list of [controller, set, maze, episode]')
+    p.add_argument('--plan', help='JSON list of [controller, set, maze, episode]')
     p.add_argument('--fixes', default='')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
@@ -107,5 +149,8 @@ if __name__ == '__main__':
     p.add_argument('--c3-lanes', type=int, default=2)
     p.add_argument('--allow-final-round', action='store_true')
     a = p.parse_args()
+    if a.reread:
+        reread(a.name)
+        raise SystemExit
     main(a.name, json.loads(a.plan), [f for f in a.fixes.split(',') if f], a.c3_decoder, a.c4_weights, a.workers, a.c3_lanes,
          a.allow_final_round)
