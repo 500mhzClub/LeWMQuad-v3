@@ -192,6 +192,26 @@ def main(name, mix, weights, updates_c3, updates_c4, lr, seed, variant):
     print(summary(result))
 
 
+def evaluate_checkpoints(name, readout_path, c4_path):
+    """Score existing C3 readout and C4 checkpoints on the same cache sets (baselines)."""
+    output.install(BASE)
+    OUT.mkdir(exist_ok=True)
+    device = torch.device('cuda:0')
+    cache = Cache()
+    started = time.monotonic()
+    base = previous.prior.previous.load('mixed_data')
+    base.load_state_dict(torch.load(readout_path, map_location='cpu', weights_only=False)['model_state_dict'])
+    readout = ReadoutVariant(base).to(device)
+    _, c4 = build_models(device, 0)
+    c4.load_state_dict(torch.load(c4_path, map_location='cpu', weights_only=False)['model_state_dict'])
+    report = evaluate(cache, readout, c4, device)
+    result = dict(name=name, baseline=True, readout=str(readout_path), readout_sha256=hashlib.sha256(Path(readout_path).read_bytes()).hexdigest(),
+                  c4=str(c4_path), c4_sha256=hashlib.sha256(Path(c4_path).read_bytes()).hexdigest(), eval=report,
+                  wall_s=time.monotonic()-started, script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
+    (OUT/f'{name}.json').write_text(output.dumps(result, indent=1))
+    print(summary(result))
+
+
 def summary(result, keys=('eval_onpolicy@800ms', 'eval_fresh_c3@800ms', 'eval_offline@800ms', 'eval_transfer@700ms')):
     lines = [f"== {result['name']}  ({result['wall_s']:.0f} s)"]
     for key in keys:
@@ -219,5 +239,9 @@ if __name__ == '__main__':
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--seed', type=int, default=2026092205)
     p.add_argument('--variant', choices=('base', 'past_frames', 'history'), default='base')
+    p.add_argument('--baseline', nargs=2, metavar=('READOUT', 'C4'), help='score existing checkpoints instead of fitting')
     a = p.parse_args()
+    if a.baseline:
+        evaluate_checkpoints(a.name, *a.baseline)
+        raise SystemExit
     main(a.name, json.loads(a.mix), json.loads(a.weights), a.updates_c3, a.updates_c4, a.lr, a.seed, a.variant)
