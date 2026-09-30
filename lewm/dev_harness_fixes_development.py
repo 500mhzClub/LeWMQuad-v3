@@ -48,9 +48,12 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   its clearance-limited turns never face. Latch releases do not help: it re-latches, and it
   never holds, so `deadlock` does not fire. On the outbound leg, while routing to a frontier,
   if the robot moves less than STALL_RADIUS_M over STALL_NS, the active camera-frontier visit
-  is abandoned (its viewpoint recorded as tried) and the frontier cell and its neighbours
-  within STALL_EXCLUSION_RADIUS_M are excluded from target selection for
-  STALL_EXCLUSION_NS. The exclusion survives the visit logic's clear-on-new-map rule.
+  is abandoned (its viewpoint recorded as tried) and every floor cell within
+  STALL_EXCLUSION_RADIUS_M of the abandoned frontier (the visit's target cell, else the route
+  end) is excluded from target selection for STALL_EXCLUSION_NS. The radius covers the whole
+  unknown pocket: at C1 fresh-check 09, retiring 0.3 m around the viewpoint only moved the
+  choice to the neighbouring frontier cell, served from the same viewpoint, and control was
+  bit-identical. The exclusion survives the visit logic's clear-on-new-map rule.
   Exclusion only changes which frontier is selected; no cell is marked free or blocked.
 - `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
   and every downstream consumer (registration, map, routing) re-derives the pose from the
@@ -308,7 +311,7 @@ class DeadlockEscapeMixin:
 
 
 STALL_NS, STALL_RADIUS_M = 30_000_000_000, .15
-STALL_EXCLUSION_NS, STALL_EXCLUSION_RADIUS_M = 90_000_000_000, .30
+STALL_EXCLUSION_NS, STALL_EXCLUSION_RADIUS_M = 90_000_000_000, 1.0
 
 
 class StickyExclusions(set):
@@ -356,7 +359,6 @@ class StallWatchdogMixin:
         if measured_ns-window['start_ns'] < STALL_NS:
             return route
         target = tuple(route['route_cells'][-1])
-        cells = {c for c in snapshot.floor if np.linalg.norm(centre(c)-centre(target)) <= STALL_EXCLUSION_RADIUS_M} | {target}
         abandoned = None
         if visits.visit is not None:
             v = visits.visit
@@ -365,8 +367,10 @@ class StallWatchdogMixin:
             if viewpoint is not None and v.get('unknown_neighbour') is not None:
                 tried = visits.attempted.setdefault(tuple(v['unknown_neighbour']), set())
                 tried.update(c for c in snapshot.floor if np.linalg.norm(centre(c)-np.asarray(viewpoint)) <= .10)
-            cells |= {tuple(v['target_cell'])} if v.get('target_cell') is not None else set()
+            if v.get('target_cell') is not None:
+                target = tuple(v['target_cell'])
             visits._finish(snapshot, measured_ns, 'DEV_NO_PROGRESS_STALL', False)
+        cells = {c for c in snapshot.floor if np.linalg.norm(centre(c)-centre(target)) <= STALL_EXCLUSION_RADIUS_M} | {target}
         for cell in cells:
             visits.excluded.sticky[cell] = measured_ns+STALL_EXCLUSION_NS
         visits.excluded.update(cells)
