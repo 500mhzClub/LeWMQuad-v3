@@ -8,6 +8,8 @@ so every C3 variant has a matched C4.
 old, maze and onpolicy; the categories are hold, rest_start, turn, cruise, arc_steady and
 switch. A '*' matches any. Within a cell, contexts are drawn uniformly.
 **Loss weights:** `--weights` gives a per-category multiplier on the loss.
+**Decoder inputs:** `--variant` is base, past_frames (a) or history (b); see
+`lewm/dev_readout_variants_development.py`.
 
 **Evaluation**, from the cache (the deployed computation, with batch-composition numerics
 only). At each set's horizons, by movement category:
@@ -31,6 +33,7 @@ import torch
 from torch.nn import functional as F
 
 from lewm import decision_headroom_json_v42_development as output
+from lewm.dev_readout_variants_development import ReadoutVariant
 from lewm.navigation_capability_supervised_development import DirectMotionPredictor
 from scripts import run_go2_navigation_capability_completed_support_v4_development as owner
 from scripts import train_go2_all_motion_horizon_readout_development as previous
@@ -90,9 +93,11 @@ def sampler(cache, mix, rng):
     return draw, {k: len(v) for k, v in cells.items()}
 
 
-def build_models(device, seed):
+def build_models(device, seed, variant='base'):
     torch.manual_seed(seed)
-    readout = previous.prior.previous.load('mixed_data').to(device).train().requires_grad_(True)
+    base = previous.prior.previous.load('mixed_data')
+    readout = ReadoutVariant(base, past_frames=variant == 'past_frames', history=variant == 'history')
+    readout = readout.to(device).train().requires_grad_(True)
     head = torch.load(json.loads(PREREG.read_text())['controllers']['C3']['head_binding']['path'], map_location='cpu', weights_only=False)['model_state_dict']
     c4 = DirectMotionPredictor(head['target_mean'], head['target_scale']).to(device).train()
     return readout, c4
@@ -112,7 +117,7 @@ def evaluate(cache, readout, c4, device, extra=None):
                     idx = idx_all[k:k+256]
                     hs = np.full(len(idx), h)
                     feats, pred, tape, control, y = cache.tensors(idx, hs, device)
-                    preds['C3'].append(readout(feats[:, 2], pred).float().cpu().numpy())
+                    preds['C3'].append(readout(feats[:, 2], pred, feats[:, 1], feats[:, 0], control).float().cpu().numpy())
                     preds['C4'].append(c4(feats, control, tape, torch.full((len(idx),), h, device=device)).float().cpu().numpy())
                 true = np.stack([np.asarray(cache.items[i]['targets'], np.float32)[h-1] for i in idx_all])
                 cats = np.asarray([cache.items[i]['category'] for i in idx_all])
@@ -143,14 +148,14 @@ def metrics(p, t, cats):
     return out
 
 
-def main(name, mix, weights, updates_c3, updates_c4, lr, seed):
+def main(name, mix, weights, updates_c3, updates_c4, lr, seed, variant):
     output.install(BASE)
     OUT.mkdir(exist_ok=True)
     device = torch.device('cuda:0')
     cache = Cache()
     rng = np.random.default_rng(seed)
     draw, cells = sampler(cache, mix, rng)
-    readout, c4 = build_models(device, seed)
+    readout, c4 = build_models(device, seed, variant)
     prereg = json.loads(PREREG.read_text())['controllers']['C4']['optimizer']
     opt3 = torch.optim.AdamW(readout.parameters(), lr=lr, weight_decay=1e-4)
     opt4 = torch.optim.AdamW(c4.parameters(), lr=prereg['learning_rate'], weight_decay=prereg['weight_decay'])
@@ -162,7 +167,7 @@ def main(name, mix, weights, updates_c3, updates_c4, lr, seed):
         row = dict(step=step+1)
         if step < updates_c3:
             opt3.zero_grad(set_to_none=True)
-            err = (readout.normalized(feats[:, 2], pred)-(y-readout.target_mean)/readout.target_scale)**2
+            err = (readout.normalized(feats[:, 2], pred, feats[:, 1], feats[:, 0], control)-(y-readout.target_mean)/readout.target_scale)**2
             loss3 = (err.mean(dim=1)*w).sum()/w.sum()
             loss3.backward()
             torch.nn.utils.clip_grad_norm_(readout.parameters(), 1.)
@@ -179,8 +184,8 @@ def main(name, mix, weights, updates_c3, updates_c4, lr, seed):
         if (step+1) % 100 == 0:
             history.append(row)
     report = evaluate(cache, readout, c4, device)
-    torch.save(dict(readout=readout.state_dict(), c4=c4.state_dict(), mix=mix, weights=weights), OUT/f'{name}.pt')
-    result = dict(name=name, mix=mix, weights=weights, updates_c3=updates_c3, updates_c4=updates_c4, lr=lr, seed=seed, cells=
+    torch.save(dict(readout=readout.state_dict(), c4=c4.state_dict(), mix=mix, weights=weights, variant=variant), OUT/f'{name}.pt')
+    result = dict(name=name, variant=variant, mix=mix, weights=weights, updates_c3=updates_c3, updates_c4=updates_c4, lr=lr, seed=seed, cells=
                   {f'{g}/{c}': n for (g, c), n in cells.items()}, history=history, eval=report, wall_s=time.monotonic()-started,
                   script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (OUT/f'{name}.json').write_text(output.dumps(result, indent=1))
@@ -213,5 +218,6 @@ if __name__ == '__main__':
     p.add_argument('--updates-c4', type=int, default=1760)
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--seed', type=int, default=2026092205)
+    p.add_argument('--variant', choices=('base', 'past_frames', 'history'), default='base')
     a = p.parse_args()
-    main(a.name, json.loads(a.mix), json.loads(a.weights), a.updates_c3, a.updates_c4, a.lr, a.seed)
+    main(a.name, json.loads(a.mix), json.loads(a.weights), a.updates_c3, a.updates_c4, a.lr, a.seed, a.variant)
