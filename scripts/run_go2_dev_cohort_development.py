@@ -3,7 +3,10 @@
 Development mode (30 Sep 2026). Missions go through `run_go2_dev_mission_development.py`. The
 frozen readers classify each mission; nothing gates or stops the cohort except storage (the
 12-GiB reserve). Each row reports round trip, disallowed contacts, hard and operating clearance
-violations, minimum wall separation, hold rates, the frozen failure taxonomy and wall time.
+violations, minimum wall separation, hold rates, the frozen failure taxonomy and wall time,
+plus how often each development fix intervened (deadlock escapes, stall reroutes, latch
+timeouts, terminal spin breaks), so recovery cannot hide weak prediction. Tables:
+`summarise_go2_dev_cohorts_development.py`.
 
 Plan format (JSON list): [[controller, set, maze, episode], ...].
 """
@@ -23,6 +26,7 @@ from lewm import decision_headroom_json_v42_development as output
 from lewm import navigation_capability_active_wall_development as wall
 from scripts import run_go2_navigation_capability_completed_support_v4_development as owner
 from scripts.run_go2_capability_completed_support_v4_gate_erratum_continuation_development import ENVIRONMENT, closeout
+from scripts.summarise_go2_dev_cohorts_development import interventions
 
 GIB = 1024**3
 MEMORY_GIB = dict(C0=10, C1=9, C2=9, C3=13, C4=12)
@@ -53,7 +57,8 @@ def row_for(base, assignment, arm, code):
                 contacts=ev['disallowed_contact_samples'], hard=s['hard']['confirmed_violation_samples'], hard_unresolved=s['hard']['unresolved_sampled_samples'],
                 operating=s['operating']['confirmed_violation_samples'], min_clearance_m=s['hard']['minimum_separation_lower_m'],
                 outbound_hold_rate=stall.get('OUTBOUND', {}).get('rate'), return_hold_rate=stall.get('RETURN', {}).get('rate'),
-                source_error=ev['source_error'], taxonomy=ev['failure_and_stall_taxonomy'], wall_s=ev['wall_s'], exit=code)
+                source_error=ev['source_error'], taxonomy=ev['failure_and_stall_taxonomy'], wall_s=ev['wall_s'], exit=code,
+                **interventions(destination))
 
 
 def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_final_round):

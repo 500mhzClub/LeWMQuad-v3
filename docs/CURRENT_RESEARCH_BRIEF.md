@@ -41,6 +41,17 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
   - C3 (JEPA): the frozen V-JEPA 2.1 encoder and frozen action-conditioned predictor, which sees three causal frames (t−1 s, t−0.5 s, t), the 1.5-s command history and the candidate tape. The motion decoder sees **only** the current-frame and predicted-future pooled features.
   - C4 (supervised): the pooled features of the three causal frames, the command history and the candidate tape, all given directly to the predictor.
   - The C3-vs-C4 input asymmetry is being addressed with decoder input variants (past-frame summaries, or command history), and this entry will be updated with the chosen inputs.
+- **Decoder selection rule (Andrew, 30 September evening; fixed before any phase-1 result existed):** choose on one held-out group, report on others, so the choice does not inflate the reported result.
+  - **Choose on** `eval_onpolicy`: held-out closed-loop C1 decisions from the C3-v3 round's held-out layouts 16–21.
+  - **Score:** the C3 decoder's median 800-ms XY error, averaged over the six movement types (hold, rest start, in-place turn, steady cruise, steady arc, command switch). Lower is better. Scores within 1 mm are split by the mean |log(median predicted/true)| over the moving types.
+  - **Applies to** both the phase-1 training-mix choice and the variant choice. Between the input variants, (a) past frames is preferred if its score is within **3 mm** of (b) command history.
+  - **Report on**, never used for choosing:
+    - `eval_transfer` (700 ms);
+    - `eval_offline` (the offline rest-start and turn recordings);
+    - `eval_fresh_c3` (C3-v2's own fresh-check decisions).
+  - The matched C4 refit is reported alongside and plays no part in the choice.
+- **Recovery reporting (Andrew, 30 September evening):** every table reports, per mission and per controller, deadlock escapes, stall reroutes, latch timeouts and terminal spin breaks next to success, contacts and clearance (`scripts/summarise_go2_dev_cohorts_development.py`). Recovery must not hide weak prediction.
+- **Reverse motion:** a scripted short back-up may be used inside the escape rule (for the narrow-corridor turnaround). Reverse is **not** added to the candidate bank, because no predictor is trained on it.
 
 **Previous status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
 - **The round.** On-policy data came from C1. C3-v3 passed the primary closed-loop criteria (moving ratio 0.92 against C3-v2's 0.33) but failed both no-regression criteria (offline held-out groups and transfer, worst on in-place turns).
