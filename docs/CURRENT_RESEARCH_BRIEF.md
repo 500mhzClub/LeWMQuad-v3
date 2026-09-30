@@ -61,6 +61,26 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - rule pick: **large, past frames**. It is inside the 1-mm tie band, has the smallest ratio error, and is the preferred visual-only variant under the 3-mm rule;
     - report sets: transfer 0.97 · 5 mm, and on C3's own fresh-check decisions cruise 0.96, switch 0.93, turn 0.89, rest start 1.09.
   - **Drive test before choosing (Andrew):** the median-seed large past-frames decoder (`dev_decoder_fits/p3_large_past_frames_s2026093011.pt`) against C3-v3, on dev mazes 0–4, recovery on. At most 2 C3 missions run at once, because measured compute sets the simulated clock. Scored by driving and by `scripts/score_go2_dev_closed_loop_prediction_development.py`.
+- **Model sizes (to be matched properly in the rigorous phase):**
+  - shared frozen V-JEPA 2.1 ViT-L encoder, about 304M;
+  - C3's frozen action-conditioned predictor, 17,204,608;
+  - C3 motion decoder: v1–v3 852,515; small past-frames variant 918,051; **large past-frames variant 12,883,267**;
+  - C4 DirectMotionPredictor, 17,397,283.
+- **Machine load and simulated time (1 October):** C3 and C4 decisions do not depend on wall time, by construction:
+  - the owner uses `UntimedSimulationClock`, which returns simulated time and charges no compute to it (`service_cost_charged_to_simulation=False`);
+  - after every 100-ms camera frame the owner drains all controller queues (tracking, registration, obstacles, mapping, planning) before physics continues;
+  - planning waits for that frame's map (`queues['mapping'].join()`, "avoiding host scheduling-dependent map choice");
+  - dispatch reads that frame's obstacles, because requests run between physics ticks after the drain.
+
+  So frame freshness, observation age, the obstacle veto, the fixed 300-ms dispatch delay and command expiry are all simulated time, the same for every controller. Wall time enters only records, profiles, crash timeouts (a 120-s drain timeout; the pipeline drain deadline), and the owner Budget's 160-hour programme window, which stops missions at 03:00 on 2 October.
+  - **My earlier statement that compute time drives the simulated clock was wrong.** That is the parent `MeasuredLatencyClock`, which V4 does not use.
+  - Development runs now use `DevBudget`: the owner's filesystem and VRAM reserve checks without the window (formal budget stops were dropped). Development reads go through `scripts/read_go2_dev_mission_development.py` for the same reason.
+  - **Verification pending:** one C3 mission at 1 versus 2 concurrent runs, with decisions compared for identity, once the drive test frees the GPU.
+- **Trap fixes frozen (Andrew, 1 October)** at the current six: terminal (burst after a terminal spin; ignores scan mode), latch, deadlock (with the C2 reactive escape), stall (never retires the last frontier), back-up, and pose (record only). Frozen at commit 2e33bbfe (`lewm/dev_harness_fixes_development.py`).
+  - No further tuning on C1 counts: 27/30 with missions flipping is noise at this sample size.
+  - **Known failures:**
+    - C1 validation 10: pose loss on the outbound leg in the six-fix re-check;
+    - C1 validation 13 and fresh-check 09: stuck oscillating at a corridor entrance or during a turnaround.
 - **Recovery on/off (Andrew, 30 September evening):** the preliminary run drives every controller twice: recovery on (the full development system) and recovery off (the controller's own choices on the frozen V4 harness). Otherwise recovery can flatten the differences between controllers; for example C2 reached 30/30 with recovery in 17 missions.
   - Switch: `--recovery on|off` on the dev mission and cohort entries (`fixes_for` in `lewm/dev_harness_fixes_development.py`).
   - **Recovery** means all behavioural fixes: terminal, latch, deadlock, stall and back-up. Each overrides a controller choice. `pose` only records the tracker failure chain and stays on in both.
