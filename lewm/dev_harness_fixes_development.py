@@ -8,8 +8,18 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   dominates, and in-place turns win even though they never bring an in-footprint target round
   (the terminal limit cycle; for example C1 validation 10/0 chose 99 right turns in a row, 4.5 cm
   from home). The arrival definition (2 cm observed, 4 cm physical, 1-s dwell) is unchanged.
+- `latch`: time out the clearance-turn recovery latch. The frozen latch releases only when the
+  measured heading reaches its target. When the latched direction is blocked by forecast
+  clearance it holds forever (C1 val 13, C3 val 17, C3-v2 fresh 01 and 06), or it flips direction
+  repeatedly (C4 val 22). If the latch makes no heading progress (at least 0.05 rad) over
+  LATCH_STALL_DECISIONS decisions, or flips direction LATCH_MAX_SWITCHES times, it is
+  released. The best clearance-feasible candidate is then chosen without it, exactly as the
+  frozen reserve logic ranks them, and re-latching is blocked for LATCH_COOLDOWN decisions.
 """
-from lewm.geometry_progress_pilot_development import candidate_commands
+import math
+
+from lewm.clearance_turn_recovery_development import choose, wrap
+from lewm.geometry_progress_pilot_development import ACTIONS, candidate_commands
 from lewm.mission_coordinate_metric_development import position_distance
 
 TERMINAL_RADIUS_M = .10
@@ -34,7 +44,57 @@ class TerminalPositionScoringMixin:
         return result
 
 
-FIXES = {'terminal': TerminalPositionScoringMixin}
+LATCH_STALL_DECISIONS, LATCH_MAX_SWITCHES, LATCH_COOLDOWN = 10, 3, 15
+
+
+def unlatched_choice(result, event):
+    """The frozen reserve ranking without the latch: best nominal-clear candidate, else hold."""
+    utilities = {r['action']: r['utility_m'] for r in result.get('scan_utilities', result['candidates'])}
+    eligible = [i for i, r in enumerate(result['memory_forecast_candidates'])
+                if r['action'] in utilities and r['nominal_predicted_path_clear']]
+    index = max(eligible, key=lambda i: utilities[ACTIONS[i]]) if eligible else ACTIONS.index('hold')
+    choose(result, index)
+    result['clearance_turn'] = dict(active=False, event=event)
+    return result
+
+
+class LatchTimeoutMixin:
+    def __init__(self, *args, **kwargs):
+        self._latch_track, self._latch_cooldown = None, 0
+        super().__init__(*args, **kwargs)
+
+    def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+        result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+        latch = self.clearance_turn
+        active = (result.get('clearance_turn') or {}).get('active')
+        if self._latch_cooldown > 0:
+            self._latch_cooldown -= 1
+            if active and 'memory_forecast_candidates' in result:
+                self.clearance_turn, self._latch_track = None, None
+                result = unlatched_choice(result, 'DEV_LATCH_SUPPRESSED_COOLDOWN')
+            return result
+        if latch is not None and active and 'memory_forecast_candidates' in result:
+            heading = math.atan2(rotation[1, 0], rotation[0, 0])
+            remaining = abs(wrap(latch['target_heading_rad']-heading))
+            key = (latch['target_heading_rad'], latch['mission_generation'])
+            track = self._latch_track
+            if track is None or track['key'] != key:
+                track = dict(key=key, best=remaining, stalled=0, switches=latch.get('reserve_recovery_direction_switches', 0))
+            if remaining < track['best']-.05:
+                track.update(best=remaining, stalled=0)
+            else:
+                track['stalled'] += 1
+            switches = latch.get('reserve_recovery_direction_switches', 0)-track['switches']
+            if track['stalled'] >= LATCH_STALL_DECISIONS or switches >= LATCH_MAX_SWITCHES:
+                self.clearance_turn, self._latch_track, self._latch_cooldown = None, None, LATCH_COOLDOWN
+                result = unlatched_choice(result, 'DEV_LATCH_TIMEOUT_RELEASED')
+                result['dev_latch_timeout'] = dict(stalled_decisions=track['stalled'], direction_switches=switches)
+            else:
+                self._latch_track = track
+        return result
+
+
+FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin}
 
 
 def compose(fixes, base):
