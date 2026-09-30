@@ -44,6 +44,7 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 - **Decoder selection rule (Andrew, 30 September evening; fixed before any phase-1 result existed):** choose on one held-out group, report on others, so the choice does not inflate the reported result.
   - **Choose on** `eval_onpolicy`: held-out closed-loop C1 decisions from the C3-v3 round's held-out layouts 16–21.
   - **Score:** the C3 decoder's median 800-ms XY error, averaged over the six movement types (hold, rest start, in-place turn, steady cruise, steady arc, command switch). Lower is better. Scores within 1 mm are split by the mean |log(median predicted/true)| over the moving types.
+  - **Seeds (added 21:55, before any fit's score was looked at):** each fit takes about a minute, so every candidate is fitted with 3 seeds and scored by its mean over them.
   - **Applies to** both the phase-1 training-mix choice and the variant choice. Between the input variants, (a) past frames is preferred if its score is within **3 mm** of (b) command history.
   - **Report on**, never used for choosing:
     - `eval_transfer` (700 ms);
