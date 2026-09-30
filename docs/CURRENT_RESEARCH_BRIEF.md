@@ -12,7 +12,21 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 
 **Current goal:** establish a validated Go2 simulation navigation testbed. For each controller type (C0 oracle, C1 command history, C2 reactive, C3 JEPA, C4 supervised predictor), determine whether it completes beacon retrieval and return in unseen mazes, report against the pre-registered capability criterion, and produce one example video per controller (C0 optional under the brief).
 
-**Status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
+**Mode (30 September, 16:45): DEVELOPMENT, per Andrew.** The aim is a fixed, working system with preliminary results. Rigour comes later, once the system is frozen: pre-declaration, multiple seeds and the E1 protocol.
+- **Dropped:** acceptance gates, stop-for-approval points, version caps, one-change-per-version, bitwise replay checks and formal budget stops.
+- **Kept:**
+  - the sealed test set stays untouched;
+  - ask before deleting data or before starting more than about 24 h of compute;
+  - the storage reserve;
+  - one git commit per meaningful change, saying what changed and why;
+  - contacts and wall clearance reported on every run.
+- **Goals, in order:**
+  1. Fix C3's decoder over-prediction on turns and slow movement while keeping its cruising accuracy, judged by closed-loop prediction accuracy by movement type and then by driving; refit C4 on the same data each time.
+  2. Fix the shared-system traps (no-movement deadlock, latched recovery turn, goal oscillation, pose loss), re-checking C1 after each change.
+  3. Run C0 (10 episodes) and C1–C4 on validation plus the 10 unused round mazes (C3-v3 round layouts 22–31), then make the videos.
+- **Round mazes 22–31:** the stopped exploratory safety check partly ran there. It is kept, and not used for development.
+
+**Previous status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
 - **The round.** On-policy data came from C1. C3-v3 passed the primary closed-loop criteria (moving ratio 0.92 against C3-v2's 0.33) but failed both no-regression criteria (offline held-out groups and transfer, worst on in-place turns).
 - **Which pair enters E1.** Under the pre-declared rule, the safety check did not run and **C3-v2 and C4-v2 enter E1**. No further C3 intervention is allowed before E1.
 - **Storage.** Cleared, with the approved deletion recorded in [the storage log](storage_manifests/storage_log.md).
