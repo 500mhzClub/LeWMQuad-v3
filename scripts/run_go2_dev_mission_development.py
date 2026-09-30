@@ -55,15 +55,16 @@ def model_loader(c3_decoder, c4_weights):
         if arm == 'C3' and c3_decoder:
             state = torch.load(c3_decoder, map_location='cpu', weights_only=False)
             variant = state.get('variant', 'base')
-            readout = ReadoutVariant(model.readout.cpu(), past_frames=variant == 'past_frames', history=variant == 'history')
+            config = state.get('readout_config', {})
+            readout = ReadoutVariant(model.readout.cpu(), past_frames=variant == 'past_frames', history=variant == 'history', **config)
             readout.load_state_dict(state['readout'])
-            if variant == 'base':
+            if variant == 'base' and readout.config == dict(proj=32, hidden=128, depth=0):
                 model.readout.project.load_state_dict(readout.project.state_dict())
                 model.readout.decode.load_state_dict(torch.nn.Sequential(readout.flatten, readout.hidden, readout.act, readout.out).state_dict())
                 model.readout.to(next(model.predictor.parameters()).device).eval().requires_grad_(False)
             else:
                 install(model, readout)
-            model.readout_identity = dict(model.readout_identity, arm='dev_decoder', variant=variant, path=str(c3_decoder), sha256=sha(c3_decoder))
+            model.readout_identity = dict(model.readout_identity, arm='dev_decoder', variant=variant, readout_config=readout.config, path=str(c3_decoder), sha256=sha(c3_decoder))
         if arm == 'C4' and c4_weights:
             state = torch.load(c4_weights, map_location='cpu', weights_only=False)
             model.predictor.load_state_dict(state['c4'] if 'c4' in state else state['model_state_dict'])

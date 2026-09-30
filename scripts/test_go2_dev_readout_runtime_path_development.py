@@ -43,11 +43,29 @@ class StandIn(nn.Module):
         return [self.readout(current.expand(len(f), -1, -1), pool_tokens(F.layer_norm(f, (1024,)))) for f in future_tokens]
 
 
+def check_large(base):
+    """A larger decoder starts equal to the base and every parameter receives gradient."""
+    x = [torch.randn(4, 192, 1024) for _ in range(4)]
+    history = torch.randn(4, 3, 5, 2)
+    reference = ReadoutVariant(base)(x[0], x[1]).detach()
+    for kind in ('base', 'past_frames', 'history'):
+        large = ReadoutVariant(base, past_frames=kind == 'past_frames', history=kind == 'history', proj=64, hidden=896, depth=1)
+        out = large(x[0], x[1], x[2], x[3], history)
+        assert torch.allclose(out, reference, atol=1e-5), (kind, float((out-reference).abs().max()))
+        out.pow(2).sum().backward()
+        dead = [n for n, p in large.named_parameters() if p.grad is None or not p.grad.abs().sum() > 0]
+        # Zero-initialised output layers pass no gradient back on the first step; their own gradients must be non-zero.
+        assert not [n for n in dead if n.startswith(('out', 'blocks.0.2', 'history_embedding.2'))], dead
+        count = sum(p.numel() for p in large.parameters())
+        print(f'large {kind}: equals base at init, {count/1e6:.1f}M parameters')
+
+
 def main():
     torch.manual_seed(0)
     base = previous.prior.previous.load('mixed_data').cpu()
-    for kind in ('past_frames', 'history'):
-        variant = ReadoutVariant(base, past_frames=kind == 'past_frames', history=kind == 'history')
+    check_large(base)
+    for kind, size in (('past_frames', {}), ('history', {}), ('past_frames', dict(proj=64, hidden=896, depth=1))):
+        variant = ReadoutVariant(base, past_frames=kind == 'past_frames', history=kind == 'history', **size)
         with torch.no_grad():
             for p in variant.parameters():
                 p.add_(.01*torch.randn_like(p))  # make the new inputs matter

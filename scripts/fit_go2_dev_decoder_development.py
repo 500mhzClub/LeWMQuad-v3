@@ -93,10 +93,10 @@ def sampler(cache, mix, rng):
     return draw, {k: len(v) for k, v in cells.items()}
 
 
-def build_models(device, seed, variant='base'):
+def build_models(device, seed, variant='base', size=None):
     torch.manual_seed(seed)
     base = previous.prior.previous.load('mixed_data')
-    readout = ReadoutVariant(base, past_frames=variant == 'past_frames', history=variant == 'history')
+    readout = ReadoutVariant(base, past_frames=variant == 'past_frames', history=variant == 'history', **(size or {}))
     readout = readout.to(device).train().requires_grad_(True)
     head = torch.load(json.loads(PREREG.read_text())['controllers']['C3']['head_binding']['path'], map_location='cpu', weights_only=False)['model_state_dict']
     c4 = DirectMotionPredictor(head['target_mean'], head['target_scale']).to(device).train()
@@ -148,14 +148,14 @@ def metrics(p, t, cats):
     return out
 
 
-def main(name, mix, weights, updates_c3, updates_c4, lr, seed, variant):
+def main(name, mix, weights, updates_c3, updates_c4, lr, seed, variant, size=None):
     output.install(BASE)
     OUT.mkdir(exist_ok=True)
     device = torch.device('cuda:0')
     cache = Cache()
     rng = np.random.default_rng(seed)
     draw, cells = sampler(cache, mix, rng)
-    readout, c4 = build_models(device, seed, variant)
+    readout, c4 = build_models(device, seed, variant, size)
     prereg = json.loads(PREREG.read_text())['controllers']['C4']['optimizer']
     opt3 = torch.optim.AdamW(readout.parameters(), lr=lr, weight_decay=1e-4)
     opt4 = torch.optim.AdamW(c4.parameters(), lr=prereg['learning_rate'], weight_decay=prereg['weight_decay'])
@@ -184,8 +184,9 @@ def main(name, mix, weights, updates_c3, updates_c4, lr, seed, variant):
         if (step+1) % 100 == 0:
             history.append(row)
     report = evaluate(cache, readout, c4, device)
-    torch.save(dict(readout=readout.state_dict(), c4=c4.state_dict(), mix=mix, weights=weights, variant=variant), OUT/f'{name}.pt')
-    result = dict(name=name, variant=variant, mix=mix, weights=weights, updates_c3=updates_c3, updates_c4=updates_c4, lr=lr, seed=seed, cells=
+    torch.save(dict(readout=readout.state_dict(), readout_config=readout.config, c4=c4.state_dict(), mix=mix, weights=weights, variant=variant),
+               OUT/f'{name}.pt')
+    result = dict(name=name, variant=variant, readout_config=readout.config, readout_parameters=sum(p.numel() for p in readout.parameters()), mix=mix, weights=weights, updates_c3=updates_c3, updates_c4=updates_c4, lr=lr, seed=seed, cells=
                   {f'{g}/{c}': n for (g, c), n in cells.items()}, history=history, eval=report, wall_s=time.monotonic()-started,
                   script_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     (OUT/f'{name}.json').write_text(output.dumps(result, indent=1))
@@ -239,9 +240,13 @@ if __name__ == '__main__':
     p.add_argument('--lr', type=float, default=1e-3)
     p.add_argument('--seed', type=int, default=2026092205)
     p.add_argument('--variant', choices=('base', 'past_frames', 'history'), default='base')
+    p.add_argument('--proj', type=int, default=32, help='projection channels per token (base 32)')
+    p.add_argument('--hidden', type=int, default=128, help='hidden units (base 128)')
+    p.add_argument('--depth', type=int, default=0, help='residual 896-style blocks (base 0)')
     p.add_argument('--baseline', nargs=2, metavar=('READOUT', 'C4'), help='score existing checkpoints instead of fitting')
     a = p.parse_args()
     if a.baseline:
         evaluate_checkpoints(a.name, *a.baseline)
         raise SystemExit
-    main(a.name, json.loads(a.mix), json.loads(a.weights), a.updates_c3, a.updates_c4, a.lr, a.seed, a.variant)
+    main(a.name, json.loads(a.mix), json.loads(a.weights), a.updates_c3, a.updates_c4, a.lr, a.seed, a.variant,
+         dict(proj=a.proj, hidden=a.hidden, depth=a.depth))
