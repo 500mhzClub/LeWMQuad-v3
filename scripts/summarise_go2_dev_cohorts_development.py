@@ -71,7 +71,10 @@ def interventions(run):
             latch['timeouts'] += 1
         elif event == 'DEV_LATCH_SUPPRESSED_COOLDOWN':
             latch['cooldown_suppressions'] += 1
-        spin += bool(s.get('dev_terminal_spin_break'))
+        brk = s.get('dev_terminal_spin_break')
+        # Runs before 1 Oct counted the planner's scan mode (zero goal, overridden by the scan
+        # selector, so no behaviour change) as a terminal spin; those records are not recovery.
+        spin += bool(brk) and not (brk.get('kind') == 'position_scoring_burst' and brk.get('distance_m') == 0.)
     log = run/'worker.log'
     events = [json.loads(line)['dev_stall'] for line in log.read_text(errors='replace').splitlines()
               if line.startswith('{"dev_stall"')] if log.exists() else []

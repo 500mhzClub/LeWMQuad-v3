@@ -107,7 +107,10 @@ class TerminalPositionScoringMixin:
     def _score(self, prediction, goal_body, **kwargs):
         result = super()._score(prediction, goal_body, **kwargs)
         distance = float(position_distance(goal_body, kwargs.get('position_metric_matrix')))
-        if distance >= TERMINAL_RADIUS_M or not result.get('candidates') or 'position_contact_utility_m' not in result['candidates'][0]:
+        # A zero goal is the planner's scan mode (panorama or view request); the scan selector
+        # overrides this choice, so it is not a terminal approach.
+        scanning = not np.any(np.asarray(goal_body, float))
+        if scanning or distance >= TERMINAL_RADIUS_M or not result.get('candidates') or 'position_contact_utility_m' not in result['candidates'][0]:
             self._terminal_turns, self._terminal_burst = 0, 0
             return result
         if self._terminal_burst == 0:

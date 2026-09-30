@@ -52,6 +52,15 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - `eval_fresh_c3` (C3-v2's own fresh-check decisions).
   - The matched C4 refit is reported alongside and plays no part in the choice.
 - **Recovery reporting (Andrew, 30 September evening):** every table reports, per mission and per controller, deadlock escapes, stall reroutes, latch timeouts and terminal spin breaks next to success, contacts and clearance (`scripts/summarise_go2_dev_cohorts_development.py`). Recovery must not hide weak prediction.
+- **Decoder progress (30 September, late), all under the committed rule, seed means:**
+  - Choice-set score: mean over movement types of median 800-ms XY error on held-out closed-loop C1 decisions.
+  - **Phase 1 (training mix) is a null:** all mixes score 13.4–16.5 mm, with a seed spread of ±2–3 mm; the C3-v3 checkpoint scores 12.7 mm. Rebalancing turns C3-v3's over-prediction on turns and rest starts into under-prediction when cruising.
+  - **Phase 2 (inputs, small decoder):** past frames 14.4 mm, command history 11.7 mm. Neither closes most of the gap to C4 (about 5 mm).
+  - **Phase 3 (larger decoder, 12.8M parameters, starting equal to the base):**
+    - scores: history 7.9 mm, base 8.3 mm, past frames 8.5 mm;
+    - rule pick: **large, past frames**. It is inside the 1-mm tie band, has the smallest ratio error, and is the preferred visual-only variant under the 3-mm rule;
+    - report sets: transfer 0.97 · 5 mm, and on C3's own fresh-check decisions cruise 0.96, switch 0.93, turn 0.89, rest start 1.09.
+  - **Drive test before choosing (Andrew):** the median-seed large past-frames decoder (`dev_decoder_fits/p3_large_past_frames_s2026093011.pt`) against C3-v3, on dev mazes 0–4, recovery on. At most 2 C3 missions run at once, because measured compute sets the simulated clock. Scored by driving and by `scripts/score_go2_dev_closed_loop_prediction_development.py`.
 - **Recovery on/off (Andrew, 30 September evening):** the preliminary run drives every controller twice: recovery on (the full development system) and recovery off (the controller's own choices on the frozen V4 harness). Otherwise recovery can flatten the differences between controllers; for example C2 reached 30/30 with recovery in 17 missions.
   - Switch: `--recovery on|off` on the dev mission and cohort entries (`fixes_for` in `lewm/dev_harness_fixes_development.py`).
   - **Recovery** means all behavioural fixes: terminal, latch, deadlock, stall and back-up. Each overrides a controller choice. `pose` only records the tracker failure chain and stays on in both.
