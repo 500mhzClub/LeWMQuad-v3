@@ -45,11 +45,14 @@ class Source:
         with np.load(trace, allow_pickle=False) as a:
             self.pose = a['base_pose_world'].copy()
             self.time = a['timestamp_s'].copy()
-        self.meta = json.loads(Path(meta).read_text())['frames']
+        # Older training recordings keep no camera metadata: the sample index then comes from the image time
+        # (verified identical to the recorded index where both exist) and camera pitch/roll are unavailable.
+        self.meta = json.loads(Path(meta).read_text())['frames'] if Path(meta).exists() else None
         self.directory = directory
 
     def features(self, frame, tape):
-        i = int(self.meta[frame]['physical_sample_index'])
+        i = (int(self.meta[frame]['physical_sample_index']) if self.meta is not None
+             else int(np.searchsorted(self.time, self.recording.stamps[frame]/1e9-1e-9)))
         t = self.time[i]
         at = lambda s: int(np.clip(np.searchsorted(self.time, t-s), 0, i))
         xy = self.pose[:, :2]
@@ -65,9 +68,12 @@ class Source:
         past = self.recording.values[frame]
         moving = np.any(past != 0, axis=1)
         since_command = 1.5 if not moving.any() else .1*(len(moving)-1-int(np.flatnonzero(moving)[-1]))
-        R = np.asarray(self.meta[frame]['transforms'][0], float)[:3, :3]
-        pitch = float(np.degrees(np.arcsin(np.clip(R[2, 2], -1, 1))))
-        roll = float(np.degrees(np.arctan2(R[2, 0], -R[2, 1])))
+        if self.meta is not None:
+            R = np.asarray(self.meta[frame]['transforms'][0], float)[:3, :3]
+            pitch = float(np.degrees(np.arcsin(np.clip(R[2, 2], -1, 1))))
+            roll = float(np.degrees(np.arctan2(R[2, 0], -R[2, 1])))
+        else:
+            pitch = roll = float('nan')
         tape = np.asarray(tape, float)
         prefix, rest = tape[:3], tape[3:]
         return dict(speed_now_m_s=speed_now, speed_mean_1s_m_s=speed_1s,
@@ -102,13 +108,14 @@ def closed_loop():
     return rows
 
 
-def offline():
+def offline(name='heldout_samples.json'):
     rows, cache = [], {}
-    for r in json.loads((BASE/'c3v2_data_v1/heldout_samples.json').read_text()):
+    for r in json.loads((BASE/'c3v2_data_v1'/name).read_text()):
         d = Path(r['directory'])
         if d not in cache:
             cache[d] = Source(d, d/'policy_histories.npz', d/'policy_observations.json', d/'physics_trace.npz', d/'in_memory_camera_observations.json')
-        rows.append(cache[d].features(r['frame'], cache[d].recording.executed_tape(r['frame'])) | dict(run=d.name, frame=r['frame']))
+        rows.append(cache[d].features(r['frame'], cache[d].recording.executed_tape(r['frame'])) | dict(run=d.name, frame=r['frame'],
+                                                                                                    source=r.get('source')))
     return rows
 
 
@@ -125,6 +132,9 @@ def compare(closed, reference):
             continue
         a = np.asarray([r[key] for r in closed], float)
         b = np.asarray([r[key] for r in reference], float)
+        a, b = a[np.isfinite(a)], b[np.isfinite(b)]
+        if not len(a) or not len(b):
+            continue
         if isinstance(value, bool):
             out[key] = dict(kind='proportion', closed_loop=float(a.mean()), offline=float(b.mean()), distance=float(abs(a.mean()-b.mean())))
         else:
@@ -147,7 +157,15 @@ def main():
                   analyser_sha256=sha(__file__))
     root = BASE/'c3v2_gap_diagnosis_v1'
     root.mkdir(exist_ok=True)
-    owner.save(root/'conditions.json', result)
+    # Second reference: the matched training contexts of C3-v2 and C4-v2 (does training cover what closed loop visits?).
+    training = offline('train_samples.json')
+    result['training_reference'] = dict(contexts=len(training), comparisons={k: compare(v, training) for k, v in subsets.items() if v},
+        speed_now_above_0_1_m_s=dict(closed_loop_forward_executed=float(np.mean([r['speed_now_m_s'] > .1 for r in forward])),
+                                     offline_heldout=float(np.mean([r['speed_now_m_s'] > .1 for r in reference])),
+                                     training=float(np.mean([r['speed_now_m_s'] > .1 for r in training])),
+                                     training_by_source={s: float(np.mean([r['speed_now_m_s'] > .1 for r in training if r['source'] == s]))
+                                                         for s in sorted({r['source'] for r in training})}))
+    owner.save(root/f"conditions_{len({r['run'] for r in closed})}runs_with_training.json", result)
     for name, comparison in result['comparisons'].items():
         print(name, result['counts'][name])
         for key, value in list(comparison.items())[:14]:

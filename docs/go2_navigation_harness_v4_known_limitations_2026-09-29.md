@@ -40,6 +40,17 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 
 **Only C4 hit this on 22/0.** C1, C2 and C3 all completed round trips on the same episode (RT 175, 193 and 315 s).
 
+## Visual pose loss (fresh check, 29 September)
+
+**C1 on fresh-check maze 09 failed with lost visual pose tracking.** 165.3 s into the outbound leg, 8.96 m travelled, the tracking stage raised `ValueError('measured visual pose unavailable')`. The frozen runtime turns this into a controller fault (`RuntimeError`), which ends the mission.
+- There were zero disallowed contacts and zero hard violations.
+- The reader's taxonomy records 1 pose loss, 8 movement-outscored holds, 2 blocked-recovery holds and 2 view-restriction holds. The failure is preserved at `runs/c3v2_check_C1_chk09_ep0_attempt001` (`failure.json`).
+
+**This is the first pose-loss failure on `v4_completed_support`.**
+- None occurred in the gate, the development screens or validation qualification.
+- It is a shared-harness perception limitation, not specific to C1. The camera-based tracker loses registration, and no controller can recover a mission once the tracker faults.
+- It is outside traps 1–3. E1 reports it as its own category (pose-loss controller failures) for every controller.
+
 ## What each trap means for E1 comparisons
 
 - **Trap 1 mostly hits controllers that hold or predict little translation.** C2 has no motion predictor, and C3 predicts collapsed translation. So part of C3's E1 deficit against C1 and C4 will be this trap and not the representation alone. E1 reports it per controller.

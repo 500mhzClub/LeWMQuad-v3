@@ -110,7 +110,13 @@ def main(pair):
         readout = json.loads((BASE.parent/'go2_maze_view_readout_v1_attempt_003/result.json').read_text())['wall_s']
         c4 = json.loads((BASE/'c4_fit_attempt002/result.json').read_text())['gpu_owner_wall_s']
     per_seed = predictor+readout+c4+acceptance
-    training = {1: 0., 2: per_seed, 3: per_seed}
+    # Queued 2x2 analysis readout fits (Andrew, 29 Sep): (a) actual-future features for C3-v2's data, at the v1
+    # readout fit's measured rate scaled to its frame count; (b) predicted features for C3-v1's 8,414 contexts, at
+    # the C3-v2 fit's measured rate; plus one acceptance-evaluator pass. Serial, charged to block 2.
+    v1_fit = json.loads((BASE.parent/'go2_maze_view_readout_v1_attempt_003/result.json').read_text())['wall_s']
+    v2_fit = json.loads((BASE/'c3v2_readout_fit_v1/result.json').read_text())['wall_s']
+    analysis = v1_fit*(9662+2928)/9662 + v2_fit*8414/11182 + acceptance
+    training = {1: 0., 2: per_seed+analysis, 3: per_seed}
     result = project(samples, (1, 2, 3), training)
     used = e1_budget.running_hours(BASE)
     cap = (result['projected_h']+used)*(1+MARGIN)
@@ -123,13 +129,14 @@ def main(pair):
         measured_missions={arm: dict(n=len(v), median_wall_s=float(np.median(samples[arm])), mean_wall_s=float(np.mean(samples[arm])),
                                      max_wall_s=float(np.max(samples[arm])), mean_bytes=size[arm], source=SOURCES[arm]) for arm, v in rows.items()},
         extra_seed_gpu_jobs_s=dict(predictor=predictor, readout=readout, c4=c4, acceptance=acceptance, total=per_seed),
+        analysis_fits_s=analysis,
         projection=result, running_time_cap_h=cap,
         storage=dict(projected_bytes=sum(storage.values()), by_controller=storage, per_seed_c3_c4_bytes=per_seed_bytes,
                      free_bytes_now=free, reserve_bytes=RESERVE_BYTES, headroom_after_e1_bytes=free-RESERVE_BYTES-sum(storage.values())),
         scheduler=dict(workers=WORKERS, c3_lanes=C3_LANES, draws=DRAWS, draw_seed=DRAW_SEED), script_sha256=sha(__file__))
     root = BASE/'e1_projection'
     root.mkdir(exist_ok=True)
-    path = root/f'projection_{pair}_{len(samples["C3"])}c3.json'
+    path = root/f'projection_{pair}_{len(samples["C3"])}c3_with_analysis_fits.json'
     owner.save(path, report)
     print(json.dumps({k: report[k] for k in ('pair', 'e1_running_hours_already_used', 'measured_missions', 'extra_seed_gpu_jobs_s', 'projection', 'running_time_cap_h', 'storage')}, indent=1))
 

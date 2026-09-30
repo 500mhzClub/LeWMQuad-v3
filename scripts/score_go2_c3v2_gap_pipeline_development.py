@@ -209,10 +209,33 @@ def main(only, out):
                           like_for_like=result['like_for_like']), indent=1))
 
 
+def merge(parts):
+    """Combine subset results (disjoint missions, run in parallel) into the diagnosis result."""
+    output.install(BASE)
+    loaded = [json.loads(Path(part).read_text()) for part in parts]
+    order = [d.name for pattern in ('c3v2_check_C3_chk*_ep0_attempt001', 'c3v2_check_C4_chk*_ep0_attempt001') for d in sorted((BASE/'runs').glob(pattern))]
+    per_run = sorted((r for part in loaded for r in part['pipeline_test']['runs']), key=lambda r: order.index(r['run']))
+    assert [r['run'] for r in per_run] == order, 'every fresh-check C3/C4 mission scored exactly once'
+    divergences = sorted((part['pipeline_test']['first_divergence'] for part in loaded if part['pipeline_test']['first_divergence']),
+                         key=lambda d: (order.index(d['run']), d['decision']))
+    rows = [r for part in loaded for r in part['forward_executed_rows']]
+    passed = all(part['pipeline_test']['passed'] for part in loaded)
+    result = dict(schema='c3v2_gap_pipeline_and_like_for_like.v1', label='Diagnosis on check mazes; validation and sealed sets untouched',
+                  tolerance=TOLERANCE, pipeline_test=dict(passed=passed, runs=per_run, first_divergence=divergences[0] if divergences else None,
+                  max_abs_xy_m=max(r['max_abs_xy_m'] for r in per_run), max_abs_yaw_rad=max(r['max_abs_yaw_rad'] for r in per_run),
+                  compared_values=sum(r['compared_values'] for r in per_run), decisions=sum(r['decisions'] for r in per_run)),
+                  like_for_like=summarise(rows) if passed else 'not interpreted: pipeline test failed',
+                  forward_executed_rows=rows, parts={str(p): sha(p) for p in parts}, scorer_sha256=sha(__file__))
+    owner.save(ROOT/'pipeline_and_like_for_like.json', result)
+    print(json.dumps(dict(pipeline_test={k: v for k, v in result['pipeline_test'].items() if k != 'runs'},
+                          like_for_like=result['like_for_like']), indent=1))
+
+
 if __name__ == '__main__':
     import argparse
     p = argparse.ArgumentParser()
     p.add_argument('--only', nargs='*')
-    p.add_argument('--out', help='smoke-test output path (default: the diagnosis result)')
+    p.add_argument('--out', help='output path for a subset or smoke test (default: the diagnosis result)')
+    p.add_argument('--merge', nargs='*', help='subset result files to combine')
     a = p.parse_args()
-    main(a.only, a.out)
+    merge(a.merge) if a.merge else main(a.only, a.out)

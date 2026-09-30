@@ -12,7 +12,20 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 
 **Current goal:** establish a validated Go2 simulation navigation testbed. For each controller type (C0 oracle, C1 command history, C2 reactive, C3 JEPA, C4 supervised predictor), determine whether it completes beacon retrieval and return in unseen mazes, report against the pre-registered capability criterion, and produce one example video per controller (C0 optional under the brief).
 
-**Status (29 September): COMPLETE for this brief, stopped for approval.** The C0 gate passed 20/20 on `v4_completed_support`. Capability qualification (validation 10/0–29/0): **C4 19/20 and C1 18/20 are capable; C3 (JEPA) 13/20 and C2 11/20 are not.** C0 scored 10/10, and there were zero contacts. Replay-verified videos, the capability report and the E1 proposal are delivered. The E1 run, the single proposed C3 intervention and any harness change all need Andrew's approval. See [the capability qualification result](go2_navigation_capability_qualification_result_2026-09-29.md), [the E1 proposal](go2_navigation_e1_proposal_2026-09-29.md), [the gate result](go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md) and [the handoff](go2_navigation_capability_handoff_2026-09-28.md).
+**Status (30 September): C3-v2 phase complete; stopped for three decisions before E1.** Read [the C3-v2 phase report](go2_navigation_c3v2_phase_report_2026-09-29.md) first.
+- **Offline acceptance and the rule.** C3-v2 (the refit readout) passed all seven pre-declared offline criteria.
+- **Fresh check.** 10 new mazes, zero contacts and zero hard violations for every controller; round trips (sanity only) C1 9/10, C3-v2 6/10, C4-v2 7/10.
+- **Which pair enters E1.** Under the pre-declared rule the C3-v2 and C4-v2 pair enters.
+- **Gap diagnosis.** The offline-to-closed-loop gap was diagnosed on the check mazes.
+  - The pipeline is exact: all 14,397 decisions reproduced.
+  - The cause is **C3's motion readout lacking coverage of closed-loop states:** it decodes about 0.2 of true forward travel even from actual future frames, while C4 decodes 0.84 on the same states. It is not the predictor.
+- **Decisions pending (Andrew):**
+  1. the proposed bounded on-policy round (not run);
+  2. clearing at least 16 GiB of RecoveryStorage (candidates listed);
+  3. E1 confirmation, after the round.
+- **Records.** [E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md), [model versions](go2_navigation_c3v2_c4v2_model_versions_2026-09-29.md), [harness limitations](go2_navigation_harness_v4_known_limitations_2026-09-29.md), [pre-declaration and Amendment 1](go2_navigation_c3v2_readout_fix_predeclaration_2026-09-29.md). The sealed set is untouched.
+
+**Earlier status (29 September): COMPLETE for this brief, stopped for approval.** The C0 gate passed 20/20 on `v4_completed_support`. Capability qualification (validation 10/0–29/0): **C4 19/20 and C1 18/20 are capable; C3 (JEPA) 13/20 and C2 11/20 are not.** C0 scored 10/10, and there were zero contacts. Replay-verified videos, the capability report and the E1 proposal are delivered. The E1 run, the single proposed C3 intervention and any harness change all need Andrew's approval. See [the capability qualification result](go2_navigation_capability_qualification_result_2026-09-29.md), [the E1 proposal](go2_navigation_e1_proposal_2026-09-29.md), [the gate result](go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md) and [the handoff](go2_navigation_capability_handoff_2026-09-28.md).
 
 This replaces the 7 September navigation goal and the closed decision-headroom programme; neither is to be resumed. Machine-readable active-goal state is in [go2_navigation_capability_active_goal_2026-09-25.json](go2_navigation_capability_active_goal_2026-09-25.json). The thread goal tool refuses to replace its unfinished legacy goal; it must not be falsely marked achieved to bypass that limitation. This repository record is the current task tracker.
 
