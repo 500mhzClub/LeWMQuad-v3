@@ -55,6 +55,20 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   choice to the neighbouring frontier cell, served from the same viewpoint, and control was
   bit-identical. The exclusion survives the visit logic's clear-on-new-map rule.
   Exclusion only changes which frontier is selected; no cell is marked free or blocked.
+- `backup`: a scripted short back-up inside the escape rules (Andrew, 30 September evening).
+  Reverse is not added to the candidate bank, because no predictor is trained on it. The
+  deadlock escape requests it when no turn or move qualifies; the stall watchdog requests it
+  on the first stall at a spot (within BACKUP_REPEAT_RADIUS_M), before retiring frontiers.
+  The script requests BACKUP_SPEED_MPS in reverse for BACKUP_DECISIONS planning cycles
+  (0.20 m). The selection records `hold`, so no forecast is attributed to it, and the stored
+  plan carries the reverse command. Every step requires:
+  - the 400-ms reverse segment to lie on observed stored floor cells;
+  - stored-map clearance along it of at least BACKUP_FLOOR_M, and no more than 1 cm below the
+    current clearance;
+  - at dispatch, the currently observed connector to clear BACKUP_FLOOR_M without ending
+    closer to an observed obstacle.
+  Any failed check ends the script. The predictors then see a reverse command in their
+  committed prefix for a few decisions, which is outside their training.
 - `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
   and every downstream consumer (registration, map, routing) re-derives the pose from the
   tracker's own evidence chain, so re-anchoring means re-plumbing those validators. The one
@@ -71,6 +85,7 @@ import numpy as np
 from lewm.clearance_turn_recovery_development import choose, wrap
 from lewm.fine_stored_obstacle_routing_development import cached_clearance
 from lewm.observed_geometry_refinement_development import nominal_connector, segment_cell_distances
+from lewm.observed_floor_waypoint_development import segment_cells
 from lewm.geometry_progress_pilot_development import ACTIONS, candidate_commands
 from lewm.mission_coordinate_metric_development import position_distance
 from lewm.process_mapped_runtime_development import pose_update
@@ -230,6 +245,8 @@ class DeadlockEscapeMixin:
         options = [i for i, r in enumerate(rows) if r['action'] in ('left_turn', 'right_turn') and r['action'] in utilities
                    and r['minimum_predicted_path_clearance_m'] is not None and r['minimum_predicted_path_clearance_m'] >= floor]
         if not options:
+            if hasattr(self, '_request_backup'):
+                self._request_backup('deadlock_no_clear_turn')
             return result
         goal = result.get('waypoint_body_xy_m')
         side = 'left_turn' if goal is None or math.atan2(goal[1], goal[0]) > 0 else 'right_turn'
@@ -268,6 +285,8 @@ class DeadlockEscapeMixin:
             gains = [clearance.minimum(q, q) for q in probes]
             best = int(np.argmax(gains))
             if gains[best] < current+REACTIVE_ESCAPE_GAIN_M:
+                if hasattr(self, '_request_backup'):
+                    self._request_backup('reactive_deadlock_no_move')
                 return result
             action = 'left_turn' if headings[best] > 0 else 'right_turn'
             detail = dict(kind='turn_toward_clearance', relative_heading_rad=float(headings[best]), clearance_there_m=float(gains[best]))
@@ -336,6 +355,7 @@ class StallWatchdogMixin:
         super().__init__(*args, **kwargs)
         self._stall_window = None
         self.dev_stall_events = []
+        self._backup_sites = []
 
     def _route(self, snapshot, evidence, goal, *, measured_ns):
         from lewm.observed_floor_waypoint_development import centre
@@ -358,6 +378,14 @@ class StallWatchdogMixin:
             return route
         if measured_ns-window['start_ns'] < STALL_NS:
             return route
+        if hasattr(self, '_request_backup') and not any(np.linalg.norm(q-np.asarray(b)) <= BACKUP_REPEAT_RADIUS_M for b in self._backup_sites):
+            self._backup_sites.append(q.tolist())
+            self._request_backup('stall')
+            event = dict(measured_ns=measured_ns, stalled_since_ns=window['start_ns'], position_map_xy_m=q.tolist(), remedy='backup')
+            self.dev_stall_events.append(event)
+            print(json.dumps(plain(dict(dev_stall=event))), flush=True)
+            self._stall_window = dict(start_ns=measured_ns, start_xy=q)
+            return route
         target = tuple(route['route_cells'][-1])
         abandoned = None
         if visits.visit is not None:
@@ -376,13 +404,91 @@ class StallWatchdogMixin:
         visits.excluded.update(cells)
         event = dict(measured_ns=measured_ns, stalled_since_ns=window['start_ns'], position_map_xy_m=q.tolist(),
                      frontier_cell=list(target), excluded_cells=len(cells), abandoned_visit=abandoned,
-                     exclusion_until_ns=measured_ns+STALL_EXCLUSION_NS)
+                     exclusion_until_ns=measured_ns+STALL_EXCLUSION_NS, remedy='frontier_exclusion')
         self.dev_stall_events.append(event)
         print(json.dumps(plain(dict(dev_stall=event))), flush=True)
         self._stall_window = dict(start_ns=measured_ns, start_xy=q)
         rerouted = super()._route(snapshot, evidence, goal, measured_ns=measured_ns)
         rerouted['dev_stall_reroute'] = plain(event)
         return rerouted
+
+
+BACKUP_SPEED_MPS, BACKUP_DECISIONS, BACKUP_STEP_S = .10, 5, .4
+BACKUP_FLOOR_M, BACKUP_REPEAT_RADIUS_M, BACKUP_OBSERVED_SLACK_M = .40, .30, .005
+
+
+class ScriptedBackupMixin:
+    def __init__(self, *args, **kwargs):
+        self._backup, self._backup_request, self._backup_store, self._backup_plans = None, None, False, set()
+        super().__init__(*args, **kwargs)
+
+    def _request_backup(self, reason):
+        if self._backup is None and self._backup_request is None:
+            self._backup_request = reason
+
+    def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+        result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+        self._backup_store = False
+        if self._backup is None and self._backup_request is None:
+            return result
+        if self._backup is None:
+            self._backup = dict(reason=self._backup_request, step=0)
+            self._backup_request = None
+        backup = self._backup
+        clearance = cached_clearance(snapshot.fine_occupied)
+        p = np.asarray(position, float)[:2]
+        yaw = math.atan2(rotation[1][0], rotation[0][0])
+        end = p-BACKUP_SPEED_MPS*BACKUP_STEP_S*np.array([math.cos(yaw), math.sin(yaw)])
+        current, path = clearance.minimum(p, p), clearance.minimum(p, end)
+        on_floor = all(tuple(c) in snapshot.floor for c in segment_cells(p, end))
+        clear = path is None or (path >= BACKUP_FLOOR_M and (current is None or path >= current-.01))
+        detail = dict(reason=backup['reason'], step=backup['step']+1, of=BACKUP_DECISIONS, current_clearance_m=current,
+                      path_clearance_m=path, on_observed_floor=on_floor)
+        if not (on_floor and clear):
+            result['dev_backup_aborted'] = detail
+            self._backup = None
+            return result
+        if 'dev_deadlock_escape' in result:
+            result['dev_deadlock_escape_overridden_by_backup'] = result.pop('dev_deadlock_escape')
+        index = ACTIONS.index('hold')
+        result.update(action='hold', action_index=index, requested_command=[-BACKUP_SPEED_MPS, 0., 0.],
+                      command_duration_ns=int(BACKUP_STEP_S*1e9))
+        result['dev_backup'] = detail
+        self._backup_store = True
+        backup['step'] += 1
+        if backup['step'] >= BACKUP_DECISIONS:
+            self._backup = None
+        return result
+
+    def _store_plan(self, plan, completed, prefix):
+        if self._backup_store:
+            plan = replace(plan, command=(-BACKUP_SPEED_MPS, 0., 0.))
+            self._backup_plans.add(plan.observed_ns)
+            self._backup_store = False
+        return super()._store_plan(plan, completed, prefix)
+
+    def request(self, *, now_ns):
+        result = super().request(now_ns=now_ns)
+        if result['reason'] not in ('CURRENT_OBSERVED_OBSTACLE_VETO', 'COMMAND_WINDOW_VETO_LATCHED'):
+            return result
+        with self.lock:
+            live = [q for q in self.plans if q.dispatch_ns <= now_ns < q.expires_ns]
+            plan, current = (live[-1] if live else None), self.latest_obstacles
+        if plan is None or current is None or plan.observed_ns not in self._backup_plans:
+            return result
+        p, R = np.asarray(current.position_map), np.asarray(current.rotation_map_from_body)
+        cells = sorted(current.occupied)
+        seconds = (plan.expires_ns-now_ns)/1e9
+        endpoint = p+R@np.array([plan.command[0]*seconds, 0., 0.])
+        check = nominal_connector(p[:2], endpoint[:2], cells, radius_m=BACKUP_FLOOR_M)
+        away = observed_distance(endpoint[:2], cells) >= observed_distance(p[:2], cells)-BACKUP_OBSERVED_SLACK_M
+        if not check['nominal_disk_connector_clear'] or not away:
+            return result
+        with self.lock:
+            self.rejected_windows.pop(plan.observed_ns, None)
+        return result | dict(requested_command=plan.request(now_ns=now_ns, fresh_observation_allows_motion=True),
+                             reason='CURRENT_NOMINAL_OBSTACLE_TEST_PASSED',
+                             dev_backup_dispatch=dict(frozen_reason=result['reason'], disk_radius_m=BACKUP_FLOOR_M, connector=check))
 
 
 class PoseLossRecordMixin:
@@ -402,7 +508,7 @@ class PoseLossRecordMixin:
 
 
 FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, 'deadlock': DeadlockEscapeMixin,
-         'pose': PoseLossRecordMixin, 'stall': StallWatchdogMixin}
+         'pose': PoseLossRecordMixin, 'stall': StallWatchdogMixin, 'backup': ScriptedBackupMixin}
 
 
 def compose(fixes, base):

@@ -7,7 +7,8 @@ clearance:
   translation, reactive turn toward clearance, scripted back-up);
 - stall reroutes (frontier exclusions by `stall`, from worker.log);
 - latch timeouts (`latch` releases) and cooldown suppressions;
-- terminal spin breaks (`terminal`, C2 reactive only).
+- terminal spin breaks (`terminal`, C2 reactive only);
+- scripted back-ups (`backup`): episodes started, and aborted steps.
 Counts come from each run's planning log and worker log, so older cohorts are covered too.
 
 Usage: summarise_go2_dev_cohorts_development.py NAME [NAME ...] [--json OUT]
@@ -27,8 +28,13 @@ def interventions(run):
     kinds = Counter()
     latch = Counter()
     spin = 0
+    backups = Counter()
     for r in rows:
         s = r['selection']
+        if s.get('dev_backup'):
+            backups['steps'] += 1
+            backups['episodes'] += s['dev_backup']['step'] == 1
+        backups['aborted'] += bool(s.get('dev_backup_aborted'))
         escape = s.get('dev_deadlock_escape')
         if escape:
             kinds[escape.get('kind', 'turn')] += 1
@@ -39,9 +45,12 @@ def interventions(run):
             latch['cooldown_suppressions'] += 1
         spin += bool(s.get('dev_terminal_spin_break'))
     log = run/'worker.log'
-    stalls = sum(1 for line in log.read_text(errors='replace').splitlines() if line.startswith('{"dev_stall"')) if log.exists() else 0
+    events = [json.loads(line)['dev_stall'] for line in log.read_text(errors='replace').splitlines()
+              if line.startswith('{"dev_stall"')] if log.exists() else []
+    stalls = sum(1 for e in events if e.get('remedy') != 'backup')  # stall answered by a back-up is counted under back-ups
     return dict(decisions=len(rows), deadlock_escapes=sum(kinds.values()), escape_kinds=dict(kinds), stall_reroutes=stalls,
-                latch_timeouts=latch['timeouts'], latch_cooldown_suppressions=latch['cooldown_suppressions'], terminal_spin_breaks=spin)
+                latch_timeouts=latch['timeouts'], latch_cooldown_suppressions=latch['cooldown_suppressions'], terminal_spin_breaks=spin,
+                backups=backups['episodes'], backup_steps=backups['steps'], backups_aborted=backups['aborted'])
 
 
 def mission_row(assignment, controller):
@@ -71,24 +80,24 @@ def fmt(value, digits=3):
 
 
 def tables(rows):
-    lines = ['| Mission | Ctrl | Round trip | Deadlock escapes | Stall reroutes | Latch timeouts | Spin breaks | Contacts | Hard | Min clearance (m) |',
-             '|---|---|---|---:|---:|---:|---:|---:|---:|---:|']
+    lines = ['| Mission | Ctrl | Round trip | Deadlock escapes | Stall reroutes | Back-ups | Latch timeouts | Spin breaks | Contacts | Hard | Min clearance (m) |',
+             '|---|---|---|---:|---:|---:|---:|---:|---:|---:|---:|']
     for r in rows:
         kinds = ', '.join(f'{k} {v}' for k, v in sorted(r['escape_kinds'].items()))
         lines.append(f"| {r['assignment']} | {r['controller']} | {fmt(r['round_trip'])} | {r['deadlock_escapes']}{f' ({kinds})' if kinds else ''} "
-                     f"| {r['stall_reroutes']} | {r['latch_timeouts']} | {r['terminal_spin_breaks']} | {fmt(r.get('contacts'))} | {fmt(r.get('hard'))} "
+                     f"| {r['stall_reroutes']} | {r['backups']} | {r['latch_timeouts']} | {r['terminal_spin_breaks']} | {fmt(r.get('contacts'))} | {fmt(r.get('hard'))} "
                      f"| {fmt(r.get('min_clearance_m'))} |")
     by = defaultdict(list)
     for r in rows:
         by[r['controller']].append(r)
-    lines += ['', '| Ctrl | Missions read | Round trips | Missions with any escape | Deadlock escapes | Stall reroutes | Latch timeouts | Spin breaks | Contacts | Min clearance (m) |',
-              '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
+    lines += ['', '| Ctrl | Missions read | Round trips | Missions with any recovery | Deadlock escapes | Stall reroutes | Back-ups | Latch timeouts | Spin breaks | Contacts | Min clearance (m) |',
+              '|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|']
     for ctrl, rs in sorted(by.items()):
         read = [r for r in rs if r['round_trip'] is not None]
-        helped = sum(1 for r in rs if r['deadlock_escapes'] or r['stall_reroutes'] or r['latch_timeouts'] or r['terminal_spin_breaks'])
+        helped = sum(1 for r in rs if r['deadlock_escapes'] or r['stall_reroutes'] or r['backups'] or r['latch_timeouts'] or r['terminal_spin_breaks'])
         clearances = [r['min_clearance_m'] for r in read if r.get('min_clearance_m') is not None]
         lines.append(f"| {ctrl} | {len(read)} | {sum(bool(r['round_trip']) for r in read)} | {helped} | {sum(r['deadlock_escapes'] for r in rs)} "
-                     f"| {sum(r['stall_reroutes'] for r in rs)} | {sum(r['latch_timeouts'] for r in rs)} | {sum(r['terminal_spin_breaks'] for r in rs)} "
+                     f"| {sum(r['stall_reroutes'] for r in rs)} | {sum(r['backups'] for r in rs)} | {sum(r['latch_timeouts'] for r in rs)} | {sum(r['terminal_spin_breaks'] for r in rs)} "
                      f"| {sum(r.get('contacts') or 0 for r in read)} | {fmt(min(clearances) if clearances else None)} |")
     return '\n'.join(lines)
 
