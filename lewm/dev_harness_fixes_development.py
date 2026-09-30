@@ -3,11 +3,16 @@
 Each fix is a mixin placed ahead of the frozen V4 `CompletedSupportRuntimeMixin`. No frozen file
 is edited; the development owner swaps the composed mixin in through `bind`.
 
-- `terminal`: near the goal, score positional progress only. The frozen scorer adds a
-  heading-alignment term scaled by min(0.35 m, distance). Within a few centimetres it
-  dominates, and in-place turns win even though they never bring an in-footprint target round
-  (the terminal limit cycle; for example C1 validation 10/0 chose 99 right turns in a row, 4.5 cm
-  from home). The arrival definition (2 cm observed, 4 cm physical, 1-s dwell) is unchanged.
+- `terminal`: break the terminal limit cycle. The frozen scorer adds a heading-alignment term
+  scaled by min(0.35 m, distance). Within a few centimetres it can dominate, so in-place turns
+  win even though they never bring an in-footprint target round (C1 validation 10/0 chose 99
+  right turns in a row, 4.5 cm from home). Within TERMINAL_RADIUS_M, after
+  TERMINAL_SPIN_TURNS consecutive turn selections, the next TERMINAL_BURST_DECISIONS
+  decisions are selected by position/contact utility alone; then the frozen scorer resumes.
+  (The first version dropped the alignment term throughout the 0.10-m radius. That regressed
+  C1's home approach on fresh-check 03, 04 and 08: about 800 decisions hovering 6-11 cm
+  from home, where the originals arrived at 1 cm.) The arrival definition (2 cm observed,
+  4 cm physical, 1-s dwell) is unchanged.
   C2's reactive terminal rule (turn to face the target within 0.1 rad, then pulse forward)
   has its own limit cycle: on validation 14, 27 and 29 it turns the same way for ~1,000
   decisions 2-5 cm from the goal, because the target sits near the Go2's turning centre and
@@ -97,13 +102,22 @@ TERMINAL_RADIUS_M = .10
 
 
 class TerminalPositionScoringMixin:
-    """Within TERMINAL_RADIUS_M of the scored waypoint, select by position/contact utility alone."""
+    """After a terminal turn spin near the waypoint, briefly select by position/contact utility alone."""
 
     def _score(self, prediction, goal_body, **kwargs):
         result = super()._score(prediction, goal_body, **kwargs)
         distance = float(position_distance(goal_body, kwargs.get('position_metric_matrix')))
         if distance >= TERMINAL_RADIUS_M or not result.get('candidates') or 'position_contact_utility_m' not in result['candidates'][0]:
+            self._terminal_turns, self._terminal_burst = 0, 0
             return result
+        if self._terminal_burst == 0:
+            self._terminal_turns = self._terminal_turns+1 if result['action'] in ('left_turn', 'right_turn') else 0
+            if self._terminal_turns < TERMINAL_SPIN_TURNS:
+                return result
+            self._terminal_burst, self._terminal_turns = TERMINAL_BURST_DECISIONS, 0
+            result['dev_terminal_spin_break'] = dict(kind='position_scoring_burst', consecutive_terminal_turns=TERMINAL_SPIN_TURNS,
+                                                     distance_m=distance, burst_decisions=TERMINAL_BURST_DECISIONS)
+        self._terminal_burst -= 1
         for row in result['candidates']:
             row['alignment_dropped_terminal'] = True
             row['utility_m'] = row['position_contact_utility_m']
@@ -116,6 +130,7 @@ class TerminalPositionScoringMixin:
 
     def __init__(self, *args, **kwargs):
         self._terminal_spin = (None, 0)
+        self._terminal_turns, self._terminal_burst = 0, 0
         super().__init__(*args, **kwargs)
 
     def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
@@ -138,7 +153,7 @@ class TerminalPositionScoringMixin:
         return result
 
 
-TERMINAL_SPIN_TURNS, TERMINAL_PULSE_NS = 15, 100_000_000
+TERMINAL_SPIN_TURNS, TERMINAL_PULSE_NS, TERMINAL_BURST_DECISIONS = 15, 100_000_000, 3
 LATCH_STALL_DECISIONS, LATCH_MAX_SWITCHES, LATCH_COOLDOWN = 10, 3, 15
 
 
