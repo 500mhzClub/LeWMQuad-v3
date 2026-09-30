@@ -5,12 +5,16 @@ frozen predictor with the executed applied tape, then the readout (the C3-v2 eva
 `evaluate_contexts`, verified exact on 14,397 fresh-check decisions). Each criterion compares
 C3-v3 with C3-v2.
 
-- P (primary): closed-loop moving decisions on the 6 `onpolicy_heldout` C1 missions. A
-  decision qualifies if its executed tape equals the forward candidate's tape and has at least
-  four forward steps, with non-zero applied commands in the preceding 1.0 s.
+- P (primary; Amendment 1, commit 45eeca14): closed-loop moving decisions on the 6
+  `onpolicy_heldout` C1 missions. A decision qualifies if it has non-zero applied commands in
+  the preceding 1.0 s and its executed applied tape has at least four forward steps. Each model
+  is scored on its prediction for that executed tape.
   - P1: median 800-ms translation ratio in [0.75, 1.25].
   - P2: median 800-ms XY error at most 50% of C3-v2's.
   - At least 30 decisions must qualify.
+  - Reported only: steady-cruise and command-switch strata, per-mission medians, the 8
+    exact-match decisions of the original definition (with C1's logged forecast), and the
+    closed-loop decisions from rest.
 - R1 (from rest): on the 72 offline held-out rest-start windows, the median 800-ms translation
   ratio is in [0.75, 1.25].
 - N (no regression beyond 5%):
@@ -47,13 +51,32 @@ def sha(path):
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def closed_loop(motions, decisions, c1):
-    t = np.asarray([d['targets'][7][:2] for d in decisions])
+def summary(motions, decisions, c1=None):
+    t = np.asarray([d['targets'][7][:2] for d in decisions]).reshape(-1, 2)
     out = dict(decisions=len(decisions), median_true_mm=float(np.median(np.linalg.norm(t, axis=1)))*1000 if len(t) else None)
-    for name, pred in list(motions.items())+[('C1', c1)]:
-        p = np.asarray(pred)[:, 7, :2] if len(decisions) else np.zeros((0, 2))
+    for name, pred in list(motions.items())+([('C1', c1)] if c1 is not None else []):
+        p = np.asarray(pred).reshape(-1, 8, 3)[:, 7, :2]
         out[name] = dict(median_ratio=float(np.median(np.linalg.norm(p, axis=1)/np.linalg.norm(t, axis=1))) if len(t) else None,
                          median_xy_error_mm=float(np.median(np.linalg.norm(p-t, axis=1)))*1000 if len(t) else None)
+    return out
+
+
+def steady_cruise(tape):
+    tape = np.asarray(tape)
+    return bool(tape[0, 0] > 0 and np.all(tape == tape[0]))
+
+
+def closed_loop(motions, decisions, c1=None):
+    """Pooled, stratified (steady cruise / command switch) and per-mission medians."""
+    def pick(mask):
+        return {n: np.asarray(v)[mask] for n, v in motions.items()}, [d for d, m in zip(decisions, mask) if m], (
+            None if c1 is None else np.asarray(c1)[mask])
+    out = summary(motions, decisions, c1)
+    for label, want in (('steady_cruise', True), ('command_switch', False)):
+        mask = np.array([steady_cruise(d['executed_tape']) == want for d in decisions], dtype=bool)
+        out[label] = summary(*pick(mask))
+    out['per_mission'] = {run: summary(*pick(np.array([d['run'] == run for d in decisions], dtype=bool)))
+                          for run in sorted({d['run'] for d in decisions})}
     return out
 
 
@@ -76,8 +99,12 @@ def main():
     with wall.job(BASE, 'C3-v3 round: offline acceptance'):
         # P: closed-loop held-out decisions.
         decisions = json.loads((BASE/'c3v3_data_v1/heldout_onpolicy_decisions.json').read_text())
-        full = [d for d in decisions if d['forward_executed'] and d['forward_steps'] >= 4]
-        sets = dict(moving=[d for d in full if not d['from_rest']], from_rest=[d for d in full if d['from_rest']])
+
+        def forward_steps(tape):
+            return int((np.asarray(tape)[:, 0] > 0).sum())
+        sets = dict(moving=[d for d in decisions if not d['from_rest'] and forward_steps(d['executed_tape']) >= 4],
+                    from_rest=[d for d in decisions if d['from_rest'] and forward_steps(d['executed_tape']) >= 4],
+                    exact_match_original_definition=[d for d in decisions if d['forward_executed'] and d['forward_steps'] >= 4 and not d['from_rest']])
         recordings, plans = {}, {}
         closed = {}
         for split, subset in sets.items():
@@ -88,8 +115,9 @@ def main():
                     plans[d['run']] = {r['measured_ns']: r for r in json.loads((Path(d['directory'])/'planning.json').read_text()) if 'selection' in r}
                 contexts.append((recordings[d['run']], d['frame']))
                 c1.append(np.asarray(plans[d['run']][d['observed_ns']]['motion_correction']['command_history_forecast_xy_yaw'])[1])
-            motions = v2.evaluate_contexts(model, readouts, c4s, contexts) if contexts else {n: [] for n in list(readouts)+list(c4s)}
-            closed[split] = closed_loop(motions, subset, c1)
+            motions = v2.evaluate_contexts(model, readouts, c4s, contexts) if contexts else {n: np.zeros((0, 8, 3)) for n in list(readouts)+list(c4s)}
+            # C1's logged forecast is for the forward candidate's tape: comparable only where that tape was executed.
+            closed[split] = closed_loop(motions, subset, c1 if split == 'exact_match_original_definition' else None)
         # R and N: offline held-out groups and the transfer population (the C3-v2 evaluator's definitions).
         rows = json.loads((BASE/'c3v2_data_v1/heldout_samples.json').read_text())
         cache, contexts = {}, []
@@ -150,12 +178,11 @@ def main():
         result = dict(schema='c3v3_offline_acceptance.v1', passed=all(criteria.values()), criteria=criteria,
                       c4_report_only=dict(gating=False, comparison='C4-v3 against C4-v2 with the same measures', measures=measures('C4_v2', 'C4_v3')),
                       closed_loop_heldout=closed, heldout_groups=groups, transfer=dict(transfer),
-                      predeclaration_sha256=sha(PREDECLARATION), predeclaration_commit='ec2e34c9',
+                      predeclaration_sha256=sha(PREDECLARATION), predeclaration_commit='ec2e34c9', amendment_commit='45eeca14',
                       checkpoints_sha256={n: sha(p) for n, p in list(READOUTS.items())+list(C4S.items())},
                       evaluator_sha256=sha(__file__), heldout_contexts=len(rows), transfer_windows=len(windows))
         owner.save(OUT/'result.json', result)
-        print(json.dumps(dict(passed=result['passed'], criteria=criteria, closed_loop_heldout=closed,
-                              c4_report_only=result['c4_report_only']['measures']), indent=1), flush=True)
+        print(json.dumps(dict(passed=result['passed'], criteria=criteria, c4_report_only=result['c4_report_only']['measures']), indent=1), flush=True)
 
 
 if __name__ == '__main__':
