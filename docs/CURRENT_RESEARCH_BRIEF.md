@@ -25,6 +25,22 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
   2. Fix the shared-system traps (no-movement deadlock, latched recovery turn, goal oscillation, pose loss), re-checking C1 after each change.
   3. Run C0 (10 episodes) and C1–C4 on validation plus the 10 unused round mazes (C3-v3 round layouts 22–31), then make the videos.
 - **Round mazes 22–31:** the stopped exploratory safety check partly ran there. It is kept, and not used for development.
+- **Order of work (Andrew, 30 September):**
+  1. decoder fix;
+  2. harness trap fixes;
+  3. **freeze the system**;
+  4. one full run of all 60 sealed test mazes on every controller (C0 on a subset) as **preliminary results**, plus validation and videos.
+  The sealed mazes are not run before the freeze. Afterwards that set is relabelled **"preliminary test"**.
+- **The rigorous phase will use a freshly generated sealed set.**
+- **Before the preliminary sealed run:**
+  - That set lives in a `sealed_*` directory, which `AGENTS.md` forbids the model-facing account to open. Andrew either declassifies and relabels it (rename plus an `AGENTS.md` exception) or sets up the custody launcher (`docs/go2_navigation_e1_sealed_custody_launcher_proposal_2026-09-30.md`).
+  - The development feature cache (about 50 GB) must be deleted or shrunk first, to keep the 12-GiB reserve. Andrew is told before anything else is cleared.
+- **Decoder inputs per controller (current system):**
+  - C1: command history plus the candidate tape (kinematic forecast; no images).
+  - C2: reactive, no motion predictor.
+  - C3 (JEPA): the frozen V-JEPA 2.1 encoder and frozen action-conditioned predictor, which sees three causal frames (t−1 s, t−0.5 s, t), the 1.5-s command history and the candidate tape. The motion decoder sees **only** the current-frame and predicted-future pooled features.
+  - C4 (supervised): the pooled features of the three causal frames, the command history and the candidate tape, all given directly to the predictor.
+  - The C3-vs-C4 input asymmetry is being addressed with decoder input variants (past-frame summaries, or command history), and this entry will be updated with the chosen inputs.
 
 **Previous status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
 - **The round.** On-policy data came from C1. C3-v3 passed the primary closed-loop criteria (moving ratio 0.92 against C3-v2's 0.33) but failed both no-regression criteria (offline held-out groups and transfer, worst on in-place turns).
