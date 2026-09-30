@@ -31,20 +31,27 @@ from scripts.summarise_go2_dev_cohorts_development import interventions
 GIB = 1024**3
 MEMORY_GIB = dict(C0=10, C1=9, C2=9, C3=13, C4=12)
 ENTRY = 'scripts/run_go2_dev_mission_development.py'
-# C2 holds need the reactive-hold reader erratum (28 Sep), as the original C2 validation used.
-REACTIVE_READER = 'scripts/read_go2_capability_v4_reactive_holds_development.py'
+DEV_READER = 'scripts/read_go2_dev_mission_development.py'
 
 
-def read_reactive(base, root, assignment):
-    """Read a completed C2 mission with the reactive-hold reader before the shared closeout."""
+def read_dev(base, root, assignment, arm, code):
+    """Read a mission with the frozen readers (dev budget, no programme window) before the shared closeout.
+
+    Reader choice mirrors the closeout: a controller failure (non-zero exit with recorded pipeline
+    faults and no closeout defect) uses the failure reader; otherwise C2 uses the reactive-hold
+    reader erratum (28 Sep), as the original C2 validation did, and every other controller the V4
+    reader. Other non-zero exits are left to the closeout, which classifies them.
+    """
     destination = base/'runs'/assignment
-    faults = destination/'pipeline_faults.json'
     if (destination/'episode_evaluation.json').exists() or not (destination/'result.json').exists():
         return
-    if faults.exists() and json.loads(faults.read_text()):
-        return  # controller failures keep the frozen failure reader
-    with (root/f'{assignment}_reactive_reader.log').open('x') as log:
-        subprocess.run([sys.executable, REACTIVE_READER, '--root', str(destination)], stdout=log, stderr=subprocess.STDOUT,
+    faults = destination/'pipeline_faults.json'
+    controller_failure = bool(code) and faults.exists() and bool(json.loads(faults.read_text())) and not (destination/'closeout_failure.json').exists()
+    if code and not controller_failure:
+        return
+    kind = 'failure' if controller_failure else 'reactive' if arm == 'C2' else 'v4'
+    with (root/f'{assignment}_dev_reader.log').open('x') as log:
+        subprocess.run([sys.executable, DEV_READER, '--root', str(destination), '--reader', kind], stdout=log, stderr=subprocess.STDOUT,
                        check=True, env=os.environ | ENVIRONMENT)
 
 
@@ -85,8 +92,7 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
             with (root/f'{assignment}.log').open('x') as log:
                 code = subprocess.run(command, stdout=log, stderr=subprocess.STDOUT, env=os.environ | ENVIRONMENT).returncode
             try:
-                if arm == 'C2':
-                    read_reactive(base, root, assignment)
+                read_dev(base, root, assignment, arm, code)
                 closeout(base, root, assignment, code)
                 row = row_for(base, assignment, arm, code)
             except Exception as exc:  # development: record and continue
@@ -132,8 +138,7 @@ def reread(name):
         if code is None:
             rows.append(dict(assignment=assignment, controller=arm, error='no recorded exit code'))
             continue
-        if arm == 'C2':
-            read_reactive(base, root, assignment)
+        read_dev(base, root, assignment, arm, code)
         try:
             closeout(base, root, assignment, code)
             rows.append(row_for(base, assignment, arm, code))

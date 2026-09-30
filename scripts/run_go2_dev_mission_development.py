@@ -16,6 +16,7 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import time
 
 import torch
 
@@ -27,6 +28,20 @@ from lewm.navigation_capability_completed_support_development import CompletedSu
 from scripts import run_go2_c3v2_check_development as fresh
 from scripts import run_go2_c3v3_round_development as round_sets
 from scripts import run_go2_navigation_capability_completed_support_v4_development as owner
+
+
+class DevBudget(owner.Budget):
+    """The owner's resource checks without its 160-hour programme window.
+
+    Development mode (Andrew, 30 Sep) dropped formal budget stops. The owner's window counts
+    wall time from a stored origin (reached 132 h on 1 Oct) and would stop every mission at
+    160 h. Everything else is the owner's check unchanged: recovery and workspace filesystem
+    reserves, and the per-device VRAM reserve. No decision reads the budget.
+    """
+
+    def check(self, force=False):
+        self.origin = time.time()
+        return super().check(force)
 
 
 def sha(path):
@@ -89,7 +104,7 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
     check_track_override(type('Checked', (runtime_mixin, base_runtime), {}))
     try:
         bind(owner.run, episode_inputs=loader_for(set_name, maze, allow_final_round), load_model=model_loader(c3_decoder, c4_weights),
-             StartupRecoveryRuntimeMixin=runtime_mixin)(arm, maze, episode, assignment)
+             StartupRecoveryRuntimeMixin=runtime_mixin, Budget=DevBudget)(arm, maze, episode, assignment)
     finally:
         destination = root/'runs'/assignment
         if destination.exists():
