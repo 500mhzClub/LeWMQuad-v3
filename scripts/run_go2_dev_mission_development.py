@@ -21,7 +21,7 @@ import torch
 
 from lewm import decision_headroom_json_v42_development as output
 from lewm.dev_harness_fixes_development import check_track_override, compose
-from lewm.dev_readout_variants_development import ReadoutVariant
+from lewm.dev_readout_variants_development import ReadoutVariant, install
 from lewm.eligible_floor_registration_development import bind
 from lewm.navigation_capability_completed_support_development import CompletedSupportRuntimeMixin
 from scripts import run_go2_c3v2_check_development as fresh
@@ -55,14 +55,15 @@ def model_loader(c3_decoder, c4_weights):
         if arm == 'C3' and c3_decoder:
             state = torch.load(c3_decoder, map_location='cpu', weights_only=False)
             variant = state.get('variant', 'base')
-            if variant != 'base':
-                raise NotImplementedError('decoder input variants need the runtime input path; base variant only for now')
-            readout = ReadoutVariant(model.readout.cpu())
+            readout = ReadoutVariant(model.readout.cpu(), past_frames=variant == 'past_frames', history=variant == 'history')
             readout.load_state_dict(state['readout'])
-            model.readout.project.load_state_dict(readout.project.state_dict())
-            model.readout.decode.load_state_dict(torch.nn.Sequential(readout.flatten, readout.hidden, readout.act, readout.out).state_dict())
-            model.readout.to(next(model.predictor.parameters()).device).eval().requires_grad_(False)
-            model.readout_identity = dict(model.readout_identity, arm='dev_decoder', path=str(c3_decoder), sha256=sha(c3_decoder))
+            if variant == 'base':
+                model.readout.project.load_state_dict(readout.project.state_dict())
+                model.readout.decode.load_state_dict(torch.nn.Sequential(readout.flatten, readout.hidden, readout.act, readout.out).state_dict())
+                model.readout.to(next(model.predictor.parameters()).device).eval().requires_grad_(False)
+            else:
+                install(model, readout)
+            model.readout_identity = dict(model.readout_identity, arm='dev_decoder', variant=variant, path=str(c3_decoder), sha256=sha(c3_decoder))
         if arm == 'C4' and c4_weights:
             state = torch.load(c4_weights, map_location='cpu', weights_only=False)
             model.predictor.load_state_dict(state['c4'] if 'c4' in state else state['model_state_dict'])

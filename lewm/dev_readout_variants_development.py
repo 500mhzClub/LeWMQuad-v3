@@ -48,3 +48,63 @@ class ReadoutVariant(nn.Module):
 
     def forward(self, current, future, past05=None, past10=None, history=None):
         return self.normalized(current, future, past05, past10, history)*self.target_scale+self.target_mean
+
+
+class RuntimeVariantReadout(nn.Module):
+    """Feed a `ReadoutVariant` its extra inputs inside the unchanged `DenseHorizonNavigationModel`.
+
+    The model calls `readout(current, future)`. `install` makes the same call carry the pooled
+    frames 0.5 s and 1 s ago (from the model's own three-frame context) and the normalised
+    1.5-s applied-command history (from the same native context the predictor uses), both
+    captured during the current forward pass.
+    """
+
+    def __init__(self, variant):
+        super().__init__()
+        self.variant = variant
+        self.stash, self.generation = {}, 0
+
+    def forward(self, current, future):
+        stash = self.stash
+        if stash.get('context_generation') != self.generation or stash.get('tokens_generation') != self.generation:
+            raise ValueError('decoder extra inputs must come from the current prediction')
+        n = len(current)
+        past05 = stash['past05'].expand(n, -1, -1) if self.variant.past_frames else None
+        past10 = stash['past10'].expand(n, -1, -1) if self.variant.past_frames else None
+        history = stash['control'].expand(n, -1, -1, -1) if self.variant.history else None
+        return self.variant(current, future, past05, past10, history)
+
+
+class _StashingEncoder:
+    def __init__(self, encoder, readout):
+        self.encoder, self.readout = encoder, readout
+
+    def tokens(self, pixels):
+        from lewm.dense_horizon_navigation_development import pool_tokens
+        tokens = self.encoder.tokens(pixels)
+        context = torch.nn.functional.layer_norm(tokens.float(), (1024,))
+        if context.shape[0] != 3:
+            raise ValueError('three-frame context required')
+        self.readout.stash.update(past10=pool_tokens(context[0:1]), past05=pool_tokens(context[1:2]),
+                                  tokens_generation=self.readout.generation)
+        return tokens
+
+    def __getattr__(self, name):
+        return getattr(self.encoder, name)
+
+
+def install(model, variant):
+    """Swap `model.readout` for a variant decoder and wire its extra inputs."""
+    device = next(model.predictor.parameters()).device
+    adapter = RuntimeVariantReadout(variant).to(device).eval().requires_grad_(False)
+    model.readout = adapter
+    model.encoder = _StashingEncoder(model.encoder, adapter)
+    original = model.set_native_context
+
+    def set_native_context(packets, *, observed_ns):
+        original(packets, observed_ns=observed_ns)
+        adapter.generation += 1
+        control = model.pending_context['past_applied_commands'][:, [0, 2]].reshape(3, 5, 2).to(device)
+        adapter.stash.update(control=((control-model.control_mean)/model.control_std)[None], context_generation=adapter.generation)
+    model.set_native_context = set_native_context
+    return model
