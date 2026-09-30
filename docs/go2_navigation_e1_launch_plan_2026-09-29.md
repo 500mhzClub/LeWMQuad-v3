@@ -1,5 +1,14 @@
 # E1 launch plan, 29 September 2026
 
+## Update, 30 September: round approved and running; storage awaiting approval
+
+- **The bounded round is approved**, with the 10-maze safety check on newly generated mazes. It is pre-declared in [the round pre-declaration](go2_navigation_c3v3_onpolicy_round_predeclaration_2026-09-30.md) (commit ec2e34c9, before any work). It is the second and final C3 intervention before E1, and C3-v1 remains the capability result.
+- **Which version enters E1:**
+  - C3-v3 and C4-v3 enter if C3-v3 passes the offline acceptance and has zero contacts and hard violations in the safety check. A C4-v3 violation is flagged for Andrew.
+  - Otherwise C3-v2 and C4-v2 enter.
+- **E1 launches only after Andrew's confirmation,** whatever the outcome.
+- **Storage.** Nothing is deleted. Provenance tracing shows that no current training set or the transfer set was derived from `go2_supervised_rollout_mazes_v1_attempt_001`. Its manifest and summary are in `docs/storage_manifests/`, and deletion awaits Andrew's go-ahead.
+
 ## Status: not ready for confirmation (30 September)
 
 1. **The gap is diagnosed.** C3's motion readout does not cover the closed-loop state distribution.
