@@ -116,3 +116,36 @@ This runs **only if C3-v3 passes §5.**
 - **Calendar stop.** Missions run the frozen owner with its calendar stop unchanged (2 October 03:47 BST). If any mission would launch after 1 October 12:00 BST, the round stops and reports rather than swapping the budget.
 - **Storage.** About 3–5 GB, on RecoveryStorage. Nothing is deleted.
 - **Stops.** Safety violation, technical failure, or a C4 GPU-cap closeout stops the round, which then reports. Failures are preserved, with no silent retries.
+
+## Amendment 1: P scored on the executed tape (Andrew's approval, 30 September 2026)
+
+**What changes.** Criterion P's set of qualifying decisions and the tape it is scored on. Every threshold stays as it was:
+- P1: median ratio in [0.75, 1.25];
+- P2: median XY error at most 50% of C3-v2's;
+- the 30-decision minimum.
+R, N, the safety check and the E1 version rule (§6–§7) are also unchanged.
+
+**Amended P.**
+- **Qualifying decisions:** C1 decision frames in the 6 `onpolicy_heldout` missions that have any non-zero applied command in the preceding 1.0 s (moving), and whose **executed applied tape** (the eight 100-ms steps after the decision) contains at least four forward steps.
+- **Scoring:** each model is scored on its prediction for that executed tape through the deployed computation, against the physics-true motion. This is the path used for R and N and verified exact on 14,397 fresh-check decisions.
+
+**Reason.**
+- The original P required the executed tape to equal the forward candidate's tape exactly. C1 cruises continuously: its forward candidate tape ends in a zero step (`FFFFFFF0`), while the executed tape continues forward into the next decision (`FFFFFFFF`).
+- **Under the original definition, only 8 of the 2,243 held-out decisions qualify,** below the 30-decision minimum. The rule would then fail C3-v3 whatever the fit.
+- **Under the amended definition, 1,348 qualify,** spread across all 6 missions. They are mostly steady cruising (`FFFFFFFF`, median true 800-ms travel 138 mm), the regime the diagnosis identified.
+
+**Evidence that no held-out output existed when this was committed** (30 September, about 08:50 BST):
+1. No acceptance output exists: `c3v3_acceptance_v1/` has not been created, and `evaluate_go2_c3v3_acceptance_development.py` has never been run.
+2. `c3v3_data_v1/heldout_onpolicy_decisions.json` holds only logged inputs and physics-true targets, with no model predictions. Its keys are `directory, executed_tape, forward_executed, forward_steps, forward_tape, frame, from_rest, observed_ns, replay, run, targets`.
+3. Both fits record `heldout_used: false` and read only `c3v3_data_v1/train_samples.json`: C3-v3 readout `85ab19ec…`, C4-v3 `992c22fb…`.
+4. The only computations on held-out data were data-only counts of qualifying decisions under each definition (8 and 1,348). They were reported to Andrew before he approved.
+5. No held-out context has been passed through any model: not the C3 encoder, predictor or readout, and not C4.
+
+**Reporting additions (not gating).**
+- **P1 and P2, stratified by tape:**
+  - steady cruise: all eight executed steps are the same forward command;
+  - command switch: the command changes within the eight steps.
+  Counts are given for each.
+- **Per-mission medians** alongside the pooled values.
+- **The 8 exact-match decisions** of the original definition.
+- **C4-v3 on the same decisions next to C3-v3,** with C3-v1, C3-v2, C4-v2 and C1 (the logged command-history forecast for the executed tape's candidate is not available, so C1 is reported only on the exact-match decisions).
