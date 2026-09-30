@@ -12,7 +12,13 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 
 **Current goal:** establish a validated Go2 simulation navigation testbed. For each controller type (C0 oracle, C1 command history, C2 reactive, C3 JEPA, C4 supervised predictor), determine whether it completes beacon retrieval and return in unseen mazes, report against the pre-registered capability criterion, and produce one example video per controller (C0 optional under the brief).
 
-**Status (30 September): C3-v2 phase complete; stopped for three decisions before E1.** Read [the C3-v2 phase report](go2_navigation_c3v2_phase_report_2026-09-29.md) first.
+**Status (30 September, 10:30): C3-v3 round complete; stopped for E1 confirmation.** Read [the C3-v3 round report](go2_navigation_c3v3_round_report_2026-09-30.md) and [the E1 launch plan](go2_navigation_e1_launch_plan_2026-09-29.md) first.
+- **The round.** On-policy data came from C1. C3-v3 passed the primary closed-loop criteria (moving ratio 0.92 against C3-v2's 0.33) but failed both no-regression criteria (offline held-out groups and transfer, worst on in-place turns).
+- **Which pair enters E1.** Under the pre-declared rule, the safety check did not run and **C3-v2 and C4-v2 enter E1**. No further C3 intervention is allowed before E1.
+- **Storage.** Cleared, with the approved deletion recorded in [the storage log](storage_manifests/storage_log.md).
+- **E1 waits for Andrew's confirmation.** The sealed set is untouched.
+
+**Earlier status (30 September): C3-v2 phase complete; stopped for three decisions before E1.** Read [the C3-v2 phase report](go2_navigation_c3v2_phase_report_2026-09-29.md) first.
 - **Offline acceptance and the rule.** C3-v2 (the refit readout) passed all seven pre-declared offline criteria.
 - **Fresh check.** 10 new mazes, zero contacts and zero hard violations for every controller; round trips (sanity only) C1 9/10, C3-v2 6/10, C4-v2 7/10.
 - **Which pair enters E1.** Under the pre-declared rule the C3-v2 and C4-v2 pair enters.

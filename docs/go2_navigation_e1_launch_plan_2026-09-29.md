@@ -1,6 +1,20 @@
 # E1 launch plan, 29 September 2026
 
-## Update, 30 September: round approved and running; storage awaiting approval
+## Final status, 30 September 10:30 BST: ready for Andrew's confirmation
+
+1. **C3-v2 and C4-v2 enter E1.** The C3-v3 round ([round report](go2_navigation_c3v3_round_report_2026-09-30.md)) ended without a replacement.
+   - C3-v3 passed the primary closed-loop criteria (moving ratio 0.92, XY error 21 mm, against C3-v2's 0.33 and 89 mm).
+   - It failed both pre-declared no-regression criteria: offline held-out groups and transfer, worst on in-place turns at 2.3–2.5× the XY error.
+   - So, under the pre-declared rule, the safety check did not run and C3-v2 with C4-v2 enter.
+   - No further C3 intervention is allowed before E1.
+2. **E1's seeds use the C3-v2 pair's recipe and data** (§3 below): each C3-v2 seed re-extracts predicted features. The queued 2×2 analysis fits (§6) are unchanged.
+3. **The main caveat for interpreting E1.** C3-v2 predicts about 0.33 of true forward travel on closed-loop cruising states (C1 held-out states), and 0.21 on its own fresh-check states. E1's C3 comparisons will largely measure that readout deficit, and the E1 report must say so. The round also showed that the same frozen features can support 0.92 (C3-v3).
+4. **Storage is cleared.** After the approved deletion, RecoveryStorage has 122.7 GiB free. After E1's projected 64.9 GiB, 45.8 GiB would remain above the 12-GiB reserve, against the 15 GiB required. See the [storage log](storage_manifests/storage_log.md).
+5. **Running-time cap: 157 h,** unchanged, with the projection from the fresh-check timings.
+6. **Budget.** The capability brief's programme time is 108.4 h of 160 h. E1 runs on its own running-time accounting, and the budget replay check is confirmed.
+7. **The sealed set is untouched.** E1 launches only on Andrew's confirmation.
+
+## Update, 30 September: round approved and running; storage awaiting approval (superseded by the final status above)
 
 - **The bounded round is approved**, with the 10-maze safety check on newly generated mazes. It is pre-declared in [the round pre-declaration](go2_navigation_c3v3_onpolicy_round_predeclaration_2026-09-30.md) (commit ec2e34c9, before any work). It is the second and final C3 intervention before E1, and C3-v1 remains the capability result.
 - **Which version enters E1:**
@@ -109,7 +123,7 @@ The versions are recorded in [the model-version record](go2_navigation_c3v2_c4v2
 - **E1's projected footprint is 69.7 GB (64.9 GiB),** using mean bytes per mission:
   - C3 29.8 GB, C4 24.9 GB, C2 8.7 GB, C1 5.3 GB, C0 1.1 GB.
 - **RecoveryStorage has 81.1 GiB free.** Keeping 12 GiB free leaves about 4.2 GiB of headroom, so storage is the tighter constraint.
-- **E1 needs more room before it starts.** It must start with at least 15 GiB above the reserve after its own footprint, so at least 92.0 GiB free. That is a shortfall of 10.8 GiB, or about 16 GiB including the bounded round. The candidates are in the phase report §8, and deleting anything needs Andrew's approval.
+- **Resolved.** After the approved deletion of `go2_supervised_rollout_mazes_v1_attempt_001`, RecoveryStorage has 122.7 GiB free (see the storage log). After E1's projected footprint, 45.8 GiB would remain above the 12-GiB reserve, against the 15 GiB required.
 
 **Stops.**
 1. **Hard cap, in every mission.** The swapped `Budget` raises a resource stop when E1 running time reaches the cap minus a 120-s closeout reserve. The E1 cohort runner also refuses a new launch if running time plus the projected remainder exceeds the cap.

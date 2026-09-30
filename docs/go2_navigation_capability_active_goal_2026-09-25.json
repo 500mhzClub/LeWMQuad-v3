@@ -1,6 +1,6 @@
 {
  "schema": "navigation_capability_goal.v1",
- "status": "c3v2_phase_complete_awaiting_decisions",
+ "status": "c3v3_round_complete_awaiting_e1_confirmation",
  "approved_start": "2026-09-25",
  "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
  "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
@@ -9,7 +9,7 @@
   "7 September 2026 navigation goal",
   "closed V4.2 decision-headroom programme"
  ],
- "stage": "c3v2_fresh_check_and_gap_diagnosis_delivered",
+ "stage": "c3v3_round_report_delivered",
  "thread_goal_tracker": {
   "status": "legacy goal remains blocked",
   "replacement_attempt": "rejected: unfinished goal exists",
@@ -82,6 +82,14 @@
    "gap_diagnosis": "pipeline exact on 14,397 decisions (max 4e-7); C3 readout lacks closed-loop coverage: split test moving C3-v1 actual-future 0.12, C3-v2 predicted 0.21 vs C4-v2 0.84, C1 1.01; offline held-out sanity 0.51/0.75",
    "report": "docs/go2_navigation_c3v2_phase_report_2026-09-29.md",
    "e1_launch_plan": "docs/go2_navigation_e1_launch_plan_2026-09-29.md (projection 130.9 h median, cap 157 h; storage shortfall 10.8 GiB)"
+  },
+  "c3v3_round": {
+   "predeclaration": "docs/go2_navigation_c3v3_onpolicy_round_predeclaration_2026-09-30.md (ec2e34c9; Amendment 1 45eeca14 before any held-out output)",
+   "onpolicy_c1": "cohorts/c3v3_onpolicy_c1: C1 22/22 round trips, zero contacts/hard; 25,469 fit contexts",
+   "fits": "C3-v3 readout 85ab19ec; C4-v3 992c22fb (matched data, 32 old + 16 maze + 16 on-policy)",
+   "acceptance": "FAILED (c3v3_acceptance_v1 5ce39164): P1/P2/R1/N3 pass (closed-loop moving ratio 0.92 vs C3-v2 0.33), N1/N2 fail (turn XY 2.3-2.5x, transfer 1.21-1.66x)",
+   "e1_pair": "C3-v2 + C4-v2 (pre-declared rule); safety check not run",
+   "report": "docs/go2_navigation_c3v3_round_report_2026-09-30.md"
   }
  },
  "limitations": [
@@ -90,7 +98,7 @@
   "One C4 metadata-writer startup failure preserved before encoding/fitting"
  ],
  "remaining": [
-  "Andrew decisions: (1) proposed bounded on-policy readout round (report section 7, not run); (2) RecoveryStorage clearance of at least 16 GiB (report section 8 candidates); (3) E1 confirmation after the round. Sealed set untouched."
+  "Andrew: confirm E1 launch (C3-v2 + C4-v2 pair; 60 sealed mazes x 1 episode x 3 seeds; running-time cap 157 h). Sealed set untouched."
  ],
  "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately",
  "result_report": "docs/go2_navigation_capability_result_2026-09-25.md",
@@ -165,7 +173,7 @@
   "stopped": true,
   "stop_reason": "Oracle prefix fidelity: six no-matching-prefix rows at one dispatch-veto decision"
  },
- "latest_progress": "docs/go2_navigation_c3v2_phase_report_2026-09-29.md",
+ "latest_progress": "docs/go2_navigation_c3v3_round_report_2026-09-30.md",
  "pending_startup_output_contract": {
   "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
   "root": "paired_floor_output_contract_attempt001",
@@ -225,5 +233,6 @@
   "recovery_usable_gib": 91.11,
   "workspace_free_gib": 5.47
  },
- "gate_result": "docs/go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md"
+ "gate_result": "docs/go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md",
+ "storage_resolution_2026_09_30": "Deleted go2_supervised_rollout_mazes_v1_attempt_001 with approval; manifest docs/storage_manifests/; free 95.8 -> 122.7 GiB; log docs/storage_manifests/storage_log.md"
 }
