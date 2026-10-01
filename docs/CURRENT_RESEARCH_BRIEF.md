@@ -69,6 +69,17 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - scores: history 7.9 mm, base 8.3 mm, past frames 8.5 mm;
     - rule pick: **large, past frames**. It is inside the 1-mm tie band, has the smallest ratio error, and is the preferred visual-only variant under the 3-mm rule;
     - report sets: transfer 0.97 · 5 mm, and on C3's own fresh-check decisions cruise 0.96, switch 0.93, turn 0.89, rest start 1.09.
+  - **Chosen by the drive test (1 October, 02:56): the large past-frames decoder** (`dev_decoder_fits/p3_large_past_frames_s2026093011.pt`), with its matched C4 from the same file.
+    - Dev mazes 0–4, recovery on, large decoder against C3-v3:
+      - 5/5 each;
+      - SPL 0.87 vs 0.85;
+      - median time 159 s vs 165 s;
+      - 2,020 vs 2,636 decisions;
+      - hold rates 0.045/0.079 vs 0.093/0.164;
+      - deadlock escapes 0.2 vs 1.8 per mission;
+      - minimum clearance 11.6 vs 3.4 cm.
+    - Closed-loop forecast error: 9 vs 11 mm overall (cruise 11 vs 16, arc 9 vs 17, switch 14 vs 18 mm). The large decoder under-predicts in-place turns (ratio 0.75, error 5 mm).
+    - The feature cache's two arrays (46.7 GiB) were then deleted, as authorised; see the storage log.
   - **Drive test before choosing (Andrew):** the median-seed large past-frames decoder (`dev_decoder_fits/p3_large_past_frames_s2026093011.pt`) against C3-v3, on dev mazes 0–4, recovery on. At most 2 C3 missions run at once, because measured compute sets the simulated clock. Scored by driving and by `scripts/score_go2_dev_closed_loop_prediction_development.py`.
 - **Model sizes (to be matched properly in the rigorous phase):**
   - shared frozen V-JEPA 2.1 ViT-L encoder, about 304M;
