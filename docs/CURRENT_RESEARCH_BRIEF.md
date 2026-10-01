@@ -52,6 +52,13 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - `prelim_off`: C1–C4 on mazes 30–49, recovery off; 80 missions.
     - The trial's recovery-on missions on 30–32 are reused rather than re-run: same code, and runs are verified deterministic.
     - Results: `scripts/report_go2_prelim_results_development.py prelim_trial prelim_on prelim_off`.
+  - **Videos (Andrew, 1 October), one per controller.** Each is the lowest-ID recovery-off success, else recovery on and labelled, plus one labelled C2 recovery-off stall.
+    - Rendered by `scripts/render_go2_prelim_video_development.py`: the unchanged V4 renderer, replaying with the run's own fixes and PRELIMINARY labels.
+    - Every replay verified identical to its log.
+    - In `<capability root>/videos/`:
+      - `prelim_C1_prelim30_recovery-off`, `prelim_C2_prelim31_recovery-off`, `prelim_C3_prelim30_recovery-off`, `prelim_C4_prelim30_recovery-off`;
+      - `prelim_C0_prelim30_recovery-on` (C0*, recovery on: C0 has no recovery-off runs);
+      - `prelim_C2_prelim30_recovery-off_stall` (labelled failure: return-leg stall).
 - **Decoder inputs per controller (current system):**
   - C1: command history plus the candidate tape (kinematic forecast; no images).
   - C2: reactive, no motion predictor.
