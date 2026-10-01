@@ -113,6 +113,14 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
   - **Verified (1 October, 03:25):** C3 with the chosen decoder on dev maze 0 was run alone on the GPU, and compared with the same mission from the drive test, which ran alongside another C3 run. The two are **identical**: 473 planning records (forecasts included), 9466 20-ms requests, the physics trace and the outcome (`scripts/compare_go2_dev_runs_identity_development.py`). Two C1 runs under different loads were identical too (fresh-check 09).
 - **Trap fixes frozen (Andrew, 1 October)** at the current six: terminal (burst after a terminal spin; ignores scan mode), latch, deadlock (with the C2 reactive escape), stall (never retires the last frontier), back-up, and pose (record only). Frozen at commit 2e33bbfe (`lewm/dev_harness_fixes_development.py`).
   - No further tuning on C1 counts: 27/30 with missions flipping is noise at this sample size.
+  - **Known harness issue: coverage-rule holds** (found 1 October from the preliminary videos; frozen V4 rule in `lewm/coverage_translation_view_development.py`, not a development fix).
+    - The rule rejects a translation whose 0.48-m swept footprint adds any coarse cell that is not floor. That includes cells already observed as **occupied**: obstacle edges that the fine 1-cm clearance gate still passes.
+    - Its remedy, a camera view request, only targets *unobserved* cells, so no view is requested. The substitute is the best of hold or a turn by utility, so the robot holds until the utilities drift or a truly unobserved cell enters the footprint.
+    - Examples:
+      - C3 maze 30 (recovery off) held 24.8 s with forward wanted toward a waypoint 0.36 m ahead; a left turn finally outscored hold.
+      - C4 maze 30 held 13.2 s at the same spot; a truly unobserved cell triggered a view request.
+    - Preliminary scale, mid-run: 1–3% of mission time for C0/C1/C3/C4, none for C2 (its reactive selector does not use the rule). 11 of 130 missions had a hold of at least 10 s; the longest was 32 s. Recovery rarely breaks it, because the stall watchdog needs 30 s without 15 cm of motion.
+    - Not changed during the preliminary run (system frozen). Candidate fix for the rigorous phase: treat occupied cells as observed in the rule and leave them to the clearance gate.
   - **Known failures:**
     - C1 validation 10: pose loss on the outbound leg in the six-fix re-check;
     - C1 validation 13 and fresh-check 09: stuck oscillating at a corridor entrance or during a turnaround.
