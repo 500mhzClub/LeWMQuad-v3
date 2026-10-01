@@ -34,10 +34,12 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 - **The rigorous phase will use a freshly generated sealed set.**
 - **Preliminary-test set (Andrew, 1 October):** Andrew declassified the 60 capability test mazes (layouts 30–89). They are renamed `sets/prelim_test_v1`, with an `AGENTS.md` exception (commit 657ca4c8), and are run through the dev entry's `prelim_test` set (hash-verified against the capability registry). Every result from them is labelled **preliminary**.
 - **Rigorous-phase sealed set generated (1 October):** `sets/sealed_test_v2`, 60 mazes × 2 episodes. It uses the same generator and exclusions, extended to all 257 earlier graphs, and random seeds that were never displayed. Structural checks only; all passed. Sealed and untouched until the rigorous phase. See [the registration note](go2_navigation_sealed_test_v2_registration_2026-10-01.md) (public receipt sha256 `45460286…`).
+  - The seeds are recorded inside the sealed folder, in its sealed registry.
+  - One hash-verified backup is on the workspace NVMe, off RecoveryStorage: `/mnt/workspace_drive/LeWMQuad-v3_sealed_backups/sealed_test_v2`.
 - **Preliminary run, as approved by Andrew (1 October):**
   - **Recovery on:** all 60 preliminary mazes (IDs 30–89, episode 0), C1–C4, with the drive-test-chosen C3 decoder and its matched C4.
   - **Recovery off:** the first 20 of those (IDs 30–49), C1–C4.
-  - **C0:** 10 mazes (IDs 30–39), recovery on.
+  - **C0:** 10 mazes (IDs 30–39), recovery on. C0's results are labelled as run on a copy of the owner's harness in which only the C0 maze-ID check is relaxed; the frozen owner limits C0 to IDs below 20.
   - **No validation or round mazes;** validation was used for tuning, so its numbers would be optimistic.
   - **Sequence:** first a 3-maze trial on all controllers, then the full run. A short progress report at about 25%, and keep going unless something is broken.
   - **Beforehand:** the 1-versus-2 concurrency identity check, and deletion of the feature cache once the decoder is chosen (authorised).

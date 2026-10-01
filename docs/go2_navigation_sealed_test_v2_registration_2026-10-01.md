@@ -24,3 +24,15 @@
   - no physics or rendering.
 
 **Custody.** `<capability root>/sets/sealed_test_v2` is a `sealed_*` directory. The AGENTS.md sealed rules apply, and the model-facing account never opens, parses or searches it. It stays untouched until the rigorous phase, which also needs the operating-system isolation and one-shot launcher that AGENTS.md requires for final-test custody.
+
+## Seeds and backup (1 October 2026, Andrew's follow-up)
+
+- **Seeds are already inside the sealed folder.** The generating process wrote the construction seed and the three seed bases into the sealed registry, `sets/sealed_test_v2/registry.json` (key `seeds`), alongside the mazes. That file is hash-bound in the public receipt (registry sha256 recorded there). A separate seeds file was not created: it would require the model-facing account to read the sealed registry, which AGENTS.md forbids. The seeds remain unseen until the rigorous phase, when they can be published from the registry with the paper.
+- **Backup off RecoveryStorage.** A byte-for-byte copy is at `/mnt/workspace_drive/LeWMQuad-v3_sealed_backups/sealed_test_v2`, on the workspace NVMe (nvme0n1), a separate physical disk from RecoveryStorage (encrypted root disk, nvme1n1), outside the repository. It keeps the `sealed_` name, so the AGENTS.md sealed rules apply to it.
+  - Made by `scripts/backup_go2_sealed_test_v2_development.py` (commit 2392b7af).
+  - Verified by hash with nothing displayed:
+    - 182 files;
+    - all 180 maze and episode files and the sealed registry match the public receipt;
+    - the construction evidence matches the source;
+    - the source still matches the receipt.
+  - Backup receipt: `<capability root>/sealed_test_v2_backup_receipt.json`, sha256 `801407c55a488516da264aaacd85a0f161cf3fedef3f151553cbfef16471ded5`.

@@ -158,7 +158,9 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
             output.install(root)
             owner.save(destination/'dev_run.json', dict(mode='development', controller=arm, set=set_name, maze=maze, episode=episode,
                 fixes=sorted(fixes), recovery=recovery, c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
-                c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None, **code_sha))
+                c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None,
+                owner_run=('copy of owner.run with only the C0 maze-ID limit relaxed for prelim_test IDs 30-89'
+                           if set_name == 'prelim_test' else 'owner.run'), **code_sha))
 
 
 if __name__ == '__main__':

@@ -22,6 +22,8 @@ from pathlib import Path
 from scripts.summarise_go2_dev_cohorts_development import BASE, mission_row
 
 LABEL = 'PRELIMINARY (prelim_test_v1, development mode; not a sealed-set result)'
+C0_NOTE = ("C0*: run on a copy of the owner's harness in which only the C0 maze-ID check is relaxed to admit the "
+           'preliminary-test IDs (the frozen owner limits C0 to IDs below 20); every other line is the owner\'s.')
 
 
 def mission(assignment, controller, recovery, maze):
@@ -79,11 +81,13 @@ def summary(rows):
         helped = sum(1 for r in read if r['deadlock_escapes'] or r['stall_reroutes'] or r['backups'] or r['latch_timeouts'] or r['terminal_spin_breaks'])
         per = lambda key: f(sum(r[key] for r in read)/n)
         clear = [r['min_clearance_m'] for r in read if r.get('min_clearance_m') is not None]
-        lines.append(f"| {ctrl} | {rec} | {n} | {len(wins)} | {len(wins)/n:.2f} | {f(mean([r.get('round_trip_spl') for r in read]))} | "
+        lines.append(f"| {ctrl}{'*' if ctrl == 'C0' else ''} | {rec} | {n} | {len(wins)} | {len(wins)/n:.2f} | {f(mean([r.get('round_trip_spl') for r in read]))} | "
                      f"{f(st.median(times), 0) if times else '-'} | {helped} | {per('deadlock_escapes')} | {per('stall_reroutes')} | {per('backups')} | "
                      f"{per('latch_timeouts')} | {per('terminal_spin_breaks')} | {f(mean([r.get('outbound_hold_rate') for r in read]), 3)} | "
                      f"{f(mean([r.get('return_hold_rate') for r in read]), 3)} | {sum(r.get('contacts') or 0 for r in read)} | "
                      f"{sum(r.get('hard') or 0 for r in read)} | {sum(r.get('operating') or 0 for r in read)} | {f(min(clear) if clear else None, 3)} |")
+    if any(r['controller'] == 'C0' for r in rows):
+        lines += ['', C0_NOTE]
     return '\n'.join(lines)
 
 
@@ -114,7 +118,7 @@ def per_mission(rows):
     lines = ['', f'**Per mission. {LABEL}**', '', '| Maze | Ctrl | Recovery | Round trip | SPL | Time (s) | Deadlock escapes | Stall reroutes | '
              'Back-ups | Latch timeouts | Spin breaks | Pose corrections | Holds out/ret | Contacts | Min clearance (m) |', '|'+'---|'*15]
     for r in sorted(rows, key=lambda r: (r['maze'], r['controller'], r['recovery'])):
-        lines.append(f"| {r['maze']} | {r['controller']} | {r['recovery']} | {f(r.get('round_trip'))} | {f(r.get('round_trip_spl'))} | "
+        lines.append(f"| {r['maze']} | {r['controller']}{'*' if r['controller'] == 'C0' else ''} | {r['recovery']} | {f(r.get('round_trip'))} | {f(r.get('round_trip_spl'))} | "
                      f"{f(r.get('total_s'), 0)} | {r['deadlock_escapes']} | {r['stall_reroutes']} | {r['backups']} | {r['latch_timeouts']} | "
                      f"{r['terminal_spin_breaks']} | {f(r.get('pose_corrections'))} | {f(r.get('outbound_hold_rate'), 2)}/{f(r.get('return_hold_rate'), 2)} | "
                      f"{f(r.get('contacts'))} | {f(r.get('min_clearance_m'), 3)} |")
