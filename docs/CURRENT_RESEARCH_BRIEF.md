@@ -52,6 +52,11 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
     - `prelim_off`: C1–C4 on mazes 30–49, recovery off; 80 missions.
     - The trial's recovery-on missions on 30–32 are reused rather than re-run: same code, and runs are verified deterministic.
     - Results: `scripts/report_go2_prelim_results_development.py prelim_trial prelim_on prelim_off`.
+  - **Recovery-on failures, checked without recovery (Andrew, 1 October; supplement cohort `prelim_off_extra55`: C1 and C4 on maze 55, recovery off).** Both recovery-on failures by C1, C3 or C4 disappear with recovery off, and in both the first recovery intervention caused them:
+    - **C4, maze 45.** Runs are identical until frame 684. There the latch timeout (10 decisions with less than 0.05 rad of progress) released a latched left turn that completes if left alone (the recovery-off run reaches the beacon at frame 2,080). A release/re-latch cycle followed (39 timeouts, 221 cool-downs), and the budget ran out 1.15 m from the beacon.
+    - **C1, maze 55.** Runs are identical until frame 912. There the stall watchdog (30 s within 15 cm) called a back-up on the exact decision at which C1, left alone, set off (left arc) and reached the beacon 34 s later. After that: 25 latch timeouts, 10 escapes, 6 frontier exclusions (2 undone), another back-up, and no progress.
+    - **C4, maze 55:** no intervention fired, and the recovery-on and recovery-off runs are bit-identical.
+    - **Implication:** for C1, C3 and C4 the recovery thresholds are too eager; they intervene on situations the controllers resolve themselves. Recovery is essential for C2 (all 9 of its recovery-off stalls).
   - **Videos (Andrew, 1 October), one per controller.** Each is the lowest-ID recovery-off success, else recovery on and labelled, plus one labelled C2 recovery-off stall.
     - Rendered by `scripts/render_go2_prelim_video_development.py`: the unchanged V4 renderer, replaying with the run's own fixes and PRELIMINARY labels.
     - Every replay verified identical to its log.
