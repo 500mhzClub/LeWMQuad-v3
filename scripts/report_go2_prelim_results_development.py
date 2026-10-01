@@ -84,6 +84,7 @@ def wilson(k, n, z=1.96):
 
 
 BOOTSTRAP, SEED = 10_000, 20261001
+POLICY_BUDGET_S = 480.  # the owner's policy_budget_s; a mission that never reaches the beacon is set to it
 
 
 def bootstrap_mean(differences):
@@ -111,9 +112,13 @@ def versus_c1(rows):
             by[(r['recovery'], r['maze'])][r['controller']] = r
     lines = ['', f'**Paired comparison against C1, same mazes and recovery setting. {LABEL}**', '',
              'Differences are other minus C1. Intervals: maze-level paired bootstrap 95% (B = 10,000). '
-             'SPL and time-to-beacon only on mazes where both succeed.', '',
+             'SPL and time-to-beacon only on mazes where both succeed. **Survivorship caution:** those conditional '
+             'differences drop every maze a controller failed, so a controller that fails its hard mazes (C2 with recovery '
+             'off) is compared on its easy ones only, which biases its SPL and time differences in its favour. The last column '
+             'counts every paired maze, with a mission that never reaches the beacon set to the 480-s policy budget.', '',
              '| Ctrl vs C1 | Recovery | Paired mazes | Success (ctrl / C1) | Success difference (95% CI) | Only C1 succeeds | Only ctrl succeeds | McNemar exact p | '
-             'Both succeed | SPL difference (95% CI) | Time-to-beacon difference, s (95% CI) |', '|'+'---|'*11]
+             'Both succeed | SPL difference (95% CI) | Time-to-beacon difference, s (95% CI) | '
+             'Time-to-beacon difference, all paired mazes, non-arrival = 480 s (95% CI) |', '|'+'---|'*12]
     for rec in ('on', 'off'):
         for ctrl in ('C0', 'C2', 'C3', 'C4'):
             pairs = [v for (rr, _m), v in sorted(by.items()) if rr == rec and ctrl in v and 'C1' in v]
@@ -128,11 +133,13 @@ def versus_c1(rows):
             spl = bootstrap_mean([v[ctrl]['round_trip_spl']-v['C1']['round_trip_spl'] for v in both])
             beacon = bootstrap_mean([v[ctrl]['outbound_s']-v['C1']['outbound_s'] for v in both
                                      if v[ctrl].get('outbound_s') is not None and v['C1'].get('outbound_s') is not None])
+            budget = lambda r: r['outbound_s'] if r.get('beacon') and r.get('outbound_s') is not None else POLICY_BUDGET_S
+            censored = bootstrap_mean([budget(v[ctrl])-budget(v['C1']) for v in pairs])
             ci = lambda m, digits=2: '-' if m[0] is None else f'{m[0]:+.{digits}f} ({m[1]:+.{digits}f} to {m[2]:+.{digits}f})'
             p = mcnemar_exact(len(only_c1), len(only_x))
             lines.append(f"| {ctrl}{'*' if ctrl == 'C0' else ''} | {rec} | {len(pairs)} | {sum(x)} / {sum(c1)} | {ci((diff, lo, hi))} | "
                          f"{len(only_c1)}{' '+str(only_c1) if only_c1 else ''} | {len(only_x)}{' '+str(only_x) if only_x else ''} | "
-                         f"{'-' if p is None else f'{p:.3f}'} | {len(both)} | {ci(spl)} | {ci(beacon, 1)} |")
+                         f"{'-' if p is None else f'{p:.3f}'} | {len(both)} | {ci(spl)} | {ci(beacon, 1)} | {ci(censored, 1)} |")
     return '\n'.join(lines)
 
 
