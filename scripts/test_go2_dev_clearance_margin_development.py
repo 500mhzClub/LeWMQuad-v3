@@ -6,10 +6,13 @@ because every requirement becomes r + margin; the logged distance is reduced by 
 The stopping projection's and routing's bindings are untouched, and outside the context the
 behaviour is the frozen one. The mixin records the margin in the selection.
 
-Pessimistic unknown (stage 2): at the start pose with only the floor ahead observed (what the
-cameras see), the never-observed ring between the seeded 0.425-m start disc and 0.5 m counts
-as occupied, so an in-place turn is blocked; with the whole reach observed it passes.
+Pessimistic unknown (stage 2, revised rule): never-observed cells block a move only within body
+reach (0.425 m) + the controller's e_f bound of the forecast centre path; remembered walls keep
+their own requirement. Cases: the start pose with only the floor ahead observed (the cameras'
+view), the whole reach observed, unseen cells only beyond the blocking radius, and a remembered
+wall at 0.44 m (still blocked at its own 0.45-m requirement in this check).
 """
+import math
 import types
 import numpy as np
 
@@ -88,24 +91,33 @@ def main():
 
 
 def pessimistic():
+    """Revised rule: never-observed cells block within body reach (0.425 m) + the e_f bound of the forecast centre path."""
     class Base:
         def _select_clear_prediction(self, selected, prediction_, snapshot, position, rotation):
             return memory_check.select_clear_prediction(selected, prediction_, snapshot.fine_occupied, position, rotation, translation_reserve_m=.03)
 
         def _route_target(self, route, snapshot, position):
-            return len(fixes._UNKNOWN_CELLS.get())
+            return fixes._UNKNOWN_CELLS.get()
 
-    ahead = frozenset((i, j) for i in range(9, 40) for j in range(-15, 16))  # floor seen ahead, x >= 0.45 m
+    bound = .0289  # C1 p99
+    ahead = frozenset((i, j) for i in range(9, 40) for j in range(-15, 16))  # floor seen ahead (x >= 0.45 m): the start-pose view
     everywhere = frozenset((i, j) for i in range(-20, 40) for j in range(-20, 21))
-    for floor, expected in ((ahead, 'hold'), (everywhere, 'left_turn')):
-        runtime = type('P', (fixes.PessimisticUnknownMixin, Base), {})()
-        snap = types.SimpleNamespace(floor=floor, occupied=frozenset(), fine_occupied=frozenset())
+    beyond = frozenset((i, j) for i in range(-20, 40) for j in range(-20, 21) if math.hypot(i+.5, j+.5)*.05 <= .52)  # unseen only beyond 0.52 m
+    cases = (('start pose, floor ahead only', ahead, frozenset(), 'hold'),
+             ('whole reach observed', everywhere, frozenset(), 'left_turn'),
+             ('unseen only beyond 0.52 m', beyond, frozenset(), 'left_turn'),
+             # The memory check alone requires 0.45 m for turns (the 0.48-m turn reserve is applied later in the chain).
+             ('whole reach observed, remembered wall 0.44 m away', everywhere, frozenset((44, j) for j in range(-60, 61)), 'hold'))
+    for name, floor, wall, expected in cases:
+        runtime = type('P', (fixes.pessimistic_unknown_mixin(bound, 'p99'), Base), {})()
+        snap = types.SimpleNamespace(floor=floor, occupied=frozenset(), fine_occupied=wall)
         result = runtime._select_clear_prediction(selection(), prediction(), snap, np.zeros(3), np.eye(3))
-        assert result['action'] == expected, (result['action'], result['dev_pessimistic_unknown'])
-        count = result['dev_pessimistic_unknown']['unknown_cells_counted_occupied']
-        print(f"pessimistic unknown, {'floor ahead only' if floor is ahead else 'whole reach observed'}: "
-              f"{count} unknown cells counted occupied -> {result['action']}")
-        assert fixes._UNKNOWN_CELLS.get() == frozenset()
+        rows = {r['action']: r for r in result['memory_forecast_candidates']}
+        record = result['dev_pessimistic_unknown']
+        print(f"pessimistic unknown (blocking radius {record['blocking_radius_m']:.4f} m), {name}: {record['unknown_cells_in_scope']} unseen cells in scope; "
+              f"left-turn effective clearance {rows['left_turn']['minimum_predicted_path_clearance_m']} -> {result['action']}")
+        assert result['action'] == expected, (name, result['action'])
+        assert fixes._UNKNOWN_CELLS.get() is None
     assert stopping.cached_clearance is routing.cached_clearance
 
 
