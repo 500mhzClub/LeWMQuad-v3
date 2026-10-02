@@ -45,7 +45,9 @@ from scripts.analyse_go2_forecast_sensitivity_error_budget_development import PA
 from scripts.diagnose_go2_forecast_sensitivity_failures_development import ACTIONS, BASE, assignments, order, spec_of, wall_distance
 
 CELL_M, FINE_M = .05, .01
-START_FREE_M, TRACK_FREE_M = .50, .20  # pessimistic-unknown variant: seeded known-free areas (spawn clearance >= 0.5 m by the generator)
+START_FREE_M, TRACK_FREE_M = .50, .20  # first estimate (2 Oct): seeded known-free areas (spawn clearance >= 0.5 m by the generator)
+BODY_REACH_M, REVISED_SCOPE_M = .425, .80  # revised rule (Andrew, 2 Oct): start reach disc 0.425 m + track; block within reach + bound
+BOUNDS = json.loads((Path(__file__).resolve().parents[1]/'docs/go2_navigation_calibrated_margins_2026-10-02.json').read_text())['controllers']
 DISC_M, NEAR_ROBOT_M = .45, .50
 BAND = (.03, .65)
 COLUMNS, ROWS = 32, 24
@@ -79,6 +81,7 @@ class Scene:
         self.shape = np.ceil((hi-lo)/CELL_M).astype(int)
         self.observed = np.zeros(self.shape, bool)
         self.seeded = np.zeros(self.shape, bool)
+        self.seeded_reach = np.zeros(self.shape, bool)
         self.centres = self.origin+(np.indices(self.shape).transpose(1, 2, 0)+.5)*CELL_M
         self.fine = set()
         self.distance = wall_distance(walls)
@@ -125,12 +128,26 @@ class Scene:
             self.observed[idx[inside, 0], idx[inside, 1]] = True
             self.fine.update(map(tuple, np.floor(points[wall, :2]/FINE_M).astype(int)))
 
-    def seed(self, centre, radius):
+    def seed(self, centre, radius, grid=None):
         """Mark cells within radius of a body-centre position as known free (start disc, own track)."""
+        grid = self.seeded if grid is None else grid
         lo = np.maximum(np.floor((centre-radius-self.origin)/CELL_M).astype(int), 0)
         hi = np.minimum(np.ceil((centre+radius-self.origin)/CELL_M).astype(int), self.shape)
         block = self.centres[lo[0]:hi[0], lo[1]:hi[1]]
-        self.seeded[lo[0]:hi[0], lo[1]:hi[1]] |= np.linalg.norm(block-centre, axis=-1) <= radius
+        grid[lo[0]:hi[0], lo[1]:hi[1]] |= np.linalg.norm(block-centre, axis=-1) <= radius
+
+    def unseen_distance(self, path, centre):
+        """Distance from the path to the nearest never-observed, unseeded (revised seeding) 5-cm cell square within scope."""
+        lo = np.maximum(np.floor((centre-REVISED_SCOPE_M-self.origin)/CELL_M).astype(int), 0)
+        hi = np.minimum(np.ceil((centre+REVISED_SCOPE_M-self.origin)/CELL_M).astype(int), self.shape)
+        corner = self.origin+np.indices((hi[0]-lo[0], hi[1]-lo[1])).transpose(1, 2, 0)*CELL_M+lo*CELL_M
+        mask = ~self.observed[lo[0]:hi[0], lo[1]:hi[1]] & ~self.seeded_reach[lo[0]:hi[0], lo[1]:hi[1]]
+        mask &= np.linalg.norm(corner+CELL_M/2-centre, axis=-1) <= REVISED_SCOPE_M
+        squares = corner[mask]
+        if not len(squares):
+            return None
+        gap = np.maximum(np.maximum(squares[None]-path[:, None], path[:, None]-(squares[None]+CELL_M)), 0.)
+        return float(np.linalg.norm(gap, axis=-1).min())
 
     def cells_near(self, path, centre):
         lo = np.floor((path.min(axis=0)-DISC_M-self.origin)/CELL_M).astype(int)
@@ -167,7 +184,9 @@ def mission(args):
             pose = P[at(1.5+frame_i*.1)]
             if frame_i == 0:
                 scene.seed(pose[:2], START_FREE_M)
+                scene.seed(pose[:2], BODY_REACH_M, scene.seeded_reach)
             scene.seed(pose[:2], TRACK_FREE_M)
+            scene.seed(pose[:2], TRACK_FREE_M, scene.seeded_reach)
             scene.observe(pose)
             frame_i += 1
         if plan['measured_ns'] not in executed or plan['action'] == 'hold':
@@ -195,7 +214,8 @@ def mission(args):
         memory = {c['action']: c for c in plan['selection'].get('memory_forecast_candidates') or []}
         logged = (memory.get(plan['action']) or {}).get('minimum_predicted_path_clearance_m')
         rows.append(dict(time_s=round(plan['measured_ns']/1e9-1.5, 1), action=plan['action'], cells=int(len(ii)), unknown=int(unknown.sum()),
-                         unknown_after_seeding=int((unknown & ~scene.seeded[ii, jj]).sum()), hidden=int(hidden.sum()),
+                         unknown_after_seeding=int((unknown & ~scene.seeded[ii, jj]).sum()),
+                         unseen_distance_revised=scene.unseen_distance(path, P[i, :2]), hidden=int(hidden.sum()),
                          unknown_sectors=dict(Counter(sector[unknown])), true_clearance=true_clear, observed_clearance=observed_clear,
                          logged_clearance=logged, unknown_only_pass=bool(true_clear < DISC_M and (observed_clear is None or observed_clear > DISC_M))))
     return dict(cohort=cohort, assignment=assignment, controller=read('config.json').get('controller'), decisions=rows)
@@ -240,11 +260,43 @@ def table(results):
     return '\n'.join(lines)
 
 
+def revised_table(results):
+    """Offline replay of the revised pessimistic-unknown rule on every logged executed moving decision."""
+    groups = {}
+    for r in results:
+        groups.setdefault((r['cohort'], r['controller']), []).extend(r['decisions'])
+    pct = lambda k, n: '-' if not n else f'{k}/{n} ({100*k/n:.1f}%)'
+    lines = [f'**Offline replay of the revised pessimistic-unknown rule. {LABEL}**', '',
+             'Seeded known free: the start reach disc (0.425 m, by cell centre) and the traversed track (0.20 m). A decision is blocked if a '
+             'never-observed 5-cm cell square lies within body reach (0.425 m) + the controller\'s calibrated e_f bound of its forecast centre path '
+             '(placed at the true pose; observation reconstructed by ray casting). Unsafe pass = true path clearance < 45 cm while clearance to '
+             'observed walls > 45 cm. Blocked counts are for the selected move only; the live planner would then choose among the others.', '',
+             '| Cohort | Controller | Decisions | Blocked at p95 radius: all · first 30 s · after 30 s | Blocked at p99 radius: all · first 30 s · after 30 s '
+             '| Unsafe passes | Unsafe passes blocked: p95 · p99 |',
+             '|---|---|---:|---|---|---:|---|']
+    for (cohort, controller), ds in sorted(groups.items(), key=lambda kv: (kv[0][0].startswith('sens_'), order(kv[0][0]) if kv[0][0].startswith('sens_') else (0, 0), kv[0][0], kv[0][1])):
+        if controller not in BOUNDS or not ds:
+            continue
+        cells = []
+        for level in ('p95', 'p99'):
+            radius = BODY_REACH_M+BOUNDS[controller][level]['margin_m']
+            blocked = lambda rows: sum(d['unseen_distance_revised'] is not None and d['unseen_distance_revised'] < radius for d in rows)
+            early, late = [d for d in ds if d['time_s'] < 30], [d for d in ds if d['time_s'] >= 30]
+            cells.append(f"{pct(blocked(ds), len(ds))} · {pct(blocked(early), len(early))} · {pct(blocked(late), len(late))}")
+        unsafe = [d for d in ds if d['unknown_only_pass']]
+        hit = lambda level: sum(d['unseen_distance_revised'] is not None and d['unseen_distance_revised'] < BODY_REACH_M+BOUNDS[controller][level]['margin_m']
+                                for d in unsafe)
+        label = spec_of(cohort) if cohort.startswith('sens_') else cohort
+        lines.append(f"| {label} | {controller} | {len(ds)} | {cells[0]} | {cells[1]} | {len(unsafe)} | "
+                     f"{pct(hit('p95'), len(unsafe))} · {pct(hit('p99'), len(unsafe))} |")
+    return '\n'.join(lines)
+
+
 def main(cohorts, out_json, out_md, workers):
     jobs = [j for c in cohorts for j in assignments(c)]
     with Pool(workers) as pool:
         results = pool.map(mission, jobs, chunksize=1)
-    text = table(results)
+    text = table(results)+'\n\n'+revised_table(results)
     print(text)
     if out_json:
         Path(out_json).write_text(json.dumps(dict(label=LABEL, missions=results), indent=1)+'\n')
