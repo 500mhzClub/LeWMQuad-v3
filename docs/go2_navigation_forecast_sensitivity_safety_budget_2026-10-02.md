@@ -88,3 +88,57 @@
 - **Separation** is the frozen reader's 500 Hz lower bound, with its upper bound used for definite violations. Near wall corners it can understate true separation by a few centimetres.
 - **The tracker term** is measured in the initial body frame. The map frame differs from it by a fixed transform, which cancels in relative geometry.
 - **The map term** is inferred from the logged remembered clearance, because remembered cells are not logged per decision. It combines walls misplaced at observation with walls never observed.
+
+## C3 and C4 on the budget (preliminary run)
+
+**Source.** Per executed moving decision, from the preliminary-run logs, using the forecast the planner applied (`applied_prediction_after_yaw_ablation`).
+- **Near walls** = the checked path's true clearance below 60 cm, within 15 cm of the disc, where the check binds.
+- The preliminary run predates the coverage-rule fix. That does not change how forecasts are scored.
+- Script: `analyse_go2_forecast_sensitivity_error_budget_development.py --by-controller`.
+
+| Run | Controller | Decisions | e_f overall p50 · p95 · p99 (cm) | e_f near walls p50 · p95 · p99 (cm) | e_p near walls p95 (cm) | Budget near walls at p95 · p99 (cm) |
+|---|---|---:|---|---|---:|---|
+| recovery off, mazes 30–49 | C1 | 7575 | 1.0 · 2.3 · 3.0 | 0.9 · 2.1 · 2.6 | 0.7 | −0.3 · −4.8 |
+| recovery off, mazes 30–49 | C3 | 7355 | 2.0 · 5.2 · 7.0 | 2.1 · 5.3 · 7.1 | 0.7 | −3.7 · −9.3 |
+| recovery off, mazes 30–49 | C4 | 7676 | 1.1 · 2.6 · 3.4 | 1.1 · 2.6 · 3.5 | 0.5 | −0.8 · −4.6 |
+| recovery on, mazes 30–89 | C1 | 22392 | 1.0 · 2.2 · 3.0 | 0.9 · 2.1 · 2.8 | 0.8 | −0.3 · −5.0 |
+| recovery on, mazes 30–89 | C3 | 21120 | 2.1 · 5.3 · 7.1 | 2.1 · 5.3 · 7.1 | 0.7 | −3.6 · −9.4 |
+| recovery on, mazes 30–89 | C4 | 21846 | 1.1 · 2.6 · 3.4 | 1.1 · 2.6 · 3.4 | 0.8 | −0.9 · −7.0 |
+| recovery on (10 mazes) | C0 oracle | 2768 | 0.2 · 0.5 · 0.6 | 0.2 · 0.5 · 0.6 | 0.7 | +1.2 · −4.8 |
+
+**Placement against the C1 cohorts.**
+- C4 sits with clean C1.
+- C3's forecast error is about twice C1's. It falls between the 10 mm noise cohort (p95 3.2, p99 3.9 cm) and the 20 mm cohort (4.9 / 6.2 cm), at a level that left C1's success unchanged.
+- C0's 0.5 cm is the measurement floor: timing and sampling of the true path.
+
+**Map term near walls.** The 99th percentile is 3–6 cm in every run: walls never observed. The p99 budget is negative for every controller, including the oracle.
+
+## Unknown cells counted as free
+
+**Method.**
+- The clearance checks measure distance to remembered occupied cells only, so a never-observed cell counts as free.
+- Neither the map nor the depth images were kept. Observation coverage is reconstructed by ray-casting both depth cameras along the true trajectory against the true scene, at 10 Hz.
+- The reconstruction is validated against the planner's logged remembered clearance: it is 1.2–1.8 cm larger at the median (p95 absolute 2.3–2.7 cm), as expected from the 1 cm cell squares.
+- Reach = 5 cm cells within the checked disc (0.45 m of the selected move's forecast centre path) and within 0.5 m of the robot.
+- Script: `scripts/analyse_go2_unknown_cells_development.py`.
+
+| Run | Controller | Moving decisions | Unknown in reach: all · turns · forward/arcs · after the first 30 s | Unknown cells by direction: front · side · rear | Hidden wall in reach | Passed only because unknown is free |
+|---|---|---:|---|---|---:|---:|
+| preliminary, recovery off | C1 | 7575 | 15.0% · 37.4% · 5.3% · 0.2% | 0.24 · 0.49 · 0.27 | 0.0% | 0.0% |
+| preliminary, recovery off | C3 | 7355 | 15.5% · 33.3% · 5.9% · 0.2% | 0.23 · 0.49 · 0.27 | 0.0% | 0.0% |
+| preliminary, recovery off | C4 | 7676 | 14.6% · 30.2% · 5.8% · 0.0% | 0.23 · 0.49 · 0.27 | 0.0% | 0.0% |
+| clean | C1 | 7314 | 15.3% · 36.6% · 5.6% · 0.0% | 0.23 · 0.49 · 0.27 | 0.0% | 0.0% |
+| noise 40 mm | C1 | 10423 | 20.2% · 30.7% · 6.0% · 9.3% | 0.23 · 0.50 · 0.27 | 0.0% | 0.0% |
+| noise 160 mm | C1 | 8039 | 84.0% · 86.3% · 52.6% · 81.6% | 0.23 · 0.51 · 0.27 | 0.0% | 4.7% |
+| scale 0.25× (partial) | C1 | 2822 | 15.4% · 41.1% · 5.8% · 0.4% | 0.23 · 0.49 · 0.27 | 0.0% | 0.0% |
+| forward × 0.25 | C1 | 10912 | 14.9% · 20.2% · 9.8% · 4.5% | 0.23 · 0.49 · 0.28 | 0.0% | 0.0% |
+
+The remaining cohorts are in the script output. Forward × 0.5 and × 0.75, 10 mm and 20 mm noise and scale 0.5× all fall between the clean and forward × 0.25 rows.
+
+**What this shows.**
+- **About 15% of moving decisions plan through never-observed cells within 0.5 m**, a third of in-place turns, for C1, C3 and C4 alike.
+- **It is almost entirely a start-of-mission effect:** at most 0.2% after the first 30 s. The cells are the floor under and around the start pose, beside and behind the robot, which no camera can see from there.
+- **No hidden wall within reach in any cohort:** walls near the robot are always observed before the robot gets close.
+- **The one real hazard is at 160 mm noise:** 4.7% of decisions passed only because unknown counts as free, because the noisy path pointed into unseen space. This matches the logged-map analysis exactly: 375 of 8039 decisions.
+- Persistent unknown cells in reach after 30 s track freezing: 9% at 40 mm noise and 82% at 160 mm, where the robot never turned to look.
+

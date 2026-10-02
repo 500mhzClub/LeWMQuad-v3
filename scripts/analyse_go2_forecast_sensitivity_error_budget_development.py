@@ -103,8 +103,15 @@ def mission(args):
         i = at(t_o)
         a = ACTIONS.index(plan['action'])
         mc = plan.get('motion_correction') or {}
-        forecast = np.asarray(mc.get('dev_degraded_forecast_xy_yaw') or mc['command_history_forecast_xy_yaw'], float)[a]
-        f = np.vstack((np.zeros(3), forecast))
+        if mc.get('dev_degraded_forecast_xy_yaw') is not None:  # sensitivity runs: the degraded forecast is what the check used
+            forecast = np.asarray(mc['dev_degraded_forecast_xy_yaw'], float)[a, :, :2]
+        elif mc.get('applied_prediction_after_yaw_ablation') is not None:  # the prediction the planner applied (C1, C3, C4)
+            forecast = np.asarray(mc['applied_prediction_after_yaw_ablation'], float)[a, :, :2]
+        elif mc.get('command_history_forecast_xy_yaw') is not None:
+            forecast = np.asarray(mc['command_history_forecast_xy_yaw'], float)[a, :, :2]
+        else:
+            return None  # no forecast logged (C2 is reactive)
+        f = np.vstack((np.zeros(2), forecast))
         yaw_o = planar_yaw(P[i])
         placed = P[i, :2]+f[:, :2]@rot(yaw_o).T
         true_path = np.array([P[at(t_o+k*STEP_S), :2] for k in range(9)])
@@ -131,6 +138,8 @@ def mission(args):
         plan = plans.get(ns)
         if plan is not None and plan['action'] != 'hold':
             d = decision(plan)
+            if d is None:
+                continue
             decisions.append({k: d[k] for k in ('action', 'e_f', 'e_p', 'heading_deg', 'remembered', 'true_clearance', 'e_pm', 'e_m', 'mode')})
     # Close approaches, as in the close-approach analysis.
     index = np.clip(np.searchsorted(ts, ct), 0, len(ts)-1)
@@ -163,10 +172,14 @@ def mission(args):
             approaches.append(out)
             continue
         d = decision(plan)
+        if d is None:
+            out.update(status='no forecast logged')
+            approaches.append(out)
+            continue
         s = (t-d['t_o'])/STEP_S
         within = 0 <= s <= HORIZON_S/STEP_S
         sc = min(max(s, 0.), 8.)
-        point_f = np.array([np.interp(sc, np.arange(9.), d['forecast'][:, k]) for k in range(2)])
+        point_f = np.array([np.interp(sc, np.arange(9.), d['forecast'][:, k]) for k in range(2)])  # centre only
         q_star = P[d['i'], :2]+rot(d['yaw_o'])@point_f
         e_f_t = float(np.linalg.norm(q_star-P[i, :2]))
         checked = d['remembered'] is None or d['remembered'] > DISC_M
@@ -179,7 +192,7 @@ def mission(args):
                    true_path_clearance_m=d['true_clearance'], e_f_m=e_f_t, e_p_m=e_p, heading_deg=d['heading_deg'], e_pm_m=d['e_pm'], e_m_m=e_m,
                    bound_m=bound, tight_bound_m=tight)
         approaches.append(out)
-    return dict(cohort=cohort, assignment=assignment, decisions=decisions, approaches=approaches)
+    return dict(cohort=cohort, assignment=assignment, controller=read('config.json').get('controller'), decisions=decisions, approaches=approaches)
 
 
 def q(values, p):
@@ -259,12 +272,41 @@ def table(results, cohorts):
     return '\n'.join(lines)
 
 
-def main(cohorts, out_json, out_md, workers):
-    cohorts = sorted(cohorts or [p.name for p in (BASE/'dev_cohorts').glob('sens_*') if (p/'config.json').exists()], key=order)
+NEAR_WALL_M = .60
+
+
+def controller_table(results):
+    """Centre forecast error by cohort and controller, overall and near walls (true path clearance < 0.60 m)."""
+    groups = {}
+    for r in results:
+        groups.setdefault((r['cohort'], r['controller']), []).extend(r['decisions'])
+    cm = lambda v: '-' if v is None else f'{100*v:.1f}'
+    lines = [f'**Centre-position forecast error e_f by controller: overall and near walls. {LABEL}**', '',
+             f'Near walls = the checked path\'s true clearance below {100*NEAR_WALL_M:.0f} cm (within 15 cm of the 45-cm disc, where the check binds). '
+             'Budget at a percentile = static margin 2.5 cm minus e_f, e_p and e_m at that percentile (near-wall decisions).', '',
+             '| Cohort | Controller | Decisions | e_f overall: p50 · p95 · p99 (cm) | Near-wall decisions | e_f near walls: p50 · p95 · p99 (cm) '
+             '| e_p near walls p95 · p99 (cm) | e_m near walls p95 · p99 (cm) | Budget near walls at p95 · p99 (cm) |',
+             '|---|---|---:|---|---:|---|---|---|---|']
+    for (cohort, controller), ds in sorted(groups.items(), key=lambda kv: (kv[0][0].startswith('sens_'), order(kv[0][0]) if kv[0][0].startswith('sens_') else (0, 0), kv[0][0], kv[0][1])):
+        if not ds:
+            continue
+        near = [d for d in ds if d['true_clearance'] < NEAR_WALL_M]
+        ef = [d['e_f'] for d in ds]
+        nf, np_, nm = [d['e_f'] for d in near], [d['e_p'] for d in near], [d['e_m'] for d in near]
+        budget = lambda pc: None if not near or q(np_, pc) is None else (DISC_M-MAX_REACH_M)-q(nf, pc)-q(np_, pc)-(q(nm, pc) or 0.)
+        label = spec_of(cohort) if cohort.startswith('sens_') else cohort
+        lines.append(f"| {label} | {controller} | {len(ds)} | {cm(q(ef, 50))} · {cm(q(ef, 95))} · {cm(q(ef, 99))} | {len(near)} | "
+                     f"{cm(q(nf, 50))} · {cm(q(nf, 95))} · {cm(q(nf, 99))} | {cm(q(np_, 95))} · {cm(q(np_, 99))} | {cm(q(nm, 95))} · {cm(q(nm, 99))} | "
+                     f"{cm(budget(95))} · {cm(budget(99))} |")
+    return '\n'.join(lines)
+
+
+def main(cohorts, out_json, out_md, workers, by_controller=False):
+    cohorts = cohorts or sorted([p.name for p in (BASE/'dev_cohorts').glob('sens_*') if (p/'config.json').exists()], key=order)
     jobs = [j for c in cohorts for j in assignments(c)]
     with Pool(workers) as pool:
         results = pool.map(mission, jobs, chunksize=1)
-    text = table(results, cohorts)
+    text = controller_table(results) if by_controller else table(results, sorted(cohorts, key=order))
     print(text)
     if out_json:
         Path(out_json).write_text(json.dumps(dict(label=LABEL, missions=results), indent=1, default=float)+'\n')
@@ -278,5 +320,6 @@ if __name__ == '__main__':
     p.add_argument('--json')
     p.add_argument('--markdown')
     p.add_argument('--workers', type=int, default=3)
+    p.add_argument('--by-controller', action='store_true', help='e_f by cohort and controller, overall and near walls (works for prelim_* cohorts)')
     a = p.parse_args()
-    main(a.cohorts, a.json, a.markdown, a.workers)
+    main(a.cohorts, a.json, a.markdown, a.workers, a.by_controller)
