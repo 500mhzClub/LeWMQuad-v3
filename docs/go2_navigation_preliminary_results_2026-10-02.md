@@ -2,6 +2,14 @@
 
 > **PRELIMINARY.** Development mode; one decoder/C4 seed. These are results on **prelim_test_v1**, the 60 former sealed mazes that Andrew declassified on 1 October. They are not sealed-set results: the rigorous phase uses the freshly generated, untouched `sealed_test_v2`. Full tables: [go2_navigation_preliminary_results_tables_2026-10-02.md](go2_navigation_preliminary_results_tables_2026-10-02.md).
 
+> **Correction (2 October, evening): the C2 recovery-off separation is mostly a harness trap, not yet evidence that prediction prevents freezing.**
+> - **Eight of C2's nine stalls are the shared "can't translate out once inside the reserve" trap.** At onset the robot's centre was already within 0.45 m of a remembered wall (0.413–0.445 m on seven mazes; maze 44 drifted in).
+> - **C2's own rule makes the trap total.** Within 0.45 m, C2's reactive rule makes *every* action ineligible, turns included, even though in most samples a step forward would have increased clearance.
+> - **The forecast controllers face the same trap, less strictly.** Their check still allows turns, and allows translations that start above 0.45 m and end above 0.48 m. Turning drifts the body 5–7 cm, though, and that can carry them inside, where no translation passes. C3's maze-31 deadlock is this trap.
+> - **The ninth C2 failure (maze 36)** was still making progress when the time budget ran out.
+> - **Next step.** A next harness version is being built that lets every controller translate out (clearance never decreasing, ending higher) and gives C2 the same clearance semantics. Recovery-off C1–C4 will be re-run on these mazes before any claim about prediction and freezing.
+> - Details: [known limitations](go2_navigation_harness_v4_known_limitations_2026-09-29.md), `scripts/analyse_go2_reserve_trap_development.py`.
+
 ## Headline
 
 - **Every controller except C2 without recovery succeeds on 95–100% of missions.** The static benchmark does not separate C1 (command history, no vision), C3 (JEPA) or C4 (supervised predictor). C0 (perfect oracle forecasts, run on 10 mazes) also reaches the ceiling, so these mazes test the shared harness more than prediction quality.
@@ -9,7 +17,7 @@
   - Success difference: +0.02 with recovery on (60 mazes), −0.05 with it off (20).
   - SPL difference: 0.00.
   - Time to beacon, mazes both succeed: within 1 s.
-- **The one clear separation is C2 (reactive) without recovery:** 11/20 against C1's 20/20. Difference −0.45 (−0.65 to −0.25), 9 discordant mazes to 0, McNemar p = 0.004. All 9 failures are no-movement stalls.
+- **The one clear separation is C2 (reactive) without recovery:** 11/20 against C1's 20/20. Difference −0.45 (−0.65 to −0.25), 9 discordant mazes to 0, McNemar p = 0.004. All 9 failures are no-movement stalls. *Corrected (see the note above): 8 of the 9 are the shared reserve trap, made total by C2's all-actions rule, so this is not yet evidence about prediction.*
 - **Recovery helps C2 (9 stalls fixed) and caused both recovery-on failures of C1 and C4.** With recovery off, C1 and C4 complete every maze tried.
 - **Safety:** 0 contacts, 0 hard violations and 0 operating violations across all 332 missions. Minimum wall clearance is smaller with recovery on (2.2–3.3 cm for C1/C2/C3) than off (5.7–9.3 cm), because the escapes and back-ups use reduced radii.
 
