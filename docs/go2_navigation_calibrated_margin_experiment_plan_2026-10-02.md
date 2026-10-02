@@ -256,3 +256,12 @@ The C1 nominal reference is `sens_base`.
    - record whether its blocking cells were ever observable from any pose reachable without translating (in-place turns at the stall position);
    - state the finding as a sensor-coverage requirement for a pessimistic-unknown rule.
 3. **Disk:** when free space nears 25 GB, retire only what the existing retention policy covers, report what went, and ask before anything outside it.
+
+## Reserve-trap confound (Andrew, 2 October, evening)
+
+**The confound.** The shared "can't translate out once inside the reserve" trap (see the [known limitations](go2_navigation_harness_v4_known_limitations_2026-09-29.md)) may confound this experiment. A larger margin means more time inside the reserve.
+
+**How the write-ups handle it.**
+- The stage 1 and stage 2 write-ups mark every stall that is a reserve-trap stall, using `scripts/analyse_go2_reserve_trap_development.py`.
+- The next harness version ([plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)) removes the trap. If the trap explains a margin's liveness cost, the comparison is re-run there.
+
