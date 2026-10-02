@@ -655,28 +655,35 @@ def degradation_mixin(spec):
 # projection, the dispatch depth stop, the coverage rule and the routing graph keep their own
 # bindings and are unchanged. Outside the mixin the behaviour is the frozen one.
 _CLEARANCE_MARGIN = contextvars.ContextVar('dev_clearance_margin_m', default=0.)
-_UNKNOWN_CELLS = contextvars.ContextVar('dev_pessimistic_unknown_fine_cells', default=frozenset())
+# (clearance over never-observed cells, offset): see PessimisticUnknownMixin below.
+_UNKNOWN_CELLS = contextvars.ContextVar('dev_pessimistic_unknown', default=None)
 
 
 class _MarginClearance:
-    def __init__(self, inner, margin):
+    """Remembered-wall distances minus the margin; never-observed cells, if any, enter shifted by their offset."""
+
+    def __init__(self, inner, margin, unknown=None):
         self._inner, self._margin = inner, margin
+        self._unknown, self._offset = unknown if unknown is not None else (None, 0.)
 
     def minimum(self, start, end):
         value = self._inner.minimum(start, end)
-        return None if value is None else value-self._margin
+        value = None if value is None else value-self._margin
+        if self._unknown is not None:
+            hidden = self._unknown.minimum(start, end)
+            if hidden is not None:
+                hidden += self._offset
+                value = hidden if value is None else min(value, hidden)
+        return value
 
     def __getattr__(self, name):
         return getattr(self._inner, name)
 
 
 def _margin_cached_clearance(cells):
-    extra = _UNKNOWN_CELLS.get()
-    if extra:
-        cells = frozenset(map(tuple, cells)) | extra
     inner = cached_clearance(cells)
-    margin = _CLEARANCE_MARGIN.get()
-    return _MarginClearance(inner, margin) if margin else inner
+    margin, unknown = _CLEARANCE_MARGIN.get(), _UNKNOWN_CELLS.get()
+    return _MarginClearance(inner, margin, unknown) if margin or unknown is not None else inner
 
 
 from lewm import clearance_lookahead_development as _lookahead  # noqa: E402
@@ -715,27 +722,32 @@ def margin_mixin(margin_m, label):
     return ClearanceMarginMixin
 
 
-# Pessimistic unknown cells (Andrew, 2 October: calibrated-margin experiment, stage 2). Inside
-# `PessimisticUnknownMixin`, never-observed 5-cm cells (neither observed floor nor observed
-# occupied in the persistent map) within 0.5 m of the robot count as occupied in the same two
-# checks the margin inflates: the forecast-based action check and the route-target lookahead.
-# Seeded as known free: only the robot's own reach disc at the start (0.425 m around the first
-# planning position) and its traversed track (cells within 0.20 m of any past planning
-# position, under the body core); not the generator's spawn guarantee, which is privileged.
-# The stopping projection, depth stop, coverage rule and routing graph see the real map.
-UNKNOWN_REACH_M, START_REACH_M, TRACK_RADIUS_M = .50, .425, .20
+# Pessimistic unknown cells (Andrew, 2 October: calibrated-margin experiment, stage 2; rule
+# revised the same day). Remembered walls keep their requirements (plus any calibrated margin).
+# Never-observed 5-cm cells (neither observed floor nor observed occupied in the persistent map)
+# block a move only if they fall within body reach (0.425 m) plus the controller's calibrated
+# e_f bound of the forecast centre path. They enter the same two checks the margin inflates
+# (the forecast-based action check and the route-target lookahead) as a separate clearance,
+# shifted so that a cell is blocking exactly when it is within that radius at the 0.48-m
+# turn/translation requirement (the frozen reserve-recovery modes, which let a move start up to
+# 0.03 m inside a requirement if it moves away, apply to it as to walls). Seeded as known free:
+# only the robot's own reach disc at the start (0.425 m around the first planning position) and
+# its traversed track (cells within 0.20 m of any past planning position), not the generator's
+# spawn guarantee, which is privileged. The stopping projection, depth stop, coverage rule and
+# routing graph see the real map.
+BODY_REACH_M, START_REACH_M, TRACK_RADIUS_M, UNKNOWN_SCOPE_M, CHECK_REQUIRED_M = .425, .425, .20, .80, .48
 
 
-def unknown_fine_cells(snapshot, position, start, track):
-    """Fine (1-cm) cells of the never-observed, unseeded coarse cells within reach of position."""
+def unknown_fine_cells(snapshot, position, start, track, scope_m=UNKNOWN_SCOPE_M):
+    """Fine (1-cm) cells of the never-observed, unseeded coarse cells within scope of position."""
     from lewm.navigation_capability_map_domain_development import COARSE_CELL_M, COARSE_HALF_CELLS
     p = np.asarray(position, float)[:2]
-    lo, hi = np.floor((p-UNKNOWN_REACH_M)/COARSE_CELL_M).astype(int), np.floor((p+UNKNOWN_REACH_M)/COARSE_CELL_M).astype(int)
+    lo, hi = np.floor((p-scope_m)/COARSE_CELL_M).astype(int), np.floor((p+scope_m)/COARSE_CELL_M).astype(int)
     ii, jj = np.meshgrid(np.arange(lo[0], hi[0]+1), np.arange(lo[1], hi[1]+1), indexing='ij')
     keys = np.stack((ii.ravel(), jj.ravel()), axis=1)
     keys = keys[np.all((keys >= -COARSE_HALF_CELLS) & (keys < COARSE_HALF_CELLS), axis=1)]
     centres = (keys+.5)*COARSE_CELL_M
-    candidate = np.linalg.norm(centres-p, axis=1) <= UNKNOWN_REACH_M
+    candidate = np.linalg.norm(centres-p, axis=1) <= scope_m
     candidate &= np.linalg.norm(centres-np.asarray(start)[:2], axis=1) > START_REACH_M
     track = np.asarray(track, float).reshape(-1, 2)
     if len(track):
@@ -746,36 +758,49 @@ def unknown_fine_cells(snapshot, position, start, track):
     return fine, len(unknown)
 
 
-class PessimisticUnknownMixin:
-    def _unknown_context(self, snapshot, position):
-        p = tuple(float(v) for v in np.asarray(position, float)[:2])
-        state = self.__dict__.setdefault('_dev_unknown_state', dict(start=None, track=[]))
-        if state['start'] is None:
-            state['start'] = p
-        if not state['track'] or math.dist(p, state['track'][-1]) > .005:
-            state['track'].append(p)
-        fine, count = unknown_fine_cells(snapshot, p, state['start'], state['track'])
-        return fine, dict(unknown_cells_counted_occupied=count, start_reach_disc_m=START_REACH_M, track_radius_m=TRACK_RADIUS_M,
-                          reach_m=UNKNOWN_REACH_M, track_points=len(state['track']))
+def pessimistic_unknown_mixin(bound_m, level):
+    """Never-observed cells block a move within body reach + this controller's calibrated e_f bound."""
+    if not np.isfinite(bound_m) or not 0. < bound_m <= .10:
+        raise ValueError('calibrated e_f bound must be in (0, 0.10] m')
+    radius = BODY_REACH_M+bound_m
 
-    def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
-        fine, record = self._unknown_context(snapshot, position)
-        token = _UNKNOWN_CELLS.set(fine)
-        try:
-            result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
-        finally:
-            _UNKNOWN_CELLS.reset(token)
-        selection = result[0] if isinstance(result, tuple) else result
-        selection['dev_pessimistic_unknown'] = record
-        return result
+    class PessimisticUnknownMixin:
+        pessimistic_unknown = dict(bound_m=bound_m, level=level, blocking_radius_m=radius)
 
-    def _route_target(self, route, snapshot, position):
-        fine, _ = self._unknown_context(snapshot, position)
-        token = _UNKNOWN_CELLS.set(fine)
-        try:
-            return super()._route_target(route, snapshot, position)
-        finally:
-            _UNKNOWN_CELLS.reset(token)
+        def _unknown_context(self, snapshot, position):
+            from lewm.fine_stored_obstacle_routing_development import FineCellClearance
+            p = tuple(float(v) for v in np.asarray(position, float)[:2])
+            state = self.__dict__.setdefault('_dev_unknown_state', dict(start=None, track=[]))
+            if state['start'] is None:
+                state['start'] = p
+            if not state['track'] or math.dist(p, state['track'][-1]) > .005:
+                state['track'].append(p)
+            fine, count = unknown_fine_cells(snapshot, p, state['start'], state['track'])
+            context = (FineCellClearance(fine), CHECK_REQUIRED_M-radius) if fine else None
+            return context, dict(unknown_cells_in_scope=count, blocking_radius_m=radius, bound_m=bound_m, level=level,
+                                 start_reach_disc_m=START_REACH_M, track_radius_m=TRACK_RADIUS_M, track_points=len(state['track']))
+
+        def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+            context, record = self._unknown_context(snapshot, position)
+            token = _UNKNOWN_CELLS.set(context)
+            try:
+                result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+            finally:
+                _UNKNOWN_CELLS.reset(token)
+            selection = result[0] if isinstance(result, tuple) else result
+            selection['dev_pessimistic_unknown'] = record
+            return result
+
+        def _route_target(self, route, snapshot, position):
+            context, _ = self._unknown_context(snapshot, position)
+            token = _UNKNOWN_CELLS.set(context)
+            try:
+                return super()._route_target(route, snapshot, position)
+            finally:
+                _UNKNOWN_CELLS.reset(token)
+
+    PessimisticUnknownMixin.__name__ = f'PessimisticUnknown_{level}'
+    return PessimisticUnknownMixin
 
 
 # Andrew (30 Sep evening): the preliminary run drives every controller twice, recovery on (the

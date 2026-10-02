@@ -29,8 +29,8 @@ import time
 import torch
 
 from lewm import decision_headroom_json_v42_development as output
-from lewm.dev_harness_fixes_development import (DEFAULT_RECOVERY, START_REACH_M, TRACK_RADIUS_M, UNKNOWN_REACH_M, PessimisticUnknownMixin,
-                                               check_track_override, compose, degradation_mixin, fixes_for, margin_mixin)
+from lewm.dev_harness_fixes_development import (DEFAULT_RECOVERY, check_track_override, compose, degradation_mixin, fixes_for, margin_mixin,
+                                               pessimistic_unknown_mixin)
 from lewm.dev_readout_variants_development import ReadoutVariant, install
 from lewm.eligible_floor_registration_development import bind
 from lewm.navigation_capability_completed_support_development import CompletedSupportRuntimeMixin
@@ -157,9 +157,14 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
     # Hash the code at start: a later edit must not relabel a run that loaded the earlier file.
     code_sha = dict(fixes_module_sha256=sha('lewm/dev_harness_fixes_development.py'), entry_sha256=sha(__file__))
     margin_record = clearance_margin(arm, margin) if margin else None
-    extra = (((PessimisticUnknownMixin,) if pessimistic else ())+((margin_mixin(margin_record['margin_m'], margin),) if margin else ())
+    # Pessimistic unknown: never-observed cells block within body reach + this controller's bound at the run's margin level (p99 if none).
+    pessimistic_record = clearance_margin(arm, margin or 'p99') if pessimistic else None
+    unknown = pessimistic_unknown_mixin(pessimistic_record['margin_m'], pessimistic_record['level']) if pessimistic else None
+    extra = (((unknown,) if pessimistic else ())+((margin_mixin(margin_record['margin_m'], margin),) if margin else ())
              +((degradation_mixin(degrade),) if degrade else ()))
-    pessimistic_record = dict(reach_m=UNKNOWN_REACH_M, start_reach_disc_m=START_REACH_M, track_radius_m=TRACK_RADIUS_M) if pessimistic else None
+    if pessimistic:
+        pessimistic_record = dict(unknown.pessimistic_unknown, bounds_file=pessimistic_record['bounds_file'],
+                                  bounds_sha256=pessimistic_record['bounds_sha256'], rule='revised 2 Oct: reach + bound')
     runtime_mixin = compose(fixes, CompletedSupportRuntimeMixin, extra=extra)
     base_runtime = owner.source.DenseReactiveNavigationRuntime if arm == 'C2' else owner.source.DenseNavigationRuntime
     check_track_override(type('Checked', (runtime_mixin, base_runtime), {}))
