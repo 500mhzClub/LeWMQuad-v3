@@ -21,6 +21,10 @@ minus its score of the degraded choice (>= 0, in the scorer's metres of progress
 alignment; for scan decisions, the scan score). Its mean and 95th percentile over changed
 choices separate harmless near-tie swaps from genuinely worse choices.
 
+Success is reported two ways (Andrew, 2 October): strict (the frozen arrival rule) and reached
+(the true base came within 0.25 m of the beacon and later within 0.25 m of home), so settling
+failures are not counted as navigation failures. Pose loss (visual tracker failure) is a
+shared-system failure, counted on its own.
 All conditions are compared against this experiment's own clean baseline (C1, coverage-rule
 fix, recovery off), not the preliminary results: success difference with a maze-level paired
 bootstrap 95% interval and discordant counts, SPL and median-time differences.
@@ -40,6 +44,7 @@ from lewm.delayed_action_planning_development import score_delayed_predictions
 from lewm.geometry_progress_pilot_development import ACTIONS
 from lewm.mission_coordinate_metric_development import position_distance
 from scripts.report_go2_prelim_results_development import BASE, bootstrap_mean, collect, mean, wilson
+from scripts.diagnose_go2_forecast_sensitivity_failures_development import reach
 from scripts.score_go2_dev_closed_loop_prediction_development import cohort_runs, decisions, metrics
 
 LABEL = 'PRELIMINARY (prelim_test_v1 mazes 30-49, recovery off, coverage-rule fix; development mode)'
@@ -137,12 +142,16 @@ def main(markdown, plot):
             continue
         k = sum(bool(r['round_trip']) for r in rows)
         lo, hi = wilson(k, len(rows))
+        reached = [reach(r['assignment']) for r in rows]
+        kr = sum(x['reached'] for x in reached)
+        rlo, rhi = wilson(kr, len(rows))
         times = [r['total_s'] for r in rows if r['round_trip'] and r.get('total_s')]
         err, ratio, n = measured(name)
         rate, decisions_n, worst, costs = choice_change(name)
         spec = condition(name)
         kind, value = ('none', 0.) if spec == 'none' else (spec.split(':')[0], float(spec.split(':')[1]))
         table.append(dict(name=name, spec=spec, kind=kind, value=value, missions=len(rows), successes=k, success=k/len(rows), lo=lo, hi=hi,
+                          reached_n=kr, reached=kr/len(rows), reached_lo=rlo, reached_hi=rhi, pose_loss=sum(x['pose_loss'] for x in reached),
                           spl=mean([r.get('round_trip_spl') for r in rows]), time=st.median(times) if times else None,
                           hold=mean([r.get('outbound_hold_rate') for r in rows]), contacts=sum(r.get('contacts') or 0 for r in rows),
                           min_clearance=min((r['min_clearance_m'] for r in rows if r.get('min_clearance_m') is not None), default=None),
@@ -170,10 +179,12 @@ def main(markdown, plot):
     lines = [f'**Forecast-sensitivity dose-response. {LABEL}**', '',
              'Rows: C1 with its forecasts degraded. "Measured forecast error" is the selected move\'s 700-ms forecast against physics truth while driving '
              '(median error · median predicted/true ratio), the same measure used for C3 and C4.', '',
-             '| Condition | Missions | Success (Wilson 95%) | SPL | Median round trip (s) | Outbound hold rate | Contacts | Min clearance | Measured forecast error | Choice-change rate | Cost of changed choices, mean · p95 (mm) | vs clean baseline: success diff (95% CI) · only base/only cond | SPL diff | Time diff (s) |',
-             '|---|---:|---|---:|---:|---:|---:|---:|---|---:|---|---|---|---|']
+             'Reached = true base within 0.25 m of the beacon and then of home. Pose loss = visual tracker failure (shared system, not forecast).', '',
+             '| Condition | Missions | Strict success (Wilson 95%) | Reached (Wilson 95%) | Pose loss | SPL | Median round trip (s) | Outbound hold rate | Contacts | Min clearance | Measured forecast error | Choice-change rate | Cost of changed choices, mean · p95 (mm) | vs clean baseline: success diff (95% CI) · only base/only cond | SPL diff | Time diff (s) |',
+             '|---|---:|---|---|---:|---:|---:|---:|---:|---:|---|---:|---|---|---|---|']
     for r in sorted(table, key=order):
         lines.append(f"| {r['spec']} | {r['missions']} | {r['successes']}/{r['missions']} · {r['success']:.2f} ({r['lo']:.2f}–{r['hi']:.2f}) | "
+                     f"{r['reached_n']}/{r['missions']} · {r['reached']:.2f} ({r['reached_lo']:.2f}–{r['reached_hi']:.2f}) | {r['pose_loss']} | "
                      f"{r['spl']:.2f} | {'-' if r['time'] is None else f'{r['time']:.0f}'} | {r['hold']:.3f} | {r['contacts']} | "
                      f"{'-' if r['min_clearance'] is None else f'{100*r['min_clearance']:.1f} cm'} | "
                      f"{'-' if r['error_mm'] is None else f'{r['error_mm']:.0f} mm · {r['ratio']:.2f}'} | "
@@ -208,8 +219,9 @@ def draw(table, refs, path):
 
     def series(ax, rows, xkey):
         x = [r[xkey] for r in rows]
-        ax.plot(x, [r['success'] for r in rows], 'o-', color=green, label='success')
+        ax.plot(x, [r['success'] for r in rows], 'o-', color=green, label='success (strict)')
         ax.fill_between(x, [r['lo'] for r in rows], [r['hi'] for r in rows], color=green, alpha=.15, linewidth=0)
+        ax.plot(x, [r['reached'] for r in rows], 'o:', color=green, alpha=.6, markerfacecolor='none', label='reached (25 cm)')
         ax.plot(x, [r['spl'] for r in rows], 's--', color=amber, label='SPL')
 
     fig, axes = plt.subplots(2, 2, figsize=(10, 7.2), dpi=150)

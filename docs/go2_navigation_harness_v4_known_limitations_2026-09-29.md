@@ -51,6 +51,23 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 - It is a shared-harness perception limitation, not specific to C1. The camera-based tracker loses registration, and no controller can recover a mission once the tracker faults.
 - It is outside traps 1–3. E1 reports it as its own category (pose-loss controller failures) for every controller.
 
+### Long in-place turning breaks the tracker (forecast sensitivity, 2 October)
+
+**What happened.** The C1 forecast-sensitivity cohorts had five pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
+- They were: noise 40 mm on mazes 38, 44 and 45; noise 160 mm on maze 41; and forward × 0.25 on maze 34.
+- The losses came 123–298 s into each mission.
+- There were none in the clean, 10 mm, forward × 0.5 or forward × 0.75 cohorts, and none in the preliminary run's C1 missions.
+
+**Every one followed sustained turning in place.**
+- In the last 10 s before the loss, the robot applied turn-only commands 47–100% of the time and no translation at all.
+- The planner was alternating left and right turns.
+
+**The tracker never sees the forecast.** It uses camera, depth and gyro only. A degraded forecast causes the loss only indirectly, by producing long in-place turning.
+
+**Limitation.** Long in-place turning breaks the visual tracker, whatever produces it: scan mode, a terminal heading limit cycle (trap 2), or a latched clearance turn (trap 3). Any controller that turns in place for long risks ending its mission this way.
+
+**How it is reported.** The sensitivity tables count pose loss as its own category, a shared-system failure, not a forecast failure, as E1 does. The diagnosis script is `scripts/diagnose_go2_forecast_sensitivity_failures_development.py`.
+
 ## What each trap means for E1 comparisons
 
 - **Trap 1 mostly hits controllers that hold or predict little translation.** C2 has no motion predictor, and C3 predicts collapsed translation. So part of C3's E1 deficit against C1 and C4 will be this trap and not the representation alone. E1 reports it per controller.
