@@ -44,6 +44,10 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
   - **Sequence:** first a 3-maze trial on all controllers, then the full run. A short progress report at about 25%, and keep going unless something is broken.
   - **Beforehand:** the 1-versus-2 concurrency identity check, and deletion of the feature cache once the decoder is chosen (authorised).
   - **Results:** per controller, success, SPL, times, recovery counts per mission, stall rates, contacts and clearance, plus recovery on versus off on the 20 mazes. All labelled preliminary.
+  - **COMPLETE (2 October, 07:11):** 332 missions, no errors.
+    - Report: [preliminary results](go2_navigation_preliminary_results_2026-10-02.md), with [full tables](go2_navigation_preliminary_results_tables_2026-10-02.md).
+    - Options note: [making the benchmark discriminate](go2_navigation_benchmark_discrimination_options_2026-10-02.md). Nothing started.
+    - Headline: C0, C1, C3 and C4 reach 95–100% success. C3 and C4 are indistinguishable even though C3's closed-loop forecasts are about 1.7–2× less accurate. C2 without recovery is the only separation (11/20). Recovery caused both of C1's and C4's recovery-on failures.
   - **Trial (1 October, 03:25–04:49):** mazes 30–32, recovery on, C0–C4, with the chosen decoder and its matched C4.
     - 15/15 round trips, 0 contacts, 0 hard violations, minimum clearance 7.4 cm.
     - C0 on maze 32: the frozen executed-prefix checker raised at the end. It passes under the committed erratum: 1 of 831 decisions had no matching branch, and all 4,980 comparable rows show 0.0 error.
