@@ -1,5 +1,35 @@
 # Development artifact retention
 
+October 2: Andrew approved ("approved, reture unndeeded depth data") the
+depth-only retirement of exactly four closed-programme roots, proposed that
+evening because tonight's runs would leave RecoveryStorage near the cohort
+runner's 14-GiB stop. This is a bounded exception to the capability protocol's
+no-existing-retirement rule, for these four roots only:
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_direct_v1_attempt_001`,
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001`,
+`go2_stop_conditioned_settling_maze02_v1_attempt_001`,
+`go2_extended_return_budget_maze02_v1_attempt_001` (11-13 September; listed
+as not referenced by the current programme in the 29 September C3-v2 storage
+survey). `clearance_preferred_arc_recovery...layout03` was deliberately
+excluded, because it may overlap the explicitly retained arc-recovery layout-3
+recordings.
+
+Completed: 76,581 per-frame depth leaves (`depth_N.npz`, `native_depth_N.npz`,
+`auxiliary_depth_N.npz`) retired, 60,401,623,040 allocated bytes (56.25 GiB).
+All 76,751 non-depth files, including each session's `depth_camera_audit.json`
+and `depth_observations.json`, hash-matched before and after. No symlinks or
+hard-linked leaves. Each root has a `depth_retention.json` marker.
+Receipt: `.generated/depth_retirement_closed_programme_roots_2026-10-02/`
+(exact deletion manifest, preserved hashes, authority with script SHA-256).
+Runner: `scripts/retire_go2_approved_closed_programme_depth_2026_10_02.py`
+(commit 84d3cc95). RecoveryStorage free space went from 22.70 to 78.90 GiB.
+
+Results, failure records, RGB, physics, commands and trajectories remain.
+Historical full-depth replay of these four recordings is no longer available,
+and regeneration is not guaranteed to reproduce the original closed-loop
+trajectories. No capability-programme run, checkpoint or sealed material was
+touched, and no process was using these roots.
+
 September 26: the user approved the eight depth-only candidates in
 `docs/go2_storage_cleanup_review_2026-09-26.md` with "do depth". This ends the
 full-depth pins for both pair-local-plane layout-3 arms, both plane-consensus
