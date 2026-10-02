@@ -119,5 +119,11 @@ Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.p
 
 **C3 at its p99 bound may not leave the start.** Its blocking radius (0.497 m) nearly fills the precondition, and its initial-panorama turn forecasts drift up to 6.6 cm at p99. In the synthetic test its start turn is blocked even with no drift. This is a consequence of C3's forecast error under the rule, and it is reported as such.
 
-**A difference between simulation and the real robot.** The physical Go2's wide-view lidar (Unitree's 4D LiDAR L1, a hemispherical field of view) would observe the start surroundings directly. On the real robot this precondition would be unnecessary.
+**Look-around exemption (option A, 2 October; the same for all controllers).** The 0.5 m seed alone still stalled half the smoke mazes. The body drifts 4.9–6.8 cm (median 5.8 cm) while turning on the spot for the scripted look-around. That is a gait property, the same for every controller, and it exceeds the room between the blocking radius and 0.5 m.
+- So, during the scripted look-around only, never-observed cells do not block a move.
+- **Justification:** under the precondition, the body cannot leave the cleared disc while its centre stays within 0.5 − 0.425 = 0.075 m of the start, 0.425 m being the body's largest reach.
+- The exemption ends when the look-around completes, or as soon as the centre drifts more than 0.07 m. The rule then applies in full.
+- Remembered walls are checked throughout.
+
+**A difference between simulation and the real robot.** The physical Go2's wide-view lidar (Unitree's 4D LiDAR L1, a hemispherical field of view) would observe the start surroundings directly. On the real robot this precondition, and the look-around exemption, would be unnecessary.
 

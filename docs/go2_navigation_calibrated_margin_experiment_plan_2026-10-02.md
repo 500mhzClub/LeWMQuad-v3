@@ -213,3 +213,31 @@ The C1 nominal reference is `sens_base`.
 - `margin_c4_nominal` never started: launched at the same instant as `margin_p99`, it failed the shared wall-ledger write. Its `config.json` is kept as the record.
 - The reference runs as `margin_c4_nominal_b` (pinned).
 - `margin_p95`, and the three remaining sensitivity cohorts (noise 80 mm, scale 0.75×, turns × 2.0), also run pinned.
+
+## Stage 2 under option A (Andrew, 2 October, late afternoon)
+
+**What happened with the precondition seed.** The 0.5 m start disc fixed the start deadlock on maze 30, which completed its round trip. Maze 31 still stalled at the 135° view of the scripted look-around, for a reason that is not about forecasts:
+- The body drifts 4.9–6.8 cm (median 5.8 cm) while turning on the spot for the look-around. This is measured on the clean C1 runs and is the same for C1, C3 and C4 in the preliminary run: it comes from the gait.
+- That exceeds the room between the blocking radius and the 0.5 m precondition: 4.6 cm for C1 at p99, before 1 cm of turn-forecast drift and up to 1.4 cm of cell straddle.
+
+**The exemption (option A, the same for all controllers):** `lewm/dev_pessimistic_unknown_lookaround_development.py`, commit `0cb7cddb`.
+- During the scripted initial look-around only (route status `INITIAL_PANORAMA_REQUIRES_VIEW`), never-observed cells do not block a move.
+- **Justification:** under the operating precondition (cleared 0.5 m area), the body cannot leave the cleared disc while its centre stays within 0.5 − 0.425 = 0.075 m of the start. 0.425 m is the body's largest reach. The observed maximum drift is 6.8 cm.
+- **The exemption ends for good** when the look-around completes, or as soon as the centre drifts more than 0.07 m from the start.
+- From then on the precondition-seeded rule applies in full. Remembered walls keep their requirements throughout.
+
+**Runs** (pinned v2 launcher, `--pessimistic-variant lookaround`):
+- `stage2_c1_lookaround_p95`: C1 × 20 mazes, started now on the CPU.
+- `stage2_c3_lookaround_p95`: C3 × 20 mazes, queued after C3 stage 1 (nominal, then the p95 margin) on the GPU.
+- Both use the **p95** e_f bound for unseen cells, so the two controllers face the same rule level. C3 cannot use p99: its start turn is blocked by construction.
+- Remembered walls are at nominal, with no margin.
+
+**C3 p99 documentation run: dropped.** Its early-stop mixin was not built. The mechanism is reported instead, as C3's start-turn forecast centre drift against C1's and C4's (initial look-around decisions, preliminary run, centimetres):
+
+| Controller | Calibration mazes 50–89: p50 · p95 · p99 | Evaluation mazes 30–49: p50 · p95 · p99 | Actual body drift during the look-around (all controllers) |
+|---|---|---|---|
+| C1 | 0.99 · 0.99 · 0.99 | 0.99 · 0.99 · 0.99 | median 5.8, max 6.8 |
+| C4 | 0.77 · 1.00 · 1.13 | 0.79 · 1.02 · 1.15 | same |
+| C3 | 0.92 · 4.10 · 6.62 | 0.89 · 3.25 · 5.23 | same |
+
+**Next, after stages 1 and 2 are written up:** the dynamics-perturbation experiment, friction first, as drafted in [the plan](go2_navigation_dynamics_perturbation_plan_2026-10-02.md). No further safety-rule variants unless a result demands one.
