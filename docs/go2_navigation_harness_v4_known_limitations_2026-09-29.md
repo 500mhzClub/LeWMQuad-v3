@@ -68,6 +68,32 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 
 **How it is reported.** The sensitivity tables count pose loss as its own category, a shared-system failure, not a forecast failure, as E1 does. The diagnosis script is `scripts/diagnose_go2_forecast_sensitivity_failures_development.py`.
 
+## Rear and side clearance during turns rests on the remembered map and the forecast only (2 October)
+
+**Both depth cameras face forward.**
+- **Primary:** level, 78° × 63°.
+- **Auxiliary:** the same lens pitched 45° down.
+- Both read depth from 0.2 m to 5 m.
+
+The last-moment depth stop uses only their current images, so it cannot see a wall beside or behind the robot. Everything that protects the rear and sides comes from the planner's remembered-map check, applied to the forecast.
+
+**That check is a disc, not the articulated body.** Every planner-stage clearance filter in the frozen chain tests a 0.45 m disc centred on the base. That covers memory clearance, the turn and translation reserves, the stopping projection and the recovery modes. The disc is swept along the forecast's centre positions only, against remembered obstacle cells, and the heading is not used. Turns and translations require 0.48 m.
+
+**The disc contains the whole body, with a thin margin at the rear.**
+- The articulated body never extends more than 42.5 cm from the base centre, in any sensitivity cohort or move (sampled at 10 Hz).
+- So a centre held at 0.45 m leaves the rear calves about 3 cm, or about 6 cm at 0.48 m.
+
+**Evidence (forecast-sensitivity cohorts, PRELIMINARY).**
+- In the clean C1 baseline, 89 of the 100 closest approaches while moving (5 per mission) were a rear calf, nearly all during in-place turns.
+- 93% of all approaches had the nearest wall point outside both cameras' view.
+- In-place turns carried 79–94% of the clearance loss in every cohort.
+- The disc held against the true walls at all approaches but one.
+- The clearance lost under degraded forecasts came from the base centre sitting closer to walls during turns: median 57 cm clean, 50–52 cm at 40–160 mm noise.
+
+Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.py`.
+
+**A difference between simulation and the real robot.** The physical Go2 carries a wide-view lidar (Unitree's 4D LiDAR L1, a hemispherical field of view) that would cover the rear and side zone. So the simulated stack's rear and side protection is weaker than the real robot's sensing allows. This blind zone is specific to the simulated sensor set, and results about it should not be read as limits of the real platform.
+
 ## What each trap means for E1 comparisons
 
 - **Trap 1 mostly hits controllers that hold or predict little translation.** C2 has no motion predictor, and C3 predicts collapsed translation. So part of C3's E1 deficit against C1 and C4 will be this trap and not the representation alone. E1 reports it per controller.

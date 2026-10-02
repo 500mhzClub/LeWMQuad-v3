@@ -23,6 +23,22 @@ At each approach:
   than the 0.2-m minimum depth; occlusion is not modelled (walls are the nearest surfaces).
   Out-of-view approaches are ones the depth stop structurally cannot catch.
 
+Planner disc check (Andrew: what does the remembered-map check test?). Every planner-stage
+clearance filter in the frozen V4 chain (memory forecast clearance, turn and translation
+reserves, stopping projection, recovery modes) tests a 0.45-m disc centred on the base, swept
+along the forecast's centre positions only (heading unused), against remembered fine
+obstacle cells; turns and translations need 0.48 m (a 0.03-m reserve). It is not the
+articulated swept volume. At each approach: the base centre's distance to the true walls
+(disc held in truth if >= 0.45 m), the closest part's reach toward the wall (centre
+distance minus separation; a part reaching beyond 0.45 m sticks out of the disc), and the
+remembered clearance the planner computed for the executing move's forecast path. Reach toward
+the wall is the exact support of all primitives along the centre-to-nearest-wall-point direction
+(the centre distance minus the reader's separation overstates it near wall edges and corners,
+because that separation is a lower bound). Over the
+whole mission (10 Hz, moving samples), the articulated body's horizontal reach from the base
+centre (support of all 27 primitives in 16 horizontal directions): how often and how far any
+part extends beyond 0.45 m and 0.48 m, by move.
+
 Clearance loss, per cohort, against this experiment's clean baseline: each approach's
 deficit is how far it falls below the clean baseline's median approach separation; the share
 of the summed deficit, and of approaches closer than the clean baseline's 10th percentile,
@@ -45,14 +61,17 @@ from lewm.auxiliary_downward45_depth_observation_development import body_from_op
 from lewm.causal_depth_observation_development import BODY_FROM_OPTICAL, FOCAL, HEIGHT, MAX_DEPTH_M, MIN_DEPTH_M, WIDTH
 from lewm.physical_execution_development import rotation_xyzw
 from scripts.analyze_go2_ground_plane_development_v1 import URDF
-from scripts.diagnose_go2_forecast_sensitivity_failures_development import BASE, LABEL, assignments, order, spec_of
+from scripts.diagnose_go2_forecast_sensitivity_failures_development import BASE, LABEL, assignments, order, spec_of, wall_distance
 
 PER_MISSION, SPACING_S = 5, 1.
 BAND_HEIGHTS_M = (.05, .15, .30, .45, .60)
 CAMERAS = {'primary': np.linalg.inv(np.asarray(BODY_FROM_OPTICAL, float)), 'auxiliary': np.linalg.inv(np.asarray(auxiliary_from_optical(), float))}
-SAFETY_TEST = ('scale:0.25', 'scale:0.5')
+SAFETY_TEST = ('scale:0.25', 'scale:0.5', 'turnscale:0.5', 'turnscale:0.25')
 PARTS = [f'{s} · {p}' for s in ('front', 'side', 'rear') for p in ('body', 'leg')]
 MOVES = ('forward', 'arc', 'turn in place', 'other')
+MOVE_GROUPS = {'in-place turns': ('turn in place',), 'forward / arcs': ('forward', 'arc'), 'other': ('other',)}
+DISC_M, TURN_REQUIRED_M = .45, .48
+REACH_DIRECTIONS = np.array([[math.cos(a), math.sin(a), 0.] for a in np.linspace(0, 2*math.pi, 16, endpoint=False)])
 
 
 class Walls:
@@ -66,6 +85,21 @@ class Walls:
                               for w in walls])
         self.normals = self.axes.reshape(-1, 3)
         self.projection = np.einsum('wij,wj->wi', self.axes, self.centres)
+
+    def reach(self, pose, joints):
+        """Largest horizontal distance of any primitive from the base centre, and its link."""
+        Q = rotation_xyzw(pose[3:])
+        support = self.model.supports(joints, REACH_DIRECTIONS@Q)
+        upper = np.array([s['upper'] for s in support['shapes']])
+        k = np.unravel_index(np.argmax(upper), upper.shape)
+        return float(upper[k]), support['shapes'][k[0]]['link']
+
+    def reach_toward(self, pose, joints, direction_world):
+        """Horizontal extent of the body from the base centre along one world direction (exact support)."""
+        d = np.array([direction_world[0], direction_world[1], 0.])
+        d /= np.linalg.norm(d)
+        support = self.model.supports(joints, d[None, :]@rotation_xyzw(pose[3:]))
+        return float(max(np.asarray(s['upper']).max() for s in support['shapes']))
 
     def closest(self, pose, joints):
         Q = rotation_xyzw(pose[3:])
@@ -113,12 +147,20 @@ def mission(args):
     root = BASE/'runs'/assignment
     spec = json.loads((root/'specification.json').read_text())
     walls = Walls(spec['geometry']['wall_boxes'])
+    centre_distance = wall_distance(spec['geometry']['wall_boxes'])
+    requests = json.loads((root/'requests.json').read_text())
+    request_s = np.array([q['simulator_ns'] for q in requests])/1e9
+    plans = {r['measured_ns']: r for r in json.loads((root/'planning.json').read_text()) if 'selection' in r}
     with np.load(root/'native/physics_trace.npz', allow_pickle=False) as f:
         ts, poses, joints, applied = f['timestamp_s'].copy(), f['base_pose_world'].copy(), f['joint_position'].copy(), f['applied_command'].copy()
     with np.load(root/'native_clearance_summary_arrays.npz', allow_pickle=False) as c:
         ct, sep = c['timestamp_s'].copy(), c['separation_lower_m'].copy()
     index = np.clip(np.searchsorted(ts, ct), 0, len(ts)-1)
     moving = np.any(applied[index] != 0, axis=1)
+    dt = np.diff(ts, append=ts[-1])
+    sampled = applied[::25]  # 50-ms resolution for the time split, moving samples only
+    kinds = np.array([move_type(c) if np.any(c != 0) else 'stationary' for c in sampled])
+    move_time = {m: float(dt[::25][kinds == m].sum()*25) for m in MOVES}
     chosen = []
     for j in np.flatnonzero(moving)[np.argsort(sep[moving], kind='stable')]:
         if all(abs(ct[j]-ct[k]) >= SPACING_S for k in chosen):
@@ -134,10 +176,23 @@ def mission(args):
         sector = 'front' if abs(angle) <= 45 else 'rear' if abs(angle) >= 135 else 'side'
         part = 'leg' if link[:3] in ('FL_', 'FR_', 'RL_', 'RR_') else 'body'
         view, camera = visibility(point[:2], poses[i], Q)
+        centre = float(centre_distance(poses[i, :2])[0])
+        q = requests[max(0, int(np.searchsorted(request_s, ct[j], side='right'))-1)]
+        plan = plans.get(q.get('command_observation_ns'))
+        remembered = None
+        if plan is not None:
+            memory = {c['action']: c for c in plan['selection'].get('memory_forecast_candidates') or []}
+            remembered = (memory.get(plan['action']) or {}).get('minimum_predicted_path_clearance_m')
         rows.append(dict(time_s=round(float(ct[j])-1.5, 3), separation_m=float(sep[j]), recomputed_m=separation, link=link,
                          part=f'{sector} · {part}', bearing_deg=round(angle, 1), move=move_type(applied[i]), command=applied[i].tolist(),
-                         view=view, camera=camera))
-    return dict(cohort=cohort, assignment=assignment, approaches=rows)
+                         view=view, camera=camera, centre_to_wall_m=centre, reach_m=walls.reach_toward(poses[i], joints[i], point[:2]-poses[i, :2]),
+                         dispatch_reason=q['reason'], planned_action=plan['action'] if plan else None, remembered_clearance_m=remembered))
+    reach = []
+    for i in range(0, len(ts), 50):
+        if np.any(applied[i] != 0):
+            value, link = walls.reach(poses[i], joints[i])
+            reach.append(dict(move=move_type(applied[i]), reach_m=value, link=link))
+    return dict(cohort=cohort, assignment=assignment, approaches=rows, move_time_s=move_time, reach=reach)
 
 
 def summarise(approaches, reference_median, reference_p10):
@@ -174,6 +229,66 @@ def table(results, cohorts):
         s = summarise(by[c], reference_median, reference_p10)
         lines.append(f"| {spec_of(c)} | {sum(r['cohort'] == c for r in results)} | {s['n']} | {100*s['worst']:.1f} · {100*s['p10']:.1f} · {100*s['median']:.1f} | "
                      f"{pct(s['out_of_view'])} | {s['deficit_mean_mm']:.1f} · {pct(s['deficit_out_of_view'])} | {s['close']} · {pct(s['close_out_of_view'])} |")
+    lines += ['', f'**Clearance loss by executing move: in-place turns versus forward / arcs. {LABEL}**', '',
+              'Share of moving time from the applied commands. Deficit share = the move\'s part of the cohort\'s summed deficit below the clean median approach.', '',
+              '| Condition | Move | Share of moving time | Approaches | Separation: worst · median (cm) | Mean deficit (mm) | Share of deficit '
+              '| Close approaches · share out of view |',
+              '|---|---|---:|---:|---|---:|---:|---|']
+    for c in cohorts:
+        if not by[c]:
+            continue
+        time = Counter()
+        for r in results:
+            if r['cohort'] == c:
+                time.update(r['move_time_s'])
+        moving_time = sum(time.values()) or 1
+        deficit = lambda a: max(0., reference_median-a['separation_m'])
+        total = sum(deficit(a) for a in by[c]) or 1
+        for group, moves in MOVE_GROUPS.items():
+            rows = [a for a in by[c] if a['move'] in moves]
+            if not rows and group == 'other':
+                continue
+            close = [a for a in rows if a['separation_m'] < reference_p10]
+            lines.append(f"| {spec_of(c)} | {group} | {sum(time[m] for m in moves)/moving_time:.2f} | {len(rows)} | "
+                         + (f"{100*min(a['separation_m'] for a in rows):.1f} · {100*st.median(a['separation_m'] for a in rows):.1f} | "
+                            f"{1000*sum(deficit(a) for a in rows)/len(rows):.1f} | {pct(sum(deficit(a) for a in rows)/total)} | " if rows else '- | - | - | ')
+                         + f"{len(close)} · {pct(sum(a['view'] != 'in view' for a in close)/len(close)) if close else '-'} |")
+    lines += ['', f'**The planner\'s disc check at each approach. {LABEL}**', '',
+              'Every planner-stage clearance filter tests a 0.45-m disc on the forecast centre path (0.48 m for turns and translations) against '
+              'remembered obstacles; heading and the articulated body are not modelled. Reach = how far the closest part extends from the base '
+              'centre toward the nearest wall point (exact support of all 27 primitives in that direction). Disc broken in truth = the base centre was within 0.45 m '
+              'of a true wall; planner believed clear = the remembered clearance of the executing move\'s forecast path was above 0.45 m.', '',
+              '| Condition | Approaches | Rear-calf approaches | Rear-calf reach: median · p95 · max (cm) | Part outside the 0.45-m disc '
+              '| Centre to true wall: worst · median (cm) | Disc broken in truth · of those, planner believed clear |',
+              '|---|---:|---:|---|---:|---|---|']
+    for c in cohorts:
+        if not by[c]:
+            continue
+        rear = [a for a in by[c] if a['link'] in ('RL_calf', 'RR_calf')]
+        broken = [a for a in by[c] if a['centre_to_wall_m'] < DISC_M]
+        believed = [a for a in broken if a['remembered_clearance_m'] is not None and a['remembered_clearance_m'] > DISC_M]
+        reach = [a['reach_m'] for a in rear]
+        lines.append(f"| {spec_of(c)} | {len(by[c])} | {len(rear)} | "
+                     + (f"{100*st.median(reach):.1f} · {100*float(np.percentile(reach, 95)):.1f} · {100*max(reach):.1f} | " if reach else '- | ')
+                     + f"{pct(sum(a['reach_m'] > DISC_M for a in by[c])/len(by[c]))} | "
+                     f"{100*min(a['centre_to_wall_m'] for a in by[c]):.1f} · {100*st.median(a['centre_to_wall_m'] for a in by[c]):.1f} | "
+                     f"{len(broken)} · {len(believed)} |")
+    lines += ['', f'**Articulated body reach versus the 0.45-m disc while moving (10 Hz samples). {LABEL}**', '',
+              'Reach = the largest horizontal distance of any of the 27 collision primitives from the base centre. Beyond 0.45 m, a part sticks out '
+              'of the disc the planner checks; beyond 0.48 m, out of the disc plus the turn/translation reserve.', '',
+              '| Condition | Move | Samples | Reach: median · p95 · max (cm) | Beyond 0.45 m | Beyond 0.48 m | Farthest link when beyond 0.45 m |',
+              '|---|---|---:|---|---:|---:|---|']
+    for c in cohorts:
+        samples = [x for r in results if r['cohort'] == c for x in r.get('reach', [])]
+        for group, moves in MOVE_GROUPS.items():
+            rows = [x for x in samples if x['move'] in moves]
+            if not rows:
+                continue
+            values = np.array([x['reach_m'] for x in rows])
+            far = Counter(x['link'] for x in rows if x['reach_m'] > DISC_M)
+            lines.append(f"| {spec_of(c)} | {group} | {len(rows)} | {100*np.median(values):.1f} · {100*np.percentile(values, 95):.1f} · {100*values.max():.1f} | "
+                         f"{pct(float(np.mean(values > DISC_M)))} | {pct(float(np.mean(values > TURN_REQUIRED_M)))} | "
+                         f"{', '.join(f'{k} {v}' for k, v in far.most_common(2)) or '-'} |")
     focus = [c for c in cohorts if spec_of(c) in ('none', *SAFETY_TEST) and by[c]]
     for c in focus:
         approaches = by[c]
