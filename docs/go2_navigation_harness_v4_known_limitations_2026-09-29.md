@@ -51,20 +51,25 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 - It is a shared-harness perception limitation, not specific to C1. The camera-based tracker loses registration, and no controller can recover a mission once the tracker faults.
 - It is outside traps 1–3. E1 reports it as its own category (pose-loss controller failures) for every controller.
 
-### Long in-place turning breaks the tracker (forecast sensitivity, 2 October)
+### Long in-place turning breaks the tracker (forecast sensitivity, 2 October; updated 14:30)
 
-**What happened.** The C1 forecast-sensitivity cohorts had five pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
-- They were: noise 40 mm on mazes 38, 44 and 45; noise 160 mm on maze 41; and forward × 0.25 on maze 34.
-- The losses came 123–298 s into each mission.
-- There were none in the clean, 10 mm, forward × 0.5 or forward × 0.75 cohorts, and none in the preliminary run's C1 missions.
+**What happened.** The C1 forecast-sensitivity cohorts had **eight** pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
 
-**Every one followed sustained turning in place.**
-- In the last 10 s before the loss, the robot applied turn-only commands 47–100% of the time and no translation at all.
-- The planner was alternating left and right turns.
+| Cohort | Mazes | Loss time | Motion before the loss |
+|---|---|---|---|
+| noise 40 mm | 38, 44, 45 | 125–298 s | sustained in-place turning: last 10 s 82–94% turn-only, no translation |
+| noise 160 mm | 41 | 123 s | sustained: 47% of the last 10 s, 56% of the 20 s before |
+| noise 160 mm | 47 | 458 s | a short burst: 20 s holding, then about 5 s of turning (51% of the last 10 s) |
+| forward × 0.25 | 34 | 135 s | sustained: 100% turn-only for the last 30 s |
+| turns × 0.5 | 32, 43 | 134–165 s | sustained: 93–100% turn-only for the last 30 s |
 
-**The tracker never sees the forecast.** It uses camera, depth and gyro only. A degraded forecast causes the loss only indirectly, by producing long in-place turning.
+- There were none in the clean, 10 mm, 20 mm, scale, forward × 0.5 / × 0.75, turns × 0.25 or turns × 1.25 cohorts.
+- There were none in the preliminary run's C1 missions.
+- **Every loss happened while turning in place with no translation.** Seven followed sustained turning (the planner alternating left and right turns); one (noise 160 mm, maze 47) followed a short burst of turning after a hold.
 
-**Limitation.** Long in-place turning breaks the visual tracker, whatever produces it: scan mode, a terminal heading limit cycle (trap 2), or a latched clearance turn (trap 3). Any controller that turns in place for long risks ending its mission this way.
+**The tracker never sees the forecast.** It uses camera, depth and gyro only. A degraded forecast causes the loss only indirectly, by producing in-place turning.
+
+**Limitation.** Long in-place turning breaks the visual tracker, whatever produces it: scan mode, a terminal heading limit cycle (trap 2), a latched clearance turn (trap 3), or turn under-prediction. Any controller that turns in place for long risks ending its mission this way.
 
 **How it is reported.** The sensitivity tables count pose loss as its own category, a shared-system failure, not a forecast failure, as E1 does. The diagnosis script is `scripts/diagnose_go2_forecast_sensitivity_failures_development.py`.
 
@@ -99,3 +104,20 @@ Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.p
 - **Trap 1 mostly hits controllers that hold or predict little translation.** C2 has no motion predictor, and C3 predicts collapsed translation. So part of C3's E1 deficit against C1 and C4 will be this trap and not the representation alone. E1 reports it per controller.
 - **Trap 2 is a goal-settling artefact.** It turns a completed approach into a timeout. It hits C1 and C2 and not the learned predictors, so it slightly favours C3 and C4.
 - **Trap 3 is rare,** with one failure each for C1, C3 and C4, and it is controller-agnostic.
+
+## Operating precondition for the pessimistic-unknown condition (2 October)
+
+**The rule.** In stage 2 of the [calibrated-margin experiment](go2_navigation_calibrated_margin_experiment_plan_2026-10-02.md), never-observed cells block a move. They do so when they lie within body reach (0.425 m) plus the controller's calibrated forecast-error bound of the forecast centre path.
+
+**Why that needs a precondition.** At the start pose, both forward depth cameras see the floor only from about 0.45 m ahead. Nothing beside or behind the robot is observed until it turns, and a turn is a move the rule must allow.
+
+**What was tried first.** Seeding only the robot's own 0.425 m reach disc deadlocked the initial look-around. In the live smoke test (C1, maze 30), no move was clear in any of 1197 decisions and the robot turned 18° in a minute. The blocking radius (0.45–0.50 m) exceeds that seed, and the turn's own forecast drifts about 1 cm.
+
+**Operating precondition.** The robot is placed in a cleared area of 0.5 m radius, the same for every controller. The start disc of that radius is seeded as known free, at 1 cm resolution and never beyond 0.5 m.
+
+**Simulated episodes satisfy it.** The episode generator rejects spawns closer than 0.5 m to a wall.
+
+**C3 at its p99 bound may not leave the start.** Its blocking radius (0.497 m) nearly fills the precondition, and its initial-panorama turn forecasts drift up to 6.6 cm at p99. In the synthetic test its start turn is blocked even with no drift. This is a consequence of C3's forecast error under the rule, and it is reported as such.
+
+**A difference between simulation and the real robot.** The physical Go2's wide-view lidar (Unitree's 4D LiDAR L1, a hemispherical field of view) would observe the start surroundings directly. On the real robot this precondition would be unnecessary.
+
