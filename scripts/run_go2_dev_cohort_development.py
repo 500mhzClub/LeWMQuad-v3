@@ -68,7 +68,7 @@ def row_for(base, assignment, arm, code):
                 **interventions(destination))
 
 
-def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_final_round, recovery=None):
+def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_final_round, recovery=None, degrade=None):
     assert Path.cwd().resolve() == owner.REPO
     protocol = json.loads(owner.PROTOCOL.read_text())
     base = Path(protocol['output_root'])
@@ -76,7 +76,7 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
     root = base/'dev_cohorts'/name
     root.mkdir(parents=True, exist_ok=False)
     jobs = [(arm, set_name, maze, episode, f'dev_{name}_{arm}_{set_name}{maze:02d}_ep{episode}') for arm, set_name, maze, episode in plan]
-    owner.save(root/'config.json', dict(mode='development', plan=jobs, fixes=fixes, recovery=recovery, c3_decoder=c3_decoder, c4_weights=c4_weights,
+    owner.save(root/'config.json', dict(mode='development', plan=jobs, fixes=fixes, recovery=recovery, forecast_degradation=degrade, c3_decoder=c3_decoder, c4_weights=c4_weights,
                                         workers=workers, c3_lanes=c3_lanes))
     rows, running, lock = {}, {}, threading.Lock()
     pending = list(jobs)
@@ -86,6 +86,7 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
             command = [sys.executable, ENTRY, '--controller', arm, '--set', set_name, '--maze', str(maze), '--episode', str(episode),
                        '--assignment', assignment]
             command += ['--recovery', recovery] if recovery else ['--fixes', ','.join(fixes)]
+            command += ['--degrade', degrade] if degrade else []
             command += ['--c3-decoder', c3_decoder] if c3_decoder else []
             command += ['--c4-weights', c4_weights] if c4_weights else []
             command += ['--allow-final-round'] if allow_final_round else []
@@ -154,7 +155,8 @@ if __name__ == '__main__':
     p.add_argument('--name', required=True)
     p.add_argument('--plan', help='JSON list of [controller, set, maze, episode]')
     p.add_argument('--fixes', default='')
-    p.add_argument('--recovery', choices=('on', 'off'), help='named fix set (see fixes_for); exclusive with --fixes')
+    p.add_argument('--recovery', choices=('on', 'off'), help='named fix set (see fixes_for; default off since 2 Oct); exclusive with --fixes')
+    p.add_argument('--degrade', help='forecast degradation (scale:S or noise:E_mm), forecast-sensitivity experiment')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
     p.add_argument('--workers', type=int, default=4)
@@ -164,11 +166,12 @@ if __name__ == '__main__':
     if a.reread:
         reread(a.name)
         raise SystemExit
+    from lewm.dev_harness_fixes_development import DEFAULT_RECOVERY, fixes_for
     fixes = [f for f in a.fixes.split(',') if f]
-    if a.recovery:
-        if fixes:
-            p.error('--recovery and --fixes are exclusive')
-        from lewm.dev_harness_fixes_development import fixes_for
-        fixes = fixes_for(a.recovery)
+    if a.recovery and fixes:
+        p.error('--recovery and --fixes are exclusive')
+    recovery = a.recovery or (None if fixes else DEFAULT_RECOVERY)
+    if recovery:
+        fixes = fixes_for(recovery)
     main(a.name, json.loads(a.plan), fixes, a.c3_decoder, a.c4_weights, a.workers, a.c3_lanes,
-         a.allow_final_round, a.recovery)
+         a.allow_final_round, recovery, a.degrade)

@@ -77,6 +77,16 @@ is edited; the development owner swaps the composed mixin in through `bind`.
     closer to an observed obstacle.
   Any failed check ends the script. The predictors then see a reverse command in their
   committed prefix for a few decisions, which is outside their training.
+- `coverage` (harness fix, 2 October; on in both recovery settings): the frozen
+  translation-footprint coverage rule (`lewm/coverage_translation_view_development.py`) counts
+  every coarse cell that is not floor as unknown, including cells already observed as occupied
+  (obstacle edges the fine clearance gate passes). Its remedy, a camera view request, targets
+  only unobserved cells, so the robot held until its utilities drifted (C3 maze 30: 24.8 s;
+  1-3% of mission time in the preliminary run). With this fix, observed occupied cells count as
+  observed: only truly unobserved cells trigger the rule, and those also get a view request.
+  Occupied cells stay with the clearance gate. Implemented without editing the frozen file: the
+  module's `filter_translation` is wrapped once, and the wrapper changes behaviour only inside
+  a runtime that carries this mixin (a context variable).
 - `pose`: record why visual pose was lost. The tracker is terminal after its first failure,
   and every downstream consumer (registration, map, routing) re-derives the pose from the
   tracker's own evidence chain, so re-anchoring means re-plumbing those validators. The one
@@ -84,6 +94,7 @@ is edited; the development owner swaps the composed mixin in through `bind`.
   turn, facing a featureless wall, so `latch` targets its cause. This fix prints the
   tracker's failure chain to worker.log and then faults exactly as before.
 """
+import contextvars
 from dataclasses import replace
 import json
 import math
@@ -97,6 +108,7 @@ from lewm.observed_floor_waypoint_development import segment_cells
 from lewm.geometry_progress_pilot_development import ACTIONS, candidate_commands
 from lewm.mission_coordinate_metric_development import position_distance
 from lewm.process_mapped_runtime_development import pose_update
+from lewm import coverage_translation_view_development as coverage_rule
 
 TERMINAL_RADIUS_M = .10
 
@@ -540,27 +552,112 @@ FIXES = {'terminal': TerminalPositionScoringMixin, 'latch': LatchTimeoutMixin, '
          'pose': PoseLossRecordMixin, 'stall': StallWatchdogMixin, 'backup': ScriptedBackupMixin}
 
 
+_COVERAGE_FIX = contextvars.ContextVar('dev_coverage_fix', default=False)
+_FROZEN_FILTER = getattr(coverage_rule.filter_translation, 'frozen', coverage_rule.filter_translation)
+
+
+class ObservedFloorView:
+    """The snapshot with observed occupied cells counted as observed by the coverage rule."""
+
+    def __init__(self, snapshot):
+        self._snapshot = snapshot
+        self.floor = snapshot.floor | snapshot.occupied
+
+    def __getattr__(self, name):
+        return getattr(self._snapshot, name)
+
+
+def _filter_translation(selection, prediction, snapshot, position, rotation):
+    if _COVERAGE_FIX.get():
+        snapshot = ObservedFloorView(snapshot)
+    return _FROZEN_FILTER(selection, prediction, snapshot, position, rotation)
+
+
+_filter_translation.frozen = _FROZEN_FILTER
+coverage_rule.filter_translation = _filter_translation  # behaviour changes only under CoverageObservedObstacleMixin
+
+
+class CoverageObservedObstacleMixin:
+    def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+        token = _COVERAGE_FIX.set(True)
+        try:
+            return super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+        finally:
+            _COVERAGE_FIX.reset(token)
+
+
+FIXES['coverage'] = CoverageObservedObstacleMixin
+
+
+NOISE_PROFILE = np.arange(1, 9)/7.  # forecast error grows linearly with horizon; 1.0 at the scored 700 ms
+
+
+def degradation_mixin(spec):
+    """Degrade the forecast the planner scores (Andrew, 2 October: forecast-sensitivity experiment).
+
+    'scale:S' multiplies every candidate's predicted displacement and heading change by S.
+    'noise:E' adds, per decision and candidate, a 2-D Gaussian displacement error whose median
+    magnitude at 700 ms is E mm, and a heading error whose median magnitude at 700 ms is E/10
+    degrees (10 mm with 1 degree), both growing linearly with horizon. Noise is seeded by the
+    level and the frame, so a mission is reproducible. The degraded forecast is logged in the
+    decision's motion correction ('dev_degraded_forecast_xy_yaw') so it can be scored like
+    C3's and C4's.
+    """
+    kind, value = spec.split(':')
+    value = float(value)
+    if kind not in ('scale', 'noise'):
+        raise ValueError('degradation must be scale:S or noise:E_mm')
+
+    class ForecastDegradationMixin:
+        degradation = dict(kind=kind, value=value)
+
+        def _correct_prediction(self, prediction, packet, evidence, prefix):
+            prediction, correction = super()._correct_prediction(prediction, packet, evidence, prefix)
+            p = np.array(prediction, float, copy=True)
+            yaw = np.arctan2(p[..., 2], p[..., 3])
+            if kind == 'scale':
+                p[..., :2] *= value
+                yaw = yaw*value
+            else:
+                rng = np.random.default_rng([20261002, int(round(value*1000)), int(packet.frame)])
+                sigma_xy = value/1000/math.sqrt(2*math.log(2))     # median |N(0, s^2 I2)| = s*sqrt(2 ln 2)
+                sigma_yaw = math.radians(value/10)/0.6744897501960817  # median |N(0, s^2)| = 0.6745 s
+                p[..., :2] += rng.normal(0, sigma_xy, size=(p.shape[0], 1, 2))*NOISE_PROFILE[None, :, None]
+                yaw = yaw+rng.normal(0, sigma_yaw, size=(p.shape[0], 1))*NOISE_PROFILE[None, :]
+            p[..., 2], p[..., 3] = np.sin(yaw), np.cos(yaw)
+            correction = dict(correction or {})
+            correction['dev_degraded_forecast_xy_yaw'] = np.stack((p[..., 0], p[..., 1], yaw), axis=-1).tolist()
+            correction['dev_degradation'] = dict(kind=kind, value=value)
+            return p, correction
+
+    ForecastDegradationMixin.__name__ = f'ForecastDegradation_{kind}_{value:g}'.replace('.', 'p')
+    return ForecastDegradationMixin
+
+
 # Andrew (30 Sep evening): the preliminary run drives every controller twice, recovery on (the
 # full development system) and recovery off (the controller's own choices on the frozen V4
 # harness). Every behavioural fix overrides a controller choice, so all of them are recovery;
 # `pose` only records the tracker failure chain and stays on in both.
 RECOVERY_FIXES = ('backup', 'deadlock', 'latch', 'stall', 'terminal')
 DIAGNOSTIC_FIXES = ('pose',)
+# Andrew (2 Oct): recovery off is the default from now on; the coverage-rule fix applies in both settings.
+HARNESS_FIXES = ('coverage',)
+DEFAULT_RECOVERY = 'off'
 
 
-def fixes_for(recovery):
-    """The fix list for --recovery on|off."""
+def fixes_for(recovery, harness=True):
+    """The fix list for --recovery on|off. harness=False gives the preliminary run's sets (no coverage fix)."""
     if recovery not in ('on', 'off'):
         raise ValueError('recovery must be on or off')
-    return sorted(DIAGNOSTIC_FIXES+(RECOVERY_FIXES if recovery == 'on' else ()))
+    return sorted(DIAGNOSTIC_FIXES+(HARNESS_FIXES if harness else ())+(RECOVERY_FIXES if recovery == 'on' else ()))
 
 
-def compose(fixes, base):
-    """The frozen startup mixin with the requested fixes ahead of it."""
+def compose(fixes, base, extra=()):
+    """The frozen startup mixin with the requested fixes (and any extra mixins, outermost) ahead of it."""
     unknown = set(fixes)-set(FIXES)
     if unknown:
         raise ValueError(f'unknown fixes: {sorted(unknown)}')
-    bases = tuple(FIXES[f] for f in sorted(fixes))+(base,)
+    bases = tuple(extra)+tuple(FIXES[f] for f in sorted(fixes))+(base,)
     return type('DevStartupRecoveryRuntimeMixin', bases, {})
 
 

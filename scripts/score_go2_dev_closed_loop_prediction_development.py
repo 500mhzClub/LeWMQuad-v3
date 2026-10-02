@@ -7,7 +7,8 @@ made while driving, against physical truth, without replaying anything.
 For each planning decision at observation time t:
 - the forecast is the selected candidate's 700-ms XY displacement (the planner's scored
   horizon; `scoring_endpoint_offset_ns`) from the decision's logged forecast: the neural raw
-  forecast for C3/C4, the command-history forecast for C1;
+  forecast for C3/C4, the command-history forecast for C1, or the degraded forecast in a
+  forecast-sensitivity run;
 - it is scored only if the requested commands actually executed over [t, t+700 ms), sampled
   at the middle of each 100-ms step from the physics trace, equal the committed prefix followed by the selected
   action's command (so the forecast describes what ran; vetoed or replaced plans are skipped);
@@ -68,7 +69,12 @@ def decisions(run):
         if not np.allclose(executed[:HORIZON_STEPS], planned[:HORIZON_STEPS], atol=1e-9):
             continue
         source = mc.get('prediction_source')
-        forecast = np.asarray(mc['command_history_forecast_xy_yaw'])[..., :2] if source == 'command_history' else np.asarray(mc['raw_forecast_xy_m'])
+        if mc.get('dev_degraded_forecast_xy_yaw') is not None:  # forecast-sensitivity runs: the degraded forecast is what was scored
+            forecast = np.asarray(mc['dev_degraded_forecast_xy_yaw'])[..., :2]
+        elif source == 'command_history':
+            forecast = np.asarray(mc['command_history_forecast_xy_yaw'])[..., :2]
+        else:
+            forecast = np.asarray(mc['raw_forecast_xy_m'])
         predicted = forecast[ACTIONS.index(s['action']), HORIZON_STEPS-1]
         start = pose[start_i]
         yaw = yaw_of(start[3:])
