@@ -229,7 +229,7 @@ The C1 nominal reference is `sens_base`.
 **Runs** (pinned v2 launcher, `--pessimistic-variant lookaround`):
 - `stage2_c1_lookaround_p95`: C1 × 20 mazes, started now on the CPU.
 - `stage2_c3_lookaround_p95`: C3 × 20 mazes, queued after C3 stage 1 (nominal, then the p95 margin) on the GPU.
-- Both use the **p95** e_f bound for unseen cells, so the two controllers face the same rule level. C3 cannot use p99: its start turn is blocked by construction.
+- Both use the **p95** e_f bound for unseen cells, so the two controllers face the same rule level (agreed by Andrew). C3 cannot use p99: its start turn is blocked by construction. No C1 stage-2 run at p99 (skipped by Andrew).
 - Remembered walls are at nominal, with no margin.
 
 **C3 p99 documentation run: dropped.** Its early-stop mixin was not built. The mechanism is reported instead, as C3's start-turn forecast centre drift against C1's and C4's (initial look-around decisions, preliminary run, centimetres):
