@@ -177,3 +177,39 @@ Without seeding, the rule would deadlock the initial look-around: the floor unde
 
 The C1 nominal reference is `sens_base`.
 
+
+## Stage 2 revised and process changes (Andrew, 2 October, afternoon)
+
+**Stage 2 runs for C1 and C3 only.**
+
+**Smoke tests that led here** (C1, mazes 30–31):
+- **Seeding only the 0.425 m start reach disc deadlocked**, under both the first and the revised rule.
+- **First rule, unseen cells counted as walls:** confirmed live on maze 30. No clear move in 1197 of 1197 decisions; 18° of turning in a minute; never translated.
+- **Revised rule, unseen cells block within reach + bound:** the synthetic test blocks the start turn. Its live smoke test was still running when this was written.
+
+**Seeding now** (`lewm/dev_pessimistic_unknown_seeded_development.py`): an **operating precondition, the same for every controller**. The robot is placed in a cleared 0.5 m area. The start disc of that radius is seeded at 1 cm resolution and never beyond 0.5 m, together with the traversed track. The [limitations note](go2_navigation_harness_v4_known_limitations_2026-09-29.md) records this, and that the physical Go2's wide-view lidar would make it unnecessary.
+
+**Why 0.5 m and not exactly the blocking radius:**
+- C1's start turn forecasts drift about 1 cm.
+- Seeding at C1's blocking radius (0.454 m) would still block its start turn.
+- 0.5 m covers every controller's blocking radius (0.45–0.50 m).
+
+**Prediction for C3** (synthetic test):
+- At its p99 bound (blocking radius 0.497 m), C3's start turn is blocked even without drift.
+- At p95 (0.479 m) it passes without drift but not with 1 cm.
+- C3's initial-panorama turn forecasts drift 0.9 cm at the median and 6.6 cm at p99.
+- So C3 may not leave the start under this rule. That would be a result about C3's forecast under the rule.
+
+**Process: pinned launches, from `6a83b937`.**
+- **No edits to live harness code while missions can launch;** new behaviour goes in new files.
+- **Every batch launches through `scripts/launch_go2_dev_cohort_pinned_development.py`.** It refuses unless the runtime files equal HEAD, and records the commit and file hashes in `<name>_launch_pin.json`, `config.json` and `result.json`.
+- **Missions run through `scripts/run_go2_dev_mission_pinned_development.py`.** It re-verifies the hashes before any repository import, refuses on mismatch, and records `runs/<assignment>/launch_pin.json`.
+- **Launches are staggered,** and the wall-clock ledger is locked.
+- **No git worktree:** AGENTS.md forbids worktree or checkout copies while legacy sealed blobs remain tracked.
+
+**Batches launched before the pin.** Identify them post hoc by the module and entry hashes in each `dev_run.json`. Their behaviour without the new options is unchanged: the identity re-run of clean maze 30 was decision- and physics-identical.
+
+**C4 nominal relaunched.**
+- `margin_c4_nominal` never started: launched at the same instant as `margin_p99`, it failed the shared wall-ledger write. Its `config.json` is kept as the record.
+- The reference runs as `margin_c4_nominal_b` (pinned).
+- `margin_p95`, and the three remaining sensitivity cohorts (noise 80 mm, scale 0.75×, turns × 2.0), also run pinned.
