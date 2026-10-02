@@ -1,6 +1,6 @@
 # Plan: calibrated clearance margins and pessimistic unknown cells (DRAFT, not run), 2 October 2026
 
-**Status: draft only.** Nothing here has been started or implemented. Requested by Andrew (2 October) after the [safety error budget](go2_navigation_forecast_sensitivity_safety_budget_2026-10-02.md). Development mode: all results will be PRELIMINARY.
+**Status: approved (Andrew, 2 October) with staging and adjustments; see the final section.** Stage 1 for C1 and C4 is running. Requested by Andrew (2 October) after the [safety error budget](go2_navigation_forecast_sensitivity_safety_budget_2026-10-02.md). Development mode: all results will be PRELIMINARY.
 
 ## Why
 
@@ -133,3 +133,47 @@ Without seeding, the rule would deadlock the initial look-around: the floor unde
 - **(c)** Run C1 and C4 through both stages first (about a day of CPU), then C3 only at nominal and q̂95.
 
 **Recommendation:** (c). C1 and C4 test the rule cheaply. C3 is where the liveness cost is expected, and its two runs fit in about 18 h.
+
+## Approved: staging, adjustments and deviations (2 October)
+
+**Staging.**
+- C1 and C4 go through both stages first, on CPU, starting now behind the memory gate.
+- C3 runs at nominal and at the p95 margin once the sensitivity queues free the GPU.
+
+**Adjustments.**
+1. **Both levels for C1 and C4.** Both p95 and p99 margins are reported.
+   - The bound is per decision, not per mission. A mission makes hundreds of near-wall decisions, so at p95 several exceedances per mission are expected.
+   - **p99 is the safety-relevant level.**
+2. **Realised exceedance** on every evaluation run: the share of near-wall decisions whose actual e_f exceeded the controller's bound. This is the validity check for the calibration under the changed closed-loop behaviour.
+3. **Possible shift.** Calibration ran with recovery on and the nominal disc; evaluation runs with recovery off and the inflated disc.
+4. **Stage 2 seeding.** Seeded as known free are only the robot's own reach disc at the start (0.425 m) and its traversed track (cells within 0.20 m of past planning positions). The generator's 0.5 m spawn guarantee is privileged and is not used. The report states whether the initial look-around still works.
+
+**Implementation as built.**
+
+| Item | Commit | Notes |
+|---|---|---|
+| Bounds | `bce6b386` | Committed before any evaluation run: C1 2.10 / 2.89 cm, C4 2.64 / 3.44 cm, C3 5.39 / 7.19 cm |
+| Margin mixin and `--margin p95\|p99` | `e99a6bde` | |
+| Pessimistic-unknown mixin and `--pessimistic-unknown` | `17a55901` | Synthetic test at the start pose: the unseen ring between 0.425 m and 0.5 m blocks an in-place turn, which predicts that the look-around deadlocks. Being checked live. |
+
+**Deviation from the draft: the routing graph is not inflated.**
+- Its 0.45 m radius is spread across six routing layers.
+- The margin applies where the safety decision is made: the forecast-based action check (inherited by the turn reserve and recovery modes) and the route-target lookahead.
+- A route/check conflict would show up as forecast-clearance holds, which are reported.
+
+**Code identity.** Missions launched after `e99a6bde` load the new module.
+- Outside the new options the new code is inert (synthetic test).
+- One live identity check (C1, maze 30, no new options) is compared decision by decision with the clean baseline mission.
+
+**Cohorts.**
+
+| Cohort | Content |
+|---|---|
+| `margin_c4_nominal` | C4 × 20, the nominal reference with the coverage fix |
+| `margin_p99` | C1 and C4 × 20 each |
+| `margin_p95` | C1 and C4 × 20 each |
+| `identity_margin_code` | the identity check |
+| `pessimistic_smoke` | C1, mazes 30–31 |
+
+The C1 nominal reference is `sens_base`.
+
