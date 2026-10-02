@@ -68,7 +68,7 @@ def row_for(base, assignment, arm, code):
                 **interventions(destination))
 
 
-def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_final_round, recovery=None, degrade=None):
+def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_final_round, recovery=None, degrade=None, margin=None):
     assert Path.cwd().resolve() == owner.REPO
     protocol = json.loads(owner.PROTOCOL.read_text())
     base = Path(protocol['output_root'])
@@ -76,7 +76,7 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
     root = base/'dev_cohorts'/name
     root.mkdir(parents=True, exist_ok=False)
     jobs = [(arm, set_name, maze, episode, f'dev_{name}_{arm}_{set_name}{maze:02d}_ep{episode}') for arm, set_name, maze, episode in plan]
-    owner.save(root/'config.json', dict(mode='development', plan=jobs, fixes=fixes, recovery=recovery, forecast_degradation=degrade, c3_decoder=c3_decoder, c4_weights=c4_weights,
+    owner.save(root/'config.json', dict(mode='development', plan=jobs, fixes=fixes, recovery=recovery, forecast_degradation=degrade, clearance_margin=margin, c3_decoder=c3_decoder, c4_weights=c4_weights,
                                         workers=workers, c3_lanes=c3_lanes))
     rows, running, lock = {}, {}, threading.Lock()
     pending = list(jobs)
@@ -87,6 +87,7 @@ def main(name, plan, fixes, c3_decoder, c4_weights, workers, c3_lanes, allow_fin
                        '--assignment', assignment]
             command += ['--recovery', recovery] if recovery else ['--fixes', ','.join(fixes)]
             command += ['--degrade', degrade] if degrade else []
+            command += ['--margin', margin] if margin else []
             command += ['--c3-decoder', c3_decoder] if c3_decoder else []
             command += ['--c4-weights', c4_weights] if c4_weights else []
             command += ['--allow-final-round'] if allow_final_round else []
@@ -157,6 +158,7 @@ if __name__ == '__main__':
     p.add_argument('--fixes', default='')
     p.add_argument('--recovery', choices=('on', 'off'), help='named fix set (see fixes_for; default off since 2 Oct); exclusive with --fixes')
     p.add_argument('--degrade', help='forecast degradation (scale:S or noise:E_mm), forecast-sensitivity experiment')
+    p.add_argument('--margin', choices=('p95', 'p99'), help='calibrated clearance margin, calibrated-margin experiment')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
     p.add_argument('--workers', type=int, default=4)
@@ -174,4 +176,4 @@ if __name__ == '__main__':
     if recovery:
         fixes = fixes_for(recovery)
     main(a.name, json.loads(a.plan), fixes, a.c3_decoder, a.c4_weights, a.workers, a.c3_lanes,
-         a.allow_final_round, recovery, a.degrade)
+         a.allow_final_round, recovery, a.degrade, a.margin)

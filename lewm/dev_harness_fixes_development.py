@@ -646,6 +646,71 @@ def degradation_mixin(spec):
     return ForecastDegradationMixin
 
 
+# Calibrated clearance margin (Andrew, 2 October: calibrated-margin experiment). The forecast-
+# based action check (memory forecast clearance, whose path distances the turn reserve and the
+# reserve-recovery modes reuse) and the route-target lookahead read remembered-cell distances
+# through their own module's `cached_clearance`. Inside `margin_mixin` those distances are
+# reduced by the controller's calibrated bound, so every requirement r becomes r + margin; the
+# logged distances are the reduced ones, and the selection records the margin. The stopping
+# projection, the dispatch depth stop, the coverage rule and the routing graph keep their own
+# bindings and are unchanged. Outside the mixin the behaviour is the frozen one.
+_CLEARANCE_MARGIN = contextvars.ContextVar('dev_clearance_margin_m', default=0.)
+
+
+class _MarginClearance:
+    def __init__(self, inner, margin):
+        self._inner, self._margin = inner, margin
+
+    def minimum(self, start, end):
+        value = self._inner.minimum(start, end)
+        return None if value is None else value-self._margin
+
+    def __getattr__(self, name):
+        return getattr(self._inner, name)
+
+
+def _margin_cached_clearance(cells):
+    inner = cached_clearance(cells)
+    margin = _CLEARANCE_MARGIN.get()
+    return _MarginClearance(inner, margin) if margin else inner
+
+
+from lewm import clearance_lookahead_development as _lookahead  # noqa: E402
+from lewm import memory_forecast_clearance_development as _memory_check  # noqa: E402
+MARGIN_MODULES = (_memory_check, _lookahead)
+for _module in MARGIN_MODULES:
+    _module.cached_clearance = _margin_cached_clearance  # behaviour changes only under margin_mixin
+
+
+def margin_mixin(margin_m, label):
+    """Inflate the forecast-based clearance requirements by a calibrated margin (metres)."""
+    if not np.isfinite(margin_m) or not 0. < margin_m <= .10:
+        raise ValueError('calibrated margin must be in (0, 0.10] m')
+
+    class ClearanceMarginMixin:
+        clearance_margin = dict(margin_m=margin_m, label=label)
+
+        def _select_clear_prediction(self, selected, prediction, snapshot, position, rotation):
+            token = _CLEARANCE_MARGIN.set(margin_m)
+            try:
+                result = super()._select_clear_prediction(selected, prediction, snapshot, position, rotation)
+            finally:
+                _CLEARANCE_MARGIN.reset(token)
+            selection = result[0] if isinstance(result, tuple) else result
+            selection['dev_clearance_margin'] = dict(margin_m=margin_m, label=label, logged_distances_reduced_by_margin=True)
+            return result
+
+        def _route_target(self, *args, **kwargs):
+            token = _CLEARANCE_MARGIN.set(margin_m)
+            try:
+                return super()._route_target(*args, **kwargs)
+            finally:
+                _CLEARANCE_MARGIN.reset(token)
+
+    ClearanceMarginMixin.__name__ = f'ClearanceMargin_{label}'
+    return ClearanceMarginMixin
+
+
 # Andrew (30 Sep evening): the preliminary run drives every controller twice, recovery on (the
 # full development system) and recovery off (the controller's own choices on the frozen V4
 # harness). Every behavioural fix overrides a controller choice, so all of them are recovery;
