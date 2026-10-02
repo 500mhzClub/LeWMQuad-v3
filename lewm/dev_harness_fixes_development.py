@@ -596,6 +596,11 @@ def degradation_mixin(spec):
     """Degrade the forecast the planner scores (Andrew, 2 October: forecast-sensitivity experiment).
 
     'scale:S' multiplies every candidate's predicted displacement and heading change by S.
+    Structured errors (Andrew, 2 October; copying C3's closed-loop failure modes):
+    'fwdscale:S' multiplies the predicted displacement of the translating candidates only
+    (forward, left arc, right arc; heading unchanged): S < 1 under-predicts forward travel.
+    'turnscale:S' multiplies the predicted displacement and heading change of the in-place
+    turn candidates only: S > 1 over-predicts turns. Other candidates are unchanged.
     'noise:E' adds, per decision and candidate, a 2-D Gaussian displacement error whose median
     magnitude at 700 ms is E mm, and a heading error whose median magnitude at 700 ms is E/10
     degrees (10 mm with 1 degree), both growing linearly with horizon. Noise is seeded by the
@@ -605,8 +610,10 @@ def degradation_mixin(spec):
     """
     kind, value = spec.split(':')
     value = float(value)
-    if kind not in ('scale', 'noise'):
-        raise ValueError('degradation must be scale:S or noise:E_mm')
+    if kind not in ('scale', 'noise', 'fwdscale', 'turnscale'):
+        raise ValueError('degradation must be scale:S, noise:E_mm, fwdscale:S or turnscale:S')
+    translating = [ACTIONS.index(a) for a in ('forward', 'left_arc', 'right_arc')]
+    turning = [ACTIONS.index(a) for a in ('left_turn', 'right_turn')]
 
     class ForecastDegradationMixin:
         degradation = dict(kind=kind, value=value)
@@ -618,6 +625,11 @@ def degradation_mixin(spec):
             if kind == 'scale':
                 p[..., :2] *= value
                 yaw = yaw*value
+            elif kind == 'fwdscale':
+                p[translating, :, :2] *= value
+            elif kind == 'turnscale':
+                p[turning, :, :2] *= value
+                yaw[turning] = yaw[turning]*value
             else:
                 rng = np.random.default_rng([20261002, int(round(value*1000)), int(packet.frame)])
                 sigma_xy = value/1000/math.sqrt(2*math.log(2))     # median |N(0, s^2 I2)| = s*sqrt(2 ln 2)

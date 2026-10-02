@@ -88,6 +88,20 @@ def check_degradation():
         assert np.array_equal(again, first)
         print(f'noise:{e:g}: median 700-ms error {np.median(xy)*1000:.1f} mm, heading {np.median(hd):.2f} deg; reproducible per frame')
     print('scale:0.5 halves displacement and heading change; degraded forecast logged:', 'dev_degraded_forecast_xy_yaw' in c)
+    from lewm.geometry_progress_pilot_development import ACTIONS
+    moving = base.copy()
+    moving[..., :2] = np.random.default_rng(1).normal(size=(6, 8, 2))
+    fwd = type('F', (fixes.degradation_mixin('fwdscale:0.5'), Source), {})()
+    q, _ = fwd._correct_prediction(moving.copy(), types.SimpleNamespace(frame=1), None, None)
+    for i, a in enumerate(ACTIONS):
+        factor = .5 if a in ('forward', 'left_arc', 'right_arc') else 1.
+        assert np.allclose(q[i, :, :2], moving[i, :, :2]*factor) and np.allclose(np.arctan2(q[i, :, 2], q[i, :, 3]), .4)
+    turn = type('T', (fixes.degradation_mixin('turnscale:2.0'), Source), {})()
+    q, _ = turn._correct_prediction(moving.copy(), types.SimpleNamespace(frame=1), None, None)
+    for i, a in enumerate(ACTIONS):
+        factor = 2. if a in ('left_turn', 'right_turn') else 1.
+        assert np.allclose(q[i, :, :2], moving[i, :, :2]*factor) and np.allclose(np.arctan2(q[i, :, 2], q[i, :, 3]), .4*factor)
+    print('fwdscale scales only forward/arcs displacement; turnscale scales only in-place turns (displacement and heading)')
 
 
 if __name__ == '__main__':
