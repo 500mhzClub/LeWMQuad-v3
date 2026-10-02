@@ -16,6 +16,10 @@ progress minus contact, plus the heading-alignment term at the logged scale; the
 choice among hold and turns when the planner was scanning). This is the scoring-stage choice:
 the later clearance, coverage and latch filters depend on the live map and are not recomputed.
 The recomputation is validated against the logged utilities of the degraded forecast.
+Cost of a changed choice (Andrew, 2 October): the clean forecast's score of the clean choice
+minus its score of the degraded choice (>= 0, in the scorer's metres of progress plus heading
+alignment; for scan decisions, the scan score). Its mean and 95th percentile over changed
+choices separate harmless near-tie swaps from genuinely worse choices.
 
 All conditions are compared against this experiment's own clean baseline (C1, coverage-rule
 fix, recovery off), not the preliminary results: success difference with a maze-level paired
@@ -68,21 +72,25 @@ def utilities(p, selection):
     return u+selection['alignment_scale_m']*(errors[0]-errors[1])
 
 
-def scan_choice(p, scan_error):
+def scan_scores(p, scan_error):
     begin, end = DELAY-1, DELAY+COMMIT-1
-    scores = []
+    scores = {}
     for a in ('hold', 'left_turn', 'right_turn'):
         i = ACTIONS.index(a)
         yaw = math.atan2(p[i, end, 2], p[i, end, 3])-math.atan2(p[i, begin, 2], p[i, begin, 3])
         remaining = math.atan2(math.sin(scan_error-yaw), math.cos(scan_error-yaw))
-        scores.append((.35*(abs(scan_error)-abs(remaining)), a))
-    return max(scores)[1]
+        scores[a] = .35*(abs(scan_error)-abs(remaining))
+    return scores
 
 
 def choice_change(name):
-    """(rate, decisions, max |recomputed - logged| utility) for one cohort's C1 runs."""
+    """Scoring-stage choice change for one cohort's C1 runs.
+
+    Returns (rate, decisions, max |recomputed - logged| utility, costs of changed choices).
+    """
     changed = total = 0
     worst = 0.
+    costs = []
     for arm, run in cohort_runs(name):
         for r in json.loads((run/'planning.json').read_text()):
             if 'selection' not in r or not r.get('motion_correction'):
@@ -96,12 +104,17 @@ def choice_change(name):
             worst = max(worst, float(np.max(np.abs(ud-np.array([c.get('position_contact_utility_m', 0)+c.get('predicted_alignment_progress_m', 0)
                                                                 for c in s['candidates']])))))
             if s.get('scan_heading_error_rad') is not None:
-                a, b = scan_choice(degraded, s['scan_heading_error_rad']), scan_choice(clean, s['scan_heading_error_rad'])
+                sd, sc = scan_scores(degraded, s['scan_heading_error_rad']), scan_scores(clean, s['scan_heading_error_rad'])
+                a, b = max(sd, key=sd.get), max(sc, key=sc.get)
+                cost = sc[b]-sc[a]
             else:
                 a, b = ACTIONS[int(np.argmax(ud))], ACTIONS[int(np.argmax(uc))]
-            changed += a != b
+                cost = float(uc[ACTIONS.index(b)]-uc[ACTIONS.index(a)])
+            if a != b:
+                changed += 1
+                costs.append(max(0., cost))
             total += 1
-    return (changed/total if total else None), total, worst
+    return (changed/total if total else None), total, worst, costs
 
 
 def condition(name):
@@ -126,7 +139,7 @@ def main(markdown, plot):
         lo, hi = wilson(k, len(rows))
         times = [r['total_s'] for r in rows if r['round_trip'] and r.get('total_s')]
         err, ratio, n = measured(name)
-        rate, decisions_n, worst = choice_change(name)
+        rate, decisions_n, worst, costs = choice_change(name)
         spec = condition(name)
         kind, value = ('none', 0.) if spec == 'none' else (spec.split(':')[0], float(spec.split(':')[1]))
         table.append(dict(name=name, spec=spec, kind=kind, value=value, missions=len(rows), successes=k, success=k/len(rows), lo=lo, hi=hi,
@@ -134,6 +147,8 @@ def main(markdown, plot):
                           hold=mean([r.get('outbound_hold_rate') for r in rows]), contacts=sum(r.get('contacts') or 0 for r in rows),
                           min_clearance=min((r['min_clearance_m'] for r in rows if r.get('min_clearance_m') is not None), default=None),
                           error_mm=err, ratio=ratio, scored=n, choice_change=rate, choice_decisions=decisions_n, recompute_max_abs=worst,
+                          change_cost_mean_mm=1000*float(np.mean(costs)) if costs else None,
+                          change_cost_p95_mm=1000*float(np.percentile(costs, 95)) if costs else None,
                           rows=rows))
     refs = {}
     for arm in ('C3', 'C4'):
@@ -155,17 +170,20 @@ def main(markdown, plot):
     lines = [f'**Forecast-sensitivity dose-response. {LABEL}**', '',
              'Rows: C1 with its forecasts degraded. "Measured forecast error" is the selected move\'s 700-ms forecast against physics truth while driving '
              '(median error · median predicted/true ratio), the same measure used for C3 and C4.', '',
-             '| Condition | Missions | Success (Wilson 95%) | SPL | Median round trip (s) | Outbound hold rate | Contacts | Min clearance | Measured forecast error | Choice-change rate | vs clean baseline: success diff (95% CI) · only base/only cond | SPL diff | Time diff (s) |',
-             '|---|---:|---|---:|---:|---:|---:|---:|---|---:|---|---|---|']
+             '| Condition | Missions | Success (Wilson 95%) | SPL | Median round trip (s) | Outbound hold rate | Contacts | Min clearance | Measured forecast error | Choice-change rate | Cost of changed choices, mean · p95 (mm) | vs clean baseline: success diff (95% CI) · only base/only cond | SPL diff | Time diff (s) |',
+             '|---|---:|---|---:|---:|---:|---:|---:|---|---:|---|---|---|---|']
     for r in sorted(table, key=order):
         lines.append(f"| {r['spec']} | {r['missions']} | {r['successes']}/{r['missions']} · {r['success']:.2f} ({r['lo']:.2f}–{r['hi']:.2f}) | "
                      f"{r['spl']:.2f} | {'-' if r['time'] is None else f'{r['time']:.0f}'} | {r['hold']:.3f} | {r['contacts']} | "
                      f"{'-' if r['min_clearance'] is None else f'{100*r['min_clearance']:.1f} cm'} | "
                      f"{'-' if r['error_mm'] is None else f'{r['error_mm']:.0f} mm · {r['ratio']:.2f}'} | "
-                     f"{'-' if r['choice_change'] is None else f'{r['choice_change']:.3f}'} | {vs(r, 'success')} · {r.get('vs_base', {}).get('only_base', '-')}/{r.get('vs_base', {}).get('only_cond', '-')} | "
+                     f"{'-' if r['choice_change'] is None else f'{r['choice_change']:.3f}'} | "
+                     f"{'-' if r['change_cost_mean_mm'] is None else f'{r['change_cost_mean_mm']:.1f} · {r['change_cost_p95_mm']:.1f}'} | {vs(r, 'success')} · {r.get('vs_base', {}).get('only_base', '-')}/{r.get('vs_base', {}).get('only_cond', '-')} | "
                      f"{vs(r, 'spl')} | {vs(r, 'time', 1)} |")
     worst = max((r['recompute_max_abs'] for r in table), default=0.)
-    lines += ['', f'Choice-change recomputation reproduces the logged degraded-forecast utilities to within {worst:.1e} m.']
+    lines += ['', f'Choice-change recomputation reproduces the logged degraded-forecast utilities to within {worst:.1e} m. '
+                  'Cost of a changed choice = clean-forecast score of the clean choice minus clean-forecast score of the degraded choice '
+                  '(metres of progress plus heading alignment over the 400-ms commit; scan score when scanning).']
     lines += ['', f"Reference, measured while driving in the preliminary recovery-off run: C3 {refs['C3']['error_mm']:.0f} mm · "
                   f"{refs['C3']['ratio']:.2f}; C4 {refs['C4']['error_mm']:.0f} mm · {refs['C4']['ratio']:.2f}."]
     text = '\n'.join(lines)
@@ -225,8 +243,9 @@ def draw(table, refs, path):
             continue
         ax.plot(r['choice_change'], r['success'], markers[r['kind']], color=green)
         ax.plot(r['choice_change'], r['spl'], markers[r['kind']], color=amber, alpha=.7)
-        ax.annotate(r['spec'], (r['choice_change'], r['success']), fontsize=6, xytext=(3, 3), textcoords='offset points')
-    ax.set_xlabel('choice-change rate (scoring stage, per decision)', fontsize=8)
+        cost = '' if r['change_cost_mean_mm'] is None else f" · {r['change_cost_mean_mm']:.0f} mm"
+        ax.annotate(r['spec']+cost, (r['choice_change'], r['success']), fontsize=6, xytext=(3, 3), textcoords='offset points')
+    ax.set_xlabel('choice-change rate (scoring stage, per decision); label: spec · mean cost of a changed choice', fontsize=7)
     ax.set_title('Success (green) and SPL (amber) against choice change', fontsize=9)
     for a in axes.flat:
         a.set_ylim(0, 1.05)
