@@ -22,6 +22,7 @@ even when it starts inside the reserve (below 0.48 m) or inside the disc (at or 
 - C2 has no forecast. Each candidate is checked on its nominal command path: the requested command integrated over the same horizon, as the dispatch check already projects it.
 - The check is the same one the others use, including the reserve-recovery modes and the new exit.
 - C2's own selection rule is unchanged: the nearest primitive to the waypoint feedback, among eligible actions.
+- **This gives C2 a crude kinematic forecast for its safety check.** The nominal command path has no learned motion model and no command history. C2's selection still uses no forecast. Approved by Andrew.
 
 **(c) Nothing else changes.** Unchanged:
 - the dispatch-time depth stop (0.45 m disk on the current depth images);
@@ -30,7 +31,7 @@ even when it starts inside the reserve (below 0.48 m) or inside the disc (at or 
 
 **Residual to watch.** If the wall the robot is leaving is visible ahead within 0.45 m, the depth stop can still veto an exit. The re-run reports any such vetoes.
 
-**Protocol note.** The V4 protocol allows one change per harness version. Andrew approved (a) and (b) together as one version.
+**Protocol note.** The V4 protocol's one-change-per-version rule does not apply in development mode (Andrew). Changes (a) and (b) are recorded together as one version.
 
 ## Gate
 
@@ -63,7 +64,7 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 | C1 gate (20) | about 1 h on the CPU |
 | C0 gate (20) | about 2 h on the CPU |
 | C1, C2, C4 re-run | about 4 h on the CPU |
-| C3 re-run | about 9–10 h on 2 GPU lanes, queued after C3 stage 1 of the calibrated-margin experiment |
+| C3 re-run | about 9–10 h on 2 GPU lanes, first on the GPU once the gates pass. It also serves as C3's margin reference; C3 at the p95 margin on this harness follows. |
 
 ## Interaction with the calibrated-margin experiment
 

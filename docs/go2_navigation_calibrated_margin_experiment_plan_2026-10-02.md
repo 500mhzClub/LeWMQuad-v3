@@ -265,3 +265,12 @@ The C1 nominal reference is `sens_base`.
 - The stage 1 and stage 2 write-ups mark every stall that is a reserve-trap stall, using `scripts/analyse_go2_reserve_trap_development.py`.
 - The next harness version ([plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)) removes the trap. If the trap explains a margin's liveness cost, the comparison is re-run there.
 
+## GPU order changed: C3 moves to the new harness (Andrew, 2 October, evening)
+
+- **Old-harness C3 stage 1 cancelled.** The nominal and p95-margin runs on the old harness were queued but never launched.
+- **Once the new harness passes its gates** ([plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)):
+  1. C3 recovery off on the new harness. It serves both as the preliminary re-run and as C3's margin reference.
+  2. Then C3 at the p95 margin on the new harness.
+- **C1/C4 stage 1 continue tonight on the old harness.** They are repeated on the new harness only if their stalls show the reserve trap.
+- **C3 stage 2 stays cancelled,** under the earlier rule (reinstated only if C1 stage 2 stalls on 10% of mazes or fewer).
+
