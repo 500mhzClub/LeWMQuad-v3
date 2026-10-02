@@ -12,6 +12,20 @@ It supersedes the decision-headroom programme. V4.2 is closed; its recommended s
 
 **Current goal:** establish a validated Go2 simulation navigation testbed. For each controller type (C0 oracle, C1 command history, C2 reactive, C3 JEPA, C4 supervised predictor), determine whether it completes beacon retrieval and return in unseen mazes, report against the pre-registered capability criterion, and produce one example video per controller (C0 optional under the brief).
 
+**Current (2 October): after the preliminary results, per Andrew.**
+- **Settings.**
+  - **Recovery off is the default** of the dev entries. The switch stays, and recovery on is a secondary condition.
+  - **Coverage-rule fix** (`coverage`) is on in both settings: observed obstacle cells count as observed in the frozen footprint rule.
+- **Preliminary report published as a private page:** https://claude.ai/artifact/BAKFyFaXryXYoLjHnxmNbX (share it from its Share menu).
+- **Budget rescore (free):** [budget rescore](go2_navigation_preliminary_budget_rescore_2026-10-02.md).
+  - Tighter budgets separate only C2 with recovery on (the fastest) from C1: +0.10 at 240 s.
+  - C1, C3 and C4 stay within noise at every budget.
+- **Running: forecast-sensitivity experiment.**
+  - C1 on prelim mazes 30–49, recovery off, coverage fix, with its forecasts degraded (`--degrade`): noise of 10–160 mm (heading 1–16°) at 700 ms, and scale 0.25–1.5×. Plus an undegraded baseline.
+  - Dose-response: `scripts/report_go2_forecast_sensitivity_development.py`, with C3 and C4 marked by their measured closed-loop error.
+- **Dynamics-perturbation plan drafted, not run:** [plan](go2_navigation_dynamics_perturbation_plan_2026-10-02.md). Perturbation sizes are finalised after the sensitivity results.
+- **E2 (moving obstacles)** waits until the dynamics work is done.
+
 **Mode (30 September, 16:45): DEVELOPMENT, per Andrew.** The aim is a fixed, working system with preliminary results. Rigour comes later, once the system is frozen: pre-declaration, multiple seeds and the E1 protocol.
 - **Dropped:** acceptance gates, stop-for-approval points, version caps, one-change-per-version, bitwise replay checks and formal budget stops.
 - **Kept:**
