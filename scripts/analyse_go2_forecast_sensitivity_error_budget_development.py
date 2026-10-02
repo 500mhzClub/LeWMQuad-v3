@@ -125,14 +125,23 @@ def mission(args):
             heading = wrap(math.atan2(R_est[1, 0], R_est[0, 0])-math.atan2(R_true[1, 0], R_true[0, 0]))
             lever = float(np.linalg.norm(f[:, :2], axis=1).max())
             e_p = float(np.linalg.norm(np.asarray(pose['position_initial_body_m'][:2])-true_rel[:2]))+abs(heading)*lever
-        memory = {c['action']: c for c in plan['selection'].get('memory_forecast_candidates') or []}
+        selection = plan['selection']
+        memory = {c['action']: c for c in selection.get('memory_forecast_candidates') or []}
         row = memory.get(plan['action']) or {}
         remembered = row.get('minimum_predicted_path_clearance_m')
+        margin = (selection.get('dev_clearance_margin') or {}).get('margin_m') or 0.
+        if remembered is not None:
+            remembered += margin  # calibrated-margin runs log distances reduced by the margin
+        brk = selection.get('dev_terminal_spin_break')
+        intervention = bool(selection.get('dev_backup') or selection.get('dev_backup_aborted') or selection.get('dev_deadlock_escape')
+                            or (brk and not (brk.get('kind') == 'position_scoring_burst' and brk.get('distance_m') == 0.))
+                            or (selection.get('clearance_turn') or {}).get('event') == 'DEV_LATCH_TIMEOUT_RELEASED')
         true_clearance = path_clearance(placed)
         e_pm = None if remembered is None else remembered-true_clearance
         return dict(t_o=t_o, action=plan['action'], forecast=f, placed=placed, yaw_o=yaw_o, i=i, e_f=e_f, e_p=e_p,
                     heading_deg=None if heading is None else math.degrees(heading), remembered=remembered, true_clearance=true_clearance,
-                    e_pm=e_pm, e_m=None if e_pm is None or e_p is None else max(0., e_pm-e_p), mode=row.get('clearance_check_mode'))
+                    e_pm=e_pm, e_m=None if e_pm is None or e_p is None else max(0., e_pm-e_p), mode=row.get('clearance_check_mode'),
+                    intervention=intervention, margin=margin)
     decisions = []
     for ns in sorted(executed):
         plan = plans.get(ns)
@@ -140,7 +149,8 @@ def mission(args):
             d = decision(plan)
             if d is None:
                 continue
-            decisions.append({k: d[k] for k in ('action', 'e_f', 'e_p', 'heading_deg', 'remembered', 'true_clearance', 'e_pm', 'e_m', 'mode')})
+            decisions.append({k: d[k] for k in ('action', 'e_f', 'e_p', 'heading_deg', 'remembered', 'true_clearance', 'e_pm', 'e_m', 'mode',
+                                                'intervention', 'margin')})
     # Close approaches, as in the close-approach analysis.
     index = np.clip(np.searchsorted(ts, ct), 0, len(ts)-1)
     moving = np.any(applied[index] != 0, axis=1)
