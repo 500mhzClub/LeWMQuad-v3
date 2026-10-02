@@ -51,7 +51,7 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 - It is a shared-harness perception limitation, not specific to C1. The camera-based tracker loses registration, and no controller can recover a mission once the tracker faults.
 - It is outside traps 1–3. E1 reports it as its own category (pose-loss controller failures) for every controller.
 
-### Long in-place turning breaks the tracker (forecast sensitivity, 2 October; updated 19:20 with the final cohorts)
+### Long in-place turning breaks the tracker (forecast sensitivity, 2 October; updated 19:10 with the final cohorts)
 
 **What happened.** The C1 forecast-sensitivity cohorts had **twelve** pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
 
