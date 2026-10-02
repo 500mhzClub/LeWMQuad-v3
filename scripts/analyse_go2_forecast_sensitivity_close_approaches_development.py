@@ -1,0 +1,221 @@
+"""PRELIMINARY: closest approaches to walls and whether the depth stop could see them (Andrew, 2 October 2026).
+
+For the forecast-sensitivity safety test (uniform scale 0.25x and 0.5x, under-prediction),
+with every other cohort for comparison. Read-only over each mission's preserved records.
+
+Approaches: per mission, the 5 smallest native separations (the frozen reader's 500-Hz
+lower bound) while moving (a non-zero applied command), each at least 1 s from the others.
+
+At each approach:
+- Closest body part: the reader's articulated collision model (27 URDF primitives, the
+  frozen V4 safety evaluator's support computation) gives every primitive's separation from
+  every wall box; the closest primitive and wall are taken, and checked against the logged
+  separation. Leg = any FL/FR/RL/RR link, body = base and head. Front / side / rear = the
+  direction from the base centre to the nearest wall point in the body frame (front within
+  45 degrees of straight ahead, rear within 45 degrees of straight behind, side otherwise).
+- Executing move: from the applied command (forward, arc, turn in place, other).
+- In the depth camera's view: the depth stop uses only the current images of the two
+  forward depth cameras (primary: 78 x 63 degrees, level, 0.33 m ahead of the base centre;
+  auxiliary: same lens pitched 45 degrees down, 0.35 m ahead), valid optical depth 0.2-5 m,
+  points 0.03-0.65 m above the floor. The nearest wall point is in view if the wall at that
+  point is inside either camera's frustum and depth range at any height in that band
+  (0.05, 0.15, 0.30, 0.45, 0.60 m). Out of view means outside the field of view or closer
+  than the 0.2-m minimum depth; occlusion is not modelled (walls are the nearest surfaces).
+  Out-of-view approaches are ones the depth stop structurally cannot catch.
+
+Clearance loss, per cohort, against this experiment's clean baseline: each approach's
+deficit is how far it falls below the clean baseline's median approach separation; the share
+of the summed deficit, and of approaches closer than the clean baseline's 10th percentile,
+that is out of view. Thresholds fixed before reading any scale-cohort approach.
+
+Usage: analyse_go2_forecast_sensitivity_close_approaches_development.py [--cohorts sens_...] [--json OUT] [--markdown OUT] [--workers 8]
+"""
+import argparse
+from collections import Counter
+import json
+import math
+from multiprocessing import Pool
+from pathlib import Path
+import statistics as st
+
+import numpy as np
+
+from lewm.articulated_collision_geometry_development import ArticulatedCollisionGeometry
+from lewm.auxiliary_downward45_depth_observation_development import body_from_optical as auxiliary_from_optical
+from lewm.causal_depth_observation_development import BODY_FROM_OPTICAL, FOCAL, HEIGHT, MAX_DEPTH_M, MIN_DEPTH_M, WIDTH
+from lewm.physical_execution_development import rotation_xyzw
+from scripts.analyze_go2_ground_plane_development_v1 import URDF
+from scripts.diagnose_go2_forecast_sensitivity_failures_development import BASE, LABEL, assignments, order, spec_of
+
+PER_MISSION, SPACING_S = 5, 1.
+BAND_HEIGHTS_M = (.05, .15, .30, .45, .60)
+CAMERAS = {'primary': np.linalg.inv(np.asarray(BODY_FROM_OPTICAL, float)), 'auxiliary': np.linalg.inv(np.asarray(auxiliary_from_optical(), float))}
+SAFETY_TEST = ('scale:0.25', 'scale:0.5')
+PARTS = [f'{s} · {p}' for s in ('front', 'side', 'rear') for p in ('body', 'leg')]
+MOVES = ('forward', 'arc', 'turn in place', 'other')
+
+
+class Walls:
+    """Per-primitive, per-wall separation lower bounds with the frozen V4 evaluator's support computation."""
+
+    def __init__(self, walls):
+        self.model = ArticulatedCollisionGeometry(URDF)
+        self.centres = np.array([w['centre_xyz'] for w in walls], float)
+        self.halves = np.array([w['size_xyz'] for w in walls], float)/2
+        self.axes = np.array([[[math.cos(w['yaw_rad']), math.sin(w['yaw_rad']), 0], [-math.sin(w['yaw_rad']), math.cos(w['yaw_rad']), 0], [0, 0, 1]]
+                              for w in walls])
+        self.normals = self.axes.reshape(-1, 3)
+        self.projection = np.einsum('wij,wj->wi', self.axes, self.centres)
+
+    def closest(self, pose, joints):
+        Q = rotation_xyzw(pose[3:])
+        support = self.model.supports(joints, self.normals@Q)
+        translation = self.normals@pose[:3]
+        n = len(support['shapes'])
+        lo = (np.array([s['lower'] for s in support['shapes']])+translation).reshape(n, -1, 3)
+        hi = (np.array([s['upper'] for s in support['shapes']])+translation).reshape(n, -1, 3)
+        separation = np.maximum(lo-(self.projection+self.halves), self.projection-self.halves-hi).max(axis=2)
+        shape, wall = np.unravel_index(np.argmin(separation), separation.shape)
+        row = support['shapes'][shape]
+        centre = pose[:3]+Q@np.asarray(row['center_body_m'])
+        local = self.axes[wall]@(centre-self.centres[wall])
+        point = self.centres[wall]+self.axes[wall].T@np.clip(local, -self.halves[wall], self.halves[wall])
+        return float(separation[shape, wall]), row['link'], point, Q
+
+
+def visibility(point_xy, pose, Q):
+    """'in view', or why not, for the wall at point_xy across the depth stop's height band."""
+    reason = 'outside field of view'
+    for h in BAND_HEIGHTS_M:
+        body = Q.T@(np.array([point_xy[0], point_xy[1], h])-pose[:3])
+        for name, optical_from_body in CAMERAS.items():
+            x, y, z = (optical_from_body@np.append(body, 1.))[:3]
+            if z <= 0 or abs(FOCAL*x/z) > WIDTH/2 or abs(FOCAL*y/z) > HEIGHT/2:
+                continue
+            if MIN_DEPTH_M <= z <= MAX_DEPTH_M:
+                return 'in view', name
+            if z < MIN_DEPTH_M:
+                reason = 'closer than minimum depth'
+    return reason, None
+
+
+def move_type(command):
+    vx, vy, wz = command
+    if vx > 0 and abs(vy) < 1e-9:
+        return 'forward' if abs(wz) < 1e-9 else 'arc'
+    if vx == 0 and vy == 0 and wz != 0:
+        return 'turn in place'
+    return 'other'
+
+
+def mission(args):
+    cohort, assignment = args
+    root = BASE/'runs'/assignment
+    spec = json.loads((root/'specification.json').read_text())
+    walls = Walls(spec['geometry']['wall_boxes'])
+    with np.load(root/'native/physics_trace.npz', allow_pickle=False) as f:
+        ts, poses, joints, applied = f['timestamp_s'].copy(), f['base_pose_world'].copy(), f['joint_position'].copy(), f['applied_command'].copy()
+    with np.load(root/'native_clearance_summary_arrays.npz', allow_pickle=False) as c:
+        ct, sep = c['timestamp_s'].copy(), c['separation_lower_m'].copy()
+    index = np.clip(np.searchsorted(ts, ct), 0, len(ts)-1)
+    moving = np.any(applied[index] != 0, axis=1)
+    chosen = []
+    for j in np.flatnonzero(moving)[np.argsort(sep[moving], kind='stable')]:
+        if all(abs(ct[j]-ct[k]) >= SPACING_S for k in chosen):
+            chosen.append(j)
+            if len(chosen) == PER_MISSION:
+                break
+    rows = []
+    for j in chosen:
+        i = index[j]
+        separation, link, point, Q = walls.closest(poses[i], joints[i])
+        direction = Q.T@(point-poses[i, :3])
+        angle = math.degrees(math.atan2(direction[1], direction[0]))
+        sector = 'front' if abs(angle) <= 45 else 'rear' if abs(angle) >= 135 else 'side'
+        part = 'leg' if link[:3] in ('FL_', 'FR_', 'RL_', 'RR_') else 'body'
+        view, camera = visibility(point[:2], poses[i], Q)
+        rows.append(dict(time_s=round(float(ct[j])-1.5, 3), separation_m=float(sep[j]), recomputed_m=separation, link=link,
+                         part=f'{sector} · {part}', bearing_deg=round(angle, 1), move=move_type(applied[i]), command=applied[i].tolist(),
+                         view=view, camera=camera))
+    return dict(cohort=cohort, assignment=assignment, approaches=rows)
+
+
+def summarise(approaches, reference_median, reference_p10):
+    seps = [a['separation_m'] for a in approaches]
+    out = [a for a in approaches if a['view'] != 'in view']
+    deficit = lambda a: max(0., reference_median-a['separation_m'])
+    total = sum(deficit(a) for a in approaches)
+    close = [a for a in approaches if a['separation_m'] < reference_p10]
+    return dict(n=len(approaches), worst=min(seps), p10=float(np.percentile(seps, 10)), median=st.median(seps),
+                out_of_view=len(out)/len(approaches), deficit_out_of_view=sum(deficit(a) for a in out)/total if total else None,
+                deficit_mean_mm=1000*total/len(approaches), close=len(close),
+                close_out_of_view=sum(a['view'] != 'in view' for a in close)/len(close) if close else None)
+
+
+def table(results, cohorts):
+    by = {c: [a for r in results if r['cohort'] == c for a in r['approaches']] for c in cohorts}
+    clean = next(c for c in cohorts if spec_of(c) == 'none')
+    seps = [a['separation_m'] for a in by[clean]]
+    reference_median, reference_p10 = st.median(seps), float(np.percentile(seps, 10))
+    worst_check = max(abs(a['separation_m']-a['recomputed_m']) for c in cohorts for a in by[c])
+    pct = lambda v: '-' if v is None else f'{100*v:.0f}%'
+    lines = [f'**Closest approaches while moving (worst {PER_MISSION} per mission, ≥ {SPACING_S:.0f} s apart) and whether the depth stop could see them. {LABEL}**', '',
+             f'Out of view = the nearest wall point, anywhere in the depth stop\'s 0.03–0.65 m height band, was outside both forward depth cameras\' '
+             f'fields of view or closer than their 0.2-m minimum depth: approaches the depth stop structurally cannot catch. Clearance loss is '
+             f'measured against this run\'s clean baseline: deficit = how far an approach falls below the clean median approach '
+             f'({100*reference_median:.1f} cm); close = closer than the clean 10th percentile ({100*reference_p10:.1f} cm). '
+             f'Closest-primitive recomputation matches the logged separation to within {1000*worst_check:.2f} mm.', '',
+             '| Condition | Missions | Approaches | Separation: worst · p10 · median (cm) | Out of view (all approaches) '
+             '| Mean deficit below clean median (mm) · share out of view | Close approaches · share out of view |',
+             '|---|---:|---:|---|---:|---|---|']
+    for c in cohorts:
+        if not by[c]:
+            continue
+        s = summarise(by[c], reference_median, reference_p10)
+        lines.append(f"| {spec_of(c)} | {sum(r['cohort'] == c for r in results)} | {s['n']} | {100*s['worst']:.1f} · {100*s['p10']:.1f} · {100*s['median']:.1f} | "
+                     f"{pct(s['out_of_view'])} | {s['deficit_mean_mm']:.1f} · {pct(s['deficit_out_of_view'])} | {s['close']} · {pct(s['close_out_of_view'])} |")
+    focus = [c for c in cohorts if spec_of(c) in ('none', *SAFETY_TEST) and by[c]]
+    for c in focus:
+        approaches = by[c]
+        lines += ['', f'**{spec_of(c)}: closest part and executing move ({len(approaches)} approaches). {LABEL}**', '',
+                  '| Closest part (direction · leg or body) | Approaches | Median separation (cm) | Out of view | Why out of view: outside FOV · closer than 0.2 m |',
+                  '|---|---:|---:|---:|---|']
+        for part in PARTS:
+            rows = [a for a in approaches if a['part'] == part]
+            if not rows:
+                continue
+            why = Counter(a['view'] for a in rows)
+            lines.append(f"| {part} | {len(rows)} | {100*st.median(a['separation_m'] for a in rows):.1f} | "
+                         f"{pct(sum(a['view'] != 'in view' for a in rows)/len(rows))} | {why['outside field of view']} · {why['closer than minimum depth']} |")
+        lines += ['', '| Executing move | Approaches | Median separation (cm) | Out of view |', '|---|---:|---:|---:|']
+        for move in MOVES:
+            rows = [a for a in approaches if a['move'] == move]
+            if rows:
+                lines.append(f"| {move} | {len(rows)} | {100*st.median(a['separation_m'] for a in rows):.1f} | "
+                             f"{pct(sum(a['view'] != 'in view' for a in rows)/len(rows))} |")
+        links = Counter(a['link'] for a in approaches)
+        lines += ['', 'Closest links: '+', '.join(f'{k} {v}' for k, v in links.most_common(6))+'.']
+    return '\n'.join(lines)
+
+
+def main(cohorts, out_json, out_md, workers):
+    cohorts = sorted(cohorts or [p.name for p in (BASE/'dev_cohorts').glob('sens_*') if (p/'config.json').exists()], key=order)
+    jobs = [j for c in cohorts for j in assignments(c)]
+    with Pool(workers) as pool:
+        results = pool.map(mission, jobs, chunksize=1)
+    text = table(results, cohorts)
+    print(text)
+    if out_json:
+        Path(out_json).write_text(json.dumps(dict(label=LABEL, missions=results), indent=1)+'\n')
+    if out_md:
+        Path(out_md).write_text(text+'\n')
+
+
+if __name__ == '__main__':
+    p = argparse.ArgumentParser()
+    p.add_argument('--cohorts', nargs='*')
+    p.add_argument('--json')
+    p.add_argument('--markdown')
+    p.add_argument('--workers', type=int, default=8)
+    a = p.parse_args()
+    main(a.cohorts, a.json, a.markdown, a.workers)
