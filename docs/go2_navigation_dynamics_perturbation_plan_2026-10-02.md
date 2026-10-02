@@ -31,6 +31,24 @@ All are applied in the simulator only. The controllers, harness, sensors and eva
 
 The levels kept are those whose realised/commanded ratio falls where the forecast-sensitivity curve shows driving starts to degrade for a uniformly biased forecast, plus one beyond. Levels where the robot falls or cannot walk are dropped; they test locomotion, not prediction.
 
+**Thresholds from the sensitivity results (added 2 October, evening; [results](go2_navigation_forecast_sensitivity_2026-10-02.md)).**
+- **Friction, payload and weak motors make the robot move less than commanded.** C1 predicts nominal motion, so it over-predicts: its predicted/true ratio is commanded/realised.
+  - On V4, over-prediction was tolerated to the limits tested: uniform × 1.5 gave 19/20 and turns × 2.0 gave 19/20.
+  - Under-prediction degraded only at × 0.25 (15/20).
+- **Random slip adds noise-like error.** On V4 the cliff is between 20 and 40 mm of median 700-ms error: 19/20 at 20 mm, 7/20 at 40 mm.
+- **A level is kept if C1's open-loop 700-ms forecast error passes either threshold:**
+  - a predicted/true ratio beyond the first over-prediction level that degrades driving (step 0 below); or
+  - a random error (after removing the mean ratio) of at least 20 mm.
+
+  One level beyond is also kept. If no stable level passes either, the harness absorbs that perturbation. That is a result in itself, and the perturbation is not run on the navigation mazes.
+
+**Step 0: re-measure the curve on the next harness version** (before the characterisation picks levels).
+- **Why.** 45 of the 50 sensitivity stalls were the reserve trap, which the next version changes, and the dynamics runs use that version.
+- **Cohorts.** C1 only, mazes 30–49, recovery off, pinned:
+  - noise 20 and 40 mm and uniform × 0.25 again;
+  - two new over-prediction cohorts, uniform × 2.0 and × 3.0, the side friction actually lands on.
+- **Cost.** 100 CPU missions, about 6–7 h, after the new-harness re-runs.
+
 ## Evaluation
 
 - **Mazes:** the 20 preliminary mazes 30–49, the same as the sensitivity experiment, so results line up with its dose-response.

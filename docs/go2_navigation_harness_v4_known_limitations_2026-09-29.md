@@ -51,21 +51,25 @@ The fixed rules label C4 22/0 "turn oscillation without progress". That rule key
 - It is a shared-harness perception limitation, not specific to C1. The camera-based tracker loses registration, and no controller can recover a mission once the tracker faults.
 - It is outside traps 1–3. E1 reports it as its own category (pose-loss controller failures) for every controller.
 
-### Long in-place turning breaks the tracker (forecast sensitivity, 2 October; updated 14:30)
+### Long in-place turning breaks the tracker (forecast sensitivity, 2 October; updated 19:20 with the final cohorts)
 
-**What happened.** The C1 forecast-sensitivity cohorts had **eight** pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
+**What happened.** The C1 forecast-sensitivity cohorts had **twelve** pose losses, all `VISUAL_TERMINAL_FAILURE` from the tracking stage. PRELIMINARY, prelim_test_v1 mazes 30–49, recovery off.
 
 | Cohort | Mazes | Loss time | Motion before the loss |
 |---|---|---|---|
 | noise 40 mm | 38, 44, 45 | 125–298 s | sustained in-place turning: last 10 s 82–94% turn-only, no translation |
+| noise 80 mm | 38, 45 | 387–421 s | sustained: last 10 s 66–75% turn-only, no translation |
+| noise 80 mm | 39 | 185 s | mixed: last 10 s 55% turn-only, 36% translating |
 | noise 160 mm | 41 | 123 s | sustained: 47% of the last 10 s, 56% of the 20 s before |
 | noise 160 mm | 47 | 458 s | a short burst: 20 s holding, then about 5 s of turning (51% of the last 10 s) |
+| uniform scale × 1.25 | 39 | 281 s | sustained: last 10 s 93% turn-only, 4% translating |
 | forward × 0.25 | 34 | 135 s | sustained: 100% turn-only for the last 30 s |
 | turns × 0.5 | 32, 43 | 134–165 s | sustained: 93–100% turn-only for the last 30 s |
 
-- There were none in the clean, 10 mm, 20 mm, scale, forward × 0.5 / × 0.75, turns × 0.25 or turns × 1.25 cohorts.
+- There were none in the clean, 10 mm, 20 mm, other uniform-scale, forward × 0.5 / × 0.75, turns × 0.25, × 1.25, × 1.5 or × 2.0 cohorts.
 - There were none in the preliminary run's C1 missions.
-- **Every loss happened while turning in place with no translation.** Seven followed sustained turning (the planner alternating left and right turns); one (noise 160 mm, maze 47) followed a short burst of turning after a hold.
+- **Every loss followed turning-dominated motion.** Ten followed sustained in-place turning with at most 4% translation (the planner alternating left and right turns). One (noise 160 mm, maze 47) followed a short burst of turning after a hold. One (noise 80 mm, maze 39) was mixed: 55% turning and 36% translating in its last 10 s.
+- The eight losses listed at 14:30 were those in the cohorts finished by then; noise 80 mm and uniform × 1.25 added four.
 
 **The tracker never sees the forecast.** It uses camera, depth and gyro only. A degraded forecast causes the loss only indirectly, by producing in-place turning.
 
