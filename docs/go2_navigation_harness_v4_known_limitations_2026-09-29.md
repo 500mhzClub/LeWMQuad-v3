@@ -127,3 +127,26 @@ Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.p
 
 **A difference between simulation and the real robot.** The physical Go2's wide-view lidar (Unitree's 4D LiDAR L1, a hemispherical field of view) would observe the start surroundings directly. On the real robot this precondition, and the look-around exemption, would be unnecessary.
 
+
+## Can't translate out once inside the reserve (shared-system trap, 2 October)
+
+**What it is.** Once the base centre is within 0.45 m of a remembered wall (inside the clearance disc), no translation can pass the planner's check, even one that moves directly away from the wall.
+- **Forecast controllers (C1, C3, C4).** A translation that starts inside the 0.48 m requirement passes only through reserve recovery. That needs its starting clearance above 0.45 m, no decrease after the start, and an end above 0.48 m.
+- **C2.** Its reactive rule makes *every* action ineligible, turns included, once the stored clearance is 0.45 m or less.
+
+**How robots get inside.** Turns stay allowed because their forecast barely moves the centre (about 1 cm). The gait actually drifts the body 5–7 cm while turning on the spot, and that carries the centre into the disc.
+
+**Evidence** (`scripts/analyse_go2_reserve_trap_development.py`; stalls of 120 s or more without translation, sampled every 5 s). PRELIMINARY:
+- **C2, preliminary run, recovery off: 8 of 9 stalls.**
+  - Mazes 30, 34, 40, 43, 46, 48 and 49 started inside the disc (remembered centre clearance 0.413–0.445 m). Maze 44 started outside and drifted in.
+  - In most samples a 0.1 m step at the current heading would have *increased* true clearance. C2's rule forbids it.
+  - The ninth stall (maze 36) is different: clearance 0.58 m, still progressing at budget end.
+- **C3, preliminary run, recovery off, maze 31** (its only failure, the deadlock described in the preliminary report).
+  - The stall began outside the disc (remembered 0.542 m at 70 s).
+  - The robot drifted inside while turning in scan mode and stayed trapped for 73 of 79 samples. In 15 of them a translation would have increased clearance.
+- **C1, stage 2 of the calibrated-margin experiment, mazes 31 and 32** (the first stage 2 stalls). Same ending: inside the disc, or inside the reserve with no translation increasing clearance, while scanning.
+  - The full 20-maze count will be added when stage 2 finishes.
+
+**Status.** This is a shared-system limitation of the frozen harness, not specific to any forecast.
+
+**Candidate fix for the next harness version — NOT applied now.** Allow a translation whose forecast clearance never decreases from its start, and ends higher, even inside the disc or reserve: one that leaves the wall rather than approaching it. For C2, allow turns and translations that increase clearance. It needs its own oracle gate before use.
