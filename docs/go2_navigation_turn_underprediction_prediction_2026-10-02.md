@@ -61,5 +61,5 @@ All are compared with the clean baseline `sens_base` on the same 20 mazes.
 - **The prediction's mechanism was quantitatively wrong at × 0.25.** In-place turns move the centre by a few centimetres, not about 1 cm. Under-predicting that drift raised the turn term of the error budget by 2.7 cm at p95. The disc check still absorbed it, and the error budget had no violations: slack min 7.0 cm, tight-bound slack min 0.0 cm.
 - **The selection-and-arrival side held only in part, and not monotonically.**
   - × 0.5: 4.8% of choices changed. It cost 3 successes (2 of them shared-system pose losses after in-place turning) and 23 s per round trip.
-  - × 0.25: more choices changed (8.0%), but there was no detectable arrival effect. Turn moving-time share was 0.42 at × 0.5, against 0.33 clean and at × 0.25.
+  - × 0.25: more choices changed (8.0%), but there was no detectable arrival effect. Turn moving-time share was 0.42 at × 0.5, against 0.32 clean and 0.33 at × 0.25.
 - **The exposure risk named in advance appeared only at × 0.5,** as more near-wall turning. Approach clearance still stayed within criterion 2.
