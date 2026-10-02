@@ -69,7 +69,7 @@ def stats(values):
 
 
 def report(run, rows):
-    lines = [f'### {run.name} (PRELIMINARY; C3 recovery off): {len(rows)} hold decisions', '',
+    lines = [f'### {run if isinstance(run, str) else run.name} (PRELIMINARY; C3 recovery off): {len(rows)} hold decisions', '',
              f"- Reader categories: {dict(Counter(r['category'] for r in rows))}; overrides: {dict(Counter(r['override'] for r in rows if r['override']))}",
              '- Predicted 700-ms travel, median (10th-90th percentile), m:',
              f"  - forward: C3 {stats(r['forward_c3_m'] for r in rows)}; command-history reference {stats(r['forward_kinematic_m'] for r in rows)}",
@@ -89,8 +89,12 @@ if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('runs', nargs='+', type=Path)
     p.add_argument('--markdown')
+    p.add_argument('--pooled', action='store_true', help='also report all given runs pooled')
     a = p.parse_args()
-    text = '\n\n'.join(report(r, decisions(r)) for r in a.runs)
+    per = [(r, decisions(r)) for r in a.runs]
+    text = '\n\n'.join(report(r, d) for r, d in per)
+    if a.pooled:
+        text += '\n\n'+report(f'All {len(per)} missions pooled', [x for _r, d in per for x in d])
     print(text)
     if a.markdown:
         Path(a.markdown).write_text(text+'\n')
