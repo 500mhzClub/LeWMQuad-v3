@@ -241,3 +241,18 @@ The C1 nominal reference is `sens_base`.
 | C3 | 0.92 · 4.10 · 6.62 | 0.89 · 3.25 · 5.23 | same |
 
 **Next, after stages 1 and 2 are written up:** the dynamics-perturbation experiment, friction first, as drafted in [the plan](go2_navigation_dynamics_perturbation_plan_2026-10-02.md). No further safety-rule variants unless a result demands one.
+
+## C3 stage 2 cancelled; C1 stage 2 is the measurement (Andrew, 2 October, evening)
+
+**What prompted it.** In the first C1 stage 2 missions under option A, the look-around exemption worked: 35 exempt decisions, ending at "look-around complete" at 15.2 s. Maze 30 completed its round trip. Maze 31 then stalled after the look-around:
+- Translations were blocked by never-observed floor about 0.4 m beside the robot, just outside the seeded start disc. The centre had drifted up to about 14 cm while turning.
+- The depth cameras see floor no closer than about 0.45 m ahead, and nothing beside the robot, so those cells could not be observed without moving.
+- The robot turned on the spot for 465 s and never translated.
+
+**Decisions:**
+1. **The chained C3 stage 2 is cancelled.** Reinstate it only if C1 stage 2's stall rate is 10% or less. Above that, the rule's liveness failure is driven by sensor geometry, and C3 would add nothing.
+2. **C1 stage 2 finishes all 20 mazes as the measurement.** The write-up will:
+   - classify each stall as at the start or later;
+   - record whether its blocking cells were ever observable from any pose reachable without translating (in-place turns at the stall position);
+   - state the finding as a sensor-coverage requirement for a pessimistic-unknown rule.
+3. **Disk:** when free space nears 25 GB, retire only what the existing retention policy covers, report what went, and ask before anything outside it.
