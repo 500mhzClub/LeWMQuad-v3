@@ -29,7 +29,8 @@ import time
 import torch
 
 from lewm import decision_headroom_json_v42_development as output
-from lewm.dev_harness_fixes_development import DEFAULT_RECOVERY, check_track_override, compose, degradation_mixin, fixes_for, margin_mixin
+from lewm.dev_harness_fixes_development import (DEFAULT_RECOVERY, START_REACH_M, TRACK_RADIUS_M, UNKNOWN_REACH_M, PessimisticUnknownMixin,
+                                               check_track_override, compose, degradation_mixin, fixes_for, margin_mixin)
 from lewm.dev_readout_variants_development import ReadoutVariant, install
 from lewm.eligible_floor_registration_development import bind
 from lewm.navigation_capability_completed_support_development import CompletedSupportRuntimeMixin
@@ -149,13 +150,16 @@ def clearance_margin(arm, level, path=MARGINS_FILE):
     return dict(level=level, margin_m=bounds['controllers'][arm][level]['margin_m'], bounds_file=path, bounds_sha256=sha(path))
 
 
-def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights, allow_final_round, recovery=None, degrade=None, margin=None):
+def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights, allow_final_round, recovery=None, degrade=None, margin=None,
+         pessimistic=False):
     protocol = json.loads(owner.PROTOCOL.read_text())
     root = Path(protocol['output_root'])
     # Hash the code at start: a later edit must not relabel a run that loaded the earlier file.
     code_sha = dict(fixes_module_sha256=sha('lewm/dev_harness_fixes_development.py'), entry_sha256=sha(__file__))
     margin_record = clearance_margin(arm, margin) if margin else None
-    extra = ((margin_mixin(margin_record['margin_m'], margin),) if margin else ())+((degradation_mixin(degrade),) if degrade else ())
+    extra = (((PessimisticUnknownMixin,) if pessimistic else ())+((margin_mixin(margin_record['margin_m'], margin),) if margin else ())
+             +((degradation_mixin(degrade),) if degrade else ()))
+    pessimistic_record = dict(reach_m=UNKNOWN_REACH_M, start_reach_disc_m=START_REACH_M, track_radius_m=TRACK_RADIUS_M) if pessimistic else None
     runtime_mixin = compose(fixes, CompletedSupportRuntimeMixin, extra=extra)
     base_runtime = owner.source.DenseReactiveNavigationRuntime if arm == 'C2' else owner.source.DenseNavigationRuntime
     check_track_override(type('Checked', (runtime_mixin, base_runtime), {}))
@@ -168,7 +172,7 @@ def main(arm, set_name, maze, episode, assignment, fixes, c3_decoder, c4_weights
         if destination.exists():
             output.install(root)
             owner.save(destination/'dev_run.json', dict(mode='development', controller=arm, set=set_name, maze=maze, episode=episode,
-                fixes=sorted(fixes), recovery=recovery, forecast_degradation=degrade, clearance_margin=margin_record, c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
+                fixes=sorted(fixes), recovery=recovery, forecast_degradation=degrade, clearance_margin=margin_record, pessimistic_unknown=pessimistic_record, c3_decoder=c3_decoder, c3_decoder_sha256=sha(c3_decoder) if c3_decoder else None,
                 c4_weights=c4_weights, c4_weights_sha256=sha(c4_weights) if c4_weights else None,
                 owner_run=('copy of owner.run with only the C0 maze-ID limit relaxed for prelim_test IDs 30-89'
                            if set_name == 'prelim_test' else 'owner.run'), **code_sha))
@@ -185,6 +189,7 @@ if __name__ == '__main__':
     p.add_argument('--recovery', choices=('on', 'off'), help='named fix set (default off since 2 Oct): off = harness fixes + pose record; on = also the five recovery fixes')
     p.add_argument('--degrade', help='forecast degradation for the sensitivity experiment: scale:S or noise:E_mm')
     p.add_argument('--margin', choices=('p95', 'p99'), help='calibrated clearance margin (committed conformal bound for this controller)')
+    p.add_argument('--pessimistic-unknown', action='store_true', help='never-observed cells within reach count as occupied (stage 2)')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
     p.add_argument('--allow-final-round', action='store_true')
@@ -195,4 +200,4 @@ if __name__ == '__main__':
     recovery = a.recovery or (None if fixes else DEFAULT_RECOVERY)
     if recovery:
         fixes = fixes_for(recovery)
-    main(a.controller, a.set, a.maze, a.episode, a.assignment, fixes, a.c3_decoder, a.c4_weights, a.allow_final_round, recovery, a.degrade, a.margin)
+    main(a.controller, a.set, a.maze, a.episode, a.assignment, fixes, a.c3_decoder, a.c4_weights, a.allow_final_round, recovery, a.degrade, a.margin, a.pessimistic_unknown)
