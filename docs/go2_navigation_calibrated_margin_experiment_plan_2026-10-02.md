@@ -185,7 +185,7 @@ The C1 nominal reference is `sens_base`.
 **Smoke tests that led here** (C1, mazes 30–31):
 - **Seeding only the 0.425 m start reach disc deadlocked**, under both the first and the revised rule.
 - **First rule, unseen cells counted as walls:** confirmed live on maze 30. No clear move in 1197 of 1197 decisions; 18° of turning in a minute; never translated.
-- **Revised rule, unseen cells block within reach + bound:** the synthetic test blocks the start turn. Its live smoke test was still running when this was written.
+- **Revised rule, unseen cells block within reach + bound:** the synthetic test blocks the start turn, and the live smoke test confirmed it on both mazes. No clear move in 1197 of 1197 decisions on either maze; 18° of turning in a minute; never translated. On the same mazes the clean runs completed the panorama in 15 s.
 
 **Seeding now** (`lewm/dev_pessimistic_unknown_seeded_development.py`): an **operating precondition, the same for every controller**. The robot is placed in a cleared 0.5 m area. The start disc of that radius is seeded at 1 cm resolution and never beyond 0.5 m, together with the traversed track. The [limitations note](go2_navigation_harness_v4_known_limitations_2026-09-29.md) records this, and that the physical Go2's wide-view lidar would make it unnecessary.
 
