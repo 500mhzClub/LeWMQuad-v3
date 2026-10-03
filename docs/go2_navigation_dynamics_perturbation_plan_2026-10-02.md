@@ -174,6 +174,40 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 - C1 and C4 run on the CPU once the C0 gate has passed and the re-run's CPU missions are done.
 - C3 runs on the GPU after the re-run's C3.
 
+### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
+
+**The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
+- any non-foot ground contact;
+- leaving the floor domain;
+- **3-D base speed above 0.3 m/s.**
+
+**Normal walking at 0.2 m/s already peaks at 0.27 m/s.** At a patch edge, the feet still on 1.0 friction push while the others slip, and the body surges.
+
+**Measurements.**
+
+| Condition | Peak 3-D base speed (m/s) | Guard result |
+|---|---|---|
+| Open arena, no patch | 0.27 | – |
+| Open arena, uniform μ = 0.2 | 0.17–0.20 | – |
+| Open arena, sharp edge into μ_p = 0.2 | 0.29–0.31 | – |
+| Open arena, sharp edge into μ_p = 0.3 | 0.275–0.285 | – |
+| Open arena, 0.3-m ramp into μ_p = 0.2 | 0.30–0.31 | – |
+| C1 missions (v4 smoke), μ_p = 0.2, dev maze 0 | – | stopped 0.4 s after entering the patch |
+| C1 missions (v4 smoke), μ_p = 0.3, dev mazes 0–2 | 0.302 at the trips; maze 2 peaked at 0.299 | 2 of 3 stopped within 1 s of entering a patch; maze 2 completed, 53 s on patches |
+
+Arena values are three headings each. Uniform friction (stage 1) never trips the guard: a 219-s μ = 0.2 mission ended on a wall contact, not the guard.
+
+**Consequence.** No μ_p that is clearly above nominal by the stage-1 rule (μ ≤ 0.3) avoids the guard. Left as is, most stage-2 missions would end at the first patch edge, and stage 2 would measure guard trips, not navigation.
+
+**Options (Andrew decides):**
+1. **(Recommended)** For stage-2 patch missions only, raise the speed limit of this guard to 0.40 m/s for every controller, marked and unmarked.
+   - Keep the non-foot-ground-contact and domain stops and all disallowed-contact stops unchanged.
+   - Record every guard row's peak speed, so surges are reported.
+   - Use μ_p = 0.2, the stage-1 level, for a consistent dose.
+   - Missions below 0.3 m/s behave identically.
+2. Keep the guard and count its stops as failures.
+3. Lower the patch contrast (μ_p ≥ 0.4). C1's command-only error would then not be clearly above nominal by the stage-1 rule.
+
 ### Estimate (from the decoder fix's measured costs)
 
 | Step | Basis | Estimate |
