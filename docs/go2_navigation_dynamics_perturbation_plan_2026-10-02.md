@@ -88,10 +88,17 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 
 **Why training is needed.** Neither model has ever seen the marker, so zero-shot it is just a colour on the floor. The C3 decoder and C4 are refit on matched data, with the same procedure as the decoder fix.
 
-**Patch hook.**
-- Patches are thin static floor tiles with the existing `slick_patch` material (a solid, untextured colour marker) and friction μ_p. The robot's 27 geometries are set to μ_p, and the floor stays at 1.0.
-- Under the maximum rule the pair is then 1.0 off a patch and μ_p on one.
-- The characterisation verifies this: off-patch realised/commanded speed must equal nominal, and on-patch must equal uniform μ_p.
+**Patch hook: a friction field, not floor tiles** (revised 3 October after a feasibility probe).
+- **Why not tiles.** The capability scene builder turns every static object into an invisible collision box plus a patterned wall mesh, and the mapping and evaluation treat static objects as walls. Tiles would also add step edges.
+- **How the field works.** Genesis multiplies each geometry's base coefficient by a runtime per-geometry ratio (`set_geoms_friction_ratio`, simulation state), then takes the maximum over the pair.
+  - The floor's ratio is set to μ_p.
+  - Each leg's four calf geometries (the foot sphere is one of them) get ratio 1.0 off a patch and μ_p over one. This is updated at every 20-ms policy step from the foot sphere's position.
+  - So contact friction is nominal off-patch and μ_p on-patch. Body and other geometries stay at 1.0 against the floor, and walls stay nominal.
+- **Probe (12-m room, 0.2 m/s commanded, patch beyond a line, μ_p = 0.2):**
+  - speed is 0.18–0.21 m/s before the patch;
+  - with all four feet on it, speed is 0.10–0.12 m/s, matching uniform μ = 0.2's speed ratio of 0.62;
+  - a short transition follows while the legs cross the boundary.
+- **The marker is a separate, visual-only floor mesh** in the existing `slick_patch` colour, so no geometry is added. The engineering still needed is adding marker meshes to the appearance builder and checking them in the rendered frames.
 
 **Visibility requirement.**
 - The forward RGB camera sees the floor from roughly 0.9 m ahead of the base centre. This is estimated from its mounting and its 63° vertical field of view, and is checked by render.
