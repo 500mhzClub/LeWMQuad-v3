@@ -98,7 +98,19 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
   - speed is 0.18–0.21 m/s before the patch;
   - with all four feet on it, speed is 0.10–0.12 m/s, matching uniform μ = 0.2's speed ratio of 0.62;
   - a short transition follows while the legs cross the boundary.
-- **The marker is a separate, visual-only floor mesh** in the existing `slick_patch` colour, so no geometry is added. The engineering still needed is adding marker meshes to the appearance builder and checking them in the rendered frames.
+- **The marker recolours the floor itself** (revised the same afternoon). The renderer draws exactly two static surfaces, floor and wall union, in a fixed order, so an extra mesh breaks its contract.
+  - In the marked condition, the floor mesh's 12.5-cm quads whose centres lie in a patch cell are recoloured a uniform `slick_patch` blue-grey (RGB 0.30/0.40/0.55), in place of the floor's random greys.
+  - Geometry, identity witnesses, depth and draw order are unchanged.
+- **Placement:**
+  - patches are runs of 2–3 consecutive interior cells on the shortest home-to-beacon cell route, so each covers the full corridor width;
+  - start and beacon cells are never patched, and the return trip crosses the same cells;
+  - the runs are seeded and cover 20–40% of the route's cells. All 20 preliminary mazes get one run, at 22–38% coverage.
+- **Built and tested** (`lewm/dev_dynamics_patches_development.py`, `scripts/test_go2_dev_dynamics_patches_development.py`) on dev maze 0, with a test patch in the cell ahead:
+  - 110 marked floor quads, and the marker changes 18% of the start frame ([frame](go2_navigation_dynamics_patch_marker_start_frame_2026-10-03.png));
+  - every foot-floor contact's solver friction is 0.2 over the patch (506 contacts) and 1.0 off it (483);
+  - the unmarked control has identical friction and no recolouring.
+- **The field's ratios are written before every policy step,** because settling resets them.
+- **The speed effect is measured in the open arena:** a single 1.3-m cell gives only about 2 s on the patch.
 
 **Visibility requirement.**
 - The forward RGB camera sees the floor from roughly 0.9 m ahead of the base centre. This is estimated from its mounting and its 63° vertical field of view, and is checked by render.
