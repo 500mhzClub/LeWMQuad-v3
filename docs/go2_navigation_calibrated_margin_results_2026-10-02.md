@@ -84,3 +84,29 @@
 - **About half the cost is the reserve trap, widened by the margin** (13 of 30 stalls). Holding inside the widened reserve, no translation passes.
 - **The other half is a different, new mechanism**: alternating turns while some translation is clear. **Candidate, not yet verified:** a route-versus-check clash. Routing uses nominal clearance, so it leads into gaps that the margin-inflated check then refuses, and the planner turns back and forth toward a route it cannot follow. The next harness version (reserve exit) does not address it.
 - **Per the GPU-order decision, C1/C4 stage 1 is repeated on the new harness**, because their stalls show the trap. Before that, the alternating-turn stalls are diagnosed offline (route direction against the clear translations at each stalled decision), so the repeat is interpretable.
+
+### Diagnosis: the alternating-turn stalls are a route-versus-check clash (3 October)
+
+**Script.** `scripts/diagnose_go2_margin_route_check_clash_development.py`.
+
+**Mechanism.**
+- The route is planned at nominal clearance.
+- The route-target lookahead and the action check both see wall distances reduced by the margin.
+- The lookahead walks along the route and stops at the first point whose straight segment from the robot falls below min(0.48 m, current clearance).
+- Where the route runs with nominal clearance between 0.48 m and 0.48 m plus the margin, the lookahead stops short, often at the robot's own cell. The planner then scores every translation as overshooting a target at or behind the robot, so turns win.
+
+| Run | Route-following decisions | Target shortened by the lookahead | Target collapsed (within 10 cm of the robot) | Where determinable, original target blocked only by the margin |
+|---|---:|---:|---:|---:|
+| C1 no margin | 6,161 | 1% | 0% | – |
+| C4 no margin | 6,941 | 2% | 0% | – |
+| C1 p95 | 13,149 | 44% | 22% | 927 of 1,048 |
+| C4 p95 | 12,396 | 33% | 22% | 1,262 of 1,265 |
+| C1 p99 | 13,087 | 37% | 15% | 1,776 of 1,822 |
+| C4 p99 | 13,662 | 41% | 24% | 2,194 of 2,310 |
+
+**The 16 alternating-turn stalls:**
+- **12: the lookahead shortened or collapsed the target** in at least 63% of stalled decisions, almost always because of the margin alone: C1 p95 30, 31, 35; C1 p99 30, 32; C4 p95 30, 31, 37; C4 p99 30, 31, 35, 37.
+- **2: the same clash at the action check** (C4 p99 40, 48). When the robot faced its target, forward was blocked, and in 21 of 24 such decisions it would have passed without the margin.
+- **2: the margin-widened reserve trap, turning variant** (C1 p99 31, 43). The robot hovers at 0.48 m plus the margin with its target behind it. The turn toward the target fails the check by under a millimetre in about half the decisions, so the filter picks the opposite turn; translations are mostly blocked.
+
+**Conclusion: confirmed.** Per Andrew's decision, margin-aware routing is added to the next harness version: when a margin is active, routing clearance grows by the same bound. With no margin, behaviour is unchanged. Stage 1 (C1 and C4 at p95 and p99, C3 at p95) is then repeated on that version.
