@@ -40,7 +40,7 @@ RUNTIME_FILES = ('lewm/dev_harness_fixes_development.py', 'lewm/dev_pessimistic_
                  'lewm/dev_harness_reserve_exit_development.py', 'scripts/run_go2_dev_mission_pinned_v3_development.py',
                  'scripts/launch_go2_dev_cohort_pinned_v3_development.py', 'lewm/dev_dynamics_friction_development.py',
                  'scripts/run_go2_dev_mission_pinned_v4_development.py', 'scripts/launch_go2_dev_cohort_pinned_v4_development.py',
-                 'lewm/dev_harness_reserve_exit_v1_1_development.py')
+                 'lewm/dev_harness_reserve_exit_v1_1_development.py', 'lewm/dev_dynamics_patches_development.py')
 
 
 def git(*args):
@@ -63,7 +63,7 @@ def main():
     p.add_argument('--plan', required=True)
     p.add_argument('--recovery', choices=('on', 'off'), default='off')
     p.add_argument('--harness', choices=('reserve_exit_v1', 'reserve_exit_v1_1'), required=True)
-    p.add_argument('--dynamics', help='friction:MU (uniform floor friction, stage 1)')
+    p.add_argument('--dynamics', help='friction:MU (uniform floor friction, stage 1) or patches:MU:marked|unmarked (stage 2)')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')
     p.add_argument('--workers', type=int, default=4)
@@ -73,9 +73,11 @@ def main():
     os.environ['LEWM_LAUNCH_PIN'] = json.dumps(launch)
     os.environ['LEWM_HARNESS'] = a.harness
     if a.dynamics:
-        kind, _, value = a.dynamics.partition(':')
-        if kind != 'friction' or not .05 <= float(value) <= 1.:
-            p.error('--dynamics friction:MU with 0.05 <= MU <= 1')
+        kind, _, rest = a.dynamics.partition(':')
+        mu, _, mark = rest.partition(':')
+        valid = (kind == 'friction' and not mark) or (kind == 'patches' and mark in ('marked', 'unmarked'))
+        if not valid or not .05 <= float(mu) <= 1.:
+            p.error('--dynamics friction:MU or patches:MU:marked|unmarked, with 0.05 <= MU <= 1')
         os.environ['LEWM_DYNAMICS'] = a.dynamics
     from lewm import decision_headroom_json_v42_development as output
     from lewm import navigation_capability_active_wall_development as wall

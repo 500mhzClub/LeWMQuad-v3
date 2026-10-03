@@ -22,7 +22,7 @@ of the floor's random greys. Vertices, faces, the identity witnesses (geometry o
 unchanged. The unmarked control has the same friction field and the floor's own colours.
 """
 from collections import deque
-import contextlib
+import hashlib
 import json
 from pathlib import Path
 
@@ -35,6 +35,11 @@ COVERAGE = (.20, .40)
 MIN_RUN_CELLS = 2
 _MARKERS = []  # this process's marked patch cells; read by the wrapped appearance builder
 _MARKED_QUADS = []
+
+
+def placement_seed(set_name, maze, episode):
+    """Fixed seed rule: sha256 of "patches-v1:<set>:<maze>:<episode>", first 8 bytes."""
+    return int.from_bytes(hashlib.sha256(f'patches-v1:{set_name}:{int(maze)}:{int(episode)}'.encode()).digest()[:8], 'big')
 
 
 def route_cells(spec, packet):
