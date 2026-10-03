@@ -21,7 +21,9 @@ Mechanism per sample:
 - inside the reserve, one increases but fails recovery (ends <= 0.48 m or dips after the prefix);
 - scan mode: translations excluded by the view requirement;
 - other.
+- a translation passes the check but is not selected (holds or turns outscore it);
 A "can't translate out once inside the reserve" trap is a stall dominated by the first three.
+With a calibrated margin, the disc and the requirement are shifted out by the margin (the check subtracts it).
 
 Usage: analyse_go2_reserve_trap_development.py --runs COHORT[:CONTROLLER[:MAZE]] ... [--markdown OUT] [--json OUT]
 """
@@ -47,9 +49,9 @@ def stall_span(t, translating):
     return best if best and best[1]-best[0] >= STALL_S else None
 
 
-def recovery_ok(d):
+def recovery_ok(d, margin=0.):
     prefix = min(d[:3])
-    return bool(DISC_M < prefix <= REQUIRED_M and min(d[3:]) >= prefix and d[7] > REQUIRED_M)
+    return bool(DISC_M+margin < prefix <= REQUIRED_M+margin and min(d[3:]) >= prefix and d[7] > REQUIRED_M+margin)
 
 
 def mission(assignment):
@@ -89,22 +91,27 @@ def mission(assignment):
                     continue
                 d = [x+margin for x in d]
                 moves.append(dict(action=a, prefix=round(min(d[:3]), 3), end=round(d[7], 3), increases=d[7] > min(d[:3])+1e-3,
-                                  recovery_ok=recovery_ok(d), clear=bool(memory[a]['nominal_predicted_path_clear'])))
-            out.update(remembered_centre_m=None if remembered is None else round(remembered, 3), moves=moves)
+                                  recovery_ok=recovery_ok(d, margin), clear=bool(memory[a]['nominal_predicted_path_clear'])))
+            out.update(remembered_centre_m=None if remembered is None else round(remembered, 3), moves=moves, margin_m=margin)
             increases = any(m['increases'] for m in moves)
         else:  # C2: no forecast; test a 0.1-m step at the current heading against the true walls
+            margin = 0.
             remembered = s.get('current_stored_clearance_m')
             yaw = planar_yaw(P[i])
             step = float(distance(P[i, :2]+.1*np.array([np.cos(yaw), np.sin(yaw)]))[0])
             increases = step > true+1e-3
             out.update(remembered_centre_m=None if remembered is None else round(remembered, 3), step_forward_true_m=round(step, 3))
         any_translation_clear = any(m.get('clear') for m in out.get('moves', [])) if 'moves' in out else bool(s.get('current_nominal_disk_clear'))
-        if remembered is not None and remembered <= DISC_M:
+        # With a calibrated margin the check subtracts it from every remembered distance, so the disc and the
+        # requirement move out by the margin (remembered is reported margin-free).
+        if remembered is not None and remembered <= DISC_M+margin:
             mechanism = 'inside the disc'
-        elif remembered is not None and remembered <= REQUIRED_M and not any_translation_clear:
+        elif remembered is not None and remembered <= REQUIRED_M+margin and not any_translation_clear:
             mechanism = 'inside the reserve, a translation increases but fails recovery' if increases else 'inside the reserve, none increases'
         elif scan:
             mechanism = 'scan mode'
+        elif any_translation_clear:
+            mechanism = 'a translation passes the check but is not selected'
         else:
             mechanism = 'other'
         out.update(increases=bool(increases), mechanism=mechanism)
@@ -118,7 +125,7 @@ def mission(assignment):
 def table(rows):
     lines = [f'**Wall-bound stalls: can the robot translate out once inside the reserve? {LABEL}**', '',
              'Onset = first sample of the stall. Remembered centre clearance: forecast controllers, the hold candidate\'s logged path clearance; '
-             'C2, its current stored clearance. Translation requirement 0.48 m (disc 0.45 m + reserve 0.03 m). Increases = a translation candidate '
+             'C2, its current stored clearance. Translation requirement 0.48 m (disc 0.45 m + reserve 0.03 m), plus any calibrated margin. Increases = a translation candidate '
              'ends with more clearance than its prefix (C2: a 0.1-m step at the current heading, true walls).', '',
              '| Run | Ctrl | Maze | Round trip | Stall (s) | Onset centre clearance: remembered · true (m) | Below 0.48 · below 0.45 at onset '
              '| Samples where some translation increases clearance | Scan-mode samples | Mechanism (samples) |',
@@ -132,7 +139,7 @@ def table(rows):
         rem = o['remembered_centre_m'] if o else None
         lines.append(f"| {r['cohort']} | {r['controller']} | {r['maze']} | {r['round_trip']} | {s['begin_s']:.0f}-{s['end_s']:.0f} | "
                      f"{'-' if rem is None else f'{rem:.3f}'} · {o['true_centre_m']:.3f} | "
-                     f"{'-' if rem is None else ('yes' if rem <= REQUIRED_M else 'no')} · {'-' if rem is None else ('yes' if rem <= DISC_M else 'no')} | "
+                     f"{'-' if rem is None else ('yes' if rem <= REQUIRED_M+o.get('margin_m', 0.) else 'no')} · {'-' if rem is None else ('yes' if rem <= DISC_M+o.get('margin_m', 0.) else 'no')} | "
                      f"{sum(x['increases'] for x in sm)}/{len(sm)} | {sum(x['scan'] for x in sm)} | "
                      f"{'; '.join(f'{k} {v}' for k, v in sorted(s['mechanisms'].items(), key=lambda kv: -kv[1]))} |")
     return '\n'.join(lines)

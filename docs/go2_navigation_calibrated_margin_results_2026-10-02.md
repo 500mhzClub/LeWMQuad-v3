@@ -1,7 +1,7 @@
-# Calibrated margins and pessimistic unknown cells: results (in progress), 2 October 2026
+# Calibrated margins and pessimistic unknown cells: results, 2–3 October 2026
 
 **PRELIMINARY.** Development mode, prelim_test_v1 mazes 30–49, recovery off, coverage-rule fix. The plan is in [go2_navigation_calibrated_margin_experiment_plan_2026-10-02.md](go2_navigation_calibrated_margin_experiment_plan_2026-10-02.md).
-- Stage 1 (C1 and C4 margins, old harness) is still running and will be added here.
+- Stage 1 (C1 and C4 margins, old harness) finished overnight; results below.
 - C3 now runs on the next harness version ([plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)).
 
 ## Stage 2, C1: never-observed cells block moves (look-around exemption, p95 bound)
@@ -40,3 +40,47 @@
 - **Suggested next step (needs Andrew's decision).** Re-run this C1 stage 2 on the next harness version, where translations that increase clearance are allowed. That separates the rule's own cost from the trap. Cost: about 1.5 h of CPU.
 
 **Reserve-trap stalls are marked** in every stage write-up (Andrew, 2 October): a larger margin, or a stricter unseen-cell rule, means more time inside the reserve.
+
+## Stage 1: calibrated margins on remembered walls (C1 and C4, old harness; added 3 October)
+
+**Runs.**
+- Cohorts `margin_p95`, `margin_p99` and `margin_c4_nominal_b` (C4's no-margin reference). C1's reference is the clean sensitivity baseline `sens_base`, same mazes.
+- The check subtracts the controller's calibrated bound from every remembered-wall distance. Unknown cells count as free. Routing is not inflated.
+- Margins: C1 2.10 cm (p95) and 2.89 cm (p99); C4 2.64 and 3.44 cm.
+
+| Ctrl | Margin | Round trips (Wilson 95%) | SPL | Outbound hold rate | Contacts · hard · operating | Min clearance (cm) | vs own no-margin run: success diff (95% CI) · only no-margin / only margin | Time to beacon, non-arrival = 480 s (95% CI) |
+|---|---|---|---:|---:|---|---:|---|---|
+| C1 | none | 20/20 (0.84–1.00) | 0.86 | 0.015 | 0 · 0 · 0 | 7.5 | – | – |
+| C1 | p95 | 10/20 (0.30–0.70) | 0.43 | 0.276 | 0 · 0 · 0 | 6.5 | −0.50 (−0.70 to −0.30) · 10 / 0 | +204 s (+125 to +283) |
+| C1 | p99 | 11/20 (0.34–0.74) | 0.46 | 0.282 | 0 · 0 · 0 | 8.2 | −0.45 (−0.65 to −0.25) · 9 / 0 | +189 s (+115 to +262) |
+| C4 | none | 20/20 (0.84–1.00) | 0.84 | 0.028 | 0 · 0 · 0 | 5.8 | – | – |
+| C4 | p95 | 15/20 (0.53–0.89) | 0.60 | 0.151 | 0 · 0 · 0 | 7.1 | −0.25 (−0.45 to −0.10) · 5 / 0 | +119 s (+53 to +190) |
+| C4 | p99 | 12/20 (0.39–0.78) | 0.48 | 0.137 | 0 · 0 · 0 | 7.6 | −0.40 (−0.60 to −0.20) · 8 / 0 | +170 s (+101 to +243) |
+
+**Realised exceedance** (near-wall decisions, true path clearance < 0.60 m, interventions excluded). Calibration on mazes 50–89 with recovery on targets 5% at p95 and 1% at p99.
+
+| Run | Ctrl | Near-wall decisions | e_f above the p95 bound | e_f above the p99 bound |
+|---|---|---:|---:|---:|
+| no margin (`sens_base`) | C1 | 5,155 | 4.8% | 0.72% |
+| no margin | C4 | 5,711 | 4.4% | 0.79% |
+| p95 margin | C1 | 7,879 | 2.3% | 0.06% |
+| p95 margin | C4 | 8,705 | 2.7% | 0.68% |
+| p99 margin | C1 | 8,351 | 2.5% | 0.72% |
+| p99 margin | C4 | 11,286 | 2.4% | 0.74% |
+
+- **The calibration transferred.** Without a margin, exceedance on the evaluation mazes is at the target despite the shift from recovery on to recovery off.
+- **With a margin it is below target.** The margin changes behaviour (more holding, more turning), and those decisions carry smaller errors.
+
+**Every failure** (32; `scripts/analyse_go2_reserve_trap_development.py`, corrected on 3 October so that a margin shifts the disc and requirement out by the margin):
+
+| Mechanism | C1 p95 | C1 p99 | C4 p95 | C4 p99 |
+|---|---|---|---|---|
+| **Reserve trap, widened by the margin** | 32, 38, 41, 42, 44 | 35, 40, 42, 44, 48 | 43, 46 | 39 |
+| **A translation passes the check but is not selected;** the robot alternates left and right turns for minutes | 30, 31, 35 | 30, 31, 32, 43 | 30, 31, 37 | 30, 31, 35, 37, 40, 48 |
+| Other | 33 (stall unclassified), 48 (pose loss after turning, 130 s) | – | – | 45 (no stall; slow, turning-dominated) |
+
+**Reading.**
+- **The margins bought almost no clearance and cost a lot of liveness.** Minimum clearance moved by about 1 cm, and 0 contacts was already the case without them. Success fell by 45–50 points for C1 and 25–40 for C4.
+- **About half the cost is the reserve trap, widened by the margin** (13 of 30 stalls). Holding inside the widened reserve, no translation passes.
+- **The other half is a different, new mechanism**: alternating turns while some translation is clear. **Candidate, not yet verified:** a route-versus-check clash. Routing uses nominal clearance, so it leads into gaps that the margin-inflated check then refuses, and the planner turns back and forth toward a route it cannot follow. The next harness version (reserve exit) does not address it.
+- **Per the GPU-order decision, C1/C4 stage 1 is repeated on the new harness**, because their stalls show the trap. Before that, the alternating-turn stalls are diagnosed offline (route direction against the clear translations at each stalled decision), so the repeat is interpretable.
