@@ -37,16 +37,15 @@ The levels kept are those whose realised/commanded ratio falls where the forecas
   - Under-prediction degraded only at × 0.25 (15/20).
 - **Random slip adds noise-like error.** On V4 the cliff is between 20 and 40 mm of median 700-ms error: 19/20 at 20 mm, 7/20 at 40 mm.
 - **A level is kept if C1's open-loop 700-ms forecast error passes either threshold:**
-  - a predicted/true ratio beyond the first over-prediction level that degrades driving (step 0 below); or
+  - a predicted/true ratio beyond × 1.5, the largest over-prediction tested; or
   - a random error (after removing the mean ratio) of at least 20 mm.
 
   One level beyond is also kept. If no stable level passes either, the harness absorbs that perturbation. That is a result in itself, and the perturbation is not run on the navigation mazes.
 
 **Step 0: re-measure the curve on the next harness version** (before the characterisation picks levels).
 - **Why.** 45 of the 50 sensitivity stalls were the reserve trap, which the next version changes, and the dynamics runs use that version.
-- **Cohorts.** C1 only, mazes 30–49, recovery off, pinned:
-  - noise 20 and 40 mm and uniform × 0.25 again;
-  - two new over-prediction cohorts, uniform × 2.0 and × 3.0, the side friction actually lands on.
+- **Cohorts (trimmed by Andrew, 3 October).** C1 only, mazes 30–49, recovery off, pinned: clean, noise 20, 40 and 80 mm, and forward/arcs × 0.25.
+- **Over-prediction beyond × 1.5 stays untested.** The over-prediction threshold for keeping a friction, payload or motor level therefore falls back to the tested limit (× 1.5). A level is kept if it pushes C1's ratio beyond that or adds at least 20 mm of random error.
 - **Cost.** 100 CPU missions, about 6–7 h, after the new-harness re-runs.
 
 ## Evaluation

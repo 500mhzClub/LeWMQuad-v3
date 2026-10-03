@@ -69,3 +69,14 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 ## Interaction with the calibrated-margin experiment
 
 **The trap may confound it.** A larger margin means more time inside the reserve, where the trap applies. So the stage 1 and stage 2 write-ups mark every reserve-trap stall, using `scripts/analyse_go2_reserve_trap_development.py`. If the trap explains a margin's liveness cost, the margin comparison is re-run on this version.
+
+## Decisions (Andrew, 3 October)
+
+1. **Margin repeats wait for today's diagnosis** of the alternating-turn stalls in margin stage 1 ([results](go2_navigation_calibrated_margin_results_2026-10-02.md)).
+   - **If the route-versus-check clash is confirmed,** margin-aware routing is added to this version: when a margin is active, routing clearance grows by the same bound.
+   - Nominal behaviour (no margin) is unchanged, so the gates still apply as written.
+   - Then stage 1 is repeated on this version: C1 and C4 at p95 and p99, and C3 at p95.
+2. **C1 stage 2 is re-run on this version** at the lowest priority, when CPU is free.
+3. **The forecast-sensitivity curve is re-measured on this version, trimmed:** clean, noise 20, 40 and 80 mm, and forward/arcs × 0.25, 20 mazes each. The write-up states that the old curve's cliff was mostly reserve-trap stalls.
+4. **The shared results page is updated once,** after Sunday's re-runs.
+5. **The dynamics experiment stays next** after these.

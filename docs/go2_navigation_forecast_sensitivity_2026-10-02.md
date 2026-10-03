@@ -7,7 +7,9 @@
 - **Random forecast error: the cliff is between 20 and 40 mm** (median 700-ms error while driving). 10 mm costs nothing (20/20). 20 mm costs one maze and 48 s per round trip (19/20). 40 mm drops to 7/20, 80 mm to 1/20, 160 mm to 0/20.
 - **Consistent bias is tolerated far better than noise.** Every forecast scaled by 0.5 is 56 mm off at the median, yet drives 20/20. Scaling by 1.25 or 1.5 gives 19/20. Only 0.25 hurts (15/20).
 - **Bad forecasts make the robot freeze, not crash.** 0 contacts and 0 clearance violations in all 380 missions. The last-moment depth stop caught 18 planned translations in total; none would have become a contact or violation without it.
-- **The freezes are almost all the shared reserve trap.** 45 of the 50 stalls had the robot inside the 0.48-m reserve with no translation allowed out. The tolerance measured here is therefore partly a property of the V4 clearance rule and should be re-measured on the next harness version (see the last section).
+- **The freezes are almost all the shared reserve trap.** 45 of the 50 stalls had the robot inside the 0.48-m reserve with no translation allowed out.
+  - **This curve's cliff was mostly reserve-trap stalls:** 6 of 13 failures at 40 mm, 14 of 19 at 80 mm and 14 of 20 at 160 mm. The rest were tracker losses, unconfirmed arrivals and a few other stalls.
+  - The tolerance measured here is therefore largely a property of the V4 clearance rule. It is re-measured on the next harness version (trimmed: clean, noise 20/40/80 mm, forward/arcs × 0.25).
 - **C1, C3 and C4 all sit well inside the tolerance on nominal dynamics:** 6, 10 and 5 mm, with ratios 0.96–1.01. On this harness their accuracy differences cannot show up as driving differences. A discriminating test has to push C1's error past about 20 mm, or its bias outside about 0.5–1.5×.
 
 ![Dose-response: success, reached and SPL against measured forecast error and scale; choice change against outcome](go2_navigation_forecast_sensitivity_2026-10-02.png)
