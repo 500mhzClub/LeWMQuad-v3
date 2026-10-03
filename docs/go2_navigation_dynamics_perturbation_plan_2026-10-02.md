@@ -73,7 +73,7 @@ The draft's optional adaptation stage on uniform perturbations is replaced. Stag
 The solver combines the two surfaces' coefficients by taking the **maximum**. This was verified in `lewm/support_friction_challenge_development.py`, which reads the solver's per-geometry coefficients (`pair_combination='maximum'`).
 - So a floor change alone does nothing while the robot's geometries stay at 1.0.
 - The 15 September lower-friction trial therefore set μ on the floor **and** all 27 robot geometries.
-- Walls keep 0.85, so the pair with a wall stays at max(μ, 0.85) = 0.85.
+- Walls keep their own coefficient, 1.0 in the capability scenes (read back from the solver on 3 October), so wall pairs stay nominal.
 
 ### Stage 1: uniform friction, zero-shot
 
