@@ -119,3 +119,24 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 - every translation primitive moves forward, and none reverses.
 
 The re-run reports any such stall.
+
+## Gates and launch (3 October)
+
+**C1 gate: passed.** Cohort `rexit_gate_c1`, dev_tune mazes 0–9, launch pin `963fdb42`.
+- 10/10 on episode 0 and 10/10 on episode 1.
+- 0 contacts and 0 hard violations; minimum separation 7.0 cm.
+- Every decision carries the exit receipt.
+
+**C0 gate:** cohort `rexit_gate_c0`, running (4/4 so far). The re-run counts only if C0 reaches at least 19/20.
+
+**C2 smoke test** (cohort `rexit_smoke_c2`, dev_tune mazes 0 and 1): not a gate, run because the gates do not cover C2.
+- **Maze 0:** success, with one exit taken.
+- **Maze 1:** failed on the residual.
+  - At 41.6 s C2 sat at 0.484 m, where every translation would lose clearance. By 57.6 s turning drift had carried it to 0.4499 m, 0.1 mm inside the disc.
+  - It then stayed in scan mode (`ADDITIONAL_VIEW_REQUIRED`), which allows only turns and hold. Inside the disc the turn reserve blocks both turns, for every controller, so it held for 420 s.
+  - The old harness's all-actions block left it in the same place, so this is not a regression. It is the inside-the-disc residual, here met while scanning rather than facing a wall.
+
+**Re-run launched** at 12:32 BST: cohort `rexit_rerun`, pin `3b173833` (runtime files as `963fdb42`).
+- C1, C2, C3 and C4 × prelim_test_v1 mazes 30–49, recovery off.
+- Models as in the preliminary run: one checkpoint holding the large past-frames decoder and its matched C4.
+- 7 workers, 2 of them C3 GPU lanes.
