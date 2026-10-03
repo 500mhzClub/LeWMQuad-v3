@@ -217,6 +217,21 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 2. **Use a milder level, μ = 0.3.** It also met the stage-1 rule: C1's error was 3.2× nominal, with speed ratio 0.78. Turning drift would be smaller, but the trap may still dominate.
 3. **Exempt the scripted look-around** from the turn reserve (as the stage-2 pessimistic-unknown rule was exempted). This covers only the early freezes.
 
+### Paused (Andrew, 4 October, 00:45): all experiments stopped, zero load
+
+**What ran.** The stage-1 tallies at the pause: C1 0/20 round trips, 0 beacons, 3 contact missions; C4 0/18 round trips, 0 beacons, 2 contact missions. The two C4 contact stops (mazes 31, 32) were scored with the failure reader.
+
+**What was stopped.**
+- Stage-1 C4 mazes 48 and 49, and stage-1 C3 mazes 30 and 31, were interrupted mid-mission.
+- Their run directories are kept as incomplete records and carry no result.
+- Stage-1 C3 mazes 32–49 never started.
+
+**On resume:**
+- Rerun the interrupted and unstarted missions as new cohorts through the v4 pinned launcher. Cohort directories are never reused.
+- Before that, Andrew's open decisions may change what runs:
+  - the turn-reserve fix, which would make the μ = 0.2 stage-1 results a pre-fix record;
+  - the stage-2 speed guard.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
