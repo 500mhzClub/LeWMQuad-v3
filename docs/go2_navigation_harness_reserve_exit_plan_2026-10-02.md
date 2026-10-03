@@ -127,7 +127,14 @@ The re-run reports any such stall.
 - 0 contacts and 0 hard violations; minimum separation 7.0 cm.
 - Every decision carries the exit receipt.
 
-**C0 gate:** cohort `rexit_gate_c0`, running (4/4 so far). The re-run counts only if C0 reaches at least 19/20.
+**C0 gate: passed, 20/20** (cohort `rexit_gate_c0`, pin `963fdb42`).
+- 0 contacts and 0 hard violations; minimum separation 10.2 cm.
+- **Mazes 1/0 and 6/0** stopped on the frozen oracle executed-prefix checker. Each passes under the committed [oracle-prefix erratum](go2_navigation_capability_oracle_prefix_erratum_2026-09-28.md), as preliminary maze 32 did:
+  - one decision without a matching branch, caused by a missing current observation;
+  - every other branch matched at 0.0 mm and 0.0°.
+- They were scored with the development reader, which bypasses the programme window and leaves arrival and safety unchanged. Both are round-trip successes with no contact.
+- The cohort runner's fallback had called the frozen reader directly, and it failed on the closed programme window.
+- **The version is cleared, so the re-run counts.**
 
 **C2 smoke test** (cohort `rexit_smoke_c2`, dev_tune mazes 0 and 1): not a gate, run because the gates do not cover C2.
 - **Maze 0:** success, with one exit taken.
