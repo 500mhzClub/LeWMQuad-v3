@@ -1,8 +1,9 @@
 """PRELIMINARY: exits and remaining stalls on the reserve_exit_v1 harness (Andrew, 2-3 October 2026).
 
 For a cohort run on the next harness version:
-- exits taken per controller: decisions whose selected move passed only by the reserve exit (forecast controllers:
-  `selected_reserve_exit`; C2: its nominal-path check's), the missions using them, the check's own clearance at the
+- exits taken per controller: decisions whose final command is a translation that passed only by the reserve exit (an
+  exit the check selected but a later rule replaced is counted separately, by that rule: stopping projection, coverage
+  rule, clearance-turn latch, other), the missions using them, the check's own clearance at the
   start and end of each exit path, and the true centre clearance at the decision and 1 s later;
 - last-moment depth stops on exits (CURRENT_OBSERVED_OBSTACLE_VETO / CURRENT_STOPPING_MARGIN_VETO on an exit's window);
 - every remaining stall (>= 120 s without translation), with its mechanism from analyse_go2_reserve_trap_development;
@@ -27,13 +28,28 @@ TRAP = ('inside the disc', 'inside the reserve, none increases', 'inside the res
 
 
 def exit_row(selection):
+    """The exit row if the final command is a translation that passed only by the reserve exit, else None."""
     if 'c2_nominal_path_check' in selection:
-        check = selection['c2_nominal_path_check']
-        rows = {r['action']: r for r in check['rows']}
-        return rows.get(selection['action']) if check.get('selected_reserve_exit') else None
-    if selection.get('selected_reserve_exit'):
-        return next(r for r in selection['memory_forecast_candidates'] if r['action'] == selection['action'])
-    return None
+        rows = {r['action']: r for r in selection['c2_nominal_path_check']['rows']}
+    else:
+        rows = {r['action']: r for r in selection.get('memory_forecast_candidates') or []}
+    row = rows.get(selection['action'])
+    return row if selection['action'] in TRANSLATIONS and row is not None and row.get('reserve_exit_path_clear') else None
+
+
+def overridden_exit(selection):
+    """Why an exit the clearance check selected did not become the command (forecast controllers), or None."""
+    if not selection.get('selected_reserve_exit') or exit_row(selection) is not None:
+        return None
+    projection = selection.get('planned_stopping_projection') or {}
+    coverage = selection.get('coverage_view_request') or {}
+    if projection.get('changed') and projection.get('before_action') in TRANSLATIONS:
+        return 'stopping projection'
+    if coverage.get('status') == 'TRANSLATION_REQUIRES_COVERAGE':
+        return 'coverage rule'
+    if (selection.get('clearance_turn') or {}).get('active'):
+        return 'clearance-turn latch'
+    return 'other'
 
 
 def mission(job):
@@ -47,8 +63,11 @@ def mission(job):
         ts, pose = f['timestamp_s'].copy(), f['base_pose_world'].copy()
     distance = wall_distance(spec['geometry']['wall_boxes'])
     centre = lambda t_s: float(distance(pose[min(int(np.searchsorted(ts, t_s)), len(ts)-1), :2])[0])
-    exits = []
+    exits, overridden = [], Counter()
     for r in plans:
+        why = overridden_exit(r['selection'])
+        if why:
+            overridden[why] += 1
         row = exit_row(r['selection'])
         if row is None:
             continue
@@ -65,7 +84,7 @@ def mission(job):
     s = ev['safety']
     return dict(cohort=cohort, controller=controller, maze=maze, assignment=assignment, round_trip=bool(ev['round_trip_success']),
                 contacts=ev['disallowed_contact_samples'] or 0, hard=s['hard']['confirmed_violation_samples'],
-                min_clearance_m=s['hard']['minimum_separation_lower_m'], decisions=len(plans), exits=exits,
+                min_clearance_m=s['hard']['minimum_separation_lower_m'], decisions=len(plans), exits=exits, overridden_exits=dict(overridden),
                 stall=None if not stall else dict(begin_s=stall['begin_s'], end_s=stall['end_s'], mechanisms=stall['mechanisms'],
                                                   onset=stall['onset'], mechanism=mechanism))
 
@@ -77,8 +96,9 @@ def table(results):
              'Check start/end = the check\'s own centre-path clearance (remembered walls). True centre = distance from the base centre '
              'to the nearest true wall at the decision and 1 s later.', '',
              '| Ctrl | Missions | Round trips | Contacts · hard | Min clearance (cm) | Exit decisions · missions using exits | '
-             'Exit check clearance start → end, median (cm) | True centre at exit → 1 s later, median (cm) | Exits stopped by the depth stop | Stalls · reserve trap |',
-             '|---|---:|---:|---|---:|---|---|---|---:|---|']
+             'Exit check clearance start → end, median (cm) | True centre at exit → 1 s later, median (cm) | Exits stopped by the depth stop | '
+             'Exits selected by the check but overridden, by rule | Stalls · reserve trap |',
+             '|---|---:|---:|---|---:|---|---|---|---:|---|---|']
     by = {}
     for m in results:
         by.setdefault(m['controller'], []).append(m)
@@ -90,7 +110,8 @@ def table(results):
         lines.append(f"| {controller} | {len(ms)} | {sum(m['round_trip'] for m in ms)} | {sum(m['contacts'] for m in ms)} · {sum(m['hard'] for m in ms)} | "
                      f"{cm(min(m['min_clearance_m'] for m in ms))} | {len(ex)} · {sum(bool(m['exits']) for m in ms)} | "
                      f"{med('check_start_m')} → {med('check_end_m')} | {med('true_centre_m')} → {med('true_centre_after_1s_m')} | "
-                     f"{sum(e['depth_stopped'] for e in ex)} | {len(stalls)} · {sum(m['stall']['mechanism'] == 'reserve trap' for m in stalls)} |")
+                     f"{sum(e['depth_stopped'] for e in ex)} | {dict(sum((Counter(m['overridden_exits']) for m in ms), Counter())) or '-'} | "
+                     f"{len(stalls)} · {sum(m['stall']['mechanism'] == 'reserve trap' for m in stalls)} |")
     lines += ['', '**Every remaining stall.**', '', '| Ctrl | Maze | Round trip | Stall (s) | Mechanism | Onset remembered · true centre clearance (m) | Samples by label |',
               '|---|---:|---|---|---|---|---|']
     for m in sorted(results, key=lambda m: (m['controller'], m['maze'])):
