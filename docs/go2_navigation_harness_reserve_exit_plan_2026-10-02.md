@@ -178,3 +178,22 @@ The re-run reports any such stall.
 - The baseline's C2 row combines `rexit_rerun_c2` (mazes 30–44) with `rexit_rerun_c2b` (45–49).
 
 **From now on,** the v4 entry and launcher are frozen while any v4 batch can launch. Further changes go into new files (v5).
+
+## Remaining stalls on the new version, interim (3 October, 17:20)
+
+`scripts/report_go2_reserve_exit_rerun_development.py`. The full report follows when C3 finishes.
+
+**Tallies so far:**
+- **C1:** 20/20.
+- **C4:** 20/20.
+- **C2:** 9/20 on v1.1, all contact-free. The superseded v1-path C2 scored 10/20.
+- **C3:** 7/8 so far.
+
+**Every remaining stall seen so far has one root: inside the reserve, the turn reserve blocks both turns.** A turn may start inside the requirement only if its forecast centre path shows a clearance gain. Each variant then has something that also blocks translation:
+1. **Inside the 0.45-m disc** (C3 maze 31 from 70 s). The unchanged stopping projection vetoes every translation, exits included, because its requested-speed path starts below 0.45 m.
+2. **In the reserve with unknown floor cells in the 0.48-m footprint** (C3 maze 31 at 48 s). The coverage rule withholds translation until a view is taken, and the view needs a turn.
+3. **C2** (7 of its 11 failures, onset clearance 0.454–0.494 m). C2's nominal turn path never moves the centre, so it can never show the gain. Both turns were blocked at every one of 900 sampled decisions on mazes 36 and 43, and every translation lost clearance.
+
+**Exits taken:** C2 took 23 exits in 13 missions, none stopped by the depth stop. On C3 maze 31, exits the check selected were replaced by the stopping projection (1) and by the coverage rule (1).
+
+**Not fixed in this version** ("nothing else changes"). A candidate next change, for Andrew to decide: let an in-place turn proceed inside the reserve or disc when its forecast centre path does not lose clearance, or allow the coverage view by turning there.

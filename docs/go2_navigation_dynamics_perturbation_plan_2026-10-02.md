@@ -174,6 +174,18 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 - C1 and C4 run on the CPU once the C0 gate has passed and the re-run's CPU missions are done.
 - C3 runs on the GPU after the re-run's C3.
 
+### Stage 1 launched (3 October, 17:15)
+
+**C1 and C4:** cohort `dyn1_friction02_cpu`, mazes 30–49 at μ = 0.2, recovery off, harness `reserve_exit_v1_1`, v4 pin `e44a23d3`.
+- Each mission writes `native/dynamics_friction.json`.
+
+**C3:** cohort `dyn1_friction02_c3`, launched automatically once the re-run cohort `rexit_rerun` writes its `result.json`.
+- This keeps at most two C3 missions on the GPU.
+
+**Contact stops are outcomes.** A disallowed contact stops a mission as a `PhysicalStop`, which the cohort runner records as a technical stop with no evaluation.
+- Each such mission is scored afterwards with the failure reader (`scripts/read_go2_dev_mission_development.py --reader failure`): round trip failed, contacts counted.
+- The 3 October smoke mission (dev maze 0) ended this way at 219 s: rear-left calf against a wall.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
