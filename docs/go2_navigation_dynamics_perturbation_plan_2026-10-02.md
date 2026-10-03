@@ -186,6 +186,37 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 - Each such mission is scored afterwards with the failure reader (`scripts/read_go2_dev_mission_development.py --reader failure`): round trip failed, contacts counted.
 - The 3 October smoke mission (dev maze 0) ended this way at 219 s: rear-left calf against a wall.
 
+### Stage 1 interim (3 October, 22:05): μ = 0.2 freezes every mission in the harness, before prediction can matter
+
+**C1:** 0 of 20 round trips; none reached the beacon.
+- 17 timed out holding.
+- 3 ended on a contact (mazes 30, 33, 42).
+
+**C4:** 0 of 9 so far; none reached the beacon.
+- 7 timed out holding.
+- 2 ended on a contact (mazes 31, 32).
+
+**C3** is queued behind the re-run.
+
+**The mechanism is the same in both** (`scripts/report_go2_reserve_exit_rerun_development.py`).
+- Most stalls begin 19–36 s in, during the scripted opening look-around.
+- At onset the centre is already inside the 0.45-m disc (true clearance 0.40–0.44 m) and the robot is in scan mode.
+- Slip while turning in place carries the body inward much more than the nominal 5–7 cm. Inside the disc the turn reserve blocks both turns, and scan mode excludes translation, so the robot holds until the budget ends.
+- The robots travel only 2–6 m in total.
+- The re-run's exit rule cannot act here: translations are excluded while scanning.
+- A few later stalls end with a clearance-turn latch or the coverage rule overriding an exit.
+
+**Contacts:** all five are the rear-left calf against a wall, 209–476 s in, after 2,700–5,700 hard-clearance samples of turning or holding pressed against the wall. This is the rear-leg blind spot, worse under slip.
+
+**Reading.**
+- At this level the shared harness freezes both controllers first, so stage 1 at μ = 0.2 cannot separate C1's command-only prediction from C4's visual prediction.
+- The forecast errors that differ (cruise and arcs) are never exercised, because the robots barely leave the start.
+
+**Options (Andrew decides):**
+1. **Address the residual turn block** (the candidate change from the re-run): let an in-place turn proceed inside the reserve or disc when its forecast centre path does not lose clearance. Then re-run stage 1. This touches the same rule that leaves C2 at 9/20 and C3 stuck on maze 31.
+2. **Use a milder level, μ = 0.3.** It also met the stage-1 rule: C1's error was 3.2× nominal, with speed ratio 0.78. Turning drift would be smaller, but the trap may still dominate.
+3. **Exempt the scripted look-around** from the turn reserve (as the stage-2 pessimistic-unknown rule was exempted). This covers only the early freezes.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
