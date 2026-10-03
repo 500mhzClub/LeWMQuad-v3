@@ -1,5 +1,7 @@
 # Plan: calibrated clearance margins and pessimistic unknown cells (DRAFT, not run), 2 October 2026
 
+> **Closed (Andrew, 3 October).** Old-harness findings, summarised with the trap caveat in [go2_navigation_old_harness_safety_findings_closed_2026-10-03.md](go2_navigation_old_harness_safety_findings_closed_2026-10-03.md). Not re-run or extended.
+
 **Status: approved (Andrew, 2 October) with staging and adjustments; see the final section.** Stage 1 for C1 and C4 is running. Requested by Andrew (2 October) after the [safety error budget](go2_navigation_forecast_sensitivity_safety_budget_2026-10-02.md). Development mode: all results will be PRELIMINARY.
 
 ## Why

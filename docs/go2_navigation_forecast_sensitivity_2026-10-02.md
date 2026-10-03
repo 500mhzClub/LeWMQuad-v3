@@ -1,5 +1,7 @@
 # Forecast sensitivity: how much forecast error does the harness tolerate? 2 October 2026
 
+> **Closed (Andrew, 3 October).** Old-harness findings, summarised with the trap caveat in [go2_navigation_old_harness_safety_findings_closed_2026-10-03.md](go2_navigation_old_harness_safety_findings_closed_2026-10-03.md). Not re-run or extended.
+
 **PRELIMINARY.** Development mode, prelim_test_v1 mazes 30–49. C1 (command-history kinematics) drives with its forecasts deliberately degraded; everything else is unchanged. Recovery off, coverage-rule fix, V4 harness (before the reserve exit planned in [go2_navigation_harness_reserve_exit_plan_2026-10-02.md](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)). 19 cohorts × 20 missions = 380 missions, all complete. Full tables: [go2_navigation_forecast_sensitivity_tables_2026-10-02.md](go2_navigation_forecast_sensitivity_tables_2026-10-02.md).
 
 ## Answer
@@ -9,7 +11,7 @@
 - **Bad forecasts make the robot freeze, not crash.** 0 contacts and 0 clearance violations in all 380 missions. The last-moment depth stop caught 18 planned translations in total; none would have become a contact or violation without it.
 - **The freezes are almost all the shared reserve trap.** 45 of the 50 stalls had the robot inside the 0.48-m reserve with no translation allowed out.
   - **This curve's cliff was mostly reserve-trap stalls:** 6 of 13 failures at 40 mm, 14 of 19 at 80 mm and 14 of 20 at 160 mm. The rest were tracker losses, unconfirmed arrivals and a few other stalls.
-  - The tolerance measured here is therefore largely a property of the V4 clearance rule. It is re-measured on the next harness version (trimmed: clean, noise 20/40/80 mm, forward/arcs × 0.25).
+  - The tolerance measured here is therefore largely a property of the V4 clearance rule. It is not re-measured (dropped 3 October).
 - **C1, C3 and C4 all sit well inside the tolerance on nominal dynamics:** 6, 10 and 5 mm, with ratios 0.96–1.01. On this harness their accuracy differences cannot show up as driving differences. A discriminating test has to push C1's error past about 20 mm, or its bias outside about 0.5–1.5×.
 
 ![Dose-response: success, reached and SPL against measured forecast error and scale; choice change against outcome](go2_navigation_forecast_sensitivity_2026-10-02.png)

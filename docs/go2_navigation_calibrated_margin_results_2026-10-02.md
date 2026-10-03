@@ -1,5 +1,7 @@
 # Calibrated margins and pessimistic unknown cells: results, 2–3 October 2026
 
+> **Closed (Andrew, 3 October).** Old-harness findings, summarised with the trap caveat in [go2_navigation_old_harness_safety_findings_closed_2026-10-03.md](go2_navigation_old_harness_safety_findings_closed_2026-10-03.md). Not re-run or extended.
+
 **PRELIMINARY.** Development mode, prelim_test_v1 mazes 30–49, recovery off, coverage-rule fix. The plan is in [go2_navigation_calibrated_margin_experiment_plan_2026-10-02.md](go2_navigation_calibrated_margin_experiment_plan_2026-10-02.md).
 - Stage 1 (C1 and C4 margins, old harness) finished overnight; results below.
 - C3 now runs on the next harness version ([plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)).

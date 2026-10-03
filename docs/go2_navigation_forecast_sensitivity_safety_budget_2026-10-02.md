@@ -1,5 +1,7 @@
 # Safety as an error budget: forecast-sensitivity cohorts (interim), 2 October 2026
 
+> **Closed (Andrew, 3 October).** Old-harness findings, summarised with the trap caveat in [go2_navigation_old_harness_safety_findings_closed_2026-10-03.md](go2_navigation_old_harness_safety_findings_closed_2026-10-03.md). Not re-run or extended.
+
 **PRELIMINARY.** Development mode, prelim_test_v1 mazes 30–49, C1 with degraded forecasts, recovery off, coverage-rule fix.
 
 **Interim.**

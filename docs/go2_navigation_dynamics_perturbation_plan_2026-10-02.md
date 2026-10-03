@@ -1,6 +1,6 @@
 # Plan: dynamics perturbation (draft, not run) — 2 October 2026
 
-**Status: DRAFT plan only. Nothing here has been started.** Option F of the [options note](go2_navigation_benchmark_discrimination_options_2026-10-02.md), drafted per Andrew (2 October) after the forecast-sensitivity experiment. Moving obstacles (E2) wait until this is done.
+**Status: next, straight after the new-harness re-run (Andrew, 3 October re-scope).** Option F of the [options note](go2_navigation_benchmark_discrimination_options_2026-10-02.md). It runs on the next harness version (reserve exit; [plan](go2_navigation_harness_reserve_exit_plan_2026-10-02.md)). **Order:** friction first, then low-friction patches with a visual marker. **Controllers:** C1, C3 and C4, recovery off. **Question:** does C3's or C4's visual prediction beat C1's command-only prediction when commands no longer determine motion? Moving obstacles (E2) wait until this is done.
 
 ## Question
 
@@ -22,7 +22,7 @@ All are applied in the simulator only. The controllers, harness, sensors and eva
 | **Floor friction** | The maze spec's `friction_mu` (default 1.0) feeds `physics_randomization.floor_friction_mu`, the floor's Rigid material (clamped to 0.01–5). Earlier room-return experiments used 0.15 through the same path. | Foot slip: less translation and yaw rate than commanded, with more variance, and drift on turns. | μ = 0.6, 0.4, 0.25 |
 | **Payload** | `robot.set_mass_shift(Δm, base link)`, plus optional `set_COM_shift` for an off-centre load. Go2 base link 6.92 kg, total 15.02 kg (Genesis `go2.urdf`). | Slower acceleration and lag; reduced speed on turns. | +2, +4, +6 kg (centred); +4 kg with COM shifted 5 cm |
 | **Motor strength** | Scale the PD gains (`set_dofs_kp/kv`, nominal kp 20, kd 0.5 from the locomotion checkpoint) or the torque limits (`set_dofs_force_range`). | The locomotion policy tracks its joint targets less well: lower realised speed and sluggish turns. | kp × 0.7, 0.5; torque limit × 0.6 |
-| **Mixed, within an episode** (stage 2) | Low-friction floor patches with the existing `slick_patch` visual marker (`lewm_genesis/textures.py`). | Motion changes where the floor looks different: vision could anticipate it, command history cannot. | μ = 0.25 patches over 20–40% of route cells |
+| **Mixed, within an episode** (second, after friction) | Low-friction floor patches with the existing `slick_patch` visual marker (`lewm_genesis/textures.py`). | Motion changes where the floor looks different: vision could anticipate it, command history cannot. | μ = 0.25 patches over 20–40% of route cells |
 
 **Picking levels.** Before any navigation run, a short open-loop characterisation drives each candidate level with fixed command tapes on a flat floor. It measures:
 - realised over commanded speed and yaw rate;
@@ -42,22 +42,17 @@ The levels kept are those whose realised/commanded ratio falls where the forecas
 
   One level beyond is also kept. If no stable level passes either, the harness absorbs that perturbation. That is a result in itself, and the perturbation is not run on the navigation mazes.
 
-**Step 0: re-measure the curve on the next harness version** (before the characterisation picks levels).
-- **Why.** 45 of the 50 sensitivity stalls were the reserve trap, which the next version changes, and the dynamics runs use that version.
-- **Cohorts (trimmed by Andrew, 3 October).** C1 only, mazes 30–49, recovery off, pinned: clean, noise 20, 40 and 80 mm, and forward/arcs × 0.25.
-- **Over-prediction beyond × 1.5 stays untested.** The over-prediction threshold for keeping a friction, payload or motor level therefore falls back to the tested limit (× 1.5). A level is kept if it pushes C1's ratio beyond that or adds at least 20 mm of random error.
-- **Cost.** 100 CPU missions, about 6–7 h, after the new-harness re-runs.
+**Step 0 (re-measuring the curve on the new harness) is dropped** (Andrew, 3 October). The thresholds above come from the old harness, whose cliff was mostly reserve-trap stalls, so they guide the choice of levels only roughly. The characterisation's open-loop C1 error is the primary measure.
 
 ## Evaluation
 
 - **Mazes:** the 20 preliminary mazes 30–49, the same as the sensitivity experiment, so results line up with its dose-response.
 - **Setting:** recovery off (the default) with the coverage-rule fix.
-- **Controllers:**
-  - **C0:** the perfect-forecast ceiling under the same physics. It separates harness and locomotion limits from prediction.
+- **Controllers (Andrew, 3 October):** C1, C3 and C4.
   - **C1:** unchanged command-history kinematics, fitted on nominal dynamics.
   - **C3:** the large past-frames decoder, which sees frames 0.5 s and 1 s ago.
   - **C4:** the matched supervised predictor, which sees three frames plus command history.
-  - **C2:** a reference only; it uses no forecasts, so it shows the perturbation's effect on the shared harness and on locomotion alone.
+  - **C0 and C2 are not run.** Locomotion limits are read from the open-loop characterisation (falls, realised speed) and from failures shared by all three controllers.
 - **Primary measures, per controller and condition:**
   - **Mechanism:** the forecast error the planner acted on while driving (median 700-ms error and ratio, by movement type), from the closed-loop scorer.
   - **Outcome:** success (Wilson 95%), SPL, median time, hold rate, contacts and clearance.
@@ -89,7 +84,7 @@ The levels kept are those whose realised/commanded ratio falls where the forecas
 | Mixed within-episode patches (stage 2): textured slick patches in the scene builder | about 1 day | about 1 day per evaluation |
 
 **Recommended first step** (about 2 days in total):
-- Hooks, the characterisation, then **friction only** at the two levels picked by characterisation, zero-shot, on C0–C4 × 20 mazes.
+- Hooks, the characterisation, then **friction only** at the two levels picked by characterisation, zero-shot, on C1, C3 and C4 × 20 mazes. Low-friction patches with the visual marker follow.
 - Friction is the simplest to apply (one spec field, already used in this project). It acts on both translation and turning, and it fails the command-to-motion assumption most clearly.
 
 ## Risks

@@ -70,7 +70,7 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 
 **The trap may confound it.** A larger margin means more time inside the reserve, where the trap applies. So the stage 1 and stage 2 write-ups mark every reserve-trap stall, using `scripts/analyse_go2_reserve_trap_development.py`. If the trap explains a margin's liveness cost, the margin comparison is re-run on this version.
 
-## Decisions (Andrew, 3 October)
+## Decisions (Andrew, 3 October, morning; superseded by the re-scope below)
 
 1. **Margin repeats wait for today's diagnosis** of the alternating-turn stalls in margin stage 1 ([results](go2_navigation_calibrated_margin_results_2026-10-02.md)).
    - **If the route-versus-check clash is confirmed,** margin-aware routing is added to this version: when a margin is active, routing clearance grows by the same bound.
@@ -80,3 +80,20 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 3. **The forecast-sensitivity curve is re-measured on this version, trimmed:** clean, noise 20, 40 and 80 mm, and forward/arcs × 0.25, 20 mazes each. The write-up states that the old curve's cliff was mostly reserve-trap stalls.
 4. **The shared results page is updated once,** after Sunday's re-runs.
 5. **The dynamics experiment stays next** after these.
+
+## Re-scope (Andrew, 3 October, midday)
+
+**The goal, that the JEPA controller can navigate, is established.** Safety analysis is a nice-to-have, and that thread is closed ([old-harness findings](go2_navigation_old_harness_safety_findings_closed_2026-10-03.md)).
+
+**Kept:**
+- this version's two changes: (a) the reserve exit and (b) C2's aligned clearance;
+- the C1 gate, then the C0 gate;
+- one recovery-off re-run of C1–C4 on mazes 30–49, the clean baseline.
+
+**Dropped:**
+- margin-aware routing (not built);
+- the margin repeats (C1, C4 and C3);
+- the C1 never-seen-cells re-run;
+- the sensitivity re-measure.
+
+**Next, straight after the re-run:** the [dynamics experiment](go2_navigation_dynamics_perturbation_plan_2026-10-02.md). Friction first, then low-friction patches with a visual marker. C1, C3 and C4, recovery off.
