@@ -10,7 +10,8 @@ Inside it, every 5 s, for the decision being executed:
     clearance. Forecast controllers: from each candidate's logged segment clearances (the check's
     own 8 distances); the frozen reserve-recovery rule would pass it only if its prefix (first
     three) is above 0.45 m, it never decreases after the prefix, and it ends above 0.48 m. C2 has
-    no forecast: a 0.1-m step at the current heading is tested against the true walls;
+    no forecast: a 0.1-m step at the current heading is tested against the true walls (on the reserve_exit_v1
+    harness, C2's nominal-path check rows are used as the forecast controllers' are);
 plus whether the decision was in scan mode (translations are then excluded by the view
 requirement, whatever the clearance).
 
@@ -79,8 +80,9 @@ def mission(assignment):
         true = float(distance(P[i, :2])[0])
         scan = s.get('scan_heading_error_rad') is not None
         out = dict(time_s=round(tp, 1), action=plan['action'], scan=scan, true_centre_m=round(true, 3))
-        if 'memory_forecast_candidates' in s:
-            memory = {c['action']: c for c in s['memory_forecast_candidates']}
+        check_rows = s.get('memory_forecast_candidates') or (s.get('c2_nominal_path_check') or {}).get('rows')
+        if check_rows:  # forecast controllers; C2 on the reserve_exit_v1 harness (nominal command paths)
+            memory = {c['action']: c for c in check_rows}
             margin = (s.get('dev_clearance_margin') or {}).get('margin_m') or 0.
             hold = memory['hold'].get('minimum_predicted_path_clearance_m')
             remembered = None if hold is None else hold+margin
@@ -101,7 +103,12 @@ def mission(assignment):
             step = float(distance(P[i, :2]+.1*np.array([np.cos(yaw), np.sin(yaw)]))[0])
             increases = step > true+1e-3
             out.update(remembered_centre_m=None if remembered is None else round(remembered, 3), step_forward_true_m=round(step, 3))
-        any_translation_clear = any(m.get('clear') for m in out.get('moves', [])) if 'moves' in out else bool(s.get('current_nominal_disk_clear'))
+        if 'c2_nominal_path_check' in s:  # C2 eligibility = its own rule AND the nominal-path check
+            out['remembered_centre_m'] = remembered = s.get('current_stored_clearance_m')
+            rule = {c['action']: c for c in s['candidates']}
+            any_translation_clear = any(rule[a]['eligible'] for a in TRANSLATIONS)
+        else:
+            any_translation_clear = any(m.get('clear') for m in out.get('moves', [])) if 'moves' in out else bool(s.get('current_nominal_disk_clear'))
         # With a calibrated margin the check subtracts it from every remembered distance, so the disc and the
         # requirement move out by the margin (remembered is reported margin-free).
         if remembered is not None and remembered <= DISC_M+margin:
