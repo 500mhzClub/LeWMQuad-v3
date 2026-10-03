@@ -146,6 +146,15 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
   - It is reported with its error by movement type, its realised/commanded speed and yaw rate, and the stability margin.
   - If no level qualifies, stage 1 stops for Andrew.
 
+**Stage 1 μ chosen (3 October, 13:05): μ = 0.2**, by the pre-declared rule ([characterisation](go2_navigation_dynamics_stage1_characterisation_2026-10-03.md)).
+- No level from 1.0 to 0.15 fell or stumbled, so 0.2 has its one-step margin.
+- C1's commands-only 700-ms error there is 29.8 mm median, against 5.9 mm nominal (5.1×) and above the nominal p95 of 16.6 mm.
+- Friction mainly cuts forward progress (speed ratio 0.62) and barely changes the turn rate (1.01).
+
+**Stage 1 runs:** C1, C3 and C4 × mazes 30–49 at μ = 0.2, recovery off, harness `reserve_exit_v1_1`, through the v4 pinned launcher (`--dynamics friction:0.2`).
+- C1 and C4 run on the CPU once the C0 gate has passed and the re-run's CPU missions are done.
+- C3 runs on the GPU after the re-run's C3.
+
 ### Estimate (from the decoder fix's measured costs)
 
 | Step | Basis | Estimate |
