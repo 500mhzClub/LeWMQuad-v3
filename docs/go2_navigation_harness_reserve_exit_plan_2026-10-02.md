@@ -163,3 +163,18 @@ The re-run reports any such stall.
 - The `rexit_rerun` C2 missions (v1 path) still run because the cohort's queue cannot be changed without editing pinned files. They are kept, labelled superseded.
 - The C1 and C0 gates are unaffected: neither uses C2's path.
 - The dynamics runs use v1.1.
+
+## Incident: v4 launcher edited while a v4 batch was launching (3 October, about 14:40)
+
+**What happened.**
+- `rexit_rerun_c2` was launched through the v4 pinned launcher at `b4a788dc`.
+- While it was still launching, I edited the v4 entry and launcher to add the stage-2 patch conditions (`1cac1bc5`).
+- Its last five missions (mazes 45–49) then refused to start on the launch-pin hash check, as designed: "launch pin mismatch … `run_go2_dev_mission_pinned_v4_development.py`, `launch_go2_dev_cohort_pinned_v4_development.py`".
+- No mission ran mixed code. The edit still broke the process rule (no edits to pinned launch code while a batch can launch).
+
+**Remedy.**
+- The five missions run as a supplementary cohort, `rexit_rerun_c2b`, from the current commit.
+- The C2 harness module (`dev_harness_reserve_exit_v1_1_development.py`) is unchanged since `b4a788dc`. The v4 changes add only dynamics options, unused here, so C2's behaviour is identical.
+- The baseline's C2 row combines `rexit_rerun_c2` (mazes 30–44) with `rexit_rerun_c2b` (45–49).
+
+**From now on,** the v4 entry and launcher are frozen while any v4 batch can launch. Further changes go into new files (v5).
