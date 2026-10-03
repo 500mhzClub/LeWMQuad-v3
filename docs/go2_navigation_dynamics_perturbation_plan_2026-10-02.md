@@ -125,6 +125,27 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 
 **Recommended control.** The same patches, unmarked (plain floor texture). If the refit models gain as much there, the gain comes from motion history, not the marker.
 
+### Decisions (Andrew, 3 October, afternoon): approved as planned
+
+- **Storage:** the feature cache is stored as float16, after a subset-refit equivalence check. The deployed decoder's recipe is refit on a fixed subset from float16 and from float32 features, and the two must give the same per-type acceptance numbers within 0.5 mm. Otherwise this stops for Andrew.
+- **The unmarked-patch control is included:** C1, C3 and C4 on mazes 30–49, with the same patches, no marker.
+- **C1 is refit on the patch data** as a fairness check, using the same mix as the decoder and C4. It runs alongside unchanged C1.
+- **The offline improvement check stays** before any closed-loop stage-2 run, as a sanity check.
+- **Stage 1 μ rule:**
+  - Choose μ in the open-loop characterisation so that the gait stays stable (no falls or stumbles) while the forecast error from commands alone is clearly above nominal.
+  - The chosen μ is reported with its reason.
+  - Definitions, fixed before any characterisation run, are below.
+
+**Stage 1 μ selection, made concrete.**
+- **Grid:** μ = 0.8, 0.6, 0.5, 0.4, 0.3, 0.25, 0.2, 0.15. Each level drives the fixed calibration tapes (rest starts, cruise, arcs, in-place turns, command switches) on a flat floor, 3 repeats.
+- **Fall:** the base falls below 0.15 m, or a non-foot geometry touches the floor for more than 0.5 s.
+- **Stumble:** any non-foot floor contact; or a base-height dip more than 5 cm below the nominal gait's minimum; or roll or pitch beyond the nominal gait's maximum plus 10°.
+- **Stable:** no fall and no stumble in any tape or repeat at that μ.
+- **Clearly above nominal:** C1's open-loop 700-ms forecast error from commands alone, median over the tapes, is at least twice nominal and above the nominal 95th percentile.
+- **Choice:** the lowest μ that is stable with one grid step of margin (the next lower level is also stable) and clearly above nominal.
+  - It is reported with its error by movement type, its realised/commanded speed and yaw rate, and the stability margin.
+  - If no level qualifies, stage 1 stops for Andrew.
+
 ### Estimate (from the decoder fix's measured costs)
 
 | Step | Basis | Estimate |
@@ -136,9 +157,9 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 | Fits | 144 s per seed (decoder and C4 together) | under 15 min for 3 seeds |
 | Offline acceptance | cached features | minutes |
 | Stage 2 evaluation | C3 about 9–10 h GPU per 20 missions; C1 and C4 about 3 h CPU | about 10 h GPU, 3 h CPU |
-| Unmarked control (optional) | same as evaluation | about 10 h GPU, 3 h CPU |
+| Unmarked control (included, 3 October) | same as evaluation | about 10 h GPU, 3 h CPU |
 
-- **Total for stage 2:** about 1 day of engineering, about 17–18 h of GPU and about 6 h of CPU, plus the optional control.
+- **Total for stage 2, with the unmarked control:** about 1 day of engineering, about 27–28 h of GPU and about 9 h of CPU.
 - **Storage.**
   - The cache took 46.7 GiB for 34,745 contexts (1.38 MB each), so about 69 GiB for 50,000 contexts. It is deleted after the fit.
   - RecoveryStorage had 70.6 GiB free on 3 October, less the re-run's outputs, and the 12-GiB reserve applies. Storing the cache as float16 halves it to about 35 GiB.
