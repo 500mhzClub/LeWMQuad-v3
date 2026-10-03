@@ -140,3 +140,19 @@ The re-run reports any such stall.
 - C1, C2, C3 and C4 × prelim_test_v1 mazes 30–49, recovery off.
 - Models as in the preliminary run: one checkpoint holding the large past-frames decoder and its matched C4.
 - 7 workers, 2 of them C3 GPU lanes.
+
+## Correction: C2's nominal path, reserve_exit_v1_1 (3 October, 12:55)
+
+**The error.** v1 integrated each primitive's 40-entry list: 300 ms of motion, then a stop. But a 400-ms commit dispatches the primitive's first command, held for four 100-ms ticks (`ScheduledCommand.prepare`). So v1's C2 path under-predicted C2's moves by up to 25%, which is not the plan's "requested command integrated as dispatched".
+
+**The fix,** in a new standalone module so that the pinned v1 file stays untouched while the re-run launches: `lewm/dev_harness_reserve_exit_v1_1_development.py`, harness `reserve_exit_v1_1`.
+- C2's path is now exactly the dispatched sequence, `command_sequences(prefix, pulse)`: the committed prefix, the candidate command for four ticks (one tick for a translation in C2's terminal pulse mode), and a stopped tick. These are the sequences the forecast controllers' forecasters receive.
+- The exit rule is byte-identical, so C0, C1, C3 and C4 behave exactly as under v1.
+- Tests: `scripts/test_go2_dev_reserve_exit_v1_1_development.py`, 13 passing.
+
+**Consequences for the re-run:**
+- The baseline's C1, C3 and C4 come from `rexit_rerun` (v1, identical for them).
+- C2 comes from a separate cohort, `rexit_rerun_c2`, on v1.1, launched with the v4 pinned launcher.
+- The `rexit_rerun` C2 missions (v1 path) still run because the cohort's queue cannot be changed without editing pinned files. They are kept, labelled superseded.
+- The C1 and C0 gates are unaffected: neither uses C2's path.
+- The dynamics runs use v1.1.

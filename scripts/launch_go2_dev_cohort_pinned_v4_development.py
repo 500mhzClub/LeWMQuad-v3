@@ -39,7 +39,8 @@ RUNTIME_FILES = ('lewm/dev_harness_fixes_development.py', 'lewm/dev_pessimistic_
                  'scripts/run_go2_dev_mission_pinned_v2_development.py', 'scripts/launch_go2_dev_cohort_pinned_v2_development.py',
                  'lewm/dev_harness_reserve_exit_development.py', 'scripts/run_go2_dev_mission_pinned_v3_development.py',
                  'scripts/launch_go2_dev_cohort_pinned_v3_development.py', 'lewm/dev_dynamics_friction_development.py',
-                 'scripts/run_go2_dev_mission_pinned_v4_development.py', 'scripts/launch_go2_dev_cohort_pinned_v4_development.py')
+                 'scripts/run_go2_dev_mission_pinned_v4_development.py', 'scripts/launch_go2_dev_cohort_pinned_v4_development.py',
+                 'lewm/dev_harness_reserve_exit_v1_1_development.py')
 
 
 def git(*args):
@@ -61,7 +62,7 @@ def main():
     p.add_argument('--name', required=True)
     p.add_argument('--plan', required=True)
     p.add_argument('--recovery', choices=('on', 'off'), default='off')
-    p.add_argument('--harness', choices=('reserve_exit_v1',), required=True)
+    p.add_argument('--harness', choices=('reserve_exit_v1', 'reserve_exit_v1_1'), required=True)
     p.add_argument('--dynamics', help='friction:MU (uniform floor friction, stage 1)')
     p.add_argument('--c3-decoder')
     p.add_argument('--c4-weights')

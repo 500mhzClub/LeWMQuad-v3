@@ -1,11 +1,13 @@
 """Mission entry for pinned launches, v4: the reserve_exit_v1 harness plus a dynamics perturbation (Andrew, 3 October 2026).
 
 As scripts/run_go2_dev_mission_pinned_v3_development.py (unchanged while batches pinned to it run): re-hashes every pinned
-runtime file before importing anything from the repository, then adds the harness version's mixins outermost. With
+runtime file before importing anything from the repository, then adds the harness version's mixins outermost
+(reserve_exit_v1, or reserve_exit_v1_1 with C2's path as dispatched). With
 LEWM_DYNAMICS=friction:MU it also wraps the owner's make_session so that the uniform floor friction of stage 1 of the
 dynamics experiment is installed on the collision floor and all 27 robot geometries before any physics step
 (lewm/dev_dynamics_friction_development.py). The pin, harness and dynamics are recorded in runs/<assignment>/launch_pin.json.
 """
+import importlib
 import json
 import os
 from pathlib import Path
@@ -14,7 +16,8 @@ import sys
 
 from scripts.run_go2_dev_mission_pinned_development import ENTRY, REPO, verify
 
-HARNESSES = ('reserve_exit_v1',)
+HARNESSES = {'reserve_exit_v1': 'lewm.dev_harness_reserve_exit_development',
+             'reserve_exit_v1_1': 'lewm.dev_harness_reserve_exit_v1_1_development'}
 
 
 def parse_dynamics(text):
@@ -35,7 +38,7 @@ def main():
     dynamics = parse_dynamics(os.environ.get('LEWM_DYNAMICS'))
     arm = sys.argv[sys.argv.index('--controller')+1]
     from lewm import dev_harness_fixes_development as fixes
-    from lewm import dev_harness_reserve_exit_development as version
+    version = importlib.import_module(HARNESSES[harness])
     from scripts import run_go2_navigation_capability_completed_support_v4_development as owner
     if version.HARNESS != harness:
         raise SystemExit(f'harness module is {version.HARNESS}, launch asked for {harness}')
