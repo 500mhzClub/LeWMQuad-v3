@@ -1,6 +1,6 @@
 # Plan: next harness version — reserve exit and aligned C2 clearance, 2 October 2026
 
-**Status: approved by Andrew (2 October, evening); not yet built.** Build starts after tonight's queues finish, before the dynamics-perturbation experiment. Development mode; all results PRELIMINARY.
+**Status: approved by Andrew (2 October, evening); built 3 October (`lewm/dev_harness_reserve_exit_development.py`, harness `reserve_exit_v1`).** Build starts after tonight's queues finish, before the dynamics-perturbation experiment. Development mode; all results PRELIMINARY.
 
 ## Why
 
@@ -97,3 +97,25 @@ Recovery off, on prelim_test_v1 mazes 30–49 (the preliminary run's recovery-of
 - the sensitivity re-measure.
 
 **Next, straight after the re-run:** the [dynamics experiment](go2_navigation_dynamics_perturbation_plan_2026-10-02.md). Friction first, then low-friction patches with a visual marker. C1, C3 and C4, recovery off.
+
+## Built (3 October)
+
+**Files:**
+- `lewm/dev_harness_reserve_exit_development.py` (harness `reserve_exit_v1`);
+- `scripts/run_go2_dev_mission_pinned_v3_development.py` and `scripts/launch_go2_dev_cohort_pinned_v3_development.py` (`--harness reserve_exit_v1`);
+- tests in `scripts/test_go2_dev_reserve_exit_development.py`: 13 synthetic tests, all passing.
+
+**(a) The exit sits at the innermost check**, `ReserveRecoveryLookaheadRuntime`'s call to `select_clear_prediction`. Every outer layer (turn reserve, latch, stopping projection, terminal rules) sees an exit as an ordinary clear candidate.
+- A translation passes if its eight segment clearances never fall more than 1 mm below the previous one or below the start, and the last ends above the first.
+- With the exit off, the result is bit-identical to the frozen check. With it on and no exit applying, the action is identical.
+
+**(b) C2's mixin replaces only the all-actions block.**
+- Eligibility = C2's own rule AND the same check (translation reserve, reserve recovery, exit, stepwise turn reserve) on the nominal command path: the committed prefix, the 400-ms commit and one stopped tick, unicycle-integrated at 10 ms.
+- Selection is still the nearest primitive to the waypoint feedback.
+- C2's terminal heading-first rule keeps its own guard: it stays off while the centre is within 0.45 m.
+
+**Residual (unchanged by design).** Inside the 0.45-m disc and facing the wall, nothing passes for any controller:
+- turns are blocked inside the disc, as before;
+- every translation primitive moves forward, and none reverses.
+
+The re-run reports any such stall.
