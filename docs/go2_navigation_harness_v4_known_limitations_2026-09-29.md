@@ -154,3 +154,12 @@ Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.p
 **Status.** This is a shared-system limitation of the frozen harness, not specific to any forecast.
 
 **Candidate fix for the next harness version — NOT applied now.** Allow a translation whose forecast clearance never decreases from its start, and ends higher, even inside the disc or reserve: one that leaves the wall rather than approaching it. For C2, allow turns and translations that increase clearance. It needs its own oracle gate before use.
+
+### Rear-left calf contacts after sliding at low friction (dynamics stage 1, μ = 0.2, 3–4 October)
+
+**What happened.** At uniform floor friction μ = 0.2, six missions ended on a disallowed contact, every one the rear-left calf against a wall: C1 mazes 30, 33 and 42, C4 mazes 31 and 32, and C3 maze 39. PRELIMINARY: prelim_test_v1, recovery off, harness `reserve_exit_v1_1`.
+- **When:** 209–476 s into the mission.
+- **Before the contact:** 2,700–7,700 hard-clearance samples of the robot turning or holding pressed against the wall.
+- **How it gets there:** turning in place slides the body far more than the nominal 5–7 cm. The rear calves are outside both forward cameras' view, as in the rear-leg limitation above, so neither the remembered-map check nor the depth stop sees the approach.
+
+**Status.** Recorded only; no follow-up experiments on these contacts (Andrew, 4 October).

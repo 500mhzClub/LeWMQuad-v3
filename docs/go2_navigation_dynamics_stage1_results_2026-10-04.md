@@ -1,4 +1,4 @@
-# Dynamics stage 1, uniform floor friction μ = 0.2: results, 4 October 2026 (interim; C3 10 of 20)
+# Dynamics stage 1, uniform floor friction μ = 0.2: results, 4 October 2026 (C3 cancelled at 10 of 20)
 
 **PRELIMINARY.** Development mode, prelim_test_v1 mazes 30–49, episode 0, recovery off, harness `reserve_exit_v1_1`. μ = 0.2 was chosen by the pre-declared rule ([characterisation](go2_navigation_dynamics_stage1_characterisation_2026-10-03.md)); friction is set on the floor and all 27 robot geometries. Controllers C1, C3 and C4 run zero-shot, unchanged from the [clean baseline](go2_navigation_reserve_exit_rerun_results_2026-10-03.md).
 
@@ -49,7 +49,8 @@
 
 ## Status and next
 
-- **C3 mazes 40–49 are running,** two GPU lanes at about 100 min per mission. Expected to finish around 03:00 on 5 October.
+- **C3 cancelled at 10 of 20 (Andrew, 4 October, 19:05).** The 10 completed missions are kept for the forecast-error table. Mazes 40–41 were interrupted and are kept as incomplete records; 42–49 never ran.
+- **Stage 1 is re-run on the turn-fixed harness** at μ = 0.3 and 0.25 (the re-picked levels; see the dynamics plan). These μ = 0.2 results stand as the record for the harness without the turn fix.
 - **Open for Andrew:**
   - the turn-reserve fix: let an in-place turn proceed inside the reserve or disc when its forecast centre path does not lose clearance. This is the rule behind every stage-1 freeze, and C2's and C3's remaining baseline failures;
   - the stage-2 speed guard.

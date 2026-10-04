@@ -244,6 +244,20 @@ The interrupted directories in `dyn1_friction02_cpu` (C4 48–49) and `dyn1_fric
 - Maze 49 froze without contact but held 0.7 cm from a wall: 56,751 samples inside the 2-cm operating bound; the 5-mm hard bound was not crossed.
 - C3 (`dyn1_friction02_c3b`) is running.
 
+### Decisions (Andrew, 4 October, evening)
+
+1. **The in-place turn fix is approved.** A turn in place is allowed inside the margin when its predicted centre path does not lose clearance. It goes into a new harness version, with the gates as before: C1 on dev mazes 0–9 × episodes 0–1, then C0 at least 19/20.
+2. **The remaining μ = 0.2 C3 missions are cancelled.** The 10 completed are kept for the forecast-error table.
+3. **The stage-1 level rule is re-picked.** "Lowest stable μ" was the wrong objective. The rule is now: the highest (mildest) μ on the calibration grid at which C1's commands-only error is clearly above nominal (at least 2× and above the nominal p95), and also the next lower level.
+   - From the [characterisation](go2_navigation_dynamics_stage1_characterisation_2026-10-03.md), that gives **μ = 0.3** (18.6 mm, against 2 × 5.9 mm and the 16.6-mm p95) **and μ = 0.25** (22.1 mm). Both are stable.
+   - μ = 0.4 fails the rule: 13.4 mm is below the nominal p95.
+   - Stage 1 runs at both levels on the fixed harness, with C1, C3 and C4, recovery off. It reports forecast error by movement type and outcomes.
+4. **Stage 2 uses μ_p = 0.3,** the chosen stage-1 level. Only if patch edges still trip the 0.3-m/s guard is it raised to 0.40 m/s, for all controllers on patch missions.
+   - The 3 October smoke missions at μ_p = 0.3, on the version without the turn fix, tripped it in 2 of 3. This is re-checked with a stage-2 smoke on the fixed harness before any recording.
+5. **The shared page is published now with the clean baseline only.** Dynamics stays out until the re-run.
+
+The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no follow-up experiments.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
