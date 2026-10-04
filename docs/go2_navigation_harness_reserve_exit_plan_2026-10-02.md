@@ -197,3 +197,19 @@ The re-run reports any such stall.
 **Exits taken:** C2 took 23 exits in 13 missions, none stopped by the depth stop. On C3 maze 31, exits the check selected were replaced by the stopping projection (1) and by the coverage rule (1).
 
 **Not fixed in this version** ("nothing else changes"). A candidate next change, for Andrew to decide: let an in-place turn proceed inside the reserve or disc when its forecast centre path does not lose clearance, or allow the coverage view by turning there.
+
+## Version reserve_exit_v2: in-place turn exit (Andrew, 4 October)
+
+**Approved:** an in-place turn is allowed inside the margin when its predicted centre path does not lose clearance. The gates are as before.
+
+**Built:** `lewm/dev_harness_reserve_exit_v2_development.py`, a standalone copy of v1.1 plus change (c).
+- **The rule.** The turn reserve (`clearance_turn_recovery_development.reserve_turns`) also passes an in-place turn whose forecast centre-path clearance never decreases (1-mm tolerance, step to step and against the start), even inside the reserve or the 0.45-m disc. The turn need not gain clearance.
+- **Where it applies.**
+  - **Forecast controllers:** at the turn reserve's call in `recover_turn`, so the clearance-turn latch, the coverage view and the terminal rules treat such a turn as an ordinary clear one.
+  - **C2:** on its dispatched path, where an in-place turn never moves the centre, so turns now pass inside the reserve.
+- **Unchanged:** the stopping projection, depth stop, coverage rule, routing and terminal rules.
+- **Behaviour.** Inside the disc the check marks hold as not clear for every controller; hold remains the fallback when nothing passes. With turns passing there, a controller facing a wall inside the disc now turns instead of holding.
+- **Tests:** `scripts/test_go2_dev_reserve_exit_v2_development.py`, 18 passing.
+  - v1.1's suite, with two C2 expectations updated: inside the disc, C2 now turns.
+  - New checks: the turn-exit rule; a turn that keeps clearance inside the disc passes; a turn drifting toward the wall stays blocked; bit-identical results with the exit off; no change in clear space; `recover_turn` uses it.
+- **Launch:** v5 pinned entry and launcher (`--harness reserve_exit_v2`), new files; v4 is unchanged.
