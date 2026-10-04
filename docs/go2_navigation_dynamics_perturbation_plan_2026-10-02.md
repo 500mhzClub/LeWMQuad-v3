@@ -264,6 +264,13 @@ The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no
 2. **After C3 at μ = 0.3 finishes,** send a short interim: forecast error by movement type plus outcomes, C1, C3 and C4. Then wait for Andrew's go before C3 at μ = 0.25. C1 and C4 at μ = 0.25 run anyway on the CPU.
 3. **If Andrew is slow to answer,** use the GPU for stage 2's patch smoke test and the feature-cache build rather than leaving it idle.
 
+### Storage correction and retirement (4 October, evening)
+
+**Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
+
+**Space freed.** Andrew approved option 1: depth-only retirement of four more closed-programme roots (see the retention policy). RecoveryStorage went from 45.75 to 85.15 GiB free.
+- After about 25–30 GB of queued missions, about 55 GiB remains. That is enough for the cache only if the evaluation sets are trimmed or the queued runs finish first. The cache build is sized against free space at launch.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:

@@ -1,5 +1,27 @@
 # Development artifact retention
 
+October 4: Andrew approved option 1 ("1"): depth-only retirement of four more closed-programme roots, to free space for the
+stage-2 feature cache. This is a bounded exception to the capability protocol's no-existing-retirement rule, for these four
+roots only:
+`go2_no_rgb_direct_extended_budget_maze02_pilot_v1_attempt_001`,
+`go2_measured_plane_chained_maze02_v1_attempt_001`,
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001`,
+`go2_recent_qualified_direct_flow_maze03_pilot_v1_attempt_001`. These are September recordings of closed programmes,
+listed as not referenced by the current programme in the 29 September C3-v2 storage survey; repository references are
+only those programmes' own scripts and documents. `clearance_preferred_arc_recovery...layout03` stays excluded.
+
+Completed: 42,351 per-frame depth leaves (`depth_N.npz`, `native_depth_N.npz`, `auxiliary_depth_N.npz`) retired,
+42,329,960,448 allocated bytes (39.42 GiB). All 42,515 non-depth files, including each session's
+`depth_camera_audit.json` and `depth_observations.json`, hash-matched before and after. There were no symlinks or
+hard-linked leaves, and each root has a `depth_retention.json` marker.
+Receipt: `.generated/depth_retirement_closed_programme_roots_2026-10-04/`.
+Runner: `scripts/retire_go2_approved_closed_programme_depth_2026_10_04.py` (commit 8fb838fd).
+RecoveryStorage free space went from 45.75 to 85.15 GiB.
+
+Results, failure records, RGB, physics, commands and trajectories remain. Historical full-depth replay of these four
+recordings, including those programmes' own replay tools, is no longer available, and regeneration is not guaranteed to
+reproduce the original closed-loop trajectories. Running missions do not use these roots.
+
 October 2: Andrew approved ("approved, reture unndeeded depth data") the
 depth-only retirement of exactly four closed-programme roots, proposed that
 evening because tonight's runs would leave RecoveryStorage near the cohort
