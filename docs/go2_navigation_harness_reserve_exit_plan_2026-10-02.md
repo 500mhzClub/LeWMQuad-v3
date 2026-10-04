@@ -213,3 +213,21 @@ The re-run reports any such stall.
   - v1.1's suite, with two C2 expectations updated: inside the disc, C2 now turns.
   - New checks: the turn-exit rule; a turn that keeps clearance inside the disc passes; a turn drifting toward the wall stays blocked; bit-identical results with the exit off; no change in clear space; `recover_turn` uses it.
 - **Launch:** v5 pinned entry and launcher (`--harness reserve_exit_v2`), new files; v4 is unchanged.
+
+### v2 gates and launch (4 October)
+
+**C1 gate: passed.** Cohort `rexit2_gate_c1`, dev_tune mazes 0–9, both episode sets.
+- 10/10 on episode 0 and 10/10 on episode 1.
+- 0 contacts and 0 hard violations; minimum separation 7.0 cm.
+
+**C0 gate: passed, 20/20** under the oracle-prefix erratum (cohort `rexit2_gate_c0`).
+- 18 direct round trips; 0 contacts and 0 hard violations; minimum separation 10.2 cm.
+- Mazes 1/0 and 6/0 stopped on the frozen oracle executed-prefix checker, the same two as the v1 gate. Each passes under the erratum: one decision without a matching branch (`missing_current_observation`), and every other branch matched at 0.0 mm and 0.0°. Scored with the development reader, both are round-trip successes with no contact (minimum separation 13.1 and 16.2 cm).
+
+**Launched from commit `b5e70ae9`** (v5 launcher, `--harness reserve_exit_v2 --recovery off`, prelim_test mazes 30–49, episode 0):
+- `dyn1v2_mu030_c3`: C3 at μ = 0.3, GPU, 2 lanes.
+- CPU queue, in order:
+  - `dyn1v2_mu030_cpu`: C1 and C4 at μ = 0.3;
+  - `dyn1v2_mu025_cpu`: C1 and C4 at μ = 0.25;
+  - `rexit2_ref`: C1, C4 and C2 at normal friction, the reference for the new version.
+- C3 at μ = 0.25 waits for Andrew's go after the μ = 0.3 interim.
