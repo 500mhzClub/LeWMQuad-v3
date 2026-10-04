@@ -1,5 +1,21 @@
 # Development artifact retention
 
+October 4 (evening), storage review Tier 1: depth-only retirement of every closed navigation root on all three drives.
+- **Authority.** Andrew asked to "delete anything youve identified that isnt used or relevent" and then, after the final review, to "remove any artefacts not required". The scope is in `docs/go2_storage_review_2026-10-04.md`.
+- **Roots.** 267 roots: 212 on RecoveryStorage, 30 on the workspace drive and 25 on `/mnt/steam_drive`.
+- **Status of those roots.** All were last written 5–18 September, before the capability programme. None is named by a current manifest, the mission runtime or the frozen predictor's traced lineage, and none is pinned here.
+- **Refused by name.** The capability root, the decision-headroom lineage, the current manifests' and runtime's source roots, the predictor's ancestor checkpoints (balanced-start predictor, frozen V-JEPA native adaptation) and this policy's pinned references.
+
+Completed:
+- 1,089,834 per-frame depth leaves retired (`depth_N`, `native_depth_N`, `auxiliary_depth_N`, `primary_depth_N`; exact name match, single link), 494,483,484,672 allocated bytes (460.52 GiB).
+- All 1,118,454 non-depth files hash-matched before and after.
+- No symlinks and no hard-linked depth leaves.
+- Every root has a `depth_retention.json` marker. Earlier markers are kept inside the new marker as `previous_marker`.
+- Receipt: `RecoveryStorage/.../.generated/depth_retirement_storage_review_tier1_2026-10-04/` (plan, root list, manifests, preserved hashes, result).
+- Runner: `scripts/retire_go2_closed_programme_depth_three_drives_2026_10_04.py` (commit 4d16f343).
+- Free space went from 89.0 to 518.2 GB on RecoveryStorage, 5.8 to 35.9 GB on the workspace drive and 0.6 to 35.0 GB on the third drive.
+- Results, failure records, RGB, physics, commands and trajectories remain. Historical full-depth replay of these recordings is no longer available.
+
 October 4: Andrew approved option 1 ("1"): depth-only retirement of four more closed-programme roots, to free space for the
 stage-2 feature cache. This is a bounded exception to the capability protocol's no-existing-retirement rule, for these four
 roots only:
