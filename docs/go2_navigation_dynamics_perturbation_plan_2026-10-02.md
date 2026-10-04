@@ -258,6 +258,12 @@ The interrupted directories in `dyn1_friction02_cpu` (C4 48–49) and `dyn1_fric
 
 The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no follow-up experiments.
 
+### Run order (Andrew, 4 October, 19:10)
+
+1. **No C3 normal-friction reference on `reserve_exit_v2` for now.** A 10-maze version runs later only if the stage-1 result needs it. C1, C2 and C4 at normal friction on v2 run on the CPU as the same-harness reference.
+2. **After C3 at μ = 0.3 finishes,** send a short interim: forecast error by movement type plus outcomes, C1, C3 and C4. Then wait for Andrew's go before C3 at μ = 0.25. C1 and C4 at μ = 0.25 run anyway on the CPU.
+3. **If Andrew is slow to answer,** use the GPU for stage 2's patch smoke test and the feature-cache build rather than leaving it idle.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
