@@ -232,6 +232,12 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
   - the turn-reserve fix, which would make the μ = 0.2 stage-1 results a pre-fix record;
   - the stage-2 speed guard.
 
+**Resumed (4 October, 09:20).** Both batches launched through the v4 pinned launcher (pin `cfe3d0ec`; runtime files unchanged since `1cac1bc5`), still on harness `reserve_exit_v1_1`:
+- `dyn1_friction02_c4b`: C4 mazes 48–49.
+- `dyn1_friction02_c3b`: C3 mazes 30–49, two GPU lanes.
+
+The interrupted directories in `dyn1_friction02_cpu` (C4 48–49) and `dyn1_friction02_c3` (C3 30–31) stay as incomplete records. Andrew's two decisions remain open.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
