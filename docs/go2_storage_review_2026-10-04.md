@@ -141,3 +141,76 @@ If approved, each tier runs as its own receipted job:
 - non-deleted files hash-checked where the tier keeps files beside deleted ones;
 - no mission writes to a root while it is processed;
 - an entry in the retention policy.
+
+## Final review and removal scope (4 October, evening)
+
+Andrew asked for one last review of the Python environments in use, every model location, and every artefact used to train the current implementation, and for removal of every artefact that is not required.
+
+Results, failure records, receipts, logs, configurations and small files stay everywhere, as AGENTS.md requires.
+
+### Python environments
+
+There are six in total. The workspace `.generated/venvs` folder is a symlink to RecoveryStorage's.
+
+| Environment | Size | Status |
+|---|---:|---|
+| `genesis_rocm_0_4_6_v1` | 2.6 GiB | **Required**: runs every mission, every fit and the harness |
+| `world_model_rocm_7_2_1_v1` | 15 GiB | **Required**: supplies torch 2.12 + ROCm 7.2 to the above through a `.pth` file |
+| `genesis_render_vulkan` | 7.5 GiB | Not required: May-corpus rendering only; no file since 18 September uses it |
+| `lewmquad-v12-runtime-rocm711`, `lewmquad-v12-runtime-torch291-rocm64`, `lewmquad-torch-hash-cpu` | 29.6 GiB | Not required: July–August runtimes |
+
+### What the missions load
+
+From the capability environment records and the mission run files:
+- the V-JEPA 2.1 ViT-L encoder (`~/.cache/vjepa2_1_vitl_dist_vitG_384.pt`);
+- the frozen predictor (`go2_horizon_dense_predictor_v1_attempt_001/action_final.pt`, workspace drive);
+- the C3/C4 decoder fit (`dev_decoder_fits/p3_large_past_frames_s2026093011.pt`, capability root);
+- the maze-view readout (`go2_maze_view_readout_v1_attempt_003`);
+- C1's command model (`go2_short_pulse_command_control_v1_attempt_001/command_only.npz`);
+- the locomotion policy (`models/tier_a_go2_locomotion/20260516_contract_ppo`, in the repository);
+- `proprio_norm_stats.json` (temporal cache, `proprio_v1`).
+
+### Training lineage of the current implementation
+
+Each step below was traced through plans, results and checkpoint hashes.
+- **Frozen predictor:**
+  - It was initialised from `go2_balanced_start_predictor_v1_attempt_001/mixed_action_final.pt` (workspace drive; hash e9399ecf).
+  - That model was initialised from `go2_frozen_vjepa_native_adaptation_v1_attempt_001/action_latest.pt` (third drive; beb9e4ab).
+  - That model was initialised from the August temporal model `factorial_v1/seed_2026080901/seed_2026080901_rgb_rollout_epoch21.pt` (temporal cache).
+  - The August model started from fresh seeded weights. It was trained on cached V-JEPA features of 4,566 May-corpus rows: `temporal_action_jepa_v1/evaluation/frozen_{ctx0,ctx1,current,sel_future,train_future}.f16`, `temporal_action_jepa_v1/predicted_token_diagnostic/frozen_train_ctx{0,1}.f16` and `two_step/frozen_{train,sel}_step2.f16`, about 33 GiB, plus their row files and `proprio_v1`.
+  - Those rows come from **18,690 rendered frames in 80 May-corpus scenes**.
+  - The predictor stages' recordings are:
+    - `go2_moving_action_switch_family`, `go2_geometry_progress_family` and `go2_short_pulse_learning` (data drive);
+    - `go2_balanced_start_actions` and `go2_balanced_start_horizon_actions` (workspace drive).
+- **Maze-view readout:** initialised from `go2_full_heading_readout_v1_attempt_001/mixed_data_final.pt`. Its recordings are protected through its frame list.
+- **C1 command model:** fitted on contexts from the family, switch and short-pulse recordings above.
+- **C3/C4 decoder and C4 fits:** fitted on the capability root's feature cache, whose source roots are protected through the cache manifests.
+
+### Kept
+
+- The two required environments.
+- Every runtime model and every file in the lineage above.
+- The capability root.
+- The decision-headroom lineage, including the temporal-cache files its scripts read.
+- Sealed material.
+- The policy's pinned references.
+- RGB in navigation roots: the retention policy covers depth only.
+- For the May corpus:
+  - all 80 lineage scenes' files and the 18,690 lineage frames;
+  - for every scene: the `.mcap` recordings, `frames.jsonl` (the render's replay input and the frame-aligned state record), `labels.jsonl`, plans, summaries and logs;
+  - the scene corpus.
+- Any file a repository file cites by exact path.
+
+### Removed
+
+| Item | About (GiB) | Recovery |
+|---|---:|---|
+| Depth in 267 closed navigation roots (Tier 1) | 460.5 | none (historical depth replay) |
+| May-corpus rendered frames, apart from the 18,690 lineage frames | 2,666 | re-render about 2 days of GPU time from the kept plans |
+| May-corpus `messages.jsonl` for the 1,370 non-lineage scenes | 317 | the convert step from the kept `.mcap` files, about 27 s per scene |
+| Bulk files of closed May–August programmes: temporal cache (non-lineage), planning utility, August qualifications and failed copies, May–June model checkpoints, workspace May–August folders, April smoke checkpoints | about 455 | none (results kept) |
+| The four unneeded environments (package lists saved first) | 36.3 | rebuild from the saved package lists |
+| The unused V-JEPA ViT-B encoder | 1.6 | re-download |
+| **Total** | **about 3,936** | |
+
+"Bulk" means any file over 16 MiB that is not named as a result, failure, summary, report, receipt, manifest or evaluation, is not cited by path in the repository, and is not on a keep list.
