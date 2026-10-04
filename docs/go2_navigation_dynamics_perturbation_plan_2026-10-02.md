@@ -238,6 +238,12 @@ The solver combines the two surfaces' coefficients by taking the **maximum**. Th
 
 The interrupted directories in `dyn1_friction02_cpu` (C4 48–49) and `dyn1_friction02_c3` (C3 30–31) stay as incomplete records. Andrew's two decisions remain open.
 
+**Stage-1 C4 complete (4 October, 10:25): 0 of 20 round trips and no beacon reached, the same as C1 (0/20).**
+- Two C4 missions ended on contact (mazes 31, 32).
+- Maze 48 froze holding.
+- Maze 49 froze without contact but held 0.7 cm from a wall: 56,751 samples inside the 2-cm operating bound; the 5-mm hard bound was not crossed.
+- C3 (`dyn1_friction02_c3b`) is running.
+
 ### Open decision: the session speed guard trips at patch edges (3 October, 15:00)
 
 **The guard.** The frozen session stops a mission ("evaluator-only native guard", `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP`) on:
