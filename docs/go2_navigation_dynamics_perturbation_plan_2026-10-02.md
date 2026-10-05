@@ -388,6 +388,22 @@ Re-run `s2smoke3_marked` (C1, patches v3, μ_p = 0.3, marked, mazes 33, 42 and 4
   - The same maze 33 was a clean round trip at uniform μ = 0.3, so the stall is specific to a local low-friction strip.
 - **Mechanism not yet known.** The note in `lewm/dev_dynamics_patches_v3_development.py` attributing the starvation to the marker is wrong. That file is pinned by running cohorts, so it is corrected here and will be corrected in the file once no v9 or v10 batch can launch.
 
+### Stage-2 recordings (Andrew, 5 October, 12:15): option 2 with a stall stop
+
+- **Decision.** Record now, accepting stalls.
+  - A recording mission ends once it has been stalled (no translation) for 60 s.
+  - The training set is built only from decisions with meaningful motion: holds and latched-veto ticks are excluded.
+  - Patch-approach and patch-entry contexts per mission are reported.
+  - Evaluation design unchanged: forecast error by distance to the patch edge is primary; outcomes are secondary, with stalls classified.
+  - No milder strips.
+- **Strip-stall diagnosis:** a real wall, not a phantom ([diagnosis](go2_navigation_stage2_strip_stall_diagnosis_2026-10-05.md)).
+- **Stall stop v1 was wrong, and the first cohort was stopped.**
+  - `s2rec` (v11 pin) used a stall stop that compared only the positions 60 s apart.
+  - 4 of its first 5 recordings were cut while the robot was driving loops (5–15 m of path, 47–72% forward or arc commands) that returned to an earlier spot. The fifth ended on a contact.
+  - The cohort was stopped (launcher and missions). Its 5 finished runs and any partial ones are kept and labelled superseded.
+  - **Stall stop v2** (`lewm/dev_recording_stall_stop_v2_development.py`, v12 pin) counts a stall only when the base stays within 0.10 m of its window-start position for the whole 60 s.
+  - All 30 recordings are relaunched as `s2rec2`: C1, marked strips (patches3, μ_p = 0.3), stage-2 fit and held-out mazes with their registered episodes, recovery off.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
