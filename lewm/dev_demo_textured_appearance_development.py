@@ -66,7 +66,16 @@ def textured_surfaces(boxes):
     xs = [b['centre_xyz'][0] for b in boxes]
     ys = [b['centre_xyz'][1] for b in boxes]
     x0, x1, y0, y1 = min(xs)-1., max(xs)+1., min(ys)-1., max(ys)+1.
-    floor = grid([x0, y0, 0.], [1, 0, 0], [0, 1, 0], [x1-x0, y1-y0], floor_tex)
+    fine = grid([x0, y0, 0.], [1, 0, 0], [0, 1, 0], [x1-x0, y1-y0], floor_tex)
+    # The scene's raster-order contract identifies the floor by its exact [-16, 16] extent: add a coarse, never-visible
+    # surround (outside the enclosed maze) so the single floor primitive keeps that extent.
+    tone = np.append(floor_tex.reshape(-1, 3).mean(0)*.8, 255).astype(np.uint8)
+    surround = []
+    for a0, a1, b0, b1 in ((-16, 16, -16, y0), (-16, 16, y1, 16), (-16, x0, y0, y1), (x1, 16, y0, y1)):
+        quad = np.array([[a0, b0, 0.], [a1, b0, 0.], [a1, b1, 0.], [a0, b1, 0.]])
+        surround.append(trimesh.Trimesh(vertices=quad, faces=[[0, 1, 2], [0, 2, 3]], vertex_colors=np.tile(tone, (4, 1)),
+                                        process=False))
+    floor = trimesh.util.concatenate([fine, *surround])
     walls = []
     for face in wall_union_boundary(boxes)['faces']:
         axis = face['axis']
