@@ -339,6 +339,23 @@ Cohort `c1a2_mu030`: C1A v2 on prelim mazes 30–49, recovery off, harness `rese
   - Options: a custodian-side overlap check, or regenerating the rigorous-phase set just before that phase, excluding every graph built by then.
   - Evaluation runs on these sets do not train anything.
 
+### Stage-2 smoke test (5 October, 11:30) and patches v3
+
+Cohort `s2smoke_mup030`: C1, marked v2 strips, μ_p = 0.3, prelim mazes 33, 42 and 47, harness `reserve_exit_v2`, v8 pin. PRELIMINARY.
+
+- **The guard still trips at strip edges.** Mazes 42 and 47 stopped on `CONTEXT_NATIVE_CONTACT_SPEED_OR_DOMAIN_STOP` at 0.300–0.301 m/s, with the body centre 0.13–0.19 m inside the strip, just after entry. (The 0.82-m/s peak at 0.1 s in every run is the spawn drop, outside the guard.)
+  - By Andrew's 4 October rule, the guard's speed limit is raised to 0.40 m/s on patch missions, for all controllers, marked and unmarked.
+  - Non-foot ground contact and domain stops are unchanged.
+- **The uniform marker starved the visual tracker (maze 33).**
+  - The robot's centre spent 228 of 306 s on the strip, mostly scanning: 499 left turns, with `ADDITIONAL_VIEW_REQUIRED` 500 times and `LOW_VISUAL_SUPPORT` 14 times. It ended on "measured visual pose unavailable", with 0 contacts.
+  - On the strip, the weaker camera's selected features had a median of 66 and a 10th percentile of 0, against 119 off it. The same corridor at uniform μ = 0.3 without a marker never starved (median 120, 10th percentile 86).
+  - A uniform colour erases the floor's texture. It would also confound marked with unmarked, since unmarked strips keep their texture.
+- **Patches v3** (`lewm/dev_dynamics_patches_v3_development.py`, v9 entry and launcher, `--dynamics patches3:MU:marked|unmarked`) changes two things:
+  - a **tinted** marker: each floor quad keeps its own colour scaled by (0.45, 0.70, 1.00), so texture survives and the strip reads blue;
+  - the **0.40-m/s guard**.
+  - Placement and the friction field are v2's. 3 synthetic tests pass.
+- **Re-run:** `s2smoke3_mup030`, marked on 33, 42 and 47, plus unmarked on 33 as a texture control.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
