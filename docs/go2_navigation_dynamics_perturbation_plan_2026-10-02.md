@@ -462,6 +462,31 @@ C1, marked strips (patches3, μ_p = 0.3), stage-2 fit (0–23) and held-out (24�
 
 **Against the plan's estimate.** The plan expected about 11,000–12,000 patch contexts. This gives about 4,100 patch-related ones (approach, entry, on patch and exit), plus 4,400 off-patch, because missions are shorter (stalls and stops) and contexts are filtered for motion. The refit's patch share of the batch mix will be correspondingly smaller unless more recordings are added.
 
+### Recording replays and marker-visibility probe (5 October, 17:45)
+
+**Replays.** All 24 contributing missions were re-simulated by `scripts/replay_go2_stage2_recording_frames_development.py` and verified bit-exact:
+- consumed-packet hashes, selected actions, C1 forecasts, dispatch commands and reasons, applied commands, native trace values and published poses;
+- maximum position and yaw error 0.
+
+Fit 14 ended in a tracking loss ("measured visual pose unavailable" at 119.5 s). That failure came on a frame acquired one tick after the last logged request, so the replay needed a fourth rule: acquire and check that final frame after the loop, and compare published poses as a prefix (commit b75bb37c). The first, failed attempt is kept as `failed_attempt1_*`.
+
+**Probe** (Andrew, midday decision 2). `scripts/probe_go2_marker_visibility_development.py`; result in `<capability root>/stage2_marker_visibility_probe_v1/result.json`. Method as fixed in the script before it ran.
+
+- **Frames:** every second replay frame, 18,812 in all, labelled from pixels: tinted (at least 2% tinted pixels) or untinted (none).
+  - Train, fit mazes: 2,553 tinted and 12,430 untinted.
+  - Test, held-out mazes 25–29: 396 tinted (only on mazes 27–29) and 3,433 untinted.
+- **Frozen V-JEPA** (mean and max pooled, 2,048 values; logistic regression, λ = 1e-3), on the held-out mazes:
+  - accuracy 0.998;
+  - **balanced accuracy 0.994** (chance 0.5);
+  - AUC 0.99998;
+  - per maze 0.996–1.000; train accuracy 1.0.
+- **Pixel reference** (mean colour ratios, 6 values): balanced accuracy 0.884, AUC 0.9995.
+- **Verdict:** not near chance. The marker is linearly readable from the frozen features, so the cache and refits proceed as decided.
+- **Caveats** (not tested further):
+  1. Frames with 0–2% tinted pixels are excluded, so this tests clear views of a strip, not distant or marginal ones.
+  2. Tinted frames come only from strips on straight segments, so corridor context is partly confounded with the tint. The probe shows the information is available; it does not show that the tint alone carries it.
+- Wall time 2.9 h, on a GPU shared with C3 missions.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
