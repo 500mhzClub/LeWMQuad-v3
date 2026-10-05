@@ -372,6 +372,22 @@ Details are in [the stage-1 results](go2_navigation_dynamics_stage1_v2_results_2
 3. **C1A, one revision (v3), designed on stage-1 data only.** Ratios are kept per movement type (cruise, arc, turn, switch), each from that type's recent decisions, with the same window and clip rules. It is re-validated at uniform μ = 0.3, then frozen and recorded here before any stage-2 evaluation.
 4. Stage 1 is closed (above).
 
+### Correction: the strip, not the marker, starves the tracker (smoke re-run, 5 October, 12:30)
+
+Re-run `s2smoke3_marked` (C1, patches v3, μ_p = 0.3, marked, mazes 33, 42 and 47) and `s2smoke3_unmarked` (maze 33). PRELIMINARY.
+
+- **The guard is fixed.** Peaks within 0.5 m of a strip edge were 0.27–0.29 m/s, below even the old 0.3-m/s limit this time; there were no guard stops. Every run had 0 contacts.
+- **Maze 42 (marked):** round trip, 32 s on the strip.
+- **Mazes 33 and 47 (marked) and maze 33 (unmarked):** the centre stayed on the strip for 228–266 s, and each mission ended on "measured visual pose unavailable".
+  - On the strip, the weaker camera's selected features were a median of 66–73 in maze 33 (both conditions), with a 10th percentile of 0. Maze 47 had a median of 132 and a 10th percentile of 28. Off the strip they were a median of 120–122.
+- **My earlier diagnosis was wrong.** The unmarked control starves the tracker exactly as the uniform marker did (median 66, 10th percentile 0), so the textureless marker was not the cause. The tinted marker stays (approved, and harmless).
+- **What the stall looks like:**
+  - Requested commands on the strip were mostly hold: 81% in maze 33 and 63% in maze 47. There was little forward motion (7% and 26%) and some turning (12%).
+  - Maze 47 covered an 18-m path for a 0.30-m net move, turning 45 rad in total.
+  - The body stays upright (roll at most 6.4°, pitch 3.3°, base height at least 0.30 m).
+  - The same maze 33 was a clean round trip at uniform μ = 0.3, so the stall is specific to a local low-friction strip.
+- **Mechanism not yet known.** The note in `lewm/dev_dynamics_patches_v3_development.py` attributing the starvation to the marker is wrong. That file is pinned by running cohorts, so it is corrected here and will be corrected in the file once no v9 or v10 batch can launch.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
