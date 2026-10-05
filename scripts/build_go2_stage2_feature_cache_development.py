@@ -54,7 +54,8 @@ REPLAYS = v1.BASE/'stage2_recording_replays'
 COHORT = 's2rec2'
 SEED = 2026100517
 OFF_PATCH_CAP = 4000
-DECODER_FIX_COLLECT = v1.collect  # bound before main() swaps in this module's collect
+# Bound before main() swaps in this module's collect and output directory.
+DECODER_FIX_COLLECT, DECODER_FIX_ITEMS = v1.collect, v1.OUT/'items.json'
 
 
 def contributing(run):
@@ -93,7 +94,7 @@ def stage2_contexts(run):
 
 def collect():
     items, sources = DECODER_FIX_COLLECT()
-    saved = json.loads((v1.OUT/'items.json').read_text())
+    saved = json.loads(DECODER_FIX_ITEMS.read_text())
     if len(saved) != len(items) or any({k: v for k, v in s.items() if k != 'frame_rows'} != json.loads(json.dumps(i))
                                        for s, i in zip(saved, items)):
         raise ValueError('the decoder-fix contexts were not reproduced exactly')
