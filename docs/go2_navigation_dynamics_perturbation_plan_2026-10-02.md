@@ -487,6 +487,41 @@ Fit 14 ended in a tracking loss ("measured visual pose unavailable" at 119.5 s).
   2. Tinted frames come only from strips on straight segments, so corridor context is partly confounded with the tint. The probe shows the information is available; it does not show that the tint alone carries it.
 - Wall time 2.9 h, on a GPU shared with C3 missions.
 
+### Stage-2 cache and refit design, fixed before fitting (5 October, 18:30)
+
+**Cache** (`scripts/build_go2_stage2_feature_cache_development.py`, `<capability root>/stage2_feature_cache_v1`, launched 18:07, about 6 h of GPU):
+- The decoder fix's 34,745 contexts are reproduced by its own `collect()` and checked item-for-item against the surviving `dev_c3_cache_v1/items.json`.
+- To these are added the 8,520 usable `s2rec2` decisions, under the counting script's motion and veto rule (one more fails the causal-context check):
+
+| Set | Group | Contexts |
+|---|---|---|
+| train (fit mazes) | `patch` (approach 1,645, entry 494, on patch 776, exit 538) | 3,453 |
+| train (fit mazes) | `patch_off` (all 3,438; the 4,000 cap does not bind) | 3,438 |
+| eval_patch (held-out mazes 24–29; 500 and 800 ms) | approach 352, entry 89, on patch 116, exit 81, off patch 991 | 1,629 |
+
+- Encoding is the decoder fix's code, unchanged.
+- The arrays take 67 GB in float16. Free space was 456 GB.
+
+**C3 decoder and C4** (`scripts/fit_go2_stage2_decoder_development.py`). The `p3_large_past_frames` recipe, unchanged: past_frames variant, proj 64, hidden 896, depth 1; 3,520 updates each; lr 3e-4; seeds 2026092205, 2026093011 and 2026093012; the median seed chosen by the existing rule (eval_onpolicy, 800 ms).
+- **Batch mix (64):** old 32, maze 16, on-policy 8 (evenly over the six movement types, as before), patch 8.
+  - The patch 8 is split 6 : 2 between `patch` and `patch_off`, the plan's 12,000 : 4,000 ratio, uniform within each.
+- **Pre-refit baseline:** the deployed checkpoint (`p3_large_past_frames_s2026093011.pt`: the C3 readout and its matched C4) scored on the same cache.
+- **Offline acceptance**, as planned: on patch, the 800-ms XY error and ratio of each refit model against its own baseline; off patch (eval_patch off_patch, and the decoder fix's four sets), no worse than 1.05 × the baseline error.
+
+**C1 fairness refit** (`scripts/fit_go2_stage2_c1_refit_development.py`, `<capability root>/stage2_c1_refit_v1`). Done, on CPU.
+- **Form:** exactly C1's form, a per-horizon ridge with penalty 1 on 447 command features (prospective commands, nominal integration, and the 420-value applied-command history of the last four frames).
+- **Data:** the same cache contexts, with the executed tape as the prospective commands.
+- **Weights:** each context's expected draw count under the decoder mix over that fit's 3,520 × 64 draws.
+- **Check:** the features rebuilt from each recording reproduce C1's logged forecasts exactly (1,895 decisions, maximum difference 0.0).
+- **Median 800-ms XY error (mm), deployed C1 → refit:**
+
+| Set | All | On patch | Entry | Exit | Approach | Off patch | Cruise | Switch |
+|---|---|---|---|---|---|---|---|---|
+| eval_patch | 6 → 7 | 29 → 24 | 22 → 21 | 32 → 27 | 6 → 7 | 6 → 6 | 7 → 9 | 9 → 11 |
+| eval_onpolicy (no patches) | 6 → 7 | – | – | – | – | – | 5 → 8 | 8 → 9 |
+
+- **Reading:** the refit learns an average slowing. With no information about where patches are, it gains on patches and loses on clean floor. This is the fairness reference the refit C3 and C4 must beat.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
