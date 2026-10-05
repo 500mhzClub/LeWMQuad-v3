@@ -522,6 +522,25 @@ Fit 14 ended in a tracking loss ("measured visual pose unavailable" at 119.5 s).
 
 - **Reading:** the refit learns an average slowing. With no information about where patches are, it gains on patches and loses on clean floor. This is the fairness reference the refit C3 and C4 must beat.
 
+### Decisions (Andrew, 5 October, evening): hard stop after this round; unmarked control offline
+
+1. **Hard stop after stage 2.** Then consolidate: what is in place, and a focused, consumable research artefact. This probably means a new repository with all the scripts and artefacts needed to recreate the results. Under AGENTS.md, that repository must be built from an explicit, hash-checked file list, never by a clone, archive or worktree copy of this repository.
+2. **The unmarked control runs offline, at the forecast level.** It replaces the closed-loop unmarked missions.
+   - The held-out recordings are re-rendered unmarked, with the logged commands forced (`scripts/render_go2_stage2_unmarked_frames_development.py`).
+   - Their contexts are encoded into an unmarked twin of `eval_patch` (`scripts/build_go2_stage2_unmarked_eval_cache_development.py`).
+   - The baseline and the refit models are scored on both, paired per context (`scripts/evaluate_go2_stage2_marker_control_development.py`).
+   - **What it answers:** whether a refit gain in the approach and entry bins depends on the tint (anticipation), or also appears without it (reaction to motion history, or corridor context).
+   - The closed-loop stage-2 evaluation runs marked only.
+3. **No second recording round.**
+4. **If the refits fail offline acceptance, the closed-loop evaluation is skipped** and stage 2 is written up as a negative result.
+
+**Unmarked re-renders (done, 5 October, 21:40).** All 5 contributing held-out recordings passed (25, 26, 27, 28, 29).
+- The native physics trace was exact at every tick, with the logged commands forced (for example 10,341 steps on maze 27).
+- RGB differs only where tinted quads are in view: 85–604 frames per recording.
+- The logged depth-packet hashes differ on a subset of those frames, starting with the first frame in which the tint is visible.
+  - The noise is seeded by frame and camera only, and the geometry is unchanged, so the hash evidently covers RGB-linked content.
+  - This is counted, not asserted. C3 and C4 consume RGB and commands only.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
