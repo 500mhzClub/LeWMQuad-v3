@@ -295,6 +295,27 @@ The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no
 - **Version history:** the first version (`lewm/dev_c1_adaptive_travel_development.py`, one XY ratio) is superseded before use. Its normal-friction check, `c1a_check` on dev mazes 0–9, is kept as a functional check only.
 - **Validation:** C1A v2 at uniform μ = 0.3 on mazes 30–49 (CPU), with forecast error by movement type against C1's 19 mm.
 
+### C1A v2 validation at uniform μ = 0.3 (5 October, 10:30)
+
+Cohort `c1a2_mu030`: C1A v2 on prelim mazes 30–49, recovery off, harness `reserve_exit_v2`, v7 pin. PRELIMINARY.
+
+- **Outcomes:** 15/20 round trips (C1: 16/20). 5 contact stops (mazes 31, 33, 36, 40, 44), all scored by the failure reader, against C1's 4. Completed runs had 0 contacts and a minimum clearance of 5.7 cm.
+- **Forecast error** (median 700-ms XY error, predicted/true ratio):
+
+| | All | Cruise | Turn | Arc | Switch |
+|---|---|---|---|---|---|
+| C1, μ = 0.3 | 19 mm ×0.92 | 40 mm ×1.17 | 12 mm ×0.54 | 21 mm ×0.91 | 25 mm ×1.01 |
+| **C1A v2, μ = 0.3** | **18 mm ×0.89** | **37 mm ×1.11** | 12 mm ×0.55 | 20 mm ×0.92 | 25 mm ×0.98 |
+| C1, normal friction (v2 reference) | 6 mm ×0.96 | 4 mm ×1.00 | 5 mm ×0.75 | 7 mm ×0.95 | 7 mm ×0.96 |
+
+- **Why the gain is small.**
+  - Uniform low friction does not scale C1's error uniformly: cruise is over-predicted (×1.17), turning translation is under-predicted (×0.55), arcs are ×0.91 and switches about ×1.0.
+  - The ratio samples mix these movements. Straight-travel samples (predicted at least 8 cm) have a median of 1.00; turn, arc and start samples a median of 0.70.
+  - So the applied translation ratio stays near 1.0: median 1.00, 10th to 90th percentile 0.73–1.14, and 1.0 for 26% of decisions (too few recent samples).
+  - The rotation ratio is a median 1.05: low friction barely changes the turn rate.
+- **The tracker is not the cause.** Over 800-ms windows, tracker travel equals physics truth (median ratio 1.00, quartiles 1.00) at both μ = 0.3 and normal friction.
+- **Parameters unchanged,** as fixed. At patch edges the slip is transient and localised, a different regime from uniform friction.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
