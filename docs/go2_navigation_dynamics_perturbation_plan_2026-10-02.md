@@ -356,6 +356,22 @@ Cohort `s2smoke_mup030`: C1, marked v2 strips, μ_p = 0.3, prelim mazes 33, 42 a
   - Placement and the friction field are v2's. 3 synthetic tests pass.
 - **Re-run:** `s2smoke3_mup030`, marked on 33, 42 and 47, plus unmarked on 33 as a texture control.
 
+### Stage 1 closed (Andrew, 5 October, midday)
+
+**Result.**
+- No zero-shot visual advantage.
+- Outcome differences between controllers are within noise.
+- The contact stops come from the v2 turn exit.
+
+Details are in [the stage-1 results](go2_navigation_dynamics_stage1_v2_results_2026-10-05.md). PRELIMINARY: prelim mazes 30–49, recovery off, harness `reserve_exit_v2`.
+
+### Decisions (Andrew, 5 October, midday)
+
+1. **Contamination, option 2.** The rigorous-phase sealed set is regenerated immediately before that phase, excluding every graph built by then. The current `sealed_test_v2` stays untouched and unseen, and will be replaced then. Recordings, the cache and the refits proceed on the stage-2 layouts.
+2. **The tinted marker is approved.** Before the refits, a **marker-visibility probe** runs: a linear classifier on frozen V-JEPA features of tinted versus untinted floor frames, tested on held-out mazes. Its accuracy is reported. **If it is near chance, stop and report before the refits.**
+3. **C1A, one revision (v3), designed on stage-1 data only.** Ratios are kept per movement type (cruise, arc, turn, switch), each from that type's recent decisions, with the same window and clip rules. It is re-validated at uniform μ = 0.3, then frozen and recorded here before any stage-2 evaluation.
+4. Stage 1 is closed (above).
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
