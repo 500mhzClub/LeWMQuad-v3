@@ -404,6 +404,31 @@ Re-run `s2smoke3_marked` (C1, patches v3, μ_p = 0.3, marked, mazes 33, 42 and 4
   - **Stall stop v2** (`lewm/dev_recording_stall_stop_v2_development.py`, v12 pin) counts a stall only when the base stays within 0.10 m of its window-start position for the whole 60 s.
   - All 30 recordings are relaunched as `s2rec2`: C1, marked strips (patches3, μ_p = 0.3), stage-2 fit and held-out mazes with their registered episodes, recovery off.
 
+### C1A v3 validated and frozen (5 October, 12:45)
+
+Cohort `c1a3_mu030`: C1A v3 on prelim mazes 30–49, uniform μ = 0.3, recovery off, harness `reserve_exit_v2`, v10 pin. PRELIMINARY.
+
+- **Outcomes:** 15/20 round trips. 4 contact stops (mazes 31, 35, 36, 44), all scored by the failure reader, and 1 other failure (maze 33). Completed runs had 0 contacts and a minimum clearance of 3.4 cm. For comparison: C1 16/20, C1A v2 15/20.
+- **Forecast error** (median 700-ms XY error, predicted/true):
+
+| | All | Cruise | Turn | Arc | Switch |
+|---|---|---|---|---|---|
+| C1 | 19 mm ×0.92 | 40 mm ×1.17 | 12 mm ×0.54 | 21 mm ×0.91 | 25 mm ×1.01 |
+| C1A v2 | 18 mm ×0.89 | 37 mm ×1.11 | 12 mm ×0.55 | 20 mm ×0.92 | 25 mm ×0.98 |
+| **C1A v3** | **18 mm ×0.92** | **39 mm ×1.14** | 12 mm ×0.54 | 21 mm ×0.95 | 24 mm ×1.00 |
+
+- **Why per-type ratios barely engage.**
+  - With a 3-s window and two samples needed, each type rarely has enough recent samples: the applied translation ratio is 1.0 for 91% of decisions (cruise), 81% (arc) and 36% (switch).
+  - Turns never adapt translation, because C1 predicts almost no translation for an in-place turn and the 2-cm rule admits no sample. The turn error (×0.54) is slip drift added on top of a near-zero prediction, which a multiplicative ratio cannot correct.
+  - Rotation ratios stay at 1.0–1.02: low friction barely changes the turn rate.
+- **Frozen.** C1A for all stage-2 evaluation is **v3** (`lewm/dev_c1_adaptive_travel_v3_development.py`), launched through the v10 entry or later. Its parameters, fixed before any stage-2 evaluation:
+  - types: cruise, arc_steady, turn and switch; hold and rest_start are not adapted;
+  - one translation ratio and one rotation ratio per type, each tracked over predicted;
+  - samples: no all-hold windows, at least 2 cm or 2° predicted, a re-forecast window of 0.4–0.8 s;
+  - each ratio: the median over 3 s, 1.0 until two samples, clipped to 0.3–1.5;
+  - inputs: tracker pose and the controller's own requested commands only.
+  - At patch edges, slip is localised and transient; whether C1A reacts there is part of the stage-2 measurement.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
