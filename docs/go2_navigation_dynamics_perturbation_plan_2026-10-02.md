@@ -316,6 +316,29 @@ Cohort `c1a2_mu030`: C1A v2 on prelim mazes 30–49, recovery off, harness `rese
 - **The tracker is not the cause.** Over 800-ms windows, tracker travel equals physics truth (median ratio 1.00, quartiles 1.00) at both μ = 0.3 and normal friction.
 - **Parameters unchanged,** as fixed. At patch edges the slip is transient and localised, a different regime from uniform friction.
 
+### Stage-2 layout sets registered (5 October, 10:40): a selected family, "routes with long straights"
+
+**Script:** `scripts/register_go2_stage2_patch_sets_development.py`. Registry: `<capability root>/stage2_sets_v1_registry.json`, sha256 `f7019303…`.
+- **Generator and checks:** the capability generator's candidate and acceptance rules, `make_spec` and episode rules, with structural checks only.
+- **Exclusions:** the capability prior graphs, all 90 capability layouts, `c3v2_sets_v1` and `c3v3_sets_v1`.
+- **Selection:** every unique accepted layout within the 10,000-candidate bound is built in order, with episodes 0 and 1. A layout qualifies when its first such episode reaches at least 20% patch coverage under the v2 placement rule.
+- **Seed attempts:** construction seeds were tried in fixed order, 2026100501, 2026100502, 2026100503 and 2026100504. They gave 47, 45, 43 and 50 qualifying layouts from about 890 unique ones each; attempt 4 is used. The choice depends on structural counts only.
+- **Sets:**
+
+| Set | Mazes | Episodes |
+|---|---|---|
+| `stage2_fit` | 0–23 | one each |
+| `stage2_heldout` | 24–29 | one each |
+| `stage2_eval` | 30–49 | one each |
+
+  26 sets use episode 0 and 24 use episode 1. Coverage is 20.5–39.7%, with 1–2 strips per route.
+- **Structural checks:** all passed (unique topologies and embeddings, disjoint from the excluded graphs, episode rules, no physics or rendering). Hash readback matches.
+- **Loading:** missions load these sets through `scripts/run_go2_dev_mission_stage2_development.py`, with v8 entry and launcher. All 50 load hash-verified, and runtime placement reproduces the registered coverage.
+- **Not checked against `sealed_test_v2`.** Its seeds are private and its folder is sealed. The generator's topology space is small: about 890 unique layouts per 10,000 candidates, and 40% of sealed_test_v2's own candidates hit a prior topology. So a few of these 50 may share a topology with a sealed_test_v2 maze.
+  - **This must be settled before any of these layouts trains a model** (the stage-2 refit).
+  - Options: a custodian-side overlap check, or regenerating the rigorous-phase set just before that phase, excluding every graph built by then.
+  - Evaluation runs on these sets do not train anything.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
