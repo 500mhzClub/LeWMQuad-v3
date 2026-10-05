@@ -214,3 +214,16 @@ Each step below was traced through plans, results and checkpoint hashes.
 | **Total** | **about 3,936** | |
 
 "Bulk" means any file over 16 MiB that is not named as a result, failure, summary, report, receipt, manifest or evaluation, is not cited by path in the repository, and is not on a keep list.
+
+## Outcome (5 October, 01:47)
+
+| Removal | Status | Freed |
+|---|---|---:|
+| Tier 1: depth in 267 closed navigation roots | **done**: 1,089,834 files; all 1,118,454 other files hash-verified | 460.5 GiB |
+| May corpus, option (a), lineage only | **done**: 69,581,310 frames and 5,480 recordings and logs; 18,690 lineage frames hash-verified | 3,352.6 GiB |
+| Closed-programme bulk, four environments, ViT-B encoder | **not run**: the removal script was refused by the session's permission check | (about 492 GiB) |
+
+Free space now:
+- data drive about 483 GiB;
+- workspace drive about 3.35 TiB;
+- third drive about 33 GiB.
