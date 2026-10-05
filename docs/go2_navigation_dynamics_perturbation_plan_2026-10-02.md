@@ -264,6 +264,16 @@ The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no
 2. **After C3 at μ = 0.3 finishes,** send a short interim: forecast error by movement type plus outcomes, C1, C3 and C4. Then wait for Andrew's go before C3 at μ = 0.25. C1 and C4 at μ = 0.25 run anyway on the CPU.
 3. **If Andrew is slow to answer,** use the GPU for stage 2's patch smoke test and the feature-cache build rather than leaving it idle.
 
+### Decisions (Andrew, 5 October, morning)
+
+1. **C3 at μ = 0.25 is skipped.** C1 and C4 there collapse to 1/20 on turn-exit contacts.
+2. **The turn-exit contacts are a recorded limitation,** with no harness change mid-experiment (see the known limitations). v2 also produced a normal-friction contact (C2), so a v3 turn check on the legs' swept footprint is required before the confirmatory sealed run. It is not built now.
+3. **Stage 2: go.** The smoke test and the feature-cache build start once C3 at μ = 0.3 finishes. Three design changes:
+   - **Placement:** patches go on straight route segments, at least 0.5 m from junctions and dead ends, to minimise in-place turns on patches. This changes the 3 October placement rule; the visibility requirement (at least 1.5 m along the route) stands.
+   - **Primary measure:** closed-loop forecast error on decisions, binned by distance to the patch edge (approach, entry, on-patch), marked versus unmarked, per controller. Mission outcomes are secondary.
+   - **An adaptive C1 baseline (C1A):** C1's forecast scaled by the recent tracked-versus-predicted travel ratio. It uses the tracker pose only, with no privileged data and no training. This separates reacting to slip from anticipating it.
+4. **The full stage-1 interim** is sent when C3 at μ = 0.3 finishes.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.

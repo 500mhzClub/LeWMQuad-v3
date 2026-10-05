@@ -163,3 +163,30 @@ Script: `scripts/analyse_go2_forecast_sensitivity_close_approaches_development.p
 - **How it gets there:** turning in place slides the body far more than the nominal 5–7 cm. The rear calves are outside both forward cameras' view, as in the rear-leg limitation above, so neither the remembered-map check nor the depth stop sees the approach.
 
 **Status.** Recorded only; no follow-up experiments on these contacts (Andrew, 4 October).
+
+### The v2 turn exit lets scanning turns near walls swing a rear calf into the wall (dynamics stage 1 on `reserve_exit_v2`, 4–5 October)
+
+**What happened.** On `reserve_exit_v2`, 51 missions ended on a disallowed contact. PRELIMINARY: prelim_test_v1 mazes 30–49, recovery off.
+
+| Cohort | Contact stops |
+|---|---|
+| μ = 0.25 | 37: C1 19, C4 18 |
+| μ = 0.3 | 13: C1 4, C4 4, C3 5 (with C3 at 15 of 20 done) |
+| Normal friction | 1: C2 |
+
+The causes were identical in every case:
+- **Which part:** a rear calf against a wall (40 rear-left, 11 rear-right), a median 65 s into the mission (19–344 s).
+- **The commanded motion:** an in-place turn in every case. Base speed was at most 0.10 m/s (median 0.06) and the yaw rate a median 0.55 rad/s over the final second.
+- **The turn exit allowed the turn.** Every contact came within 2 s of a turn that only the v2 turn exit passed (`clearance_check_mode: TURN_EXIT`).
+  - The selected action just before contact was that turn in 45 cases (44 right, 1 left). In the other 6 the controller had just switched to hold.
+  - The robot was mostly scanning (`ADDITIONAL_VIEW_REQUIRED` 46, footprint-extension view 3, initial panorama 2).
+  - The body centre started those turns 0.36–0.44 m from the wall, inside the 0.45-m disc.
+- **Why the check missed it.** The exit checks only that the forecast **centre** path does not lose clearance. In an in-place turn the centre barely moves, but the legs sweep outward, and at low friction the rear feet slide further. The rear calves are outside both forward cameras' view, as in the entries above.
+- **Under v1** the same turns were blocked inside the disc, and controllers froze instead (μ = 0.2: 0 round trips).
+
+**v2 also produced a contact at normal friction:** C2 on the v2 reference, rear-left calf, during a turn-exit turn. The v1 clean baseline had none.
+
+**Status (Andrew, 5 October).**
+- Recorded as a limitation, with no harness change mid-experiment.
+- **Before the confirmatory sealed run, a v3 turn check is required** that tests the legs' swept footprint rather than the centre path. It is not built now.
+- Stage 1's forecast comparison uses the decisions made before each stop, so it stands.
