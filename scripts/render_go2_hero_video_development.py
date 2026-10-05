@@ -4,7 +4,13 @@ Presentation only: nothing here feeds an experiment. The source is one logged, s
 `dev_prelim_off_C3_prelim_test30_ep0`: C3, the V-JEPA world model with the large past-frames decoder, on preliminary
 maze 30, recovery off. It was a round trip in 136 s with 0 contacts and 14.1 cm minimum separation.
 
-Composition (1920x1080, 30 fps, 2x simulated time):
+**Textured demo runs** (Andrew, 5 October: "use those new textures for real on the robot"). A run made with
+`--demo-textures` (lewm/dev_demo_textured_appearance_development.py) saved the consumed robot-camera frames under
+native/ego_frames; for such a run the inset uses them, and the presentation scene draws the very same brick and parquet
+meshes, so both views show the world the robot saw. The video says the models never saw these textures in training.
+
+Composition (1920x1080, 30 fps, 2x simulated time; stretches without translation longer than 2 s play at 6x, with a
+fast-forward badge, and the HUD mission clock keeps simulated time):
 - **Main view:** a smoothed drone-style follow camera, re-rendered from the logged trajectory (kinematic replay of the
   physics trace's base pose and 12 joint angles; no physics), in a presentation scene. The scene has the run's exact
   wall boxes with CC0 textures (assets/textures), a textured floor, soft lighting, and markers for home and the goal.
@@ -36,7 +42,7 @@ URDF = Path('/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/venvs/ge
             'site-packages/genesis/assets/urdf/go2/urdf/go2.urdf')
 FLOOR_TEX = REPO/'assets/textures/floor/WoodFloor043.jpg'
 WALL_TEX = REPO/'assets/textures/wall/PaintedPlaster017.jpg'
-W, H, FPS, SPEED = 1920, 1080, 30, 2.0
+W, H, FPS, SPEED, FAST = 1920, 1080, 30, 2.0, 6.0
 FONT = '/usr/share/fonts/truetype/lato/Lato-{}.ttf'
 ACCENT, GOAL, HOME, TEXT = (90, 200, 255), (255, 150, 40), (80, 150, 255), (240, 244, 248)
 
@@ -52,7 +58,9 @@ def yaw_of(q):
 
 class Run:
     def __init__(self, source, ego):
-        self.source, self.ego = Path(source), Path(ego)
+        self.source = Path(source)
+        self.textured = (self.source/'native/ego_frames').is_dir()
+        self.ego = self.source/'native/ego_frames' if self.textured and ego is None else Path(ego or EGO)
         with np.load(self.source/'native/physics_trace.npz') as z:
             self.t, self.pose, self.joints = z['timestamp_s'].copy(), z['base_pose_world'].copy(), z['joint_position'].copy()
         spec = json.loads((self.source/'specification.json').read_text())
@@ -76,6 +84,34 @@ class Run:
         xs = [w['centre_xyz'][0] for w in self.walls]
         ys = [w['centre_xyz'][1] for w in self.walls]
         self.bounds = (min(xs)-.8, max(xs)+.8, min(ys)-.8, max(ys)+.8)
+        self.fast = self.fast_forward()
+
+    def fast_forward(self):
+        """10-Hz flags: True inside stretches longer than 2 s whose 1-s translation speed stays under 3 cm/s (from 1 s
+        after the stretch starts to 0.5 s before it ends)."""
+        grid = np.arange(self.t0, self.t1, .1)
+        xy = self.pose[np.searchsorted(self.t, grid).clip(0, len(self.t)-1), :2]
+        speed = np.zeros(len(grid))
+        speed[5:-5] = np.linalg.norm(xy[10:]-xy[:-10], axis=1)
+        slow, fast, k = speed < .03, np.zeros(len(grid), bool), 0
+        while k < len(slow):
+            e = k
+            while e < len(slow) and slow[e] == slow[k]:
+                e += 1
+            if slow[k] and (e-k)*.1 > 2.:
+                fast[k+10:max(k+10, e-5)] = True
+            k = e
+        return fast
+
+    def fast_at(self, t):
+        return bool(self.fast[int(np.clip((t-self.t0)/.1, 0, len(self.fast)-1))])
+
+    def playback(self):
+        times, t = [], self.t0
+        while t < self.t1:
+            times.append(t)
+            t += (FAST if self.fast_at(t) else SPEED)/FPS
+        return times+[self.t1]
 
     def index(self, t):
         return int(np.clip(np.searchsorted(self.t, t), 0, len(self.t)-1))
@@ -118,12 +154,19 @@ def build_scene(run):
     x0, x1, y0, y1 = run.bounds
     size = (x1-x0+4., y1-y0+4., .04)
     texture = lambda path: gs.surfaces.Default(diffuse_texture=gs.textures.ImageTexture(image_path=str(path), encoding='srgb'))
-    scene.add_entity(gs.morphs.Mesh(file=cached_box_obj(size, tiles_per_m=.6), pos=((x0+x1)/2, (y0+y1)/2, -.02), fixed=True,
-                                    collision=False, file_meshes_are_zup=True), surface=texture(FLOOR_TEX))
-    for w in run.walls:
-        scene.add_entity(gs.morphs.Mesh(file=cached_box_obj(tuple(w['size_xyz']), tiles_per_m=.8), pos=tuple(w['centre_xyz']),
-                                        euler=(0, 0, math.degrees(w['yaw_rad'])), fixed=True, collision=False,
-                                        file_meshes_are_zup=True), surface=texture(WALL_TEX))
+    if run.textured:
+        # The exact brick and parquet meshes the robot's camera saw.
+        from lewm.dev_demo_textured_appearance_development import textured_surfaces
+        for name, mesh in textured_surfaces(run.walls):
+            scene.add_entity(gs.morphs.MeshSet(files=[mesh], fixed=True, collision=False, visualization=True, decimate=False,
+                                               convexify=False, align=False, file_meshes_are_zup=True), name=name)
+    else:
+        scene.add_entity(gs.morphs.Mesh(file=cached_box_obj(size, tiles_per_m=.6), pos=((x0+x1)/2, (y0+y1)/2, -.02),
+                                        fixed=True, collision=False, file_meshes_are_zup=True), surface=texture(FLOOR_TEX))
+        for w in run.walls:
+            scene.add_entity(gs.morphs.Mesh(file=cached_box_obj(tuple(w['size_xyz']), tiles_per_m=.8),
+                                            pos=tuple(w['centre_xyz']), euler=(0, 0, math.degrees(w['yaw_rad'])), fixed=True,
+                                            collision=False, file_meshes_are_zup=True), surface=texture(WALL_TEX))
     scene.add_entity(gs.morphs.Cylinder(radius=.035, height=.75, pos=(*run.goal, .375), fixed=True, collision=False),
                      surface=gs.surfaces.Default(color=(.95, .95, .95)))
     scene.add_entity(gs.morphs.Sphere(radius=.11, pos=(*run.goal, .82), fixed=True, collision=False),
@@ -162,8 +205,11 @@ def render_view(run, scene, robot, camera, dofs, follow, t):
     robot.set_pos(pose[:3])
     robot.set_quat([pose[6], pose[3], pose[4], pose[5]])
     robot.set_dofs_position(run.joints[i], dofs)
-    position, target = follow.update(pose)
+    position, target = follow.update(pose, alpha=.09*(FAST/SPEED if run.fast_at(t) else 1.))
     camera.set_pose(pos=position, lookat=target, up=(0., 0., 1.))
+    # Kinematic posing does not step the scene, so the visuals must be pushed explicitly; without this the robot stays
+    # drawn at its start pose (the bug Andrew saw in the first cut).
+    scene.visualizer.update(force=True)
     rgb = camera.render(rgb=True, depth=False, segmentation=False, normal=False)[0]
     return Image.fromarray(np.asarray(rgb).reshape(H, W, 3).astype(np.uint8)), i
 
@@ -260,9 +306,21 @@ def compose(run, view, i, t, decisions_so_far, distance):
     d.text((48, 34), 'JEPA world-model navigation', font=font('Black', 46), fill=(*TEXT, 255))
     d.text((50, 92), 'Unitree Go2 (simulated)  ·  a V-JEPA world model forecasts each candidate move from camera images  ·  reach the goal, return home',
            font=font('Regular', 22), fill=(*TEXT, 220))
-    chip = rounded_panel((316, 34), radius=17, fill=(255, 196, 64, 230))
-    frame.alpha_composite(chip, (50, 128))
-    ImageDraw.Draw(frame).text((64, 133), 'PRELIMINARY DEV RUN · 2× SPEED', font=font('Bold', 18), fill=(30, 22, 0, 255))
+    x = 50
+    chips = [('PRELIMINARY DEV RUN', (255, 196, 64), (30, 22, 0))]
+    if run.textured:
+        chips.append(('BRICK & PARQUET TEXTURES NEVER SEEN IN TRAINING', (110, 225, 205), (0, 30, 26)))
+    fast = run.fast_at(t)
+    chips.append((f'      {FAST:.0f}× FAST-FORWARD' if fast else f'{SPEED:.0f}× SPEED', (255, 110, 110) if fast else (225, 230, 238),
+                  (40, 6, 6) if fast else (20, 24, 30)))
+    for label, fill, ink in chips:
+        width = int(ImageDraw.Draw(frame).textlength(label, font=font('Bold', 18)))+28
+        frame.alpha_composite(rounded_panel((width, 34), radius=17, fill=(*fill, 232)), (x, 128))
+        ImageDraw.Draw(frame).text((x+14, 133), label, font=font('Bold', 18), fill=(*ink, 255))
+        if label.startswith('      '):
+            for dx in (0, 11):
+                ImageDraw.Draw(frame).polygon([(x+14+dx, 137), (x+14+dx, 155), (x+26+dx, 146)], fill=(*ink, 255))
+        x += width+10
     frame.alpha_composite(minimap(run, i, t), (W-430-40, 40))
     frame.alpha_composite(forecast_panel(run, t), (W-430-40, 40+430+16))
     ego = run.ego_frame(t).resize((512, 384), Image.LANCZOS)
@@ -303,8 +361,10 @@ def end_card(frame, run):
     d.text((W//2, H//2-120), 'Round trip complete', font=font('Black', 54), fill=(120, 255, 160, 255), anchor='mm')
     d.text((W//2, H//2-52), f'{run.t1-run.t0:.0f} s  ·  {run.contacts} wall contacts  ·  closest approach {run.clearance*100:.0f} cm',
            font=font('Regular', 28), fill=(*TEXT, 240), anchor='mm')
-    d.text((W//2, H//2-12), f'preliminary maze {run.maze}  ·  development run, not a sealed result', font=font('Italic', 20),
-           fill=(*TEXT, 180), anchor='mm')
+    note = f'preliminary maze {run.maze}  ·  development run, not a sealed result'
+    if run.textured:
+        note += '  ·  textures unseen in training'
+    d.text((W//2, H//2-12), note, font=font('Italic', 20), fill=(*TEXT, 180), anchor='mm')
     return image.convert('RGB')
 
 
@@ -324,7 +384,7 @@ def main(out, source, ego, still):
     encoder = subprocess.Popen(['ffmpeg', '-y', '-nostdin', '-v', 'error', '-f', 'rawvideo', '-pix_fmt', 'rgb24', '-s', f'{W}x{H}',
                                 '-r', str(FPS), '-i', 'pipe:0', '-an', '-c:v', 'libx264', '-preset', 'slow', '-crf', '17',
                                 '-pix_fmt', 'yuv420p', '-movflags', '+faststart', str(out)], stdin=subprocess.PIPE)
-    times = list(np.arange(run.t0, run.t1, SPEED/FPS))+[run.t1]
+    times = run.playback()
     distance, last_i, last = 0., 0, None
     for t in times:
         view, i = render_view(run, scene, robot, camera, dofs, follow, t)
@@ -338,15 +398,16 @@ def main(out, source, ego, still):
     encoder.stdin.close()
     if encoder.wait():
         raise RuntimeError('ffmpeg failed')
-    print(json.dumps(dict(out=str(out), frames=len(times)+int(4*FPS), source=str(source), success=run.success,
-                          contacts=run.contacts, clearance_m=run.clearance)))
+    print(json.dumps(dict(out=str(out), frames=len(times)+int(4*FPS), seconds=(len(times)+4*FPS)/FPS, source=str(source),
+                          textured=run.textured, success=run.success, contacts=run.contacts, clearance_m=run.clearance,
+                          fast_forward_s=float(run.fast.sum()*.1))))
 
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--out', default='~/Videos/LeWMQuad_JEPA_navigation_hero.mp4')
     p.add_argument('--source', default=str(SOURCE))
-    p.add_argument('--ego', default=str(EGO))
+    p.add_argument('--ego', help='ego frame directory (default: the run\'s native/ego_frames if any, else EGO)')
     p.add_argument('--still', nargs=2, metavar=('SECONDS', 'PNG'))
     a = p.parse_args()
     main(a.out, a.source, a.ego, None if a.still is None else (float(a.still[0]), a.still[1]))
