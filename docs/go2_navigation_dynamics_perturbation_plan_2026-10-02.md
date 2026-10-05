@@ -274,6 +274,27 @@ The μ = 0.2 rear-left-calf contacts are noted in the known limitations, with no
    - **An adaptive C1 baseline (C1A):** C1's forecast scaled by the recent tracked-versus-predicted travel ratio. It uses the tracker pose only, with no privileged data and no training. This separates reacting to slip from anticipating it.
 4. **The full stage-1 interim** is sent when C3 at μ = 0.3 finishes.
 
+### Decisions (Andrew, 5 October, late morning): stage-2 layouts and C1A
+
+**Placement constraint found.** Under the 5 October placement rule (straight segments, at least 0.5 m from junctions, dead ends and endpoints, and at least 1.5 m long), only mazes 33, 42 and 47 of 30–49 can hold a patch. Across all 100 capability-maze episodes (dev, validation and prelim), 14 can hold one and 8 can reach 20% coverage.
+
+**Stage-2 layout sets: a selected family, "routes with long straights".**
+- New sets come from the capability generator, through the registration procedure, disjoint from every existing graph: 24 fit, 6 held-out and 20 evaluation.
+- Only episodes whose route has a usable straight segment are kept, and placement must reach the 20% coverage minimum.
+- They are a **selected family**, not a sample of the capability distribution. Results on them describe routes with long straights.
+- The smoke test runs on prelim mazes 33, 42 and 47 as planned.
+
+**No-patch reference** on the 20 evaluation mazes, with C1, C4 and C3. It is secondary, for outcome context.
+
+**C1A parameters, fixed before any stage-2 run** (`lewm/dev_c1_adaptive_travel_v2_development.py`, entry v7):
+- **Two ratios:** translation (tracked over predicted XY travel) and rotation (tracked over predicted heading change). Both compare the tracker pose with C1's own forecast, re-run on the commands the controller requested over the past 0.4–0.8 s.
+- **Samples come only from meaningful commanded motion:** all-hold windows are excluded, and a sample needs at least 2 cm (translation) or 2° (rotation) of predicted motion.
+- **Each ratio:** the median over a 3-s window, 1.0 until there are two samples, clipped to 0.3–1.5.
+- **Applied to every candidate and horizon:** XY times the translation ratio, yaw times the rotation ratio.
+- **Inputs:** tracker pose and the controller's own requested commands only; no privileged data, no training.
+- **Version history:** the first version (`lewm/dev_c1_adaptive_travel_development.py`, one XY ratio) is superseded before use. Its normal-friction check, `c1a_check` on dev mazes 0–9, is kept as a functional check only.
+- **Validation:** C1A v2 at uniform μ = 0.3 on mazes 30–49 (CPU), with forecast error by movement type against C1's 19 mm.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
