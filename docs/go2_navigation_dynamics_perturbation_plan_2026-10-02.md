@@ -429,6 +429,39 @@ Cohort `c1a3_mu030`: C1A v3 on prelim mazes 30–49, uniform μ = 0.3, recovery 
   - inputs: tracker pose and the controller's own requested commands only.
   - At patch edges, slip is localised and transient; whether C1A reacts there is part of the stage-2 measurement.
 
+### Stage-2 recordings done (5 October, 13:40): `s2rec2`
+
+C1, marked strips (patches3, μ_p = 0.3), stage-2 fit (0–23) and held-out (24–29) mazes, recovery off, harness `reserve_exit_v2`, stall stop v2, v12 pin. PRELIMINARY. Counts come from `scripts/count_go2_stage2_recording_contexts_development.py`.
+
+**Endings (30 missions):**
+
+| Ending | Count | Notes |
+|---|---|---|
+| Round trip | 15 | |
+| Contact stop | 6 | all scored by the failure reader; all are the rear-left calf during a turn-exit in-place turn, 5 on a strip and 1 0.17 m outside |
+| Stall stop, strip trap | 5 | centre within 0.45 m of a wall, dispatch veto latched |
+| Stall stop, other | 3 | |
+| Other failure | 1 | |
+
+**Usable contexts.**
+- A context is usable when its 700-ms window has meaningful requested motion and no vetoed or latched dispatch tick.
+- Under the on-policy rule, the 6 contact missions contribute nothing.
+- From the 24 contributing missions: **8,521 usable contexts.**
+
+| Bin | Contexts |
+|---|---|
+| approach (0.3–1.5 m, moving in) | 1,998 |
+| entry (±0.3 m, moving in) | 583 |
+| on patch (at least 0.3 m inside) | 892 |
+| exit | 619 |
+| off patch | 4,429 |
+
+- **Per mission:** approach 31–171, entry 14–67 (highest in strip traps, which hover at the edge), on patch 0–63.
+- **Missions reaching no strip:** held-out 25 and 26 (stalled before any strip) and fit 14 (failed early).
+- **Held-out mazes with strip contexts:** 27, 28 and 29: 89 entry and 116 on-patch contexts in all.
+
+**Against the plan's estimate.** The plan expected about 11,000–12,000 patch contexts. This gives about 4,100 patch-related ones (approach, entry, on patch and exit), plus 4,400 off-patch, because missions are shorter (stalls and stops) and contexts are filtered for motion. The refit's patch share of the batch mix will be correspondingly smaller unless more recordings are added.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
