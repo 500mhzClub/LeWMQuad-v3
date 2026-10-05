@@ -17,6 +17,11 @@ ran (v12 pinned entry):
    post_sample_index), so that one step is not replayed. Its frame, decision and dispatch request are still checked.
    Traces and published poses are compared as prefixes, and mission rows and finish() are skipped. Round trips are
    checked in full, as before.
+4. **Missions ended by a failure on their final frame** (fit14: "measured visual pose unavailable"). The frame was
+   acquired one tick after the last logged request, and the failure stopped the mission before that tick's request. The
+   loop over requests therefore ends one frame short. That final frame is acquired after the loop and its consumed-packet
+   record is checked (it is not submitted to the controller). Published poses are compared as a prefix, and mission rows
+   and finish() are skipped, as for the stall stop.
 
 Contact-stopped missions are skipped: they contribute nothing to the training set.
 
@@ -85,6 +90,8 @@ def verify(source_root, root, budget, spec, packet, trace, requests, frames, mix
     expected_calls = {r['observed_ns']: r for r in receipts}
     expected_plans = {r['frame']: r for r in json.loads((source_root/'planning.json').read_text()) if 'selection' in r}
     truncated = 'post_sample_index' not in requests[-1]
+    final_frame = (not truncated and (source_root/'failure.json').exists()
+                   and len(frames) == (len(requests)+4)//5+1)
     ego = root/'ego_frames'
     ego.mkdir()
     directory = root/'verification_native'
@@ -174,10 +181,21 @@ def verify(source_root, root, budget, spec, packet, trace, requests, frames, mix
                 maximum = [max(maximum[0], position), max(maximum[1], yaw)]
                 if controller.mission_terminal is not None and tick != len(requests)-1:
                     raise ValueError('replay mission terminated early')
+            if final_frame:
+                clock.advance(int(session.ctx.runner._sim_time_ns))
+                session.sensor_packets()
+                camera = session.captured_pairs[-1]
+                record, logged = camera['consumed_hash_record'], frames[-1]
+                for key in ('pixel_sha256', 'live_depth_noise', 'consumed_packet_sha256', 'arrays', 'measured_ns', 'physical_sample_index'):
+                    if record[key] != logged[key]:
+                        raise ValueError(f'consumed packet record differs: final frame {key}')
+                Image.fromarray(np.asarray(camera['images'][0][0])).save(ego/f'{len(frames)-1:04d}.png')
+                camera['images'] = []
+                counts['frames'] += 1
             if counts['decisions'] != len(expected_plans) or counts['frames'] != len(frames):
                 raise ValueError('decision or frame count differs')
             logged_poses = json.loads((source_root/'poses.json').read_text())
-            if truncated:
+            if truncated or final_frame:
                 if renderer.jsonable(published) != logged_poses[:len(published)]:
                     raise ValueError('published poses differ (prefix)')
             else:
@@ -188,7 +206,7 @@ def verify(source_root, root, budget, spec, packet, trace, requests, frames, mix
                     raise ValueError('published poses differ')
                 if renderer.jsonable(controller.mission_rows) != json.loads((source_root/'mission.json').read_text()):
                     raise ValueError('mission rows differ')
-            return dict(passed=True, controller='C1', truncated_by_stall_stop=truncated,
+            return dict(passed=True, controller='C1', truncated_by_stall_stop=truncated, ended_by_final_frame_failure=final_frame,
                         bitwise_consumed_packet_records=counts['frames'], identical_selected_actions=counts['decisions'],
                         identical_dispatch_command_reason_steps=counts['dispatch'], identical_published_poses=len(published),
                         maximum_position_error_m=maximum[0], maximum_yaw_error_degrees=maximum[1], exact_native_trace_values=True)
