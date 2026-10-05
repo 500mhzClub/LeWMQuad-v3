@@ -106,7 +106,23 @@ def install():
 
 
 def ego_session(make_session):
-    """Save each consumed primary RGB frame as ego_frames/NNNN.png in the session directory."""
+    """Save each consumed primary RGB frame as ego_frames/NNNN.png in the session directory.
+
+    The session's hash-retention mixin clears the captured images inside sensor_packets, right after record_consumed
+    hashes them, so the frame is taken inside record_consumed (looked up from the module at call time)."""
+    from lewm import navigation_capability_sensor_retention_development as retention
+    latest = {}
+    if not getattr(retention.record_consumed, 'dev_demo_ego', False):
+        original_record = retention.record_consumed
+
+        def record_consumed(row, packets):
+            latest['image'] = np.asarray(row['images'][0][0]).astype(np.uint8).copy()
+            return original_record(row, packets)
+        record_consumed.dev_demo_ego = True
+        record_consumed.latest = latest
+        retention.record_consumed = record_consumed
+    latest = retention.record_consumed.latest
+
     def make(spec, directory, full_frames=False):
         session = make_session(spec, directory, full_frames=full_frames)
         out = Path(directory)/'ego_frames'
@@ -115,9 +131,9 @@ def ego_session(make_session):
         count = [0]
 
         def sensor_packets(*args, **kwargs):
+            latest.pop('image', None)
             packets = original(*args, **kwargs)
-            image = session.captured_pairs[-1]['images'][0][0]
-            Image.fromarray(np.asarray(image).astype(np.uint8)).save(out/f'{count[0]:04d}.png')
+            Image.fromarray(latest.pop('image')).save(out/f'{count[0]:04d}.png')
             count[0] += 1
             return packets
         session.sensor_packets = sensor_packets
