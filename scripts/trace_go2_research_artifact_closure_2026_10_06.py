@@ -123,7 +123,36 @@ def shell_references(path):
     return {f'scripts/{m}' for m in SHELL_REF.findall(text)}, set(SHELL_MODULE.findall(text))
 
 
+def data_references(path, files):
+    """Repository paths named anywhere inside a JSON or YAML data file (bindings, pins, protocols)."""
+    import yaml
+    full = REPO/path
+    if full.stat().st_size > 10_000_000:
+        return set()
+    try:
+        value = json.loads(full.read_text()) if path.endswith('.json') else yaml.safe_load(full.read_text())
+    except Exception:
+        return set()
+    found, stack = set(), [value]
+    while stack:
+        v = stack.pop()
+        if isinstance(v, dict):
+            stack.extend(v.keys())
+            stack.extend(v.values())
+        elif isinstance(v, list):
+            stack.extend(v)
+        elif isinstance(v, str) and len(v) < 300:
+            candidate = v.split('LeWMQuad-v3/', 1)[-1] if v.startswith('/') else v
+            if candidate in files:
+                found.add(candidate)
+    return found
+
+
 def references(path, files):
+    if path.endswith(('.json', '.yaml', '.yml')):
+        return set(), data_references(path, files)
+    if not path.endswith(('.py', '.sh')):
+        return set(), set()
     if path.endswith('.sh'):
         targets, modules = shell_references(path)
         return modules, targets
@@ -170,14 +199,20 @@ def closure(entries, files, sealed):
             if SEALED.search(s):
                 sealed_refs.add(s)
                 continue
-            if s.startswith('/'):
+            if s.startswith('/') and s.split('LeWMQuad-v3/', 1)[-1] in files:
+                rel = s.split('LeWMQuad-v3/', 1)[-1]
+                if rel not in seen and rel.endswith(('.py', '.sh', '.json', '.yaml', '.yml')):
+                    queue.append(rel)
+                if not rel.endswith(('.py', '.sh')):
+                    data.add(rel)
+            elif s.startswith('/'):
                 artefacts.add(s)
             elif PATH_STRING.match(s):
                 if s in files:
-                    if s.endswith(('.py', '.sh')):
+                    if s.endswith(('.py', '.sh', '.json', '.yaml', '.yml')):
                         if s not in seen:
                             queue.append(s)
-                    else:
+                    if not s.endswith(('.py', '.sh')):
                         data.add(s)
                 elif '/' in s:
                     artefacts.add(s)
