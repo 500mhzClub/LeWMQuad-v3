@@ -541,6 +541,62 @@ Fit 14 ended in a tracking loss ("measured visual pose unavailable" at 119.5 s).
   - The noise is seeded by frame and camera only, and the geometry is unchanged, so the hash evidently covers RGB-linked content.
   - This is counted, not asserted. C3 and C4 consume RGB and commands only.
 
+### Stage-2 offline results (6 October, 06:00): on-patch gain, off-patch no-loss rule failed, marker used on the patch but not ahead of it
+
+**Cache check.** The deployed decoder and C4, scored on the rebuilt cache, reproduce their original fit record exactly: 14 evaluation sets, maximum difference 0.
+
+**Seed choice** (existing rule; eval_onpolicy at 800 ms; mean over types of the median XY error):
+- seeds 9.43 mm (2026092205), 12.04 mm (2026093011) and 9.87 mm (2026093012);
+- the median seed is **2026093012**;
+- every seed scores worse than the deployed decoder, which scores **8.51 mm**.
+
+**Held-out patch set, median 800-ms XY error (mm), deployed → refit (median seed):**
+
+| Bin | n | C3 | C4 |
+|---|---|---|---|
+| approach | 352 | 12.5 → 11.2 | 5.7 → 6.6 |
+| entry | 89 | 24.7 → 16.6 | 20.7 → 15.3 |
+| on patch | 116 | 35.4 → 18.5 | 32.3 → 13.0 |
+| exit | 81 | 25.4 → 17.4 | 31.5 → 18.9 |
+| off patch | 991 | 10.6 → 9.5 | 5.2 → 6.4 |
+
+All three seeds show the same on-patch pattern: C3 on patch 15–19 mm and C4 13–18 mm, against 35 and 32 mm before.
+
+**Off-patch no-loss rule (no worse than 1.05 × the deployed error): failed**, broadly, for both models. Examples for the median seed:
+
+| Set | C3 | C4 |
+|---|---|---|
+| eval_onpolicy, all | 10.6 → 11.7 | 6.3 → 7.8 |
+| eval_onpolicy, cruise | 11.7 → 13.1 | 4.5 → 6.8 |
+| eval_onpolicy, arc | 10.1 → 13.5 | – |
+| eval_offline, all | – | 4.4 → 5.0 |
+| eval_fresh_c3, all | – | 4.6 → 5.4 |
+| eval_patch, off patch | – | 5.2 → 6.4 |
+
+38 type-by-set cells are over 1.05 ×. Like the C1 refit, the refits pay for the patch gain on clean floor. The likely cause is the mix change: on-policy 16 → 8 plus 8 patch slots.
+
+**Marker control** (paired, unmarked minus marked error per context, on the 370 contexts with the tint in at least one input frame; mean and 95% bootstrap interval, mm; positive means the marker helps):
+
+| Model | approach (104) | entry (57) | on patch (90) | exit (19) |
+|---|---|---|---|---|
+| deployed C3 | +0.1 [−1.0, 1.1] | −3.1 [−4.6, −1.8] | −1.6 [−2.8, −0.6] | −1.5 |
+| deployed C4 | −0.1 | −0.4 [−0.7, −0.1] | −0.0 | −0.0 |
+| refit C3, 3 seeds | −0.3 / −0.1 / −1.5 | +2.8 / +4.4 / +1.4 | +6.1 / +5.6 / +0.5 | −3.2 / −2.8 / −3.6 |
+| refit C4, 3 seeds | −0.5 / +0.4 / −0.2 | +1.1 / +3.9 / +1.1 | +8.0 / +7.8 / +10.1 | −1.8 / −3.3 / −3.4 |
+
+- **Refit C4 uses the marker on the patch:** +8 to +10 mm in all three seeds, every interval excluding 0.
+- **Refit C3 uses it in two of three seeds:** +5.6 to +6.1 on patch, +2.8 to +4.4 at entry. The median seed barely uses it (+0.5 on patch).
+- **No model anticipates during approach** (0.3–1.5 m out): every result is about 0.
+  - At about 0.2 m/s, an 800-ms forecast from beyond about 0.45 m never reaches the strip, so this bin has little to anticipate.
+  - Entry (±0.3 m) is the anticipation test. There the gain is small and seed-dependent (+1 to +4 mm).
+- **At exit the marker hurts** (−2 to −4 mm). With the tint still in the recent frames, the models predict slip after the feet have left the strip.
+- **The deployed C3 is hurt slightly by the tint at entry** (−3.1 mm), which is unseen out-of-distribution content.
+
+**Reading.**
+- The refits learn the strip's slip strongly, and the C4 refit reads it partly from the marker.
+- The marker's value lies on the strip and at entry, not ahead of it. It is evidence for recognising the current floor state, barely for anticipation.
+- The refits fail the pre-registered off-patch no-loss rule, so by decision 4 the closed-loop C3 and C4 stage-2 evaluation is not run. It awaits Andrew's confirmation, because the failure is off patch, not a missing patch gain.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
