@@ -239,6 +239,31 @@ So the clean repository's runtime core is about 1,100 functions and about 10k st
 
 **Effect on the estimate.** P4 (porting the runtime core) looks like the lower end of its 1.5–2.5 weeks. P4b (training) is unchanged.
 
+## P2 and P3 (6 October, 14:30)
+
+Andrew: "do it. all code for maze gen, RL locomotion training, data generation, training, inference for each harness type, and experiments that produce comparisons between the harness should be ported".
+
+**Closure extended to the whole pipeline.** `scripts/trace_go2_research_artifact_closure_2026_10_06.py` now covers maze and scene generation, locomotion RL training (`train_genesis_go2_locomotion_contract`, the upstream Genesis example fetcher, the contract check), May-corpus data generation (shell drivers followed), the T1 temporal predictor and its cache builders, T2–T5 training, all training-data collection, the C1 lineage, the historical C3/C4 stages, every pinned launcher, and the experiment reports.
+- It also follows repository paths named inside JSON/YAML bindings. The first snapshot missed a hash-bound file that only a docs binding names.
+- `docs/go2_research_artifact_closure_2026-10-06.json`: 2,313 code and binding files, plus 540 data files.
+
+**Lineage scripts.** `scripts/discover_go2_lineage_scripts_2026_10_06.py` reads the script hashes recorded in each lineage artefact (`docs/go2_research_artifact_lineage_scripts_2026-10-06.json`). Every recorded hash matches the HEAD version, so one frozen commit serves as the source of every component.
+
+**Snapshot A exported:** `~/Workspace/LeWMQuad-v3-snapshot-2026-10-06`.
+- 2,751 files (45 MB) from commit `935f923a`, by `scripts/export_go2_research_snapshot_2026_10_06.py`: an explicit list, per-file SHA-256 against the commit blob, sealed names refused before reading.
+- Fresh git history; `SNAPSHOT_MANIFEST.json`.
+
+**Snapshot check (passed).** C1 on prelim maze 30, recovery off (`snapA_smoke2`), against the same mission from this repository (`p1t3_base`):
+- the physics trace (51,010 samples), dispatch requests, poses, model calls and outcome are identical;
+- `planning.json` differs only in one wall-clock timing field.
+
+**P3: clean repository skeleton** at `~/Workspace/Go2-JEPA-Navigation`. Local only; nothing is pushed before Andrew's review.
+- The `go2nav` package layout and the ROCm 7.2 environment lock (111 packages, with `rsl-rl-lib` 5.4.1 for locomotion retraining).
+- A custody test (no sealed names, no absolute home paths in code).
+- `docs/PORTING_MAP.md` (350 traced files with targets).
+- `artifacts/manifest.yaml` (14 checkpoints with SHA-256).
+- `docs/MIGRATION_STATUS.md`, the resume point for the port.
+
 ## 5. Decisions needed
 
 - **A. Paper scope:** which results (R1–R6, V) and the headline claim. This sets the porting list in P1.
