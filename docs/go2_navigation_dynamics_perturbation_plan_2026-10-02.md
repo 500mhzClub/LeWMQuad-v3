@@ -597,6 +597,28 @@ All three seeds show the same on-patch pattern: C3 on patch 15–19 mm and C4 13
 - The marker's value lies on the strip and at entry, not ahead of it. It is evidence for recognising the current floor state, barely for anticipation.
 - The refits fail the pre-registered off-patch no-loss rule, so by decision 4 the closed-loop C3 and C4 stage-2 evaluation is not run. It awaits Andrew's confirmation, because the failure is off patch, not a missing patch gain.
 
+### Stage 2 closed (Andrew, 6 October): closed-loop C3/C4 skipped; programme at its hard stop
+
+**Decision.** Andrew confirmed that the closed-loop C3/C4 stage-2 evaluation is skipped, by the offline acceptance rule. Stage 2 ends with the offline results above, and the programme moves to consolidation (migration plan: `docs/go2_research_artifact_migration_plan_2026-10-06.md`).
+
+**Closed-loop C1 family, marked strips** (`s2eval_cpu`; v14 pin; patches3, μ_p = 0.3, guard 0.40; stage2_eval mazes 30–49; recovery off). Secondary outcome context. PRELIMINARY.
+
+| Controller | Round trips | Contact stops | Tracking lost | Other stalls (blocked recovery) |
+|---|---|---|---|---|
+| C1 | 15/20 | 2 (mazes 37, 39) | 2 (33, 49) | 1 (47) |
+| C1A (v3) | 16/20 | 1 (42) | 2 (33, 38) | 1 (39) |
+| C1R (fairness refit) | 14/20 | 0 | 2 (38, 47) | 4 (37, 43, 48, 49) |
+
+**No-patch reference on the same mazes:**
+
+| Controller | Round trips | Contacts | Minimum clearance |
+|---|---|---|---|
+| C1 | 20/20 | 0 | 5.4 cm |
+| C4 | 20/20 | 0 | 4.6 cm |
+| C3 | 17/20 | 0 | 2.0 cm (failures on 38, 39 and 41 were long missions that never returned) |
+
+**Reading.** The strips cost the C1 family 4–6 round trips, through strip-slip tracking loss, contact stops on turn exits, and stalls. C1, C1A and C1R are within noise of one another. Adapting C1's travel (C1A) or refitting it (C1R) does not change outcomes.
+
 ### Storage correction and retirement (4 October, evening)
 
 **Correction.** The decoder fix's feature cache was already stored in float16 (`frames.f16`, `pred.f16`), so its 46.7 GiB was the float16 size. The earlier estimate, about 69 GiB in float32 and about 35 GiB in float16, was wrong: the stage-2 cache needs **about 69 GiB in float16**, and the float16 equivalence check is moot.
