@@ -1,0 +1,32 @@
+{
+  "schema": "navigation_capability_v3_support_replay.v1",
+  "purpose": "Diagnose repeated weak-view recovery with admitted unchanged visual poses; compare original strong-corner counts with actual completed tracker-feature counts. No model fitting, ranking or new navigation.",
+  "base": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001",
+  "root_name": "v3_support_replay_attempt001",
+  "wall_cap_s": 1800,
+  "maximum_simulated_s": 563,
+  "retained_cap_bytes": 33554432,
+  "ram_cap_bytes": 17179869184,
+  "per_device_vram_reserve_bytes": 2147483648,
+  "frames_retained": false,
+  "tracker_changed": false,
+  "controller_rerun": false,
+  "automatic_retry": false,
+  "script_sha256": "d6793cda16830e03a5425b2de5c4a1c35bea997c1a0b34694964152e30306906",
+  "assignments": [
+    {
+      "maze": 1,
+      "source": "runs/v3c1_live_turn_screen_C1_dev01_ep0_attempt001",
+      "last_frame": 2300,
+      "summary_first_frame": 1900,
+      "source_config_sha256": "e482e4be2c56eea33c99d54e3abf2da9d4369990f43baed613c2c6169c348906"
+    },
+    {
+      "maze": 9,
+      "source": "runs/v3c1_live_turn_screen_C1_dev09_ep0_attempt001",
+      "last_frame": 3300,
+      "summary_first_frame": 2670,
+      "source_config_sha256": "7089a8b3f272cd001872d8dbb6cc1cc48b34ea31af976ea72fd7d995e70def27"
+    }
+  ]
+}

@@ -3,6 +3,8 @@
 Coordinates are instructions, never map or free-space observations. Arrivals
 are candidates requiring independent native/hardware verification.
 """
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M
+
 from copy import deepcopy
 import numpy as np
 from lewm.matched_model_goal_probe_development import (
@@ -13,7 +15,7 @@ MAX_NAVIGATION_TICKS = 4000
 
 def point(value):
     p = np.asarray(value, float)
-    if p.shape != (2,) or not np.isfinite(p).all() or np.max(np.abs(p)) > 4.9:
+    if p.shape != (2,) or not np.isfinite(p).all() or np.max(np.abs(p)) > POINT_BOUND_M:
         raise ValueError('finite initial-frame mission point within map bounds required')
     return p.copy()
 

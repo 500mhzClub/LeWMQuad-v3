@@ -1,0 +1,749 @@
+{
+ "passed": true,
+ "successes": 20,
+ "episodes": 20,
+ "stops": [],
+ "rows": [
+  {
+   "episode": "00/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 112.72,
+   "wall_s": 708,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1653,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.834,
+    0.928
+   ],
+   "decisions": 267,
+   "comparable_rows": 1602,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 486
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 3,
+    "planned arrival settling": 1
+   }
+  },
+  {
+   "episode": "00/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 134.92000000000002,
+   "wall_s": 810,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1448,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.857,
+    0.931
+   ],
+   "decisions": 323,
+   "comparable_rows": 1938,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 7,
+   "vetoed_movement": 3,
+   "substitutions": {
+    "override": 626,
+    "veto": 64,
+    "missing_current_observation": 1
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 1,
+    "observation/view restriction (motion-dependent footprint)": 3,
+    "planned arrival settling": 10,
+    "blocked recovery/override": 5
+   }
+  },
+  {
+   "episode": "01/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 194.82,
+   "wall_s": 1181,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1401,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.851,
+    0.936
+   ],
+   "decisions": 479,
+   "comparable_rows": 2874,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 261
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 2,
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "01/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 192.12,
+   "wall_s": 1169,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1385,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.692,
+    0.919
+   ],
+   "decisions": 472,
+   "comparable_rows": 2832,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 506
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "movement outscored": 2,
+    "planned arrival settling": 18
+   }
+  },
+  {
+   "episode": "02/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 158.52,
+   "wall_s": 990,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1423,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.882,
+    0.923
+   ],
+   "decisions": 388,
+   "comparable_rows": 2322,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 1,
+   "no_match_causes": {
+    "missing_current_observation": 1
+   },
+   "vetoed": 3,
+   "vetoed_movement": 3,
+   "substitutions": {
+    "override": 251,
+    "missing_current_observation": 1,
+    "veto": 34
+   },
+   "frozen_checker_passed": false,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 4,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "02/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 137.32,
+   "wall_s": 941,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1283,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.856,
+    0.941
+   ],
+   "decisions": 336,
+   "comparable_rows": 2016,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 2,
+   "vetoed_movement": 2,
+   "substitutions": {
+    "override": 241,
+    "missing_current_observation": 1,
+    "veto": 19
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 16,
+    "planned arrival settling": 3,
+    "observation/view restriction (motion-dependent footprint)": 1
+   }
+  },
+  {
+   "episode": "03/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 158.32,
+   "wall_s": 1106,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1369,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.9,
+    0.939
+   ],
+   "decisions": 387,
+   "comparable_rows": 2322,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 476
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 5,
+    "movement outscored": 1,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "03/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 171.62,
+   "wall_s": 1158,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1525,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.915,
+    0.947
+   ],
+   "decisions": 419,
+   "comparable_rows": 2514,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 11,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 291,
+    "veto": 88,
+    "missing_current_observation": 2
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 46,
+    "planned arrival settling": 79
+   }
+  },
+  {
+   "episode": "04/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 106.42,
+   "wall_s": 756,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1533,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.892,
+    0.925
+   ],
+   "decisions": 257,
+   "comparable_rows": 1542,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 226
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 4,
+    "planned arrival settling": 3
+   }
+  },
+  {
+   "episode": "04/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 154.32,
+   "wall_s": 1017,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1497,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.854,
+    0.896
+   ],
+   "decisions": 371,
+   "comparable_rows": 2226,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 5,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 906,
+    "veto": 45
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "movement outscored": 1,
+    "planned arrival settling": 43
+   }
+  },
+  {
+   "episode": "05/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 168.42000000000002,
+   "wall_s": 1150,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1264,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.53,
+    0.947
+   ],
+   "decisions": 411,
+   "comparable_rows": 2466,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 1,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 446,
+    "veto": 5
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "planned arrival settling": 3
+   }
+  },
+  {
+   "episode": "05/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 125.32000000000001,
+   "wall_s": 828,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1421,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.649,
+    0.913
+   ],
+   "decisions": 304,
+   "comparable_rows": 1824,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 321
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 1,
+    "observation/view restriction (motion-dependent footprint)": 3,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "06/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 158.02,
+   "wall_s": 1075,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.162,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.661,
+    0.915
+   ],
+   "decisions": 386,
+   "comparable_rows": 2316,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 301
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 62,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "06/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 102.92,
+   "wall_s": 680,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.151,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.922,
+    0.951
+   ],
+   "decisions": 248,
+   "comparable_rows": 1488,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 236
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 1,
+    "planned arrival settling": 1
+   }
+  },
+  {
+   "episode": "07/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 140.42000000000002,
+   "wall_s": 935,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1543,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.708,
+    0.931
+   ],
+   "decisions": 343,
+   "comparable_rows": 2058,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 246
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "07/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 125.92,
+   "wall_s": 838,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1144,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.82,
+    0.953
+   ],
+   "decisions": 306,
+   "comparable_rows": 1836,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 601
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "08/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 234.72,
+   "wall_s": 1597,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.0562,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.675,
+    0.937
+   ],
+   "decisions": 578,
+   "comparable_rows": 3468,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 281
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "movement outscored": 1,
+    "observation/view restriction (motion-dependent footprint)": 1,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "08/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 154.52,
+   "wall_s": 1062,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1464,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.724,
+    0.907
+   ],
+   "decisions": 378,
+   "comparable_rows": 2268,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 251
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "09/0",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 225.12,
+   "wall_s": 1469,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1016,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.504,
+    0.936
+   ],
+   "decisions": 552,
+   "comparable_rows": 3312,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 6,
+   "vetoed_movement": 4,
+   "substitutions": {
+    "override": 921,
+    "veto": 40
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 2,
+    "blocked recovery/override": 15,
+    "planned arrival settling": 2
+   }
+  },
+  {
+   "episode": "09/1",
+   "round_trip": true,
+   "beacon": true,
+   "home": true,
+   "simulated_s": 121.22,
+   "wall_s": 833,
+   "contacts": 0,
+   "hard": 0,
+   "hard_unresolved": 0,
+   "operating": 0,
+   "min_separation_m": 0.1619,
+   "fk_interval_failures": 0,
+   "spl": [
+    0.823,
+    0.898
+   ],
+   "decisions": 295,
+   "comparable_rows": 1770,
+   "max_err": [
+    0.0,
+    0.0
+   ],
+   "no_match": 0,
+   "no_match_causes": {},
+   "vetoed": 0,
+   "vetoed_movement": 0,
+   "substitutions": {
+    "override": 231
+   },
+   "frozen_checker_passed": true,
+   "taxonomy": {
+    "observation/view restriction (motion-dependent footprint)": 26,
+    "planned arrival settling": 2
+   }
+  }
+ ]
+}

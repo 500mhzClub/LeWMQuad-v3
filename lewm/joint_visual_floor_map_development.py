@@ -1,4 +1,6 @@
 """Measured flat-floor coverage in a gravity-aligned visual map; unknown stays unknown."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS, COARSE_CELL_COUNT
+
 import numpy as np
 from lewm.causal_depth_observation_development import BODY_FROM_OPTICAL, FOCAL, body_points
 from lewm.causal_sensor_state import SensorContractError
@@ -7,7 +9,7 @@ from lewm.joint_visual_surface_memory_development import JointVisualSurfaceMemor
 from lewm.observed_floor_waypoint_development import CELL_M, propose
 
 T = np.asarray(BODY_FROM_OPTICAL)
-GRID = np.array([(x, y) for x in range(-100, 100) for y in range(-100, 100)], np.int64)
+GRID = np.array([(x, y) for x in range(-COARSE_HALF_CELLS, COARSE_HALF_CELLS) for y in range(-COARSE_HALF_CELLS, COARSE_HALF_CELLS)], np.int64)
 
 
 def floor_coverage(depth, valid, map_from_body, translation_map, floor_height, cells=GRID):
@@ -23,7 +25,7 @@ def floor_coverage(depth, valid, map_from_body, translation_map, floor_height, c
             or not np.isfinite(R).all() or not np.isfinite(p).all()
             or not np.allclose(R.T@R, np.eye(3), atol=1e-8, rtol=0) or abs(np.linalg.det(R)-1) > 1e-8
             or cells.ndim != 2 or cells.shape[1:] != (2,) or cells.dtype.kind not in 'iu'
-            or len(cells) > 40000 or np.any(cells < -100) or np.any(cells >= 100)):
+            or len(cells) > COARSE_CELL_COUNT or np.any(cells < -COARSE_HALF_CELLS) or np.any(cells >= COARSE_HALF_CELLS)):
         raise SensorContractError('bounded floor grid and proper observed map transform required')
     up_body = R[2]
     index = observed_floor_cell_index(depth, valid, up_body)
@@ -92,7 +94,7 @@ class JointVisualFloorMap:
             above = points[(points[:, 2] > self.floor_height+.03)&(points[:, 2] < self.floor_height+.65)]
             keys = np.floor(above[:, :2]/CELL_M).astype(int)
             for cell in np.unique(keys, axis=0):
-                if np.all(cell >= -100) and np.all(cell < 100): self.occupied.setdefault(tuple(map(int, cell)), receipt['frame'])
+                if np.all(cell >= -COARSE_HALF_CELLS) and np.all(cell < COARSE_HALF_CELLS): self.occupied.setdefault(tuple(map(int, cell)), receipt['frame'])
             return dict(frame=receipt['frame'], measured_ns=now_ns,
                 rgb_sha256=receipt['rgb_sha256'], depth_sha256=receipt['depth_sha256'],
                 current_observed_floor_cells=int(coverage['covered'].sum()),

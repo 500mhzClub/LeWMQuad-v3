@@ -3,6 +3,8 @@
 All depth, pose, floor, coverage, prefix and classification logic remains in its
 original order. Only repeated optical/body projection expressions are routed.
 """
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS, COARSE_CELL_COUNT
+
 from copy import deepcopy
 import math
 import numpy as np
@@ -44,7 +46,7 @@ class BodyProjectedFloorGeometry(FloorFrameGeometry):
                 or not np.isfinite(R).all() or not np.isfinite(p).all()
                 or not np.allclose(R.T@R, np.eye(3), atol=1e-8, rtol=0) or abs(np.linalg.det(R)-1) > 1e-8
                 or cells.ndim != 2 or cells.shape[1:] != (2,) or cells.dtype.kind not in 'iu'
-                or len(cells) > 40000 or np.any(cells < -100) or np.any(cells >= 100)):
+                or len(cells) > COARSE_CELL_COUNT or np.any(cells < -COARSE_HALF_CELLS) or np.any(cells >= COARSE_HALF_CELLS)):
             raise SensorContractError('bounded floor grid and proper observed map transform required')
         up_body = R[2]
         index = self.index(depth, valid, up_body)

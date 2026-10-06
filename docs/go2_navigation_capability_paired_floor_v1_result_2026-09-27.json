@@ -1,0 +1,141 @@
+{
+  "status": "SCREEN_COMPLETE_GATE_NOT_MET",
+  "rows": [
+    {
+      "episode": "00/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "simulated_s": 130.42000000000002,
+      "outcome": "round trip",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "01/0",
+      "beacon": true,
+      "home": false,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "outcome": "timeout",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "02/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "simulated_s": 159.62,
+      "outcome": "round trip",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "03/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "simulated_s": 463.12,
+      "outcome": "round trip",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "04/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "simulated_s": 132.72,
+      "outcome": "round trip",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "05/0",
+      "beacon": true,
+      "home": false,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "outcome": "timeout",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "06/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "simulated_s": 160.92000000000002,
+      "outcome": "round trip",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "07/0",
+      "beacon": true,
+      "home": false,
+      "round_trip": false,
+      "simulated_s": 249.0,
+      "outcome": "pose loss",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "08/0",
+      "beacon": false,
+      "home": false,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "outcome": "timeout",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    },
+    {
+      "episode": "09/0",
+      "beacon": true,
+      "home": false,
+      "round_trip": false,
+      "simulated_s": 480.0,
+      "outcome": "timeout",
+      "contacts": 0,
+      "hard": 0,
+      "operating": 0,
+      "hard_unresolved": 0
+    }
+  ],
+  "beacon_successes": 9,
+  "round_trip_successes": 5,
+  "required_screen_successes": 9,
+  "contract_passed": 20,
+  "contract_total": 20,
+  "contract_tolerance_m": 0.002,
+  "maximum_floor_error_m": 0.00030511476667632875,
+  "old_contract_passed": 10,
+  "normal_recordings_all_exact": true,
+  "version_charge_stands": true,
+  "outcome_versions_consumed": 2,
+  "source_hashes": {
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/cohorts/v1_paired_floor_C1_screen/result.json": "83c020e4222c24b3fa568c470601a23c9d2f2ab89d9e0f54f0f1f659753ebf35",
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/paired_floor_output_contract_attempt001/result.json": "0476b0b8e3880a38a312946d1050c9b9837ca061e8dfa26d9975d7684f41d648"
+  },
+  "next": "Diagnose the remaining four timeouts and unchanged 07 pose loss before selecting another single shared change; no new version or simulation launched."
+}

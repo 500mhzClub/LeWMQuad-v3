@@ -1,4 +1,6 @@
 """Accelerate exact distances for axis-aligned observed-floor graph edges."""
+from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M
+
 from functools import lru_cache
 import math
 
@@ -35,7 +37,7 @@ class AxisGraphClearance:
     def _calculate(self, start, end):
         a, b = np.asarray(start, float), np.asarray(end, float)
         if (a.shape != (2,) or b.shape != (2,)
-                or not np.isfinite([a, b]).all() or np.max(np.abs([a, b])) > 5.):
+                or not np.isfinite([a, b]).all() or np.max(np.abs([a, b])) > MAP_HALF_WIDTH_M):
             raise ValueError('bounded finite segment required')
         if not len(self.geometry.cells):
             return None

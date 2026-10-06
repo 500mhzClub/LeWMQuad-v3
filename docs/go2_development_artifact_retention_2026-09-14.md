@@ -1,5 +1,96 @@
 # Development artifact retention
 
+October 4 (evening), storage review Tier 1: depth-only retirement of every closed navigation root on all three drives.
+- **Authority.** Andrew asked to "delete anything youve identified that isnt used or relevent" and then, after the final review, to "remove any artefacts not required". The scope is in `docs/go2_storage_review_2026-10-04.md`.
+- **Roots.** 267 roots: 212 on RecoveryStorage, 30 on the workspace drive and 25 on `/mnt/steam_drive`.
+- **Status of those roots.** All were last written 5–18 September, before the capability programme. None is named by a current manifest, the mission runtime or the frozen predictor's traced lineage, and none is pinned here.
+- **Refused by name.** The capability root, the decision-headroom lineage, the current manifests' and runtime's source roots, the predictor's ancestor checkpoints (balanced-start predictor, frozen V-JEPA native adaptation) and this policy's pinned references.
+
+Completed:
+- 1,089,834 per-frame depth leaves retired (`depth_N`, `native_depth_N`, `auxiliary_depth_N`, `primary_depth_N`; exact name match, single link), 494,483,484,672 allocated bytes (460.52 GiB).
+- All 1,118,454 non-depth files hash-matched before and after.
+- No symlinks and no hard-linked depth leaves.
+- Every root has a `depth_retention.json` marker. Earlier markers are kept inside the new marker as `previous_marker`.
+- Receipt: `RecoveryStorage/.../.generated/depth_retirement_storage_review_tier1_2026-10-04/` (plan, root list, manifests, preserved hashes, result).
+- Runner: `scripts/retire_go2_closed_programme_depth_three_drives_2026_10_04.py` (commit 4d16f343).
+- Free space went from 89.0 to 518.2 GB on RecoveryStorage, 5.8 to 35.9 GB on the workspace drive and 0.6 to 35.0 GB on the third drive.
+- Results, failure records, RGB, physics, commands and trajectories remain. Historical full-depth replay of these recordings is no longer available.
+
+October 4: Andrew approved option 1 ("1"): depth-only retirement of four more closed-programme roots, to free space for the
+stage-2 feature cache. This is a bounded exception to the capability protocol's no-existing-retirement rule, for these four
+roots only:
+`go2_no_rgb_direct_extended_budget_maze02_pilot_v1_attempt_001`,
+`go2_measured_plane_chained_maze02_v1_attempt_001`,
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_jepa_v1_attempt_001`,
+`go2_recent_qualified_direct_flow_maze03_pilot_v1_attempt_001`. These are September recordings of closed programmes,
+listed as not referenced by the current programme in the 29 September C3-v2 storage survey; repository references are
+only those programmes' own scripts and documents. `clearance_preferred_arc_recovery...layout03` stays excluded.
+
+Completed: 42,351 per-frame depth leaves (`depth_N.npz`, `native_depth_N.npz`, `auxiliary_depth_N.npz`) retired,
+42,329,960,448 allocated bytes (39.42 GiB). All 42,515 non-depth files, including each session's
+`depth_camera_audit.json` and `depth_observations.json`, hash-matched before and after. There were no symlinks or
+hard-linked leaves, and each root has a `depth_retention.json` marker.
+Receipt: `.generated/depth_retirement_closed_programme_roots_2026-10-04/`.
+Runner: `scripts/retire_go2_approved_closed_programme_depth_2026_10_04.py` (commit 8fb838fd).
+RecoveryStorage free space went from 45.75 to 85.15 GiB.
+
+Results, failure records, RGB, physics, commands and trajectories remain. Historical full-depth replay of these four
+recordings, including those programmes' own replay tools, is no longer available, and regeneration is not guaranteed to
+reproduce the original closed-loop trajectories. Running missions do not use these roots.
+
+October 2: Andrew approved ("approved, reture unndeeded depth data") the
+depth-only retirement of exactly four closed-programme roots, proposed that
+evening because tonight's runs would leave RecoveryStorage near the cohort
+runner's 14-GiB stop. This is a bounded exception to the capability protocol's
+no-existing-retirement rule, for these four roots only:
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_direct_v1_attempt_001`,
+`go2_stop_conditioned_independent_00_frozen_reference_seed_2026091001_full_supervised_rollout_v1_attempt_001`,
+`go2_stop_conditioned_settling_maze02_v1_attempt_001`,
+`go2_extended_return_budget_maze02_v1_attempt_001` (11-13 September; listed
+as not referenced by the current programme in the 29 September C3-v2 storage
+survey). `clearance_preferred_arc_recovery...layout03` was deliberately
+excluded, because it may overlap the explicitly retained arc-recovery layout-3
+recordings.
+
+Completed: 76,581 per-frame depth leaves (`depth_N.npz`, `native_depth_N.npz`,
+`auxiliary_depth_N.npz`) retired, 60,401,623,040 allocated bytes (56.25 GiB).
+All 76,751 non-depth files, including each session's `depth_camera_audit.json`
+and `depth_observations.json`, hash-matched before and after. No symlinks or
+hard-linked leaves. Each root has a `depth_retention.json` marker.
+Receipt: `.generated/depth_retirement_closed_programme_roots_2026-10-02/`
+(exact deletion manifest, preserved hashes, authority with script SHA-256).
+Runner: `scripts/retire_go2_approved_closed_programme_depth_2026_10_02.py`
+(commit 84d3cc95). RecoveryStorage free space went from 22.70 to 78.90 GiB.
+
+Results, failure records, RGB, physics, commands and trajectories remain.
+Historical full-depth replay of these four recordings is no longer available,
+and regeneration is not guaranteed to reproduce the original closed-loop
+trajectories. No capability-programme run, checkpoint or sealed material was
+touched, and no process was using these roots.
+
+September 26: the user approved the eight depth-only candidates in
+`docs/go2_storage_cleanup_review_2026-09-26.md` with "do depth". This ends the
+full-depth pins for both pair-local-plane layout-3 arms, both plane-consensus
+layout-0 arms, and the progress-rejoining learned / fixed-transfer reactive
+layout-5/6 pairs, solely for this exact retirement. It also supplies a bounded
+exception to the navigation preregistration's no-existing-retirement rule;
+the frozen preregistration is unchanged.
+
+Completed: 63,050 exact primary/auxiliary depth NPZ leaves retired,
+105,985,282,048 allocated bytes (98.71 GiB). All
+63,342 original non-depth file hashes matched before and after.
+Every root has a `depth_retention.json` marker. Exact paths, sizes, pre-change
+file identities and preserved hashes were saved before deletion in
+`/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/depth_retirement_historical_references_2026-09-26/`.
+RecoveryStorage free space afterward was 113.48 GiB.
+
+All results and failure records, RGB, physics, commands, trajectories and
+models remain. Historical full-depth replay of these eight recordings is no
+longer available; regeneration is not guaranteed to reproduce the original
+closed-loop trajectories. No current pilot, checkpoint, other artifact family
+or sealed material was retired. Current readout frame-path inputs contain no
+depth-leaf references; no navigation/replay owner was running.
+
 September 22: lossless RGB deduplication completed over 120 completed
 historical training scenes in `datagen_full/rollout/train/large_enclosed_maze`
 chunks 0000, 0040 and 0080 and their exactly bound `render_textured_v03` outputs.

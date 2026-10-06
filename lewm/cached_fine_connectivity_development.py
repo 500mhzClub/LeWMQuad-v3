@@ -1,4 +1,6 @@
 """Reuse fine-grid search results only for identical observed graph inputs."""
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS, COARSE_CELL_M
+
 from functools import lru_cache
 import heapq
 import time
@@ -16,7 +18,7 @@ from lewm.vectorized_connector_routing_development import segment_cells
 @lru_cache(maxsize=8)
 def floor_index(floor):
     cells=tuple(sorted(floor))
-    points=(np.asarray(cells,dtype=float).reshape(-1,2)+.5)*.05
+    points=(np.asarray(cells,dtype=float).reshape(-1,2)+.5)*COARSE_CELL_M
     return cells,cKDTree(points)
 
 
@@ -46,7 +48,7 @@ def search_graph(floor,occupied,fine_occupied,radius,seed,target):
         for dx,dy in NEIGHBOURS:
             nxt=(cell[0]+dx,cell[1]+dy)
             if nxt not in floor:continue
-            step=.5*(costs[cell[0]+100,cell[1]+100]+costs[nxt[0]+100,nxt[1]+100])
+            step=.5*(costs[cell[0]+COARSE_HALF_CELLS,cell[1]+COARSE_HALF_CELLS]+costs[nxt[0]+COARSE_HALF_CELLS,nxt[1]+COARSE_HALF_CELLS])
             candidate=cost+step
             if candidate>=distance.get(nxt,float('inf')):continue
             edge=tuple(sorted((cell,nxt)))
@@ -61,7 +63,7 @@ def search_graph(floor,occupied,fine_occupied,radius,seed,target):
 
 def fine_goal_route(snapshot,position,goal,route):
     if route['status']=='OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL':return route
-    target=tuple(map(int,np.floor(np.asarray(goal)/.05)))
+    target=tuple(map(int,np.floor(np.asarray(goal)/COARSE_CELL_M)))
     if target not in snapshot.floor:return route
     began=time.perf_counter();geometry=cached_graph_geometry(snapshot.fine_occupied)
     radius=route['nominal_radius_m']

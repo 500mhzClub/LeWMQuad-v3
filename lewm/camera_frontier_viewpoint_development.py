@@ -6,6 +6,8 @@ The current measured roll, pitch and height are retained for a candidate yaw.
 import math
 import numpy as np
 
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_M
+
 from lewm.causal_depth_observation_development import BODY_FROM_OPTICAL, FOCAL
 from lewm.auxiliary_downward45_depth_geometry_development import body_from_optical
 from lewm.observed_floor_waypoint_development import centre, segment_cells
@@ -20,7 +22,7 @@ def floor_cell_projection(cell, position_map, rotation_map_from_body, floor_heig
             or not np.allclose(R.T@R, np.eye(3), atol=1e-8, rtol=0)
             or not np.isclose(np.linalg.det(R), 1., atol=1e-8, rtol=0)):
         raise ValueError('finite measured pose, floor height and proper rotation required')
-    xy = (cell + np.array([[0, 0], [1, 0], [1, 1], [0, 1]])) * .05
+    xy = (cell + np.array([[0, 0], [1, 0], [1, 1], [0, 1]])) * COARSE_CELL_M
     world = np.c_[xy, np.full(4, floor_height)]
     rows = []
     for name, mount in (('primary', np.asarray(BODY_FROM_OPTICAL)),

@@ -1,0 +1,1399 @@
+{
+  "schema": "navigation_capability_harness.v1",
+  "version": "v3_live_turn",
+  "status": "FROZEN_BEFORE_SCREEN",
+  "preregistration_sha256": "b6a84db2f304282d9d7ec9327ac21420d6e8c3e262de20178c7f243791a887d6",
+  "original_source_bindings": {
+    "scripts/run_go2_decision_headroom_pilot_development.py": {
+      "sha256": "803497e83d86f2c8d4a4c1db466906e508e97e631f4f7dd52404f6c037d11958",
+      "bytes": 18560
+    },
+    "scripts/run_go2_decision_headroom_source_development.py": {
+      "sha256": "4f2f9336d55b8838c88b60d725f57843bd204d72a0138d8ebbe90de530d43bb6",
+      "bytes": 14699
+    },
+    "scripts/run_go2_decision_headroom_branches_development.py": {
+      "sha256": "2ccf66a39842034ae0148a8a1e575b981333c5602f7153ff665a6ccb264c0d8a",
+      "bytes": 14066
+    },
+    "scripts/qualify_go2_decision_headroom_reference_development.py": {
+      "sha256": "bc61ec6f238edfdf54dbddbcbccab424019933f3178f8f2789956a83ed93c6a7",
+      "bytes": 6363
+    },
+    "lewm/decision_headroom_packet_development.py": {
+      "sha256": "529e3a9c734c439d55b2fba83bd0e28a66a64d9216f66aeb249a987427c546c7",
+      "bytes": 6000
+    },
+    "lewm/decision_headroom_snapshot_development.py": {
+      "sha256": "676e57c7dd8b41a6b5b229d62c8042255761a362bd665f7300c06de42394d54a",
+      "bytes": 5190
+    },
+    "lewm/decision_headroom_reference_development.py": {
+      "sha256": "b9f08da08704893aff9299a9b57ded142dd1831d4edd1289c46cefd5c6a6e81d",
+      "bytes": 12083
+    },
+    "scripts/check_go2_decision_headroom_pilot_development.py": {
+      "sha256": "a9d7543d7d9e3b6dad08ed2c0ce3b871e20e374008e6085213d045d2d173ebcb",
+      "bytes": 6674
+    },
+    "scripts/time_go2_decision_headroom_components_development.py": {
+      "sha256": "94e605e5a2b6674d01f9e970cf26bcd96e1fdaa6728287362566afc0f7718f05",
+      "bytes": 4065
+    },
+    "scripts/read_go2_decision_headroom_pilot_development.py": {
+      "sha256": "fbe01c9822ea58e70feb1b41c72f22f418e052e90eea7d70acd08126d2080799",
+      "bytes": 7622
+    },
+    "scripts/run_go2_dense_horizon_navigation_development.py": {
+      "sha256": "519fdc0b0f1e170bb93b0b98663d5984b404fce840df2f20738b97c3d443e37e",
+      "bytes": 17745
+    },
+    "lewm/dense_horizon_navigation_development.py": {
+      "sha256": "74144468362025da58fcc38ceb8654847a68199cd68b91e43926e5b09c523aa4",
+      "bytes": 10120
+    },
+    "lewm/dense_native_observation_development.py": {
+      "sha256": "f42282bb4209487739c753528158f83a33b850b58b59dd9a360a7c5763f9adb3",
+      "bytes": 2638
+    },
+    "scripts/paced_native_session_development.py": {
+      "sha256": "223c65fea3efcc2870f9f470afc954ccb0ff28f3e2501d27f239b3c873321898",
+      "bytes": 2161
+    },
+    "scripts/whole_task_physics_session_development.py": {
+      "sha256": "0a118879d6e890f0b262902eafc90dd7a969128bac5ead43de226ba0b02f48bd",
+      "bytes": 6610
+    },
+    "scripts/rgb_navigation_retention_development.py": {
+      "sha256": "e4f9957bf240047048179f4a46c5ba25e8a0470f6b74fdf821d94fda43aaff99",
+      "bytes": 2667
+    },
+    "lewm/dense_world_model_maze_layouts_development.py": {
+      "sha256": "0b6ab63cadf7fe2af77994d9b6711c65de299c1945325713852c663955c584f8",
+      "bytes": 1641
+    },
+    "scripts/continue_go2_decision_headroom_prephysics_development.py": {
+      "sha256": "f23b3c48f19cf0b3849e3ba316bb8cd1980c2e1d839162f206b9d5247be03f68",
+      "bytes": 7508
+    },
+    "scripts/run_go2_decision_headroom_rgb_recheck_development.py": {
+      "sha256": "fe397738ae12410a1560c3a81e40c3af9eef69fc253658723559fc8c6b7494eb",
+      "bytes": 17500
+    },
+    "scripts/in_memory_paired_camera_session_development.py": {
+      "sha256": "dd825899993b68cc98d43421730fd89ae92c07aeecbec48375150315b8aa021e",
+      "bytes": 9935
+    },
+    "scripts/dev_frozen_dense_representation_encoders_v1.py": {
+      "sha256": "c5bb12ddc4711071dbdbac8c2ad6cc4b7528dd8ceb263b752fd539bd954aa9e2",
+      "bytes": 15564
+    },
+    "scripts/run_go2_sparse_corner_completion_development.py": {
+      "sha256": "dbd0ee7f4fd1bb72f5813264e5bc1307b4dfc8001aba49ddba7b9a99d431c484",
+      "bytes": 5942
+    },
+    "lewm/sparse_corner_completion_runtime_development.py": {
+      "sha256": "808e2a2eb6333c54998b5a9f21539b99c2f9c86e5304b80dfc0d3df17aee6320",
+      "bytes": 2043
+    },
+    "scripts/run_go2_route_turn_memory_transfer_development.py": {
+      "sha256": "023ff1e54ce2c182822423973259410f2827d17891f327bfb1c9cc0f1ab2669e",
+      "bytes": 6869
+    },
+    "lewm/axis_aligned_fine_connectivity_development.py": {
+      "sha256": "305b6ac61a423db46ae9d192abc4f3bdaaee141c0f59b6b96206bd847caface2",
+      "bytes": 2884
+    },
+    "scripts/run_go2_interrupted_route_turn_memory_development.py": {
+      "sha256": "12933ffee8406c8c3fc0551eb5e69949b288a95e3d4a017021cb41eb310b8a10",
+      "bytes": 4784
+    },
+    "lewm/interrupted_route_turn_memory_development.py": {
+      "sha256": "936ef19bc1e2c75aa034521c80c8b440f448a96e906094e8940e88bfeb719a5f",
+      "bytes": 5498
+    },
+    "scripts/run_go2_interrupted_view_replan_development.py": {
+      "sha256": "6d43307d9a795e338ff1dc31410e5e8009db62bbe466b06906b0c6233eeb1a8a",
+      "bytes": 3766
+    },
+    "lewm/interrupted_view_replan_development.py": {
+      "sha256": "d0bd0d77a469a433c301d559dc7e5662565add76fa025de0b27a60c3b84b87a8",
+      "bytes": 2957
+    },
+    "scripts/run_go2_cached_fine_connectivity_development.py": {
+      "sha256": "1a2583300af17cf6d39400d83841f123fbc8e79b0d9bff7811d00f1c8fc4cae3",
+      "bytes": 4621
+    },
+    "scripts/run_go2_current_position_coverage_view_development.py": {
+      "sha256": "e64a8c04fb6e3fbb2180f9b8e25f441249ab081c0f873cc68751dadf50e45446",
+      "bytes": 4228
+    },
+    "lewm/current_position_coverage_view_development.py": {
+      "sha256": "df266825f0e922a1d53ae731da57fb9e2e335fb95bcf7e7eae470537adbb62ec",
+      "bytes": 2435
+    },
+    "scripts/run_go2_coverage_translation_view_development.py": {
+      "sha256": "807187ff52c49fa73bd5196c40ece7090cb64c81acbbed0ad18485c3229e278b",
+      "bytes": 4018
+    },
+    "lewm/coverage_translation_view_development.py": {
+      "sha256": "b8f1dd8819034f97fe1f3df98c817a9afe770e5acd38539e894f278dba2c0a13",
+      "bytes": 8094
+    },
+    "scripts/run_go2_view_arc_no_early_release_development.py": {
+      "sha256": "f4c6db4e9a6147097026c5610af017ad1d19c9b35611523c4b3d937b9e74ea5f",
+      "bytes": 4006
+    },
+    "scripts/run_go2_measured_view_arc_recovery_development.py": {
+      "sha256": "f1729ad14d9ef07ad83d04513a05982527e5731ce9806a15d492fe2b9060771e",
+      "bytes": 7352
+    },
+    "lewm/measured_view_arc_recovery_development.py": {
+      "sha256": "7e1b8f4ec4d0d3b861049b581682280cf1f322f4eba677e0784094ae532410de",
+      "bytes": 4831
+    },
+    "scripts/run_go2_publication_repaired_navigation_replication_development.py": {
+      "sha256": "0e5e784b50461c50004f0c5c65232a92aef01ebdf63376520f25853db3b63e82",
+      "bytes": 14179
+    },
+    "lewm/measured_recovery_publication_development.py": {
+      "sha256": "b701f273a86b58a9d7c2eee244d4a6ae4d5d84c567c310a6e18e3bc223e9e039",
+      "bytes": 2344
+    },
+    "scripts/run_go2_nogil_recovery_hold_development.py": {
+      "sha256": "874bd0263732ad5a4612fe380e77d97dae75ef30425df2686a6919fcf2835bec",
+      "bytes": 6567
+    },
+    "lewm/visual_recovery_dispatch_hold_development.py": {
+      "sha256": "15cf34e3be63016b618ab9f9ab8de239d2d5648a86d67dce388cf5e5fa379a9b",
+      "bytes": 3338
+    },
+    "lewm/live_planning_stage_profile_development.py": {
+      "sha256": "d690739b3b2cd2fb8b6d041b151d359b1d3151f441c94bda4e65aa99d3d5995e",
+      "bytes": 1200
+    },
+    "lewm/live_planning_profile_development.py": {
+      "sha256": "7c7ac97289350aec50569e7e3186652a958b22c9004fc80a4c100484251337a3",
+      "bytes": 1856
+    },
+    "lewm/persistent_local_visual_recovery_development.py": {
+      "sha256": "46aa53afd6d9c00bfe80279300804b0aa8bdb9bb1acdccd12fb03d545d42c252",
+      "bytes": 474
+    },
+    "lewm/framewise_visual_support_recovery_development.py": {
+      "sha256": "27316417408522fa44c66e6c5d1fe88de76fb52955f393238881aa9b3ce6000a",
+      "bytes": 2529
+    },
+    "lewm/prefix_aware_terminal_approach_development.py": {
+      "sha256": "e381280cd759609b1348492d81ccbf04f249ef29546a4b6b15c0bde7ce82c63b",
+      "bytes": 2519
+    },
+    "lewm/visual_support_recovery_development.py": {
+      "sha256": "ff664ced1f7d7c614aa228b1c03d0eddc649810b417c0a6dc23c5727791bf206",
+      "bytes": 4521
+    },
+    "lewm/pipeline_age_dispatch_development.py": {
+      "sha256": "9c0e91305d7ad22ba9e01e999ff2b528dc013577db5f1dcdf9e7918e0bda64d0",
+      "bytes": 1747
+    },
+    "lewm/short_pulse_navigation_runtime_development.py": {
+      "sha256": "b13a78260a482c38ebfa1f242db66d982ee0e4f1add13c8bcb0ae24dabc95cdc",
+      "bytes": 6421
+    },
+    "lewm/neural_input_treatment_development.py": {
+      "sha256": "f32abe2d34c41b873ad175dbec97abcae2091d87159d736fec62ee0d624737e5",
+      "bytes": 1385
+    },
+    "lewm/signed_veto_view_recovery_development.py": {
+      "sha256": "122245801f8ec58c54666cf125c19c61dbc600a2e72fb641c75236ea173aeb7b",
+      "bytes": 632
+    },
+    "scripts/run_go2_auxiliary_turn_recovery_development.py": {
+      "sha256": "8e9fdc32495cbe29230c5960b8f4720ef94670734c3ec080661b4c398578c273",
+      "bytes": 4271
+    },
+    "lewm/floor_reacquisition_development.py": {
+      "sha256": "e64929ce351c99a5e41b9dc01bc59978b8368ba138f5226366932d3c6335206e",
+      "bytes": 7710
+    },
+    "scripts/run_go2_planned_stopping_projection_development.py": {
+      "sha256": "92b795dd674c7240742d0c2ceb495852d48f5e7fc1a801a33fde303099124e2d",
+      "bytes": 3800
+    },
+    "lewm/planned_stopping_projection_development.py": {
+      "sha256": "ef4f136f799d279cdbf93b3db29affa4d2968566891060fa1f6e6c6b3f10fe95",
+      "bytes": 4633
+    },
+    "scripts/run_go2_committed_camera_view_development.py": {
+      "sha256": "178f04faec59482f7535b47857c877e09c9b7d000552e7ffb072f8d3d1a4af98",
+      "bytes": 4440
+    },
+    "lewm/combined_motion_source_development.py": {
+      "sha256": "48d25137c9b53897b52569172a59ba132070cc53f9f43484ab8b312806ad37af",
+      "bytes": 2086
+    },
+    "lewm/committed_camera_frontier_view_development.py": {
+      "sha256": "1ddb7097fe56b0fed86b233202bdc0a9753ec6936bc034afea275613bd2ff011",
+      "bytes": 3124
+    },
+    "lewm/camera_frontier_visits_development.py": {
+      "sha256": "7c1798ebaf8681951f5fd52f5ce93f44801b07cd9d95642b582ea9b87608fb35",
+      "bytes": 7685
+    },
+    "scripts/run_go2_contact_score_ablation_development.py": {
+      "sha256": "e2ed0f04b2e8175647d09a51e8c5c8669687fdd7aa6a16188ea9654865ea6f24",
+      "bytes": 4325
+    },
+    "lewm/contact_score_ablation_development.py": {
+      "sha256": "0a5d5c8df9f3174fc6fc65e975d6a313a7e36923d06ebd226fb8c9a1f0936780",
+      "bytes": 1756
+    },
+    "scripts/run_go2_pose_command_xy_ablation_development.py": {
+      "sha256": "d42419a630a69d94d526372231abad55f2b26941d3028441680b6d957f57956f",
+      "bytes": 4720
+    },
+    "lewm/pose_command_xy_control_development.py": {
+      "sha256": "9eb73ab0972bb3f0d160864eceb2fbaa963b3061a43e3d529c1c9294c9643996",
+      "bytes": 4317
+    },
+    "scripts/run_go2_routing_memory_scope_development.py": {
+      "sha256": "8bde0b310c851997939f4221254670064265093a937436094540df29409efb17",
+      "bytes": 4748
+    },
+    "lewm/current_pair_routing_memory_development.py": {
+      "sha256": "32954a8a46314338f0ae90360b3524e4e3afb734e0b0941e59254b5378bdba1b",
+      "bytes": 4422
+    },
+    "scripts/run_go2_hold_relative_heading_recovery_development.py": {
+      "sha256": "21e69d547a01be7fd09134d3c564e8125882a26b23cb5de13c05e1c793e1cb4f",
+      "bytes": 4049
+    },
+    "lewm/hold_relative_heading_recovery_development.py": {
+      "sha256": "8bfa928e99a78b1b242a83056ad389311f2795f5967e1b62cd3b51a6af446c89",
+      "bytes": 3176
+    },
+    "scripts/run_go2_nearby_panorama_comparison_development.py": {
+      "sha256": "421d378cf70c38634de7aab396b573bd4e73fe159bc05ed974498d812b1ef309",
+      "bytes": 6019
+    },
+    "lewm/nearby_panorama_directed_view_development.py": {
+      "sha256": "9895c56a8c4541955ed79c9061aaef9f6c35e91935b09abb3e76caa054b1c836",
+      "bytes": 3167
+    },
+    "scripts/run_go2_survey_reposition_native_development.py": {
+      "sha256": "71d24987b28888218b663cb5cbaa2435d3084b2d751306447b225d35af044d66",
+      "bytes": 4781
+    },
+    "lewm/survey_clearance_reposition_development.py": {
+      "sha256": "57165d317eb04243fe8b8049ed50764ff9852f6d40e92ffd9c26ba1d8ce33944",
+      "bytes": 2697
+    },
+    "lewm/no_early_heading_release_development.py": {
+      "sha256": "c3e776795e6288bfe6b31b93d8c9ead84c0ef91c68bcb1fd7358a54d11d71f64",
+      "bytes": 1164
+    },
+    "lewm/full_reserve_heading_release_development.py": {
+      "sha256": "909bf94eeb45c5f91842a92e05731565bdd965e2d3ef7f349c64aeb18b3ecdff",
+      "bytes": 2790
+    },
+    "lewm/matched_motion_residual_runtime_development.py": {
+      "sha256": "f0bd5e6bc4556a8d919e447207746cbcfde1124faa6572208c8bcc1e82a9d71c",
+      "bytes": 2439
+    },
+    "lewm/arrival_entry_terminal_priority_development.py": {
+      "sha256": "9f62525dc63c41963d0e2ecbad5ce037ae94b59a8357e409e6dd73f4d1dd01d3",
+      "bytes": 2235
+    },
+    "lewm/cached_fine_connectivity_development.py": {
+      "sha256": "74f66142fb91f057fce037fd25a46daa51437cb410351ab4736728955c9f13c2",
+      "bytes": 4852
+    },
+    "lewm/cached_fine_goal_route_development.py": {
+      "sha256": "e98704d701dba3579d0a1173f6950f7536c64bb30859010fb949a920c2d66bbb",
+      "bytes": 1407
+    },
+    "lewm/hold_relative_clearance_recovery_development.py": {
+      "sha256": "154984396da44bbd05751369b54775a3dda19c49d3a6eaabe3befa43039e6400",
+      "bytes": 2701
+    },
+    "lewm/terminal_translation_pulse_development.py": {
+      "sha256": "a7caae5459107c3776acd477b0d38c35db82102da9bb6c695c76b6cee5df69a0",
+      "bytes": 5670
+    },
+    "lewm/predictive_arrival_hold_development.py": {
+      "sha256": "b6d632f5a2c0e315b6e6da586199aced6fedef80466b4eebc87e605bf537ba9a",
+      "bytes": 2360
+    },
+    "lewm/fine_goal_route_development.py": {
+      "sha256": "82b08774bc0f0c33dc770422ece71e1e9a4ed0e655ac559f6027ff1275a813be",
+      "bytes": 3766
+    },
+    "lewm/terminal_position_priority_development.py": {
+      "sha256": "9a010ca496af4c3ef203aa285770ab443c9799abfca76c882bd396c77ad43237",
+      "bytes": 3002
+    },
+    "lewm/clearance_preferred_route_development.py": {
+      "sha256": "6f7e9f290a98dfb6bf3212a0318d49fca1c4c08fb16a39152bd615f421d99dff",
+      "bytes": 3844
+    },
+    "lewm/clearance_turn_recovery_development.py": {
+      "sha256": "7906735616b98d755cf93b27854e902c3fb26830f13313290590f5dcf386e9d0",
+      "bytes": 8058
+    },
+    "lewm/initial_panorama_development.py": {
+      "sha256": "2156c544ed2f36216e42130fcc6b0a85237f87b1bde55dcffdd7cd4df39efe79",
+      "bytes": 2540
+    },
+    "lewm/recovery_limited_initial_survey_development.py": {
+      "sha256": "1fa5b5ac771dd41a51d8216a2a33c9281c81e7dc31771b1633f0149c70e58806",
+      "bytes": 2137
+    },
+    "lewm/closed_loop_motion_residual_development.py": {
+      "sha256": "97ed2f008a5b984e969f124da880894a74aecb3a2e92d29a7205505663361997",
+      "bytes": 3135
+    },
+    "lewm/clearance_lookahead_development.py": {
+      "sha256": "45c0911f4c7efb1b02ec982a245558b2912f70a2ebef3f64592684f5ed8aa207",
+      "bytes": 2785
+    },
+    "lewm/memory_forecast_clearance_development.py": {
+      "sha256": "3bf94dd8bb69f3bc312a03252ecb2f0e45b4596fbf728189193a4ca949633cca",
+      "bytes": 4229
+    },
+    "lewm/frontier_visit_runtime_development.py": {
+      "sha256": "898932c536f340554ae2c1dbc1ea7a4f0a20157887fa790097f37ecd21b04b5a",
+      "bytes": 6280
+    },
+    "lewm/fine_stored_obstacle_routing_development.py": {
+      "sha256": "955716832830b3c2dba72a1981a1f82233f400c68ba118956e46c8ed0fd3f375",
+      "bytes": 3826
+    },
+    "lewm/continuous_start_connector_development.py": {
+      "sha256": "a399ba3610bf7c8a849f19bc557f471edd71f958dadc32c463ee562ec25624a2",
+      "bytes": 893
+    },
+    "lewm/waypoint_alignment_planning_development.py": {
+      "sha256": "3ff9f9d2182c4a98906951ab573c0b217d045fd6459a7d429af74e0ae46fc76d",
+      "bytes": 2230
+    },
+    "lewm/partial_height_round_trip_development.py": {
+      "sha256": "d97ac509a425dd00418d8802e9d56e70d7b38359710d27101dd5a5c68a37c84d",
+      "bytes": 1742
+    },
+    "lewm/fine_obstacle_round_trip_development.py": {
+      "sha256": "5b814a1c5c09dd7200d6365e6e93f39eb8ff1b14007ab4e813e760372b225ea1",
+      "bytes": 2628
+    },
+    "lewm/veto_view_round_trip_development.py": {
+      "sha256": "1590ce5ad303fbfda9760c33196a392e3caa84b219c08616153ee49e9a3d71a1",
+      "bytes": 2570
+    },
+    "lewm/stopping_margin_dispatch_development.py": {
+      "sha256": "38bef757a98bbfceb2045c086dc8b0dd098b5e40a98a1a92d912b792b84f618c",
+      "bytes": 1707
+    },
+    "lewm/process_registered_round_trip_development.py": {
+      "sha256": "75c8d43de6545862f2f506167dfec010e96b69bb84e4848b3f0217a1817c100e",
+      "bytes": 1682
+    },
+    "lewm/continuous_round_trip_runtime_development.py": {
+      "sha256": "3f6b4312bc71e5ed1ae98aead16213b7017e995d8da09a63236b5a5e9c2e6177",
+      "bytes": 4874
+    },
+    "lewm/continuous_commitment_runtime_development.py": {
+      "sha256": "705269f64407782066324278707560d3dc23867c8cb35e3e278f30847c90d5ee",
+      "bytes": 1769
+    },
+    "lewm/independent_depth_process_development.py": {
+      "sha256": "e1b5c0dec31e3ee03d1010d5d292f95d480632d74f29c41bacf12393a2fdbbdb",
+      "bytes": 1254
+    },
+    "lewm/independent_depth_runtime_development.py": {
+      "sha256": "e893888e0dc24cec1055584d3a08819fcb44efd4d691482a9e1fd79fff197c34",
+      "bytes": 1557
+    },
+    "lewm/measured_latency_simulation_development.py": {
+      "sha256": "e8f605e83e5e08788940871cfbfcf35d82da113dd0a96c4be320b5a9b8618a77",
+      "bytes": 3548
+    },
+    "lewm/process_mapped_runtime_development.py": {
+      "sha256": "12157a39bc97e0c1a87650cc4d595268b3d0b2d19a86c1f0866a83dad704bdb8",
+      "bytes": 4694
+    },
+    "lewm/auxiliary_only_turn_recovery_development.py": {
+      "sha256": "d1aa80ecca853b2cc56a6972b8110e55544a3b02294b2b586a55d7ca856ea0b4",
+      "bytes": 3610
+    },
+    "lewm/paced_multirate_controller_development.py": {
+      "sha256": "710c103dce529a30cf1f993ea271950f7e04d96bd0b5a55f3aa6d5213ac8f757",
+      "bytes": 15065
+    },
+    "lewm/sparse_corner_comparison_development.py": {
+      "sha256": "b933808886125849a230f95ec02f0b6bc5dfb07c942fc2cc8c48ccfeab4ff175",
+      "bytes": 1161
+    },
+    "lewm/persistent_visual_baselines_development.py": {
+      "sha256": "6c5856f5d00b4b5ee0367ab23e354fdbc5945bddd5426467ae7a84a3bb55b1a5",
+      "bytes": 3263
+    },
+    "scripts/qualify_go2_source_decision_packet_development.py": {
+      "sha256": "8507c6e01e040618908ba69beae90ae74501e73e949332f0df2c52681c398a37",
+      "bytes": 6851
+    },
+    "scripts/qualify_go2_articulated_clearance_development.py": {
+      "sha256": "b2e724af577c4fe796651ec4a5621e37392bbd2c4b3e1ff01397adaf67670b8c",
+      "bytes": 6200
+    },
+    "scripts/run_go2_remaining_phase1_qualification_development.py": {
+      "sha256": "eb4628dfd5a534279381aeefad80df1e9947e67efe64d2dcabe0b5b2597f6944",
+      "bytes": 11396
+    },
+    "lewm/articulated_collision_geometry_development.py": {
+      "sha256": "abd59e2960ae59a496904e39bbb16f5827b0ec9e57ac7b1da11d9a4947c6c61f",
+      "bytes": 7670
+    },
+    "lewm/native_collision_grouping_development.py": {
+      "sha256": "0128eeb5838c316c077450165c90f95a82ce144ea8fd37dd9f4d1a4d58d0a8d6",
+      "bytes": 1363
+    },
+    "lewm/decision_headroom_v4_development.py": {
+      "sha256": "4787ee960b3ef67daa98075642946897559a04dc4c075e2a698e78318c04d12b",
+      "bytes": 24073
+    },
+    "lewm/decision_headroom_v4_collection_development.py": {
+      "sha256": "c40982715a7e39b6eda4013b76f3f9790f01047f24d8c82ef5c17b1c026a1520",
+      "bytes": 4408
+    },
+    "lewm/decision_headroom_v4_layout_runtime_development.py": {
+      "sha256": "2a810020a787861ceb91c5695d9f95b0bf8d59166cabb90d52381f33af7c93a3",
+      "bytes": 631
+    },
+    "scripts/freeze_go2_headroom_v4_layouts_development.py": {
+      "sha256": "cc42bfdf4f6420e759edc9b34b26d7c8b9e588a50ee224c075545424b529094b",
+      "bytes": 2372
+    },
+    "scripts/check_go2_headroom_v4_adapters_development.py": {
+      "sha256": "e404363a410e6f800e8571e38c678bee2c570687212b194d2fec6b6f932b8d1d",
+      "bytes": 5687
+    },
+    "scripts/check_go2_headroom_v4_final_development.py": {
+      "sha256": "a574b1f76e101432daf286429697d060fa0be84ce387daf6a3196eccdb9051d7",
+      "bytes": 3066
+    },
+    "scripts/run_go2_headroom_v4_development.py": {
+      "sha256": "a0076211745e1f1bce83c560912429857c14c20634d2eeae21ef2405f4822884",
+      "bytes": 4446
+    },
+    "scripts/run_go2_headroom_v4_source_development.py": {
+      "sha256": "353506316e7b0754ba293deaf39bc0037e3e2ba63c9e7e0dd70046e72d934893",
+      "bytes": 13691
+    },
+    "scripts/run_go2_headroom_v4_branches_development.py": {
+      "sha256": "b9c853ebf72c1618826b9ceb231f6f854a5a81ca9c85b06d69651adc1532d696",
+      "bytes": 13421
+    },
+    "scripts/read_go2_headroom_v4_development.py": {
+      "sha256": "22171a92b60dbaa71b31370b32cf7f5d1923f723a11a0e0e3cd7c7eef74e2bf2",
+      "bytes": 9741
+    },
+    "docs/go2_decision_headroom_protocol_v4_2026-09-23.md": {
+      "sha256": "5bdb260a93c7ed91e504a50a18a79f07c597c94b422d85ded6329230e21cd6bd",
+      "bytes": 25992
+    },
+    "docs/go2_decision_headroom_v4_layouts_2026-09-23.json": {
+      "sha256": "45da609b86eed739e87eb1c05d7a3869b8b368e7c14403662b8b124db07acf62",
+      "bytes": 302053
+    },
+    "docs/go2_decision_headroom_v4_component_checks_2026-09-23.json": {
+      "sha256": "cf5507c9fd1d09f5e490ffc4582df7e6fa79b697c9f4531b16707563099a933d",
+      "bytes": 5177
+    },
+    "docs/go2_decision_headroom_v4_final_checks_2026-09-23.json": {
+      "sha256": "82d3131b73b47c8fdda129e10aec1346892f942fc685b6d276eb680a02c50ef9",
+      "bytes": 2661
+    },
+    "docs/go2_decision_headroom_v4_adapter_checks_2026-09-23.json": {
+      "sha256": "59f5f24cd23a1a04214d0a37c7b2d80a4d5858817301223bcf21354e792ab366",
+      "bytes": 2377
+    },
+    "docs/go2_decision_headroom_v4_adapter_check_initial_failure_2026-09-23.json": {
+      "sha256": "a4047a6ac497be37945d739717ce4002dd3e3ef9e8c132aa155fd5b5ffce69fe",
+      "bytes": 348
+    },
+    "docs/go2_remaining_phase1_provenance_addendum_2026-09-23.md": {
+      "sha256": "fa4cb00ee137b6f390fd7963a6414439e0a07680167a1d446ba015dbbae43c2a",
+      "bytes": 7046
+    },
+    "docs/go2_stage_a_holds_exploratory_2026-09-23.md": {
+      "sha256": "947424ea078cdde3a37fc5d47057b9258dd09103f95a10c0a903553e3f453893",
+      "bytes": 4343
+    },
+    "docs/go2_decision_headroom_reference_sanity_v1_2026-09-23.json": {
+      "sha256": "1503fd7360cdf527bd2ff2f26422ea68557ff1e5e1c5755a8d00435b89914964",
+      "bytes": 22188
+    },
+    "docs/go2_decision_headroom_clearance_boundary_result_v2_2026-09-23.json": {
+      "sha256": "8206245a0f47eda5e396295bb673428f876d8fd907276f1f6c8e6570c761f961",
+      "bytes": 15216
+    },
+    "lewm/maze_view_training_layouts_development.py": {
+      "sha256": "0e5df128e855f0b58f6ee1590ca9cb2558cebd8bf84522b7046aec9f7bbf99e8",
+      "bytes": 3439
+    },
+    "lewm/maze_view_transfer_layouts_development.py": {
+      "sha256": "2fcfcfe30ac57c7b7356bba5f94bfe52d8f612bddb8261bb7a0bca45e3747c39",
+      "bytes": 2563
+    },
+    "lewm/independent_round_trip_layouts_development.py": {
+      "sha256": "138efde8fd944c66d47eb66b43a6867a115ad0f561201439e86ff8bef3e97708",
+      "bytes": 8517
+    },
+    "scripts/live_depth_noise_session_development.py": {
+      "sha256": "0c45024b3eae9af5b0770d3aaa8d6f6e07147113e9a3aeb8e548a89adb6583ae",
+      "bytes": 3792
+    },
+    "scripts/compact_depth_retention_session_development.py": {
+      "sha256": "32942d2559ae52ef22f471cb7c8cdd726e421a46594d069fbe813feb466c86df",
+      "bytes": 1573
+    },
+    "lewm/decision_headroom_v41_development.py": {
+      "sha256": "19fbdf48a261870748b23a7ab1bbc40349b5d8cf29a43c2dd18632780bbf61b6",
+      "bytes": 7482
+    },
+    "scripts/run_go2_headroom_v41_development.py": {
+      "sha256": "a9a869e83fdc8ad6a98911e8a0b037f083862fa12c994427a771b02925e13878",
+      "bytes": 5398
+    },
+    "scripts/run_go2_headroom_v41_source_development.py": {
+      "sha256": "96a4353d71224ece3900f6928cfe3bccca2ddfcd83b06010cab696f012302e4a",
+      "bytes": 13693
+    },
+    "scripts/run_go2_headroom_v41_branches_development.py": {
+      "sha256": "8a4859a347d48e6e5a09a2450e9ba92bbf23bf376e03e1f685f0a8e842aa9ca4",
+      "bytes": 15471
+    },
+    "scripts/read_go2_headroom_v41_development.py": {
+      "sha256": "e3dc19a6e7ee29675b873ad3dc792133fb6c9df15a4429037e3db18cf4bbcff9",
+      "bytes": 13475
+    },
+    "scripts/check_go2_headroom_v41_development.py": {
+      "sha256": "12b85691eecec4fd43fb289c3af5a31e14eb0fb25d7c05a394fdcc3445d54ffc",
+      "bytes": 5718
+    },
+    "scripts/check_go2_headroom_historical_rerender_v41_development.py": {
+      "sha256": "1606ba3003ad5dd6d7c14b81cbb6c13595899831154965805630def5d92abdaa",
+      "bytes": 8300
+    },
+    "lewm/decision_headroom_json_v42_development.py": {
+      "sha256": "7a2fa4b7cc83cb8a34f5b12b167c00bbda2acd423b38d060cf6c6df973a6a599",
+      "bytes": 7615
+    },
+    "scripts/run_go2_headroom_v42_development.py": {
+      "sha256": "68768d74db55933d8c8e438c8463fe1c990c8cc6428da384177ec0f053947fce",
+      "bytes": 6496
+    },
+    "scripts/run_go2_headroom_v42_source_development.py": {
+      "sha256": "fabaa26ab6190e3774c7b883762dea54c5f1456d206910b613315f3027281ad3",
+      "bytes": 13693
+    },
+    "scripts/run_go2_headroom_v42_branches_development.py": {
+      "sha256": "bf5607357bd345ec086829fd8ac974d98278cda11b280f52064617a3e7942536",
+      "bytes": 15578
+    },
+    "scripts/read_go2_headroom_v42_development.py": {
+      "sha256": "8d942911ba63fc87db05cbb51c934b9d9e61677f2ba51ee69828093193723d03",
+      "bytes": 13475
+    },
+    "scripts/check_go2_headroom_v42_owner_development.py": {
+      "sha256": "632795e8295e2c3e291c5527dce3e252979dbe42b25eccdc0be6fe222049d78c",
+      "bytes": 9493
+    },
+    "scripts/check_go2_headroom_historical_rerender_v42_development.py": {
+      "sha256": "4cdac35aa4ee6e4f55c543b94112e4eb66a51829298da80669d63bf54075cfc4",
+      "bytes": 8397
+    },
+    "scripts/freeze_go2_headroom_v42_development.py": {
+      "sha256": "75dce61533cd5c9757eab7123c824d8a9f57680422cbca98b067ea2e019fb0c2",
+      "bytes": 4532
+    }
+  },
+  "implementation_bindings": {
+    "scripts/run_go2_navigation_capability_development.py": {
+      "sha256": "0ee68c788a45559f50f27836f2f10982811a34860d07b08ea0b1bf9fec3beeef",
+      "bytes": 16275
+    },
+    "lewm/navigation_capability_oracle_development.py": {
+      "sha256": "c32f7e7b7e035e8e1fd4a46eac3a4196533101a301abbfa25ca56b7ee437c553",
+      "bytes": 8014
+    },
+    "scripts/generate_go2_navigation_capability_sets_development.py": {
+      "sha256": "3ecf7445b92b0a6b6fcba335f8a33dfe83dd02f4bdec7508d079555ff5cc2ab2",
+      "bytes": 8343
+    },
+    "scripts/run_go2_navigation_capability_slots_development.py": {
+      "sha256": "5e55d1759bc6eff21e3cdb4a5af212afb70685bdefa8ca806d1fe6cd32399857",
+      "bytes": 3685
+    },
+    "lewm/navigation_capability_direct_slot_development.py": {
+      "sha256": "e034fcfc57b56c5829376f23b34e5d08b305ffe874a0842186958da1bdb19cc9",
+      "bytes": 4715
+    },
+    "lewm/navigation_capability_unused_workload_development.py": {
+      "sha256": "6b9e9d78a7043953d5833bcef61d79937217f336c2323dcd147f1902fd05810c",
+      "bytes": 2505
+    },
+    "lewm/navigation_capability_supervised_development.py": {
+      "sha256": "3c6c975a88ab1c6889675c6fded6a6aaf06e352e08059510a587df60dc5d4bfc",
+      "bytes": 1360
+    },
+    "docs/go2_navigation_capability_correctness_c1_2026-09-26.json": {
+      "sha256": "2ead38b1a18f15e2a2b10acc0040339708e825ad9f611efa1a7f6d6a93de792b",
+      "bytes": 56425
+    },
+    "docs/go2_navigation_capability_environment_pin_2026-09-26.json": {
+      "sha256": "985fef588ea9aefa045be6d12dd870f0b0626b57e94d388d74b6035404d5efe8",
+      "bytes": 11027
+    },
+    "lewm/navigation_capability_environment_development.py": {
+      "sha256": "6116e1efbca6f3b8d807f2a76ffd3f804413196ff32642a9ca98ea9213bdda3e",
+      "bytes": 2342
+    },
+    "lewm/navigation_capability_target_reference_development.py": {
+      "sha256": "b7f0ed8238f5fb9bfc5754f9ba450eb872e9734f209e810422d66cbf81759c74",
+      "bytes": 5233
+    },
+    "lewm/navigation_capability_sensor_retention_development.py": {
+      "sha256": "58877e35f2b47d720aa226ade088c9f783ddb4e5bf19a4b7c4ef95bc339adfc8",
+      "bytes": 4041
+    },
+    "scripts/check_go2_capability_task_transform_2026_09_26.py": {
+      "sha256": "526bcfc9a5669e8b15a27600285737028dfb2d591b57b99c038917e902c23978",
+      "bytes": 6835
+    },
+    "scripts/run_go2_navigation_capability_correctness_c1_development.py": {
+      "sha256": "51ae2e4dcce1a73f15636a20effaf88d72d7b6ed6f1165feaa72c3d453c14ea7",
+      "bytes": 19402
+    },
+    "scripts/read_go2_navigation_capability_correctness_c1_development.py": {
+      "sha256": "f6b5d70f2b763c59a992fbbc225e6daaf49a33642ec7c7c06ac0d76412cd07d2",
+      "bytes": 1117
+    },
+    "scripts/read_go2_navigation_capability_episode_development.py": {
+      "sha256": "5d6f7ca6ad15aaeb8cf16b9a6ac4cfd69d64d89d467ecb43e90199e81bb6a473",
+      "bytes": 11825
+    },
+    "scripts/check_go2_capability_corrected_C0_replay_development.py": {
+      "sha256": "409874abc6ee42b4800e4352e079d1dc4e1465c1667556491cba6e81f9b30069",
+      "bytes": 5045
+    },
+    "scripts/project_go2_capability_correctness_budget_development.py": {
+      "sha256": "511bfac1cca7be1f58a86519eeec792a2c1bfdd96b9487a2ec548e5bd7add1b2",
+      "bytes": 4175
+    },
+    "scripts/run_go2_capability_correctness_cohort_development.py": {
+      "sha256": "9b86b46b51e3204a6b029974e0562a910d42a7d26193c0e3182829ff203b9dc4",
+      "bytes": 4891
+    },
+    "lewm/axis_aligned_fine_connectivity_development.py": {
+      "sha256": "305b6ac61a423db46ae9d192abc4f3bdaaee141c0f59b6b96206bd847caface2",
+      "bytes": 2884
+    },
+    "lewm/body_projected_floor_geometry_development.py": {
+      "sha256": "2e8ec9acc6e30208d12c938c6b8305b750c05527575f45d74d102554f2329d3d",
+      "bytes": 10518
+    },
+    "lewm/clearance_preferred_route_development.py": {
+      "sha256": "6f7e9f290a98dfb6bf3212a0318d49fca1c4c08fb16a39152bd615f421d99dff",
+      "bytes": 3844
+    },
+    "lewm/continuous_connector_waypoint_development.py": {
+      "sha256": "b22653c3eaffc0099926483d6cea09fad4ed46924ee06764eafd0216772bc3e0",
+      "bytes": 4334
+    },
+    "lewm/coverage_translation_view_development.py": {
+      "sha256": "7bc7d1a75f959554f24087402938189e8c0318f40d107cbc75b0553209efb8b3",
+      "bytes": 8129
+    },
+    "lewm/exact_mission_target_development.py": {
+      "sha256": "acc19dc5b012730850eb9242931b130c01cfd6c2d4f90e5cfc10f01f8007ea47",
+      "bytes": 2201
+    },
+    "lewm/exact_terminal_waypoint_development.py": {
+      "sha256": "9b70a677539e599876abeacfdf0f839805ce942e6c53cbd1e9221214ad3f98b7",
+      "bytes": 3566
+    },
+    "lewm/fine_stored_obstacle_routing_development.py": {
+      "sha256": "1cd38ffeeda62cb76d122858b818f6a5d7c4e67935a564abbc5cae24d1acd021",
+      "bytes": 3928
+    },
+    "lewm/joint_visual_floor_map_development.py": {
+      "sha256": "fec05363641d501cd1d69262a449637e1dd583027c08bb1e3627b52c91c39e26",
+      "bytes": 7528
+    },
+    "lewm/multirate_routing_map_development.py": {
+      "sha256": "ee1ae5f682ec2d984dfa631e5aefda4bbccdebb60141dad8711d2ba3931b3092",
+      "bytes": 8289
+    },
+    "lewm/observed_floor_waypoint_development.py": {
+      "sha256": "b4f47b9691992c8ec0f86577a142ef825775ea133920b3df83877206d9e30258",
+      "bytes": 6530
+    },
+    "lewm/observed_geometry_refinement_development.py": {
+      "sha256": "9f577c690404e4ee9866ca2b148dc586a142e42e11184d20ff382ae8c30c84fb",
+      "bytes": 4415
+    },
+    "lewm/observed_round_trip_mission_development.py": {
+      "sha256": "35841c1f12b2873b0453b0308812b93ccbce875d037caffcaa2272d232976ea4",
+      "bytes": 5673
+    },
+    "lewm/reached_frontier_waypoint_development.py": {
+      "sha256": "d35c3508d3b43677bab13dc34a18333496599a58e0392b8de2c402c8f56dc1f6",
+      "bytes": 4805
+    },
+    "lewm/reactive_route_connector_development.py": {
+      "sha256": "d3d29c23f22025067fc907d6265c0609d7439761978d88e5a6b142231cb0a979",
+      "bytes": 4993
+    },
+    "lewm/tests/test_clearance_preferred_route_development.py": {
+      "sha256": "639f68ccc4ee7aea7c5df3fb0c8cb1fd28fbe66e7370650d0e1c0c2962b8c373",
+      "bytes": 2260
+    },
+    "lewm/vectorized_connector_routing_development.py": {
+      "sha256": "0cbb9d8fed314b636c90be59efe0352659596a9ce4d122ddbb4193a35347fd72",
+      "bytes": 1472
+    },
+    "lewm/navigation_capability_map_domain_development.py": {
+      "sha256": "738412cf7504d82a496eb4a55ed34cc01628e9a792f27f6bd776c235210f1dac",
+      "bytes": 750
+    },
+    "lewm/navigation_capability_startup_recovery_development.py": {
+      "sha256": "a2736ad18358485d64214a35aa7b7ecf2a573dd6f32bad7b8ac47d6f6b7c8dac",
+      "bytes": 5656
+    },
+    "lewm/navigation_capability_startup_containment_development.py": {
+      "sha256": "9041ed199220000043bff570d22a9f1e4f5d8df6686d9e554f3e4f05590c61a7",
+      "bytes": 1913
+    },
+    "lewm/tests/test_navigation_capability_startup_recovery_development.py": {
+      "sha256": "7d6593bdab2d8761296f359dad783ac346bf4968b7459ffd61d16b5eb90a146b",
+      "bytes": 2567
+    },
+    "scripts/check_go2_capability_startup_geometry_development.py": {
+      "sha256": "17e093c4bc63e69fcf5ed2695d2a3df0757c7f479f1d3d467b0e9a0e5a44bec8",
+      "bytes": 6963
+    },
+    "scripts/check_go2_capability_map_domain_contract_development.py": {
+      "sha256": "65482635ea180af34e9134454d5985c4fe6754a06d06794e09513e28a2edf1c0",
+      "bytes": 1072
+    },
+    "scripts/diagnose_go2_capability_initial_floor_development.py": {
+      "sha256": "17aebb2cdfbb2d071f136a88e591c94e03630889dd8b73b381190062f70d3017",
+      "bytes": 4349
+    },
+    "scripts/run_go2_navigation_capability_correctness_c2_development.py": {
+      "sha256": "e04d574aac4a8cdbab919a642556531da862f88529d82edd67607796a4958314",
+      "bytes": 19740
+    },
+    "scripts/read_go2_navigation_capability_correctness_c2_development.py": {
+      "sha256": "09d931728c86b9fcd4e269c963e18591c0ad184aceb8c02e8a44da53e3cc1715",
+      "bytes": 1120
+    },
+    "scripts/read_go2_capability_startup_c2_failure_development.py": {
+      "sha256": "038415b8b4806977e09be6e3658d0c3af976e084f391d87f1ca571ff2675e1d6",
+      "bytes": 5067
+    },
+    "scripts/run_go2_capability_startup_c2_cohort_development.py": {
+      "sha256": "241e8e3e8dc7e2e4adb1dd161cf5fb080fe126c36964efb27e2a684caf4d3543",
+      "bytes": 6086
+    },
+    "scripts/project_go2_capability_startup_c2_budget_development.py": {
+      "sha256": "da2aa2bd50c2c0ee46886bfa0f8d4193330797b7ea0893fca3c9ea95686dc500",
+      "bytes": 4712
+    },
+    "scripts/check_go2_capability_startup_c2_C0_replay_development.py": {
+      "sha256": "94f59f77be5727ce43e77c793c8893decaa67da857a9e352d3a984a088711365",
+      "bytes": 5046
+    },
+    "scripts/freeze_go2_navigation_capability_startup_c2_development.py": {
+      "sha256": "20fa6dafba8aeb881a15633cd974f3123cf1f5561c5d380780e3006eb9eab8ba",
+      "bytes": 5178
+    },
+    "docs/go2_navigation_capability_correctness_c2_2026-09-26.json": {
+      "sha256": "9467d107f6871b3cfd08b47577ee95103403e09bc0574ddcee4e8385166f86ae",
+      "bytes": 57252
+    },
+    "lewm/fresh_obstacle_dispatch_development.py": {
+      "sha256": "dc730cf9e42ed71542e81f764e69087d1f60861744ddde4cccd6bd576a8eda1f",
+      "bytes": 6647
+    },
+    "lewm/frame_cached_floor_map_development.py": {
+      "sha256": "15c7c5582ec801326843ae8038edbc5b9e373b2e7f358cb442c623d2d6563691",
+      "bytes": 15037
+    },
+    "lewm/current_observation_planning_map_development.py": {
+      "sha256": "2da4286048776c49182fd9236f2571288dd3121b804ca5adca052c8dabb9af66",
+      "bytes": 6142
+    },
+    "lewm/tests/test_later_floor_evidence_development.py": {
+      "sha256": "ebb43767c23e9bb9b6f9fb8a1a9eabd0745351ec4e612926772529f0b87e8bcb",
+      "bytes": 10441
+    },
+    "scripts/run_go2_capability_bound_exposure_replays_development.py": {
+      "sha256": "c76fdc065736a94968375e5b80bb9733c178ccb8ee8860afeb2cfda3ae0e7a9c",
+      "bytes": 2087
+    },
+    "lewm/reached_frontier_state_development.py": {
+      "sha256": "c881d5a1928e9e7e41573f618660de406bcec7d95315be043b1520e8ac1d3d2a",
+      "bytes": 4489
+    },
+    "lewm/current_position_coverage_view_development.py": {
+      "sha256": "2d10a1e95360c1b156c3bd9eaa36d213201d06266a5d9e7eddc3c1a9b71471a0",
+      "bytes": 2522
+    },
+    "scripts/check_go2_capability_grid_c3_C0_replay_development.py": {
+      "sha256": "d87647848dd4e7e365edca920b744e1c971fea6b20a23550deb40b9939a197c6",
+      "bytes": 5043
+    },
+    "scripts/project_go2_capability_grid_c3_budget_development.py": {
+      "sha256": "036e787c3d803210002e15fd88bc2bfa15124102a4790346f16691c8b2546b60",
+      "bytes": 4670
+    },
+    "lewm/projected_polygon_floor_coverage_development.py": {
+      "sha256": "64d09d90ec3489f2eb823425b3d9ba830655136047540a4b8b2ac8259fddffa5",
+      "bytes": 5672
+    },
+    "lewm/cached_fine_connectivity_development.py": {
+      "sha256": "53cb586fa220b82dfdecb3aeb8f77d5ee4540f388ec58feef70ffcf675672f32",
+      "bytes": 5024
+    },
+    "scripts/read_go2_capability_grid_c3_failure_development.py": {
+      "sha256": "f2c4752c9c54115acb55b04416dc4eaaec9d2b13a166281f899a40175584d10e",
+      "bytes": 5067
+    },
+    "scripts/replay_go2_capability_bound_exposure_development.py": {
+      "sha256": "a49d693648007b35ba33f00939a0936e628040220171661d59346a090b570d3d",
+      "bytes": 8358
+    },
+    "scripts/read_go2_navigation_capability_correctness_c3_development.py": {
+      "sha256": "25dfc693815058a80f41e843a57c94b5ba7a3c919e850c39a5081c3f653f1c4c",
+      "bytes": 1117
+    },
+    "lewm/fine_obstacle_round_trip_development.py": {
+      "sha256": "27383183254a9d6cc205b76fb2138e01ed16c622c6cd4834aec3907d777c3352",
+      "bytes": 2854
+    },
+    "scripts/freeze_go2_navigation_capability_grid_c3_development.py": {
+      "sha256": "2b1b2106b1f0e44f17f26fa3e07b233e9d8a420e6021ab1a5ea32fadfa6a15b2",
+      "bytes": 5860
+    },
+    "lewm/frame_cached_floor_geometry_development.py": {
+      "sha256": "39af2dfad2a3bc275e6aeea835bd96bb8c8c373cac8eade8b4d0e5db2bf2cf8c",
+      "bytes": 9931
+    },
+    "lewm/retained_floor_patch_development.py": {
+      "sha256": "62e6a0dc319a2c692da9b8724a42d244ff9ed2bef5b6509290eb3a812d4d9880",
+      "bytes": 4078
+    },
+    "lewm/auxiliary_depth_floor_map_development.py": {
+      "sha256": "f796d97f8d4a28986bf4e546bcdc1329ef155f16e0f2f1061547fe75003ab203",
+      "bytes": 9337
+    },
+    "lewm/measured_floor_partition_development.py": {
+      "sha256": "d424827d0b788f4d8efbc86311266f7086655bf31935f93cd6961c66bf23f06f",
+      "bytes": 2310
+    },
+    "lewm/independent_depth_obstacle_development.py": {
+      "sha256": "9a1c79ef9bfb2d729c9dc86533c8da16418bde6b5105ba14ca8021c8004579d1",
+      "bytes": 3766
+    },
+    "lewm/auxiliary_downward45_floor_map_development.py": {
+      "sha256": "b4fb0416800b833db5e2a91daa37dc348d2ec4af87691bda015c9ae24d9f3bbf",
+      "bytes": 3900
+    },
+    "lewm/camera_frontier_viewpoint_development.py": {
+      "sha256": "9129bb91c49e68829ae5f2ab5b6b189bcb53d35c51ceb0b729c848366b9c69bf",
+      "bytes": 4076
+    },
+    "lewm/tests/test_navigation_capability_refined_containment_development.py": {
+      "sha256": "699972843a2a4a0ef58f63e37280b3eb207db45261a637b1901385e465a7ff42",
+      "bytes": 2772
+    },
+    "lewm/later_floor_evidence_development.py": {
+      "sha256": "77f994370faef930ba19f537978770e3f1a3dde25537628a95a947d686390949",
+      "bytes": 11204
+    },
+    "scripts/run_go2_capability_grid_c3_cohort_development.py": {
+      "sha256": "058838ad5eea35755c4ef836a67e5372a58c17887b8fbe3f2f208f9f0b80470b",
+      "bytes": 6422
+    },
+    "lewm/fine_goal_route_development.py": {
+      "sha256": "8019553a7ae48c32940f52e48a65f84ff99b2dcd89954dc21e0bc16b0dc17243",
+      "bytes": 3928
+    },
+    "lewm/auxiliary_only_turn_recovery_development.py": {
+      "sha256": "d1aa80ecca853b2cc56a6972b8110e55544a3b02294b2b586a55d7ca856ea0b4",
+      "bytes": 3610
+    },
+    "lewm/progressive_batched_retained_floor_patch_development.py": {
+      "sha256": "6462236a03e0d497e32e67a6540142a75a61e4dd8087b2b6311a154b8d41ccbc",
+      "bytes": 2790
+    },
+    "scripts/run_go2_navigation_capability_correctness_c3_development.py": {
+      "sha256": "e4559dcda04bef2afced175c4546d8b8aeae9811403dda3f68edf04d395fced9",
+      "bytes": 19919
+    },
+    "lewm/partial_height_round_trip_development.py": {
+      "sha256": "6222ec4990f33a7e9d485db094bbf020275cbf90050bff7ca47f345d7853f0a7",
+      "bytes": 1825
+    },
+    "lewm/navigation_capability_refined_containment_development.py": {
+      "sha256": "fb3cad9f2fec16d15f06a4c6a0a2ddca04fe46bd66e1f7ed409f490df0095735",
+      "bytes": 4000
+    },
+    "lewm/tests/test_navigation_capability_full_grid_contract_development.py": {
+      "sha256": "06bb036e2e24cbc7ac5ec09ee9e9ee665abd1cee89e40120629826d585279328",
+      "bytes": 14685
+    },
+    "lewm/batched_retained_floor_patch_development.py": {
+      "sha256": "584607d82f89cdab7ffaf9c37103da9625a02d31ad965438728d17c57bf87731",
+      "bytes": 4065
+    },
+    "lewm/visibility_batched_retained_floor_patch_development.py": {
+      "sha256": "3d3534f6d1b1c1f100a14bb16226e746c11785fbb8a11804542a1278a4f32017",
+      "bytes": 2643
+    },
+    "docs/go2_navigation_capability_correctness_c3_2026-09-26.json": {
+      "sha256": "a869a3ec8ff4b79d189218c48efc9dfc74d166fcd8883d3d0c8c742ab41f9d54",
+      "bytes": 58646
+    },
+    "lewm/navigation_capability_paired_floor_start_development.py": {
+      "sha256": "7d1b0ec1e452cdc8de76a1eba59cd293ea8a32d4f177f20f279c7e5487543e96",
+      "bytes": 4861
+    },
+    "lewm/tests/test_navigation_capability_paired_floor_start_development.py": {
+      "sha256": "462f9da51114bfd51205b51092d3b2555bf0218ef9eaaf703e4b863cdcab85e2",
+      "bytes": 3568
+    },
+    "docs/go2_navigation_capability_paired_floor_v1_2026-09-26.json": {
+      "sha256": "1b8cba2cc382dd70a64258455f45ee3aabf367179bc68e9f81b237bf87924b2d",
+      "bytes": 58596
+    },
+    "docs/go2_navigation_capability_grid_c3_failure_diagnosis_2026-09-26.md": {
+      "sha256": "155be84df45cdb24a3a51306fa17def04507099c9ad41628e0bf08cdb9a6579f",
+      "bytes": 16378
+    },
+    "scripts/run_go2_navigation_capability_paired_floor_v1_development.py": {
+      "sha256": "c4b9cbaa7ad1ee46d3cedf6354b8c42f604755ee2493df243d9ba63ec164f0e3",
+      "bytes": 20015
+    },
+    "scripts/read_go2_navigation_capability_paired_floor_v1_development.py": {
+      "sha256": "6bac4b08efa1f5b23401115552263d327b232ff1289c18cd44c7d5ad674a104e",
+      "bytes": 1122
+    },
+    "scripts/read_go2_capability_paired_floor_v1_failure_development.py": {
+      "sha256": "d2e6648d1d77f88c9c86659a48aed86d8d000b002512bf261bf6a03cc5852710",
+      "bytes": 5069
+    },
+    "scripts/check_go2_capability_paired_floor_v1_C0_replay_development.py": {
+      "sha256": "b5d9a0269860f37572a33b7bdc7fb3c0e91fe8652a4550cbf0cbb09635b812d0",
+      "bytes": 5052
+    },
+    "scripts/project_go2_capability_paired_floor_v1_budget_development.py": {
+      "sha256": "f153cd71bd9fcde3fed4cd68284461603e3db6c397e5c3621e30b3cc68facc4e",
+      "bytes": 4670
+    },
+    "scripts/run_go2_capability_paired_floor_v1_cohort_development.py": {
+      "sha256": "0aada5634a83e5adc8aa149059a97dd36a9015d6971e871222e11a62a75865dd",
+      "bytes": 5877
+    },
+    "scripts/freeze_go2_navigation_capability_paired_floor_v1_development.py": {
+      "sha256": "e488aacd1a3101abd554ff4ba78ecb96121900042b2a83ca8a37cbc090db0db3",
+      "bytes": 5230
+    },
+    "scripts/analyse_go2_capability_grid_c3_failures_readonly_development.py": {
+      "sha256": "396a3bab8f1e1c275ea46967590091e1ac47bc13633df7339c288ab916568238",
+      "bytes": 9193
+    },
+    "scripts/diagnose_go2_capability_grid_c3_initial_map_development.py": {
+      "sha256": "455b2b74ed96a0012a915680f825da45f0f8827e5d2a1ac7b10881882e77d4a5",
+      "bytes": 8168
+    },
+    "lewm/navigation_capability_exhausted_view_development.py": {
+      "sha256": "f53cf4d119b9fbd4a277d035b7783ee9805addd051d43ea5926ab0c73446ef3f",
+      "bytes": 3501
+    },
+    "lewm/tests/test_navigation_capability_exhausted_view_development.py": {
+      "sha256": "059d6469147b2637e9eb9556ee8cba0aa4dc2369d57a80a8caba4770d71dcbd7",
+      "bytes": 2175
+    },
+    "scripts/analyse_go2_capability_paired_floor_legs_development.py": {
+      "sha256": "a62eba2f2096d3ecd3875099f1c1f8ec04a2a01db0459ec6740cbe2cc1624b97",
+      "bytes": 7937
+    },
+    "docs/go2_navigation_capability_paired_floor_leg_diagnosis_2026-09-27.md": {
+      "sha256": "51548cf73857c6b7c117149c4cd0a4d0e69debb98f555d89bb89a5ab74b08c1e",
+      "bytes": 11444
+    },
+    "docs/go2_navigation_capability_paired_floor_leg_diagnosis_2026-09-27.json": {
+      "sha256": "c78961c4136a37d37e481c9fbd9edf1e9dcb3c96dfe25e878b3bef1e8a682f6b",
+      "bytes": 36902
+    },
+    "docs/go2_navigation_capability_exhausted_view_v2_2026-09-27.json": {
+      "sha256": "fa92a89d059b4996bfb7ffb7373cbbc4e68f64929b37b524fee6d63bbc2d7c50",
+      "bytes": 58694
+    },
+    "scripts/run_go2_navigation_capability_exhausted_view_v2_development.py": {
+      "sha256": "f276d20e770861d6cff7ad6758f7cdb133ba22844762ff837bc78badda7458bf",
+      "bytes": 20195
+    },
+    "scripts/read_go2_navigation_capability_exhausted_view_v2_development.py": {
+      "sha256": "f6e827fd28de505e267c1bdbd80a4a13523af147174e8ca51dea848d9ae90264",
+      "bytes": 1126
+    },
+    "scripts/read_go2_capability_exhausted_view_v2_failure_development.py": {
+      "sha256": "3397f23db11c300913247e5c6fad0d340708d62dfbe381e9b8cb8c28adc5ac6d",
+      "bytes": 5073
+    },
+    "scripts/check_go2_capability_exhausted_view_v2_C0_replay_development.py": {
+      "sha256": "914fba132397a400646c93d6df9eef907398b12c79152a8207747bd3f1bf9e13",
+      "bytes": 5056
+    },
+    "scripts/project_go2_capability_exhausted_view_v2_budget_development.py": {
+      "sha256": "c887445eee8b137a29ce462b9f8e163603dac6d08e818cd9c895811a716f08ce",
+      "bytes": 4677
+    },
+    "scripts/run_go2_capability_exhausted_view_v2_cohort_development.py": {
+      "sha256": "a1cb1005ee0473313b5645188e4597320cabebcb9a4b39727af41c59792075aa",
+      "bytes": 5897
+    },
+    "scripts/freeze_go2_navigation_capability_exhausted_view_v2_development.py": {
+      "sha256": "405a558aca9a6aaf440e2b64414b83b899c559aa23ed1cd79e5eb6343d592bf5",
+      "bytes": 5095
+    },
+    "lewm/navigation_capability_live_turn_memory_development.py": {
+      "sha256": "ba10ef57ad7278a85cb3686a249f6db95e1d3a2e48fa69ed0c23dda027988fc3",
+      "bytes": 1612
+    },
+    "lewm/tests/test_navigation_capability_live_turn_memory_development.py": {
+      "sha256": "037b2b444feace821bbbacc216d046f917db4cb2e58a2ffdce659cb526e07291",
+      "bytes": 2200
+    },
+    "scripts/diagnose_go2_capability_v2_turns_development.py": {
+      "sha256": "89df6f19a23a68a79f82432cc5bc7d001378ef0cfa4663787c4ac37a71f7390b",
+      "bytes": 3000
+    },
+    "docs/go2_navigation_capability_v2_turn_diagnosis_2026-09-27.md": {
+      "sha256": "6f30e495fa268c8766703e7f4de13366194871a9dd1234faf84724231ed1ef58",
+      "bytes": 4388
+    },
+    "docs/go2_navigation_capability_live_turn_v3_2026-09-27.json": {
+      "sha256": "334cb3b6b4b66425be8c5602f2c9d22a8a66cded2bf9160646ab83c3a8dd2028",
+      "bytes": 59241
+    },
+    "docs/go2_navigation_capability_second_episode_gate_amendment_2026-09-27.json": {
+      "sha256": "125ad2e32fa1558f3ec95a0698a8df876ca73a48c5db4039e070f50db86117de",
+      "bytes": 2961
+    },
+    "scripts/run_go2_navigation_capability_live_turn_v3_development.py": {
+      "sha256": "0051864f00bb282ce5a4a40530c95d22ff1310aaaa4ac2e6e90258774dee5668",
+      "bytes": 20394
+    },
+    "scripts/read_go2_navigation_capability_live_turn_v3_development.py": {
+      "sha256": "c5d0ec1bbfc1c5264d78d332d1a900c5af09cf5b53a95ce7358922292b013559",
+      "bytes": 1116
+    },
+    "scripts/read_go2_capability_live_turn_v3_failure_development.py": {
+      "sha256": "0fc28b0987bcc2104d90f6e3c301f7abaf179d825994bf36d6f95a3bb2c50de6",
+      "bytes": 5063
+    },
+    "scripts/check_go2_capability_live_turn_v3_C0_replay_development.py": {
+      "sha256": "80f9542dec7229a1fc53a2b248f01d7341ec0a5b00239cb3edb9e67bc7db4fa0",
+      "bytes": 5046
+    },
+    "scripts/project_go2_capability_live_turn_v3_budget_development.py": {
+      "sha256": "524e17f01db2755e47feda5c6c0818a3e619a38174b5ef45ab89991a3cc3a48d",
+      "bytes": 4694
+    },
+    "scripts/run_go2_capability_live_turn_v3_cohort_development.py": {
+      "sha256": "b372adcb6447d7c6a297ab93f855213425c1e92dcdbdba312aed58ed76f562c0",
+      "bytes": 6280
+    },
+    "scripts/freeze_go2_navigation_capability_live_turn_v3_development.py": {
+      "sha256": "573016dbff801394df07111f5a2284e0f58bd962d21d99538c885e684adb8c71",
+      "bytes": 4681
+    }
+  },
+  "controller_algorithms_changed": true,
+  "sensors_changed": false,
+  "candidate_bank_changed": false,
+  "new_components": [
+    "Live eligibility invalidates blocked visual route-turn latch"
+  ],
+  "import_check_passed": true,
+  "oracle_fidelity_check_pending": true,
+  "adapter_revision": 4,
+  "predecessor_sha256": "83382ac945a192d04c43c264e8fc1dbaf507d1fb9927f75b7b92ce0e79ef0629",
+  "correction": {
+    "harness": "v3_live_turn",
+    "outcome_iteration_versions_consumed": 4,
+    "outcome_version_increment": 1,
+    "correctness_version_increment": 0,
+    "single_change": "Release visual turn-memory latch when its chosen direction becomes ineligible; then use unchanged ordinary selection and interruption memory.",
+    "rationale": "01 retains blocked right-turn override for705 holds despite eligible left turn;09 predominantly has a different clearance/view oscillator.",
+    "expected_effect": "Allow01 to leave the blocked visual-memory latch.09 may remain unchanged; no combined repair.",
+    "unchanged": [
+      "tracker estimation and pose admission",
+      "sensors and feature selection",
+      "models",
+      "candidate bank",
+      "mapping and routing cost",
+      "V2 reference exhaustion",
+      "clearance and stopping thresholds",
+      "dispatch guards",
+      "480-second mission budget",
+      "arrival rules"
+    ],
+    "predecessor_containment_passed": true,
+    "assignments": {
+      "screen": [
+        [
+          0,
+          0
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          9,
+          0
+        ]
+      ],
+      "second_screen": [
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          1
+        ]
+      ],
+      "gate": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          1
+        ],
+        [
+          1,
+          0
+        ],
+        [
+          1,
+          1
+        ],
+        [
+          2,
+          0
+        ],
+        [
+          2,
+          1
+        ],
+        [
+          3,
+          0
+        ],
+        [
+          3,
+          1
+        ],
+        [
+          4,
+          0
+        ],
+        [
+          4,
+          1
+        ],
+        [
+          5,
+          0
+        ],
+        [
+          5,
+          1
+        ],
+        [
+          6,
+          0
+        ],
+        [
+          6,
+          1
+        ],
+        [
+          7,
+          0
+        ],
+        [
+          7,
+          1
+        ],
+        [
+          8,
+          0
+        ],
+        [
+          8,
+          1
+        ],
+        [
+          9,
+          0
+        ],
+        [
+          9,
+          1
+        ]
+      ]
+    },
+    "gate_condition": "Same-harness C1 first9/10 and second9/10 with zero safety violations, then C0>=19/20. Failed second check activates all20>=18/20 for future versions.",
+    "safety": "Any disallowed contact or hard violation disqualifies the version and stops; preserve every failure, no retries."
+  },
+  "C4_final_binding": {
+    "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/c4_fit_attempt002/direct_final.pt",
+    "sha256": "d491584b17ee4321d65daf883460ccf3b626fe8d735b986473d2ecc477064013",
+    "bytes": 69592773,
+    "updates": 1760,
+    "training_render_provenance": "unverified"
+  },
+  "qualification_evidence": {
+    "videos/pipeline_test_attempt001/replay_verification.json": {
+      "sha256": "d862beeb12bf8630f63bb6f460df29c0b7cf513c56882e7778ee903d8e76f1dd",
+      "bytes": 470
+    },
+    "equivalence/C2_unused_workload_serial_attempt001/result.json": {
+      "sha256": "ed537b34543a21af4b964440e4b4f29f1e188e45d94b518568533ae4b1daba26",
+      "bytes": 580
+    },
+    "runs/v0_pilot_C0_dev00_ep0_attempt002/oracle_execution_coverage.json": {
+      "sha256": "11cfcae55853e055b8dbed31f2b5eec1c862df59a53edf6c7bc2241296722320",
+      "bytes": 916
+    },
+    "c4_fit_attempt002/plan.json": {
+      "sha256": "fc2265b89546a7a0b3b39d33a0e6ec59a3799276928269e4052e9c3430e14635",
+      "bytes": 4227
+    },
+    "c4_fit_attempt002/result.json": {
+      "sha256": "4dbde80112ac3745f515404e52b83c11053d005412085dd745e990dedea72ab3",
+      "bytes": 280
+    }
+  },
+  "correctness_only": false,
+  "outcome_driven_versions_consumed": 4,
+  "initialization_contract": {
+    "path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/target_reference_correctness_c1_2026-09-26/result.json",
+    "sha256": "c767d3638b46274c7d86dc5442a8955626c23b119f4cea337ae04480144e936e",
+    "episodes": 180,
+    "tolerance_m": 1e-09,
+    "passed": true
+  },
+  "protocol_sha256": "334cb3b6b4b66425be8c5602f2c9d22a8a66cded2bf9160646ab83c3a8dd2028",
+  "refined_containment_evidence": {
+    "grid_c3_bound_exposure/dev00/result.json": {
+      "sha256": "2cb5f7cc8e4a1cd69732c22b782334cd0477f2c83536403d59bbf9801d9e82fb",
+      "bytes": 690
+    },
+    "grid_c3_bound_exposure/dev03/result.json": {
+      "sha256": "9b114f03344171b13797f55bc9b324347b4dc5050388705735744465d06e9d5b",
+      "bytes": 564
+    },
+    "grid_c3_bound_exposure/dev04/result.json": {
+      "sha256": "ab480f4f19436eea0e743e09569c136f730961c4d30ae42f3b549032038052d0",
+      "bytes": 565
+    },
+    "grid_c3_bound_exposure/dev05/result.json": {
+      "sha256": "52bad7581b3670270610672a667cb6636e979a948f65f46e36f954f3891ca4ad",
+      "bytes": 564
+    },
+    "grid_c3_bound_exposure/dev07/result.json": {
+      "sha256": "fe81a63c6c0718f36dc3f4e351fa1572ad2289a920512260404ab0be62c44083",
+      "bytes": 924
+    }
+  },
+  "diagnosis_evidence": {
+    "v2_turn_diagnosis_attempt001/result.json": {
+      "sha256": "89db19988c92b010580923703d81343ae22c4e2dde1b3c954731f4e2688829c2",
+      "bytes": 41774
+    },
+    "cohorts/v2_exhausted_view_C1_screen/result.json": {
+      "sha256": "5ff7a1e7dff3f68963050c3fb56f47b50f917c22459922f2fd12b25af34aec4c",
+      "bytes": 3961
+    }
+  }
+}

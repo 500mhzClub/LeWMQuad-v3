@@ -1,6 +1,8 @@
 """Prefer a measured in-place view before routing to a coverage viewpoint."""
 import numpy as np
 
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_M
+
 from lewm.camera_frontier_visits_development import CameraFrontierVisits
 from lewm.camera_frontier_viewpoint_development import directed_rotation, floor_cell_projection
 from lewm.observed_floor_waypoint_development import centre, segment_cells
@@ -21,7 +23,7 @@ class CurrentPositionCoverageVisits(CameraFrontierVisits):
                 if r['fully_projected'] and not (segment_cells(
                     r['camera_origin_map_xy_m'],centre(unknown)) & snapshot.occupied)]
             if cameras:
-                return dict(viewpoint_cell=np.floor(p[:2]/.05).astype(int).tolist(),
+                return dict(viewpoint_cell=np.floor(p[:2]/COARSE_CELL_M).astype(int).tolist(),
                     viewpoint_map_xy_m=p[:2].tolist(),route_cells=[],unknown_cell=list(unknown),
                     frontier_target_map_xy_m=centre(unknown).tolist(),view_heading_rad=heading,
                     projected_cameras=cameras,current_roll_pitch_height_used=True,

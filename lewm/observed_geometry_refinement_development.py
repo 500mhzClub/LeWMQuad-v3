@@ -3,6 +3,8 @@
 Neither calculation certifies articulated motion or ground support. Both retain
 the supplied observed geometry; no scene labels or native poses enter here.
 """
+from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M, COARSE_CELL_COUNT
+
 import math
 import numpy as np
 from lewm.observed_floor_waypoint_development import CELL_M
@@ -14,11 +16,11 @@ from lewm.joint_rgbd_rigid_pose_development import proper
 def segment_cell_distances(start,end,cells):
     """Euclidean distances between a closed 2-D segment and observed cell squares."""
     a,b=np.asarray(start,float),np.asarray(end,float);keys=np.asarray(cells)
-    if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>5.:
+    if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>MAP_HALF_WIDTH_M:
         raise ValueError('bounded finite segment required')
     if keys.size==0:return np.empty(0,float)
-    cell_limit=int(round(5./CELL_M))
-    if keys.ndim!=2 or keys.shape[1]!=2 or keys.dtype.kind not in 'iu' or len(keys)>40000 or np.any(keys < -cell_limit) or np.any(keys>=cell_limit):
+    cell_limit=int(round(MAP_HALF_WIDTH_M/CELL_M))
+    if keys.ndim!=2 or keys.shape[1]!=2 or keys.dtype.kind not in 'iu' or len(keys)>COARSE_CELL_COUNT or np.any(keys < -cell_limit) or np.any(keys>=cell_limit):
         raise ValueError('bounded integer observed cells required')
     low=keys*CELL_M;high=low+CELL_M;delta=b-a;length2=float(delta@delta)
     distances=np.minimum(np.linalg.norm(np.maximum(np.maximum(low-a,a-high),0.),axis=1),

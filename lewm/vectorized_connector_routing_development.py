@@ -1,4 +1,6 @@
 """Same closed grid supercover, with cell/box intersections evaluated in arrays."""
+from lewm.navigation_capability_map_domain_development import MAP_HALF_WIDTH_M
+
 import numpy as np
 from lewm import observed_floor_waypoint_development as original
 from lewm.eligible_floor_registration_development import bind
@@ -6,7 +8,7 @@ from lewm.eligible_floor_registration_development import bind
 
 def segment_cells(start,end):
     a,b=np.asarray(start,float),np.asarray(end,float)
-    if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>5.:
+    if a.shape!=(2,) or b.shape!=(2,) or not np.isfinite([a,b]).all() or np.max(np.abs([a,b]))>MAP_HALF_WIDTH_M:
         raise ValueError('bounded finite map connector required')
     low=np.floor(np.minimum(a,b)/original.CELL_M).astype(int)-1
     high=np.floor(np.maximum(a,b)/original.CELL_M).astype(int)

@@ -4,6 +4,8 @@ Each calculation is a separately named source derivative. No imported function
 or active controller is patched; complete decision equality is required before
 using this implementation in a fresh native attempt.
 """
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS
+
 from copy import deepcopy
 import hashlib
 import numpy as np
@@ -78,7 +80,7 @@ class FrameCachedFloorMemory(JointFloorRegisteredSurfaceMemory):
         mapped=points@B.T;above=mapped[(mapped[:,2]>floor_height+.03)&(mapped[:,2]<floor_height+.65)]
         keys=np.floor(above[:,:2]/CELL_M).astype(int)
         for cell in np.unique(keys,axis=0):
-            if np.all(cell>=-100) and np.all(cell<100):occupied.setdefault(tuple(map(int,cell)),witness['frame'])
+            if np.all(cell>=-COARSE_HALF_CELLS) and np.all(cell<COARSE_HALF_CELLS):occupied.setdefault(tuple(map(int,cell)),witness['frame'])
         self.auxiliary_ns=now_ns
         self.auxiliary_receipt=dict(**witness,current_returns=len(points),current_floor_returns=int(mask.sum()),
             current_other_returns=int((~mask).sum()),total_returns=self.auxiliary_partition.total_returns,
@@ -168,7 +170,7 @@ class FrameCachedFloorMap(JointFloorRegisteredMap):
             above = points[(points[:, 2] > self.floor_height+.03)&(points[:, 2] < self.floor_height+.65)]
             keys = np.floor(above[:, :2]/CELL_M).astype(int)
             for cell in np.unique(keys, axis=0):
-                if np.all(cell >= -100) and np.all(cell < 100): self.occupied.setdefault(tuple(map(int, cell)), receipt['frame'])
+                if np.all(cell >= -COARSE_HALF_CELLS) and np.all(cell < COARSE_HALF_CELLS): self.occupied.setdefault(tuple(map(int, cell)), receipt['frame'])
             return dict(frame=receipt['frame'], measured_ns=now_ns,
                 rgb_sha256=receipt['rgb_sha256'], depth_sha256=receipt['depth_sha256'],
                 current_observed_floor_cells=int(coverage['covered'].sum()),

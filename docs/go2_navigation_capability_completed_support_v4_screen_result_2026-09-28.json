@@ -1,0 +1,764 @@
+{
+  "schema": "navigation_capability_screen_report.v1",
+  "date": "2026-09-28",
+  "harness": "v4_completed_support",
+  "source_commit": "7da82b23",
+  "cohort": {
+    "controller": "C1",
+    "harness": "v4_completed_support",
+    "harness_sha256": "82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871",
+    "complete": true,
+    "episodes": 10,
+    "successes": 10,
+    "passed": true,
+    "rows": [
+      {
+        "assignment": "v4_completed_support_screen_C1_dev00_ep0_attempt001",
+        "episode_id": "00/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 2,
+          "planned arrival settling": 20,
+          "movement outscored": 2
+        },
+        "wall_s": 293.8662577740033
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev01_ep0_attempt001",
+        "episode_id": "01/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 6,
+          "planned arrival settling": 5,
+          "movement outscored": 3
+        },
+        "wall_s": 466.06858352100244
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev02_ep0_attempt001",
+        "episode_id": "02/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 103,
+          "planned arrival settling": 7
+        },
+        "wall_s": 462.5374051160179
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev03_ep0_attempt001",
+        "episode_id": "03/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 2,
+          "planned arrival settling": 2
+        },
+        "wall_s": 339.5317892099847
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev04_ep0_attempt001",
+        "episode_id": "04/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 4,
+          "planned arrival settling": 57
+        },
+        "wall_s": 314.20530654495815
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev05_ep0_attempt001",
+        "episode_id": "05/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "movement outscored": 2,
+          "memory clearance": 5,
+          "observation/view restriction": 4,
+          "planned arrival settling": 3
+        },
+        "wall_s": 343.58137783402344
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev06_ep0_attempt001",
+        "episode_id": "06/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 61,
+          "planned arrival settling": 4
+        },
+        "wall_s": 334.0018590700347
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev07_ep0_attempt001",
+        "episode_id": "07/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 1,
+          "planned arrival settling": 23
+        },
+        "wall_s": 412.2469709169818
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev08_ep0_attempt001",
+        "episode_id": "08/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "planned arrival settling": 3
+        },
+        "wall_s": 435.6986033919966
+      },
+      {
+        "assignment": "v4_completed_support_screen_C1_dev09_ep0_attempt001",
+        "episode_id": "09/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 2,
+          "planned arrival settling": 2
+        },
+        "wall_s": 461.8232152509736
+      }
+    ],
+    "outcome_iteration_versions_consumed": 5,
+    "outcome_version_increment": 1,
+    "predecessor_refined_containment_passed": true,
+    "wall_s": 5136.077838557016,
+    "stop_on_safety_disqualification": false
+  },
+  "budget": {
+    "schema": "navigation_capability_measured_mission_budget.v1",
+    "elapsed_conservative_wall_hours": 61.015132573843005,
+    "remaining_science_episodes": {
+      "C0": 30,
+      "C1": 30,
+      "C2": 20,
+      "C3": 20,
+      "C4": 20
+    },
+    "measurement_basis": {
+      "C0": {
+        "missions": 1,
+        "source": "pre-fix pilot; provisional",
+        "mean_wall_s_per_mission": 676.1005353289947,
+        "mean_reader_wall_s_per_mission": 82.60315208899556
+      },
+      "C1": {
+        "missions": 10,
+        "source": "latest diagnostic screen or corrected missions, including failures",
+        "mean_wall_s_per_mission": 386.3561368629977,
+        "mean_reader_wall_s_per_mission": 121.25059993478935
+      },
+      "C2": {
+        "missions": 1,
+        "source": "pre-fix pilot; provisional",
+        "mean_wall_s_per_mission": 1009.9013674749876,
+        "mean_reader_wall_s_per_mission": 91.73232363903662
+      },
+      "C3": {
+        "missions": 1,
+        "source": "pre-fix pilot; provisional",
+        "mean_wall_s_per_mission": 1937.2397145989817,
+        "mean_reader_wall_s_per_mission": 170.23299290699651
+      },
+      "C4": {
+        "missions": 1,
+        "source": "pre-fix pilot; provisional",
+        "mean_wall_s_per_mission": 670.5671118299942,
+        "mean_reader_wall_s_per_mission": 134.6795511689852
+      }
+    },
+    "future_runs_and_native_analysis_hours": 32.8545483219036,
+    "video_hours": 3.1853871377104603,
+    "extra_replay_and_capture_allowance_hours": 1.0,
+    "contingency_fraction": 0.15,
+    "projected_total_wall_hours": 103.61105835239917,
+    "wall_cap_hours": 160,
+    "time_fits": true,
+    "additional_storage_with_contingency_bytes": 50336553776.510376,
+    "recovery_usable_bytes": 99493834752,
+    "storage_fits": true,
+    "validation_episodes_per_maze": 1,
+    "extra_harness_versions_assumed": 0,
+    "assumptions": [
+      "Re-project after each cohort; future missions use measured wall time per controller, including failures.",
+      "A first-episode screen, second-episode C1 check and gate; another outcome-driven version needs a fresh projection.",
+      "No concurrency speedup credited. C1/C2 pre-fix model-workload cost is conservative until corrected measurements.",
+      "C0 full recording only for first corrected gate episode; bitwise replay is a strict gate.",
+      "Storage is sized at 480 s per remaining mission; time is not."
+    ]
+  },
+  "episodes": [
+    {
+      "episode": "00/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 87.2,
+      "return_s": 43.2,
+      "total_s": 130.4,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.15585424039312756,
+        "minimum_separation_upper_m": 0.15837168290562983,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.15585424039312756,
+        "minimum_separation_upper_m": 0.15837168290562983,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 206,
+          "holds": 23,
+          "rate": 0.11165048543689321
+        },
+        "RETURN": {
+          "selected_plans": 104,
+          "holds": 1,
+          "rate": 0.009615384615384616
+        }
+      },
+      "latency_s": {
+        "median": 0.2122929795,
+        "p95": 0.22603469325
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 2,
+        "planned arrival settling": 20,
+        "movement outscored": 2
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev00_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "63ce030e017dcc6b7698e9ee31615e596fcf3c088b46b448e936553411120dcb"
+    },
+    {
+      "episode": "01/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 126.5,
+      "return_s": 84.70000000000002,
+      "total_s": 211.20000000000002,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16234699659510543,
+        "minimum_separation_upper_m": 0.16234699659510501,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16234699659510543,
+        "minimum_separation_upper_m": 0.16234699659510501,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 311,
+          "holds": 7,
+          "rate": 0.022508038585209004
+        },
+        "RETURN": {
+          "selected_plans": 202,
+          "holds": 7,
+          "rate": 0.034653465346534656
+        }
+      },
+      "latency_s": {
+        "median": 0.2159721745,
+        "p95": 0.23336980315
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 6,
+        "planned arrival settling": 5,
+        "movement outscored": 3
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev01_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "11fa14855012196a1041e4ef5101b46c0bef6a1a92bd36fc9d222974d8fec187"
+    },
+    {
+      "episode": "02/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 146.3,
+      "return_s": 63.0,
+      "total_s": 209.3,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.10513956614047137,
+        "minimum_separation_upper_m": 0.14187170671258412,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.10513956614047137,
+        "minimum_separation_upper_m": 0.14187170671258412,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 361,
+          "holds": 110,
+          "rate": 0.3047091412742382
+        },
+        "RETURN": {
+          "selected_plans": 155,
+          "holds": 0,
+          "rate": 0.0
+        }
+      },
+      "latency_s": {
+        "median": 0.211938262,
+        "p95": 0.2272098698
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 103,
+        "planned arrival settling": 7
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev02_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "e84ea5d021b4260f13f50cb1e5dcfa1cfae94e3d6359cdfceeee5e3ca3d5c2ef"
+    },
+    {
+      "episode": "03/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 87.2,
+      "return_s": 63.3,
+      "total_s": 150.5,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16902965502204514,
+        "minimum_separation_upper_m": 0.16902965502204517,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16902965502204514,
+        "minimum_separation_upper_m": 0.16902965502204517,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 213,
+          "holds": 3,
+          "rate": 0.014084507042253521
+        },
+        "RETURN": {
+          "selected_plans": 155,
+          "holds": 1,
+          "rate": 0.0064516129032258064
+        }
+      },
+      "latency_s": {
+        "median": 0.2139148775,
+        "p95": 0.228858823
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 2,
+        "planned arrival settling": 2
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev03_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "7b191695618c1fb12108ee65a8dcf359ac4631cea8227f3b642073175dca804a"
+    },
+    {
+      "episode": "04/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 98.1,
+      "return_s": 40.400000000000006,
+      "total_s": 138.5,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.1593238578919871,
+        "minimum_separation_upper_m": 0.1686316984775955,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.1593238578919871,
+        "minimum_separation_upper_m": 0.1686316984775955,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 236,
+          "holds": 60,
+          "rate": 0.2542372881355932
+        },
+        "RETURN": {
+          "selected_plans": 98,
+          "holds": 1,
+          "rate": 0.01020408163265306
+        }
+      },
+      "latency_s": {
+        "median": 0.2081366025,
+        "p95": 0.21916269725
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 4,
+        "planned arrival settling": 57
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev04_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "29cf2e9260b5803b4bb619d0795a5c987023127214afd61e564a8131fa5dba6f"
+    },
+    {
+      "episode": "05/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 103.6,
+      "return_s": 50.10000000000002,
+      "total_s": 153.70000000000002,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.06694236343181381,
+        "minimum_separation_upper_m": 0.08838129090089165,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.06694236343181381,
+        "minimum_separation_upper_m": 0.08838129090089165,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 254,
+          "holds": 9,
+          "rate": 0.03543307086614173
+        },
+        "RETURN": {
+          "selected_plans": 122,
+          "holds": 1,
+          "rate": 0.00819672131147541
+        }
+      },
+      "latency_s": {
+        "median": 0.214170768,
+        "p95": 0.2295015215
+      },
+      "taxonomy": {
+        "movement outscored": 2,
+        "memory clearance": 5,
+        "observation/view restriction": 4,
+        "planned arrival settling": 3
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev05_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "e33b2ec064a53d08c90d7b8397e8c404418eefe2668de853545f6467d214caff"
+    },
+    {
+      "episode": "06/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 108.8,
+      "return_s": 42.10000000000001,
+      "total_s": 150.9,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16196621963223556,
+        "minimum_separation_upper_m": 0.1619662196322356,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.16196621963223556,
+        "minimum_separation_upper_m": 0.1619662196322356,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 267,
+          "holds": 64,
+          "rate": 0.2397003745318352
+        },
+        "RETURN": {
+          "selected_plans": 102,
+          "holds": 1,
+          "rate": 0.00980392156862745
+        }
+      },
+      "latency_s": {
+        "median": 0.208341564,
+        "p95": 0.22152382059999998
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 61,
+        "planned arrival settling": 4
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev06_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "5544f3459ffefd83ff35452bc22306c11469ded951ffe110377726e7a6724b84"
+    },
+    {
+      "episode": "07/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 92.5,
+      "return_s": 90.30000000000001,
+      "total_s": 182.8,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.15987300306553953,
+        "minimum_separation_upper_m": 0.15987300306553956,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.15987300306553953,
+        "minimum_separation_upper_m": 0.15987300306553956,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 226,
+          "holds": 1,
+          "rate": 0.004424778761061947
+        },
+        "RETURN": {
+          "selected_plans": 213,
+          "holds": 23,
+          "rate": 0.107981220657277
+        }
+      },
+      "latency_s": {
+        "median": 0.216069905,
+        "p95": 0.2301449032
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 1,
+        "planned arrival settling": 23
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev07_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "88af09a42e433a4d2fdbc2357b79f14fb858f1faf662ef2d080f76e5417135f2"
+    },
+    {
+      "episode": "08/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 124.8,
+      "return_s": 72.00000000000001,
+      "total_s": 196.8,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.0813745119807543,
+        "minimum_separation_upper_m": 0.110894627114415,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.0813745119807543,
+        "minimum_separation_upper_m": 0.110894627114415,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 306,
+          "holds": 2,
+          "rate": 0.006535947712418301
+        },
+        "RETURN": {
+          "selected_plans": 177,
+          "holds": 1,
+          "rate": 0.005649717514124294
+        }
+      },
+      "latency_s": {
+        "median": 0.2164931545,
+        "p95": 0.23148505349999998
+      },
+      "taxonomy": {
+        "planned arrival settling": 3
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev08_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "9a8d3be412ba7e05bbb3a35e44ce8e511cc025a324f227ac8d929ecd66099c01"
+    },
+    {
+      "episode": "09/0",
+      "beacon": true,
+      "home": true,
+      "round_trip": true,
+      "outbound_s": 146.5,
+      "return_s": 62.400000000000006,
+      "total_s": 208.9,
+      "contacts": 0,
+      "hard": {
+        "threshold_m": 0.005,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.09025891090829918,
+        "minimum_separation_upper_m": 0.10972837668891125,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "operating": {
+        "threshold_m": 0.02,
+        "confirmed_violation_samples": 0,
+        "unresolved_sampled_samples": 0,
+        "all_native_samples_qualified": true,
+        "minimum_separation_lower_m": 0.09025891090829918,
+        "minimum_separation_upper_m": 0.10972837668891125,
+        "interval_robustness_failure_count": 0,
+        "native_discrete_ground_truth": true,
+        "interval_check_secondary": true
+      },
+      "stall": {
+        "OUTBOUND": {
+          "selected_plans": 360,
+          "holds": 4,
+          "rate": 0.011111111111111112
+        },
+        "RETURN": {
+          "selected_plans": 153,
+          "holds": 0,
+          "rate": 0.0
+        }
+      },
+      "latency_s": {
+        "median": 0.209252259,
+        "p95": 0.222191
+      },
+      "taxonomy": {
+        "observation/view restriction (motion-dependent footprint)": 2,
+        "planned arrival settling": 2
+      },
+      "evaluation_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v4_completed_support_screen_C1_dev09_ep0_attempt001/episode_evaluation.json",
+      "evaluation_sha256": "c785b0027db6471ac8c2bf7135702aabcc8bdbccda1d75193f6f11a14408833e"
+    }
+  ],
+  "interpretation": "Development screen only; not capability qualification or an isolated causal estimate.",
+  "next_stage": "Same frozen harness, all ten second dev episodes, C1; >=9/10 and zero safety violations required before C0."
+}

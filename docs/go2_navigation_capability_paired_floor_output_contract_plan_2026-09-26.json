@@ -1,0 +1,128 @@
+{
+  "schema": "navigation_capability_paired_floor_output_contract.v1",
+  "authority": "User additions to floor-height version 2469bb79: startup-only ground-truth output contract on all 20 dev episodes and post-screen normal-start comparison; screen unchanged.",
+  "harness_commit": "2469bb79",
+  "harness_sha256": "e069986cac21a61dad268d211d55c122712f1556898dfc7e6a9842bae3169654",
+  "script_sha256": "e3a50c892b182e9438f4f5396d2904abf08eed1e5d1327cdea7d88e29391b7d3",
+  "wait_for_screen_process": {
+    "pid": 610547,
+    "created": 1790455022.89
+  },
+  "execution_order": "Wait for existing C1 screen owner to close; baseline calibration; freeze numerical tolerance; 20 startup contracts; five read-only recording comparisons.",
+  "concurrency": "Existing exact concurrency qualification is explicitly C3-only; no extra simulator/renderer owner alongside C1.",
+  "calibration_episodes": [
+    "00/0",
+    "03/0",
+    "04/0",
+    "05/0",
+    "07/0"
+  ],
+  "calibration": "Original C3 primary mapping path only, versus native ground plane expressed in the mapper start frame. Do not evaluate V1 before the tolerance is frozen.",
+  "tolerance_rule": "max(0.002 m, ceil(2 * maximum absolute old primary-path error / 0.001 m) * 0.001 m); stop if this exceeds 0.005 m. Freeze numerical value before all V1 tests.",
+  "tolerance_rationale": "Twice the measured primary-path maximum, rounded upward to millimetres; 2-mm minimum equals existing depth-noise scale. A 5-mm ceiling keeps the allowance below half the mapping 10-mm floor-height band and prevents calibration from legitimising a large bias.",
+  "assignments": [
+    [
+      0,
+      0
+    ],
+    [
+      0,
+      1
+    ],
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      2,
+      1
+    ],
+    [
+      3,
+      0
+    ],
+    [
+      3,
+      1
+    ],
+    [
+      4,
+      0
+    ],
+    [
+      4,
+      1
+    ],
+    [
+      5,
+      0
+    ],
+    [
+      5,
+      1
+    ],
+    [
+      6,
+      0
+    ],
+    [
+      6,
+      1
+    ],
+    [
+      7,
+      0
+    ],
+    [
+      7,
+      1
+    ],
+    [
+      8,
+      0
+    ],
+    [
+      8,
+      1
+    ],
+    [
+      9,
+      0
+    ],
+    [
+      9,
+      1
+    ]
+  ],
+  "contract": "Absolute initial scalar map-floor-height error versus native horizontal collision ground, at the map-origin vertical, <= frozen tolerance. All 20 starts must qualify. New and C3 maps receive the identical actual startup sensor/registered-pose packet; ground truth stays evaluator-only.",
+  "startup_scope": "1.5-s original settling and first consumed packet only; zero mission commands/planning decisions. An unavailable initial output is unresolved and reported before a next change; do not silently substitute or extend the attempt.",
+  "native_reference": "world_from_map = settled_world_from_body @ initial_from_map; ground world Z=0 verified from native collision-floor position/quaternion; transform its plane into each mapper frame.",
+  "comparison_episodes": [
+    "00/0",
+    "03/0",
+    "04/0",
+    "05/0",
+    "07/0"
+  ],
+  "comparison": "Every native field (dtype/shape/value), full request dictionaries and every consumed sensor hash; report first differences and missing runs without replacements.",
+  "accounting": "No zero charge: implemented mapping change also affects normal starts. Preserve comparisons and c3-v1 contract evidence; do not retrospectively alter V1.",
+  "maximum_simulated_s": 37.5,
+  "execution_wall_cap_s": 1800,
+  "retained_cap_bytes": 67108864,
+  "programme_wall_cap_h": 160,
+  "recovery_reserve_bytes": 12884901888,
+  "workspace_reserve_bytes": 4294967296,
+  "per_device_vram_reserve_bytes": 2147483648,
+  "no_retries": true,
+  "frames_retained": false,
+  "sealed_inputs": false,
+  "stop_rule": "Report any failed or unresolved start before a next harness change. Preserve all failed attempts. Running screen remains unchanged."
+}

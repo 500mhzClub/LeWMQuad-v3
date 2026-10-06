@@ -4,6 +4,8 @@ This map proposes routes only. It supplies no robot-volume/contact check and
 does not authorize a command. Updates may skip observations; pose estimation
 and the actuation loop must keep their own clocks and freshness requirements.
 """
+from lewm.navigation_capability_map_domain_development import FINE_CELL_M, COARSE_HALF_CELLS, FINE_HALF_CELLS
+
 from dataclasses import dataclass
 import hashlib
 import numpy as np
@@ -92,10 +94,18 @@ class MultirateRoutingMap:
             if self.floor_height is None:
                 index = geometry.index(depth['depth_m'], depth['valid'], Q[2])
                 rr, cc = np.nonzero(index['ground_cells'])
+                initial_depth, initial_Q, initial_q = depth, Q, q
+                self.initial_floor_source = 'primary'
+                if len(rr) < 100 and getattr(self, 'startup_recovery_enabled', False):
+                    initial_Q, initial_q = reference_pose(Q, q)
+                    initial_depth = auxiliary_depth
+                    index = geometry.index(initial_depth['depth_m'], initial_depth['valid'], initial_Q[2])
+                    rr, cc = np.nonzero(index['ground_cells'])
+                    self.initial_floor_source = 'auxiliary_after_primary_unavailable'
                 if len(rr) < 100: raise SensorContractError('initial measured floor unavailable')
-                z = depth['depth_m'][rr, cc]; T = np.asarray(BODY_FROM_OPTICAL)
+                z = initial_depth['depth_m'][rr, cc]; T = np.asarray(BODY_FROM_OPTICAL)
                 optical = np.column_stack((z*(cc+.5-320)/FOCAL, z*(rr+.5-240)/FOCAL, z))
-                xyz = (optical@T[:3, :3].T+T[:3, 3])@Q.T+q
+                xyz = (optical@T[:3, :3].T+T[:3, 3])@initial_Q.T+initial_q
                 self.floor_height = float(np.median(xyz[:, 2]))
             counts = []
             new_floor = set(); new_occupied = set()
@@ -112,11 +122,11 @@ class MultirateRoutingMap:
                 above = mapped[(mapped[:, 2] > self.floor_height+.03)&(mapped[:, 2] < self.floor_height+.65)]
                 keys = np.unique(np.floor(above[:, :2]/CELL_M).astype(int), axis=0)
                 new_occupied.update(tuple(map(int, cell)) for cell in keys
-                    if np.all(cell >= -100) and np.all(cell < 100))
+                    if np.all(cell >= -COARSE_HALF_CELLS) and np.all(cell < COARSE_HALF_CELLS))
                 if self.retain_fine_obstacles:
-                    fine_keys = np.unique(np.floor(above[:, :2]/.01).astype(int), axis=0)
+                    fine_keys = np.unique(np.floor(above[:, :2]/FINE_CELL_M).astype(int), axis=0)
                     self.fine_occupied.update(tuple(map(int, cell)) for cell in fine_keys
-                        if np.all(cell >= -500) and np.all(cell < 500))
+                        if np.all(cell >= -FINE_HALF_CELLS) and np.all(cell < FINE_HALF_CELLS))
             self.floor.update(new_floor); self.occupied.update(new_occupied)
             self.latest = RoutingSnapshot(pose['frame'], measured_ns,
                 frozenset(self.floor), frozenset(self.occupied), tuple(map(float, q)),

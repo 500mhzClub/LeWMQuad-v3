@@ -100,7 +100,7 @@ def test_bad_pair_rejected_before_any_ledger_publication(fault):
     elif fault == 'rgb_pair': views[1]['witness']['rgb_sha256'] = 'c'*64
     elif fault == 'transform': views[1]['witness']['position_map_m'][0] += .001
     elif fault == 'duplicate_cell': views[0]['cells'] = np.array([[0,0],[0,0]])
-    else: views[0]['cells'] = np.array([[100,0]])
+    else: views[0]['cells'] = np.array([[160,0]])
     with pytest.raises(ValueError): ledger.record_pair(0,1_500_000_000,np.eye(3),-.3,views)
     assert ledger.frame == -1 and not ledger._records and not ledger._cell_observations
 

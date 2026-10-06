@@ -1,4 +1,6 @@
 """Skip empty per-frame visibility enumeration without changing coverage rules."""
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M
+
 import numpy as np
 from lewm.batched_retained_floor_patch_development import (
     BatchedRetainedFloorPatches, projected_rectangles, record_coverage, FRAME_BATCH)
@@ -8,7 +10,7 @@ class VisibilityBatchedRetainedFloorPatches(BatchedRetainedFloorPatches):
     def coverage(self, centres, radius=.022):
         xy = np.asarray(centres, float)
         if (xy.ndim != 2 or xy.shape[1:] != (2,) or len(xy) > 128 or not np.isfinite(xy).all()
-                or (xy.size and np.max(np.abs(xy)) > 4.9) or not np.isfinite(radius) or not 0 < radius <= .1):
+                or (xy.size and np.max(np.abs(xy)) > POINT_BOUND_M) or not np.isfinite(radius) or not 0 < radius <= .1):
             raise ValueError('bounded nominal foot centres and radius required')
         found = [None]*len(xy)
         for start in range(0, len(self.frames), FRAME_BATCH):

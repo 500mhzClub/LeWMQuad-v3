@@ -1,0 +1,30 @@
+{
+  "schema": "navigation_capability_oracle_prefix_erratum.v1",
+  "date": "2026-09-28",
+  "approval": "Andrew Knowles, 28 September 2026 handoff section 3 and rulings of the same day",
+  "applies_to": "C0 executed-prefix qualification for harness v4_completed_support (82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871)",
+  "unchanged": ["harness", "controllers", "C0 oracle and branch definition", "frozen checker verify_executed", "position_tolerance_m 0.001", "yaw_tolerance_degrees 0.1", "recorded outputs"],
+  "tick_ns": 20000000,
+  "position_tolerance_m": 0.001,
+  "yaw_tolerance_degrees": 0.1,
+  "comparable_branch": "Applied command tape equals dispatched commands for at least one tick from the source boundary; compared over the matching prefix only.",
+  "comparable_mismatch": "STOP_C0_VALIDITY",
+  "zero_length_branch_when_another_matches": "NOT_EXECUTED_RECORDED_ONLY",
+  "no_matching_branch_decision": "COUNT_AND_REPORT; neither qualifies nor disqualifies the episode",
+  "dispatch_substitution_causes": {
+    "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": "missing_current_observation",
+    "COMMAND_WINDOW_VETO_LATCHED": "veto",
+    "CURRENT_OBSERVED_OBSTACLE_VETO": "veto",
+    "COMMITTED_PREFIX_NOT_EXECUTED": "veto",
+    "FLOOR_REACQUISITION_HOLD": "override",
+    "NO_ON_TIME_PLAN": "override",
+    "MISSION_SETTLING_OR_TERMINAL": "override"
+  },
+  "ordinary_dispatch_reasons": ["CURRENT_NOMINAL_OBSTACLE_TEST_PASSED"],
+  "unexplained_no_match": "STOP_C0_VALIDITY (first tick is ordinary dispatch, unknown reason, or has no request record)",
+  "completeness": "Exactly six rows per branch receipt and no unmatched rows; zero-length rows confirmed from the retained first-tick branch command; otherwise STOP_C0_VALIDITY",
+  "veto_reporting": "Per episode: dispatch-substitution tick counts by reason; vetoed selections = decisions whose served window contains a veto or missing-observation substitution",
+  "fifth_attempt": "v4_completed_support_gate_C0_dev02_ep0_attempt001 reached terminal OBSERVED_ROUND_TRIP_CANDIDATE; re-evaluate from preserved records, no rerun; navigation outcome from the unchanged physical reader",
+  "branches_model_veto": false,
+  "branch_veto_modelling_requires_approval": true
+}

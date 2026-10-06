@@ -2,6 +2,8 @@
 
 This checks measured map geometry only. It does not forecast a command outcome.
 """
+from lewm.navigation_capability_map_domain_development import COARSE_CELL_COUNT
+
 from copy import deepcopy
 import math
 import numpy as np
@@ -28,7 +30,7 @@ def nearer_route_target(selection, position_map, rotation_map_from_body, floor, 
             or selection.get('native_state_used') is not False or selection.get('learned_model_used') is not False
             or selection.get('candidate_future_outcomes_evaluated') is not False
             or selection.get('actual_commitment_horizon_ns') != 100_000_000
-            or not route or len(route) > 40000):
+            or not route or len(route) > COARSE_CELL_COUNT):
         raise ValueError('original non-predictive selection and current observed map pose required')
     if (nominal_connector(p[:2], p[:2], cells, radius_m=.45) != selection['current_nominal_clearance']
             or nominal_connector(p[:2], target, cells, radius_m=.45) != selection['measured_waypoint_connector']):

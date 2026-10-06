@@ -1,0 +1,1210 @@
+{
+  "schema": "paired_floor_leg_diagnosis.v1",
+  "no_new_physics": true,
+  "no_models": true,
+  "report": "docs/go2_navigation_capability_paired_floor_leg_diagnosis_2026-09-27.md",
+  "evidence": {
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/paired_floor_leg_diagnosis_attempt001/result.json": {
+      "sha256": "81d0131d528dfa1f60205e05dd852516c3ce9733b819c794c517127e831c414e",
+      "bytes": 276720
+    },
+    "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/paired_floor_leg_diagnosis_attempt001/mechanism_witnesses.json": {
+      "sha256": "b3ff2c292c2db5cfeca96c1c0eadd60c6df485c912d4e6e788b4a61d0b9d4a9b",
+      "bytes": 5340
+    }
+  },
+  "rows": [
+    {
+      "episode_id": "01/0",
+      "beacon_s": 144.0,
+      "shortest_round_trip_m": 20.94018469431964,
+      "legs": {
+        "OUTBOUND": {
+          "start_s": 0,
+          "end_s": 144.0,
+          "duration_s": 144.0,
+          "moving_s": 125.20000000000142,
+          "holding_s": 18.799999999998423,
+          "translating_s": 63.399999999999906,
+          "turn_only_s": 61.800000000001525,
+          "visual_recovery_s": 0.799999999999983,
+          "visual_recovery_moving_s": 0.49999999999998934,
+          "visual_recovery_holding_s": 0.2999999999999936,
+          "route_counts": {
+            "NATIVE_DENSE_CONTEXT_WARMUP": 2,
+            "INITIAL_PANORAMA_REQUIRES_VIEW": 35,
+            "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 242,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 2,
+            "FRONTIER_STANDOFF_REQUIRES_VIEW": 17,
+            "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW": 32,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 26,
+            "MISSION_HOLD": 3
+          },
+          "action_counts": {
+            "left_turn": 107,
+            "right_turn": 48,
+            "left_arc": 59,
+            "right_arc": 38,
+            "forward": 63,
+            "hold": 39
+          },
+          "selected": 354,
+          "selected_holds": 39,
+          "aligned_recovery_holds": 0,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 80,
+            "NO_ON_TIME_PLAN": 100,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 6980,
+            "COMMAND_WINDOW_VETO_LATCHED": 20,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 20
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 12,
+            "mapped_measured_ns": 2700000000,
+            "routing_floor_cells": 51,
+            "retained_floor_cells": 51,
+            "routing_fine_obstacle_cells": 213,
+            "retained_fine_obstacle_cells": 213,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 1428,
+            "mapped_measured_ns": 144300000000,
+            "routing_floor_cells": 9457,
+            "retained_floor_cells": 9457,
+            "routing_fine_obstacle_cells": 8690,
+            "retained_fine_obstacle_cells": 8690,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 12.30537111326418,
+          "net_displacement_m": 2.624686845716852,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 10.481308617295564,
+            "heading_rad": -2.6161320564371,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 0.013159975557526484,
+            "heading_rad": 1.1683816286694222,
+            "direct_segment": true
+          }
+        },
+        "RETURN": {
+          "start_s": 144.0,
+          "end_s": 480.0,
+          "duration_s": 336.0,
+          "moving_s": 47.60000000002435,
+          "holding_s": 288.3999999998292,
+          "translating_s": 0.0,
+          "turn_only_s": 47.60000000002435,
+          "visual_recovery_s": 20.400000000010436,
+          "visual_recovery_moving_s": 16.100000000008237,
+          "visual_recovery_holding_s": 4.3000000000022,
+          "route_counts": {
+            "MISSION_HOLD": 1,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 788,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 51
+          },
+          "action_counts": {
+            "right_turn": 53,
+            "left_turn": 81,
+            "hold": 705
+          },
+          "selected": 839,
+          "selected_holds": 705,
+          "aligned_recovery_holds": 0,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 5,
+            "NO_ON_TIME_PLAN": 30,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 16380,
+            "COMMAND_WINDOW_VETO_LATCHED": 165,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 220
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 1444,
+            "mapped_measured_ns": 145900000000,
+            "routing_floor_cells": 9457,
+            "retained_floor_cells": 9457,
+            "routing_fine_obstacle_cells": 8697,
+            "retained_fine_obstacle_cells": 8697,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4796,
+            "mapped_measured_ns": 481100000000,
+            "routing_floor_cells": 9457,
+            "retained_floor_cells": 9457,
+            "routing_fine_obstacle_cells": 8908,
+            "retained_fine_obstacle_cells": 8908,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 2.1213250058155344,
+          "net_displacement_m": 0.17214147659743387,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 10.453404388241795,
+            "heading_rad": -2.037599656958221,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 10.527233185962235,
+            "heading_rad": -1.5153217076250005,
+            "direct_segment": false
+          }
+        }
+      },
+      "retracing": {
+        "outbound_cells": [
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "loop_erased_outbound": [
+          [
+            2,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "return_cells": [
+          [
+            2,
+            0
+          ]
+        ],
+        "loop_erased_return": [
+          [
+            2,
+            0
+          ]
+        ],
+        "reverse_outbound_prefix_cells_matched": 1,
+        "return_loop_erased_is_reverse_prefix": true,
+        "return_new_cells": [],
+        "method": "Native XY nearest 1.3-m cell centres, consecutive deduplication; loop erasure descriptive only, no route supplied to controller."
+      }
+    },
+    {
+      "episode_id": "05/0",
+      "beacon_s": 103.6,
+      "shortest_round_trip_m": 14.182741699796857,
+      "legs": {
+        "OUTBOUND": {
+          "start_s": 0,
+          "end_s": 103.6,
+          "duration_s": 103.6,
+          "moving_s": 97.69999999999702,
+          "holding_s": 5.899999999999516,
+          "translating_s": 58.99999999999659,
+          "turn_only_s": 38.70000000000042,
+          "visual_recovery_s": 0.0,
+          "visual_recovery_moving_s": 0.0,
+          "visual_recovery_holding_s": 0.0,
+          "route_counts": {
+            "NATIVE_DENSE_CONTEXT_WARMUP": 2,
+            "INITIAL_PANORAMA_REQUIRES_VIEW": 35,
+            "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 162,
+            "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW": 17,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 40,
+            "MISSION_HOLD": 2
+          },
+          "action_counts": {
+            "left_turn": 83,
+            "forward": 64,
+            "left_arc": 43,
+            "right_arc": 42,
+            "right_turn": 13,
+            "hold": 9
+          },
+          "selected": 254,
+          "selected_holds": 9,
+          "aligned_recovery_holds": 0,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 75,
+            "NO_ON_TIME_PLAN": 80,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 5010,
+            "COMMAND_WINDOW_VETO_LATCHED": 15
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 12,
+            "mapped_measured_ns": 2700000000,
+            "routing_floor_cells": 551,
+            "retained_floor_cells": 551,
+            "routing_fine_obstacle_cells": 494,
+            "retained_fine_obstacle_cells": 494,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 1024,
+            "mapped_measured_ns": 103900000000,
+            "routing_floor_cells": 8466,
+            "retained_floor_cells": 8466,
+            "routing_fine_obstacle_cells": 6939,
+            "retained_fine_obstacle_cells": 6939,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 11.02524439245403,
+          "net_displacement_m": 4.081911466101494,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 7.087071430588563,
+            "heading_rad": -0.4400448821965437,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 0.0148407698999805,
+            "heading_rad": -2.2460721768501233,
+            "direct_segment": true
+          }
+        },
+        "RETURN": {
+          "start_s": 103.6,
+          "end_s": 480.0,
+          "duration_s": 376.4,
+          "moving_s": 69.9999999999492,
+          "holding_s": 306.39999999990766,
+          "translating_s": 5.29999999999518,
+          "turn_only_s": 64.69999999995402,
+          "visual_recovery_s": 269.99999999990473,
+          "visual_recovery_moving_s": 28.999999999976822,
+          "visual_recovery_holding_s": 240.99999999992792,
+          "route_counts": {
+            "MISSION_HOLD": 1,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 265,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 675
+          },
+          "action_counts": {
+            "right_turn": 152,
+            "left_turn": 197,
+            "hold": 577,
+            "right_arc": 8,
+            "forward": 4,
+            "left_arc": 2
+          },
+          "selected": 940,
+          "selected_holds": 577,
+          "aligned_recovery_holds": 569,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 5,
+            "NO_ON_TIME_PLAN": 30,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 11795,
+            "COMMAND_WINDOW_VETO_LATCHED": 6027,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 960,
+            "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 3
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 1040,
+            "mapped_measured_ns": 105500000000,
+            "routing_floor_cells": 8466,
+            "retained_floor_cells": 8466,
+            "routing_fine_obstacle_cells": 6939,
+            "retained_fine_obstacle_cells": 6939,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4796,
+            "mapped_measured_ns": 481100000000,
+            "routing_floor_cells": 8954,
+            "retained_floor_cells": 8954,
+            "routing_fine_obstacle_cells": 7656,
+            "retained_fine_obstacle_cells": 7656,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 3.336424493328742,
+          "net_displacement_m": 0.666467786572787,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 7.0767179024411355,
+            "heading_rad": 0.4751778104495873,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 6.41061370985379,
+            "heading_rad": 0.4666825181416835,
+            "direct_segment": false
+          }
+        }
+      },
+      "retracing": {
+        "outbound_cells": [
+          [
+            0,
+            2
+          ],
+          [
+            -1,
+            2
+          ],
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ]
+        ],
+        "loop_erased_outbound": [
+          [
+            0,
+            2
+          ],
+          [
+            1,
+            2
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            -1,
+            -1
+          ]
+        ],
+        "return_cells": [
+          [
+            -1,
+            -1
+          ],
+          [
+            0,
+            -1
+          ]
+        ],
+        "loop_erased_return": [
+          [
+            -1,
+            -1
+          ],
+          [
+            0,
+            -1
+          ]
+        ],
+        "reverse_outbound_prefix_cells_matched": 2,
+        "return_loop_erased_is_reverse_prefix": true,
+        "return_new_cells": [],
+        "method": "Native XY nearest 1.3-m cell centres, consecutive deduplication; loop erasure descriptive only, no route supplied to controller."
+      }
+    },
+    {
+      "episode_id": "07/0",
+      "beacon_s": 211.70000000000002,
+      "shortest_round_trip_m": 12.96430590953292,
+      "legs": {
+        "OUTBOUND": {
+          "start_s": 0,
+          "end_s": 211.70000000000002,
+          "duration_s": 211.70000000000002,
+          "moving_s": 125.20000000003373,
+          "holding_s": 86.50000000000078,
+          "translating_s": 48.50000000002183,
+          "turn_only_s": 76.7000000000119,
+          "visual_recovery_s": 78.79999999999896,
+          "visual_recovery_moving_s": 13.900000000000201,
+          "visual_recovery_holding_s": 64.89999999999876,
+          "route_counts": {
+            "NATIVE_DENSE_CONTEXT_WARMUP": 2,
+            "INITIAL_PANORAMA_REQUIRES_VIEW": 35,
+            "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 94,
+            "FRONTIER_STANDOFF_REQUIRES_VIEW": 117,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 197,
+            "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW": 27,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 54,
+            "MISSION_HOLD": 3
+          },
+          "action_counts": {
+            "left_turn": 107,
+            "right_arc": 37,
+            "right_turn": 148,
+            "forward": 42,
+            "left_arc": 43,
+            "hold": 147
+          },
+          "selected": 524,
+          "selected_holds": 147,
+          "aligned_recovery_holds": 144,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 70,
+            "NO_ON_TIME_PLAN": 70,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 8175,
+            "COMMAND_WINDOW_VETO_LATCHED": 1869,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 400,
+            "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 1
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 12,
+            "mapped_measured_ns": 2700000000,
+            "routing_floor_cells": 325,
+            "retained_floor_cells": 325,
+            "routing_fine_obstacle_cells": 429,
+            "retained_fine_obstacle_cells": 429,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 2104,
+            "mapped_measured_ns": 211900000000,
+            "routing_floor_cells": 8358,
+            "retained_floor_cells": 8358,
+            "routing_fine_obstacle_cells": 7943,
+            "retained_fine_obstacle_cells": 7943,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 10.566618753245812,
+          "net_displacement_m": 4.090693360620891,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 6.4908707983015415,
+            "heading_rad": -0.4828979892095607,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 0.03192378323543382,
+            "heading_rad": 0.0714516171179703,
+            "direct_segment": true
+          }
+        },
+        "RETURN": {
+          "start_s": 211.70000000000002,
+          "end_s": 249.0,
+          "duration_s": 37.29999999999998,
+          "moving_s": 32.400000000016576,
+          "holding_s": 4.900000000002478,
+          "translating_s": 0.0,
+          "turn_only_s": 32.400000000016576,
+          "visual_recovery_s": 14.60000000000747,
+          "visual_recovery_moving_s": 11.800000000006037,
+          "visual_recovery_holding_s": 2.8000000000014325,
+          "route_counts": {
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 56,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 37
+          },
+          "action_counts": {
+            "right_turn": 48,
+            "left_turn": 43,
+            "hold": 2
+          },
+          "selected": 93,
+          "selected_holds": 2,
+          "aligned_recovery_holds": 2,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 5,
+            "NO_ON_TIME_PLAN": 25,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 1600,
+            "COMMAND_WINDOW_VETO_LATCHED": 135,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 100
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 2120,
+            "mapped_measured_ns": 213500000000,
+            "routing_floor_cells": 8358,
+            "retained_floor_cells": 8358,
+            "routing_fine_obstacle_cells": 7945,
+            "retained_fine_obstacle_cells": 7945,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 2488,
+            "mapped_measured_ns": 250300000000,
+            "routing_floor_cells": 8358,
+            "retained_floor_cells": 8358,
+            "routing_fine_obstacle_cells": 8010,
+            "retained_fine_obstacle_cells": 8010,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 0.8266563391294626,
+          "net_displacement_m": 0.1345506413277525,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 6.4471385807226085,
+            "heading_rad": -2.665256290695478,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 6.569042011990919,
+            "heading_rad": -2.746199027464004,
+            "direct_segment": false
+          }
+        }
+      },
+      "retracing": {
+        "outbound_cells": [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ],
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "loop_erased_outbound": [
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            0,
+            0
+          ],
+          [
+            0,
+            -1
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "return_cells": [
+          [
+            2,
+            0
+          ]
+        ],
+        "loop_erased_return": [
+          [
+            2,
+            0
+          ]
+        ],
+        "reverse_outbound_prefix_cells_matched": 1,
+        "return_loop_erased_is_reverse_prefix": true,
+        "return_new_cells": [],
+        "method": "Native XY nearest 1.3-m cell centres, consecutive deduplication; loop erasure descriptive only, no route supplied to controller."
+      }
+    },
+    {
+      "episode_id": "08/0",
+      "beacon_s": null,
+      "shortest_round_trip_m": 21.337829714197756,
+      "legs": {
+        "OUTBOUND": {
+          "start_s": 0,
+          "end_s": 480.0,
+          "duration_s": 480.0,
+          "moving_s": 161.19999999996105,
+          "holding_s": 318.79999999989235,
+          "translating_s": 6.399999999999988,
+          "turn_only_s": 154.79999999996105,
+          "visual_recovery_s": 319.9999999999021,
+          "visual_recovery_moving_s": 75.39999999997667,
+          "visual_recovery_holding_s": 244.59999999992542,
+          "route_counts": {
+            "NATIVE_DENSE_CONTEXT_WARMUP": 2,
+            "INITIAL_PANORAMA_REQUIRES_VIEW": 35,
+            "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 238,
+            "FRONTIER_STANDOFF_REQUIRES_VIEW": 124,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 800
+          },
+          "action_counts": {
+            "left_turn": 350,
+            "right_turn": 247,
+            "right_arc": 7,
+            "forward": 7,
+            "left_arc": 3,
+            "hold": 583
+          },
+          "selected": 1197,
+          "selected_holds": 583,
+          "aligned_recovery_holds": 578,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 15,
+            "NO_ON_TIME_PLAN": 60,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 16305,
+            "COMMAND_WINDOW_VETO_LATCHED": 6513,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 1105,
+            "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 2
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 12,
+            "mapped_measured_ns": 2700000000,
+            "routing_floor_cells": 45,
+            "retained_floor_cells": 45,
+            "routing_fine_obstacle_cells": 189,
+            "retained_fine_obstacle_cells": 189,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4796,
+            "mapped_measured_ns": 481100000000,
+            "routing_floor_cells": 1312,
+            "retained_floor_cells": 1312,
+            "routing_fine_obstacle_cells": 2192,
+            "retained_fine_obstacle_cells": 2192,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 5.9804665272205,
+          "net_displacement_m": 1.0380189038196694,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 10.666307017346062,
+            "heading_rad": 1.131827648135708,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 9.855918311370854,
+            "heading_rad": 0.6210808146470521,
+            "direct_segment": false
+          }
+        }
+      },
+      "retracing": {
+        "outbound_cells": [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ]
+        ],
+        "loop_erased_outbound": [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ]
+        ],
+        "return_cells": [],
+        "loop_erased_return": [],
+        "reverse_outbound_prefix_cells_matched": 0,
+        "return_loop_erased_is_reverse_prefix": true,
+        "return_new_cells": [],
+        "method": "Native XY nearest 1.3-m cell centres, consecutive deduplication; loop erasure descriptive only, no route supplied to controller."
+      }
+    },
+    {
+      "episode_id": "09/0",
+      "beacon_s": 458.09999999999997,
+      "shortest_round_trip_m": 18.773523804664805,
+      "legs": {
+        "OUTBOUND": {
+          "start_s": 0,
+          "end_s": 458.09999999999997,
+          "duration_s": 458.09999999999997,
+          "moving_s": 423.9999999998802,
+          "holding_s": 34.09999999999316,
+          "translating_s": 71.7999999999667,
+          "turn_only_s": 352.1999999999134,
+          "visual_recovery_s": 98.79999999997743,
+          "visual_recovery_moving_s": 79.6999999999804,
+          "visual_recovery_holding_s": 19.099999999997017,
+          "route_counts": {
+            "NATIVE_DENSE_CONTEXT_WARMUP": 2,
+            "INITIAL_PANORAMA_REQUIRES_VIEW": 35,
+            "LOW_VISUAL_SUPPORT_REQUIRES_MEASURED_VIEW": 247,
+            "OBSERVED_FLOOR_ROUTE_TO_FRONTIER": 765,
+            "FOOTPRINT_EXTENSION_REQUIRES_OBSERVED_VIEW": 32,
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 61,
+            "MISSION_HOLD": 3
+          },
+          "action_counts": {
+            "left_turn": 534,
+            "right_turn": 411,
+            "left_arc": 62,
+            "right_arc": 42,
+            "forward": 77,
+            "hold": 14
+          },
+          "selected": 1140,
+          "selected_holds": 14,
+          "aligned_recovery_holds": 0,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 75,
+            "NO_ON_TIME_PLAN": 80,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 21065,
+            "COMMAND_WINDOW_VETO_LATCHED": 899,
+            "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 6,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 780
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 12,
+            "mapped_measured_ns": 2700000000,
+            "routing_floor_cells": 35,
+            "retained_floor_cells": 35,
+            "routing_fine_obstacle_cells": 158,
+            "retained_fine_obstacle_cells": 158,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4568,
+            "mapped_measured_ns": 458300000000,
+            "routing_floor_cells": 7879,
+            "retained_floor_cells": 7879,
+            "routing_fine_obstacle_cells": 7956,
+            "retained_fine_obstacle_cells": 7956,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 20.980347969527074,
+          "net_displacement_m": 4.086424667332425,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 9.369345971213928,
+            "heading_rad": -0.48401753889440335,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 0.011733639504573923,
+            "heading_rad": -0.08266335434921544,
+            "direct_segment": true
+          }
+        },
+        "RETURN": {
+          "start_s": 458.09999999999997,
+          "end_s": 480.0,
+          "duration_s": 21.900000000000034,
+          "moving_s": 20.699999999981173,
+          "holding_s": 1.1999999999989086,
+          "translating_s": 16.099999999985357,
+          "turn_only_s": 4.599999999995816,
+          "visual_recovery_s": 0.0,
+          "visual_recovery_moving_s": 0.0,
+          "visual_recovery_holding_s": 0.0,
+          "route_counts": {
+            "OBSERVED_FLOOR_ROUTE_TO_GOAL_CELL": 54
+          },
+          "action_counts": {
+            "left_turn": 13,
+            "left_arc": 12,
+            "forward": 22,
+            "right_arc": 7
+          },
+          "selected": 54,
+          "selected_holds": 0,
+          "aligned_recovery_holds": 0,
+          "dispatch_counts": {
+            "MISSION_SETTLING_OR_TERMINAL": 5,
+            "NO_ON_TIME_PLAN": 25,
+            "CURRENT_NOMINAL_OBSTACLE_TEST_PASSED": 1030,
+            "CURRENT_OBSERVATION_UNAVAILABLE_OR_STALE": 1,
+            "COMMAND_WINDOW_VETO_LATCHED": 14,
+            "COMMITTED_PREFIX_NOT_EXECUTED": 20
+          },
+          "first_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4584,
+            "mapped_measured_ns": 459900000000,
+            "routing_floor_cells": 7879,
+            "retained_floor_cells": 7879,
+            "routing_fine_obstacle_cells": 7957,
+            "retained_fine_obstacle_cells": 7957,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "last_memory": {
+            "condition": "persistent",
+            "mapped_frame": 4796,
+            "mapped_measured_ns": 481100000000,
+            "routing_floor_cells": 7902,
+            "retained_floor_cells": 7902,
+            "routing_fine_obstacle_cells": 8125,
+            "retained_fine_obstacle_cells": 8125,
+            "accumulated_action_clearance_preserved": true,
+            "tracker_temporal_model_mission_and_frontier_state_retained": true,
+            "latest_mapped_pair_is_not_necessarily_current_planning_frame": true,
+            "memoryless_controller": false
+          },
+          "native_path_m": 2.94947379486395,
+          "net_displacement_m": 2.7791247891321036,
+          "remaining_start": {
+            "valid": true,
+            "distance_m": 9.381031763425216,
+            "heading_rad": -2.026527644242529,
+            "direct_segment": false
+          },
+          "remaining_end": {
+            "valid": true,
+            "distance_m": 6.608845816262714,
+            "heading_rad": -2.0768808502791303,
+            "direct_segment": false
+          }
+        }
+      },
+      "retracing": {
+        "outbound_cells": [
+          [
+            -1,
+            1
+          ],
+          [
+            -1,
+            2
+          ],
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "loop_erased_outbound": [
+          [
+            -1,
+            1
+          ],
+          [
+            0,
+            1
+          ],
+          [
+            1,
+            1
+          ],
+          [
+            1,
+            0
+          ],
+          [
+            1,
+            -1
+          ],
+          [
+            2,
+            -1
+          ],
+          [
+            2,
+            0
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            2
+          ]
+        ],
+        "return_cells": [
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "loop_erased_return": [
+          [
+            2,
+            2
+          ],
+          [
+            2,
+            1
+          ],
+          [
+            2,
+            0
+          ]
+        ],
+        "reverse_outbound_prefix_cells_matched": 3,
+        "return_loop_erased_is_reverse_prefix": true,
+        "return_new_cells": [],
+        "method": "Native XY nearest 1.3-m cell centres, consecutive deduplication; loop erasure descriptive only, no route supplied to controller."
+      }
+    }
+  ],
+  "chosen_change": "One-second continuously attained recovery heading retires/consumes its unsuccessful measured-view reference; unchanged estimator and all clearance gates.",
+  "mission_budget_s": 480
+}

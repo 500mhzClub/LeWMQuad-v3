@@ -1,0 +1,18 @@
+{
+  "status": "LAUNCHED",
+  "harness": "v2_exhausted_view",
+  "source_commit": "bad3883a",
+  "protocol_sha256": "fa92a89d059b4996bfb7ffb7373cbbc4e68f64929b37b524fee6d63bbc2d7c50",
+  "harness_sha256": "83382ac945a192d04c43c264e8fc1dbaf507d1fb9927f75b7b92ce0e79ef0629",
+  "cohort_session_id": 4579,
+  "owner_pid": 659174,
+  "assignment": "C1 dev00/0 through09/0 once, serial",
+  "focused_tests_passed": 4,
+  "projected_total_wall_hours": 94.64219384915768,
+  "wall_cap_hours": 160,
+  "storage_fits": true,
+  "mission_budget_s": 480,
+  "outcome_versions_consumed": 3,
+  "automatic_retry": false,
+  "recorded_unix_s": 1790506621.5729125
+}

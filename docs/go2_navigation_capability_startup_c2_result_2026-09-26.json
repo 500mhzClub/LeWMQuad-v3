@@ -1,0 +1,268 @@
+{
+  "schema": "navigation_capability_diagnostic_screen_result.v1",
+  "harness": "v0_startup_c2",
+  "source_result": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/cohorts/v0_startup_c2_C1_screen/result.json",
+  "source_sha256": "08e8f43fd9cf9f65baa6432611bfe916e7b6692fb1d1f3e12e4bac92bd594305",
+  "diagnostic_only": true,
+  "gate_eligible": false,
+  "reason": "Known fine-route cost indexing defect; explicit user direction",
+  "completed": {
+    "controller": "C1",
+    "harness": "v0_startup_c2",
+    "harness_sha256": "b580745078e1683677fede67909e00fd99a8abdf6a4c40ee92f968c8de5b6db9",
+    "complete": true,
+    "episodes": 10,
+    "successes": 3,
+    "passed": false,
+    "rows": [
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev00_ep0_attempt001",
+        "episode_id": "00/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 2,
+          "planned arrival settling": 20,
+          "movement outscored": 2
+        },
+        "wall_s": 297.0343217889895,
+        "containment": {
+          "episode": "00/0",
+          "required": true,
+          "identical": true,
+          "differences": [],
+          "prior_run": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev00_ep0_attempt001",
+          "classification_if_divergent": "Count combined correction as a harness version and diagnose cause",
+          "conservative_population": "All original runs that reached planning, including map-extent-potentially-affected runs"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev01_ep0_attempt001",
+        "episode_id": "01/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "pose loss": 1,
+          "movement outscored": 1,
+          "observation/view restriction": 621,
+          "memory clearance": 621,
+          "observation/view restriction (motion-dependent footprint)": 2
+        },
+        "wall_s": 730.8731841070112,
+        "containment": {
+          "episode": "01/0",
+          "required": false,
+          "reason": "Original pre-planning startup failure"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev02_ep0_attempt001",
+        "episode_id": "02/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "pose loss": 1,
+          "movement outscored": 1
+        },
+        "wall_s": 142.11076463595964,
+        "containment": {
+          "episode": "02/0",
+          "required": false,
+          "reason": "Original pre-planning startup failure"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev03_ep0_attempt001",
+        "episode_id": "03/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 694,
+          "planned arrival settling": 19,
+          "movement outscored": 2
+        },
+        "wall_s": 992.3618831579806,
+        "containment": {
+          "episode": "03/0",
+          "required": true,
+          "identical": true,
+          "differences": [],
+          "prior_run": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev03_ep0_attempt001",
+          "classification_if_divergent": "Count combined correction as a harness version and diagnose cause",
+          "conservative_population": "All original runs that reached planning, including map-extent-potentially-affected runs"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev04_ep0_attempt001",
+        "episode_id": "04/0",
+        "round_trip_success": true,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction (motion-dependent footprint)": 10,
+          "planned arrival settling": 1
+        },
+        "wall_s": 255.64064816600876,
+        "containment": {
+          "episode": "04/0",
+          "required": true,
+          "identical": false,
+          "differences": [
+            "native/applied_command",
+            "native/base_pose_world",
+            "native/base_twist_world",
+            "native/edge_index",
+            "native/joint_position",
+            "native/joint_velocity",
+            "native/phase",
+            "native/physics_contact",
+            "native/post_slew_applied_command",
+            "native/requested_command",
+            "native/timestamp_s",
+            "requests",
+            "consumed_sensor_hashes"
+          ],
+          "prior_run": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev04_ep0_attempt001",
+          "classification_if_divergent": "Count combined correction as a harness version and diagnose cause",
+          "conservative_population": "All original runs that reached planning, including map-extent-potentially-affected runs"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev05_ep0_attempt001",
+        "episode_id": "05/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "movement outscored": 515,
+          "memory clearance": 228,
+          "observation/view restriction (motion-dependent footprint)": 1,
+          "planned arrival settling": 1,
+          "observation/view restriction": 227,
+          "budget exhaustion despite progress": 1
+        },
+        "wall_s": 1038.197270351986,
+        "containment": {
+          "episode": "05/0",
+          "required": true,
+          "identical": false,
+          "differences": [
+            "native/applied_command",
+            "native/base_pose_world",
+            "native/base_twist_world",
+            "native/joint_position",
+            "native/joint_velocity",
+            "native/post_slew_applied_command",
+            "native/requested_command",
+            "requests",
+            "consumed_sensor_hashes"
+          ],
+          "prior_run": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev05_ep0_attempt001",
+          "classification_if_divergent": "Count combined correction as a harness version and diagnose cause",
+          "conservative_population": "All original runs that reached planning, including map-extent-potentially-affected runs"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev06_ep0_attempt001",
+        "episode_id": "06/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "movement outscored": 3,
+          "observation/view restriction (motion-dependent footprint)": 58,
+          "observation/view restriction": 9,
+          "memory clearance": 9,
+          "budget exhaustion despite progress": 1
+        },
+        "wall_s": 1005.2046700379578,
+        "containment": {
+          "episode": "06/0",
+          "required": false,
+          "reason": "Original pre-planning startup failure"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev07_ep0_attempt001",
+        "episode_id": "07/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "pose loss": 1,
+          "movement outscored": 146,
+          "observation/view restriction (motion-dependent footprint)": 2,
+          "planned arrival settling": 1
+        },
+        "wall_s": 551.6656396730104,
+        "containment": {
+          "episode": "07/0",
+          "required": true,
+          "identical": true,
+          "differences": [],
+          "prior_run": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/runs/v0_task_c1_screen_C1_dev07_ep0_attempt001",
+          "classification_if_divergent": "Count combined correction as a harness version and diagnose cause",
+          "conservative_population": "All original runs that reached planning, including map-extent-potentially-affected runs"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev08_ep0_attempt001",
+        "episode_id": "08/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "budget exhaustion despite progress": 1
+        },
+        "wall_s": 986.7072473809822,
+        "containment": {
+          "episode": "08/0",
+          "required": false,
+          "reason": "Original pre-planning startup failure"
+        }
+      },
+      {
+        "assignment": "v0_startup_c2_screen_C1_dev09_ep0_attempt001",
+        "episode_id": "09/0",
+        "round_trip_success": false,
+        "disallowed_contacts": 0,
+        "hard_violations": 0,
+        "hard_unresolved": 0,
+        "failure_and_stall_taxonomy": {
+          "observation/view restriction": 971,
+          "memory clearance": 971,
+          "budget exhaustion despite progress": 1
+        },
+        "wall_s": 876.2655916129588,
+        "containment": {
+          "episode": "09/0",
+          "required": false,
+          "reason": "Original pre-planning startup failure"
+        }
+      }
+    ],
+    "outcome_iteration_versions_consumed": 1,
+    "wall_s": 9290.867484240967,
+    "stop_on_safety_disqualification": false
+  },
+  "startup": {
+    "first_frame_initialized": 10,
+    "primary": 5,
+    "auxiliary": 5,
+    "new_startup_defects": 0
+  },
+  "outcome_iteration_versions_consumed": 1
+}

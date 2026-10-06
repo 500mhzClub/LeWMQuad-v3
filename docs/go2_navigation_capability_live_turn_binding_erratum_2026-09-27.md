@@ -1,0 +1,9 @@
+# V3 controller-construction binding erratum
+
+The first V3 attempt, `v3_live_turn_screen_C1_dev00_ep0_attempt001`, failed during construction with an explicit type assertion. It executed zero planning decisions, zero policy steps and zero mission seconds, after the normal simulator settling. The failure, native settling evidence and frozen original source/configuration are preserved. No navigation result is inferred.
+
+Cause: the adapter assumed `SelectedRouteTurnMemory`, a related development variant, while the deployed dense and reactive stacks actually install `InterruptedRouteTurnMemory`. The assertion caught the incompatible binding before use. The original four synthetic checks exercised the assumed class and therefore did not check integration with the deployed stack.
+
+Correction: subclass and replace the actually deployed `InterruptedRouteTurnMemory`. The only behavioural intervention remains releasing a visual turn latch when its direction becomes ineligible. No alternate selected-turn algorithm is introduced. A fifth zero-physics test checks both deployed class hierarchies and executes the replacement constructor with the original memory type; all five checks pass.
+
+The source repair and fresh explicitly recorded attempt are routine implementation work under the active brief's “no silent retries” rule and the user's direction to complete the single change and continue. There is no safety, containment, resource or version-cap failure. The failed owner did not automatically retry. The successor is frozen separately as `v3c1_live_turn`; the original attempt and sources are not overwritten. This outcome-independent integration correction adds no new scientific tuning change; the fourth outcome version is still being tested. First/second C1 screens, C0, model identities and budgets remain unchanged.

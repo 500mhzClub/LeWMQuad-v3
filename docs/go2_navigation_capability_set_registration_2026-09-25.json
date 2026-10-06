@@ -1,0 +1,18 @@
+{
+  "schema": "navigation_capability_set_registration.v1",
+  "registry_path": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001/registry.json",
+  "registry_binding": {
+    "sha256": "8c049ac012c3af4018f1e42ca79ef85b50b00c9dbf8d6dd6180528a89af7bdd1",
+    "bytes": 96118
+  },
+  "preregistration_sha256": "b6a84db2f304282d9d7ec9327ac21420d6e8c3e262de20178c7f243791a887d6",
+  "counts": {
+    "dev_tune": 10,
+    "validation": 20,
+    "sealed_test": 60
+  },
+  "episodes_per_maze": 2,
+  "structural_checks_passed": true,
+  "legacy_sealed_material_accessed": false,
+  "test_runtime_or_rendering": false
+}

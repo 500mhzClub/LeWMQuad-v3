@@ -1,0 +1,260 @@
+{
+ "schema": "navigation_capability_goal.v1",
+ "status": "development_mode",
+ "approved_start": "2026-09-25",
+ "authority": "docs/go2_navigation_testbed_controller_capability_agent_brief_2026-09-25.md",
+ "programme_goal": "Determine when JEPA representations carry decision-relevant information for navigation beyond kinematic prediction, reactive control and explicit memory. Start with a validated testbed, then E1, then moving obstacles.",
+ "current_goal": "Establish a validated Go2 simulation navigation testbed; determine C0-C4 capability for paired unseen-maze beacon retrieval and return, report the preregistered capability criterion, produce example videos and an E1 proposal, then stop.",
+ "supersedes": [
+  "7 September 2026 navigation goal",
+  "closed V4.2 decision-headroom programme"
+ ],
+ "stage": "development: C3 decoder rebalancing, then shared-trap fixes, then validation + round-maze runs and videos",
+ "thread_goal_tracker": {
+  "status": "legacy goal remains blocked",
+  "replacement_attempt": "rejected: unfinished goal exists",
+  "old_goal_achieved": false,
+  "repository_record_is_authoritative": true
+ },
+ "milestones": [
+  "preregistration_committed",
+  "throughput_budget_and_pipeline_video",
+  "harness_versions",
+  "oracle_gate",
+  "capability_and_videos"
+ ],
+ "limits": {
+  "harness_versions": 6,
+  "runs_and_videos_wall_hours": 160,
+  "c4_training_gpu_hours": 12,
+  "recovery_reserve_gib": 12,
+  "workspace_reserve_gib": 4,
+  "per_device_vram_reserve_gib": 2
+ },
+ "completed": {
+  "preregistration_commit": "bb9ab232",
+  "set_and_initial_harness_commit": "523005c1",
+  "sets": {
+   "dev_tune": 10,
+   "validation": 20,
+   "sealed_test": 60
+  },
+  "oracle_pilot": "114.82 s successful native round trip; 1668 exact matching-prefix comparisons; zero contacts/hard/operating violations",
+  "C4_data_inventory": "8414 training contexts, all causal inputs present",
+  "C1_pilot": "111.22 s successful native round trip; zero contacts/hard/operating violations",
+  "C1_unused_workload_equivalence": "2226 source RGB matches, 270 identical actions, 5561 identical commands and all native physics values identical",
+  "pipeline_video": "Higher chase pass: 3337 frames, 1080p/30fps/H.264/yuv420p, zero pose error; contact-sheet review passed; pipeline test only",
+  "C2_pilot": "125.22 s successful native round trip; zero holds, contacts and hard/operating violations",
+  "C2_unused_workload_equivalence": "2506 source RGB matches, 304 identical actions, 6261 identical commands and every native physics value identical; 258.08 wall s for 125.22 simulated s",
+  "C4_fit": "Fixed final checkpoint d491584b17ee4321d65daf883460ccf3b626fe8d735b986473d2ecc477064013; 1760 updates, 4869.74 s conservative GPU-owner accounting",
+  "C3_pilot": "238.72 s successful native round trip; zero contacts/hard/operating violations; 150 holds in 588 decisions",
+  "C4_pilot": "188.42 s; home passed, beacon dwell rejected at 43.894 mm versus 40 mm; round trip failed; zero contacts/hard/operating violations",
+  "leg_accounting_erratum": "Failed arrival still defines phase boundary; all outcomes unchanged; first four pilots leg metrics identical; original C4 report preserved",
+  "C3_concurrency": "All six full replays at two/four owners passed exact RGB, predictions, decisions, commands and native values; measured throughput gains 1.351x / 1.396x",
+  "pilot_budget": "149.35 h full design; 96.20 h reduced design; one validation episode per maze fixed before validation",
+  "target_reference_reread": "All five pre-fix pilots reread with fixed world targets; no verdict changed",
+  "structural_reference_check": "180 registered episodes pass geometry; uncorrected settling reference contract fails; no replacements",
+  "sensor_regeneration": "C1-C4: 13,278 exact RGB and noisy-depth packet matches from commands/seed; all five native traces exact; C0 original sensor evidence missing",
+  "settled_task_contract": "Both targets, all 180 episodes, zero-physics 1-nm test passed; no episode replacements",
+  "grid_c3_screen": "3/10 round trips; 4 timeouts, 3 pose losses; all five original planning recordings exactly contained; zero safety violations.",
+  "grid_c3_failure_diagnosis": "All four timeouts diagnosed by minute; all three pose failures reproduced exactly; all five auxiliary starts have fixed map floor 23\u201329 cm above qualified paired depth plane.",
+  "paired_floor_v1": "5/10 round trips, 9/10 beacon; zero safety violations; 20/20 startup outputs within frozen2mm tolerance; all five normal recordings exact.",
+  "paired_floor_v1_screen": "5/10 round trips, 9/10 beacons; zero safety violations; startup-output contract20/20 and five normal recordings exact",
+  "paired_floor_leg_diagnosis": "01/05/09 return timeouts, 08 outbound timeout, 07 return pose loss; persistent map retained, no return re-exploration; attained-view deadlock chosen for V2",
+  "exhausted_view_v2_screen": "8/10 round trips; 10/10 beacons; no pose loss or safety violations; 05/07/08 newly succeed; 01/09 return timeouts",
+  "V3_corrected_binding_screen": "8/10 safe;01 stale holds removed but oscillates;09 beacon266.8s but return timeout",
+  "V3_support_replay": "5602 frame pairs and raw poses exact; actual tracker has85\u2013150 selected features on197 frames called weak by original subset",
+  "completed_support_v4_first_screen": "10/10 round trips; zero contacts, hard/operating violations, unresolved native clearance or pose loss",
+  "completed_support_v4_second_screen": "10/10 safe round trips; 20/20 across both C1 screens",
+  "corrected_C0_sensor_replay": "PASS:2256 RGB and2256 depth packets bitwise; native trace exact",
+  "completed_support_v4_partial_C0_gate": "4/4 qualified safe round trips; fifth attempt02/0 unqualified;15 assignments unstarted",
+  "completed_support_v4_C0_gate": "PASSED 20/20; zero contacts/hard; 1 no-match decision (02/0) requalified under the prefix erratum; 35 vetoed selections, none causing failure",
+  "capability_qualification": "Validation 10/0-29/0: C1 18/20, C2 11/20, C3 13/20, C4 19/20, C0 10/10 (10/0-19/0); zero contacts/hard/operating violations; C1 and C4 capable",
+  "videos": "C1-C4 on 11/0 replay-verified exactly + 2x2 composite + 4x cuts + contact sheets",
+  "report": "docs/go2_navigation_capability_qualification_result_2026-09-29.md",
+  "e1_proposal": "docs/go2_navigation_e1_proposal_2026-09-29.md",
+  "c3v2_phase": {
+   "predeclaration": "docs/go2_navigation_c3v2_readout_fix_predeclaration_2026-09-29.md (b72b76b9; Amendment 1 47f88bda before any acceptance number)",
+   "offline_acceptance": "C3-v2 passed all seven criteria (c3v2_acceptance_v1/result.json ec0f7727)",
+   "fresh_check": "cohorts/c3v2_fresh_check complete: C1 9/10, C3-v2 6/10, C4-v2 7/10 round trips (sanity only); zero contacts and hard violations; C1 maze 09 pose loss",
+   "e1_rule": "C3-v2 + C4-v2 pair enters under the pre-declared rule",
+   "model_versions": "docs/go2_navigation_c3v2_c4v2_model_versions_2026-09-29.md (C3-v2 readout 11a61e41, C4-v2 68de16af)",
+   "gap_diagnosis": "pipeline exact on 14,397 decisions (max 4e-7); C3 readout lacks closed-loop coverage: split test moving C3-v1 actual-future 0.12, C3-v2 predicted 0.21 vs C4-v2 0.84, C1 1.01; offline held-out sanity 0.51/0.75",
+   "report": "docs/go2_navigation_c3v2_phase_report_2026-09-29.md",
+   "e1_launch_plan": "docs/go2_navigation_e1_launch_plan_2026-09-29.md (projection 130.9 h median, cap 157 h; storage shortfall 10.8 GiB)"
+  },
+  "c3v3_round": {
+   "predeclaration": "docs/go2_navigation_c3v3_onpolicy_round_predeclaration_2026-09-30.md (ec2e34c9; Amendment 1 45eeca14 before any held-out output)",
+   "onpolicy_c1": "cohorts/c3v3_onpolicy_c1: C1 22/22 round trips, zero contacts/hard; 25,469 fit contexts",
+   "fits": "C3-v3 readout 85ab19ec; C4-v3 992c22fb (matched data, 32 old + 16 maze + 16 on-policy)",
+   "acceptance": "FAILED (c3v3_acceptance_v1 5ce39164): P1/P2/R1/N3 pass (closed-loop moving ratio 0.92 vs C3-v2 0.33), N1/N2 fail (turn XY 2.3-2.5x, transfer 1.21-1.66x)",
+   "e1_pair": "C3-v2 + C4-v2 (pre-declared rule); safety check not run",
+   "report": "docs/go2_navigation_c3v3_round_report_2026-09-30.md"
+  }
+ },
+ "limitations": [
+  "C0 pilot camera records omitted; physical/decision evidence retained; cannot use it for video",
+  "One oracle startup failure preserved before mission commands",
+  "One C4 metadata-writer startup failure preserved before encoding/fitting"
+ ],
+ "remaining": [
+  "1. C3 decoder: fix turn/slow over-prediction keeping cruising accuracy; refit C4 on the same data",
+  "2. Fix shared traps (deadlock, latched recovery turn, goal oscillation, pose loss); re-check C1 each change",
+  "3. C0 x10, C1-C4 on validation + round mazes 22-31; videos; then stop with a short summary"
+ ],
+ "execution_accounting": "Per-attempt fresh run/config/result roots and GPU schedule receipts; failed attempts and replay checks retained separately",
+ "result_report": "docs/go2_navigation_capability_result_2026-09-25.md",
+ "storage_resolution": {
+  "date": "2026-09-26",
+  "authority": "User: do depth",
+  "receipt": "/home/andrewknowles/RecoveryStorage/LeWMQuad-v3/.generated/depth_retirement_historical_references_2026-09-26/result.json",
+  "reclaimed_allocated_bytes": 105985282048,
+  "recovery_free_bytes_after": 121851113472,
+  "next_screen_storage_fits": true,
+  "current_programme_storage_projection_fits": true,
+  "cohorts_launched": false,
+  "remaining_resume_check": "Remaining wall budget and current resource admission before execution"
+ },
+ "historical_blockers": [
+  {
+   "schema": "navigation_capability_storage_stop.v1",
+   "recorded_unix_s": 1790350968.69569,
+   "status": "STOPPED_BEFORE_COHORT_STORAGE_ADMISSION",
+   "goal_complete": false,
+   "pilot_complete": true,
+   "all_six_concurrency_checks_passed": true,
+   "budget_result_sha256": "03343cc7a9487bf44c1ed7432cceadd1598d2a1241cb4b890849976914888dca",
+   "next_assignment_group": "C1 v0 development screen: 01/0 through 09/0",
+   "usable_recovery_gib": 3.0537338256835938,
+   "next_screen_full_budget_gib": 6.861614850844609,
+   "next_screen_shortfall_gib": 3.8078810251610156,
+   "selected_remaining_programme_gib": 86.11108828271081,
+   "selected_programme_shortfall_gib": 83.05735445702722,
+   "validation_episodes_per_maze": 1,
+   "cohorts_launched": false,
+   "oracle_gate_passed": false,
+   "validation_runs": 0,
+   "sealed_test_runs": 0,
+   "existing_artifacts_retired": false,
+   "reason": "The planned next cohort cannot be admitted at full mission duration while preserving the filesystem reserve. The current reserve has not been breached.",
+   "resume": "Recheck capacity and remaining wall budget; reuse completed pilots and C4 checkpoint. Continue the prescribed C1 screen, then dominant-mechanism iteration and the unchanged oracle gate. Do not repeat completed trials."
+  }
+ ],
+ "blockers": [
+  {
+   "kind": "oracle_prefix_fidelity",
+   "report": "docs/go2_navigation_capability_completed_support_v4_oracle_stop_2026-09-28.md",
+   "requires_disposition": true
+  }
+ ],
+ "latest_checkpoint": {
+  "date": "2026-09-28",
+  "stage": "STOP:oracle prefix qualification in02/0",
+  "new_harness": "v4_completed_support",
+  "outcome_iteration_versions_consumed": 5,
+  "containment_pending": false,
+  "oracle_gate_pending": true,
+  "capability_pending": true,
+  "official_videos_pending": true,
+  "wall_cap_hours": 160,
+  "source_harness_sha256": "82b7b6049a93c34cc00599db93a82fee0e7a882683af45ccaae47b5443c84871",
+  "projected_total_wall_hours": 102.98246851950476,
+  "correctness_version_increment": 0,
+  "projection_excludes_next_iteration": false,
+  "projection_excludes_second_episode_amendment": false
+ },
+ "current_cohort": {
+  "root": "cohorts/v4_completed_support_C0_gate",
+  "completed_episodes": 4,
+  "complete": false,
+  "launched": true,
+  "source_harness_commit": "7da82b23",
+  "screen_session_id": 46793,
+  "current_episode": null,
+  "failed_assignment": "v4_completed_support_gate_C0_dev02_ep0_attempt001",
+  "stopped": true,
+  "stop_reason": "Oracle prefix fidelity: six no-matching-prefix rows at one dispatch-veto decision"
+ },
+ "latest_progress": "docs/go2_navigation_c3v3_round_report_2026-09-30.md",
+ "pending_startup_output_contract": {
+  "plan": "docs/go2_navigation_capability_paired_floor_output_contract_plan_2026-09-26.json",
+  "root": "paired_floor_output_contract_attempt001",
+  "order": "Immediately after running C1 screen",
+  "normal_start_comparison": [
+   "00/0",
+   "03/0",
+   "04/0",
+   "05/0",
+   "07/0"
+  ],
+  "failure_requires_report_before_next_change": true,
+  "version_charge_stands_because_normal_initialisation_changes": true,
+  "status": "COMPLETE_PASS_20_OF_20"
+ },
+ "previous_cohort": {
+  "root": "cohorts/v4_completed_support_C1_second_screen",
+  "completed_episodes": 10,
+  "complete": true,
+  "launched": true,
+  "source_harness_commit": "7da82b23",
+  "screen_session_id": 21161,
+  "current_episode": null,
+  "successes": 10,
+  "passed": true
+ },
+ "gate_sequence_amendment": {
+  "path": "docs/go2_navigation_capability_second_episode_gate_amendment_2026-09-27.json",
+  "sha256": "125ad2e32fa1558f3ec95a0698a8df876ca73a48c5db4039e070f50db86117de",
+  "second_episode_check_status": "PASS_10_OF_10",
+  "expanded_20_episode_screen_active": false,
+  "C0_gate_blocked_until_amended_C1_requirements_pass": false
+ },
+ "session_execution_instruction": "Wait in-session for jobs, continue at milestones; stop only at authorised cap/resource/safety/containment/approval conditions.",
+ "preserved_implementation_failures": [
+  {
+   "assignment": "v3_live_turn_screen_C1_dev00_ep0_attempt001",
+   "cause": "Incorrect route-memory constructor type binding",
+   "policy_steps": 0,
+   "planning_decisions": 0,
+   "erratum": "docs/go2_navigation_capability_live_turn_binding_erratum_2026-09-27.md"
+  }
+ ],
+ "handoff": {
+  "path": "docs/go2_navigation_capability_handoff_2026-09-28.md",
+  "role": "Current instructions; overrides older instructions where they conflict; records win on facts."
+ },
+ "orientation": {
+  "path": "docs/go2_navigation_capability_orientation_2026-09-28.md",
+  "status": "RESOLVED: Andrew approved proceeding 28 September; handoff corrected; ledger fixed",
+  "discrepancies": [
+   "Handoff: six unmatched decisions in C0 02/0; records: one decision (simulator 119.9 s) with six candidate rows, the stale-observation veto on the shared committed prefix, then 20 COMMITTED_PREFIX_NOT_EXECUTED holds (no motion).",
+   "Six-version cap: preregistration counts V0 among six (IDs 0-5), making V4 the sixth; later records count five of six charged changes. Ruling needed before any post-gate iteration."
+  ],
+  "fifth_attempt": "Terminal OBSERVED_ROUND_TRIP_CANDIDATE at 160.0 s simulator time; closeout prefix check raised; physical reader not run.",
+  "elapsed_conservative_wall_hours": 70.1,
+  "recovery_usable_gib": 91.11,
+  "workspace_free_gib": 5.47
+ },
+ "gate_result": "docs/go2_navigation_capability_completed_support_v4_gate_result_2026-09-28.md",
+ "storage_resolution_2026_09_30": "Deleted go2_supervised_rollout_mazes_v1_attempt_001 with approval; manifest docs/storage_manifests/; free 95.8 -> 122.7 GiB; log docs/storage_manifests/storage_log.md",
+ "mode": {
+  "set_by": "Andrew 2026-09-30",
+  "dropped": [
+   "pre-declared acceptance criteria",
+   "gates",
+   "stop-for-approval points",
+   "one-change-per-version",
+   "version caps",
+   "bitwise replay checks",
+   "formal budget stops"
+  ],
+  "kept": [
+   "sealed test set untouched",
+   "ask before deleting data or starting >24 h compute",
+   "storage reserve",
+   "git commit per meaningful change",
+   "contacts and wall clearance reported every run"
+  ]
+ },
+ "e1": "Deferred until the system is frozen (development mode); sealed set untouched; custody proposal docs/go2_navigation_e1_sealed_custody_launcher_proposal_2026-09-30.md stands for later"
+}

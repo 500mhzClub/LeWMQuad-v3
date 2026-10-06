@@ -19,6 +19,19 @@ This policy grants no access to sealed benchmark material.
 - Treat every legacy sealed role as inaccessible even when it is already
   scientifically invalid. In particular, V4 is development-only and
   permanently ineligible for final evaluation.
+- Preliminary-test exception (Andrew, 1 October 2026). The 60 Go2
+  navigation-capability mazes formerly at
+  `<capability root>/sets/sealed_test_v1` (capability layouts 30-89; capability
+  root `.generated/navigation_development_artifacts_v1/go2_navigation_capability_v1_attempt_001`
+  under RecoveryStorage) are declassified.
+  - They are renamed to `<capability root>/sets/prelim_test_v1`.
+  - They are preliminary-test mazes, not sealed. They may be opened, parsed
+    and run for the development-mode preliminary run, and every result from
+    them is labelled preliminary.
+  - This exception covers that one directory only. It does not cover the
+    rigorous-phase set generated to replace it
+    (`<capability root>/sets/sealed_test_v2`), which stays sealed and untouched
+    until the rigorous phase, and it does not cover any other sealed role.
 - Ordinary source discovery must honor the tracked `.ignore` rules. Do not use
   `rg -u`, `rg --no-ignore`, `grep -R`, `git grep`, IDE-wide indexing, or an
   equivalent bypass across a custody root.

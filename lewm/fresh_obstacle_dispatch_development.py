@@ -4,6 +4,8 @@ This nominal disk test is not a whole-body or ground-support certificate. It
 does not infer free space from absent returns. Fresh collision and visibility
 outcomes must be measured in the prospective simulator experiment.
 """
+from lewm.navigation_capability_map_domain_development import COARSE_HALF_CELLS
+
 from dataclasses import dataclass
 import numpy as np
 
@@ -79,7 +81,7 @@ def observe_obstacles(policy, depth, evidence, routing_snapshot, *, auxiliary_de
         mapped=((points@R.T+p)@B.T) if auxiliary else (points@Q.T+q)
         above=mapped[(mapped[:,2]>routing_snapshot.floor_height+.03)&(mapped[:,2]<routing_snapshot.floor_height+.65)]
         keys=np.unique(np.floor(above[:,:2]/CELL_M).astype(int),axis=0)
-        cells.update(tuple(map(int,cell)) for cell in keys if np.all(cell>=-100) and np.all(cell<100))
+        cells.update(tuple(map(int,cell)) for cell in keys if np.all(cell>=-COARSE_HALF_CELLS) and np.all(cell<COARSE_HALF_CELLS))
     return CurrentObstacles(pose['frame'],measured_ns,tuple(map(float,q)),
         tuple(tuple(map(float,row)) for row in Q),frozenset(cells),tuple(counts))
 

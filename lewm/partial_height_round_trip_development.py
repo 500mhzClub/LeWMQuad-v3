@@ -1,4 +1,6 @@
 """Integrate explicit partial-height observations into the continuous development runtime."""
+from lewm.navigation_capability_map_domain_development import FINE_CELL_M
+
 from lewm.eligible_floor_registration_development import bind
 from lewm.partial_floor_height_development import PartialHeightRegistration,read_pose,fit_gyro_height
 from lewm import process_registered_round_trip_development as registration_process
@@ -13,7 +15,7 @@ class PartialHeightMap(MultirateRoutingMap):
     update=bind(MultirateRoutingMap.update,current_measured_floor_pose=read_pose)
 
 
-_partial_observe=bind(IndependentDepthObstacles._observe,CELL_M=.01,fit_joint_plane=fit_gyro_height)
+_partial_observe=bind(IndependentDepthObstacles._observe,CELL_M=FINE_CELL_M,fit_joint_plane=fit_gyro_height)
 
 
 class PartialHeightObstacles(FineDepthObstacles):

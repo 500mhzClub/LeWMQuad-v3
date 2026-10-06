@@ -1,4 +1,6 @@
 """Use the instructed endpoint after an observed route reaches its goal cell."""
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M, MAP_HALF_WIDTH_M
+
 import numpy as np
 from lewm.observed_floor_waypoint_development import centre,segment_cells,CELL_M
 from lewm.observed_geometry_refinement_development import nominal_connector
@@ -6,7 +8,9 @@ from lewm.observed_geometry_refinement_development import nominal_connector
 
 def terminal_target(proposal,waypoint,position,goal,floor,occupied):
     original=np.asarray(waypoint,float);p=np.asarray(position,float);g=np.asarray(goal,float)
-    if any(v.shape!=(2,) or not np.isfinite(v).all() or np.max(np.abs(v))>4.9 for v in (original,p,g)):
+    if (any(v.shape!=(2,) or not np.isfinite(v).all() for v in (original,p,g))
+            or np.max(np.abs(original))>=MAP_HALF_WIDTH_M
+            or max(np.max(np.abs(p)),np.max(np.abs(g)))>POINT_BOUND_M):
         raise ValueError('bounded observed position, waypoint and instructed mission goal required')
     evidence=dict(selected=False,original_waypoint_map_xy_m=original.tolist(),
         mission_goal_map_xy_m=g.tolist(),goal_tolerance_changed=False,

@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "focused_tests": 5,
+  "command": "python -m pytest -q lewm/tests/test_navigation_capability_paired_floor_start_development.py",
+  "reported_test_wall_s": 1.66,
+  "syntax_check_passed": true,
+  "diagnostic_replays": "Unchanged predecessor only; no new-version navigation yet",
+  "harness_sha256": "e069986cac21a61dad268d211d55c122712f1556898dfc7e6a9842bae3169654"
+}

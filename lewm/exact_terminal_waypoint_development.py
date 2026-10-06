@@ -1,4 +1,6 @@
 """Score the actual mission point when the terminal goal-cell waypoint is selected."""
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M
+
 from copy import deepcopy
 import numpy as np
 from lewm.observed_floor_waypoint_development import CELL_M, centre
@@ -20,7 +22,7 @@ def exact_terminal_target(selection, position_map, rotation_map_body, mission_ma
         return selection
     p, R, g = np.asarray(position_map, float), np.asarray(rotation_map_body, float), np.asarray(mission_map_xy, float)
     if (p.shape != (3,) or g.shape != (2,) or not np.isfinite(p).all()
-            or not np.isfinite(g).all() or np.max(np.abs(np.r_[p[:2], g])) > 4.9):
+            or not np.isfinite(g).all() or np.max(np.abs(np.r_[p[:2], g])) > POINT_BOUND_M):
         raise ValueError('finite bounded observed mission coordinates required')
     proper(R)
     if list(map(int, np.floor(g/CELL_M))) != list(path[-1]):

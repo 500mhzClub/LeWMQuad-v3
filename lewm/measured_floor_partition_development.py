@@ -1,4 +1,6 @@
 """Retain every return in measured-floor or non-floor/unknown bound indices."""
+from lewm.navigation_capability_map_domain_development import POINT_BOUND_M
+
 import numpy as np
 from lewm.measured_sample_bounds_development import MeasuredSampleBoundsIndex
 from lewm.observed_floor_waypoint_development import CELL_M
@@ -26,7 +28,7 @@ class MeasuredFloorPartition:
 def foot_projection_coverage(center_map_xy,radius,floor_cells):
     """Closed nominal disk coverage by previously measured complete floor cells."""
     p=np.asarray(center_map_xy,float)
-    if p.shape!=(2,) or not np.isfinite(p).all() or np.max(np.abs(p))>4.9 or not 0<radius<=.1:
+    if p.shape!=(2,) or not np.isfinite(p).all() or np.max(np.abs(p))>POINT_BOUND_M or not 0<radius<=.1:
         raise ValueError('bounded nominal foot disk required')
     a=np.floor((p-radius)/CELL_M).astype(int)-1;b=np.floor((p+radius)/CELL_M).astype(int)
     keys=[(x,y) for x in range(a[0],b[0]+1) for y in range(a[1],b[1]+1)]
