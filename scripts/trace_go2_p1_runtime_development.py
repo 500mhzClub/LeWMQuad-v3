@@ -10,7 +10,10 @@ render environment. So nothing in the environment changes:
   moved aside so the distribution list is unchanged;
 - this wrapper rewrites, in its own process only, each subprocess command of the form [python, X.py, args...] into
   [python, boot, X.py, args...]; `boot` (this module, run as a script) appends the coverage directory to sys.path, starts
-  coverage, restores sys.argv and sys.path[0] as `python X.py` would have them, and runs X.py as __main__.
+  coverage, restores sys.argv and sys.path[0] as `python X.py` would have them, and runs X.py as __main__;
+- spawned multiprocessing children unpickle coverage's hook before applying the parent's sys.path, so `boot` points the
+  spawn executable at `p1_runtime_trace/python_child`, a shell shim that runs the same venv Python with the coverage
+  directory on that child's PYTHONPATH (workers do not run the environment check; the mission process keeps it exact).
 Missions are ordinary development runs (cohorts named p1t2_*), labelled as trace runs.
 
 Usage: trace_go2_p1_runtime_development.py GROUP LAUNCHER_MODULE -- LAUNCHER ARGS...
@@ -31,6 +34,8 @@ def boot():
     script = sys.argv[2]
     sys.path.append(str(TRACE/'site'))
     import coverage
+    import multiprocessing.spawn
+    multiprocessing.spawn.set_executable(str(TRACE/'python_child'))
     cov = coverage.Coverage(config_file=str(TRACE/'coveragerc'), data_file=os.environ['P1_COVERAGE_FILE'])
     cov.start()
     import atexit
