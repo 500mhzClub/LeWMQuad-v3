@@ -4,6 +4,17 @@ Andrew, 6 October: "a hard stop after this round of experimentation … consolid
 
 This plan is for review. Nothing has been copied or created yet.
 
+## 0. Decisions (Andrew, 6 October)
+
+| | Decision | Consequence for the plan |
+|---|---|---|
+| Scope | "all results comparing the different harnesses once we established they could all complete the mazes" | Read as the controller comparisons after the capability gate: R1, R3, R4, R5 and R6, with R2 as the method behind the compared C3. The capability-qualification path itself (V4 gate, validation) is background. **To confirm.** |
+| Repository | **Go2-JEPA-Navigation**, public | The first push needs a pre-publication review by Andrew: licences, secrets, absolute paths, personal data, and a name-only sealed scan. Nothing is pushed before it. |
+| Shipped data | yes, as proposed | Checkpoints, maze sets (excluding sealed), per-mission result summaries, gate replay inputs. Raw runs and caches are archived and rebuildable. |
+| Training | ship checkpoints and their lineage, and **all code to retrain each component from scratch** | Every learned component must retrain from shipped data with a seed parameter. **Multiple seeds per component** will be run later, so published results are not one lucky seed. See section 3a. |
+| Platform | ROCm for now | Pin the ROCm stack. Replace the `.pth` bridge with one locked environment. Docker is optional. |
+| Extras | ship them, for later review | C1A, C1R, the forecast-degradation hooks, demo textures and hero video, the marker probe and the unmarked control go under `experiments/dev/` with their results. |
+
 ## 1. What the paper rests on
 
 Everything here is from the navigation-capability programme (25 September onwards), and all of it is labelled **preliminary** (development mode).
@@ -123,6 +134,44 @@ Genesis 0.4.6 plus torch 2.12 / ROCm 7.2 (through a `.pth` bridge into `world_mo
   docs/           reproduction guide, results map, limitations, custody note
 ```
 
+### 3a. Retraining from scratch and multi-seed runs
+
+**Component graph** (each node gets a `seed` and records a lineage manifest):
+
+| # | Component | Trained on | Parent |
+|---|---|---|---|
+| T1 | temporal action predictor (August) | V-JEPA 2.1 features of 18,690 May-corpus lineage frames (80 scenes), `proprio_v1` | fresh weights |
+| T2 | native adaptation | native Go2 recordings | T1 |
+| T3 | balanced-start predictor | moving-action-switch, geometry-progress, short-pulse, balanced-start recordings | T2 |
+| T4 | horizon dense predictor (**the frozen JEPA predictor**) | balanced-start horizon-action recordings | T3 |
+| T5 | full-heading readout → maze-view readout | readout recordings and frame lists | T4 features |
+| T6 | C1 command ridge | family, switch and short-pulse contexts | closed form, no seed |
+| T7 | C3 decoder + matched C4 | feature cache from T4 (old, maze and on-policy contexts) | T4, T5 |
+| T8 | stage-2 refits (C3/C4, C1R) | stage-2 cache | T7, T6 |
+
+**Training data to ship** (measured):
+
+| Data | Size |
+|---|---|
+| Predictor-stage recordings | ~8.5 GB (switch family 5.9, geometry-progress 1.6, short pulse 0.36, balanced start 0.14) |
+| Predictor checkpoints | ~0.8 GB |
+| Readout and transfer data | ~0.3 GB |
+| C3/C4 decoder data, rest/turn recordings and gap replays | ~2.6 GB |
+| Stage-2 recordings and replays | ~2.7 GB |
+
+The **T1 inputs** are the 18,690 lineage frames (size to be measured) plus `proprio_v1`. Their 33 GiB of cached V-JEPA features are rebuilt by a shipped script rather than shipped. Feature caches for T7/T8 are likewise rebuilt, not shipped. The total is in the tens of GB, which suits Hugging Face Hub datasets.
+
+**Lineage manifest per checkpoint:** parents, with their sha256; the training-data manifest sha256; code commit; config; seed; metrics. The shipped checkpoints get retrofitted manifests from the existing records (plans, results and hashes in `docs/`).
+
+**Multi-seed protocol.** This is designed now, run later in the rigorous phase:
+- Seeds come in **full chains**: seed *k* retrains T1→T8 end to end. That measures end-to-end variance, not just the last stage's.
+- C1 is closed form, so its variance comes from data, not a seed.
+- Then closed-loop evaluation of every seed's C3 and C4 on the rigorous-phase set.
+- The number of seeds and the evaluation set are fixed before any seed result is seen.
+- Compute is estimated in P1 from the original stage timings. Closed loop dominates: C3 is about 10 GPU h per 20 missions.
+
+**Retraining gate (G5):** each component, retrained in B with its original seed and data order, reproduces its logged metrics. It reproduces the checkpoint hash exactly where the training is deterministic, and stays within a stated tolerance where GPU kernels are not.
+
 ### Equivalence gates (B must reproduce A)
 
 The repository already has the needed machinery: verified replays that assert every hash, decision, dispatch command and trace value, and fit-record reproduction (the stage-2 cache reproduced the decoder fix's metrics with 0 difference across 14 sets).
@@ -142,12 +191,13 @@ The repository already has the needed machinery: verified replays that assert ev
 | P1 | **Runtime trace:** run one short mission per controller and condition, plus one cache, fit and report each, under coverage. This gives the executed functions, which become the porting list. The static closure (1,617 files) should shrink to a few hundred functions. | 0.5 day | ~1 day CPU/GPU, parallel |
 | P2 | **Snapshot A:** manifest, hash-checked export, then a bit-exact replay smoke from the snapshot (paths remapped by config) | 0.5–1 day | hours |
 | P3 | **Clean repo skeleton:** configs (from the docs bindings), artefact manifest and fetch script, CI with unit tests | 0.5 day | – |
+| P4b | **Training pipeline port:** T1–T8 as seed-parameterised stages with lineage manifests; data manifests and fetch; gate G5 on each stage with its original seed | 1 week | GPU: the original stage timings, once each |
 | P4 | **Port bottom-up with gates:** sim → perception → planning/harness (hardest: the mixin stack and fixes) → models and controllers → data/training → eval/reports. G1 per layer, G2/G3 at the end. | **1.5–2.5 weeks** | replays: hours |
 | P5 | **Artefact packaging:** checkpoints, maze sets, result tables and per-mission JSON summaries, selected replay inputs | 1 day | upload time |
 | P6 | **Docs:** README, paper-results map (each table and figure → command → expected numbers), limitations, custody note | 1 day | – |
 | P7 | **Fresh-machine verification:** clean environment, fetch artefacts, run G2/G3 and regenerate the paper tables | 0.5 day | ~0.5 day |
 
-**Total:** about 3–4 weeks of engineering. Phase P4 dominates, and it scales with how much of R1–R6 is kept.
+**Total:** about 4–5 weeks of engineering, with P4 and P4b dominating, plus GPU time for the G5 retraining checks. The multi-seed runs belong to the rigorous phase, after the repository is gated.
 
 ## 5. Decisions needed
 
