@@ -199,6 +199,46 @@ The repository already has the needed machinery: verified replays that assert ev
 
 **Total:** about 4–5 weeks of engineering, with P4 and P4b dominating, plus GPU time for the G5 retraining checks. The multi-seed runs belong to the rigorous phase, after the repository is gated.
 
+## P1 result: runtime trace (6 October, 13:00)
+
+The porting list is in `docs/go2_research_artifact_p1_runtime_trace_2026-10-06.json`, with per file and per function the executed lines.
+
+**Method.** Coverage, installed outside the pinned environment (`scripts/trace_go2_p1_runtime_development.py`).
+- The frozen harness verifies its environment exactly: Python distributions, `PYTHONPATH` and render variables. So entries are booted under coverage by rewriting the launcher's subprocess commands, with the environment untouched.
+- Spawned workers get coverage through a spawn-executable shim.
+
+**What was traced.**
+- 11 short missions (cohorts `p1t3_*`):
+  - C0, C1, C2, C3 and C4, plus C1A and C1R;
+  - recovery on and off;
+  - uniform friction, marked patches with the recording stall stop;
+  - the v2 launcher's forecast degradation and calibrated margins, with the pessimistic-unknown map.
+- 10 offline steps: reports, scoring, context counts, the C1 refit check, the cache collector, the decoder baseline and the marker control.
+- The two rewritten result files (decoder baseline, marker control) reproduced their originals exactly. The originals are kept in `stage2_decoder_fits/original_before_p1_trace/`.
+
+**Outcomes** matched expectations. 9 of 11 completed a round trip. The two failures:
+- **C4 on maze 45 with recovery on:** the same failure as the preliminary run (the latch release).
+- **C1 with 40-mm forecast noise:** a degraded condition.
+
+**Size of what actually runs:**
+
+| | Count |
+|---|---|
+| Files in the static closure | 1,617 |
+| Files with any executed line | 918 (24,417 lines; most are import-time `def`, `class` and constant lines) |
+| **Files with an executed function body** | **350** (lewm 239, scripts 88, lewm_genesis 22, lewm_worlds 1) |
+| **Executed functions** | **1,126**, with 8,467 executed lines in their bodies |
+
+So the clean repository's runtime core is about 1,100 functions and about 10k statements, not the static closure's 1,617 files. The rest is version layering, alternatives that were never selected, and import scaffolding.
+
+**Not traced** (ported from static reading instead):
+- **Training lineage T1–T5:** checked by gate G5.
+- **Data and set generation:** data collection and the capability maze generator.
+- **Rebuild and render steps:** feature-cache encoding, verified replay, the unmarked re-render, the marker probe, and video rendering.
+- **Rare runtime branches:** contact handling and some recoveries. Gate G2, run over many logged missions, catches these.
+
+**Effect on the estimate.** P4 (porting the runtime core) looks like the lower end of its 1.5–2.5 weeks. P4b (training) is unchanged.
+
 ## 5. Decisions needed
 
 - **A. Paper scope:** which results (R1–R6, V) and the headline claim. This sets the porting list in P1.
